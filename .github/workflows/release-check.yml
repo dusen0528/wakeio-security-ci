@@ -1,0 +1,62 @@
+name: release-check
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts --no-audit --fund=false
+
+      - name: Build and run tests
+        run: npm test
+
+      - name: Run supported benchmark corpus in strict mode
+        run: npm run benchmark -- --strict
+
+      - name: Build release artifacts locally
+        run: npm run package:release
+
+      - name: Verify release archive paths and checksums
+        shell: bash
+        run: |
+          set -euo pipefail
+          sums_file="$(find artifacts -maxdepth 1 -type f -name '*-SHA256SUMS.txt' -print -quit)"
+          test -n "$sums_file"
+          (cd artifacts && sha256sum -c "$(basename "$sums_file")")
+          source_archive="$(find artifacts -maxdepth 1 -type f -name '*-source-*.tar.gz' -print -quit)"
+          npm_archive="$(find artifacts -maxdepth 1 -type f -name '*.tgz' -print -quit)"
+          test -n "$source_archive"
+          test -n "$npm_archive"
+          tar -tzf "$source_archive" | grep -Fx 'wakeio-security-ci/'
+          tar -tzf "$source_archive" | grep -Fx 'wakeio-security-ci/src/'
+          tar -tzf "$source_archive" | grep -Fx 'wakeio-security-ci/tests/'
+
+      # This keeps a reviewable CI artifact only. There is deliberately no
+      # npm token, npm publish, GitHub release upload, or registry mutation in
+      # this workflow; publication remains a separate, explicitly authorized
+      # release step after the package has been reviewed.
+      - name: Upload checked artifacts for inspection
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: wakeio-security-ci-release-check
+          path: artifacts/
+          if-no-files-found: warn

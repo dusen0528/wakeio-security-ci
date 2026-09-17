@@ -1,0 +1,54 @@
+{
+  "name": "wakeio-security-ci",
+  "version": "0.4.0-dev.1",
+  "description": "Bounded local source and URL security checks for CI",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dusen0528/wakeio-security-ci.git"
+  },
+  "homepage": "https://github.com/dusen0528/wakeio-security-ci#readme",
+  "bugs": {
+    "url": "https://github.com/dusen0528/wakeio-security-ci/issues"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "bin": {
+    "wakeio-security-ci": "./build/src/cli.js"
+  },
+  "exports": {
+    ".": "./build/src/index.js",
+    "./contracts": "./build/src/contracts.js"
+  },
+  "files": [
+    "build/src",
+    "README.md",
+    "README.ko.md",
+    "README.ja.md",
+    "README.zh-CN.md",
+    "CONTRIBUTING.md",
+    "benchmarks/README.md",
+    "LICENSE",
+    "SECURITY.md",
+    "THIRD_PARTY_NOTICES.md",
+    "docs",
+    "examples",
+    "scripts/install-tools.mjs"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json && node scripts/build-action-bundle.mjs",
+    "test": "npm run build && node --test build/tests/*.test.js",
+    "benchmark": "npm run build && node scripts/benchmark.mjs",
+    "package:release": "npm run build && node scripts/package-release.mjs"
+  },
+  "dependencies": {
+    "parse5": "7.3.0",
+    "typescript": "5.9.3"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.2",
+    "esbuild": "0.28.2"
+  }
+}

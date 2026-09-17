@@ -1,0 +1,173 @@
+{
+  "experiment": "Same synthetic corpus, tools disabled, public runSource; no target fixture code executed",
+  "corpusVersion": "2026-09-15.synthetic-js-ts.v1",
+  "corpusSha256": "a9192419fd5ef7d4199a4bef0f16a3fa72b90421610b0c479daa4d2647f00c26",
+  "scope": "The measured signal is the built-in AST candidate detector with tools: []. It is a scoped regression benchmark, not a production accuracy estimate.",
+  "unsupportedScope": [
+    "Python semantics are outside this JS/TS AST corpus and are not represented as production coverage.",
+    "Real Next.js, React, Supabase, Express, database, or browser runtime behavior is not executed.",
+    "Network, package installation, authentication, and framework build behavior are outside the measurement.",
+    "Cross-function and cross-file flows are retained as explicit known-scope entries so their denominator stays visible."
+  ],
+  "before": {
+    "version": "0.1.0",
+    "strictExit": 1,
+    "summary": {
+      "totalCases": 30,
+      "vulnerableCases": 15,
+      "fixedCases": 15,
+      "supportedExpectationCases": 13,
+      "knownUnsupportedCases": 2,
+      "supportedExpectedFindings": 13,
+      "knownUnsupportedExpectedFindings": 2,
+      "allExpectedFindings": 15,
+      "allDetectedExpectedFindings": 6,
+      "allFalseNegatives": 9,
+      "truePositives": 6,
+      "falsePositives": 0,
+      "falseNegatives": 7,
+      "precision": 1,
+      "recall": 0.4615,
+      "supportedPrecision": 1,
+      "supportedRecall": 0.4615,
+      "allCorpusRecall": 0.4,
+      "falsePositiveCases": 0,
+      "fixedFalsePositiveCases": 0,
+      "falseNegativeCases": 7,
+      "fixedCaseFalsePositiveRate": 0,
+      "knownMisses": 2,
+      "knownMissesResolved": 0,
+      "strictRegressions": 7,
+      "coveredRuleIds": [
+        "ast:html-input-sink",
+        "ast:open-redirect",
+        "ast:server-request",
+        "ast:shell-input-sink",
+        "ast:sql-input-sink"
+      ]
+    },
+    "ruleMetrics": [
+      {
+        "ruleId": "ast:html-input-sink",
+        "truePositives": 2,
+        "falsePositives": 0,
+        "falseNegatives": 1,
+        "knownMisses": 0,
+        "knownMissesResolved": 0
+      },
+      {
+        "ruleId": "ast:open-redirect",
+        "truePositives": 1,
+        "falsePositives": 0,
+        "falseNegatives": 1,
+        "knownMisses": 0,
+        "knownMissesResolved": 0
+      },
+      {
+        "ruleId": "ast:server-request",
+        "truePositives": 1,
+        "falsePositives": 0,
+        "falseNegatives": 1,
+        "knownMisses": 0,
+        "knownMissesResolved": 0
+      },
+      {
+        "ruleId": "ast:shell-input-sink",
+        "truePositives": 1,
+        "falsePositives": 0,
+        "falseNegatives": 2,
+        "knownMisses": 0,
+        "knownMissesResolved": 0
+      },
+      {
+        "ruleId": "ast:sql-input-sink",
+        "truePositives": 1,
+        "falsePositives": 0,
+        "falseNegatives": 2,
+        "knownMisses": 2,
+        "knownMissesResolved": 0
+      }
+    ]
+  },
+  "after": {
+    "version": "0.2.0-dev.1",
+    "strictExit": 0,
+    "summary": {
+      "totalCases": 30,
+      "vulnerableCases": 15,
+      "fixedCases": 15,
+      "supportedExpectationCases": 13,
+      "knownUnsupportedCases": 2,
+      "supportedExpectedFindings": 13,
+      "knownUnsupportedExpectedFindings": 2,
+      "allExpectedFindings": 15,
+      "allDetectedExpectedFindings": 13,
+      "allFalseNegatives": 2,
+      "truePositives": 13,
+      "falsePositives": 0,
+      "falseNegatives": 0,
+      "precision": 1,
+      "recall": 1,
+      "supportedPrecision": 1,
+      "supportedRecall": 1,
+      "allCorpusRecall": 0.8667,
+      "falsePositiveCases": 0,
+      "fixedFalsePositiveCases": 0,
+      "falseNegativeCases": 0,
+      "fixedCaseFalsePositiveRate": 0,
+      "knownMisses": 2,
+      "knownMissesResolved": 0,
+      "strictRegressions": 0,
+      "coveredRuleIds": [
+        "ast:html-input-sink",
+        "ast:open-redirect",
+        "ast:server-request",
+        "ast:shell-input-sink",
+        "ast:sql-input-sink"
+      ]
+    },
+    "ruleMetrics": [
+      {
+        "ruleId": "ast:html-input-sink",
+        "truePositives": 3,
+        "falsePositives": 0,
+        "falseNegatives": 0,
+        "knownMisses": 0,
+        "knownMissesResolved": 0
+      },
+      {
+        "ruleId": "ast:open-redirect",
+        "truePositives": 2,
+        "falsePositives": 0,
+        "falseNegatives": 0,
+        "knownMisses": 0,
+        "knownMissesResolved": 0
+      },
+      {
+        "ruleId": "ast:server-request",
+        "truePositives": 2,
+        "falsePositives": 0,
+        "falseNegatives": 0,
+        "knownMisses": 0,
+        "knownMissesResolved": 0
+      },
+      {
+        "ruleId": "ast:shell-input-sink",
+        "truePositives": 3,
+        "falsePositives": 0,
+        "falseNegatives": 0,
+        "knownMisses": 0,
+        "knownMissesResolved": 0
+      },
+      {
+        "ruleId": "ast:sql-input-sink",
+        "truePositives": 3,
+        "falsePositives": 0,
+        "falseNegatives": 0,
+        "knownMisses": 2,
+        "knownMissesResolved": 0
+      }
+    ]
+  },
+  "limitations": "Synthetic regression measurement only. Not production detection accuracy or overall security coverage. Known misses remain in all-corpus expected counts."
+}

@@ -1,0 +1,60 @@
+name: Bug report
+description: Report a reproducible non-sensitive problem in the CLI or Action.
+title: "[Bug]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please remove secrets, private source, personal data, production URLs, and real scan reports.
+        Use synthetic fixtures and the smallest reproducible scope.
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Package version or commit used for the reproduction.
+      placeholder: 0.2.0-dev.1
+    validations:
+      required: true
+  - type: textarea
+    id: command
+    attributes:
+      label: Command and input boundary
+      description: Include the command, whether this was source or URL mode, and a synthetic fixture description.
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: Include a redacted error or report excerpt. Keep finding evidence and secret values out.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description: Paste a short synthetic fixture or link to a public repository that contains no private material.
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Operating system, architecture, Node.js version, and runner or shell.
+      placeholder: macOS arm64, Node.js 22.22.1
+    validations:
+      required: true
+  - type: checkboxes
+    id: safe
+    attributes:
+      label: Sensitive data check
+      options:
+        - label: I removed real secrets, private source, personal data, production URLs, and unredacted reports.
+          required: true

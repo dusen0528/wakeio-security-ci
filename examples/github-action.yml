@@ -1,0 +1,37 @@
+# Copy-ready public preview for a consumer repository.
+# `@main` is intentionally used while the Action is in preview; review the
+# resolved commit and replace it with that full SHA before production use.
+# `tools: none` selects Wakeio's built-in checks only, so this first run does
+# not install or download optional native scanners.
+name: wakeio-security-ci
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out application
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Run Wakeio Security CI built-in checks
+        uses: dusen0528/wakeio-security-ci@main
+        with:
+          source: .
+          tools: none
+          fail-on: high
+          out: wakeio-security-reports
+      - name: Upload Wakeio reports
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: wakeio-security-ci-reports
+          path: wakeio-security-reports
+          if-no-files-found: error

@@ -1,0 +1,155 @@
+{
+  "scope": [
+    {
+      "exit": 0,
+      "statuses": [
+        [
+          "source.inventory",
+          "completed"
+        ],
+        [
+          "source.builtin-ast",
+          "completed"
+        ],
+        [
+          "source.framework",
+          "not_applicable"
+        ],
+        [
+          "source.gitleaks",
+          "completed"
+        ]
+      ],
+      "fingerprint": "5644fdd9e01701ebadd6fae7e27e884ab2a47fb5fe065c63a48de3dfca332448"
+    },
+    {
+      "exit": 0,
+      "statuses": [
+        [
+          "source.inventory",
+          "completed"
+        ],
+        [
+          "source.builtin-ast",
+          "completed"
+        ],
+        [
+          "source.framework",
+          "not_applicable"
+        ],
+        [
+          "source.gitleaks",
+          "completed"
+        ]
+      ],
+      "fingerprint": "3264162583b5884292af20bc2296a3ffcb41946bc5229ba158c9a3812959ea14"
+    }
+  ],
+  "lines": [
+    {
+      "exit": 0
+    },
+    {
+      "exit": 0
+    }
+  ],
+  "api": [
+    {
+      "case": "expired",
+      "status": "completed",
+      "findings": [],
+      "exit": 0,
+      "requests": 3
+    },
+    {
+      "case": "empty",
+      "status": "partial",
+      "findings": [],
+      "exit": 2,
+      "requests": 3
+    },
+    {
+      "case": "echo",
+      "status": "completed",
+      "findings": [
+        {
+          "ruleId": "api.authorization-data-exposure",
+          "severity": "high"
+        }
+      ],
+      "exit": 1,
+      "requests": 3
+    },
+    {
+      "case": "exposed",
+      "status": "completed",
+      "findings": [
+        {
+          "ruleId": "api.authorization-data-exposure",
+          "severity": "high"
+        }
+      ],
+      "exit": 1,
+      "requests": 3
+    }
+  ],
+  "scopeComparison": {
+    "exit": 2,
+    "comparable": false,
+    "reasons": [
+      "Declared target, options, or ruleset changed."
+    ],
+    "sameToolBytes": true,
+    "engineEvidence": "Synthetic trusted scanner scripts with identical bytes, not native Gitleaks accuracy validation"
+  },
+  "lineComparison": {
+    "exit": 1,
+    "comparable": true,
+    "summary": {
+      "new": 1,
+      "changed": 0,
+      "unchanged": 0,
+      "not_observed": 1,
+      "unverified": 0
+    }
+  },
+  "sql": [
+    {
+      "case": "nested_block_comment",
+      "frameworkStatus": "completed",
+      "finding": "supabase:disable-row-level-security",
+      "severity": "high",
+      "line": 3,
+      "classification": "false_positive",
+      "validation": "synthetic static fixture; no database execution"
+    },
+    {
+      "case": "quoted_disable_then_enable",
+      "frameworkStatus": "completed",
+      "finding": "supabase:disable-row-level-security",
+      "severity": "high",
+      "line": 1,
+      "classification": "false_positive",
+      "validation": "synthetic static fixture; no database execution"
+    }
+  ],
+  "urlHeaders": {
+    "case": "nonce_script_policy_and_invalid_nosniff",
+    "status": "completed",
+    "csp": "script-src 'nonce-dGVzdGZpeHR1cmU=' 'unsafe-inline'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'",
+    "xContentTypeOptions": "invalid-value",
+    "findings": [
+      "url.csp-unsafe-inline",
+      "url.insecure-transport"
+    ],
+    "validation": "loopback HTTP fetch and current static rule output; compared with standards; no browser execution"
+  },
+  "pythonDependencyInput": {
+    "input": "requirements.txt containing requests==2.32.0",
+    "scanner": "synthetic executable path; native OSV not invoked",
+    "status": "partial",
+    "lockfiles": 0,
+    "dependencyManifest": true,
+    "note": "A dependency manifest declares packages, but no supported lockfile was available for OSV-Scanner."
+  }
+}

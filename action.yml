@@ -1,0 +1,118 @@
+name: Wakeio Security CI
+description: Run local source and URL security checks and write JSON, SARIF, and Markdown reports
+author: Wakeio Security CI contributors
+
+inputs:
+  source:
+    description: Checkout-relative source directory to inspect
+    required: false
+    default: ''
+  url:
+    description: HTTP(S) URL to inspect with bounded same-origin GET requests
+    required: false
+    default: ''
+  pages:
+    description: Optional newline or comma-separated additional same-origin URL pages
+    required: false
+    default: ''
+  api-policy:
+    description: Checkout-relative JSON authorization policy; credentials are read from its named environment variables
+    required: false
+    default: ''
+  out:
+    description: Directory for report.json, report.sarif, report.md, and Action status
+    required: false
+    default: wakeio-security-reports
+  tools:
+    description: Comma-separated source scanner set, or none
+    required: false
+    default: gitleaks,osv,trivy
+  fail-on:
+    description: Severity threshold for findings (none disables finding failure only)
+    required: false
+    default: high
+  allow-private:
+    description: Allow explicitly local/private URL targets
+    required: false
+    default: 'false'
+  timeout-ms:
+    description: Per-check timeout in milliseconds
+    required: false
+    default: '30000'
+  max-pages:
+    description: Maximum total URL pages including the root page
+    required: false
+    default: ''
+  osv-offline:
+    description: Require a preloaded OSV database instead of querying the public service
+    required: false
+    default: 'false'
+  bandit-path:
+    description: Optional preinstalled trusted Bandit executable for Python source scans
+    required: false
+    default: ''
+  project-id:
+    description: Stable project identifier passed to the scanner (defaults to github.repository)
+    required: false
+    default: ''
+  tool-cache:
+    description: Optional persistent directory for verified native scanner archives
+    required: false
+    default: ''
+
+outputs:
+  report-dir:
+    description: Absolute report directory used by the scanner
+    value: ${{ steps.wakeio-run.outputs.report-dir }}
+  report-json:
+    description: Absolute JSON report path
+    value: ${{ steps.wakeio-run.outputs.report-json }}
+  report-sarif:
+    description: Absolute SARIF report path
+    value: ${{ steps.wakeio-run.outputs.report-sarif }}
+  report-markdown:
+    description: Absolute Markdown report path
+    value: ${{ steps.wakeio-run.outputs.report-markdown }}
+  exit-code:
+    description: Scanner exit code (0 clean, 1 threshold findings, 2 incomplete/setup failure)
+    value: ${{ steps.wakeio-run.outputs.exit-code }}
+  finding-count:
+    description: Number of findings in report.json
+    value: ${{ steps.wakeio-run.outputs.finding-count }}
+  incomplete-count:
+    description: Number of incomplete checks in report.json
+    value: ${{ steps.wakeio-run.outputs.incomplete-count }}
+  setup-status:
+    description: Action setup status
+    value: ${{ steps.wakeio-run.outputs.setup-status }}
+  scan-status:
+    description: Scan status
+    value: ${{ steps.wakeio-run.outputs.scan-status }}
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Node.js 22
+      uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+      with:
+        node-version: '22'
+    - name: Run Wakeio Security CI
+      id: wakeio-run
+      shell: bash
+      env:
+        WAKEIO_ACTION_PATH: ${{ github.action_path }}
+        WAKEIO_SOURCE: ${{ inputs.source }}
+        WAKEIO_URL: ${{ inputs.url }}
+        WAKEIO_PAGES: ${{ inputs.pages }}
+        WAKEIO_API_POLICY: ${{ inputs.api-policy }}
+        WAKEIO_OUT: ${{ inputs.out }}
+        WAKEIO_TOOLS: ${{ inputs.tools }}
+        WAKEIO_FAIL_ON: ${{ inputs.fail-on }}
+        WAKEIO_ALLOW_PRIVATE: ${{ inputs.allow-private }}
+        WAKEIO_TIMEOUT_MS: ${{ inputs.timeout-ms }}
+        WAKEIO_MAX_PAGES: ${{ inputs.max-pages }}
+        WAKEIO_OSV_OFFLINE: ${{ inputs.osv-offline }}
+        WAKEIO_BANDIT_PATH: ${{ inputs.bandit-path }}
+        WAKEIO_PROJECT_ID: ${{ inputs.project-id }}
+        WAKEIO_TOOL_CACHE: ${{ inputs.tool-cache }}
+      run: node "$WAKEIO_ACTION_PATH/scripts/action-run.mjs"

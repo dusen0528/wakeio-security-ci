@@ -1,0 +1,19 @@
+# GitLab does not consume GitHub composite Action metadata, so vendor a
+# reviewed source archive at ACTION_DIR. The collector excludes vendor/ from
+# CI_PROJECT_DIR, preventing the action's own tests from being self-scanned
+# while the runner builds from that trusted path.
+stages:
+  - security
+
+wakeio-security-ci:
+  image: node:22-bookworm
+  stage: security
+  variables:
+    ACTION_DIR: "$CI_PROJECT_DIR/vendor/wakeio-security-ci"
+    OUT_DIR: "$CI_PROJECT_DIR/wakeio-security-reports"
+  script:
+    - WAKEIO_ACTION_PATH="$ACTION_DIR" GITHUB_WORKSPACE="$CI_PROJECT_DIR" WAKEIO_SOURCE="${WAKEIO_SOURCE-$CI_PROJECT_DIR}" WAKEIO_URL="${WAKEIO_URL:-}" WAKEIO_OUT="$OUT_DIR" WAKEIO_TOOLS="${WAKEIO_TOOLS:-gitleaks,osv,trivy}" WAKEIO_FAIL_ON="${WAKEIO_FAIL_ON:-high}" node "$ACTION_DIR/scripts/action-run.mjs"
+  artifacts:
+    when: always
+    paths:
+      - wakeio-security-reports/

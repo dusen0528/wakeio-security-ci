@@ -1,0 +1,45 @@
+# Example for a consumer repository using a reviewed local source archive.
+# The public preview reference is available in examples/github-action.yml;
+# use this workflow when a local checkout or offline vendor is preferred.
+# Before using this workflow, copy this repository into
+# vendor/wakeio-security-ci (excluding .git and node_modules). The action source
+# then has a real local action.yml and no public owner is needed. The collector
+# excludes vendor/ from source: . so the action's own tests are not self-scanned.
+name: local-wakeio-security-ci
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out application
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Cache verified Wakeio native archives
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
+        with:
+          path: ${{ runner.temp }}/wakeio-security-ci-native
+          key: wakeio-security-ci-native-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('vendor/wakeio-security-ci/package-lock.json') }}
+      - name: Scan source
+        uses: ./vendor/wakeio-security-ci
+        with:
+          source: .
+          tools: gitleaks,osv,trivy
+          out: wakeio-security-reports
+          tool-cache: ${{ runner.temp }}/wakeio-security-ci-native
+          fail-on: high
+      - name: Upload reports as ordinary artifacts
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: wakeio-security-ci-reports
+          path: wakeio-security-reports
+          if-no-files-found: error

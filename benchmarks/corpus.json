@@ -1,0 +1,314 @@
+{
+  "corpusVersion": "2026-09-15.synthetic-js-ts.v1",
+  "name": "Wakeio built-in source security regression corpus",
+  "description": "Small, inspectable JavaScript and TypeScript fixtures for the public runSource API. Every input is synthetic and contains no real credential or customer data.",
+  "scope": "The measured signal is the built-in AST candidate detector with tools: []. It is a scoped regression benchmark, not a production accuracy estimate.",
+  "unsupportedScope": [
+    "Python semantics are outside this JS/TS AST corpus and are not represented as production coverage.",
+    "Real Next.js, React, Supabase, Express, database, or browser runtime behavior is not executed.",
+    "Network, package installation, authentication, and framework build behavior are outside the measurement.",
+    "Cross-function and cross-file flows are retained as explicit known-scope entries so their denominator stays visible."
+  ],
+  "cases": [
+    {
+      "id": "sql-direct",
+      "classification": "vulnerable",
+      "language": "typescript",
+      "framework": "synthetic TypeScript database request handler",
+      "fixture": "fixtures/sql-direct",
+      "whyVulnerable": "A request query value is passed directly as the SQL argument.",
+      "whyFixed": "No fixed variant is represented; request input remains connected to the SQL sink.",
+      "expectedFindings": [{ "ruleId": "ast:sql-input-sink", "path": "app.ts", "line": 2, "support": "supported" }]
+    },
+    {
+      "id": "sql-indirect",
+      "classification": "vulnerable",
+      "language": "typescript",
+      "framework": "synthetic TypeScript database request handler",
+      "fixture": "fixtures/sql-indirect",
+      "whyVulnerable": "A request value is interpolated into a statement variable before the database call.",
+      "whyFixed": "No fixed variant is represented; request input remains connected through the statement variable.",
+      "expectedFindings": [{ "ruleId": "ast:sql-input-sink", "path": "app.ts", "line": 3, "support": "supported" }]
+    },
+    {
+      "id": "sql-reassignment",
+      "classification": "vulnerable",
+      "language": "typescript",
+      "framework": "synthetic TypeScript database request handler",
+      "fixture": "fixtures/sql-reassignment",
+      "whyVulnerable": "A query variable is reassigned from a safe literal to request input before execute.",
+      "whyFixed": "No fixed variant is represented; the reassigned statement reaches execute with request data.",
+      "expectedFindings": [{ "ruleId": "ast:sql-input-sink", "path": "app.ts", "line": 4, "support": "supported" }]
+    },
+    {
+      "id": "html-direct",
+      "classification": "vulnerable",
+      "language": "typescript",
+      "framework": "synthetic TypeScript DOM handler",
+      "fixture": "fixtures/html-direct",
+      "whyVulnerable": "Request HTML is assigned directly to an innerHTML sink.",
+      "whyFixed": "No fixed variant is represented; request HTML remains connected to innerHTML.",
+      "expectedFindings": [{ "ruleId": "ast:html-input-sink", "path": "app.ts", "line": 2, "support": "supported" }]
+    },
+    {
+      "id": "html-indirect",
+      "classification": "vulnerable",
+      "language": "typescript",
+      "framework": "synthetic TypeScript DOM handler",
+      "fixture": "fixtures/html-indirect",
+      "whyVulnerable": "Request HTML is first stored in a markup variable and then rendered.",
+      "whyFixed": "No fixed variant is represented; request HTML remains connected through the markup variable.",
+      "expectedFindings": [{ "ruleId": "ast:html-input-sink", "path": "app.ts", "line": 3, "support": "supported" }]
+    },
+    {
+      "id": "html-insert-adjacent",
+      "classification": "vulnerable",
+      "language": "typescript",
+      "framework": "synthetic TypeScript DOM handler",
+      "fixture": "fixtures/html-insert-adjacent",
+      "whyVulnerable": "Request HTML is passed to insertAdjacentHTML.",
+      "whyFixed": "No fixed variant is represented; request HTML is passed to the HTML insertion sink.",
+      "expectedFindings": [{ "ruleId": "ast:html-input-sink", "path": "app.ts", "line": 2, "support": "supported" }]
+    },
+    {
+      "id": "exec-direct",
+      "classification": "vulnerable",
+      "language": "typescript",
+      "framework": "synthetic TypeScript child_process handler",
+      "fixture": "fixtures/exec-direct",
+      "whyVulnerable": "A request command is passed directly to child_process.exec.",
+      "whyFixed": "No fixed variant is represented; request command text reaches exec.",
+      "expectedFindings": [{ "ruleId": "ast:shell-input-sink", "path": "app.ts", "line": 3, "support": "supported" }]
+    },
+    {
+      "id": "exec-indirect",
+      "classification": "vulnerable",
+      "language": "typescript",
+      "framework": "synthetic TypeScript child_process handler",
+      "fixture": "fixtures/exec-indirect",
+      "whyVulnerable": "A request command is copied into a variable before child_process.exec.",
+      "whyFixed": "No fixed variant is represented; request command text reaches exec through a variable.",
+      "expectedFindings": [{ "ruleId": "ast:shell-input-sink", "path": "app.ts", "line": 4, "support": "supported" }]
+    },
+    {
+      "id": "exec-reassignment",
+      "classification": "vulnerable",
+      "language": "typescript",
+      "framework": "synthetic TypeScript child_process handler",
+      "fixture": "fixtures/exec-reassignment",
+      "whyVulnerable": "A command is initially fixed but later reassigned from request input before execSync.",
+      "whyFixed": "No fixed variant is represented; reassignment replaces the fixed command with request input.",
+      "expectedFindings": [{ "ruleId": "ast:shell-input-sink", "path": "app.ts", "line": 5, "support": "supported" }]
+    },
+    {
+      "id": "fetch-direct",
+      "classification": "vulnerable",
+      "language": "typescript",
+      "framework": "synthetic TypeScript server request handler",
+      "fixture": "fixtures/fetch-direct",
+      "whyVulnerable": "A request URL controls the outbound fetch target.",
+      "whyFixed": "No fixed variant is represented; request URL controls the outbound target.",
+      "expectedFindings": [{ "ruleId": "ast:server-request", "path": "app.ts", "line": 2, "support": "supported" }]
+    },
+    {
+      "id": "fetch-indirect",
+      "classification": "vulnerable",
+      "language": "typescript",
+      "framework": "synthetic TypeScript outbound request handler",
+      "fixture": "fixtures/fetch-indirect",
+      "whyVulnerable": "A request URL is stored in a target variable and passed to Axios.",
+      "whyFixed": "No fixed variant is represented; request URL controls Axios through a variable.",
+      "expectedFindings": [{ "ruleId": "ast:server-request", "path": "app.ts", "line": 4, "support": "supported" }]
+    },
+    {
+      "id": "redirect-direct",
+      "classification": "vulnerable",
+      "language": "typescript",
+      "framework": "synthetic TypeScript redirect handler",
+      "fixture": "fixtures/redirect-direct",
+      "whyVulnerable": "A request destination controls the Next redirect target.",
+      "whyFixed": "No fixed variant is represented; request destination reaches redirect directly.",
+      "expectedFindings": [{ "ruleId": "ast:open-redirect", "path": "app.ts", "line": 3, "support": "supported" }]
+    },
+    {
+      "id": "redirect-indirect",
+      "classification": "vulnerable",
+      "language": "typescript",
+      "framework": "synthetic TypeScript redirect handler",
+      "fixture": "fixtures/redirect-indirect",
+      "whyVulnerable": "A destination variable is reassigned from request input before permanentRedirect.",
+      "whyFixed": "No fixed variant is represented; reassignment leaves request destination in the redirect argument.",
+      "expectedFindings": [{ "ruleId": "ast:open-redirect", "path": "app.ts", "line": 5, "support": "supported" }]
+    },
+    {
+      "id": "sql-cross-function-known-miss",
+      "classification": "vulnerable",
+      "language": "typescript",
+      "framework": "synthetic TypeScript database request handler",
+      "fixture": "fixtures/sql-cross-function-known-miss",
+      "whyVulnerable": "Request input crosses a helper function before reaching a database sink.",
+      "whyFixed": "No fixed variant is represented; the helper return still contains request data.",
+      "expectedFindings": [{ "ruleId": "ast:sql-input-sink", "path": "app.ts", "line": 2, "support": "known_miss", "knownUnsupported": "cross-function data flow through an executeQuery helper is outside this corpus run's supported expectation" }]
+    },
+    {
+      "id": "sql-cross-file-known-miss",
+      "classification": "vulnerable",
+      "language": "typescript",
+      "framework": "synthetic TypeScript database module boundary",
+      "fixture": "fixtures/sql-cross-file-known-miss",
+      "whyVulnerable": "Request input is built in one module and consumed by a sink in another module.",
+      "whyFixed": "No fixed variant is represented; the imported helper still builds SQL from request data.",
+      "expectedFindings": [{ "ruleId": "ast:sql-input-sink", "path": "sink.ts", "line": 2, "support": "known_miss", "knownUnsupported": "cross-file data flow through an imported builder and executeQuery helper is outside this corpus run's supported expectation" }]
+    },
+    {
+      "id": "sql-parameterized",
+      "classification": "fixed",
+      "language": "typescript",
+      "framework": "synthetic TypeScript database request handler",
+      "fixture": "fixtures/sql-parameterized",
+      "whyVulnerable": "The corresponding unsafe variant would interpolate request data into the SQL string.",
+      "whyFixed": "The SQL structure is fixed and request input is a separate parameter value.",
+      "expectedFindings": []
+    },
+    {
+      "id": "sql-static",
+      "classification": "fixed",
+      "language": "typescript",
+      "framework": "synthetic TypeScript database request handler",
+      "fixture": "fixtures/sql-static",
+      "whyVulnerable": "The corresponding unsafe variant would pass request input as the statement argument.",
+      "whyFixed": "The database call receives only a static statement.",
+      "expectedFindings": []
+    },
+    {
+      "id": "sql-comment",
+      "classification": "fixed",
+      "language": "typescript",
+      "framework": "synthetic TypeScript database request handler",
+      "fixture": "fixtures/sql-comment",
+      "whyVulnerable": "The corresponding unsafe variant is shown only in the comment and is not executed.",
+      "whyFixed": "The apparent request flow exists only in a comment; the executed statement is static.",
+      "expectedFindings": []
+    },
+    {
+      "id": "sql-reassigned-safe",
+      "classification": "fixed",
+      "language": "typescript",
+      "framework": "synthetic TypeScript database request handler",
+      "fixture": "fixtures/sql-reassigned-safe",
+      "whyVulnerable": "The corresponding unsafe variant would leave the tainted assignment as the final value.",
+      "whyFixed": "A tainted intermediate value is overwritten with a fixed statement before the sink.",
+      "expectedFindings": []
+    },
+    {
+      "id": "html-textcontent",
+      "classification": "fixed",
+      "language": "typescript",
+      "framework": "synthetic TypeScript DOM handler",
+      "fixture": "fixtures/html-textcontent",
+      "whyVulnerable": "The corresponding unsafe variant would use an HTML parsing sink instead of textContent.",
+      "whyFixed": "Request content is assigned as textContent, which does not parse HTML.",
+      "expectedFindings": []
+    },
+    {
+      "id": "html-static",
+      "classification": "fixed",
+      "language": "typescript",
+      "framework": "synthetic TypeScript DOM handler",
+      "fixture": "fixtures/html-static",
+      "whyVulnerable": "The corresponding unsafe variant would replace the literal with request HTML.",
+      "whyFixed": "The innerHTML value is a fixed literal.",
+      "expectedFindings": []
+    },
+    {
+      "id": "html-string",
+      "classification": "fixed",
+      "language": "typescript",
+      "framework": "synthetic TypeScript DOM handler",
+      "fixture": "fixtures/html-string",
+      "whyVulnerable": "The corresponding unsafe variant is present only as a string in this negative control.",
+      "whyFixed": "The request and sink text appears only inside a string; the actual sink receives a static literal.",
+      "expectedFindings": []
+    },
+    {
+      "id": "html-comment",
+      "classification": "fixed",
+      "language": "typescript",
+      "framework": "synthetic TypeScript DOM handler",
+      "fixture": "fixtures/html-comment",
+      "whyVulnerable": "The corresponding unsafe variant is present only as a comment in this negative control.",
+      "whyFixed": "The apparent flow exists only in a comment; the actual sink receives a static literal.",
+      "expectedFindings": []
+    },
+    {
+      "id": "html-shadowing",
+      "classification": "fixed",
+      "language": "typescript",
+      "framework": "synthetic TypeScript DOM handler",
+      "fixture": "fixtures/html-shadowing",
+      "whyVulnerable": "The corresponding unsafe variant would use the shadowed request value as the sink argument.",
+      "whyFixed": "A nested parameter shadows the outer request name, while the HTML sink still receives a static literal.",
+      "expectedFindings": []
+    },
+    {
+      "id": "exec-static",
+      "classification": "fixed",
+      "language": "typescript",
+      "framework": "synthetic TypeScript child_process handler",
+      "fixture": "fixtures/exec-static",
+      "whyVulnerable": "The corresponding unsafe variant would pass request command text to exec.",
+      "whyFixed": "The process command is fixed and does not use request input.",
+      "expectedFindings": []
+    },
+    {
+      "id": "exec-comment",
+      "classification": "fixed",
+      "language": "typescript",
+      "framework": "synthetic TypeScript child_process handler",
+      "fixture": "fixtures/exec-comment",
+      "whyVulnerable": "The corresponding unsafe variant appears only in the comment in this negative control.",
+      "whyFixed": "The apparent request command exists only in a comment; the actual command is static.",
+      "expectedFindings": []
+    },
+    {
+      "id": "fetch-static",
+      "classification": "fixed",
+      "language": "typescript",
+      "framework": "synthetic TypeScript server request handler",
+      "fixture": "fixtures/fetch-static",
+      "whyVulnerable": "The corresponding unsafe variant would replace the approved target with request URL input.",
+      "whyFixed": "The outbound request target is a fixed approved origin and path.",
+      "expectedFindings": []
+    },
+    {
+      "id": "fetch-comment",
+      "classification": "fixed",
+      "language": "typescript",
+      "framework": "synthetic TypeScript server request handler",
+      "fixture": "fixtures/fetch-comment",
+      "whyVulnerable": "The corresponding unsafe variant appears only in the comment in this negative control.",
+      "whyFixed": "The apparent request URL appears only in a comment; the actual fetch target is static.",
+      "expectedFindings": []
+    },
+    {
+      "id": "redirect-allowlisted",
+      "classification": "fixed",
+      "language": "typescript",
+      "framework": "synthetic TypeScript redirect handler",
+      "fixture": "fixtures/redirect-allowlisted",
+      "whyVulnerable": "The corresponding unsafe variant would pass the unchecked request destination to redirect.",
+      "whyFixed": "The request value is checked for membership, and both redirect arguments are fixed local paths.",
+      "expectedFindings": []
+    },
+    {
+      "id": "redirect-string",
+      "classification": "fixed",
+      "language": "typescript",
+      "framework": "synthetic TypeScript redirect handler",
+      "fixture": "fixtures/redirect-string",
+      "whyVulnerable": "The corresponding unsafe variant appears only in a string in this negative control.",
+      "whyFixed": "The request and redirect text appears only inside a string; the actual redirect is static.",
+      "expectedFindings": []
+    }
+  ]
+}

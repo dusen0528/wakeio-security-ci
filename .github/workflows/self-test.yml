@@ -1,0 +1,56 @@
+name: self-test
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package-and-local-action:
+    runs-on: ubuntu-latest
+    steps:
+      # Keep the action checkout and the scanned checkout in separate paths.
+      # This is also the shape used by a consumer that vendors a reviewed
+      # local copy of the public preview Action.
+      - name: Check out action source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          path: wakeio-security-ci
+          persist-credentials: false
+      - name: Check out scan fixture
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          path: scanned-repository
+          persist-credentials: false
+      - name: Set up Node.js 22 for package checks
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - name: Install and test package
+        working-directory: wakeio-security-ci
+        run: |
+          npm ci --ignore-scripts
+          npm test
+      - name: Run local composite action
+        id: scan
+        uses: ./wakeio-security-ci
+        with:
+          # Keep the delivery self-test bounded to the synthetic fixture
+          # corpus. The full checkout contains the committed Action bundle,
+          # which is intentionally outside the per-file source scan limit.
+          source: scanned-repository/benchmarks/fixtures
+          tools: none
+          # This repository deliberately contains synthetic secret fixtures.
+          # Unit tests assert severity gates; this step verifies Action delivery.
+          fail-on: none
+          out: wakeio-security-ci/wakeio-security-reports
+      - name: Save reports
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: wakeio-security-ci-reports
+          path: wakeio-security-ci/wakeio-security-reports
+          if-no-files-found: error

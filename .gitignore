@@ -1,0 +1,12 @@
+node_modules/
+build/
+coverage/
+.DS_Store
+wakeio-security-reports/
+*.log
+artifacts/
+benchmarks/results/
+.env
+.env.*
+!.env.example
+.intent-review/

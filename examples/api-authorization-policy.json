@@ -1,0 +1,18 @@
+{
+  "version": 2,
+  "baseUrl": "http://127.0.0.1:8877",
+  "actors": [
+    {"id": "owner", "authorizationEnv": "WAKEIO_OWNER_AUTH", "identity": {"path": "/whoami", "status": 200, "jsonPointer": "/userId", "equals": "demo-owner", "organization": {"jsonPointer": "/orgId", "equals": "demo-org"}}},
+    {"id": "other", "authorizationEnv": "WAKEIO_OTHER_AUTH", "identity": {"path": "/whoami", "status": 200, "jsonPointer": "/userId", "equals": "demo-other", "organization": {"jsonPointer": "/orgId", "equals": "demo-org"}}},
+    {"id": "anonymous"}
+  ],
+  "cases": [{
+    "id": "owner-document-read",
+    "path": "/documents/demo-owner-report",
+    "allow": {"actor": "owner", "status": 200, "resource": {"jsonPointer": "/id", "equals": "demo-owner-report"}, "protected": {"jsonPointer": "/canary", "equals": "synthetic-private-canary"}},
+    "deny": [
+      {"actor": "other", "statuses": [401, 403, 404]},
+      {"actor": "anonymous", "statuses": [401, 403, 404]}
+    ]
+  }]
+}

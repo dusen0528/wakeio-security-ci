@@ -1,0 +1,43 @@
+name: Feature request
+description: Suggest a bounded, reviewable improvement to the public tool.
+title: "[Feature]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Describe a capability that can run within the local CLI or Action contract.
+        Do not include private source, secrets, customer data, or real scan reports.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What reproducible user problem or workflow gap should this address?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: State the input boundary, observable output, and uncertainty or limitation.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Synthetic evidence
+      description: Add a minimal synthetic fixture or example. Keep it free of private material.
+    validations:
+      required: true
+  - type: checkboxes
+    id: contract
+    attributes:
+      label: Contract check
+      options:
+        - label: This request preserves redacted findings, explicit partial or unknown states, and the local no-account execution boundary.
+          required: true
