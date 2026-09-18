@@ -282,7 +282,11 @@ export function parseOsvOutput(text: string, stageDir: string, files: CollectedF
       const packageName = requiredString(packageIdentity, "name", "OSV-Scanner");
       const ecosystem = requiredString(packageIdentity, "ecosystem", "OSV-Scanner");
       const packageVersion = requiredString(packageIdentity, "version", "OSV-Scanner");
-      const vulnerabilities = requiredArray(packageObject, "vulnerabilities", "OSV-Scanner");
+      const vulnerabilitiesValue = own(packageObject, "vulnerabilities");
+      if (vulnerabilitiesValue !== undefined && !Array.isArray(vulnerabilitiesValue)) {
+        throw new Error("OSV-Scanner output has an invalid vulnerabilities field");
+      }
+      const vulnerabilities = vulnerabilitiesValue ?? [];
       const groupsValue = own(packageObject, "groups");
       if (groupsValue !== undefined && !Array.isArray(groupsValue)) throw new Error("OSV-Scanner output has an invalid groups field");
       const groups = groupsValue ?? [];

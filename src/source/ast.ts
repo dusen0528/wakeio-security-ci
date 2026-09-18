@@ -92,6 +92,188 @@ function isSqlSink(name: string): boolean {
   return SQL_SINK.test(name) || RAW_SQL_SINK.test(name);
 }
 
+function isFunctionLikeNode(node: ts.Node): node is ts.FunctionLikeDeclaration {
+  return ts.isFunctionDeclaration(node)
+    || ts.isFunctionExpression(node)
+    || ts.isArrowFunction(node)
+    || ts.isMethodDeclaration(node)
+    || ts.isGetAccessorDeclaration(node)
+    || ts.isSetAccessorDeclaration(node)
+    || ts.isConstructorDeclaration(node);
+}
+
+function isUrlSearchParamsFactory(expression: ts.Expression): boolean {
+  if (ts.isNewExpression(expression)) {
+    return ts.isIdentifier(expression.expression) && expression.expression.text === "URLSearchParams";
+  }
+  return ts.isCallExpression(expression)
+    && ts.isIdentifier(expression.expression)
+    && expression.expression.text === "URLSearchParams";
+}
+
+function isUrlSearchParamsToString(expression: ts.Expression, variables: ReadonlySet<string>): boolean {
+  if (!ts.isCallExpression(expression)
+    || !ts.isPropertyAccessExpression(expression.expression)
+    || expression.expression.name.text !== "toString"
+    || expression.arguments.length !== 0) {
+    return false;
+  }
+  const receiver = expression.expression.expression;
+  return (ts.isIdentifier(receiver) && variables.has(receiver.text))
+    || isUrlSearchParamsFactory(receiver);
+}
+
+function isObjectEntriesCall(expression: ts.Expression): boolean {
+  return ts.isCallExpression(expression)
+    && ts.isPropertyAccessExpression(expression.expression)
+    && ts.isIdentifier(expression.expression.expression)
+    && expression.expression.expression.text === "Object"
+    && expression.expression.name.text === "entries";
+}
+
+function isAllowedUrlSearchParamsCall(node: ts.CallExpression, variables: ReadonlySet<string>): boolean {
+  const expression = node.expression;
+  if (ts.isIdentifier(expression)) {
+    return expression.text === "String" || expression.text === "URLSearchParams";
+  }
+  if (!ts.isPropertyAccessExpression(expression)) return false;
+  const receiver = expression.expression;
+  if (expression.name.text === "entries") {
+    return ts.isIdentifier(receiver) && receiver.text === "Object";
+  }
+  if (expression.name.text === "forEach") return isObjectEntriesCall(receiver);
+  if (!ts.isIdentifier(receiver) || !variables.has(receiver.text)) return false;
+  if (expression.name.text === "toString") return node.arguments.length === 0;
+  return expression.name.text === "set";
+}
+
+function isDerivedSerializerExpression(expression: ts.Expression, variables: ReadonlySet<string>, serialized: ReadonlySet<string>): boolean {
+  if (ts.isIdentifier(expression) && serialized.has(expression.text)) return true;
+  if (isUrlSearchParamsToString(expression, variables)) return true;
+  let derived = false;
+  expression.forEachChild((child) => {
+    if (derived || !ts.isExpression(child)) return;
+    derived = isDerivedSerializerExpression(child, variables, serialized);
+  });
+  return derived;
+}
+
+/**
+ * A bare local function named `query` can be a URL query-string serializer,
+ * rather than a database sink. Keep this exception deliberately narrow: only
+ * a top-level `function query` whose body contains the known URLSearchParams
+ * serializer calls and returns their derived string is eligible. Property
+ * calls (for example `db.query(...)`) and unproven bare calls remain SQL
+ * candidates.
+ */
+function isUrlSearchParamsSerializer(functionLike: ts.FunctionLikeDeclaration): boolean {
+  const body = functionLike.body;
+  if (!body) return false;
+
+  const variables = new Set<string>();
+  const collectVariables = (node: ts.Node): void => {
+    if (node !== body && isFunctionLikeNode(node)) return;
+    if (ts.isVariableDeclaration(node)
+      && ts.isIdentifier(node.name)
+      && node.initializer
+      && isUrlSearchParamsFactory(node.initializer)) {
+      variables.add(node.name.text);
+    }
+    if (ts.isBinaryExpression(node)
+      && node.operatorToken.kind === ts.SyntaxKind.EqualsToken
+      && ts.isIdentifier(node.left)
+      && isUrlSearchParamsFactory(node.right)) {
+      variables.add(node.left.text);
+    }
+    ts.forEachChild(node, collectVariables);
+  };
+  collectVariables(body);
+  if (variables.size === 0) return false;
+
+  const serialized = new Set<string>();
+  const collectSerialized = (node: ts.Node): void => {
+    if (node !== body && isFunctionLikeNode(node)) return;
+    if (ts.isVariableDeclaration(node)
+      && ts.isIdentifier(node.name)
+      && node.initializer
+      && isUrlSearchParamsToString(node.initializer, variables)) {
+      serialized.add(node.name.text);
+    }
+    if (ts.isBinaryExpression(node)
+      && node.operatorToken.kind === ts.SyntaxKind.EqualsToken
+      && ts.isIdentifier(node.left)
+      && isUrlSearchParamsToString(node.right, variables)) {
+      serialized.add(node.left.text);
+    }
+    ts.forEachChild(node, collectSerialized);
+  };
+  collectSerialized(body);
+
+  let valid = true;
+  const validate = (node: ts.Node): void => {
+    if (!valid) return;
+    if (ts.isNewExpression(node) && !isUrlSearchParamsFactory(node)) valid = false;
+    if (ts.isCallExpression(node) && !isAllowedUrlSearchParamsCall(node, variables)) valid = false;
+    if ((ts.isBinaryExpression(node) && node.operatorToken.kind >= ts.SyntaxKind.FirstAssignment && node.operatorToken.kind <= ts.SyntaxKind.LastAssignment)
+      || ts.isPrefixUnaryExpression(node) || ts.isPostfixUnaryExpression(node)
+      || ts.isDeleteExpression(node)) {
+      valid = false;
+    }
+    ts.forEachChild(node, validate);
+  };
+  validate(body);
+  if (!valid) return false;
+
+  let returnedDerived = false;
+  const findReturns = (node: ts.Node): void => {
+    if (returnedDerived || (node !== body && isFunctionLikeNode(node))) return;
+    if (ts.isReturnStatement(node) && node.expression && ts.isExpression(node.expression)) {
+      returnedDerived = isDerivedSerializerExpression(node.expression, variables, serialized);
+      return;
+    }
+    ts.forEachChild(node, findReturns);
+  };
+  if (ts.isBlock(body)) findReturns(body);
+  else returnedDerived = isDerivedSerializerExpression(body, variables, serialized);
+  return returnedDerived;
+}
+
+// Deliberately conservative: any other binding or write to these names in
+// this file disables the exemption, rather than guessing lexical resolution.
+function localUrlSearchParamsSerializer(sourceFile: ts.SourceFile): boolean {
+  const declarations = sourceFile.statements.filter((statement): statement is ts.FunctionDeclaration =>
+    ts.isFunctionDeclaration(statement) && statement.name?.text === "query");
+  if (declarations.length !== 1 || !isUrlSearchParamsSerializer(declarations[0])) return false;
+  const protectedNames = new Set(["query", "URLSearchParams", "Object", "String"]);
+  const touches = (node: ts.Node): boolean => {
+    if (ts.isIdentifier(node)) return protectedNames.has(node.text);
+    return ts.forEachChild(node, touches) ?? false;
+  };
+  let ambiguous = false;
+  const visit = (node: ts.Node): void => {
+    if (ambiguous) return;
+    const binding = ts.isVariableDeclaration(node) || ts.isParameter(node)
+      || ts.isFunctionDeclaration(node) || ts.isFunctionExpression(node)
+      || ts.isClassDeclaration(node) || ts.isClassExpression(node)
+      || ts.isImportClause(node) || ts.isImportSpecifier(node)
+      || ts.isNamespaceImport(node) || ts.isBindingElement(node);
+    if (binding && node !== declarations[0] && node.name && touches(node.name)) ambiguous = true;
+    if (ts.isBinaryExpression(node)
+      && node.operatorToken.kind >= ts.SyntaxKind.FirstAssignment
+      && node.operatorToken.kind <= ts.SyntaxKind.LastAssignment
+      && touches(node.left)) ambiguous = true;
+    if ((ts.isPrefixUnaryExpression(node) || ts.isPostfixUnaryExpression(node)) && touches(node.operand)) ambiguous = true;
+    if ((ts.isForOfStatement(node) || ts.isForInStatement(node)) && touches(node.initializer)) ambiguous = true;
+    ts.forEachChild(node, visit);
+  };
+  visit(sourceFile);
+  return !ambiguous;
+}
+
+function isLocalUrlSearchParamsSerializerCall(node: ts.CallExpression, proven: boolean): boolean {
+  return proven && ts.isIdentifier(node.expression) && node.expression.text === "query";
+}
+
 function hasDangerousHtmlProp(expression: ts.Expression | undefined): boolean {
   if (!expression || !ts.isObjectLiteralExpression(expression)) return false;
   return expression.properties.some((property) => {
@@ -145,6 +327,7 @@ function flowConfidence(use: InputFlowUse, index = 0): Finding["confidence"] | u
 function observeFile(astFile: AstFile): Observation[] {
   const observations: Observation[] = [];
   const { file, sourceFile } = astFile;
+  const localUrlSearchParamsSerializerBinding = localUrlSearchParamsSerializer(sourceFile);
   const flowUses = new Map<ts.Node, InputFlowUse>();
   for (const use of findInputFlows(sourceFile)) flowUses.set(use.node, use);
   const walk = (node: ts.Node): void => {
@@ -174,7 +357,10 @@ function observeFile(astFile: AstFile): Observation[] {
         pushObservation(observations, file, sourceFile, node, "ast:html-input-sink", "Request input reaches an HTML sink", "Untrusted request or URL input appears to flow into an HTML rendering sink.", "high", "Validate and contextually encode untrusted values before rendering them.", confidence);
       } else if (use?.kind === "call" && name === "React.createElement" && hasDangerousHtmlProp(node.arguments[1]) && flowConfidence(use, 1)) {
         pushObservation(observations, file, sourceFile, node, "ast:html-input-sink", "Request input reaches a React HTML sink", "Untrusted request or URL input appears in a dangerouslySetInnerHTML prop passed to React.createElement.", "high", "Avoid dangerouslySetInnerHTML or sanitize and contextually encode untrusted values before rendering them.", flowConfidence(use, 1));
-      } else if (use?.kind === "call" && isSqlSink(name) && flowConfidence(use, 0)) {
+      } else if (use?.kind === "call"
+        && isSqlSink(name)
+        && !isLocalUrlSearchParamsSerializerCall(node, localUrlSearchParamsSerializerBinding)
+        && flowConfidence(use, 0)) {
         pushObservation(observations, file, sourceFile, node, "ast:sql-input-sink", "Request input reaches a dynamic SQL call", "Request input appears in a dynamically constructed SQL argument.", "high", "Use a parameterized query API and keep SQL structure separate from user input.", flowConfidence(use, 0));
       } else if (use?.kind === "call" && REDIRECT_SINK.test(name) && flowConfidence(use, 0)) {
         pushObservation(observations, file, sourceFile, node, "ast:open-redirect", "Request input reaches a redirect call", "Untrusted request input appears to control a redirect destination.", "medium", "Allowlist destination origins or paths before redirecting.", flowConfidence(use, 0));
