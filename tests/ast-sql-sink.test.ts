@@ -118,3 +118,32 @@ test("shadowed serializer builtins and reassigned locals remain candidates", asy
   `);
   assert.equal(ast?.findings.filter((f) => f.ruleId === "ast:sql-input-sink").length, 1);
 });
+
+test("a nested URLSearchParams binding cannot bless an outer or shadowed receiver", async () => {
+  for (const body of [
+    '{ const search = new URLSearchParams(); } search.set("sql", params); return search.toString();',
+    'const search = new URLSearchParams(); { const search = database; search.set("sql", params); } return search.toString();',
+  ]) {
+    const ast = await scan(`
+      const search = database;
+      function query(params: any) { ${body} }
+      function load(req: any) { query(req.query.sql); }
+    `);
+    assert.equal(ast?.findings.filter((f) => f.ruleId === "ast:sql-input-sink").length, 1, body);
+  }
+});
+
+test("TypeScript runtime builtin bindings disable the serializer exception", async () => {
+  for (const binding of ['namespace Object {}', 'import Object = require("unsafe");', 'enum String { value }']) {
+    const ast = await scan(`
+      ${binding}
+      function query(params: any) {
+        const search = new URLSearchParams();
+        Object.entries(params).forEach(([key, value]) => search.set(key, String(value)));
+        return search.toString();
+      }
+      function load(req: any) { query(req.query.sql); }
+    `);
+    assert.equal(ast?.findings.filter((f) => f.ruleId === "ast:sql-input-sink").length, 1, binding);
+  }
+});

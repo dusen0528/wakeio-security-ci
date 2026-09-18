@@ -168,26 +168,21 @@ function isDerivedSerializerExpression(expression: ts.Expression, variables: Rea
  */
 function isUrlSearchParamsSerializer(functionLike: ts.FunctionLikeDeclaration): boolean {
   const body = functionLike.body;
-  if (!body) return false;
+  if (!body || !ts.isBlock(body)) return false;
 
   const variables = new Set<string>();
-  const collectVariables = (node: ts.Node): void => {
-    if (node !== body && isFunctionLikeNode(node)) return;
-    if (ts.isVariableDeclaration(node)
-      && ts.isIdentifier(node.name)
-      && node.initializer
-      && isUrlSearchParamsFactory(node.initializer)) {
-      variables.add(node.name.text);
+  const declarations = new Set<ts.Node>();
+  // Only direct immutable bindings belong to the helper's execution scope.
+  // A factory inside a nested block must not bless an outer variable by name.
+  for (const statement of body.statements) {
+    if (!ts.isVariableStatement(statement) || !(statement.declarationList.flags & ts.NodeFlags.Const)) continue;
+    for (const declaration of statement.declarationList.declarations) {
+      if (ts.isIdentifier(declaration.name) && declaration.initializer && isUrlSearchParamsFactory(declaration.initializer)) {
+        variables.add(declaration.name.text);
+        declarations.add(declaration);
+      }
     }
-    if (ts.isBinaryExpression(node)
-      && node.operatorToken.kind === ts.SyntaxKind.EqualsToken
-      && ts.isIdentifier(node.left)
-      && isUrlSearchParamsFactory(node.right)) {
-      variables.add(node.left.text);
-    }
-    ts.forEachChild(node, collectVariables);
-  };
-  collectVariables(body);
+  }
   if (variables.size === 0) return false;
 
   const serialized = new Set<string>();
@@ -212,6 +207,10 @@ function isUrlSearchParamsSerializer(functionLike: ts.FunctionLikeDeclaration): 
   let valid = true;
   const validate = (node: ts.Node): void => {
     if (!valid) return;
+    if ((ts.isVariableDeclaration(node) || ts.isParameter(node) || ts.isBindingElement(node)
+      || ts.isFunctionDeclaration(node) || ts.isFunctionExpression(node) || ts.isClassDeclaration(node)
+      || ts.isClassExpression(node) || ts.isModuleDeclaration(node) || ts.isEnumDeclaration(node))
+      && node.name && ts.isIdentifier(node.name) && variables.has(node.name.text) && !declarations.has(node)) valid = false;
     if (ts.isNewExpression(node) && !isUrlSearchParamsFactory(node)) valid = false;
     if (ts.isCallExpression(node) && !isAllowedUrlSearchParamsCall(node, variables)) valid = false;
     if ((ts.isBinaryExpression(node) && node.operatorToken.kind >= ts.SyntaxKind.FirstAssignment && node.operatorToken.kind <= ts.SyntaxKind.LastAssignment)
@@ -256,7 +255,8 @@ function localUrlSearchParamsSerializer(sourceFile: ts.SourceFile): boolean {
       || ts.isFunctionDeclaration(node) || ts.isFunctionExpression(node)
       || ts.isClassDeclaration(node) || ts.isClassExpression(node)
       || ts.isImportClause(node) || ts.isImportSpecifier(node)
-      || ts.isNamespaceImport(node) || ts.isBindingElement(node);
+      || ts.isNamespaceImport(node) || ts.isBindingElement(node)
+      || ts.isImportEqualsDeclaration(node) || ts.isModuleDeclaration(node) || ts.isEnumDeclaration(node);
     if (binding && node !== declarations[0] && node.name && touches(node.name)) ambiguous = true;
     if (ts.isBinaryExpression(node)
       && node.operatorToken.kind >= ts.SyntaxKind.FirstAssignment
