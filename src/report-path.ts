@@ -90,4 +90,3 @@ export function safeHttpUrl(value: unknown): string | undefined {
     return undefined;
   }
 }
-
