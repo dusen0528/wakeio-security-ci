@@ -8,6 +8,7 @@ interface BanditContext {
   stageDir: string;
   timeoutMs: number;
   toolPath: string;
+  signal?: AbortSignal;
 }
 
 const MAX_LINE = 10_000_000;
@@ -284,6 +285,7 @@ export function parseBanditOutput(text: string, stageDir: string, files: Collect
 }
 
 function processFailure(result: ProcessResult, timeoutMs: number): string | undefined {
+  if (result.cancelled) return 'Bandit was cancelled; coverage is incomplete.';
   if (result.spawnError) return "Bandit could not be started.";
   if (result.timedOut) return `Bandit exceeded the ${timeoutMs} ms scanner timeout.`;
   if (result.outputLimitExceeded) return "Bandit exceeded the scanner output limit.";
@@ -310,6 +312,7 @@ export async function runBandit(context: BanditContext): Promise<CheckResult> {
     cwd: context.stageDir,
     timeoutMs: context.timeoutMs,
     home: join(dirname(context.stageDir), "home"),
+    signal: context.signal,
   });
   const failure = processFailure(result, context.timeoutMs);
   if (failure) return errorCheck(failure);

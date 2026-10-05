@@ -54,10 +54,13 @@ const SOURCE_ALLOWLIST = [
   'src',
   'tests',
   'tsconfig.json',
+  'workers',
 ];
 
 const EXCLUDED_DIRECTORY_NAMES = new Set([
   '.git',
+  '__pycache__',
+  '.hypothesis',
   'artifacts',
   'build',
   'node_modules',

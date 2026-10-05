@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "replacements": [
+    {
+      "path": "query.py",
+      "beforeSha256": "20e5cd11f5aace65bf633b7db1b6bcccd2aa9502459200f1e111002cda941d82",
+      "content": "def lookup(db, name):\n    return db.execute(\"SELECT name FROM users WHERE name = ?\", (name,)).fetchall()\n"
+    }
+  ]
+}

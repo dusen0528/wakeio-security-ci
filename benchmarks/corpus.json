@@ -1,5 +1,5 @@
 {
-  "corpusVersion": "2026-09-15.synthetic-js-ts.v1",
+  "corpusVersion": "2026-10-05.synthetic-js-ts.v2",
   "name": "Wakeio built-in source security regression corpus",
   "description": "Small, inspectable JavaScript and TypeScript fixtures for the public runSource API. Every input is synthetic and contains no real credential or customer data.",
   "scope": "The measured signal is the built-in AST candidate detector with tools: []. It is a scoped regression benchmark, not a production accuracy estimate.",
@@ -7,7 +7,7 @@
     "Python semantics are outside this JS/TS AST corpus and are not represented as production coverage.",
     "Real Next.js, React, Supabase, Express, database, or browser runtime behavior is not executed.",
     "Network, package installation, authentication, and framework build behavior are outside the measurement.",
-    "Cross-function and cross-file flows are retained as explicit known-scope entries so their denominator stays visible."
+    "Only the declared static local/relative-module subset is supported; dynamic dispatch, package imports and full framework reachability remain outside the model."
   ],
   "cases": [
     {
@@ -148,7 +148,7 @@
       "fixture": "fixtures/sql-cross-function-known-miss",
       "whyVulnerable": "Request input crosses a helper function before reaching a database sink.",
       "whyFixed": "No fixed variant is represented; the helper return still contains request data.",
-      "expectedFindings": [{ "ruleId": "ast:sql-input-sink", "path": "app.ts", "line": 2, "support": "known_miss", "knownUnsupported": "cross-function data flow through an executeQuery helper is outside this corpus run's supported expectation" }]
+      "expectedFindings": [{ "ruleId": "ast:sql-input-sink", "path": "app.ts", "line": 2, "support": "supported" }]
     },
     {
       "id": "sql-cross-file-known-miss",
@@ -158,7 +158,7 @@
       "fixture": "fixtures/sql-cross-file-known-miss",
       "whyVulnerable": "Request input is built in one module and consumed by a sink in another module.",
       "whyFixed": "No fixed variant is represented; the imported helper still builds SQL from request data.",
-      "expectedFindings": [{ "ruleId": "ast:sql-input-sink", "path": "sink.ts", "line": 2, "support": "known_miss", "knownUnsupported": "cross-file data flow through an imported builder and executeQuery helper is outside this corpus run's supported expectation" }]
+      "expectedFindings": [{ "ruleId": "ast:sql-input-sink", "path": "sink.ts", "line": 2, "support": "supported" }]
     },
     {
       "id": "sql-parameterized",

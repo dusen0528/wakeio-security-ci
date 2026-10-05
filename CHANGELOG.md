@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.4.0 — bounded source and fixture verification release
+
+- Extend bounded JS/TS static flow analysis with interprocedural and selected local-module/object flows, SQL/HTTP/fork argument roles, immutable value qualifiers, parse diagnostics, and explicit analysis budgets/gaps. These are static candidates; runtime exploitability and remediation remain unverified.
+- Add `agent-report.json` and first-read report summaries with shared scan gates, evidence positions, incomplete work, report digests, and separate delivery semantics. Findings never authorize executing instructions or uploading source.
+- Add a version-pinned Schemathesis worker for owned broken/fixed OpenAPI fixtures, reproducible input replay, process supervision, redaction, and artifact fingerprints. Required-engine tests fail rather than skip when the reviewed Python environment is unavailable.
+- Add an owned API resource/state pilot with independent before/after observations, normal controls, cancellation, lineage, and delivery-only retries. This executes only the bundled synthetic scenarios.
+- Add an opt-in repair proposal CLI with declared Python/SQLite regression controls in a prepared local Docker image. External agents require explicit source-upload authorization; proposals do not modify the original source.
+- Add an explicitly selected Darwin arm64 Opengrep preview using a reviewed binary and original rules. The binary is not bundled or downloaded automatically; native traces remain truncated static evidence.
+- Ship compiled CLI/SDK code, fixture workers, examples, notices, and documentation in a filtered npm archive, with a separate source archive and SHA-256 manifest.
+
+See [release scope and verification](docs/release-0.4.0.md). This release does not establish general SAST/DAST completeness, production security, real-world vulnerability accuracy, paid-tool parity, or verified remediation of a user application.
+
 ## 0.4.0-dev.1 — local development preview
 
 - Correct PostgreSQL string/comment and quoted-identifier handling; add bounded migration-history RLS candidates and static client/env secret propagation.

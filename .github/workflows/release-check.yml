@@ -10,6 +10,7 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Check out source
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
@@ -22,27 +23,58 @@ jobs:
           node-version: '22'
           cache: npm
 
+      - name: Set up Python 3.12.13
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12.13'
+
+      - name: Prepare version-pinned Schemathesis environment
+        timeout-minutes: 5
+        run: node scripts/bootstrap-schemathesis.mjs
+
       - name: Install dependencies without lifecycle scripts
+        timeout-minutes: 3
         run: npm ci --ignore-scripts --no-audit --fund=false
 
-      - name: Build and run tests
-        run: npm test
+      - name: Run CI verification contracts and required real-engine suite
+        timeout-minutes: 7
+        run: |
+          node --test scripts/ci-verification.test.mjs
+          npm run test:schemathesis
 
       - name: Run supported benchmark corpus in strict mode
+        timeout-minutes: 3
         run: npm run benchmark -- --strict
 
+      - name: Declare exact release artifact paths
+        id: release-files
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFileSync, appendFileSync } from 'node:fs';
+          const { version } = JSON.parse(readFileSync('package.json', 'utf8'));
+          if (!/^[0-9A-Za-z][0-9A-Za-z.+-]*$/.test(version)) throw Error('invalid release version');
+          const paths = { source: `artifacts/wakeio-security-ci-source-${version}.tar.gz`, npm: `artifacts/wakeio-security-ci-${version}.tgz`, sums: `artifacts/wakeio-security-ci-${version}-SHA256SUMS.txt` };
+          for (const [key, value] of Object.entries(paths)) appendFileSync(process.env.GITHUB_OUTPUT, `${key}=${value}\n`);
+          NODE
+
       - name: Build release artifacts locally
+        timeout-minutes: 3
         run: npm run package:release
 
       - name: Verify release archive paths and checksums
+        timeout-minutes: 2
         shell: bash
+        env:
+          SUMS_FILE: ${{ steps.release-files.outputs.sums }}
+          SOURCE_ARCHIVE: ${{ steps.release-files.outputs.source }}
+          NPM_ARCHIVE: ${{ steps.release-files.outputs.npm }}
         run: |
           set -euo pipefail
-          sums_file="$(find artifacts -maxdepth 1 -type f -name '*-SHA256SUMS.txt' -print -quit)"
+          sums_file="$SUMS_FILE"
           test -n "$sums_file"
           (cd artifacts && sha256sum -c "$(basename "$sums_file")")
-          source_archive="$(find artifacts -maxdepth 1 -type f -name '*-source-*.tar.gz' -print -quit)"
-          npm_archive="$(find artifacts -maxdepth 1 -type f -name '*.tgz' -print -quit)"
+          source_archive="$SOURCE_ARCHIVE"
+          npm_archive="$NPM_ARCHIVE"
           test -n "$source_archive"
           test -n "$npm_archive"
           tar -tzf "$source_archive" | grep -Fx 'wakeio-security-ci/'
@@ -58,5 +90,9 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: wakeio-security-ci-release-check
-          path: artifacts/
+          # Release files only; private replay/patch/field evidence never upload here.
+          path: |
+            ${{ steps.release-files.outputs.source }}
+            ${{ steps.release-files.outputs.npm }}
+            ${{ steps.release-files.outputs.sums }}
           if-no-files-found: warn

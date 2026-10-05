@@ -5,7 +5,7 @@
 
 - 프로젝트: Wakeio Security CI, npm 이름 `wakeio-security-ci`, Apache-2.0.
 - 공개 저장소: <https://github.com/dusen0528/wakeio-security-ci>.
-- 실행 경계: 로그인, 요금제, 전용 서버, LLM 호출 없이 local CLI와 composite
+- 기본 scan 실행 경계: 로그인, 요금제, 전용 서버, LLM 호출 없이 local CLI와 composite
   Action을 실행한다. CI runner 시간·저장 공간·네트워크 사용량은 사용자의
   환경에서 소비된다.
 - 소스 모드: 제한된 파일 수집, JS/TS 기본 정적 후보, Gitleaks CLI,
@@ -16,7 +16,7 @@
 - API 정책 모드: 환경변수 인증정보, 같은 origin의 GET과 소유자 전후 대조,
   다른 계정·익명 거절 검증. 제한된 명시 정책만 실행하며 자동 로그인·결제·쓰기
   요청·퍼징은 하지 않는다.
-- 기본 결과: JSON + SARIF 2.1.0 + Markdown. 민감값과 원문 코드를 결과에 담지
+- 기본 scan 결과: `report.json` + `report.sarif`(SARIF 2.1.0) + `report.md` + `agent-report.json`. 민감값과 원문 코드를 결과에 담지
   않으며, `partial`, `error`, `skipped`, `not_applicable`, `unknown`,
   `not_observed`를 completed clean과 구분한다.
 - CLI: `wakeio-security-ci scan --source .`, `scan --url https://example.com`,
@@ -36,8 +36,9 @@
   `runSource(options): Promise<CheckResult[]>`, `runUrl(options):
   Promise<CheckResult[]>`를 export한다.
 - 보고서 계약: `report.ts`는 `createReport(checks, mode, startedAt, scope?):
-  ScanReport`, `writeReports(report, outDir): Promise<void>`,
+  ScanReport`, `writeReports(report, outDir, { failOn? }?): Promise<void>`(기존 두 인자 호출은 high),
   `exitCode(report, failOn): 0|1|2`를 export한다. CLI는 이 interface를 사용한다.
+  4파일은 파일별 atomic write이며 agent의 `scanGate`는 단일 scan 판정이다. delivery 실패는 CLI exit 2이고 최종 CI 성공 receipt와 구분한다. [agent 계약](agent-report.md)
 - Native tool 설치: 고정 버전과 검증된 checksum을 사용한다. OSV 기본은 패키지
   식별자의 공개 DB 질의이며 네트워크 동작을 문서화한다. offline 모드는 준비된
   DB가 없으면 오류다. Trivy 규칙·DB 다운로드와 provenance도 결과에 남긴다.
@@ -50,3 +51,15 @@
   Action을 사용할 수 있다. npm package는 아직 publish하지 않았고 GitHub
   Marketplace listing/release도 없다. `package:release`는 local tarball,
   source archive, SHA-256 manifest만 만든다.
+
+## 선택적 repair 경계
+
+2026-10-04에 별도 실험적 repair CLI가 추가되었다. 기존 scan의 계약을 확대하거나
+완화하지 않는다. trusted TOML·고정 verifier·준비된 로컬 Docker 이미지에서 선언된
+SQL 회귀와 정상 control을 수정 전후 비교하고, 원본을 변경하지 않은 private patch와
+검증 기록을 만든다. 명시적 `--agent codex|claude --allow-source-upload`는 선택된
+코드 문맥을 외부 모델에 전달할 수 있으며 별도 API 인증·비용이 필요하다.
+
+이 CLI에는 대상 코드 실행이 포함되므로 scan의 대상 미실행 계약과 구분한다.
+patch에는 원문 코드가 있으므로 scan의 redacted 보고서와 동일하게 취급하지 않는다.
+전체 지원 범위·검증기 신뢰·미확인 사항은 [repair 계약](repair-preview.md)을 따른다.

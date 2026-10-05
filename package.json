@@ -1,6 +1,6 @@
 {
   "name": "wakeio-security-ci",
-  "version": "0.4.0-dev.1",
+  "version": "0.4.0",
   "description": "Bounded local source and URL security checks for CI",
   "license": "Apache-2.0",
   "repository": {
@@ -24,6 +24,11 @@
   },
   "files": [
     "build/src",
+    "workers/api-state",
+    "workers/schemathesis/worker.py",
+    "workers/schemathesis/openapi.json",
+    "workers/schemathesis/requirements.txt",
+    "workers/schemathesis/requirements.lock.txt",
     "README.md",
     "README.ko.md",
     "README.ja.md",
@@ -41,7 +46,9 @@
     "build": "tsc -p tsconfig.json && node scripts/build-action-bundle.mjs",
     "test": "npm run build && node --test build/tests/*.test.js",
     "benchmark": "npm run build && node scripts/benchmark.mjs",
-    "package:release": "npm run build && node scripts/package-release.mjs"
+    "package:release": "npm run build && node scripts/package-release.mjs",
+    "test:schemathesis": "node scripts/test-schemathesis.mjs",
+    "test:repair:docker": "npm run build && node scripts/verify-repair-docker.mjs"
   },
   "dependencies": {
     "parse5": "7.3.0",

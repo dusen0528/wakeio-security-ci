@@ -1,9 +1,11 @@
+import { resolveAnalysisBudget } from './source/analysis-budget.js';
 import { createHash } from 'node:crypto';
 import { createReadStream } from 'node:fs';
 import { lstat, readdir } from 'node:fs/promises';
 import { relative, resolve, sep } from 'node:path';
 import type { Mode, ScanScope, ToolName } from './contracts.js';
 import { findExecutable } from './source/process.js';
+import { OPENGREP_PROFILE, OPENGREP_SHA256, OWN_RULES_SHA256 } from './source/opengrep-rules.js';
 
 const MAX_PROJECT_ID_LENGTH = 128;
 const MAX_HASH_FILES = 10_000;
@@ -13,7 +15,7 @@ const MAX_HASH_BYTES = 128 * 1024 * 1024;
 // release binaries; a larger file is reported as unreadable.
 const MAX_ENGINE_BYTES = 256 * 1024 * 1024;
 const IGNORED_DIRECTORIES = new Set([
-  '.git', '.hg', '.svn', 'node_modules', '.venv', 'venv', '__pycache__',
+  '.git', '.hg', '.svn', 'node_modules', '.venv', '.venv-schemathesis', '.hypothesis', 'venv', '__pycache__',
   '.pytest_cache', '.mypy_cache', '.ruff_cache', '.intent-review', 'vendor',
   'build', 'dist', 'coverage', '.next', '.nuxt', '.turbo', '.cache',
   '.parcel-cache', 'out',
@@ -29,6 +31,7 @@ const IGNORED_FILES = new Set([
 export interface ScopeInputs {
   mode: Mode;
   source?: string;
+  analysisProfile?: import('./contracts.js').AnalysisProfile;
   url?: string;
   projectId?: string;
   tools?: ToolName[];
@@ -40,6 +43,7 @@ export interface ScopeInputs {
   maxPages?: number;
   apiPolicy?: unknown;
   ruleset: string;
+  nativePreview?: { executable: string };
 }
 
 export function validateProjectId(value: unknown): string | undefined {
@@ -139,8 +143,14 @@ async function engineProvenance(inputs: ScopeInputs): Promise<ScanScope['provena
     const sha256 = await hashEngine(executable);
     engines.push(sha256 ? { name, status: 'available', sha256 } : { name, status: 'unreadable' });
   }
+  if (inputs.nativePreview) {
+    const sha256 = await hashEngine(inputs.nativePreview.executable);
+    engines.push(sha256 ? { name: 'opengrep-native-preview', status: sha256 === OPENGREP_SHA256 ? 'available' : 'unknown', sha256 }
+      : { name: 'opengrep-native-preview', status: 'unreadable' });
+  }
   engines.sort((a, b) => a.name.localeCompare(b.name));
   const dataSources: Record<string, string> = {};
+  if (inputs.nativePreview) dataSources.opengrepOwnRules = OWN_RULES_SHA256;
   if ((inputs.tools ?? []).includes('osv')) dataSources.osvDatabase = inputs.osvOffline ? 'offline-unknown' : 'online-unknown';
   if ((inputs.tools ?? []).includes('trivy')) {
     dataSources.trivyDatabase = 'unknown';
@@ -162,12 +172,14 @@ async function engineProvenance(inputs: ScopeInputs): Promise<ScanScope['provena
 /** Build stable scope identity and bounded run provenance separately. */
 export async function buildScanScope(inputs: ScopeInputs): Promise<ScanScope> {
   const projectId = validateProjectId(inputs.projectId);
+  const analysisBudget = inputs.source ? resolveAnalysisBudget(inputs.analysisProfile) : undefined;
   const stable = {
     mode: inputs.mode,
     projectId: projectId ?? null,
     // A project ID intentionally replaces an absolute checkout path. Without
     // it, retain the old conservative path identity for local comparisons.
     sourceRoot: projectId ? null : inputs.source ? resolve(inputs.source) : null,
+    ...(analysisBudget ? { analysisBudget } : {}),
     url: inputs.url ?? null,
     tools: [...(inputs.tools ?? [])].sort(),
     allowPrivate: inputs.allowPrivate === true,
@@ -176,12 +188,16 @@ export async function buildScanScope(inputs: ScopeInputs): Promise<ScanScope> {
     pages: [...(inputs.pages ?? [])],
     maxPages: inputs.maxPages ?? null,
     apiPolicy: inputs.apiPolicy ?? null,
+    // Preserve non-native fingerprints; selection is an explicit model change.
+    ...(inputs.nativePreview ? { nativePreview: { profile: OPENGREP_PROFILE, enginePin: OPENGREP_SHA256, rulePackPin: OWN_RULES_SHA256,
+      runtimeMs: Math.min(inputs.timeoutMs ?? 10_000, 10_000), outputBytes: 8 * 1024 * 1024, sampledRssBytes: 512 * 1024 * 1024 } } : {}),
   };
   const fingerprint = hashText(JSON.stringify(stable));
   const provenance = await engineProvenance(inputs);
   return {
     fingerprint,
     ruleset: inputs.ruleset,
+    ...(analysisBudget ? { analysisBudget } : {}),
     ...(projectId ? { projectId } : {}),
     ...(provenance ? { provenance } : {}),
   };

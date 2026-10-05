@@ -1,3 +1,4 @@
+import { ownedApiCapture, type ApiStateCaptureSession } from './api-state-capture.js';
 import type { CheckResult, Finding } from "./contracts.js";
 import {
   MAX_REQUESTS,
@@ -21,6 +22,24 @@ export const API_MAX_TIMEOUT_MS = 120_000;
 export const API_DEFAULT_TIMEOUT_MS = 30_000;
 export const API_MAX_SINGLE_BODY_BYTES = MAX_SINGLE_BODY_BYTES;
 export const API_MAX_TOTAL_BODY_BYTES = 10 * 1024 * 1024;
+
+/** Shared deadline/cancellation contract for API runners and worker adapters. */
+export function createApiRunControl(timeoutMs: number, signal?: AbortSignal) {
+  if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > API_MAX_TIMEOUT_MS) {
+    throw new RangeError("invalid API time budget");
+  }
+  if (signal !== undefined && !(signal instanceof AbortSignal)) throw new TypeError("invalid API cancellation signal");
+  const controller = new AbortController();
+  const deadlineAt = Date.now() + timeoutMs;
+  const cancel = () => controller.abort();
+  signal?.addEventListener("abort", cancel, { once: true });
+  if (signal?.aborted) cancel();
+  const timer = setTimeout(cancel, timeoutMs);
+  return { signal: controller.signal, deadlineAt, dispose() {
+    clearTimeout(timer);
+    signal?.removeEventListener("abort", cancel);
+  } };
+}
 
 const MAX_ACTORS = 32;
 const MAX_PATH_LENGTH = 2048;
@@ -155,6 +174,7 @@ export interface ApiRunOptions {
   allowPrivate?: boolean;
   timeoutMs?: number;
   env?: NodeJS.ProcessEnv;
+  signal?: AbortSignal;
 }
 
 interface CredentialSet {
@@ -163,6 +183,7 @@ interface CredentialSet {
 }
 
 interface RequestContextState {
+  ownedCapture?: ApiStateCaptureSession;
   context: UrlNetworkContext;
   bytes: number;
   stopRequests: boolean;
@@ -619,6 +640,9 @@ async function requestApi(
     state.bodyBudgetExhausted = true;
     return { errorCode: "total_body_limit" };
   }
+  const capture = state.ownedCapture;
+  let capturedOrdinal: number | undefined;
+  try { capturedOrdinal = capture?.start(url, authorization); } catch { /* Passive observation never changes API adjudication. */ }
   try {
     const resource = await fetchResource(
       url,
@@ -633,8 +657,10 @@ async function requestApi(
       Math.min(MAX_SINGLE_BODY_BYTES, API_MAX_TOTAL_BODY_BYTES - state.bytes),
     );
     state.bytes += resource.body.byteLength;
+    try { capture?.finish(capturedOrdinal, resource); } catch { /* Oracle handles missing capture. */ }
     return { resource };
   } catch (error) {
+    try { capture?.finish(capturedOrdinal); } catch { /* Oracle handles missing capture. */ }
     const errorCode = codeOf(error);
     // readResponseBody can reject after consuming a final chunk that crosses
     // the cap. Stop the whole preview on that terminal condition so repeated
@@ -927,6 +953,9 @@ function errorCheck(code: string, note: string, metrics: Record<string, number |
  */
 export async function runApiPolicy(options: ApiRunOptions): Promise<CheckResult[]> {
   if (!isRecord(options)) return [errorCheck("invalid_options", "API policy options are invalid.")];
+  if (options.signal !== undefined && !(options.signal instanceof AbortSignal)) {
+    return [errorCheck("invalid_options", "signal must be an AbortSignal.")];
+  }
   if (hasOwn(options, "allowPrivate") && options.allowPrivate !== undefined && typeof options.allowPrivate !== "boolean") {
     return [errorCheck("invalid_options", "allowPrivate must be boolean.")];
   }
@@ -954,15 +983,15 @@ export async function runApiPolicy(options: ApiRunOptions): Promise<CheckResult[
 
   const notes: string[] = [API_SCOPE_NOTE];
   const findings: Finding[] = [];
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  const controller = createApiRunControl(timeoutMs, options.signal);
   const budget: UrlNetworkContext["budget"] = { count: 0, max: API_MAX_REQUESTS };
   const state: RequestContextState = {
+    ownedCapture: ownedApiCapture(options.signal),
     context: {
       allowPrivate: options.allowPrivate === true,
       signal: controller.signal,
       budget,
-      deadlineAt: Date.now() + timeoutMs,
+      deadlineAt: controller.deadlineAt,
     },
     bytes: 0,
     stopRequests: false,
@@ -1031,10 +1060,12 @@ export async function runApiPolicy(options: ApiRunOptions): Promise<CheckResult[
       }
     }
   } finally {
-    clearTimeout(timer);
+    controller.dispose();
   }
   if (controller.signal.aborted || Date.now() >= state.context.deadlineAt) {
-    addNote(notes, "The API policy time budget elapsed; the authorization preview is incomplete.");
+    addNote(notes, options.signal?.aborted
+      ? "The API policy was cancelled; the authorization preview is incomplete."
+      : "The API policy time budget elapsed; the authorization preview is incomplete.");
     incomplete = true;
   }
   const status: CheckResult["status"] = incomplete ? "partial" : "completed";

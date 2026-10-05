@@ -22,7 +22,8 @@ The report contract is part of the public interface:
 
 - `candidate` means a pattern that needs human confirmation.
 - `observation` means a property observed in the collected response or
-  configuration.
+  configuration or source syntax. See [dynamic-code signal](docs/dynamic-code-signal.md)
+  for the limits of literal code operand observations.
 - `advisory` means a scanner or public advisory database result.
 - finding evidence must remain redacted; do not add raw secret values or
   source excerpts to JSON, SARIF, Markdown, logs, or snapshots.

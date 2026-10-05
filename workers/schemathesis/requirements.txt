@@ -1,0 +1,2 @@
+schemathesis==4.2.0
+Werkzeug==3.1.3

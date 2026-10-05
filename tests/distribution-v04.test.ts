@@ -1,4 +1,5 @@
 import test from 'node:test';
+import { resolveAnalysisBudget } from '../src/source/analysis-budget.js';
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
 import { chmod, copyFile, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
@@ -69,6 +70,7 @@ test('source archive Action bundle runs without node_modules and keeps reports o
         WAKEIO_ACTION_PATH: action,
         GITHUB_WORKSPACE: workspace,
         WAKEIO_SOURCE: 'app',
+        WAKEIO_ANALYSIS_PROFILE: 'extended',
         WAKEIO_TOOLS: 'none',
         WAKEIO_FAIL_ON: 'none',
         WAKEIO_PROJECT_ID: '',
@@ -85,6 +87,13 @@ test('source archive Action bundle runs without node_modules and keeps reports o
     for (const name of ['report.json', 'report.sarif', 'report.md', 'action-status.json']) {
       await assert.doesNotReject(readFile(join(workspace, 'wakeio-security-reports', name)));
     }
+    const report = JSON.parse(await readFile(join(workspace, 'wakeio-security-reports/report.json'), 'utf8'));
+    const ast = report.checks.find((check: any) => check.id === 'source.builtin-ast');
+    const budget = resolveAnalysisBudget('extended');
+    assert.deepEqual(report.scope.analysisBudget, budget);
+    assert.deepEqual(ast.analysisBudget, budget);
+    const maxNames = ['maxIndexWork','maxFlowWork','maxNodeVisits','maxFunctions','maxSummaryWork','maxModuleEdges','maxCallDepth','maxAliasSteps','maxTraceSteps'];
+    for (const [index, value] of Object.values(budget.limits).entries()) assert.equal(ast.metrics[maxNames[index]], value);
     await assert.rejects(readFile(join(workspace, 'ACTION_TARGET_EXECUTED')));
     await assert.rejects(readFile(join(action, 'node_modules')));
   } finally {

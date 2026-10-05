@@ -26,6 +26,35 @@
 evidence를 함께 정의해야 하며, 개인 작업 상태 파일을 source archive에 넣지
 않는다.
 
+## 채택된 고도화 방향 — 2026-10-04
+
+아래 네 기준은 사용자에게 확인된 제품 방향이다. 에이전트 연동과 repair가
+이미 구현되었다는 뜻은 아니다.
+
+1. 에이전트 없이도 무료 보안 검사가 작동한다. 기존 scan의 계정·모델 호출·
+   기본 소스 전송 없는 실행 경계를 유지한다.
+2. 사용자가 선택한 에이전트를 선택적으로 연결한다. 연결하지 않은 scan은
+   계속 작동하고, 명시적으로 요청한 에이전트 실행의 오류를 조용히 무시하거나
+   다른 공급자로 대체하지 않는다. 모델 비용과 외부 코드 전달은 별도 고지한다.
+3. 수정 전 취약점 재현과 수정 후 검증을 같은 기준으로 수행한다. 보안 assertion,
+   합성 입력, 정상 동작 control, 필수 검사와 검증 계획을 patch 전에 고정한다.
+   실행 환경 오류나 scanner 경고 소멸만으로 재현·수정 성공을 확정하지 않는다.
+4. 실패·생략·검증 불가를 성공처럼 포장하지 않는다. 필수 엔진이 없는 CI는 실패해야
+   하며, patch 생성과 해당 범위의 검증 완료를 분리한다.
+
+초기 구현 제안은 기존 scan을 보존하고 별도 repair 경계에서 격리된 사본의
+patch와 검증 기록을 만드는 것이다. 사용자는 scan과 repair의 두 공개 CLI 경계를 확인했다.
+TOML 프로필은 지침·허용 범위·검증 기준을 선언하고 실행기가 권한을 강제한다.
+원본 자동 적용, commit, push, PR, merge, 배포는 이 고도화의 기본 실행에 포함하지 않는다.
+
+현재 self-test workflow는 일반 `npm test` 대신 `npm run test:schemathesis`를
+호출하여 Python/Schemathesis 엔진이 없으면 시작 단계에서 실패하도록 연결한다.
+실험적 repair CLI에는 TOML 정책, Codex/Claude의 선택적 data-only 수정안 연결,
+고정된 verifier와 준비된 Docker 이미지에서의 수정 전후 검사, private patch와
+결과 기록이 추가되었다. 초기 지원은 선언된 Python/SQLite SQL injection 회귀·정상
+control에 한정한다. 공급자 모의 프로토콜 검사, 실제 SQLite 검사, 실제 Docker 격리,
+라이브 모델 호출은 서로 다른 검증 수준이며 [repair 문서](repair-preview.md)에서 구분한다.
+
 ## 배포 기준
 
 GitHub source repository는

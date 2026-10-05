@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "scope": "owned-synthetic-resource-read-only",
+  "files": {
+    "all-deny.mjs": "8d688c59f64d7cc27e93753eb202a9868e05bebbcd2a16956c3ec71f278004a9",
+    "fixed.mjs": "d6632c18fef36718379bab398568fb5314b4974fcf7a2496e49370e773746b21",
+    "ineffective.mjs": "02abd8033adccbcaf8c7fc2ab53186d226d14cd3325465d9758f771b0d1c5dde",
+    "normal-regression.mjs": "ed774fa5af0d19941a7fae1dcdaff240e654aab9e7b1174a2297f03c85325ae6",
+    "vulnerable.mjs": "6086bb0dcad21187826f704dacf76a8e4edbbc329a20588fe28e8b06617da78e"
+  }
+}

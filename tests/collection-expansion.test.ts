@@ -8,7 +8,7 @@ import { collectSource } from '../src/source/collector.js';
 test('Python dependency environments, intent state and comparison artifacts do not consume source scope', async () => {
   const root = await mkdtemp(join(tmpdir(), 'wakeio-python-collection-'));
   try {
-    for (const name of ['.venv', 'venv', '__pycache__', '.intent-review']) {
+    for (const name of ['.venv', '.venv-schemathesis', '.hypothesis', 'venv', '__pycache__', '.intent-review']) {
       await mkdir(join(root, name));
       await writeFile(join(root, name, 'private.py'), 'TOKEN="local_state_should_not_be_scanned"');
     }

@@ -547,3 +547,30 @@ test("weak protected canaries and weak principal markers are rejected or remain 
     await close(weakFixture.server);
   }
 });
+
+test("API runner shares caller cancellation and sends no requests when already aborted", async () => {
+  const fixture = fixtureServer((_request, response) => json(response, 200, {}));
+  const base = await listen(fixture.server);
+  const controller = new AbortController(); controller.abort();
+  try {
+    const [result] = await runApiPolicy({ policy: policyV2(base), allowPrivate: true, env: ENV, signal: controller.signal });
+    assert.equal(result.status, "partial");
+    assert.equal(result.metrics?.requestCount, 0);
+    assert.equal(fixture.requests.length, 0);
+  } finally { await close(fixture.server); }
+});
+
+test("caller cancellation aborts an in-flight API request and prevents subsequent requests", async () => {
+  const controller = new AbortController();
+  const fixture = fixtureServer(() => { controller.abort(); });
+  const base = await listen(fixture.server);
+  try {
+    const [result] = await runApiPolicy({ policy: policyV2(base), allowPrivate: true, env: ENV,
+      timeoutMs: 30000, signal: controller.signal });
+    assert.equal(result.status, "partial");
+    assert.equal(result.metrics?.requestCount, 1);
+    assert.equal(fixture.requests.length, 1);
+    assert.ok(result.notes.some(note => note.includes("was cancelled")));
+    assert.ok(!JSON.stringify(result).includes(ENV.WAKEIO_OWNER_AUTH));
+  } finally { await close(fixture.server); }
+});

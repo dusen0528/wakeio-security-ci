@@ -1,13 +1,23 @@
+import { redactSecrets, safeRelativePath, safeHttpUrl } from './report-path.js';
+import { sanitiseAnalysisBudget } from './source/analysis-budget.js';
+import { sanitiseApiStateEvidence } from './api-state-observer.js';
+import { projectReportSummary } from './report-summary.js';
 import { createHash } from 'node:crypto';
 import { constants as fsConstants } from 'node:fs';
 import { lstat, mkdir, open, realpath, rename, unlink } from 'node:fs/promises';
-import { dirname, posix, resolve, sep } from 'node:path';
+import { dirname, resolve, sep } from 'node:path';
+import { GAP_REPORT_LIMIT, capAnalysisGaps, sanitiseAnalysisGaps } from './analysis-gaps.js';
 import type {
+  AgentReport,
+  AnalysisGapReasonSummary,
   CheckResult,
+  FailOn,
   Finding,
   Mode,
   ScanProvenance,
   ScanReport,
+  ScanGate,
+  ReportSummary,
   Severity,
 } from './contracts.js';
 
@@ -16,7 +26,7 @@ export const REPORT_SCHEMA_VERSION = '1.0.0' as const;
 
 /** The version advertised to SARIF consumers when the package is built. */
 export const REPORT_TOOL_VERSION = '0.4.0-dev.1';
-export const RULESET_VERSION = '2026-09-16.2';
+export const RULESET_VERSION = '2026-10-05.17';
 
 const SEVERITIES: readonly Severity[] = [
   'info',
@@ -77,13 +87,13 @@ export function createReport(
     mode: validMode(mode),
     startedAt: start,
     finishedAt: finished,
-    checks: Array.isArray(checks) ? checks.map(sanitiseCheck) : [],
+    checks: sanitiseChecks(checks),
     ...safeScope(scope),
   };
 }
 
 /**
- * Write the three public report formats using atomic replacement.
+ * Write the public report formats using per-file atomic replacement.
  *
  * The output directory and all of its ancestors are checked with lstat. A
  * symlink is rejected at every level, including an existing report target.
@@ -94,6 +104,7 @@ export function createReport(
 export async function writeReports(
   report: ScanReport,
   outDir: string,
+  options: { failOn?: FailOn } = {},
 ): Promise<void> {
   if (typeof outDir !== 'string' || outDir.trim().length === 0) {
     throw new Error('Report output directory must be a non-empty path');
@@ -103,10 +114,14 @@ export async function writeReports(
   await ensureSafeDirectory(targetDir);
 
   const safeReport = sanitiseReport(report);
+  const reportJson = serialiseReport(safeReport);
   const outputs: ReadonlyArray<readonly [string, string]> = [
-    ['report.json', `${JSON.stringify(safeReport, null, 2)}\n`],
+    ['report.json', reportJson],
     ['report.sarif', `${JSON.stringify(toSarif(safeReport), null, 2)}\n`],
-    ['report.md', toMarkdown(safeReport)],
+    ['report.md', toMarkdown(safeReport, options.failOn ?? 'high')],
+    // Publish this last. This is not a four-file transaction or a receipt
+    // for the final CLI exit: a failed write leaves stale/partial artifacts.
+    ['agent-report.json', `${JSON.stringify(projectAgentReport(safeReport, options.failOn ?? 'high'), null, 2)}\n`],
   ];
 
   const destinations = outputs.map(([filename, contents]) => ({
@@ -130,35 +145,144 @@ export async function writeReports(
  */
 export function exitCode(
   report: ScanReport,
-  failOn: Severity | 'none',
+  failOn: FailOn,
 ): 0 | 1 | 2 {
-  const checks = Array.isArray(report?.checks) ? report.checks : [];
-  if (checks.length === 0 || checks.every((check) => check.status === 'not_applicable')) {
-    return 2;
-  }
-  if (checks.some((check) => check.status !== 'completed' && check.status !== 'not_applicable')) {
-    return 2;
-  }
+  return evaluateGate(report, failOn).exitCode;
+}
 
-  if (failOn === 'none') {
-    return 0;
-  }
+/** One scan adjudication shared by CLI exitCode and the agent projection. */
+export function evaluateGate(report: ScanReport, failOn: FailOn = 'high'): ScanGate {
+  return evaluateSanitisedGate(sanitiseReport(report), failOn);
+}
 
-  const threshold = SEVERITY_RANK[failOn];
-  if (threshold === undefined) {
-    // Invalid configuration is an execution error. TypeScript callers cannot
-    // reach this branch, but CLI input is untrusted at runtime.
-    return 2;
+function evaluateSanitisedGate(report: ScanReport, failOn: FailOn): ScanGate {
+  const checks = report.checks;
+  const threshold = SEVERITIES.includes(failOn as Severity) ? SEVERITY_RANK[failOn as Severity] : undefined;
+  const validThreshold = failOn === 'none' || threshold !== undefined;
+  const reasons: ScanGate['reasons'] = [];
+  const blockingFindingIds: string[] = [];
+  if (!validThreshold) reasons.push({ code: 'invalid_fail_on' });
+  if (checks.length === 0) reasons.push({ code: 'no_checks' });
+  else if (checks.every((check) => check.status === 'not_applicable')) {
+    reasons.push({ code: 'no_applicable_checks' });
   }
-
   for (const check of checks) {
-    for (const finding of Array.isArray(check.findings) ? check.findings : []) {
-      if (SEVERITY_RANK[finding.severity] >= threshold) {
-        return 1;
-      }
+    if (check.status !== 'completed' && check.status !== 'not_applicable') {
+      reasons.push({ code: 'check_incomplete', checkId: check.id, status: check.status });
+    }
+    if (threshold === undefined) continue;
+    const findingIds = check.findings
+      .filter((finding) => SEVERITY_RANK[finding.severity] >= threshold)
+      .map((finding) => finding.id!);
+    if (findingIds.length) {
+      blockingFindingIds.push(...findingIds);
+      reasons.push({ code: 'severity_threshold', checkId: check.id, findingIds });
     }
   }
-  return 0;
+  const incomplete = reasons.some((reason) => reason.code !== 'severity_threshold');
+  const code = incomplete ? 2 : blockingFindingIds.length ? 1 : 0;
+  return {
+    outcome: code === 2 ? 'incomplete' : code === 1 ? 'findings' : 'pass',
+    exitCode: code,
+    failOn: validThreshold ? failOn : 'invalid',
+    blockingFindingIds: [...new Set(blockingFindingIds)],
+    reasons,
+  };
+}
+
+/** Public projection always passes through the same sanitiser as report.json. */
+export function toAgentReport(report: ScanReport, failOn: FailOn = 'high'): AgentReport {
+  return projectAgentReport(sanitiseReport(report), failOn);
+}
+
+/** First-read navigation only; uses the same sanitisation and adjudication as the agent report. */
+export function toReportSummary(report: ScanReport, failOn: FailOn = 'high'): ReportSummary {
+  const safeReport = sanitiseReport(report);
+  return projectReportSummary(safeReport, evaluateSanitisedGate(safeReport, failOn));
+}
+
+function serialiseReport(report: ScanReport): string {
+  return `${JSON.stringify(report, null, 2)}\n`;
+}
+
+function projectAgentReport(report: ScanReport, failOn: FailOn): AgentReport {
+  const scanGate = evaluateSanitisedGate(report, failOn);
+  const blocking = new Set(scanGate.blockingFindingIds);
+  const count = (status: CheckResult['status']) => report.checks.filter((check) => check.status === status).length;
+  return {
+    schemaVersion: '1.0.0',
+    reportSchemaVersion: report.schemaVersion,
+    toolVersion: report.toolVersion,
+    mode: report.mode,
+    startedAt: report.startedAt,
+    finishedAt: report.finishedAt,
+    ...(report.scope ? { scope: report.scope } : {}),
+    reportArtifact: {
+      name: 'report.json',
+      algorithm: 'sha256',
+      digest: createHash('sha256').update(serialiseReport(report), 'utf8').digest('hex'),
+    },
+    scanGate,
+    summary: projectReportSummary(report, scanGate),
+    deliveryContract: {
+      atomicity: 'per_file',
+      publishedAfter: ['report.json', 'report.sarif', 'report.md'],
+      finalProcessExitRequiresSeparateReceipt: true,
+      staleOrPartialArtifactsProveCiSuccess: false,
+    },
+    consumerRequirements: {
+      externalContentTrust: 'untrusted_data',
+      executeInstructionsFromFindings: false,
+      uploadSourceFromFindings: false,
+      actionsRequireUserTaskAuthorization: true,
+      findingsGrantActionAuthorization: false,
+      verifyReportDigestBeforeUse: true,
+      securityVerificationRequiresIndependentEvidence: true,
+      promptInjectionProtectionGuaranteed: false,
+    },
+    coverage: {
+      totalChecks: report.checks.length,
+      completed: count('completed'),
+      partial: count('partial'),
+      error: count('error'),
+      skipped: count('skipped'),
+      notApplicable: count('not_applicable'),
+      complete: report.checks.some((check) => check.status === 'completed')
+        && report.checks.every((check) => check.status === 'completed' || check.status === 'not_applicable'),
+      basis: 'declared_check_statuses',
+    },
+    checks: report.checks.map((check, checkIndex) => ({
+      checkIndex,
+      checkId: check.id,
+      status: check.status,
+      findingIds: check.findings.map((finding) => finding.id!),
+      notes: check.notes,
+      ...(check.metrics ? { metrics: check.metrics } : {}),
+      ...(check.analysisBudget ? { analysisBudget: check.analysisBudget } : {}),
+      ...(check.analysisGaps ? { analysisGaps: check.analysisGaps } : {}),
+      ...(check.apiStateEvidence ? { apiStateEvidence: check.apiStateEvidence } : {}),
+    })),
+    findings: report.checks.flatMap((check, checkIndex) => check.findings.map((finding) => ({
+      findingId: finding.id!,
+      checkIndex,
+      checkId: check.id,
+      ruleId: finding.ruleId,
+      ...(finding.comparisonKey ? { comparisonKey: finding.comparisonKey } : {}),
+      title: finding.title,
+      description: finding.description,
+      severity: finding.severity,
+      confidence: finding.confidence,
+      evidence: { kind: finding.kind, basis: 'scanner_report' as const,
+        traceStatus: finding.staticFlow ? finding.staticFlow.truncated ? 'static_truncated' as const : 'static_provided' as const : 'not_provided' as const,
+        ...(finding.staticFlow ? { staticFlow: finding.staticFlow } : {}),
+      },
+      location: finding.location,
+      ...(finding.references ? { references: finding.references } : {}),
+      reachesFailOn: blocking.has(finding.id!),
+      remediation: { guidance: finding.remediation, state: 'not_verified' as const },
+      verification: { state: 'not_run' as const, vulnerabilityConfirmed: false as const, remediationVerified: false as const },
+    }))),
+  };
 }
 
 /** Exposed for the CLI and tests that need to inspect the SARIF projection. */
@@ -228,6 +352,12 @@ export function toSarif(report: ScanReport): SarifLog {
       if (finding.references && finding.references.length > 0) {
         result.properties.references = finding.references;
       }
+      if (finding.staticFlow) {
+        result.properties.staticFlow = finding.staticFlow;
+        result.codeFlows = [{ threadFlows: [{ locations: finding.staticFlow.steps.map((item) => ({
+          location: sarifLocation(item.location)!, kinds: [item.role],
+        })) }] }];
+      }
       results.push(result);
     }
   }
@@ -273,6 +403,16 @@ export function toSarif(report: ScanReport): SarifLog {
           mode: safeReport.mode,
           category: `wakeio-security-ci/${safeReport.mode}`,
           schemaVersion: safeReport.schemaVersion,
+          ...(safeReport.scope?.analysisBudget ? { analysisBudget: safeReport.scope.analysisBudget } : {}),
+          ...(safeReport.checks.some(check => check.analysisBudget) ? { analysisBudgets: safeReport.checks.flatMap((check, checkIndex) => check.analysisBudget ? [{ checkIndex, checkId: check.id, analysisBudget: check.analysisBudget }] : []) } : {}),
+          ...(safeReport.checks.some(check => check.apiStateEvidence) ? {
+            apiStateEvidence: safeReport.checks.flatMap((check, checkIndex) => check.apiStateEvidence
+              ? [{ checkIndex, checkId: check.id, apiStateEvidence: check.apiStateEvidence }] : []),
+          } : {}),
+          ...(safeReport.checks.some((check) => check.analysisGaps) ? {
+            analysisGaps: safeReport.checks.flatMap((check, checkIndex) => check.analysisGaps
+              ? [{ checkIndex, checkId: check.id, analysisGaps: check.analysisGaps }] : []),
+          } : {}),
         },
       },
     ],
@@ -280,10 +420,13 @@ export function toSarif(report: ScanReport): SarifLog {
 }
 
 /** Exposed for tests and consumers that want the human-readable projection. */
-export function toMarkdown(report: ScanReport): string {
+export function toMarkdown(report: ScanReport, failOn: FailOn = 'high'): string {
   const safeReport = sanitiseReport(report);
+  const summary = projectReportSummary(safeReport, evaluateSanitisedGate(safeReport, failOn));
   const lines: string[] = [
     '# Wakeio Security CI report',
+    '',
+    ...markdownSummary(summary),
     '',
     `- Mode: ${markdownInline(safeReport.mode)}`,
     `- Started: ${markdownInline(safeReport.startedAt)}`,
@@ -299,6 +442,7 @@ export function toMarkdown(report: ScanReport): string {
       `- Ruleset: ${markdownInline(safeReport.scope.ruleset)}`,
       ...(safeReport.scope.projectId ? [`- Project ID: ${markdownInline(safeReport.scope.projectId)}`] : []),
     );
+    if (safeReport.scope.analysisBudget) lines.push(`- AST analysis budget: ${budgetText(safeReport.scope.analysisBudget)}`);
     if (safeReport.scope.provenance) {
       const provenance = safeReport.scope.provenance;
       if (provenance.sourceContentHash) lines.push('- Source content hash: recorded as provenance; it does not define comparison scope.');
@@ -317,8 +461,25 @@ export function toMarkdown(report: ScanReport): string {
   } else {
     for (const check of safeReport.checks) {
       lines.push(`- **${markdownInline(check.id)}**: ${markdownInline(check.status)}`);
+      if (check.analysisBudget) lines.push(`  - AST analysis budget: ${budgetText(check.analysisBudget)}`);
       for (const note of check.notes) {
         lines.push(`  - Note: ${markdownInline(note)}`);
+      }
+      if (check.apiStateEvidence) {
+        const e = check.apiStateEvidence;
+        lines.push(`  - Owned synthetic resource evidence (${e.phase}): execution=${e.execution}, effect=${e.effect}, normal=${e.normal}, verification=${e.verification}, cleanup=${e.cleanup}.`,
+          `  - API requests=${e.counts.apiRequests ?? 'unknown'}; next evidence=${e.nextEvidence}. Finding verification is unchanged; this is not whole-app security proof.`);
+      }
+      if (check.analysisGaps) {
+        const gaps = check.analysisGaps;
+        lines.push(gaps.accounting === 'exact'
+          ? `  - Analysis gap events: observed=${gaps.eventsObserved}, dropped=${gaps.eventsDropped}, truncated=${gaps.truncated}. Counts are metadata accounting, not complete source coverage.`
+          : '  - Analysis gap accounting: unknown; metadata is incomplete/truncated.');
+        for (const gap of gaps.items) {
+          const where = gap.location ? `${gap.location.path}:${gap.location.line}:${gap.location.column}` : 'location unknown (check-wide)';
+          lines.push(`    - ${markdownInline(gap.reason)} (${gap.phase}, observations=${gap.observations}): ${markdownInline(where)}${gap.diagnosticCode === undefined ? '' : `; TS${gap.diagnosticCode} (scanner parser representative per file)`}; next static review: ${gap.nextReview}.`);
+        }
+        lines.push(...markdownGapReasons(gaps.reasonSummary));
       }
     }
   }
@@ -342,6 +503,12 @@ export function toMarkdown(report: ScanReport): string {
       if (where) {
         lines.push(`  - Location: ${markdownInline(where)}`);
       }
+      if (finding.staticFlow) {
+        lines.push(`  - Static source flow${finding.staticFlow.truncated ? ' (incomplete/truncated)' : ''}; runtime verification not run:`);
+        for (const item of finding.staticFlow.steps) {
+          lines.push(`    - ${item.role}: ${markdownInline(item.location.path)}:${item.location.line}:${item.location.column}`);
+        }
+      }
       lines.push(`  - Remediation: ${markdownInline(finding.remediation)}`);
       if (finding.references && finding.references.length > 0) {
         lines.push(
@@ -353,6 +520,55 @@ export function toMarkdown(report: ScanReport): string {
 
   lines.push('', '_Generated locally by wakeio-security-ci._', '');
   return lines.join('\n');
+}
+
+function markdownSummary(summary: ReportSummary): string[] {
+  const gate = summary.scanGate, count = summary.counts;
+  const interpretation = gate.outcome === 'incomplete' ? 'Declared work is incomplete; review the recorded diagnostics.'
+    : gate.outcome === 'findings' ? 'The selected severity threshold was reached; findings still require evidence review.'
+    : 'Applicable declared checks completed; the selected threshold did not block this scan.';
+  const lines = ['## First read', '',
+    `- Scan gate: ${gate.outcome}; exit ${gate.exitCode}; fail-on ${gate.failOn}.`,
+    `- ${interpretation}`,
+    `- Gate reason codes: ${gate.reasonCodes.join(', ') || 'none'}.`,
+    `- Findings (rows): ${count.findings}; candidates (rows): ${count.candidates}. Blocking findings (unique IDs): ${count.blockingFindings}; blocking candidates (unique IDs): ${count.blockingCandidates}.`,
+    '- Candidate rows and blocking IDs overlap and use different units; do not add these counts.',
+    `- Declared checks: ${count.completedChecks} completed; ${count.incompleteChecks} incomplete; ${count.notApplicableChecks} not applicable.`,
+  ];
+  for (const check of summary.incompleteChecks) {
+    lines.push(`- Incomplete check [${check.checkIndex}] ${markdownInline(check.checkId)}: ${check.status}.`);
+    if (!check.analysisGaps) lines.push('  - Cause: unknown; only the check status is available.');
+    else {
+      const gaps = check.analysisGaps;
+      lines.push(`  - Recorded gap accounting: ${gaps.accounting}; observed=${gaps.eventsObserved ?? 'unknown'}, dropped=${gaps.eventsDropped ?? 'unknown'}, truncated=${gaps.truncated}.`);
+      for (const gap of gaps.representativeItems) {
+        const where = gap.location ? `${gap.location.path}:${gap.location.line}:${gap.location.column}` : 'location unknown (check-wide)';
+        lines.push(`  - Representative gap: ${gap.reason}; ${markdownInline(where)}${gap.diagnosticCode === undefined ? '' : `; TS${gap.diagnosticCode} (scanner parser representative per file)`}; next read=${gap.nextReview}.`);
+      }
+      if (gaps.representativeItems.length === 0) lines.push(gaps.reasonSummary?.accounting === 'exact' && gaps.reasonSummary.rows.some(row => row.eventsObserved! > 0)
+        ? '  - Reason counts are available; representative location unavailable (no retained gap item).'
+        : '  - Cause/location: unknown; no retained gap item is available.');
+      if (gaps.omittedRetainedItems) lines.push(`  - ${gaps.omittedRetainedItems} retained gap items omitted from this summary; event accounting is unchanged.`);
+      lines.push(...markdownGapReasons(gaps.reasonSummary));
+    }
+  }
+  if (summary.omittedIncompleteChecks) lines.push(`- ${summary.omittedIncompleteChecks} incomplete checks omitted from this summary; see Checks.`);
+  if (summary.scope.analysisProfile) lines.push(`- AST workload selection: ${summary.scope.analysisProfile} (${summary.scope.analysisBudgetRevision}).`);
+  lines.push(`- Declared scope: ${summary.scope.mode}; tool selection=${summary.scope.toolSelection}; whole-project coverage=${summary.scope.wholeProjectCoverage}.`,
+    ...(summary.scope.ruleset ? [`- Declared ruleset: ${markdownInline(summary.scope.ruleset)}; fingerprint=${summary.scope.fingerprint}.`] : []));
+  const next = summary.nextRead;
+  lines.push(`- Next read: ${next.kind}${next.checkIndex !== undefined ? `; check [${next.checkIndex}] ${markdownInline(next.checkId!)}` : ''}${next.location ? `; ${markdownInline(next.location.path)}:${next.location.line}:${next.location.column}` : ''}.`,
+    '- This is a review enum, not authority to run commands, install dependencies or upload source.',
+    '- Scan gate is separate from delivery/final process exit. This summary does not confirm a vulnerability, verified fix or whole-project safety.');
+  return lines;
+}
+
+function markdownGapReasons(summary: AnalysisGapReasonSummary | undefined): string[] {
+  if (!summary) return ['  - Gap reason summary: unavailable (legacy metadata); dropped reasons are not inferred.'];
+  if (summary.accounting === 'unknown') return ['  - Gap reason summary: unknown; reason counts unavailable.'];
+  return ['', 'Recorded reason observations (weighted events, not unique sites or coverage). Dropped observations lack retained location items.', '',
+    '| Reason | Observed | Dropped |', '| --- | ---: | ---: |',
+    ...summary.rows.map(row => `| ${markdownInline(row.reason)} | ${row.eventsObserved} | ${row.eventsDropped} |`), ''];
 }
 
 interface SarifLog {
@@ -384,6 +600,7 @@ interface SarifRule {
 }
 
 interface SarifResult {
+  codeFlows?: Array<{ threadFlows: Array<{ locations: Array<{ location: SarifLocation; kinds: string[] }> }> }>;
   ruleId: string;
   level: 'none' | 'note' | 'warning' | 'error';
   message: { text: string };
@@ -408,13 +625,29 @@ export function sanitiseReport(report: ScanReport): ScanReport {
     mode: validMode(report?.mode),
     startedAt: timestamp(report?.startedAt),
     finishedAt: timestamp(report?.finishedAt),
-    checks: Array.isArray(report?.checks) ? report.checks.map(sanitiseCheck) : [],
+    checks: sanitiseChecks(report?.checks),
     ...safeScope(report?.scope),
   };
 }
 
+function sanitiseChecks(input: CheckResult[] | undefined): CheckResult[] {
+  if (!Array.isArray(input)) return [];
+  let remaining = GAP_REPORT_LIMIT;
+  return input.map((check) => {
+    const safe = sanitiseCheck(check);
+    if (safe.analysisGaps) {
+      safe.analysisGaps = capAnalysisGaps(safe.analysisGaps, remaining);
+      remaining -= safe.analysisGaps.items.length;
+    }
+    return safe;
+  });
+}
+
 function sanitiseCheck(input: CheckResult): CheckResult {
-  const status = STATUSES.includes(input?.status) ? input.status : 'error';
+  let status = STATUSES.includes(input?.status) ? input.status : 'error';
+  const apiStateEvidence = input?.apiStateEvidence === undefined ? undefined : sanitiseApiStateEvidence(input.apiStateEvidence);
+  if (input?.id === 'api.owned-state-oracle' && apiStateEvidence?.execution !== undefined && apiStateEvidence.execution !== 'completed' && status === 'completed') status = 'partial';
+  const analysisBudget = sanitiseAnalysisBudget(input?.analysisBudget);
   const findings = Array.isArray(input?.findings)
     ? input.findings.map(sanitiseFinding)
     : [];
@@ -423,6 +656,8 @@ function sanitiseCheck(input: CheckResult): CheckResult {
     : [];
 
   const metrics: Record<string, number | string | boolean> = {};
+  const analysisGaps = sanitiseAnalysisGaps(input?.analysisGaps,
+    (path) => redactSecrets(path) === path ? safeRelativePath(path) : undefined);
   if (input?.metrics && typeof input.metrics === 'object') {
     for (const [key, value] of Object.entries(input.metrics)) {
       if (
@@ -442,6 +677,9 @@ function sanitiseCheck(input: CheckResult): CheckResult {
     findings: findings.map((finding) => ({ ...finding, id: findingIdentity(safeId(input?.id, 'check'), finding) })),
     notes,
     ...(Object.keys(metrics).length > 0 ? { metrics } : {}),
+    ...(analysisBudget ? { analysisBudget } : {}),
+    ...(analysisGaps ? { analysisGaps } : {}),
+    ...(apiStateEvidence ? { apiStateEvidence } : {}),
   };
 }
 
@@ -451,9 +689,11 @@ function safeScope(scope: ScanReport['scope']): { scope?: ScanReport['scope'] } 
     ? scope.projectId
     : undefined;
   const provenance = sanitiseProvenance(scope.provenance);
+  const analysisBudget = sanitiseAnalysisBudget(scope.analysisBudget);
   return {
     scope: {
       fingerprint: scope.fingerprint,
+      ...(analysisBudget ? { analysisBudget } : {}),
       ruleset: scope.ruleset,
       ...(projectId ? { projectId } : {}),
       ...(provenance ? { provenance } : {}),
@@ -522,7 +762,7 @@ export async function writeArtifacts(outDir: string, artifacts: ReadonlyArray<re
   const targetDir = resolve(outDir);
   await ensureSafeDirectory(targetDir);
   for (const [name] of artifacts) {
-    if (!/^[a-z][a-z0-9-]*\.(json|md)$/.test(name)) throw new Error('Invalid artifact name');
+    if (!/^[a-z][a-z0-9-]*\.(json|md|sarif)$/.test(name)) throw new Error('Invalid artifact name');
     await ensureSafeReportTarget(resolve(targetDir, name), targetDir);
   }
   for (const [name, contents] of artifacts) await atomicWrite(resolve(targetDir, name), contents);
@@ -540,6 +780,7 @@ function sanitiseFinding(input: Finding): Finding {
         .filter((reference): reference is string => reference !== undefined)
     : undefined;
   const location = sanitiseLocation(input?.location);
+  const staticFlow = sanitiseStaticFlow(input?.staticFlow);
   const comparisonKey = typeof input?.comparisonKey === 'string' && /^[a-f0-9]{64}$/.test(input.comparisonKey)
     ? input.comparisonKey
     : undefined;
@@ -557,8 +798,24 @@ function sanitiseFinding(input: Finding): Finding {
       'Review the finding and verify the affected scope.',
     ),
     ...(comparisonKey ? { comparisonKey } : {}),
+    ...(staticFlow ? { staticFlow } : {}),
     ...(references && references.length > 0 ? { references } : {}),
   };
+}
+
+function sanitiseStaticFlow(input: Finding['staticFlow'] | undefined): Finding['staticFlow'] | undefined {
+  if (!input || input.kind !== 'static_flow' || !Array.isArray(input.steps) || typeof input.truncated !== 'boolean') return undefined;
+  const allowed = ['source', 'call', 'parameter', 'return', 'intermediate', 'sink'];
+  const steps: NonNullable<Finding['staticFlow']>['steps'] = [];
+  for (const item of input.steps.slice(0, 24)) {
+    if (!item || !allowed.includes(item.role)) continue;
+    const location = sanitiseLocation(item.location);
+    if (!location.path || !location.line || !location.column) continue;
+    steps.push({ role: item.role, location: { path: location.path, line: location.line, column: location.column } });
+  }
+  return steps.length ? { kind: 'static_flow', steps,
+    truncated: input.truncated || input.steps.length > 24 || steps.length !== input.steps.length
+      || !steps.some((item) => item.role === 'source') || steps.at(-1)?.role !== 'sink' } : undefined;
 }
 
 function sanitiseLocation(
@@ -670,96 +927,6 @@ function stripControl(value: string): string {
     .join('');
 }
 
-/** Redact common credential forms before any text reaches an artifact. */
-function redactSecrets(value: string): string {
-  let result = value;
-
-  // URL query strings are never needed in a report and frequently contain
-  // tokens. This also strips credentials embedded in an URL authority.
-  result = result.replace(/https?:\/\/[^\s<>"'`]+/gi, (candidate) => {
-    const safe = safeHttpUrl(candidate);
-    return safe ?? '[REDACTED_URL]';
-  });
-
-  // PEM bodies and common bearer/API-token forms.
-  result = result.replace(
-    /-----BEGIN [^-]+-----[\s\S]*?-----END [^-]+-----/gi,
-    '[REDACTED_KEY]',
-  );
-  result = result.replace(
-    /(authorization\s*[:=]\s*(?:bearer\s+)?|bearer\s+)([^\s,;]+)/gi,
-    '$1[REDACTED]',
-  );
-  result = result.replace(
-    /((?:api[_-]?key|access[_-]?key|secret|token|password|passwd|client[_-]?secret|session|cookie|refresh[_-]?token)\s*[:=]\s*)(["'])(?:\\.|(?!\2)[\s\S])*?\2/gi,
-    '$1$2[REDACTED]$2',
-  );
-  result = result.replace(
-    /\b[A-Z0-9_]*(?:SECRET|TOKEN|PASSWORD|API[_-]?KEY|ACCESS[_-]?KEY)[A-Z0-9_-]*\s*=\s*(["'])(?:\\.|(?!\1)[\s\S])*?\1/gi,
-    '[REDACTED_ASSIGNMENT]',
-  );
-  result = result.replace(
-    /((?:api[_-]?key|access[_-]?key|secret|token|password|passwd|client[_-]?secret|session|cookie|refresh[_-]?token)\s*[:=]\s*["']?)([^\s"',;]+)/gi,
-    '$1[REDACTED]',
-  );
-  result = result.replace(/\b(?:ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9_]+\b/g, '[REDACTED_TOKEN]');
-  result = result.replace(/\bgithub_pat_[A-Za-z0-9_]+\b/g, '[REDACTED_TOKEN]');
-  result = result.replace(/\bxox[baprs]-[A-Za-z0-9-]+\b/g, '[REDACTED_TOKEN]');
-  result = result.replace(/\bAKIA[0-9A-Z]{16}\b/g, '[REDACTED_TOKEN]');
-  result = result.replace(/\bASIA[0-9A-Z]{16}\b/g, '[REDACTED_TOKEN]');
-  result = result.replace(/\b(?:sk|rk)_(?:live|test)_[A-Za-z0-9]{12,}\b/g, '[REDACTED_TOKEN]');
-  result = result.replace(/\bAIza[0-9A-Za-z_-]{20,}\b/g, '[REDACTED_TOKEN]');
-  result = result.replace(/\bsk-[A-Za-z0-9_-]{16,}\b/g, '[REDACTED_TOKEN]');
-  result = result.replace(/\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b/g, '[REDACTED_JWT]');
-
-  return result;
-}
-
-function safeRelativePath(value: string): string | undefined {
-  let path = value.replaceAll('\\', '/').trim();
-  if (!path || path.includes('\u0000') || /[\u0000-\u001f\u007f]/.test(path)) {
-    return undefined;
-  }
-  // Reject both absolute and drive-relative Windows spellings. A value such
-  // as `C:report.txt` is not an absolute filesystem path on Windows, but it is
-  // still interpreted as a URI scheme by some SARIF consumers.
-  if (path.startsWith('/') || path.startsWith('//') || /^[A-Za-z]:/.test(path)) {
-    return undefined;
-  }
-
-  const parts = path.split('/');
-  const safeParts: string[] = [];
-  for (const part of parts) {
-    if (!part || part === '.') continue;
-    if (part === '..') {
-      if (safeParts.length === 0) return undefined;
-      safeParts.pop();
-      continue;
-    }
-    safeParts.push(part);
-  }
-  path = posix.normalize(safeParts.join('/'));
-  if (!path || path === '..' || path.startsWith('../') || path.startsWith('/')) {
-    return undefined;
-  }
-  return path;
-}
-
-function safeHttpUrl(value: unknown): string | undefined {
-  if (typeof value !== 'string' || value.length === 0) return undefined;
-  try {
-    const url = new URL(value);
-    if (url.protocol !== 'http:' && url.protocol !== 'https:') return undefined;
-    url.username = '';
-    url.password = '';
-    url.search = '';
-    url.hash = '';
-    return url.toString();
-  } catch {
-    return undefined;
-  }
-}
-
 function timestamp(value: unknown): string {
   if (value instanceof Date) {
     return Number.isNaN(value.valueOf()) ? new Date().toISOString() : value.toISOString();
@@ -852,3 +1019,5 @@ async function atomicWrite(destination: string, contents: string): Promise<void>
 function isMissing(error: unknown): boolean {
   return Boolean(error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT');
 }
+
+function budgetText(b: import('./contracts.js').AstAnalysisBudget): string { return `${b.effectiveProfile} (${b.revision}; requested=${b.requestedProfile}), ${Object.entries(b.limits).map(([key, value]) => `${key}=${value}`).join(', ')}`; }

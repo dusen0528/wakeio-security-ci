@@ -148,6 +148,7 @@ jobs:
 | `report.md` | 供人阅读的范围、候选问题、限制和修复线索 |
 | `report.json` | CI 和比较流程使用的结构化结果 |
 | `report.sarif` | 与 SARIF 2.1.0 工具链集成 |
+| `agent-report.json` | scan gate、finding/check 与未验证的修复状态。[契约](docs/agent-report.md) |
 
 | 退出码 | 含义 |
 | --- | --- |
@@ -170,7 +171,9 @@ jobs:
 
 ## 数据处理和网络使用
 
-Wakeio 不会把源代码上传到 Wakeio 服务器，也不调用 LLM，不发送 telemetry。源代码检查在本地运行。URL 和 API 检查会对用户明确指定的 target 发起网络 GET 请求。
+在 scan 模式中，Wakeio 不会把源代码上传到 Wakeio 服务器，也不调用 LLM，不发送 telemetry。源代码检查在本地运行。URL 和 API 检查会对用户明确指定的 target 发起网络 GET 请求。
+
+独立的实验性 [repair CLI](docs/repair-preview.md) 可在明确同意和 API 认证后向 Codex/Claude 发送代码，可能产生模型费用。它通过固定验证器和已准备的 Docker image 生成 private patch 和验证记录，不修改或 commit 原始 checkout。初始支持仅限声明的 SQL fixture。
 
 选择外部引擎后，会产生该引擎自己的网络请求。OSV 在线检查可能把 package identifier 发送到公开 OSV 服务，Trivy 可能下载 policy data。`--osv-offline` 要求准备好的本地数据库，不会自动 fallback 到在线服务。API credential 只从命名环境变量读取，token 和 raw secret 不写入报告。
 

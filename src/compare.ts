@@ -1,3 +1,4 @@
+import { sanitiseAnalysisBudget, sameAnalysisBudget } from './source/analysis-budget.js';
 import type { Finding, ScanProvenance, ScanReport, Severity } from './contracts.js';
 import { exitCode, sanitiseReport, writeArtifacts } from './report.js';
 import { readJsonInput } from './json-input.js';
@@ -37,6 +38,7 @@ export function parseScanReport(input: unknown): ScanReport {
     if (!record(check) || !text(check.id) || !check.id || checkIds.has(check.id)
       || !['completed', 'partial', 'error', 'skipped', 'not_applicable'].includes(check.status)
       || !Array.isArray(check.findings) || !Array.isArray(check.notes) || !check.notes.every(text)) return invalid();
+    if (check.analysisBudget !== undefined && !sanitiseAnalysisBudget(check.analysisBudget)) return invalid();
     checkIds.add(check.id);
     count += check.findings.length;
     if (count > 50_000 || (check.status === 'not_applicable' && check.findings.length)) return invalid();
@@ -129,6 +131,12 @@ export function compareReports(beforeInput: ScanReport, afterInput: ScanReport):
       break;
     }
   }
+  for (const [report, label] of [[before, 'Before'], [after, 'After']] as const) {
+    const ast = report.checks.find(check => check.id === 'source.builtin-ast' && check.status !== 'not_applicable');
+    if (ast && !sameAnalysisBudget(report.scope?.analysisBudget, ast.analysisBudget)) reasons.push(`${label} AST analysis budget identity is missing or inconsistent.`);
+  }
+  if ((before.checks.some(c => c.id === 'source.builtin-ast' && c.status !== 'not_applicable') || after.checks.some(c => c.id === 'source.builtin-ast' && c.status !== 'not_applicable'))
+    && !sameAnalysisBudget(before.scope?.analysisBudget, after.scope?.analysisBudget)) reasons.push('AST analysis budget changed or is unknown.');
   const oldIndex = indexed(before);
   const currentIndex = indexed(after);
   if (oldIndex.ambiguous.size > 0 || currentIndex.ambiguous.size > 0) {
@@ -163,6 +171,7 @@ function validScope(scope: unknown): boolean {
     || !/^[A-Za-z0-9._-]{1,80}$/.test(scope.ruleset)) return false;
   if (scope.projectId !== undefined
     && (typeof scope.projectId !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$/.test(scope.projectId))) return false;
+  if (scope.analysisBudget !== undefined && !sanitiseAnalysisBudget(scope.analysisBudget)) return false;
   const provenance = scope.provenance;
   if (provenance === undefined) return true;
   if (!record(provenance)) return false;
