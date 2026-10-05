@@ -10,3 +10,6 @@ benchmarks/results/
 .env.*
 !.env.example
 .intent-review/
+__pycache__/
+.hypothesis/
+.venv-schemathesis/

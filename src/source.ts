@@ -1,3 +1,4 @@
+import { resolveAnalysisBudget } from './source/analysis-budget.js';
 import { createHash } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
@@ -9,6 +10,7 @@ import { frameworkHasApplicableInput, maskSql, runFrameworkRules } from "./sourc
 import { parseGitleaksOutput, parseOsvOutput, parseTrivyOutput } from "./source/parsers.js";
 import { DEFAULT_TOOL_TIMEOUT_MS, MAX_TOOL_TIMEOUT_MS, findExecutable, runProcess } from "./source/process.js";
 import { pythonFiles, runBandit } from "./source/python.js";
+import { nativeFiles, runNativePreview } from './source/opengrep.js';
 import type { ParsedToolResult, ProcessResult, SourceSnapshot } from "./source/types.js";
 
 export const DEFAULT_SOURCE_TOOLS: ToolName[] = ["gitleaks", "osv", "trivy"];
@@ -50,6 +52,7 @@ interface ToolContext {
   toolPath: string;
   osvOffline?: boolean;
   blockedConfigCount?: number;
+  signal?: AbortSignal;
 }
 
 const SOURCE_CODE_EXTENSIONS = /\.(?:[cm]?[jt]sx?)$/i;
@@ -382,7 +385,7 @@ function checkStatusForSnapshot(snapshot: SourceSnapshot): CheckResult["status"]
   return snapshot.complete ? "completed" : "partial";
 }
 
-function inventoryCheck(snapshot: SourceSnapshot, tools: ToolName[]): CheckResult {
+function inventoryCheck(snapshot: SourceSnapshot, tools: ToolName[], nativeSelected = false): CheckResult {
   const issueCounts = new Map<string, number>();
   for (const entry of snapshot.issues) issueCounts.set(entry.code, (issueCounts.get(entry.code) ?? 0) + 1);
   const issueSummary = [...issueCounts.entries()].map(([code, count]) => `${code}:${count}`).join(", ");
@@ -390,7 +393,8 @@ function inventoryCheck(snapshot: SourceSnapshot, tools: ToolName[]): CheckResul
     `Collected ${snapshot.files.length} allowlisted file${snapshot.files.length === 1 ? "" : "s"} (${snapshot.totalBytes} bytes).`,
     ...(snapshot.ignoredFiles > 0 ? [`Ignored ${snapshot.ignoredFiles} path${snapshot.ignoredFiles === 1 ? "" : "s"} outside the static-analysis allowlist.`] : []),
     ...(issueSummary ? [`Collection coverage issues: ${issueSummary}.`] : []),
-    ...(tools.length === 0 ? ["External scanner scope was narrowed to built-in checks (--tools none)."] : [`External scanner scope: ${tools.join(", ")}.`]),
+    ...(tools.length === 0 ? [nativeSelected ? 'External default tools disabled (--tools none); explicit native preview remains selected.' : "External scanner scope was narrowed to built-in checks (--tools none)."] : [`External scanner scope: ${tools.join(", ")}.`]),
+    ...(nativeSelected ? ['Pinned BYO native preview was explicitly selected.'] : []),
     ...(snapshot.rootError ? [snapshot.rootError] : []),
   ];
   return {
@@ -421,6 +425,7 @@ function notApplicableCheck(id: string, message: string, metrics?: Record<string
 }
 
 function processFailure(result: ProcessResult, tool: string, timeoutMs: number): string | undefined {
+  if (result.cancelled) return `${tool} was cancelled; coverage is incomplete.`;
   if (result.spawnError) return `${tool} could not be started.`;
   if (result.timedOut) return `${tool} exceeded the ${timeoutMs} ms scanner timeout.`;
   if (result.outputLimitExceeded) return `${tool} exceeded the scanner output limit.`;
@@ -561,8 +566,8 @@ function trivyHasApplicableInput(snapshot: SourceSnapshot): boolean {
   return snapshot.files.some((file) => file.category === "config" && trivyInputCandidate(file.path, file.text));
 }
 
-function hasOtherSecurityCheck(snapshot: SourceSnapshot, tools: ToolName[]): boolean {
-  return tools.some((tool) => {
+function hasOtherSecurityCheck(snapshot: SourceSnapshot, tools: ToolName[], nativeSelected = false): boolean {
+  return (nativeSelected && nativeFiles(snapshot).length > 0) || tools.some((tool) => {
     if (tool === "gitleaks") return snapshot.files.length > 0;
     if (tool === "osv") return osvHasApplicableInput(snapshot);
     if (tool === "trivy") return trivyHasApplicableInput(snapshot);
@@ -627,7 +632,7 @@ async function runGitleaks(context: ToolContext): Promise<CheckResult> {
     "--max-decode-depth",
     "0",
     context.stageDir,
-  ], { cwd: context.stageDir, timeoutMs: context.timeoutMs, home: join(dirname(context.stageDir), "home") });
+  ], { cwd: context.stageDir, timeoutMs: context.timeoutMs, home: join(dirname(context.stageDir), "home"), signal: context.signal });
   const failure = processFailure(result, "Gitleaks", context.timeoutMs);
   if (failure) return errorCheck("source.gitleaks", failure);
   try {
@@ -678,6 +683,7 @@ async function runOsv(context: ToolContext): Promise<CheckResult> {
     cwd: context.stageDir,
     timeoutMs: context.timeoutMs,
     home: join(dirname(context.stageDir), "home"),
+    signal: context.signal,
     ...(preparedDb ? { environment: { OSV_SCANNER_LOCAL_DB_CACHE_DIRECTORY: preparedDb } } : {}),
   });
   const failure = processFailure(result, "OSV-Scanner", context.timeoutMs);
@@ -739,7 +745,7 @@ async function runTrivy(context: ToolContext): Promise<CheckResult> {
     "--module-dir",
     privateModules,
     context.stageDir,
-  ], { cwd: context.stageDir, timeoutMs: context.timeoutMs, home: join(dirname(context.stageDir), "home") });
+  ], { cwd: context.stageDir, timeoutMs: context.timeoutMs, home: join(dirname(context.stageDir), "home"), signal: context.signal });
   const failure = processFailure(result, "Trivy", context.timeoutMs);
   if (failure) return errorCheck("source.trivy", failure);
   try {
@@ -775,20 +781,26 @@ async function runTool(tool: ToolName, snapshot: SourceSnapshot, stageDir: strin
   if (tool === "bandit" && pythonFiles(snapshot).length === 0) {
     return runBandit({ snapshot, stageDir, timeoutMs, toolPath: "" });
   }
+  if (options.signal?.aborted) return partialCheck(`source.${tool}`, 'Source scanner was cancelled before execution.');
   const configuredPath = options.toolPaths?.[tool];
   const executable = await findExecutable(configuredPath ?? (tool === "osv" ? "osv-scanner" : tool));
   if (!executable) return partialCheck(`source.${tool}`, `${tool} executable was not found; this scanner's coverage is unavailable.`);
-  if (tool === "gitleaks") return runGitleaks({ snapshot, stageDir, timeoutMs, toolPath: executable });
-  if (tool === "osv") return runOsv({ snapshot, stageDir, timeoutMs, toolPath: executable, ...(options.osvOffline ? { osvOffline: true } : {}) });
-  if (tool === "bandit") return runBandit({ snapshot, stageDir, timeoutMs, toolPath: executable });
-  return runTrivy({ snapshot, stageDir, timeoutMs, toolPath: executable, blockedConfigCount });
+  if (tool === "gitleaks") return runGitleaks({ snapshot, stageDir, timeoutMs, toolPath: executable, signal: options.signal });
+  if (tool === "osv") return runOsv({ snapshot, stageDir, timeoutMs, toolPath: executable, signal: options.signal, ...(options.osvOffline ? { osvOffline: true } : {}) });
+  if (tool === "bandit") return runBandit({ snapshot, stageDir, timeoutMs, toolPath: executable, signal: options.signal });
+  return runTrivy({ snapshot, stageDir, timeoutMs, toolPath: executable, blockedConfigCount, signal: options.signal });
 }
 
 /** Runs bounded built-in and selected native source scanners. */
 export async function runSource(options: SourceOptions): Promise<CheckResult[]> {
+  let analysisBudget;
+  try { analysisBudget = resolveAnalysisBudget(options?.analysisProfile); }
+  catch { return [errorCheck('source.options', 'Analysis profile must be default or extended.')]; }
   if (!options || typeof options.root !== "string" || options.root.trim().length === 0) {
     return [errorCheck("source.inventory", "A source directory is required.")];
   }
+  if (options.signal !== undefined && !(options.signal instanceof AbortSignal)) return [errorCheck('source.cancelled', 'Source cancellation signal must be an AbortSignal.')];
+  if (options.signal?.aborted) return [partialCheck(options.nativePreview ? 'source.opengrep.preview' : 'source.cancelled', 'Source scan was cancelled before collection; no child was started.')];
   const tools = requestedTools(options);
   const timeoutMs = normalizeTimeout(options.timeoutMs);
   let snapshot: SourceSnapshot;
@@ -797,11 +809,15 @@ export async function runSource(options: SourceOptions): Promise<CheckResult[]> 
   } catch {
     return [errorCheck("source.inventory", "The source snapshot could not be collected.")];
   }
+  if (options.signal?.aborted) return [inventoryCheck(snapshot, tools, !!options.nativePreview), partialCheck('source.cancelled', 'Source scan was cancelled after collection.')];
   const checks: CheckResult[] = [
-    inventoryCheck(snapshot, tools),
-    runBuiltinAst(snapshot, hasOtherSecurityCheck(snapshot, tools)),
+    inventoryCheck(snapshot, tools, !!options.nativePreview),
+    runBuiltinAst(snapshot, hasOtherSecurityCheck(snapshot, tools, !!options.nativePreview), analysisBudget.limits, analysisBudget),
     runFrameworkRules(snapshot),
   ];
+  // Native owns a separate code-only stage and cleanup, including --tools none.
+  if (options.nativePreview) checks.push(await runNativePreview(snapshot, options));
+  if (options.signal?.aborted) { checks.push(partialCheck('source.cancelled', 'Source scan was cancelled; later stages were not started.')); return addSourceComparisonKeys(checks, snapshot); }
   if (tools.length === 0 || snapshot.files.length === 0 || snapshot.rootError) {
     if (snapshot.files.length === 0 && !snapshot.rootError) {
       checks.push(...tools.map((tool) => {
@@ -828,7 +844,7 @@ export async function runSource(options: SourceOptions): Promise<CheckResult[]> 
   let trivyStaged: Awaited<ReturnType<typeof stageSnapshot>> | undefined;
   let trivySnapshot: SourceSnapshot | undefined;
   let blockedConfigCount = 0;
-  if (tools.includes("trivy")) {
+  if (tools.includes("trivy") && !options.signal?.aborted) {
     const trivyCandidates = snapshot.files.filter((file) => file.category === "config" && trivyInputCandidate(file.path, file.text));
     const trivyFiles = trivyCandidates.filter((file) => isTrivyConfigSafe(file.path, file.text));
     blockedConfigCount = trivyCandidates.filter((file) => !isTrivyConfigSafe(file.path, file.text)).length;
@@ -844,7 +860,7 @@ export async function runSource(options: SourceOptions): Promise<CheckResult[]> 
   }
   let banditStaged: Awaited<ReturnType<typeof stageSnapshot>> | undefined;
   let banditSnapshot: SourceSnapshot | undefined;
-  if (tools.includes("bandit")) {
+  if (tools.includes("bandit") && !options.signal?.aborted) {
     const banditFiles = pythonFiles(snapshot);
     banditSnapshot = { ...snapshot, files: banditFiles };
     if (banditFiles.length > 0) {
@@ -885,6 +901,7 @@ export async function runSource(options: SourceOptions): Promise<CheckResult[]> 
       }
     }));
     checks.push(...external);
+    if (options.signal?.aborted) checks.push(partialCheck('source.cancelled', 'Source scan was cancelled; coverage is incomplete.'));
     if (checks.filter((check) => check.id !== "source.inventory").length > 0
       && checks.filter((check) => check.id !== "source.inventory").every((check) => check.status === "not_applicable")) {
       checks.push(partialCheck("source.coverage", "No applicable security check could run for this source snapshot; coverage is incomplete."));

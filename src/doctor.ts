@@ -11,6 +11,8 @@ const SKIPPED_DIRECTORIES = new Set([
   ".svn",
   "node_modules",
   ".venv",
+  ".venv-schemathesis",
+  ".hypothesis",
   "venv",
   "__pycache__",
   ".pytest_cache",

@@ -46,6 +46,11 @@ test("benchmark corpus is balanced and every expected finding has an inspectable
   assert.ok(corpus.cases.every((entry) => entry.whyVulnerable.length > 0 && entry.whyFixed.length > 0 && entry.fixture.startsWith("fixtures/")));
   const expected = corpus.cases.flatMap((entry) => entry.expectedFindings);
   assert.ok(expected.length > 0);
+  for (const id of ["sql-cross-function-known-miss", "sql-cross-file-known-miss"]) {
+    const promoted = corpus.cases.find((entry) => entry.id === id);
+    assert.ok(promoted);
+    assert.ok(promoted.expectedFindings.every((finding) => finding.support === "supported" && finding.knownUnsupported === undefined));
+  }
   assert.ok(expected.every((finding) => finding.ruleId.length > 0 && finding.path.length > 0 && Number.isSafeInteger(finding.line) && finding.line > 0));
   assert.ok(expected.filter((finding) => finding.support === "known_miss").every((finding) => (finding.knownUnsupported ?? "").length > 0));
   assert.deepEqual([...new Set(expected.map((finding) => finding.ruleId))].sort(), [
@@ -165,8 +170,8 @@ test("default exit semantics permit a measured FN while strict mode exposes the 
     { id: "source.builtin-ast", status: "completed", findings: [], notes: [] },
   ], { engine: { label: "empty-test-engine", version: "test", versionSource: "test" } });
   assert.equal(report.success, true);
-  assert.equal(report.summary.falseNegatives, 13);
-  assert.equal(report.summary.strictRegressions, 13);
+  assert.equal(report.summary.falseNegatives, 15);
+  assert.equal(report.summary.strictRegressions, 15);
   assert.equal(benchmark.benchmarkExitCode(report, false), 0);
   assert.equal(benchmark.benchmarkExitCode(report, true), 1);
 });

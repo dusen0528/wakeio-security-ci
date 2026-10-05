@@ -46,6 +46,13 @@ export interface ProcessResult {
   timedOut: boolean;
   outputLimitExceeded: boolean;
   spawnError?: string;
+  cancelled?: boolean;
+  stopReason?: 'cancelled' | 'timeout' | 'output_limit' | 'rss_limit' | 'observer_unknown' | 'spawn_error' | 'close_unknown';
+  exited?: boolean;
+  closeConfirmed?: boolean;
+  cleanupState?: 'terminated' | 'terminated_zombies' | 'running' | 'unknown' | 'not_started';
+  cleanupConfirmed?: boolean;
+  rss?: { assessment: 'measured' | 'unassessed'; samples: number; failedSamples: number; peakBytes: number; capBytes: number };
 }
 
 export interface ToolRunContext {

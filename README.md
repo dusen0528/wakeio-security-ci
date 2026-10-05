@@ -6,9 +6,11 @@ Wakeio checks the code, HTTP responses, and optional read-only API policy that y
 
 [한국어](README.ko.md) · [日本語](README.ja.md) · [简体中文](README.zh-CN.md) · [implemented checklist](docs/checklist.md) · [0.4 guide](docs/preview-0.4.md) · [verification record](docs/verification-0.4.md)
 
-**Preview:** `0.4.0-dev.1` · Apache-2.0 · Node.js 22+
+**Release:** `0.4.0` · Apache-2.0 · Node.js 22+
 
-This is a free local tool. It does not require a Wakeio account, subscription, hosted Wakeio service, LLM, or source upload, and it does not send usage telemetry. The npm registry is not a distribution path for this preview; use the Git checkout or the GitHub Action below.
+The default scan is a free local tool. It does not require a Wakeio account, subscription, hosted Wakeio service, LLM, or source upload, and it does not send usage telemetry. Use the versioned npm CLI below, a Git checkout, or the GitHub Action. See the [0.4.0 release scope](docs/release-0.4.0.md).
+
+An experimental, separate [`repair` CLI](docs/repair-preview.md) can verify a reviewed local proposal or optionally request one from Codex/Claude. Agent calls require explicit source-upload consent and API authentication; they may incur provider costs. Repair uses a prepared local Docker image and frozen verifier, writes private patch/verification artifacts only, and never applies changes or commits to the original checkout. Its initial SQL fixture support is not general-purpose application remediation.
 
 ## What it checks
 
@@ -25,7 +27,17 @@ The built-in source rules are intentionally narrow. They cover useful code scene
 
 ## Quick start: built-in checks only
 
-Clone the public repository and build it locally:
+With Node.js 22+, run the versioned npm CLI. Replace both paths and keep reports outside the scanned repository:
+
+```sh
+npx --yes wakeio-security-ci@0.4.0 doctor --source /path/to/your-app --tools none
+npx --yes wakeio-security-ci@0.4.0 scan \
+  --source /path/to/your-app \
+  --tools none \
+  --out /path/outside/your-app/reports
+```
+
+`npx` downloads the CLI package and its declared runtime dependencies from npm. For contributors or a reviewed source checkout, clone and build locally:
 
 ```sh
 git clone --branch main https://github.com/dusen0528/wakeio-security-ci.git
@@ -64,7 +76,7 @@ Private or local URL/API targets require explicit `--allow-private`; metadata-ad
 
 ## GitHub Actions
 
-The easiest CI path uses the public Action from the initial `main` branch. This example selects built-in checks explicitly, preserves reports when the scan finds a failure, and keeps the surrounding actions on their current pinned SHAs.
+The example below uses the public Action from `main`. Pin Wakeio to a reviewed commit SHA in an operational workflow. This example selects built-in checks explicitly, preserves reports when the scan finds a failure, and keeps the surrounding actions on their current pinned SHAs.
 
 ```yaml
 name: wakeio-security-ci
@@ -103,7 +115,7 @@ jobs:
           if-no-files-found: error
 ```
 
-Copy-ready version: [`examples/github-action.yml`](examples/github-action.yml). `@main` is convenient for trying the preview. For a production workflow, pin `dusen0528/wakeio-security-ci` to a reviewed commit and review updates deliberately; keep helper actions pinned to reviewed SHAs as well. The Action provisions Node.js 22, never runs scripts from the scanned project, writes a Job Summary, and leaves `report.md`, `report.json`, `report.sarif`, and `action-status.json` in the output directory.
+Copy-ready version: [`examples/github-action.yml`](examples/github-action.yml). `@main` is convenient for trying the preview. For a production workflow, pin `dusen0528/wakeio-security-ci` to a reviewed commit and review updates deliberately; keep helper actions pinned to reviewed SHAs as well. The Action provisions Node.js 22, never runs scripts from the scanned project, writes a Job Summary, and leaves `report.md`, `report.json`, `report.sarif`, `agent-report.json`, and `action-status.json` in the output directory.
 
 ## Optional engines
 
@@ -129,15 +141,16 @@ node build/src/cli.js scan \
   --bandit /path/to/venv/bin/bandit
 ```
 
-Prepare the pinned native binaries, or provide trusted executable paths, before enabling the optional-engine command. The [distribution guide](docs/preview-0.4-distribution.md) covers the installer, cache, and provenance details. The installer verifies native release assets with SHA-256. OSV can use a prepared database with `--osv-offline`; offline mode fails when that database is unavailable. Trivy may download scanner-managed policy or database data. These external network requests are separate from Wakeio: Wakeio itself does not upload source or call an LLM.
+Prepare the pinned native binaries, or provide trusted executable paths, before enabling the optional-engine command. The [distribution guide](docs/preview-0.4-distribution.md) covers the installer, cache, and provenance details. The installer verifies native release assets with SHA-256. OSV can use a prepared database with `--osv-offline`; offline mode fails when that database is unavailable. Trivy may download scanner-managed policy or database data. In scan mode, Wakeio itself does not upload source or call an LLM.
 
 ## Reports and exit codes
 
-Every scan writes three primary files to `wakeio-security-reports/` (or `--out DIR`):
+Every started scan writes four primary files to `wakeio-security-reports/` (or `--out DIR`):
 
 - `report.md` for a human-readable summary, evidence, limits, and remediation hints;
 - `report.json` for the structured checks, scope, provenance, findings, and incomplete states;
-- `report.sarif` as SARIF 2.1.0 for optional code-scanning workflows.
+- `report.sarif` as SARIF 2.1.0 for optional code-scanning workflows;
+- `agent-report.json` for versioned scan-gate, finding/check links, and unverified remediation state. See the [agent report contract](docs/agent-report.md). Its scan gate is separate from final process/delivery status.
 
 Findings are labeled as candidates, observations, or advisories. Missing tools, timeouts, changed or unknown provenance, unsupported input, duplicate semantic anchors, and collection gaps remain visible in the report and can make the run incomplete.
 
@@ -202,12 +215,14 @@ Wakeio reports the code path it recognized and why it needs review. It does not 
 
 ## Verification and known limits
 
-The current `0.4.0-dev.1` local verification record reports `npm test` passing **144/144** tests. Its strict synthetic JS/TS benchmark has 30 cases: 15 vulnerable and 15 fixed; 13 of 15 vulnerable expectations were detected, no fixed cases produced false positives, and two cross-function/cross-file cases remain documented known misses. This is a regression signal for the bounded detector, not production accuracy, coverage, or a security certification.
+The local 0.4.0 release verification passed **489/489** tests in `npm run test:schemathesis`, with zero failures or skips and the required real engine available. The strict synthetic JS/TS corpus has 30 cases: 15 risky and 15 fixed; all 15 supported expected findings were observed with zero false positives or supported false negatives. These are scoped regression results, not production accuracy, whole-project coverage, or a security certification. See the [release verification](docs/release-0.4.0.md); earlier dated records retain their original counts.
 
 To reproduce the local checks:
 
 ```sh
-npm test
+node scripts/bootstrap-schemathesis.mjs
+node --test scripts/ci-verification.test.mjs
+npm run test:schemathesis
 npm run benchmark -- --strict
 ```
 
@@ -216,3 +231,7 @@ The implemented [checklist](docs/checklist.md), [0.4 guide](docs/preview-0.4.md)
 ## Contributing and license
 
 Add rules with vulnerable/fixed synthetic fixtures, evidence and limits, and a compatible license. See [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md). Wakeio Security CI is Apache-2.0; external scanners and rules keep their own licenses in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
+### AST workload selection
+
+Source scans support SDK `analysisProfile: 'default' | 'extended'`, CLI `--analysis-profile default|extended`, and Action input `analysis-profile`. Omission keeps the current default; extended requires source and selects four times the six workload caps while depth/alias/trace limits stay unchanged. Invalid Action selections are rejected before setup/install. No automatic retry or numeric override is provided. The `ast-work-v1` identity is recorded in reports and comparison scope; legacy missing identity is unverified. Completion, equivalent precision and RAM/time use are not guaranteed. See [source-flow budget contract](docs/source-flow.md#explicit-ast-workload-selection).

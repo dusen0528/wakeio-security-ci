@@ -11,6 +11,7 @@ permissions:
 jobs:
   package-and-local-action:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       # Keep the action checkout and the scanned checkout in separate paths.
       # This is also the shape used by a consumer that vendors a reviewed
@@ -29,11 +30,21 @@ jobs:
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: '22'
-      - name: Install and test package
+      - name: Set up Python 3.12.13
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12.13'
+      - name: Prepare version-pinned Schemathesis environment
+        timeout-minutes: 5
+        working-directory: wakeio-security-ci
+        run: node scripts/bootstrap-schemathesis.mjs
+      - name: Install and run required-engine package tests
+        timeout-minutes: 7
         working-directory: wakeio-security-ci
         run: |
-          npm ci --ignore-scripts
-          npm test
+          npm ci --ignore-scripts --no-audit --fund=false
+          node --test scripts/ci-verification.test.mjs
+          npm run test:schemathesis
       - name: Run local composite action
         id: scan
         uses: ./wakeio-security-ci

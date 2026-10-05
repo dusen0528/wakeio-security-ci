@@ -148,6 +148,7 @@ jobs:
 | `report.md` | 人が読むための範囲、候補、制限、修正の手がかり |
 | `report.json` | CI や比較処理で使う構造化結果 |
 | `report.sarif` | SARIF 2.1.0 対応のコードスキャン連携 |
+| `agent-report.json` | scan gate・finding/check・未検証の修正状態。[契約](docs/agent-report.md) |
 
 | 終了コード | 意味 |
 | --- | --- |
@@ -170,7 +171,9 @@ jobs:
 
 ## データ処理とネットワーク
 
-Wakeio はソースを Wakeio のサーバーへアップロードせず、LLM や telemetry も使いません。ソース検査はローカルで動きます。URL と API 検査では、ユーザーが明示した target に対してネットワーク GET を送ります。
+scan モードでは、Wakeio はソースを Wakeio のサーバーへアップロードせず、LLM や telemetry も使いません。ソース検査はローカルで動きます。URL と API 検査では、ユーザーが明示した target に対してネットワーク GET を送ります。
+
+実験的な別の [repair CLI](docs/repair-preview.md) は、明示的な同意と API 認証で Codex/Claude にコードを送信できます。モデル料金が発生する場合があります。固定した検証器と用意済み Docker image で private patch と検証記録のみを生成し、元の checkout を変更・commit しません。初期対応は宣言した SQL fixture に限定されます。
 
 外部エンジンを選択した場合は、そのエンジン固有の通信が発生します。OSV のオンライン検査では package identifier が公開 OSV サービスへ送られることがあり、Trivy は policy data を取得することがあります。`--osv-offline` は準備済みのローカル DB を要求し、オンラインへ自動 fallback しません。API credential は名前付き環境変数から読み取り、report に token や raw secret を書きません。
 

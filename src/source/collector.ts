@@ -28,6 +28,8 @@ const IGNORED_DIRECTORIES = new Set([
   ".svn",
   "node_modules",
   ".venv",
+  ".venv-schemathesis",
+  ".hypothesis",
   "venv",
   "__pycache__",
   ".pytest_cache",
@@ -67,7 +69,7 @@ const IGNORED_SCANNER_FILES = new Set([
   "osv-scanner.yml",
 ]);
 
-const IGNORED_OUTPUT_FILES = new Set(["report.json", "report.sarif", "report.md", "comparison.json", "comparison.md"]);
+const IGNORED_OUTPUT_FILES = new Set(["report.json", "report.sarif", "report.md", "agent-report.json", "comparison.json", "comparison.md"]);
 
 const CODE_EXTENSIONS = new Set([
   ".c",

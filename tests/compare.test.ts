@@ -1,3 +1,4 @@
+import { resolveAnalysisBudget } from '../src/source/analysis-budget.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { chmod, mkdir, mkdtemp, readFile, rm, writeFile, symlink } from 'node:fs/promises';
@@ -11,8 +12,8 @@ import type { Finding, CheckResult, ScanProvenance } from '../src/contracts.js';
 
 const finding = (line = 1): Finding => ({ ruleId: 'fixture:sql', title: 'Input reaches SQL', description: 'Candidate',
   severity: 'high', confidence: 'medium', kind: 'candidate', location: { path: 'app.ts', line }, remediation: 'Use parameters.' });
-const check = (findings: Finding[], status: CheckResult['status'] = 'completed'): CheckResult => ({ id: 'source.builtin-ast', findings, status, notes: [] });
-const scope = { fingerprint: 'a'.repeat(64), ruleset: 'test.1' };
+const check = (findings: Finding[], status: CheckResult['status'] = 'completed'): CheckResult => ({ id: 'source.builtin-ast', findings, status, notes: [], analysisBudget: resolveAnalysisBudget() });
+const scope = { fingerprint: 'a'.repeat(64), ruleset: 'test.1', analysisBudget: resolveAnalysisBudget() };
 const report = (findings: Finding[], status: CheckResult['status'] = 'completed') => createReport([check(findings, status)], 'source', new Date(), scope);
 
 test('report comparison preserves counts, stable IDs, new and changed finding gates', () => {

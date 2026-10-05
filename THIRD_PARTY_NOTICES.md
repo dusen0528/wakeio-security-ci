@@ -1,5 +1,20 @@
 # Third-party notices
 
+## Optional native preview and original rules
+
+The optional native preview invokes a separately supplied Opengrep core 1.30.0
+process; no engine binary is included in this package or downloaded at runtime.
+The engine's pinned [LGPL-2.1 license](https://github.com/opengrep/opengrep/blob/acf67b45c97c4b63626536605c77064ef536806d/LICENSE)
+and third-party distribution obligations remain separate from Wakeio's license.
+Official artifact hash verification is not publisher signature, reproducible
+build, or complete redistribution compliance verification.
+
+The four experimental SQL/command rules in `src/source/opengrep-rules.ts` are
+original Wakeio patterns, Copyright 2026 Wakeio Security CI contributors,
+licensed under this package's Apache-2.0 [LICENSE](LICENSE). They do not contain
+downloaded registry or restricted security rule content. Their embedded YAML
+is byte-identical to the frozen original pack. See [the preview contract](docs/native-preview.md).
+
 Wakeio Security CI does not vendor these executables in the repository. The
 installer downloads the exact upstream release asset for the three native
 engines when explicitly run or invoked by the Action, checks the hard-coded SHA-256 from the upstream release metadata,

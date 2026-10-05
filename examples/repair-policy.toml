@@ -1,0 +1,12 @@
+schema_version = 1
+profile = "sql_injection"
+files = ["query.py"]
+instructions = "Trace external input to SQL execution. Bind values as parameters, preserve normal reads, and return only the allowed file replacement. Never weaken verification or claim success."
+timeout_ms = 120000
+
+[verification]
+# REQUIRED: replace with a reviewed, already-present local image ID, not a tag.
+# This placeholder deliberately fails preflight. The package never pulls an image.
+image = "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+verifier = "repair-sql-verifier.py"
+verifier_sha256 = "09877493143999a626dedd1868853ae3ce9c0f58156696776bde28c951a1fc83"

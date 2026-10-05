@@ -1,5 +1,5 @@
 name: Wakeio Security CI
-description: Run local source and URL security checks and write JSON, SARIF, and Markdown reports
+description: Run local source and URL security checks and write JSON, SARIF, Markdown, and agent reports
 author: Wakeio Security CI contributors
 
 inputs:
@@ -20,13 +20,17 @@ inputs:
     required: false
     default: ''
   out:
-    description: Directory for report.json, report.sarif, report.md, and Action status
+    description: Directory for report.json, report.sarif, report.md, agent-report.json, and Action status
     required: false
     default: wakeio-security-reports
   tools:
     description: Comma-separated source scanner set, or none
     required: false
     default: gitleaks,osv,trivy
+  analysis-profile:
+    description: Versioned AST workload preset, default or extended (extended requires source)
+    required: false
+    default: default
   fail-on:
     description: Severity threshold for findings (none disables finding failure only)
     required: false
@@ -73,8 +77,11 @@ outputs:
   report-markdown:
     description: Absolute Markdown report path
     value: ${{ steps.wakeio-run.outputs.report-markdown }}
+  report-agent:
+    description: Agent report path when bound to this run's fresh report.json; empty when unavailable, not a final CI success receipt
+    value: ${{ steps.wakeio-run.outputs.report-agent }}
   exit-code:
-    description: Scanner exit code (0 clean, 1 threshold findings, 2 incomplete/setup failure)
+    description: Action exit code (0 completed checked scope without threshold failure, 1 threshold findings, 2 incomplete/setup/delivery failure)
     value: ${{ steps.wakeio-run.outputs.exit-code }}
   finding-count:
     description: Number of findings in report.json
@@ -92,6 +99,17 @@ outputs:
 runs:
   using: composite
   steps:
+    - name: Validate AST analysis profile
+      shell: bash
+      env:
+        WAKEIO_SOURCE: ${{ inputs.source }}
+        WAKEIO_ANALYSIS_PROFILE: ${{ inputs.analysis-profile }}
+      run: |
+        case "$WAKEIO_ANALYSIS_PROFILE" in
+          default) ;;
+          extended) [[ "$WAKEIO_SOURCE" =~ [^[:space:]] ]] || { echo 'extended analysis-profile requires source' >&2; exit 2; } ;;
+          *) echo 'analysis-profile must be default or extended' >&2; exit 2 ;;
+        esac
     - name: Set up Node.js 22
       uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
       with:
@@ -102,6 +120,7 @@ runs:
       env:
         WAKEIO_ACTION_PATH: ${{ github.action_path }}
         WAKEIO_SOURCE: ${{ inputs.source }}
+        WAKEIO_ANALYSIS_PROFILE: ${{ inputs.analysis-profile }}
         WAKEIO_URL: ${{ inputs.url }}
         WAKEIO_PAGES: ${{ inputs.pages }}
         WAKEIO_API_POLICY: ${{ inputs.api-policy }}

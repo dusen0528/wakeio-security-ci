@@ -1,7 +1,8 @@
 #!/usr/bin/env node
+import { resolveAnalysisBudget } from './source/analysis-budget.js';
 import { realpathSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { resolve } from "node:path";
+import { isAbsolute, resolve } from "node:path";
 import type { Mode, ScanScope, SourceOptions, ToolName, UrlOptions } from "./contracts.js";
 import { runSource } from "./source.js";
 import { runUrl } from "./url.js";
@@ -13,11 +14,13 @@ import { DEFAULT_TOOL_TIMEOUT_MS, MAX_TOOL_TIMEOUT_MS } from "./source/process.j
 import { buildScanScope, validateProjectId } from "./scan-scope.js";
 import { doctorMain } from "./doctor.js";
 import { initMain } from "./init.js";
+import { repairMain } from "./repair.js";
 
 const SEVERITY_VALUES = new Set(["critical", "high", "medium", "low", "info", "none"] as const);
 const TOOL_VALUES = new Set<ToolName>(["gitleaks", "osv", "trivy", "bandit"]);
 
 export interface CliOptions {
+  analysisProfile?: SourceOptions['analysisProfile'];
   source?: string;
   url?: string;
   projectId?: string;
@@ -31,6 +34,7 @@ export interface CliOptions {
   timeoutMs: number;
   osvOffline: boolean;
   toolPaths: Partial<Record<ToolName, string>>;
+  nativePreview?: { executable: string };
 }
 
 export class CliUsageError extends Error {
@@ -48,12 +52,15 @@ export const USAGE = `Usage:
   wakeio-security-ci compare --before report.json --after report.json --out DIR [--fail-on LEVEL]
   wakeio-security-ci doctor [--source DIR] [--tools ...] [--json] [--strict]
   wakeio-security-ci init [--source DIR] [--workflow FILE] [--out DIR] [--tools ...]
+  wakeio-security-ci repair --source DIR --policy FILE --out NEW_DIR --proposal FILE
+  wakeio-security-ci repair --help
 
 Options:
   --out DIR                    Report directory (default: wakeio-security-reports)
   --tools gitleaks,osv,trivy   External source scanners (default: all three)
   --tools bandit               Optional Python SAST (install Bandit separately)
   --tools none                 Run built-in source checks only
+  --analysis-profile PROFILE   default|extended AST workload (source only; default: default)
   --fail-on LEVEL              critical|high|medium|low|info|none (default: high)
   --api-policy FILE            Explicit read-only API authorization policy JSON
   --project-id ID              Logical repository identity for cross-checkout comparison
@@ -66,6 +73,7 @@ Options:
   --osv PATH                   OSV-Scanner executable
   --trivy PATH                 Trivy executable
   --bandit PATH                Bandit executable
+  --opengrep-core ABS_PATH     Explicit pinned Darwin arm64 native preview (BYO)
   --help                       Show this help
 `;
 
@@ -164,6 +172,10 @@ export function parseCliArgs(argv: readonly string[]): CliOptions | { help: true
     else if ((value = valueFlag("--max-pages")) !== undefined) options.maxPages = parsePageLimit(value);
     else if ((value = valueFlag("--api-policy")) !== undefined) options.apiPolicy = value;
     else if ((value = valueFlag("--out")) !== undefined) options.outDir = value;
+    else if ((value = valueFlag('--analysis-profile')) !== undefined) {
+      try { options.analysisProfile = resolveAnalysisBudget(value).requestedProfile; }
+      catch { throw new CliUsageError('--analysis-profile must be default or extended'); }
+    }
     else if ((value = valueFlag("--tools")) !== undefined) options.tools = parseTools(value);
     else if ((value = valueFlag("--fail-on")) !== undefined) {
       if (!SEVERITY_VALUES.has(value as never)) throw new CliUsageError("--fail-on must be critical, high, medium, low, info, or none");
@@ -173,6 +185,10 @@ export function parseCliArgs(argv: readonly string[]): CliOptions | { help: true
     else if ((value = valueFlag("--osv")) !== undefined) options.toolPaths.osv = value;
     else if ((value = valueFlag("--trivy")) !== undefined) options.toolPaths.trivy = value;
     else if ((value = valueFlag("--bandit")) !== undefined) options.toolPaths.bandit = value;
+    else if ((value = valueFlag('--opengrep-core')) !== undefined) {
+      if (!isAbsolute(value) || value.includes('\0')) throw new CliUsageError('--opengrep-core requires an absolute executable path');
+      options.nativePreview = { executable: value };
+    }
     else if (arg === "--allow-private") {
       if (seen.has(arg)) throw new CliUsageError(`${arg} may only be specified once`);
       seen.add(arg);
@@ -191,6 +207,8 @@ export function parseCliArgs(argv: readonly string[]): CliOptions | { help: true
   if (options.maxPages !== undefined && !options.url) throw new CliUsageError("--max-pages requires --url");
   if (options.allowPrivate && !options.url && !options.apiPolicy) throw new CliUsageError("--allow-private requires URL or API mode");
   if (options.osvOffline && !options.source) throw new CliUsageError("--osv-offline requires source mode");
+  if (options.analysisProfile !== undefined && !options.source) throw new CliUsageError('--analysis-profile requires source mode');
+  if (options.nativePreview && !options.source) throw new CliUsageError('--opengrep-core requires source mode');
   return options;
 }
 
@@ -240,12 +258,14 @@ async function declaredScope(options: CliOptions, apiPolicy: ApiPolicy | undefin
   return buildScanScope({
     mode: modeFor(options),
     source: options.source,
+    analysisProfile: options.analysisProfile,
     url: options.url,
     projectId: options.projectId,
     tools: options.source ? options.tools : [],
     // Tool paths are used only to resolve/hash the selected executable in
     // provenance. They are intentionally excluded from the stable scope.
     toolPaths: options.source ? options.toolPaths : {},
+    nativePreview: options.nativePreview,
     allowPrivate: options.allowPrivate,
     timeoutMs: options.timeoutMs,
     osvOffline: options.osvOffline,
@@ -256,11 +276,12 @@ async function declaredScope(options: CliOptions, apiPolicy: ApiPolicy | undefin
   });
 }
 
-/** Executes a scan and writes the three contract reports when scanning starts. */
+/** Executes a scan and writes public reports when scanning starts. */
 export async function main(argv: readonly string[] = process.argv.slice(2)): Promise<number> {
   if (argv[0] === 'compare') return runComparison(argv);
   if (argv[0] === 'doctor') return doctorMain(argv);
   if (argv[0] === 'init') return initMain(argv);
+  if (argv[0] === 'repair') return repairMain(argv);
   let parsed: CliOptions | { help: true };
   try {
     parsed = parseCliArgs(argv);
@@ -273,6 +294,10 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
     process.stdout.write(USAGE);
     return 0;
   }
+  const controller = parsed.nativePreview ? new AbortController() : undefined;
+  const cancel = (): void => controller?.abort();
+  if (controller) { process.on('SIGINT', cancel); process.on('SIGTERM', cancel); }
+  try {
   const startedAt = new Date().toISOString();
   const mode = modeFor(parsed);
   process.stderr.write(`Wakeio: scanning ${mode === "both" ? "source and URL" : mode} scope...\n`);
@@ -288,11 +313,14 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
   if (parsed.source) {
     const sourceOptions: SourceOptions = {
       root: parsed.source,
+      analysisProfile: parsed.analysisProfile,
       tools: parsed.tools,
       toolPaths: parsed.toolPaths,
       timeoutMs: parsed.timeoutMs,
       osvOffline: parsed.osvOffline,
       outDir: parsed.outDir,
+      nativePreview: parsed.nativePreview,
+      signal: controller?.signal,
     };
     try {
       checks.push(...await runSource(sourceOptions));
@@ -300,7 +328,7 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
       checks.push(runtimeErrorCheck("source.runtime", "Source scanning could not be completed."));
     }
   }
-  if (parsed.url) {
+  if (parsed.url && !controller?.signal.aborted) {
     const urlOptions: UrlOptions = {
       url: parsed.url,
       pages: parsed.pages,
@@ -314,16 +342,25 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
       checks.push(runtimeErrorCheck("url.runtime", "URL scanning could not be completed."));
     }
   }
-  if (apiPolicy) {
+  if (apiPolicy && !controller?.signal.aborted) {
     try {
-      checks.push(...await runApiPolicy({ policy: apiPolicy, allowPrivate: parsed.allowPrivate, timeoutMs: parsed.timeoutMs }));
+      checks.push(...await runApiPolicy({ policy: apiPolicy, allowPrivate: parsed.allowPrivate, timeoutMs: parsed.timeoutMs, signal: controller?.signal }));
     } catch {
       checks.push(runtimeErrorCheck('api.runtime', 'API authorization scanning could not be completed.'));
     }
   }
-  const report = createReport(checks, mode, startedAt, await declaredScope(parsed, apiPolicy));
+  const scope = await declaredScope(parsed, apiPolicy);
+  const markCancelled = (): void => {
+    if (controller?.signal.aborted && !checks.some((check) => check.id === 'scan.cancelled')) checks.push({ id: 'scan.cancelled', status: 'partial', findings: [], notes: ['The command was cancelled; completed stages do not establish command completion.'] });
+  };
+  markCancelled();
+  let report = createReport(checks, mode, startedAt, scope);
   try {
-    await writeReports(report, parsed.outDir);
+    await writeReports(report, parsed.outDir, { failOn: parsed.failOn });
+    if (controller?.signal.aborted && !report.checks.some((check) => check.id === 'scan.cancelled')) {
+      markCancelled(); report = createReport(checks, mode, startedAt, scope);
+      await writeReports(report, parsed.outDir, { failOn: parsed.failOn });
+    }
   } catch {
     process.stderr.write("Error: report files could not be written.\n");
     return 2;
@@ -344,11 +381,14 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
     `Findings: ${findings.length} (${levels.map((level) => `${level} ${findings.filter((finding) => finding.severity === level).length}`).join(", ")})`,
     outcome,
     ...(parsed.failOn === "none" ? ["Finding threshold disabled (--fail-on none); incomplete scans still fail."] : []),
-    `Reports: ${JSON.stringify(resolve(parsed.outDir))} (report.json, report.sarif, report.md)`,
+    `Reports: ${JSON.stringify(resolve(parsed.outDir))} (report.json, report.sarif, report.md, agent-report.json)`,
     "Scope details and limitations are recorded in report.md.",
     "",
   ].join("\n"));
   return code;
+  } finally {
+    if (controller) { process.removeListener('SIGINT', cancel); process.removeListener('SIGTERM', cancel); }
+  }
 }
 
 function canonicalFile(path: string): string {

@@ -456,7 +456,7 @@ export function renderMarkdown(report) {
     "",
     "## Interpretation",
     "",
-    "Default benchmark execution is successful when all fixtures were measured, even when supported false positives or false negatives exist. `--strict` turns those supported regressions into exit code 1. Known cross-function and cross-file misses remain visible above and are excluded from the supported recall denominator.",
+    "Default benchmark execution is successful when all fixtures were measured, even when supported false positives or false negatives exist. `--strict` turns those supported regressions into exit code 1. Any expectations explicitly labelled known_miss remain separate from supported recall. The current v2 corpus promotes its two historical local/relative-module SQL misses to supported expectations; strict mode includes them. Archived baseline reports retain their original labels and denominators.",
     "",
   ];
   return lines.join("\n");
