@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+- Resolve static script/module collection against the first HTML document base,
+  decode explicit BOM/header/early-meta encodings, retain partial findings on
+  bounded parser failure, and preserve scan reports after SIGINT/SIGTERM.
+- Add opt-in exact known-canary matching across bounded JSON value positions,
+  retaining actor/owner controls and incomplete outcomes on malformed/over-limit
+  responses. Ship owned A/B/admin/two-tenant fixtures with verified cleanup.
+- Compile explicit allowlisted OpenAPI GET selections and caller-supplied path
+  values into the existing API v2 policy executor. No remote refs, new transport,
+  arbitrary payload generation, real staging connection or mutation is added.
+- Gate a repeated positive/safe/error loopback corpus and extracted npm consumer;
+  report scoped configuration coverage, request counts and elapsed time.
+- Ruleset `2026-10-06.2`; the npm version remains 0.4.0 pending a separate release.
 - Replace the URL secret-assignment prefix search with consuming token matching,
   retaining literal detection/redaction while avoiding quadratic failed matches
   on long hyphenated input or whitespace. Add bounded subprocess regression

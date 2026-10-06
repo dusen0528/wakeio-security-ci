@@ -45,6 +45,10 @@ jobs:
           npm ci --ignore-scripts --no-audit --fund=false
           node --test scripts/ci-verification.test.mjs
           npm run test:schemathesis
+      - name: Gate owned loopback DAST task coverage
+        timeout-minutes: 2
+        working-directory: wakeio-security-ci
+        run: node examples/dast-owned-corpus.mjs
       - name: Run local composite action
         id: scan
         uses: ./wakeio-security-ci

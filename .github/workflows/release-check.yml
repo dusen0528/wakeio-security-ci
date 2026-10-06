@@ -42,6 +42,10 @@ jobs:
           node --test scripts/ci-verification.test.mjs
           npm run test:schemathesis
 
+      - name: Gate owned loopback DAST task coverage
+        timeout-minutes: 2
+        run: node examples/dast-owned-corpus.mjs
+
       - name: Run supported benchmark corpus in strict mode
         timeout-minutes: 3
         run: npm run benchmark -- --strict

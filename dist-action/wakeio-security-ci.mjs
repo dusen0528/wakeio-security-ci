@@ -142,7 +142,7 @@ var require_typescript = __commonJS({
         ModifierFlags: () => ModifierFlags,
         ModuleDetectionKind: () => ModuleDetectionKind,
         ModuleInstanceState: () => ModuleInstanceState,
-        ModuleKind: () => ModuleKind3,
+        ModuleKind: () => ModuleKind2,
         ModuleResolutionKind: () => ModuleResolutionKind,
         ModuleSpecifierEnding: () => ModuleSpecifierEnding,
         NavigateTo: () => ts_NavigateTo_exports,
@@ -2225,7 +2225,7 @@ var require_typescript = __commonJS({
         transformTypeScript: () => transformTypeScript,
         transpile: () => transpile,
         transpileDeclaration: () => transpileDeclaration,
-        transpileModule: () => transpileModule2,
+        transpileModule: () => transpileModule,
         transpileOptionValueCompilerOptions: () => transpileOptionValueCompilerOptions,
         tryAddToSet: () => tryAddToSet,
         tryAndIgnoreErrors: () => tryAndIgnoreErrors,
@@ -6895,23 +6895,23 @@ ${lanes.join("\n")}
         PollingWatchKind3[PollingWatchKind3["FixedChunkSize"] = 3] = "FixedChunkSize";
         return PollingWatchKind3;
       })(PollingWatchKind || {});
-      var ModuleKind3 = /* @__PURE__ */ ((ModuleKind32) => {
-        ModuleKind32[ModuleKind32["None"] = 0] = "None";
-        ModuleKind32[ModuleKind32["CommonJS"] = 1] = "CommonJS";
-        ModuleKind32[ModuleKind32["AMD"] = 2] = "AMD";
-        ModuleKind32[ModuleKind32["UMD"] = 3] = "UMD";
-        ModuleKind32[ModuleKind32["System"] = 4] = "System";
-        ModuleKind32[ModuleKind32["ES2015"] = 5] = "ES2015";
-        ModuleKind32[ModuleKind32["ES2020"] = 6] = "ES2020";
-        ModuleKind32[ModuleKind32["ES2022"] = 7] = "ES2022";
-        ModuleKind32[ModuleKind32["ESNext"] = 99] = "ESNext";
-        ModuleKind32[ModuleKind32["Node16"] = 100] = "Node16";
-        ModuleKind32[ModuleKind32["Node18"] = 101] = "Node18";
-        ModuleKind32[ModuleKind32["Node20"] = 102] = "Node20";
-        ModuleKind32[ModuleKind32["NodeNext"] = 199] = "NodeNext";
-        ModuleKind32[ModuleKind32["Preserve"] = 200] = "Preserve";
-        return ModuleKind32;
-      })(ModuleKind3 || {});
+      var ModuleKind2 = /* @__PURE__ */ ((ModuleKind3) => {
+        ModuleKind3[ModuleKind3["None"] = 0] = "None";
+        ModuleKind3[ModuleKind3["CommonJS"] = 1] = "CommonJS";
+        ModuleKind3[ModuleKind3["AMD"] = 2] = "AMD";
+        ModuleKind3[ModuleKind3["UMD"] = 3] = "UMD";
+        ModuleKind3[ModuleKind3["System"] = 4] = "System";
+        ModuleKind3[ModuleKind3["ES2015"] = 5] = "ES2015";
+        ModuleKind3[ModuleKind3["ES2020"] = 6] = "ES2020";
+        ModuleKind3[ModuleKind3["ES2022"] = 7] = "ES2022";
+        ModuleKind3[ModuleKind3["ESNext"] = 99] = "ESNext";
+        ModuleKind3[ModuleKind3["Node16"] = 100] = "Node16";
+        ModuleKind3[ModuleKind3["Node18"] = 101] = "Node18";
+        ModuleKind3[ModuleKind3["Node20"] = 102] = "Node20";
+        ModuleKind3[ModuleKind3["NodeNext"] = 199] = "NodeNext";
+        ModuleKind3[ModuleKind3["Preserve"] = 200] = "Preserve";
+        return ModuleKind3;
+      })(ModuleKind2 || {});
       var JsxEmit = /* @__PURE__ */ ((JsxEmit3) => {
         JsxEmit3[JsxEmit3["None"] = 0] = "None";
         JsxEmit3[JsxEmit3["Preserve"] = 1] = "Preserve";
@@ -57283,7 +57283,7 @@ ${lanes.join("\n")}
               }
               const symbol = symbolFromModule && symbolFromVariable && symbolFromModule !== symbolFromVariable ? combineValueAndTypeSymbols(symbolFromVariable, symbolFromModule) : symbolFromModule || symbolFromVariable;
               if (isImportOrExportSpecifier(specifier) && isOnlyImportableAsDefault(moduleSpecifier, moduleSymbol) && nameText !== "default") {
-                error2(name, Diagnostics.Named_imports_from_a_JSON_file_into_an_ECMAScript_module_are_not_allowed_when_module_is_set_to_0, ModuleKind3[moduleKind]);
+                error2(name, Diagnostics.Named_imports_from_a_JSON_file_into_an_ECMAScript_module_are_not_allowed_when_module_is_set_to_0, ModuleKind2[moduleKind]);
               } else if (!symbol) {
                 errorNoModuleMemberSymbol(moduleSymbol, targetSymbol, node, name);
               }
@@ -95678,7 +95678,7 @@ ${lanes.join("\n")}
         }
         function checkClassNameCollisionWithObject(name) {
           if (languageVersion >= 1 && name.escapedText === "Object" && host.getEmitModuleFormatOfFile(getSourceFileOfNode(name)) < 5) {
-            error2(name, Diagnostics.Class_name_cannot_be_Object_when_targeting_ES5_and_above_with_module_0, ModuleKind3[moduleKind]);
+            error2(name, Diagnostics.Class_name_cannot_be_Object_when_targeting_ES5_and_above_with_module_0, ModuleKind2[moduleKind]);
           }
         }
         function checkUnmatchedJSDocParameters(node) {
@@ -97219,7 +97219,7 @@ ${lanes.join("\n")}
                 }
               }
               if (!importClause.isTypeOnly && 101 <= moduleKind && moduleKind <= 199 && isOnlyImportableAsDefault(node.moduleSpecifier, resolvedModule) && !hasTypeJsonImportAttribute(node)) {
-                error2(node.moduleSpecifier, Diagnostics.Importing_a_JSON_file_into_an_ECMAScript_module_requires_a_type_Colon_json_import_attribute_when_module_is_set_to_0, ModuleKind3[moduleKind]);
+                error2(node.moduleSpecifier, Diagnostics.Importing_a_JSON_file_into_an_ECMAScript_module_requires_a_type_Colon_json_import_attribute_when_module_is_set_to_0, ModuleKind2[moduleKind]);
               }
             } else if (noUncheckedSideEffectImports && !importClause) {
               void resolveExternalModuleName(node, node.moduleSpecifier);
@@ -138503,8 +138503,8 @@ ${lanes.join("\n")}
           if (moduleResolution === 100 && !emitModuleKindIsNonNodeESM(moduleKind) && moduleKind !== 200) {
             createOptionValueDiagnostic("moduleResolution", Diagnostics.Option_0_can_only_be_used_when_module_is_set_to_preserve_or_to_es2015_or_later, "bundler");
           }
-          if (ModuleKind3[moduleKind] && (100 <= moduleKind && moduleKind <= 199) && !(3 <= moduleResolution && moduleResolution <= 99)) {
-            const moduleKindName = ModuleKind3[moduleKind];
+          if (ModuleKind2[moduleKind] && (100 <= moduleKind && moduleKind <= 199) && !(3 <= moduleResolution && moduleResolution <= 99)) {
+            const moduleKindName = ModuleKind2[moduleKind];
             const moduleResolutionName = ModuleResolutionKind[moduleKindName] ? moduleKindName : "Node16";
             createOptionValueDiagnostic("moduleResolution", Diagnostics.Option_moduleResolution_must_be_set_to_0_or_left_unspecified_when_option_module_is_set_to_1, moduleResolutionName, moduleKindName);
           } else if (ModuleResolutionKind[moduleResolution] && (3 <= moduleResolution && moduleResolution <= 99) && !(100 <= moduleKind && moduleKind <= 199)) {
@@ -155118,7 +155118,7 @@ ${lanes.join("\n")}
       var optionsRedundantWithVerbatimModuleSyntax = /* @__PURE__ */ new Set([
         "isolatedModules"
       ]);
-      function transpileModule2(input, transpileOptions) {
+      function transpileModule(input, transpileOptions) {
         return transpileWorker(
           input,
           transpileOptions,
@@ -155272,7 +155272,7 @@ interface Symbol {
         return { outputText, diagnostics, sourceMapText };
       }
       function transpile(input, compilerOptions, fileName, diagnostics, moduleName) {
-        const output = transpileModule2(input, { compilerOptions, fileName, reportDiagnostics: !!diagnostics, moduleName });
+        const output = transpileModule(input, { compilerOptions, fileName, reportDiagnostics: !!diagnostics, moduleName });
         addRange(diagnostics, output.diagnostics);
         return output.outputText;
       }
@@ -195645,7 +195645,7 @@ ${options.prefix}` : "\n" : options.prefix
         ModifierFlags: () => ModifierFlags,
         ModuleDetectionKind: () => ModuleDetectionKind,
         ModuleInstanceState: () => ModuleInstanceState,
-        ModuleKind: () => ModuleKind3,
+        ModuleKind: () => ModuleKind2,
         ModuleResolutionKind: () => ModuleResolutionKind,
         ModuleSpecifierEnding: () => ModuleSpecifierEnding,
         NavigateTo: () => ts_NavigateTo_exports,
@@ -197728,7 +197728,7 @@ ${options.prefix}` : "\n" : options.prefix
         transformTypeScript: () => transformTypeScript,
         transpile: () => transpile,
         transpileDeclaration: () => transpileDeclaration,
-        transpileModule: () => transpileModule2,
+        transpileModule: () => transpileModule,
         transpileOptionValueCompilerOptions: () => transpileOptionValueCompilerOptions,
         tryAddToSet: () => tryAddToSet,
         tryAndIgnoreErrors: () => tryAndIgnoreErrors,
@@ -198750,23 +198750,23 @@ ${options.prefix}` : "\n" : options.prefix
         JsxEmit3["ReactJSXDev"] = "react-jsxdev";
         return JsxEmit3;
       })(JsxEmit2 || {});
-      var ModuleKind22 = /* @__PURE__ */ ((ModuleKind32) => {
-        ModuleKind32["None"] = "none";
-        ModuleKind32["CommonJS"] = "commonjs";
-        ModuleKind32["AMD"] = "amd";
-        ModuleKind32["UMD"] = "umd";
-        ModuleKind32["System"] = "system";
-        ModuleKind32["ES6"] = "es6";
-        ModuleKind32["ES2015"] = "es2015";
-        ModuleKind32["ES2020"] = "es2020";
-        ModuleKind32["ES2022"] = "es2022";
-        ModuleKind32["ESNext"] = "esnext";
-        ModuleKind32["Node16"] = "node16";
-        ModuleKind32["Node18"] = "node18";
-        ModuleKind32["Node20"] = "node20";
-        ModuleKind32["NodeNext"] = "nodenext";
-        ModuleKind32["Preserve"] = "preserve";
-        return ModuleKind32;
+      var ModuleKind22 = /* @__PURE__ */ ((ModuleKind3) => {
+        ModuleKind3["None"] = "none";
+        ModuleKind3["CommonJS"] = "commonjs";
+        ModuleKind3["AMD"] = "amd";
+        ModuleKind3["UMD"] = "umd";
+        ModuleKind3["System"] = "system";
+        ModuleKind3["ES6"] = "es6";
+        ModuleKind3["ES2015"] = "es2015";
+        ModuleKind3["ES2020"] = "es2020";
+        ModuleKind3["ES2022"] = "es2022";
+        ModuleKind3["ESNext"] = "esnext";
+        ModuleKind3["Node16"] = "node16";
+        ModuleKind3["Node18"] = "node18";
+        ModuleKind3["Node20"] = "node20";
+        ModuleKind3["NodeNext"] = "nodenext";
+        ModuleKind3["Preserve"] = "preserve";
+        return ModuleKind3;
       })(ModuleKind22 || {});
       var ModuleResolutionKind2 = /* @__PURE__ */ ((ModuleResolutionKind3) => {
         ModuleResolutionKind3["Classic"] = "classic";
@@ -229320,38 +229320,49 @@ function analyzeCsp(values) {
 
 // build/src/url-modules.js
 var ts11 = __toESM(require_typescript(), 1);
+var MAX_MODULE_AST_NODES = 2e5;
+var MAX_MODULE_TEXT_LENGTH = 2 * 1024 * 1024;
 function scanModuleReferences(text2) {
-  const source = ts11.createSourceFile("remote-module.js", text2, ts11.ScriptTarget.Latest, true, ts11.ScriptKind.JS);
-  const parsed = ts11.transpileModule(text2, {
-    fileName: "remote-module.js",
-    compilerOptions: { target: ts11.ScriptTarget.ES2022, module: ts11.ModuleKind.ESNext },
-    reportDiagnostics: true
-  });
-  const staticReferences = [];
-  let dynamicImports = 0;
-  let computedImports = 0;
-  const visit = (node) => {
-    if (ts11.isImportDeclaration(node) && ts11.isStringLiteral(node.moduleSpecifier)) {
-      staticReferences.push({ specifier: node.moduleSpecifier.text, kind: "import" });
-    } else if (ts11.isExportDeclaration(node) && node.moduleSpecifier && ts11.isStringLiteral(node.moduleSpecifier)) {
-      staticReferences.push({ specifier: node.moduleSpecifier.text, kind: "export" });
-    } else if (ts11.isImportEqualsDeclaration(node) && ts11.isExternalModuleReference(node.moduleReference) && ts11.isStringLiteral(node.moduleReference.expression)) {
-      staticReferences.push({ specifier: node.moduleReference.expression.text, kind: "import" });
-    } else if (ts11.isCallExpression(node) && node.expression.kind === ts11.SyntaxKind.ImportKeyword) {
-      dynamicImports += 1;
-      const argument = node.arguments[0];
-      if (!argument || !ts11.isStringLiteral(argument))
-        computedImports += 1;
+  const result2 = { staticReferences: [], dynamicImports: 0, computedImports: 0, parseDiagnostics: 0 };
+  if (text2.length > MAX_MODULE_TEXT_LENGTH)
+    return { ...result2, incompleteReason: "ast_limit" };
+  try {
+    const source = ts11.createSourceFile("remote-module.js", text2, ts11.ScriptTarget.Latest, false, ts11.ScriptKind.JS);
+    const diagnostics = source.parseDiagnostics;
+    result2.parseDiagnostics = Array.isArray(diagnostics) ? diagnostics.length : 1;
+    const pending = [source];
+    let scheduled = 1;
+    while (pending.length > 0) {
+      const node = pending.pop();
+      if (ts11.isImportDeclaration(node) && ts11.isStringLiteral(node.moduleSpecifier)) {
+        result2.staticReferences.push({ specifier: node.moduleSpecifier.text, kind: "import" });
+      } else if (ts11.isExportDeclaration(node) && node.moduleSpecifier && ts11.isStringLiteral(node.moduleSpecifier)) {
+        result2.staticReferences.push({ specifier: node.moduleSpecifier.text, kind: "export" });
+      } else if (ts11.isImportEqualsDeclaration(node) && ts11.isExternalModuleReference(node.moduleReference) && ts11.isStringLiteral(node.moduleReference.expression)) {
+        result2.staticReferences.push({ specifier: node.moduleReference.expression.text, kind: "import" });
+      } else if (ts11.isCallExpression(node) && node.expression.kind === ts11.SyntaxKind.ImportKeyword) {
+        result2.dynamicImports += 1;
+        const argument = node.arguments[0];
+        if (!argument || !ts11.isStringLiteral(argument))
+          result2.computedImports += 1;
+      }
+      const children = [];
+      ts11.forEachChild(node, (child) => {
+        if (scheduled >= MAX_MODULE_AST_NODES) {
+          result2.incompleteReason = "ast_limit";
+          return true;
+        }
+        scheduled += 1;
+        children.push(child);
+        return void 0;
+      });
+      for (let index = children.length - 1; index >= 0; index -= 1)
+        pending.push(children[index]);
     }
-    ts11.forEachChild(node, visit);
-  };
-  visit(source);
-  return {
-    staticReferences,
-    dynamicImports,
-    computedImports,
-    parseDiagnostics: parsed.diagnostics?.length ?? 0
-  };
+  } catch {
+    result2.incompleteReason = "parser_failure";
+  }
+  return result2;
 }
 
 // build/src/url-secret-assignments.js
@@ -229380,6 +229391,85 @@ function* scanSecretAssignments(text2) {
       continue;
     names.lastIndex = literal.lastIndex;
     yield { 0: text2.slice(name.index, literal.lastIndex), index: name.index };
+  }
+}
+
+// build/src/url-decoding.js
+var META_PRESCAN_BYTES = 1024;
+var MAX_CHARSET_LENGTH = 64;
+function charsetParameter(value) {
+  const parameters = value.split(";").slice(1);
+  const declarations = parameters.filter((part) => /^\s*charset(?:\s|=|$)/i.test(part));
+  if (declarations.length === 0)
+    return void 0;
+  const match = /^\s*charset\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"']+))\s*$/i.exec(declarations[0]);
+  return { label: match?.[1] ?? match?.[2] ?? match?.[3] ?? "", malformed: !match || declarations.length > 1 };
+}
+function metaCharset(body) {
+  const prefix = Buffer.from(body.subarray(0, META_PRESCAN_BYTES)).toString("latin1");
+  const document = parse(prefix);
+  const pending = [document];
+  while (pending.length > 0) {
+    const node = pending.pop();
+    if (node.tagName === "meta") {
+      const attr2 = (name) => node.attrs?.find((entry) => entry.name === name)?.value;
+      const charset = attr2("charset");
+      if (charset !== void 0)
+        return { label: charset };
+      if (attr2("http-equiv")?.trim().toLowerCase() === "content-type") {
+        const declaration = charsetParameter(attr2("content") ?? "");
+        if (declaration)
+          return declaration;
+      }
+    }
+    for (let index = (node.childNodes?.length ?? 0) - 1; index >= 0; index -= 1)
+      pending.push(node.childNodes[index]);
+  }
+  return void 0;
+}
+function decodeUrlText(body, contentType, kind) {
+  const notes = [];
+  let declaration;
+  let declaredByMeta = false;
+  if (kind === "module" || body[0] === 239 && body[1] === 187 && body[2] === 191)
+    declaration = { label: "utf-8" };
+  else if (body[0] === 255 && body[1] === 254 && body[2] === 0 && body[3] === 0 || body[0] === 0 && body[1] === 0 && body[2] === 254 && body[3] === 255)
+    declaration = { label: "utf-32" };
+  else if (body[0] === 255 && body[1] === 254)
+    declaration = { label: "utf-16le" };
+  else if (body[0] === 254 && body[1] === 255)
+    declaration = { label: "utf-16be" };
+  else {
+    declaration = charsetParameter(contentType ?? "");
+    if (!declaration && kind === "html") {
+      try {
+        declaration = metaCharset(body);
+        declaredByMeta = declaration !== void 0;
+      } catch {
+        notes.push("The bounded HTML encoding prescan failed; text coverage may be incomplete.");
+      }
+    }
+  }
+  let label = declaration?.label.trim() ?? "utf-8";
+  let decoder;
+  try {
+    if (declaration?.malformed || !label || label.length > MAX_CHARSET_LENGTH)
+      throw new RangeError("invalid charset");
+    decoder = new TextDecoder(label, { fatal: true });
+    if (declaredByMeta && (decoder.encoding === "utf-16le" || decoder.encoding === "utf-16be")) {
+      label = "utf-8";
+      decoder = new TextDecoder(label, { fatal: true });
+    }
+  } catch {
+    notes.push("An unsupported or malformed character encoding was declared; UTF-8 fallback text coverage may be incomplete.");
+    label = "utf-8";
+    decoder = new TextDecoder(label, { fatal: true });
+  }
+  try {
+    return { text: decoder.decode(body), notes };
+  } catch {
+    notes.push("Malformed byte sequences were replaced while decoding collected text; text coverage may be incomplete.");
+    return { text: new TextDecoder(label, { fatal: false }).decode(body), notes };
   }
 }
 
@@ -229488,9 +229578,17 @@ function firstHeader(headers, name) {
   return headerValues3(headers, name)[0];
 }
 function textFromNode(node) {
-  if (node.value !== void 0)
-    return node.value;
-  return (node.childNodes ?? []).map(textFromNode).join("");
+  const parts = [];
+  const pending = [node];
+  while (pending.length > 0) {
+    const current = pending.pop();
+    if (current.value !== void 0)
+      parts.push(current.value);
+    else
+      for (let index = (current.childNodes?.length ?? 0) - 1; index >= 0; index -= 1)
+        pending.push(current.childNodes[index]);
+  }
+  return parts.join("");
 }
 function attr(node, name) {
   return (node.attrs ?? []).find((entry) => entry.name.toLowerCase() === name.toLowerCase());
@@ -229901,22 +229999,39 @@ function inspectHtml(state, html, pageUrl) {
   const resources = [];
   const documentStarts = lineStarts2(html);
   let document;
+  let baseUrl = pageUrl;
+  let baseSeen = false;
   try {
     document = parse(html, { sourceCodeLocationInfo: true });
   } catch {
     addNote(state, "HTML parsing failed; content collection is incomplete.");
-    return { scripts, moduleScans: [] };
+    return { scripts, moduleScans: [], baseUrl };
   }
-  const walk = (node) => {
+  const pending = [document];
+  while (pending.length > 0) {
+    const node = pending.pop();
     const tag = (node.tagName ?? node.nodeName ?? "").toLowerCase();
     const nodeLocation = sourceLocation2(node);
+    if (tag === "base" && node.namespaceURI === "http://www.w3.org/1999/xhtml" && !baseSeen) {
+      const href = attr(node, "href");
+      if (href) {
+        baseSeen = true;
+        try {
+          const resolvedBase = new URL(href.value, pageUrl.href);
+          resolvedBase.hash = "";
+          baseUrl = normalizeUrl(resolvedBase.href);
+        } catch {
+          addNote(state, "The first document base URL was invalid or unsupported; relative references used the page URL and coverage may be incomplete.");
+        }
+      }
+    }
     if (tag === "script") {
       const src = attr(node, "src");
       if (src) {
         const type = attr(node, "type")?.value.trim().toLowerCase() ?? "";
         if (src.value.trim() && isJavaScriptType(type)) {
           const loc = sourceLocation2(node, "src");
-          scripts.push({ raw: src.value, line: loc.line ?? nodeLocation.line, column: loc.column ?? nodeLocation.column });
+          scripts.push({ raw: src.value, isModule: type === "module", line: loc.line ?? nodeLocation.line, column: loc.column ?? nodeLocation.column });
         }
       } else {
         const inline = scriptTextLocation(node);
@@ -229949,10 +230064,9 @@ function inspectHtml(state, html, pageUrl) {
         resources.push({ raw: entry.value, kind: resourceKind, line: loc.line ?? nodeLocation.line, column: loc.column ?? nodeLocation.column });
       }
     }
-    for (const child of node.childNodes ?? [])
-      walk(child);
-  };
-  walk(document);
+    for (let index = (node.childNodes?.length ?? 0) - 1; index >= 0; index -= 1)
+      pending.push(node.childNodes[index]);
+  }
   for (const resource of resources) {
     if (pageUrl.protocol === "https:" && /^http:\/\//i.test(resource.raw) && isActiveMixedContentKind(resource.kind)) {
       addFinding(state, {
@@ -229969,7 +230083,8 @@ function inspectHtml(state, html, pageUrl) {
   }
   return {
     scripts,
-    moduleScans: inlineModuleScans
+    moduleScans: inlineModuleScans,
+    baseUrl
   };
 }
 function isJavaScriptType(type) {
@@ -230013,6 +230128,8 @@ function pageBudgetFor(options) {
 function optionsError(options) {
   if (!options || typeof options !== "object" || typeof options.url !== "string")
     return "invalid_url_option";
+  if (options.signal !== void 0 && !(options.signal instanceof AbortSignal))
+    return "invalid_cancellation_signal";
   const timeout = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   const pageInputs = options.pages;
   if (pageInputs !== void 0 && !Array.isArray(pageInputs))
@@ -230071,7 +230188,13 @@ function inspectPage(state, response, label) {
   inspectHeaders(state, response);
   inspectSourceMapHeaders(state, response);
   inspectCors(state, response);
-  const pageText = new TextDecoder("utf-8", { fatal: false }).decode(response.body);
+  const contentType = firstHeader(response.headers, "content-type");
+  const mediaType = contentType?.toLowerCase() ?? "";
+  const isHtml = !mediaType || mediaType.includes("text/html") || mediaType.includes("application/xhtml+xml");
+  const decoded = decodeUrlText(response.body, contentType, isHtml ? "html" : "text");
+  for (const note of decoded.notes)
+    addNote(state, note);
+  const pageText = decoded.text;
   scanSecrets(state, pageText, response.finalUrl);
   scanDomSinks(state, pageText, response.finalUrl);
   if (response.finalUrl.protocol === "http:") {
@@ -230087,8 +230210,6 @@ function inspectPage(state, response, label) {
     });
   }
   scanMixedContent(state, pageText, response.finalUrl);
-  const contentType = firstHeader(response.headers, "content-type")?.toLowerCase() ?? "";
-  const isHtml = !contentType || contentType.includes("text/html") || contentType.includes("application/xhtml+xml");
   if (isHtml) {
     scanDisclosure(state, pageText, response.finalUrl);
     scanComponents(state, pageText, response.finalUrl);
@@ -230096,7 +230217,7 @@ function inspectPage(state, response, label) {
     return inspection;
   }
   addNote(state, label === "root" ? "The root response was not declared as HTML; only static text checks were applied." : "An explicitly requested page was not declared as HTML; only static text checks were applied.", false);
-  return { scripts: [], moduleScans: [scanJs(state, pageText, response.finalUrl)] };
+  return { scripts: [], moduleScans: [scanJs(state, pageText, response.finalUrl)], baseUrl: response.finalUrl };
 }
 function recordModuleScan(state, scan) {
   state.moduleReferencesDiscovered += scan.staticReferences.length;
@@ -230105,6 +230226,10 @@ function recordModuleScan(state, scan) {
   state.computedImportsObserved += scan.computedImports;
   if (scan.parseDiagnostics > 0)
     addNote(state, "A JavaScript module parse had syntax diagnostics; static module coverage may be incomplete.");
+  if (scan.incompleteReason === "parser_failure")
+    addNote(state, "A JavaScript module parser failed; previously collected findings were retained and static module coverage is incomplete.");
+  if (scan.incompleteReason === "ast_limit")
+    addNote(state, "A JavaScript module exceeded the bounded syntax inspection limit; static module coverage is incomplete.");
   if (scan.dynamicImports > 0)
     addNote(state, "Dynamic module imports were observed but were not fetched; browser/runtime resolution is outside the static URL scope.", false);
   if (scan.computedImports > 0)
@@ -230113,7 +230238,7 @@ function recordModuleScan(state, scan) {
 function isWebModuleSpecifier(specifier) {
   return /^(?:\.\.?\/|\/|\/\/|https?:\/\/)/i.test(specifier);
 }
-function enqueueScript(state, pending, seenScripts, raw, baseUrl, allowedOrigin, kind) {
+function enqueueScript(state, pending, seenScripts, raw, baseUrl, allowedOrigin, kind, isModule = kind === "module") {
   const specifier = raw.trim();
   if (kind === "module" && !isWebModuleSpecifier(specifier)) {
     state.scriptsSkipped += 1;
@@ -230133,10 +230258,11 @@ function enqueueScript(state, pending, seenScripts, raw, baseUrl, allowedOrigin,
     addNote(state, kind === "module" ? "A cross-origin static module reference was outside the approved collection scope." : "Cross-origin linked JavaScript was outside the approved collection scope.", false);
     return;
   }
-  if (seenScripts.has(scriptUrl.href))
+  const key2 = `${isModule ? "module" : "text"}:${scriptUrl.href}`;
+  if (seenScripts.has(key2))
     return;
-  seenScripts.add(scriptUrl.href);
-  pending.push({ url: scriptUrl, kind });
+  seenScripts.add(key2);
+  pending.push({ url: scriptUrl, kind, isModule });
 }
 function enqueueModuleScan(state, pending, seenScripts, scan, baseUrl, allowedOrigin) {
   recordModuleScan(state, scan);
@@ -230144,13 +230270,13 @@ function enqueueModuleScan(state, pending, seenScripts, scan, baseUrl, allowedOr
     enqueueScript(state, pending, seenScripts, reference.specifier, baseUrl, allowedOrigin, "module");
   }
 }
-function enqueuePageInspection(state, pending, seenScripts, inspection, pageUrl, allowedOrigin) {
+function enqueuePageInspection(state, pending, seenScripts, inspection, allowedOrigin) {
   state.scriptsDiscovered += inspection.scripts.length;
   for (const reference of inspection.scripts) {
-    enqueueScript(state, pending, seenScripts, reference.raw, pageUrl, allowedOrigin, "html");
+    enqueueScript(state, pending, seenScripts, reference.raw, inspection.baseUrl, allowedOrigin, "html", reference.isModule);
   }
   for (const scan of inspection.moduleScans)
-    enqueueModuleScan(state, pending, seenScripts, scan, pageUrl, allowedOrigin);
+    enqueueModuleScan(state, pending, seenScripts, scan, inspection.baseUrl, allowedOrigin);
 }
 async function processScripts(state, pending, seenScripts, context, maxScripts, maxBytes, allowedOrigin) {
   while (pending.length > 0) {
@@ -230179,7 +230305,10 @@ async function processScripts(state, pending, seenScripts, context, maxScripts, 
       if (scriptType && !scriptType.includes("javascript") && !scriptType.includes("ecmascript") && !scriptType.includes("text/plain")) {
         addNote(state, "A same-origin linked script or module returned an unexpected content type.");
       }
-      const moduleScan = scanJs(state, new TextDecoder("utf-8", { fatal: false }).decode(script.body), script.finalUrl);
+      const decoded = decodeUrlText(script.body, firstHeader(script.headers, "content-type"), entry.isModule ? "module" : "text");
+      for (const note of decoded.notes)
+        addNote(state, note);
+      const moduleScan = scanJs(state, decoded.text, script.finalUrl);
       enqueueModuleScan(state, pending, seenScripts, moduleScan, script.finalUrl, allowedOrigin);
       if (script.status < 200 || script.status >= 300 || script.status === 206) {
         addNote(state, entry.kind === "module" ? "A static module returned a non-success HTTP status." : "A linked script returned a non-success HTTP status.");
@@ -230229,12 +230358,24 @@ async function runUrl(options) {
   const pageTargets = pageTargetsFor(options, target);
   if (pageTargets.error)
     return [errorResult(pageTargets.error, options, state)];
+  if (options.signal?.aborted) {
+    addNote(state, "URL collection was cancelled before any request; coverage is incomplete.");
+    return [result(state, "partial", state.notes, { requestCount: 0, allowPrivate: options.allowPrivate === true })];
+  }
   const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   const maxPages = pageBudgetFor(options);
   const maxScripts = options.maxScripts ?? DEFAULT_MAX_SCRIPTS;
   const maxBytes = options.maxBytes ?? DEFAULT_MAX_BYTES2;
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  const cancel = () => controller.abort();
+  options.signal?.addEventListener("abort", cancel, { once: true });
+  if (options.signal?.aborted)
+    cancel();
+  const timer = setTimeout(cancel, timeoutMs);
+  const dispose = () => {
+    clearTimeout(timer);
+    options.signal?.removeEventListener("abort", cancel);
+  };
   const budget = {
     count: 0,
     // One shared request budget covers root/additional pages, linked scripts,
@@ -230246,7 +230387,11 @@ async function runUrl(options) {
   try {
     root = await fetchResource(target, context, target.origin, Math.min(MAX_COMPRESSED_BODY_BYTES, maxBytes), Math.min(MAX_SINGLE_BODY_BYTES, maxBytes));
   } catch (error) {
-    clearTimeout(timer);
+    dispose();
+    if (options.signal?.aborted) {
+      addNote(state, "URL collection was cancelled before the root response was inspected; coverage is incomplete.");
+      return [result(state, "partial", state.notes, { requestCount: budget.count, allowPrivate: context.allowPrivate })];
+    }
     return [errorResult(codeOf(error), options, state, { requestCount: budget.count })];
   }
   state.pagesFetched = 1;
@@ -230255,7 +230400,7 @@ async function runUrl(options) {
   const seenScripts = /* @__PURE__ */ new Set();
   try {
     const rootInspection = inspectPage(state, root, "root");
-    enqueuePageInspection(state, pending, seenScripts, rootInspection, root.finalUrl, root.finalUrl.origin);
+    enqueuePageInspection(state, pending, seenScripts, rootInspection, root.finalUrl.origin);
     await processScripts(state, pending, seenScripts, context, maxScripts, maxBytes, root.finalUrl.origin);
     const targetLimit = Math.min(maxPages, pageTargets.targets.length);
     for (let index = 1; index < targetLimit; index += 1) {
@@ -230280,17 +230425,19 @@ async function runUrl(options) {
       state.pagesFetched += 1;
       state.bytes += page.body.byteLength;
       const inspection = inspectPage(state, page, "page");
-      enqueuePageInspection(state, pending, seenScripts, inspection, page.finalUrl, root.finalUrl.origin);
+      enqueuePageInspection(state, pending, seenScripts, inspection, root.finalUrl.origin);
       await processScripts(state, pending, seenScripts, context, maxScripts, maxBytes, root.finalUrl.origin);
     }
     if (pageTargets.targets.length > maxPages) {
       state.pagesSkipped += pageTargets.targets.length - maxPages;
       addNote(state, "The shared same-origin page limit was reached; additional requested pages were not fetched.");
     }
-    if (controller.signal.aborted || Date.now() >= context.deadlineAt)
+    if (options.signal?.aborted)
+      addNote(state, "URL collection was cancelled; previously collected findings were retained and coverage is incomplete.");
+    else if (controller.signal.aborted || Date.now() >= context.deadlineAt)
       addNote(state, "The collection deadline elapsed before all static checks completed.");
   } finally {
-    clearTimeout(timer);
+    dispose();
   }
   const status = state.incomplete ? "partial" : "completed";
   return [result(state, status, state.notes, {
@@ -230540,7 +230687,7 @@ import { lstat as lstat4, mkdir as mkdir4, open as open3, realpath, rename, unli
 import { dirname as dirname6, resolve as resolve6, sep as sep3 } from "node:path";
 var REPORT_SCHEMA_VERSION = "1.0.0";
 var REPORT_TOOL_VERSION = "0.4.0";
-var RULESET_VERSION = "2026-10-06.1";
+var RULESET_VERSION = "2026-10-06.2";
 var SEVERITIES = [
   "info",
   "low",
@@ -231675,6 +231822,8 @@ var MAX_POINTER_LENGTH = 512;
 var MAX_STATUS_VALUES = 16;
 var MAX_AUTHORIZATION_LENGTH2 = 8192;
 var API_SCOPE_NOTE = "API authorization preview sends bounded read-only GET requests from an explicit policy; it does not write, fuzz, execute browser code, follow redirects, or prove complete API security.";
+var API_MAX_EVIDENCE_NODES = 1e4;
+var API_MAX_EVIDENCE_DEPTH = 64;
 var ApiPolicyError = class extends Error {
   code;
   constructor(code, message) {
@@ -231813,7 +231962,15 @@ function parseAllow(value, version) {
   }
   exactKeys3(value, ["actor", "status", "resource", "protected"], [], "allow");
   const resource = parseScalarExpectation(value.resource, "allow resource");
-  const protectedMarker = parseScalarExpectation(value.protected, "allow protected");
+  if (!isRecord(value.protected))
+    invalid("allow protected must be an object");
+  exactKeys3(value.protected, ["jsonPointer", "equals"], ["match"], "allow protected");
+  if (hasOwn(value.protected, "match") && value.protected.match !== "pointer" && value.protected.match !== "json-values")
+    invalid("allow protected match is unsupported");
+  const protectedMarker = {
+    ...parseScalarExpectation({ jsonPointer: value.protected.jsonPointer, equals: value.protected.equals }, "allow protected"),
+    ...hasOwn(value.protected, "match") ? { match: value.protected.match } : {}
+  };
   if (resource.jsonPointer === protectedMarker.jsonPointer)
     invalid("allow resource and protected assertions must use separate JSON pointers");
   if (typeof protectedMarker.equals !== "string" || protectedMarker.equals.trim().length === 0)
@@ -232250,8 +232407,35 @@ function actorIdentityVerified(actorId, actor, states) {
   const state = states.get(actorId);
   return state?.beforeValid === true && state.identityReuse === false && state.beforePrincipal !== void 0;
 }
-function protectedMatches(value, marker) {
-  return marker !== void 0 && scalarMatches(atJsonPointer(value, marker.jsonPointer), marker.equals);
+function protectedEvidence(value, marker) {
+  if (!marker)
+    return { matched: false, complete: true };
+  if (marker.match !== "json-values")
+    return { matched: scalarMatches(atJsonPointer(value, marker.jsonPointer), marker.equals), complete: true };
+  if (scalarMatches(atJsonPointer(value, marker.jsonPointer), marker.equals))
+    return { matched: true, complete: true };
+  const pending = [{ value, depth: 0 }];
+  let visited = 0;
+  let complete = true;
+  while (pending.length) {
+    if (++visited > API_MAX_EVIDENCE_NODES)
+      return { matched: false, complete: false };
+    const current = pending.pop();
+    if (scalarMatches(current.value, marker.equals))
+      return { matched: true, complete };
+    if (current.value === null || typeof current.value !== "object")
+      continue;
+    if (current.depth >= API_MAX_EVIDENCE_DEPTH) {
+      complete = false;
+      continue;
+    }
+    const children = Object.values(current.value);
+    if (children.length > API_MAX_EVIDENCE_NODES - visited - pending.length)
+      return { matched: false, complete: false };
+    for (let index = children.length - 1; index >= 0; index -= 1)
+      pending.push({ value: children[index], depth: current.depth + 1 });
+  }
+  return { matched: false, complete };
 }
 function resourceMatches(value, marker) {
   return scalarMatches(atJsonPointer(value, marker.jsonPointer), marker.equals);
@@ -232266,10 +232450,15 @@ async function checkDeny(entry, deny, actor, denyAuthorization, identityVerified
   const status = resource.status;
   const expected = deny.statuses.includes(status);
   const parsed = readJson(resource);
-  const protectedExposed = parsed.valid && protectedMatches(parsed.value, entry.allow.protected);
+  const evidence2 = parsed.valid ? protectedEvidence(parsed.value, entry.allow.protected) : { matched: false, complete: true };
+  const protectedExposed = evidence2.matched;
   if (protectedExposed) {
     findings.push(findingForExposure(entry, deny, status));
     addNote2(notes, `API case ${entry.id}: actor ${deny.actor} returned the protected canary with HTTP ${status}; exposure is recorded.`);
+  }
+  if (!evidence2.complete) {
+    addNote2(notes, `API case ${entry.id}: actor ${deny.actor} response exceeded the bounded canary evidence traversal; denial is inconclusive.`);
+    return true;
   }
   if (status === 429 || status >= 500) {
     if (!protectedExposed)
@@ -232337,6 +232526,7 @@ function errorCheck3(code, note, metrics = {}) {
   };
 }
 async function runApiPolicy(options) {
+  const startedAt = performance.now();
   if (!isRecord(options))
     return [errorCheck3("invalid_options", "API policy options are invalid.")];
   if (options.signal !== void 0 && !(options.signal instanceof AbortSignal)) {
@@ -232473,6 +232663,8 @@ async function runApiPolicy(options) {
       expectedRequestCount: parsed.expectedRequests,
       requestCount: budget.count,
       bytesInspected: state.bytes,
+      elapsedMs: Math.round(performance.now() - startedAt),
+      jsonValueEvidenceCases: parsed.cases.filter((entry) => entry.allow.protected?.match === "json-values").length,
       bodyBudgetExhausted: state.bodyBudgetExhausted,
       bodyReadIncomplete: state.bodyReadIncomplete,
       allowPrivate: options.allowPrivate === true
@@ -233956,12 +234148,10 @@ ${USAGE}`);
     process.stdout.write(USAGE);
     return 0;
   }
-  const controller = parsed.nativePreview ? new AbortController() : void 0;
-  const cancel = () => controller?.abort();
-  if (controller) {
-    process.on("SIGINT", cancel);
-    process.on("SIGTERM", cancel);
-  }
+  const controller = new AbortController();
+  const cancel = () => controller.abort();
+  process.on("SIGINT", cancel);
+  process.on("SIGTERM", cancel);
   try {
     const startedAt = (/* @__PURE__ */ new Date()).toISOString();
     const mode = modeFor(parsed);
@@ -233986,7 +234176,7 @@ ${USAGE}`);
         osvOffline: parsed.osvOffline,
         outDir: parsed.outDir,
         nativePreview: parsed.nativePreview,
-        signal: controller?.signal
+        signal: controller.signal
       };
       try {
         checks.push(...await runSource(sourceOptions));
@@ -233994,13 +234184,14 @@ ${USAGE}`);
         checks.push(runtimeErrorCheck("source.runtime", "Source scanning could not be completed."));
       }
     }
-    if (parsed.url && !controller?.signal.aborted) {
+    if (parsed.url && !controller.signal.aborted) {
       const urlOptions = {
         url: parsed.url,
         pages: parsed.pages,
         maxPages: parsed.maxPages,
         allowPrivate: parsed.allowPrivate,
-        timeoutMs: parsed.timeoutMs
+        timeoutMs: parsed.timeoutMs,
+        signal: controller.signal
       };
       try {
         checks.push(...await runUrl(urlOptions));
@@ -234008,23 +234199,23 @@ ${USAGE}`);
         checks.push(runtimeErrorCheck("url.runtime", "URL scanning could not be completed."));
       }
     }
-    if (apiPolicy && !controller?.signal.aborted) {
+    if (apiPolicy && !controller.signal.aborted) {
       try {
-        checks.push(...await runApiPolicy({ policy: apiPolicy, allowPrivate: parsed.allowPrivate, timeoutMs: parsed.timeoutMs, signal: controller?.signal }));
+        checks.push(...await runApiPolicy({ policy: apiPolicy, allowPrivate: parsed.allowPrivate, timeoutMs: parsed.timeoutMs, signal: controller.signal }));
       } catch {
         checks.push(runtimeErrorCheck("api.runtime", "API authorization scanning could not be completed."));
       }
     }
     const scope = await declaredScope(parsed, apiPolicy);
     const markCancelled = () => {
-      if (controller?.signal.aborted && !checks.some((check) => check.id === "scan.cancelled"))
+      if (controller.signal.aborted && !checks.some((check) => check.id === "scan.cancelled"))
         checks.push({ id: "scan.cancelled", status: "partial", findings: [], notes: ["The command was cancelled; completed stages do not establish command completion."] });
     };
     markCancelled();
     let report = createReport(checks, mode, startedAt, scope);
     try {
       await writeReports(report, parsed.outDir, { failOn: parsed.failOn });
-      if (controller?.signal.aborted && !report.checks.some((check) => check.id === "scan.cancelled")) {
+      if (controller.signal.aborted && !report.checks.some((check) => check.id === "scan.cancelled")) {
         markCancelled();
         report = createReport(checks, mode, startedAt, scope);
         await writeReports(report, parsed.outDir, { failOn: parsed.failOn });
@@ -234052,10 +234243,8 @@ ${USAGE}`);
     ].join("\n"));
     return code;
   } finally {
-    if (controller) {
-      process.removeListener("SIGINT", cancel);
-      process.removeListener("SIGTERM", cancel);
-    }
+    process.removeListener("SIGINT", cancel);
+    process.removeListener("SIGTERM", cancel);
   }
 }
 function canonicalFile(path) {

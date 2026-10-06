@@ -4,6 +4,7 @@ export * from "./url.js";
 export * from "./report.js";
 export * from "./compare.js";
 export * from "./api.js";
+export * from "./openapi.js";
 export * from "./scan-scope.js";
 export * from "./doctor.js";
 export * from "./init.js";

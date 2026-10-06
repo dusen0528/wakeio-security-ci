@@ -57,3 +57,20 @@ node build/src/cli.js scan \
 
 경로에는 query/fragment/임의 header/body를 넣을 수 없다. 기본은 HTTPS이며 `--allow-private`와 loopback을 함께 사용하는 합성 fixture만 HTTP를 허용한다. 리디렉션은 따르지 않고, 요청·응답·압축·전체 시간 예산은 기존 URL-network 제한을 공유한다.
 
+## 2026-10-06: 다른 JSON 위치의 합성 canary와 독립 fixture 평가
+
+`allow.protected.match: "json-values"`를 명시하면 deny 응답의 JSON 값 전체에서 **이미 정책에 선언된 canary와 정확히 같은 문자열**을 찾는다. 기본값은 기존 `jsonPointer` 위치 검사다. Owner positive control은 확장 모드에서도 지정 pointer의 resource와 canary를 정확히 확인한다. 응답 본문, canary, credential 값이나 공격자가 정한 JSON 키를 보고서에 복사하지 않는다.
+
+탐색은 최대 10,000개 값과 깊이 64로 제한한다. 부재를 확인하기 전에 제한에 도달하거나 응답이 malformed/non-JSON이면 clean으로 판정하지 않고 partial로 남긴다. 문자열 일부, 키, 인코딩·변형된 값, 알 수 없는 실제 비밀은 이 판정 범위 밖이다. 알려진 합성 canary만 사용해야 한다.
+
+`npm run test:dast`는 외부 주소를 받지 않고 매번 새 127.0.0.1 앱을 띄운다. 사용자 A/B, 다른 테넌트 사용자, 관리자와 객체 네 개를 메모리에 준비하고 종료 후 객체·credential·서버 정리를 검증한다. 직접/중첩/배열 노출, 정상 거부/공개 ID/다른 marker 대조군, malformed/잘못된 identity/owner 부재/5xx/깊이·노드 초과를 두 번씩 검사한다. 허용 경로와 GET만 요청했는지, 실제 서버 요청 수와 scanner 계수가 같은지, redaction과 incomplete 상태를 검사하며 request count와 시간을 출력한다.
+
+이 비교는 **같은 빌드의 pointer 설정과 json-values 설정** 사이의 한정된 task coverage다. 독립 앱 fixture와 정해 둔 기대 결과를 사용하지만 실제 staging 검증이나 전체 보안 탐지율을 뜻하지 않는다. 사용자 소유 staging의 실제 계정, 합성 객체, endpoint와 실행 승인은 별도로 설정해야 하며 이 작업에서는 연결하지 않았다. Schemathesis/state-pilot의 fixture-only 범위도 그대로다.
+
+## OpenAPI에서 명시적으로 허용한 GET 만들기
+
+SDK의 `buildOpenApiPolicy(input)`은 네트워크 없이 v2 정책을 만들고, `runOpenApiPolicy({ input, env, signal, timeoutMs, allowPrivate })`는 기존 API 실행기에 그대로 위임한다. `input`은 parsed JSON `document`, 명시적 origin `baseUrl`, v2 `actors`, GET `operations` 허용 목록, operation ID를 참조하는 `cases`를 받는다. `/whoami` 같은 identity control 경로도 목록에 넣어야 한다. 각 operation에는 정확한 문서 path template과 사용자가 제공한 단순 scalar `pathParameters`만 사용한다.
+
+OpenAPI 3.0/3.1의 제한된 부분집합이며 1 MiB/20,000-node/깊이 40/256-reference compile 예산이 있다. 같은 문서 JSON-pointer `$ref`만 해석하며 remote/file reference, 순환 reference, 모호한 경로, 필수 query/header/cookie, request body, callback, 지원하지 않는 parameter schema/serialization은 실행 전에 거부한다. `servers`, example/default, security 선언에서 주소·credential·payload를 자동으로 만들지 않는다. 응답 schema 검증이나 일반 fuzzing은 제공하지 않는다. CLI의 새 flag는 없으며 기존 `--api-policy` 입력 또는 SDK를 사용한다.
+
+`node examples/openapi-owned-fixture.mjs`는 새 자체 fixture를 생성해 32개의 GET으로 정상 대조군을 검사한다. `--vulnerable`은 중첩 JSON 노출 대조군을 실행하며 high finding 때문에 exit 1이 정상 기대값이다. 둘 다 종료 시 합성 객체와 서버를 정리하며 외부 target 입력은 받지 않는다.

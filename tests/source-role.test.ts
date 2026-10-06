@@ -225,7 +225,7 @@ test('payload role never sanitizes SQL/shell/HTML and public projections retain 
   const result=run(text);assert.equal(outbound(result).length,0);
   for(const id of ['ast:sql-input-sink','ast:shell-input-sink','ast:html-input-sink'])assert.ok(result.findings.some(f=>f.ruleId===id),id);
   const report=createReport([result],'source','2026-10-05T00:00:00.000Z');const agent=toAgentReport(report,'high');
-  assert.equal(RULESET_VERSION,'2026-10-06.1');assert.equal(agent.scanGate.exitCode,1);
+  assert.equal(RULESET_VERSION,'2026-10-06.2');assert.equal(agent.scanGate.exitCode,1);
   assert.ok(agent.findings.every(f=>f.verification.state==='not_run'&&!f.verification.vulnerabilityConfirmed));
   for(const output of [JSON.stringify(report),JSON.stringify(agent),JSON.stringify(toSarif(report)),toMarkdown(report)])assert.equal(output.includes('https://fixed.example/path'),false);
   const safe=run(prefix+`function route(req){client.request({url:${fixed},data:req.body})}`);

@@ -87,8 +87,8 @@ export function sourceSnapshot(root) {
       paths.push(path);
     }
   }
-  for (const path of ['src', 'tests', 'scripts', 'workers', '.github', 'package.json', 'package-lock.json', 'tsconfig.json', 'action.yml']) walk(path);
-  const files = [...new Set(paths)].sort().filter(path => /^(src\/|tests\/|scripts\/|workers\/|\.github\/|package(?:-lock)?\.json$|tsconfig\.json$|action\.yml$)/.test(path));
+  for (const path of ['src', 'tests', 'scripts', 'workers', 'examples', '.github', 'package.json', 'package-lock.json', 'tsconfig.json', 'action.yml']) walk(path);
+  const files = [...new Set(paths)].sort().filter(path => /^(src\/|tests\/|scripts\/|workers\/|examples\/|\.github\/|package(?:-lock)?\.json$|tsconfig\.json$|action\.yml$)/.test(path));
   const hash = createHash('sha256');
   let totalBytes = 0;
   for (const path of files) {
@@ -101,7 +101,7 @@ export function sourceSnapshot(root) {
     hash.update(path + '\0').update(createHash('sha256').update(bytes).digest());
   }
   return { sha256: hash.digest('hex'), fileCount: files.length, totalBytes, enumeration, gitPresent: existsSync(join(root, '.git')),
-    scope: 'src/tests/scripts/workers/workflows/package-lock/tsconfig/action; generated outputs excluded; input symlinks unsupported' };
+    scope: 'src/tests/scripts/workers/examples/workflows/package-lock/tsconfig/action; generated outputs excluded; input symlinks unsupported' };
 }
 
 export function currentTestFiles(root) {

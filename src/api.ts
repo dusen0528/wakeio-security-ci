@@ -55,6 +55,15 @@ export interface ApiScalarExpectation {
   equals: JsonScalar;
 }
 
+/** Only the configured synthetic canary is searched; response values are never reported. */
+export interface ApiProtectedExpectation extends ApiScalarExpectation {
+  /** Default: pointer. json-values also checks exact scalar values at other JSON positions. */
+  match?: "pointer" | "json-values";
+}
+
+export const API_MAX_EVIDENCE_NODES = 10_000;
+export const API_MAX_EVIDENCE_DEPTH = 64;
+
 /**
  * A GET identity control. The primary marker identifies the principal. An
  * optional organization marker may be shared by multiple principals.
@@ -82,7 +91,7 @@ export interface ApiAllowExpectationV2 {
   actor: string;
   status: number;
   resource: ApiScalarExpectation;
-  protected: ApiScalarExpectation;
+  protected: ApiProtectedExpectation;
 }
 
 export type ApiAllowExpectation = ApiAllowExpectationV1 | ApiAllowExpectationV2;
@@ -143,7 +152,7 @@ interface NormalizedAllow {
   actor: string;
   status: number;
   resource: ApiScalarExpectation;
-  protected?: ApiScalarExpectation;
+  protected?: ApiProtectedExpectation;
 }
 
 interface NormalizedDeny {
@@ -366,7 +375,13 @@ function parseAllow(value: unknown, version: 1 | 2): ApiAllowExpectation {
   }
   exactKeys(value, ["actor", "status", "resource", "protected"], [], "allow");
   const resource = parseScalarExpectation(value.resource, "allow resource");
-  const protectedMarker = parseScalarExpectation(value.protected, "allow protected");
+  if (!isRecord(value.protected)) invalid("allow protected must be an object");
+  exactKeys(value.protected, ["jsonPointer", "equals"], ["match"], "allow protected");
+  if (hasOwn(value.protected, "match") && value.protected.match !== "pointer" && value.protected.match !== "json-values") invalid("allow protected match is unsupported");
+  const protectedMarker: ApiProtectedExpectation = {
+    ...parseScalarExpectation({ jsonPointer: value.protected.jsonPointer, equals: value.protected.equals }, "allow protected"),
+    ...(hasOwn(value.protected, "match") ? { match: value.protected.match as "pointer" | "json-values" } : {}),
+  };
   if (resource.jsonPointer === protectedMarker.jsonPointer) invalid("allow resource and protected assertions must use separate JSON pointers");
   if (typeof protectedMarker.equals !== "string" || protectedMarker.equals.trim().length === 0) invalid("allow protected equals must be a non-empty string canary");
   if (scalarMatches(protectedMarker.equals, resource.equals)) invalid("allow protected canary must differ from the resource identity marker");
@@ -835,8 +850,28 @@ function actorIdentityVerified(actorId: string, actor: ApiActor | undefined, sta
   return state?.beforeValid === true && state.identityReuse === false && state.beforePrincipal !== undefined;
 }
 
-function protectedMatches(value: unknown, marker: ApiScalarExpectation | undefined): boolean {
-  return marker !== undefined && scalarMatches(atJsonPointer(value, marker.jsonPointer), marker.equals);
+function protectedEvidence(value: unknown, marker: ApiProtectedExpectation | undefined): { matched: boolean; complete: boolean } {
+  if (!marker) return { matched: false, complete: true };
+  if (marker.match !== "json-values") return { matched: scalarMatches(atJsonPointer(value, marker.jsonPointer), marker.equals), complete: true };
+  if (scalarMatches(atJsonPointer(value, marker.jsonPointer), marker.equals)) return { matched: true, complete: true };
+  // Iterative, bounded traversal. Keys, substrings, encoded values and arbitrary
+  // secrets are deliberately outside this exact known-canary contract.
+  const pending: Array<{ value: unknown; depth: number }> = [{ value, depth: 0 }];
+  let visited = 0;
+  let complete = true;
+  while (pending.length) {
+    if (++visited > API_MAX_EVIDENCE_NODES) return { matched: false, complete: false };
+    const current = pending.pop()!;
+    if (scalarMatches(current.value, marker.equals)) return { matched: true, complete };
+    if (current.value === null || typeof current.value !== "object") continue;
+    if (current.depth >= API_MAX_EVIDENCE_DEPTH) { complete = false; continue; }
+    const children = Object.values(current.value);
+    // Never queue more work than the remaining node budget. A skipped branch
+    // cannot justify a clean denial, even when the HTTP status was expected.
+    if (children.length > API_MAX_EVIDENCE_NODES - visited - pending.length) return { matched: false, complete: false };
+    for (let index = children.length - 1; index >= 0; index -= 1) pending.push({ value: children[index], depth: current.depth + 1 });
+  }
+  return { matched: false, complete };
 }
 
 function resourceMatches(value: unknown, marker: ApiScalarExpectation): boolean {
@@ -863,11 +898,17 @@ async function checkDeny(
   const status = resource.status;
   const expected = deny.statuses.includes(status);
   const parsed = readJson(resource);
-  const protectedExposed = parsed.valid && protectedMatches(parsed.value, entry.allow.protected);
+  const evidence = parsed.valid ? protectedEvidence(parsed.value, entry.allow.protected) : { matched: false, complete: true };
+  const protectedExposed = evidence.matched;
 
   if (protectedExposed) {
     findings.push(findingForExposure(entry, deny, status));
     addNote(notes, `API case ${entry.id}: actor ${deny.actor} returned the protected canary with HTTP ${status}; exposure is recorded.`);
+  }
+
+  if (!evidence.complete) {
+    addNote(notes, `API case ${entry.id}: actor ${deny.actor} response exceeded the bounded canary evidence traversal; denial is inconclusive.`);
+    return true;
   }
 
   // A rate limit or server failure is never a denial, even when the policy
@@ -952,6 +993,7 @@ function errorCheck(code: string, note: string, metrics: Record<string, number |
  * policy; this function never interprets a policy string or executes it.
  */
 export async function runApiPolicy(options: ApiRunOptions): Promise<CheckResult[]> {
+  const startedAt = performance.now();
   if (!isRecord(options)) return [errorCheck("invalid_options", "API policy options are invalid.")];
   if (options.signal !== undefined && !(options.signal instanceof AbortSignal)) {
     return [errorCheck("invalid_options", "signal must be an AbortSignal.")];
@@ -1085,6 +1127,8 @@ export async function runApiPolicy(options: ApiRunOptions): Promise<CheckResult[
       expectedRequestCount: parsed.expectedRequests,
       requestCount: budget.count,
       bytesInspected: state.bytes,
+      elapsedMs: Math.round(performance.now() - startedAt),
+      jsonValueEvidenceCases: parsed.cases.filter((entry) => entry.allow.protected?.match === "json-values").length,
       bodyBudgetExhausted: state.bodyBudgetExhausted,
       bodyReadIncomplete: state.bodyReadIncomplete,
       allowPrivate: options.allowPrivate === true,

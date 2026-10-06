@@ -45,13 +45,22 @@ test('release npm archive exposes root and contracts types to strict TypeScript 
     await cp(join(root, 'node_modules', 'undici-types'), join(modules, 'undici-types'), { recursive: true });
     await writeFile(join(consumer, 'package.json'), JSON.stringify({ private: true, type: 'module' }));
     await writeFile(join(consumer, 'consumer.ts'), `
-import { runSource, type SourceOptions, type CheckResult } from 'wakeio-security-ci';
+import { runSource, buildOpenApiPolicy, runOpenApiPolicy, type OpenApiPolicyInput, type ApiProtectedExpectation, type UrlOptions, type SourceOptions, type CheckResult } from 'wakeio-security-ci';
 import type { SourceOptions as ContractSourceOptions } from 'wakeio-security-ci/contracts';
 
 const options = { root: '.', tools: [], analysisProfile: 'extended' } satisfies SourceOptions;
 const contractOptions: ContractSourceOptions = options;
 const results: Promise<CheckResult[]> = runSource(contractOptions);
 void results;
+const protectedMarker: ApiProtectedExpectation = { jsonPointer: '/canary', equals: 'synthetic-only', match: 'json-values' };
+const urlOptions: UrlOptions = { url: 'https://fixture.invalid', signal: new AbortController().signal };
+function generatedPolicy(input: OpenApiPolicyInput): Promise<CheckResult[]> {
+  buildOpenApiPolicy(input);
+  return runOpenApiPolicy({ input, signal: new AbortController().signal });
+}
+void [protectedMarker, urlOptions, generatedPolicy];
+// @ts-expect-error Evidence matching must remain a closed, exact-value contract.
+const invalidMarker: ApiProtectedExpectation = { jsonPointer: '/canary', equals: 'synthetic-only', match: 'arbitrary-regex' };
 
 // @ts-expect-error Invalid tool names must be rejected by the published API.
 runSource({ root: '.', tools: ['not-a-scanner'] });
@@ -75,6 +84,30 @@ const invalidContractOptions: ContractSourceOptions = { root: '.', tools: [], ti
       });
       assert.equal(stdout + stderr, '', `strict ${moduleResolution} consumer should compile without diagnostics`);
     }
+
+    // Run the shipped corpus against the extracted archive, with only declared
+    // runtime dependencies. No source-tree imports, install hooks or network.
+    for (const dependency of ['typescript', 'parse5', 'entities']) {
+      await cp(join(root, 'node_modules', dependency), join(modules, dependency), { recursive: true });
+    }
+    const { stdout } = await exec(process.execPath, [join(installedPackage, 'examples/dast-owned-corpus.mjs')], {
+      cwd: consumer, timeout: 30_000, maxBuffer: 1024 * 1024,
+    });
+    const corpus = JSON.parse(stdout);
+    assert.equal(corpus.summary['json-values'].detectedPositiveTasks, 6);
+    assert.equal(corpus.summary['json-values'].falsePositiveTasks, 0);
+    assert.equal(corpus.summary['json-values'].incompleteErrorTasks, 12);
+    const example = join(installedPackage, 'examples/openapi-owned-fixture.mjs');
+    const safe = await exec(process.execPath, [example], { cwd: consumer, timeout: 10_000 });
+    assert.deepEqual(JSON.parse(safe.stdout), { ...JSON.parse(safe.stdout), cases: 4, status: 'completed', findings: 0, requests: 32 });
+    await assert.rejects(exec(process.execPath, [example, '--vulnerable'], { cwd: consumer, timeout: 10_000 }), (error: any) => {
+      const result = JSON.parse(error.stdout);
+      assert.equal(error.code, 1);
+      assert.equal(result.status, 'completed');
+      assert.equal(result.findings, 16);
+      assert.equal(result.requests, 32);
+      return true;
+    });
   } finally {
     await rm(temporary, { recursive: true, force: true });
   }

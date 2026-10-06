@@ -16,7 +16,7 @@ const gap=(c:ReturnType<typeof run>)=>c.analysisGaps?.items.some(g=>g.reason==='
 function projections(c:ReturnType<typeof run>,source=entry){const report=createReport([c],'source',new Date());for(const text of [JSON.stringify(report),toMarkdown(report),JSON.stringify(toAgentReport(report)),JSON.stringify(toSarif(report))]){assert.ok(source.includes('ownedReceiverMarker'));assert.ok(!text.includes('ownedReceiverMarker'));assert.ok(!text.includes(source));}assert.ok(toAgentReport(report).findings.every(f=>!f.verification.vulnerabilityConfirmed&&!f.verification.remediationVerified));return report;}
 
 test('canonical singleton carries actual argument1 through same receiver body despite fixed return, with matching fixed URL normal',()=>{
- assert.equal(RULESET_VERSION,'2026-10-06.1');
+ assert.equal(RULESET_VERSION,'2026-10-06.2');
  for(const async of [false,true])for(const spec of ['./finder','./finder/index.js']){
   const source=entry.replace('./finder',spec),r=run(files(producer('fetch(url)',async),{},source));assert.equal(r.status,'completed');assert.equal(outbound(r).length,1);assert.equal(outbound(r)[0].confidence,'medium');assert.equal(outbound(r)[0].location.path,'finder/index.js');
   const trace=outbound(r)[0].staticFlow!;assert.equal(trace.truncated,false);assert.equal(trace.steps.filter(s=>s.role==='parameter').length,2);assert.ok(trace.steps.some(s=>s.role==='call'&&s.location.path==='entry.js'));assert.equal(evaluateGate(projections(r,source),'high').exitCode,1);

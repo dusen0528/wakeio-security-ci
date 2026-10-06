@@ -71,7 +71,7 @@ test('index/flow/summary caps and scope uncertainty do not certify a local fork 
 });
 test('ordinary native fork and non-fork shell calls retain their original rules and unverified projection',()=>{
  const check=run("const {fork}=require('child_process');function route(req){fork(req.query.module);exec(req.query.command)}");assert.equal(native(check).length,1);assert.equal(shell(check).length,1);
- const report=createReport([check],'source',new Date());assert.equal(RULESET_VERSION,'2026-10-06.1');assert.match(toMarkdown(report),/Node fork module path/);assert.match(JSON.stringify(toSarif(report)),/ast:fork-module-path/);
+ const report=createReport([check],'source',new Date());assert.equal(RULESET_VERSION,'2026-10-06.2');assert.match(toMarkdown(report),/Node fork module path/);assert.match(JSON.stringify(toSarif(report)),/ast:fork-module-path/);
  const agent=toAgentReport(report);assert.ok(agent.findings.every(f=>f.verification.vulnerabilityConfirmed===false&&f.verification.remediationVerified===false));assert.equal(agent.scanGate.exitCode,1);
 });
 

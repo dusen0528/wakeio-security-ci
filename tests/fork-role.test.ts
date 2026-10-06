@@ -85,7 +85,7 @@ test('fork role does not change SQL HTTP HTML taint or first-argument source pre
 });
 test('four projections retain the static candidate contract and new ruleset',()=>{
   const check=run("import {fork} from 'child_process';function route(req){fork(req.query.module)}");
-  const report=createReport([check],'source','2026-10-05T00:00:00.000Z');assert.equal(RULESET_VERSION,'2026-10-06.1');
+  const report=createReport([check],'source','2026-10-05T00:00:00.000Z');assert.equal(RULESET_VERSION,'2026-10-06.2');
   assert.match(toMarkdown(report),/Input reaches a Node fork module path/);assert.match(JSON.stringify(toSarif(report)),/ast:fork-module-path/);
   const agent=toAgentReport(report);assert.equal(agent.findings[0].verification.vulnerabilityConfirmed,false);assert.equal(agent.findings[0].verification.remediationVerified,false);
   assert.equal(agent.findings[0].verification.state,'not_run');assert.match(JSON.stringify(report),/ast:fork-module-path/);

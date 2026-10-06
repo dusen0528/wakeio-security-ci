@@ -51,6 +51,9 @@ try {
   if (bytes.length > 8 * 1024 * 1024) throw Error('test_receipt_limit');
   const events = bytes.toString().trim().split('\n').map(line => JSON.parse(line));
   receipt.tests = validateTestEvents(events, required, join(root, 'build/tests/schemathesis.test.js'));
+  receipt.dast = validateTestEvents(events,
+    ['owned DAST corpus gates positive, safe and error controls with lifecycle and exact request counts'],
+    join(root, 'build/tests/dast-corpus.test.js'));
   receipt.testEventsSha256 = createHash('sha256').update(bytes).digest('hex');
   receipt.testFiles = files.map(file => ({ path: file, sha256: createHash('sha256').update(readFileSync(file)).digest('hex') }));
   receipt.sourceAfter = sourceSnapshot(root);

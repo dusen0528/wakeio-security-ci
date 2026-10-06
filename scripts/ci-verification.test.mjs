@@ -99,6 +99,17 @@ test('source root and nested TS/worker links are unsupported rather than blind s
     assert.throws(() => sourceSnapshot(root), /source_symlink_unsupported/);
   } finally { await rm(root, { recursive: true, force: true }); }
 });
+test('owned DAST application fixture changes are included in the source receipt', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'wakeio-ci-fixture-source-'));
+  try {
+    await mkdir(join(root, 'examples'));
+    await writeFile(join(root, 'examples/dast-owned-fixture.mjs'), 'export const mode="safe";');
+    const before = sourceSnapshot(root);
+    await writeFile(join(root, 'examples/dast-owned-fixture.mjs'), 'export const mode="nested";');
+    assert.notEqual(sourceSnapshot(root).sha256, before.sha256);
+    assert.equal(before.fileCount, 1);
+  } finally { await rm(root, { recursive: true, force: true }); }
+});
 test('deleted required source cannot use stale JS, and only a safe generated build is cleaned', async () => {
   const root = await mkdtemp(join(tmpdir(), 'wakeio-ci-stale-'));
   try {

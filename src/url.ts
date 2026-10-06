@@ -22,6 +22,7 @@ import {
 import { analyzeCsp } from "./url-csp.js";
 import { scanModuleReferences, type ModuleReferenceScan } from "./url-modules.js";
 import { scanSecretAssignments } from "./url-secret-assignments.js";
+import { decodeUrlText } from "./url-decoding.js";
 
 const DEFAULT_TIMEOUT_MS = 30_000;
 const DEFAULT_MAX_PAGES = 1;
@@ -50,6 +51,7 @@ interface HtmlAttr {
 interface HtmlNode {
   nodeName?: string;
   tagName?: string;
+  namespaceURI?: string;
   value?: string;
   attrs?: HtmlAttr[];
   childNodes?: HtmlNode[];
@@ -78,6 +80,7 @@ interface ScanState {
 
 interface ScriptReference {
   raw: string;
+  isModule: boolean;
   line?: number;
   column?: number;
 }
@@ -85,11 +88,13 @@ interface ScriptReference {
 interface HtmlInspection {
   scripts: ScriptReference[];
   moduleScans: ModuleReferenceScan[];
+  baseUrl: NormalizedUrl;
 }
 
 interface PendingScript {
   url: NormalizedUrl;
   kind: "html" | "module";
+  isModule: boolean;
 }
 
 interface ResourceReference {
@@ -200,8 +205,14 @@ function firstHeader(headers: Record<string, string | string[]>, name: string): 
 }
 
 function textFromNode(node: HtmlNode): string {
-  if (node.value !== undefined) return node.value;
-  return (node.childNodes ?? []).map(textFromNode).join("");
+  const parts: string[] = [];
+  const pending = [node];
+  while (pending.length > 0) {
+    const current = pending.pop()!;
+    if (current.value !== undefined) parts.push(current.value);
+    else for (let index = (current.childNodes?.length ?? 0) - 1; index >= 0; index -= 1) pending.push(current.childNodes![index]);
+  }
+  return parts.join("");
 }
 
 function attr(node: HtmlNode, name: string): HtmlAttr | undefined {
@@ -662,23 +673,41 @@ function inspectHtml(state: ScanState, html: string, pageUrl: NormalizedUrl): Ht
   const resources: ResourceReference[] = [];
   const documentStarts = lineStarts(html);
   let document: HtmlNode;
+  let baseUrl = pageUrl;
+  let baseSeen = false;
   try {
     document = parseHtml(html, { sourceCodeLocationInfo: true }) as unknown as HtmlNode;
   } catch {
     addNote(state, "HTML parsing failed; content collection is incomplete.");
-    return { scripts, moduleScans: [] };
+    return { scripts, moduleScans: [], baseUrl };
   }
 
-  const walk = (node: HtmlNode): void => {
+  const pending: HtmlNode[] = [document];
+  while (pending.length > 0) {
+    const node = pending.pop()!;
     const tag = (node.tagName ?? node.nodeName ?? "").toLowerCase();
     const nodeLocation = sourceLocation(node);
+    if (tag === "base" && node.namespaceURI === "http://www.w3.org/1999/xhtml" && !baseSeen) {
+      const href = attr(node, "href");
+      if (href) {
+        baseSeen = true;
+        try {
+          const resolvedBase = new URL(href.value, pageUrl.href);
+          // A base fragment affects no resource request. Remove it before
+          // applying the stricter request-URL validation and origin guards.
+          resolvedBase.hash = "";
+          baseUrl = normalizeUrl(resolvedBase.href);
+        }
+        catch { addNote(state, "The first document base URL was invalid or unsupported; relative references used the page URL and coverage may be incomplete."); }
+      }
+    }
     if (tag === "script") {
       const src = attr(node, "src");
       if (src) {
         const type = attr(node, "type")?.value.trim().toLowerCase() ?? "";
         if (src.value.trim() && isJavaScriptType(type)) {
           const loc = sourceLocation(node, "src");
-          scripts.push({ raw: src.value, line: loc.line ?? nodeLocation.line, column: loc.column ?? nodeLocation.column });
+          scripts.push({ raw: src.value, isModule: type === "module", line: loc.line ?? nodeLocation.line, column: loc.column ?? nodeLocation.column });
         }
       } else {
         const inline = scriptTextLocation(node);
@@ -711,9 +740,8 @@ function inspectHtml(state: ScanState, html: string, pageUrl: NormalizedUrl): Ht
         resources.push({ raw: entry.value, kind: resourceKind, line: loc.line ?? nodeLocation.line, column: loc.column ?? nodeLocation.column });
       }
     }
-    for (const child of node.childNodes ?? []) walk(child);
-  };
-  walk(document);
+    for (let index = (node.childNodes?.length ?? 0) - 1; index >= 0; index -= 1) pending.push(node.childNodes![index]);
+  }
 
   for (const resource of resources) {
     if (pageUrl.protocol === "https:" && /^http:\/\//i.test(resource.raw) && isActiveMixedContentKind(resource.kind)) {
@@ -732,6 +760,7 @@ function inspectHtml(state: ScanState, html: string, pageUrl: NormalizedUrl): Ht
   return {
     scripts,
     moduleScans: inlineModuleScans,
+    baseUrl,
   };
 }
 
@@ -769,6 +798,7 @@ function pageBudgetFor(options: UrlOptions): number {
 
 function optionsError(options: UrlOptions): string | undefined {
   if (!options || typeof options !== "object" || typeof options.url !== "string") return "invalid_url_option";
+  if (options.signal !== undefined && !(options.signal instanceof AbortSignal)) return "invalid_cancellation_signal";
   const timeout = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   const pageInputs = options.pages;
   if (pageInputs !== undefined && !Array.isArray(pageInputs)) return "invalid_page_option";
@@ -826,7 +856,7 @@ function markResponseStatus(state: ScanState, status: number, label: "root" | "p
   }
 }
 
-function inspectPage(state: ScanState, response: FetchedResource, label: "root" | "page"): { scripts: ScriptReference[]; moduleScans: ModuleReferenceScan[] } {
+function inspectPage(state: ScanState, response: FetchedResource, label: "root" | "page"): HtmlInspection {
   markResponseStatus(state, response.status, label);
   if (response.body.byteLength === 0) {
     addNote(state, label === "root" ? "The root response body was empty; content checks are incomplete." : "An explicitly requested page body was empty; content checks are incomplete.");
@@ -834,7 +864,12 @@ function inspectPage(state: ScanState, response: FetchedResource, label: "root" 
   inspectHeaders(state, response);
   inspectSourceMapHeaders(state, response);
   inspectCors(state, response);
-  const pageText = new TextDecoder("utf-8", { fatal: false }).decode(response.body);
+  const contentType = firstHeader(response.headers, "content-type");
+  const mediaType = contentType?.toLowerCase() ?? "";
+  const isHtml = !mediaType || mediaType.includes("text/html") || mediaType.includes("application/xhtml+xml");
+  const decoded = decodeUrlText(response.body, contentType, isHtml ? "html" : "text");
+  for (const note of decoded.notes) addNote(state, note);
+  const pageText = decoded.text;
   scanSecrets(state, pageText, response.finalUrl);
   scanDomSinks(state, pageText, response.finalUrl);
   if (response.finalUrl.protocol === "http:") {
@@ -851,8 +886,6 @@ function inspectPage(state: ScanState, response: FetchedResource, label: "root" 
   }
   scanMixedContent(state, pageText, response.finalUrl);
 
-  const contentType = firstHeader(response.headers, "content-type")?.toLowerCase() ?? "";
-  const isHtml = !contentType || contentType.includes("text/html") || contentType.includes("application/xhtml+xml");
   if (isHtml) {
     scanDisclosure(state, pageText, response.finalUrl);
     scanComponents(state, pageText, response.finalUrl);
@@ -863,7 +896,7 @@ function inspectPage(state: ScanState, response: FetchedResource, label: "root" 
   addNote(state, label === "root"
     ? "The root response was not declared as HTML; only static text checks were applied."
     : "An explicitly requested page was not declared as HTML; only static text checks were applied.", false);
-  return { scripts: [], moduleScans: [scanJs(state, pageText, response.finalUrl)] };
+  return { scripts: [], moduleScans: [scanJs(state, pageText, response.finalUrl)], baseUrl: response.finalUrl };
 }
 
 function recordModuleScan(state: ScanState, scan: ModuleReferenceScan): void {
@@ -872,6 +905,8 @@ function recordModuleScan(state: ScanState, scan: ModuleReferenceScan): void {
   state.dynamicImportsObserved += scan.dynamicImports;
   state.computedImportsObserved += scan.computedImports;
   if (scan.parseDiagnostics > 0) addNote(state, "A JavaScript module parse had syntax diagnostics; static module coverage may be incomplete.");
+  if (scan.incompleteReason === "parser_failure") addNote(state, "A JavaScript module parser failed; previously collected findings were retained and static module coverage is incomplete.");
+  if (scan.incompleteReason === "ast_limit") addNote(state, "A JavaScript module exceeded the bounded syntax inspection limit; static module coverage is incomplete.");
   if (scan.dynamicImports > 0) addNote(state, "Dynamic module imports were observed but were not fetched; browser/runtime resolution is outside the static URL scope.", false);
   if (scan.computedImports > 0) addNote(state, "Computed or deep dynamic module imports were observed but were not fetched.", false);
 }
@@ -888,6 +923,7 @@ function enqueueScript(
   baseUrl: NormalizedUrl,
   allowedOrigin: string,
   kind: PendingScript["kind"],
+  isModule = kind === "module",
 ): void {
   const specifier = raw.trim();
   if (kind === "module" && !isWebModuleSpecifier(specifier)) {
@@ -910,9 +946,12 @@ function enqueueScript(
       : "Cross-origin linked JavaScript was outside the approved collection scope.", false);
     return;
   }
-  if (seenScripts.has(scriptUrl.href)) return;
-  seenScripts.add(scriptUrl.href);
-  pending.push({ url: scriptUrl, kind });
+  // Classic and module responses can decode the same bytes differently. A
+  // prior classic reference must not suppress the UTF-8 module import graph.
+  const key = `${isModule ? "module" : "text"}:${scriptUrl.href}`;
+  if (seenScripts.has(key)) return;
+  seenScripts.add(key);
+  pending.push({ url: scriptUrl, kind, isModule });
 }
 
 function enqueueModuleScan(
@@ -933,15 +972,14 @@ function enqueuePageInspection(
   state: ScanState,
   pending: PendingScript[],
   seenScripts: Set<string>,
-  inspection: { scripts: ScriptReference[]; moduleScans: ModuleReferenceScan[] },
-  pageUrl: NormalizedUrl,
+  inspection: HtmlInspection,
   allowedOrigin: string,
 ): void {
   state.scriptsDiscovered += inspection.scripts.length;
   for (const reference of inspection.scripts) {
-    enqueueScript(state, pending, seenScripts, reference.raw, pageUrl, allowedOrigin, "html");
+    enqueueScript(state, pending, seenScripts, reference.raw, inspection.baseUrl, allowedOrigin, "html", reference.isModule);
   }
-  for (const scan of inspection.moduleScans) enqueueModuleScan(state, pending, seenScripts, scan, pageUrl, allowedOrigin);
+  for (const scan of inspection.moduleScans) enqueueModuleScan(state, pending, seenScripts, scan, inspection.baseUrl, allowedOrigin);
 }
 
 async function processScripts(
@@ -984,7 +1022,9 @@ async function processScripts(
       if (scriptType && !scriptType.includes("javascript") && !scriptType.includes("ecmascript") && !scriptType.includes("text/plain")) {
         addNote(state, "A same-origin linked script or module returned an unexpected content type.");
       }
-      const moduleScan = scanJs(state, new TextDecoder("utf-8", { fatal: false }).decode(script.body), script.finalUrl);
+      const decoded = decodeUrlText(script.body, firstHeader(script.headers, "content-type"), entry.isModule ? "module" : "text");
+      for (const note of decoded.notes) addNote(state, note);
+      const moduleScan = scanJs(state, decoded.text, script.finalUrl);
       enqueueModuleScan(state, pending, seenScripts, moduleScan, script.finalUrl, allowedOrigin);
       if (script.status < 200 || script.status >= 300 || script.status === 206) {
         addNote(state, entry.kind === "module" ? "A static module returned a non-success HTTP status." : "A linked script returned a non-success HTTP status.");
@@ -1033,13 +1073,24 @@ export async function runUrl(options: UrlOptions): Promise<CheckResult[]> {
   }
   const pageTargets = pageTargetsFor(options, target);
   if (pageTargets.error) return [errorResult(pageTargets.error, options, state)];
+  if (options.signal?.aborted) {
+    addNote(state, "URL collection was cancelled before any request; coverage is incomplete.");
+    return [result(state, "partial", state.notes, { requestCount: 0, allowPrivate: options.allowPrivate === true })];
+  }
 
   const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   const maxPages = pageBudgetFor(options);
   const maxScripts = options.maxScripts ?? DEFAULT_MAX_SCRIPTS;
   const maxBytes = options.maxBytes ?? DEFAULT_MAX_BYTES;
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  const cancel = (): void => controller.abort();
+  options.signal?.addEventListener("abort", cancel, { once: true });
+  if (options.signal?.aborted) cancel();
+  const timer = setTimeout(cancel, timeoutMs);
+  const dispose = (): void => {
+    clearTimeout(timer);
+    options.signal?.removeEventListener("abort", cancel);
+  };
   const budget: UrlNetworkContext["budget"] = {
     count: 0,
     // One shared request budget covers root/additional pages, linked scripts,
@@ -1057,7 +1108,11 @@ export async function runUrl(options: UrlOptions): Promise<CheckResult[]> {
       Math.min(MAX_SINGLE_BODY_BYTES, maxBytes),
     );
   } catch (error) {
-    clearTimeout(timer);
+    dispose();
+    if (options.signal?.aborted) {
+      addNote(state, "URL collection was cancelled before the root response was inspected; coverage is incomplete.");
+      return [result(state, "partial", state.notes, { requestCount: budget.count, allowPrivate: context.allowPrivate })];
+    }
     return [errorResult(codeOf(error), options, state, { requestCount: budget.count })];
   }
 
@@ -1067,7 +1122,7 @@ export async function runUrl(options: UrlOptions): Promise<CheckResult[]> {
   const seenScripts = new Set<string>();
   try {
     const rootInspection = inspectPage(state, root, "root");
-    enqueuePageInspection(state, pending, seenScripts, rootInspection, root.finalUrl, root.finalUrl.origin);
+    enqueuePageInspection(state, pending, seenScripts, rootInspection, root.finalUrl.origin);
     await processScripts(state, pending, seenScripts, context, maxScripts, maxBytes, root.finalUrl.origin);
 
     const targetLimit = Math.min(maxPages, pageTargets.targets.length);
@@ -1099,16 +1154,17 @@ export async function runUrl(options: UrlOptions): Promise<CheckResult[]> {
       state.pagesFetched += 1;
       state.bytes += page.body.byteLength;
       const inspection = inspectPage(state, page, "page");
-      enqueuePageInspection(state, pending, seenScripts, inspection, page.finalUrl, root.finalUrl.origin);
+      enqueuePageInspection(state, pending, seenScripts, inspection, root.finalUrl.origin);
       await processScripts(state, pending, seenScripts, context, maxScripts, maxBytes, root.finalUrl.origin);
     }
     if (pageTargets.targets.length > maxPages) {
       state.pagesSkipped += pageTargets.targets.length - maxPages;
       addNote(state, "The shared same-origin page limit was reached; additional requested pages were not fetched.");
     }
-    if (controller.signal.aborted || Date.now() >= context.deadlineAt) addNote(state, "The collection deadline elapsed before all static checks completed.");
+    if (options.signal?.aborted) addNote(state, "URL collection was cancelled; previously collected findings were retained and coverage is incomplete.");
+    else if (controller.signal.aborted || Date.now() >= context.deadlineAt) addNote(state, "The collection deadline elapsed before all static checks completed.");
   } finally {
-    clearTimeout(timer);
+    dispose();
   }
   const status: CheckResult["status"] = state.incomplete ? "partial" : "completed";
   return [result(state, status, state.notes, {

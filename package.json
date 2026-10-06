@@ -52,6 +52,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json && node scripts/build-action-bundle.mjs",
     "test": "npm run build && node --test build/tests/*.test.js",
+    "test:dast": "npm run build && node examples/dast-owned-corpus.mjs",
     "benchmark": "npm run build && node scripts/benchmark.mjs",
     "package:release": "npm run build && node scripts/package-release.mjs",
     "test:schemathesis": "node scripts/test-schemathesis.mjs",

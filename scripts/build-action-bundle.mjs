@@ -57,7 +57,7 @@ async function bundledDependencyNotices() {
     const packageJson = JSON.parse(await readFile(packagePath, 'utf8'));
     const licensePath = join(root, 'node_modules', name, file);
     sections.push(`===== ${name} ${packageJson.version} :: ${file} =====`);
-    sections.push(await readFile(licensePath, 'utf8'));
+    sections.push((await readFile(licensePath, 'utf8')).replace(/\r\n/g, '\n'));
     sections.push('');
   }
   return `${sections.join('\n').trimEnd()}\n`;

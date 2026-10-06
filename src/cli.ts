@@ -294,9 +294,9 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
     process.stdout.write(USAGE);
     return 0;
   }
-  const controller = parsed.nativePreview ? new AbortController() : undefined;
-  const cancel = (): void => controller?.abort();
-  if (controller) { process.on('SIGINT', cancel); process.on('SIGTERM', cancel); }
+  const controller = new AbortController();
+  const cancel = (): void => controller.abort();
+  process.on('SIGINT', cancel); process.on('SIGTERM', cancel);
   try {
   const startedAt = new Date().toISOString();
   const mode = modeFor(parsed);
@@ -320,7 +320,7 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
       osvOffline: parsed.osvOffline,
       outDir: parsed.outDir,
       nativePreview: parsed.nativePreview,
-      signal: controller?.signal,
+      signal: controller.signal,
     };
     try {
       checks.push(...await runSource(sourceOptions));
@@ -328,13 +328,14 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
       checks.push(runtimeErrorCheck("source.runtime", "Source scanning could not be completed."));
     }
   }
-  if (parsed.url && !controller?.signal.aborted) {
+  if (parsed.url && !controller.signal.aborted) {
     const urlOptions: UrlOptions = {
       url: parsed.url,
       pages: parsed.pages,
       maxPages: parsed.maxPages,
       allowPrivate: parsed.allowPrivate,
       timeoutMs: parsed.timeoutMs,
+      signal: controller.signal,
     };
     try {
       checks.push(...await runUrl(urlOptions));
@@ -342,22 +343,22 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
       checks.push(runtimeErrorCheck("url.runtime", "URL scanning could not be completed."));
     }
   }
-  if (apiPolicy && !controller?.signal.aborted) {
+  if (apiPolicy && !controller.signal.aborted) {
     try {
-      checks.push(...await runApiPolicy({ policy: apiPolicy, allowPrivate: parsed.allowPrivate, timeoutMs: parsed.timeoutMs, signal: controller?.signal }));
+      checks.push(...await runApiPolicy({ policy: apiPolicy, allowPrivate: parsed.allowPrivate, timeoutMs: parsed.timeoutMs, signal: controller.signal }));
     } catch {
       checks.push(runtimeErrorCheck('api.runtime', 'API authorization scanning could not be completed.'));
     }
   }
   const scope = await declaredScope(parsed, apiPolicy);
   const markCancelled = (): void => {
-    if (controller?.signal.aborted && !checks.some((check) => check.id === 'scan.cancelled')) checks.push({ id: 'scan.cancelled', status: 'partial', findings: [], notes: ['The command was cancelled; completed stages do not establish command completion.'] });
+    if (controller.signal.aborted && !checks.some((check) => check.id === 'scan.cancelled')) checks.push({ id: 'scan.cancelled', status: 'partial', findings: [], notes: ['The command was cancelled; completed stages do not establish command completion.'] });
   };
   markCancelled();
   let report = createReport(checks, mode, startedAt, scope);
   try {
     await writeReports(report, parsed.outDir, { failOn: parsed.failOn });
-    if (controller?.signal.aborted && !report.checks.some((check) => check.id === 'scan.cancelled')) {
+    if (controller.signal.aborted && !report.checks.some((check) => check.id === 'scan.cancelled')) {
       markCancelled(); report = createReport(checks, mode, startedAt, scope);
       await writeReports(report, parsed.outDir, { failOn: parsed.failOn });
     }
@@ -387,7 +388,7 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
   ].join("\n"));
   return code;
   } finally {
-    if (controller) { process.removeListener('SIGINT', cancel); process.removeListener('SIGTERM', cancel); }
+    process.removeListener('SIGINT', cancel); process.removeListener('SIGTERM', cancel);
   }
 }
 

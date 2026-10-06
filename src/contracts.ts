@@ -116,6 +116,8 @@ export interface UrlOptions {
   maxPages?: number;
   maxScripts?: number;
   maxBytes?: number;
+  /** Cooperatively abort collection while preserving already inspected findings. */
+  signal?: AbortSignal;
 }
 
 export interface EngineProvenance {
