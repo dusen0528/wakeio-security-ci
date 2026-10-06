@@ -1,3 +1,6 @@
+import { apiRequestPlanDigest, createApiExecutionLedger, finishApiExecutionLedger } from "./api-execution.js";
+import type { ApiExecutionLedger, ApiExecutionStep, ApiRequestPlan, ApiRequestPlanStep } from "./contracts.js";
+export type { ApiRequestPlan, ApiRequestPlanStep } from "./contracts.js";
 import { ApiPolicyError } from "./api-policy-error.js";
 import { types } from "node:util";
 import { snapshotJsonData } from "./json-snapshot.js";
@@ -206,6 +209,10 @@ interface SessionDiagnostics {
 }
 
 interface RequestContextState {
+  execution: ApiExecutionLedger;
+  activeStep?: ApiExecutionStep;
+  actorIndexes: Map<string, number>;
+  caseIndexes: Map<string, number>;
   session: SessionDiagnostics;
   ownedCapture?: ApiStateCaptureSession;
   context: UrlNetworkContext;
@@ -559,13 +566,6 @@ export function validateApiPolicy(input: unknown): ParsedApiPolicy {
 
 /** A configuration check, never a scan result or authorization to contact a target. */
 export interface ApiPreflightIssue { code: string; location: string; message: string }
-export interface ApiRequestPlanStep {
-  ordinal: number;
-  method: 'GET';
-  phase: 'identity-before' | 'owner-before' | 'deny' | 'owner-after' | 'identity-after';
-  actorIndex: number;
-  caseIndex?: number;
-}
 export interface ApiPreflightResult {
   version: 1;
   kind: 'api-preflight';
@@ -574,18 +574,10 @@ export interface ApiPreflightResult {
   networkRequests: 0;
   dnsLookups: 0;
   policyVersion: 1 | 2 | null;
+  /** Redacted plan identity only; no target, credential or assertion values are hashed. */
+  planSha256: string | null;
   issues: ApiPreflightIssue[];
-  plan: null | {
-    actorCount: number;
-    caseCount: number;
-    logicalRequests: number;
-    maximumHttpAttempts: number;
-    timeoutMs: number;
-    maximumResponseBytes: number;
-    maximumTotalResponseBytes: number;
-    allowPrivate: boolean;
-    steps: ApiRequestPlanStep[];
-  };
+  plan: ApiRequestPlan | null;
   limitations: string[];
 }
 const PREFLIGHT_LIMITATIONS = [
@@ -601,7 +593,7 @@ const PREFLIGHT_LIMITATIONS = [
 function blockedApiPreflight(code: string, location: string, message: string): ApiPreflightResult {
   // This constructor accepts only fixed strings at internal call sites, not errors from input.
   return { version: 1, kind: 'api-preflight', status: 'blocked', execution: 'not_run', networkRequests: 0, dnsLookups: 0,
-    policyVersion: null, issues: [{ code, location, message }], plan: null, limitations: [...PREFLIGHT_LIMITATIONS] };
+    policyVersion: null, planSha256: null, issues: [{ code, location, message }], plan: null, limitations: [...PREFLIGHT_LIMITATIONS] };
 }
 
 class ApiPreparationError extends Error {
@@ -647,6 +639,24 @@ function prepareApiRun(options: ApiRunOptions): { parsed: ParsedApiPolicy; crede
   return { parsed, credentials, timeoutMs, allowPrivate: options.allowPrivate === true, signal: options.signal };
 }
 
+function requestPlan(parsed: ParsedApiPolicy, timeoutMs: number, allowPrivate: boolean): ApiRequestPlan {
+  const steps: ApiRequestPlanStep[] = [];
+  const indexes = new Map(parsed.policy.actors.map((actor, index) => [actor.id, index]));
+  const add = (phase: ApiRequestPlanStep['phase'], actor: string, caseIndex?: number) => {
+    steps.push({ ordinal: steps.length, method: 'GET', phase, actorIndex: indexes.get(actor)!, ...(caseIndex === undefined ? {} : { caseIndex }) });
+  };
+  if (!parsed.legacy) for (const actor of parsed.policy.actors) if (actor.identity) add('identity-before', actor.id);
+  parsed.cases.forEach((entry, caseIndex) => {
+    add('owner-before', entry.allow.actor, caseIndex);
+    for (const deny of entry.deny) add('deny', deny.actor, caseIndex);
+    add('owner-after', entry.allow.actor, caseIndex);
+  });
+  if (!parsed.legacy) for (const actor of parsed.policy.actors) if (actor.identity) add('identity-after', actor.id);
+  return { actorCount: parsed.policy.actors.length, caseCount: parsed.cases.length, logicalRequests: parsed.expectedRequests,
+    maximumHttpAttempts: API_MAX_REQUESTS, timeoutMs, maximumResponseBytes: API_MAX_SINGLE_BODY_BYTES,
+    maximumTotalResponseBytes: API_MAX_TOTAL_BODY_BYTES, allowPrivate, steps };
+}
+
 /** Offline, redacted configuration and execution-plan preview. Ready is not a scan pass. */
 export function preflightApiPolicy(options: ApiRunOptions): ApiPreflightResult {
   try {
@@ -656,23 +666,10 @@ export function preflightApiPolicy(options: ApiRunOptions): ApiPreflightResult {
     if (signal && Object.getOwnPropertyDescriptor(AbortSignal.prototype, 'aborted')!.get!.call(signal)) issues.push({ code: 'cancelled', location: 'signal', message: 'The supplied cancellation signal is already aborted.' });
     try { validateStaticTarget(parsed.baseUrl, allowPrivate); }
     catch { issues.push({ code: 'blocked_target', location: 'policy.baseUrl', message: 'The target violates static network policy; metadata and forbidden ranges stay blocked even with allowPrivate.' }); }
-    const steps: ApiRequestPlanStep[] = [];
-    const indexes = new Map(parsed.policy.actors.map((actor, index) => [actor.id, index]));
-    const add = (phase: ApiRequestPlanStep['phase'], actor: string, caseIndex?: number) => {
-      steps.push({ ordinal: steps.length, method: 'GET', phase, actorIndex: indexes.get(actor)!, ...(caseIndex === undefined ? {} : { caseIndex }) });
-    };
-    if (!parsed.legacy) for (const actor of parsed.policy.actors) if (actor.identity) add('identity-before', actor.id);
-    parsed.cases.forEach((entry, caseIndex) => {
-      add('owner-before', entry.allow.actor, caseIndex);
-      for (const deny of entry.deny) add('deny', deny.actor, caseIndex);
-      add('owner-after', entry.allow.actor, caseIndex);
-    });
-    if (!parsed.legacy) for (const actor of parsed.policy.actors) if (actor.identity) add('identity-after', actor.id);
+    const plan = requestPlan(parsed, timeoutMs, allowPrivate);
     return { version: 1, kind: 'api-preflight', status: issues.length ? 'blocked' : 'ready', execution: 'not_run',
       networkRequests: 0, dnsLookups: 0, policyVersion: parsed.policy.version, issues,
-      plan: { actorCount: parsed.policy.actors.length, caseCount: parsed.cases.length, logicalRequests: parsed.expectedRequests,
-        maximumHttpAttempts: API_MAX_REQUESTS, timeoutMs, maximumResponseBytes: API_MAX_SINGLE_BODY_BYTES,
-        maximumTotalResponseBytes: API_MAX_TOTAL_BODY_BYTES, allowPrivate, steps },
+      plan, planSha256: apiRequestPlanDigest(parsed.policy.version, plan),
       limitations: [...PREFLIGHT_LIMITATIONS] };
   } catch (error) {
     return error instanceof ApiPreparationError ? blockedApiPreflight(error.issue.code, error.issue.location, error.issue.message)
@@ -805,10 +802,11 @@ async function requestApi(
   authorization: string | undefined,
   state: RequestContextState,
 ): Promise<RequestOutcome> {
-  if (state.stopRequests) return { errorCode: state.bodyReadIncomplete ? "body_limit" : "total_body_limit" };
+  if (state.stopRequests) { if (state.activeStep) state.activeStep.reason = "body_budget"; return { errorCode: state.bodyReadIncomplete ? "body_limit" : "total_body_limit" }; }
   if (state.bytes >= API_MAX_TOTAL_BODY_BYTES) {
     state.stopRequests = true;
     state.bodyBudgetExhausted = true;
+    if (state.activeStep) state.activeStep.reason = "body_budget";
     return { errorCode: "total_body_limit" };
   }
   const capture = state.ownedCapture;
@@ -828,11 +826,13 @@ async function requestApi(
       Math.min(MAX_SINGLE_BODY_BYTES, API_MAX_TOTAL_BODY_BYTES - state.bytes),
     );
     state.bytes += resource.body.byteLength;
+    if (state.activeStep) state.activeStep.httpStatus = resource.status;
     try { capture?.finish(capturedOrdinal, resource); } catch { /* Oracle handles missing capture. */ }
     return { resource };
   } catch (error) {
     try { capture?.finish(capturedOrdinal); } catch { /* Oracle handles missing capture. */ }
     const errorCode = codeOf(error);
+    if (state.activeStep) state.activeStep.reason = requestFailureReason(errorCode, state);
     // readResponseBody can reject after consuming a final chunk that crosses
     // the cap. Stop the whole preview on that terminal condition so repeated
     // cases cannot accumulate unaccounted response bytes.
@@ -843,6 +843,33 @@ async function requestApi(
     }
     return { errorCode };
   }
+}
+
+function requestFailureReason(code: string, state: RequestContextState): ApiExecutionStep['reason'] {
+  if (Date.now() >= state.context.deadlineAt) return 'deadline';
+  if (state.context.signal.aborted) return 'cancelled';
+  if (['body_limit', 'total_body_limit'].includes(code)) return 'body_budget';
+  if (code === 'request_limit') return 'request_budget';
+  if (/blocked|private|metadata|redirect|scheme|port|address/.test(code)) return 'network_policy';
+  return 'transport_error';
+}
+
+async function recordStep<T>(state: RequestContextState, phase: ApiRequestPlanStep['phase'], actor: string,
+  caseId: string | undefined, execute: () => Promise<T>, evaluated: (result: T) => boolean): Promise<T> {
+  const plan = state.execution.plan!;
+  const actorIndex = state.actorIndexes.get(actor), caseIndex = caseId === undefined ? undefined : state.caseIndexes.get(caseId);
+  const planned = plan.steps.find(step => step.phase === phase && step.actorIndex === actorIndex && step.caseIndex === caseIndex)!;
+  const step = state.execution.steps[planned.ordinal];
+  step.attemptStart = state.context.budget.count;
+  state.activeStep = step;
+  try {
+    const result = await execute();
+    step.httpAttempts = state.context.budget.count - step.attemptStart;
+    step.outcome = step.httpAttempts === 0 ? 'not_attempted' : evaluated(result) ? 'evaluated' : 'inconclusive';
+    if (step.outcome === 'evaluated') step.reason = 'evaluated';
+    else if (step.reason === 'not_reached') step.reason = 'assertion_inconclusive';
+    return result;
+  } finally { state.activeStep = undefined; }
 }
 
 function controlFailureNote(caseId: string, phase: "before" | "after", detail: string): string {
@@ -983,7 +1010,8 @@ async function runIdentityControls(
       incomplete = true;
       continue;
     }
-    const result = await checkIdentity(actor.id, identity, authorization, phase, state, notes);
+    const result = await recordStep(state, phase === "before" ? "identity-before" : "identity-after", actor.id, undefined,
+      () => checkIdentity(actor.id, identity, authorization, phase, state, notes), result => result.valid);
     if (phase === "before") {
       current.beforeValid = result.valid;
       current.beforePrincipal = result.principal;
@@ -1178,6 +1206,9 @@ export async function runApiPolicy(options: ApiRunOptions): Promise<CheckResult[
   const controller = createApiRunControl(timeoutMs, signal);
   const budget: UrlNetworkContext["budget"] = { count: 0, max: API_MAX_REQUESTS };
   const state: RequestContextState = {
+    execution: createApiExecutionLedger(parsed.policy.version, requestPlan(parsed, timeoutMs, allowPrivate)),
+    actorIndexes: new Map(parsed.policy.actors.map((actor, index) => [actor.id, index])),
+    caseIndexes: new Map(parsed.cases.map((entry, index) => [entry.id, index])),
     session: { authenticatedDeny401Count: 0, identityStatusMismatches: 0, identityResponseFailures: 0,
       identityPrincipalMismatches: 0, identityOrganizationMismatches: 0, identityRequestFailures: 0 },
     ownedCapture: ownedApiCapture(signal),
@@ -1223,8 +1254,12 @@ export async function runApiPolicy(options: ApiRunOptions): Promise<CheckResult[
         incomplete = true;
         continue;
       }
-      const before = await checkPositiveControl(entry, ownerAuthorization, "before", state, notes);
+      const before = await recordStep(state, "owner-before", entry.allow.actor, entry.id,
+        () => checkPositiveControl(entry, ownerAuthorization, "before", state, notes), result => result.valid);
       if (!before.valid) {
+        for (const step of state.execution.plan!.steps) if (step.caseIndex === state.caseIndexes.get(entry.id) && step.phase !== "owner-before") {
+          state.execution.steps[step.ordinal].reason = "prerequisite_failed";
+        }
         incomplete = true;
         continue;
       }
@@ -1233,10 +1268,12 @@ export async function runApiPolicy(options: ApiRunOptions): Promise<CheckResult[
         const actor = actors.get(deny.actor);
         const authorization = actor?.authorizationEnv === undefined ? undefined : credentials.values.get(deny.actor);
         const identityVerified = actorIdentityVerified(deny.actor, actor, identityStates);
-        if (await checkDeny(entry, deny, actor, authorization, identityVerified, parsed.legacy, state, notes, findings)) incomplete = true;
+        if (await recordStep(state, "deny", deny.actor, entry.id,
+          () => checkDeny(entry, deny, actor, authorization, identityVerified, parsed.legacy, state, notes, findings), result => !result)) incomplete = true;
         if (controller.signal.aborted) incomplete = true;
       }
-      const after = await checkPositiveControl(entry, ownerAuthorization, "after", state, notes);
+      const after = await recordStep(state, "owner-after", entry.allow.actor, entry.id,
+        () => checkPositiveControl(entry, ownerAuthorization, "after", state, notes), result => result.valid);
       if (!after.valid) incomplete = true;
     }
     if (!parsed.legacy) {
@@ -1262,11 +1299,14 @@ export async function runApiPolicy(options: ApiRunOptions): Promise<CheckResult[
       : "The API policy time budget elapsed; the authorization preview is incomplete.");
     incomplete = true;
   }
-  const status: CheckResult["status"] = incomplete ? "partial" : "completed";
+  const apiExecution = finishApiExecutionLedger(state.execution, incomplete);
+  if (apiExecution.status === 'invalid') addNote(notes, 'API execution metadata was inconsistent; the run remains incomplete.');
+  const status: CheckResult["status"] = incomplete || apiExecution.status !== 'complete' ? "partial" : "completed";
   return [{
     id: "api.authorization",
     status,
     findings,
+    apiExecution,
     notes: notes.slice(0, 128),
     metrics: {
       caseCount: parsed.cases.length,

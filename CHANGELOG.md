@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Extend the existing indexed API GET preflight plan with a versioned execution
+  ledger: evaluated, inconclusive and never-attempted steps, shared HTTP retry
+  accounting, fixed reasons and redacted plan identity. No added requests.
+  Align CLI planning with the existing scan time budget; SDK defaults stay unchanged.
+- Fail closed on malformed/incompatible ledger metadata while retaining findings
+  and report delivery; comparisons require matching complete declared plans.
+  Existing reports without a ledger stay readable. Hashes are not attestations.
+
 - Keep authenticated HTTP 401 probes incomplete even when point-in-time identity
   controls pass or later requests recover; retain protected-canary findings.
   Add fixed numeric identity/session failure diagnostics without response values.

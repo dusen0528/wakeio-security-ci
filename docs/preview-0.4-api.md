@@ -21,7 +21,7 @@ node build/src/cli.js plan \
 ```
 
 - `--api-policy FILE` 또는 `--openapi-input FILE` 중 하나만 사용한다. OpenAPI 입력은 원본 schema 파일만이 아니라 [전체 wrapper JSON](../examples/openapi-preflight-input.json)이다.
-- 선택 옵션은 `--allow-private`, `--timeout-ms N`이다. timeout은 1..120000 ms, 기본 30000 ms다. 계획에 표시할 실행 시간 예산이며 실제 실행에는 옵션을 별도로 전달한다. `--out`, `--tools`, `--url` 등 scan 옵션을 섞지 않는다.
+- 선택 옵션은 `--allow-private`, `--timeout-ms N`이다. timeout은 1..120000 ms, CLI 기본 120000 ms다. 계획에 표시할 실행 시간 예산이며 실제 실행에는 옵션을 별도로 전달한다. `--out`, `--tools`, `--url` 등 scan 옵션을 섞지 않는다.
 - 입력은 1 MiB 이하의 읽을 수 있는 일반 JSON 파일이다. symlink나 FIFO 같은 비파일 입력은 지원하지 않는다. 원격 schema나 YAML을 읽지 않는다.
 - 결과와 설정 오류는 stdout의 JSON이다. 종료 코드 `0`은 설정 `ready`, `2`는 `blocked`이며 `1`로 finding을 보고하지 않는다. DNS 조회·HTTP 요청·서버 시작·scan 보고서 작성은 없다. `plan --help`는 사용법 텍스트를 출력한다.
 
@@ -125,6 +125,56 @@ authenticated actor의 리소스 요청이 HTTP 401이면 앞뒤 identity contro
 이 계수는 처음 실패한 검사 단계만 분류한다. 모두 0이라고 세션 연속성이 입증되는 것은 아니다. 전후 identity 검사는 해당 시점의 표본이므로 중간에 사라졌다 회복된 세션·tenant 변화나 endpoint별 인증 동작을 보장하지 않는다. 특히 403만으로 권한 거부와 내부 인증 오류를 구별할 수 없다. 토큰 만료 시각을 추측하거나 자동 로그인·refresh·tenant header를 추가하지 않는다. endpoint와 credential 설정을 검토하고 새로 승인된 합성 자격증명으로 다시 실행해야 한다.
 
 API/OpenAPI SDK 옵션은 own data property만 사용한다. 상속된 옵션·getter는 실행 권한을 제공하지 않으며, own accessor는 실행 전에 거부한다. `allowPrivate`, `signal`, 시간 예산, 정책과 credential은 실행 시작 시 고정한다. 전달한 env/옵션을 중간에 바꿔 token refresh나 권한 변경을 수행할 수 없다. 받은 signal 자체의 정상 abort는 계속 적용된다. `plan`은 로컬 설정만 확인하므로 401을 포함한 정책이 `ready`여도 실제 401 실행 결과는 `partial`일 수 있다.
+
+## 계획 대비 실행 ledger
+
+정상적으로 준비된 API/OpenAPI 실행은 `api.authorization.apiExecution`에 별도
+`version: 1` ledger를 남긴다. 기존 GET runner를 관찰할 뿐 요청·인증 refresh·범위를
+추가하지 않는다. `plan`의 순서와 `steps[].ordinal`은 0부터 시작하며 실행하지 못한
+단계도 빠뜨리지 않는다. actor/case는 입력 배열 index로만 참조한다.
+
+- `evaluated`: 기존 evaluator가 해당 control/probe를 판정했다. 보호 canary 노출
+  finding도 이 상태가 될 수 있으므로 성공·안전·exploit 검증을 뜻하지 않는다
+- `inconclusive`: HTTP 시도를 했지만 transport, response, identity 또는 assertion
+  문제로 판정하지 못했다
+- `not_attempted`: 해당 단계에서 HTTP 시도를 시작하지 않았다. 선행 owner control
+  실패, cancellation, DNS/target 차단, 소진된 예산 등이 원인일 수 있다
+
+`attemptStart`와 `httpAttempts`는 기존 runner의 HTTP attempt budget을 그대로 센다.
+주소 retry는 한 logical step에서 여러 attempt를 사용할 수 있다. 이는 서버 수신 확인이
+아니며 DNS lookup 수와도 다르다. `httpStatus`는 전체 bounded response를 받았을 때만
+존재한다. redirect/body-limit 등의 예외에서는 헤더를 일부 받았어도 `null`이다.
+응답 body/header, raw request, URL/path, actor 이름, 환경변수 이름, principal, canary,
+credential 값은 ledger에 저장하지 않는다. 기존 finding/location/notes의 공개 계약은 별개다.
+
+예를 들어 8단계 계획에서 owner-before인 step 2가 HTTP 503이면 step 3·4의 deny와
+step 5의 owner-after는 `not_attempted / prerequisite_failed`로 남는다. 뒤의 identity
+controls가 통과하더라도 이 세 probe를 통과한 것으로 세지 않는다. Markdown에서 미실행
+index를 바로 찾고, 정책의 해당 case와 owner fixture를 확인한 뒤 승인된 동일 검사로
+재실행할 수 있다. `--fail-on none`이어도 이 실행은 partial/exit 2다.
+
+CLI `plan`의 기본 `--timeout-ms`는 `scan`과 같은 120000ms다. SDK의 API 기본값은
+기존 30000ms를 유지한다. SDK와 CLI를 연결할 때는 같은 timeout 등 effective 옵션을
+명시해야 같은 plan hash가 된다.
+
+preflight와 runtime의 `planSha256`은 같은 canonical redacted plan, budget, policy
+version에 대한 SHA-256이다. **같은 모양의 서로 다른 target·정책·assertion·credential은
+동일한 hash를 가질 수 있다.** 이 hash는 exact-policy/credential commitment나 서명이
+아니다. 기존 report scope/ruleset/tool provenance 비교와 함께 읽어야 한다.
+`agent-report.json`의 기존 report digest가 ledger를 포함한 sanitized report bytes를
+연결한다. 어떤 hash도 실행 사실·보고자 신뢰·독립 응답 증거를 증명하지 않는다.
+
+SDK `sanitiseApiExecutionLedger(untrustedValue)`는 네트워크 없이 schema, 순서, 예산,
+plan hash와 count/상태의 논리적 일관성만 확인한다. unknown version, accessor/proxy,
+중복·누락·추가 ordinal, 불가능한 HTTP/control 상태나 변경된 hash는 raw input을 버리고
+고정된 `status: invalid` envelope로 만든다. report 투영은 finding을 보존하면서 해당
+check를 partial로 낮추므로 artifact 생성 전체를 중단하지 않는다. ledger가 없는 이전
+report는 그대로 읽으며 사후에 실행 증거를 만들어 넣지 않는다.
+
+`compare`는 한쪽에만 ledger가 있거나, incomplete/invalid ledger이거나, policy version과
+redacted plan hash가 다르면 `unverified`다. 양쪽 ledger가 없으면 기존 비교 동작을
+유지한다. 동일하고 complete인 ledger도 기존 scope/provenance 검사를 대체하지 않으며,
+`not_observed`를 수정 완료로 승격하지 않는다.
 
 ## 정책 작성
 

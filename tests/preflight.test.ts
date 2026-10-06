@@ -1,4 +1,5 @@
 import test from "node:test";
+import { parseCliArgs } from "../src/cli.js";
 import assert from "node:assert/strict";
 import { execFile, spawn } from "node:child_process";
 import { createServer } from "node:http";
@@ -549,4 +550,21 @@ test('API and OpenAPI wrappers ignore inherited option getters without invoking 
     assert.equal(getterCalls, 0);
   `);
   assert.equal(result.code, 0, result.stderr);
+});
+
+
+test('CLI preflight and scan share default and explicit effective time budgets', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'wakeio-plan-budget-'));
+  try {
+    const file = join(root, 'policy.json'); await writeFile(file, JSON.stringify(policy()));
+    for (const flags of [[], ['--timeout-ms', '1234']]) {
+      const scan = parseCliArgs(['scan', '--api-policy', file, ...flags]); assert.ok(!('help' in scan));
+      const result = await child(CLI_TRAPPED, ['plan', '--api-policy', file, ...flags], root);
+      assert.equal(result.code, 0, result.stderr); const planned = JSON.parse(result.stdout);
+      assert.equal(planned.plan.timeoutMs, scan.timeoutMs);
+      assert.equal(planned.planSha256, preflightApiPolicy({ policy: policy(), env: ENV, timeoutMs: scan.timeoutMs }).planSha256);
+      assertOffline(planned);
+    }
+    assert.equal(preflightApiPolicy({ policy: policy(), env: ENV }).plan?.timeoutMs, 30_000);
+  } finally { await rm(root, { recursive: true, force: true }); }
 });

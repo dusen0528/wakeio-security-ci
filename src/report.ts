@@ -1,3 +1,5 @@
+import { types as utilTypes } from "node:util";
+import { sanitiseApiExecutionLedger, invalidApiExecutionLedger } from "./api-execution.js";
 import { redactSecrets, safeRelativePath, safeHttpUrl } from './report-path.js';
 import { sanitiseAnalysisBudget } from './source/analysis-budget.js';
 import { sanitiseApiStateEvidence } from './api-state-observer.js';
@@ -261,6 +263,7 @@ function projectAgentReport(report: ScanReport, failOn: FailOn): AgentReport {
       ...(check.analysisBudget ? { analysisBudget: check.analysisBudget } : {}),
       ...(check.analysisGaps ? { analysisGaps: check.analysisGaps } : {}),
       ...(check.apiStateEvidence ? { apiStateEvidence: check.apiStateEvidence } : {}),
+      ...(check.apiExecution ? { apiExecution: check.apiExecution } : {}),
     })),
     findings: report.checks.flatMap((check, checkIndex) => check.findings.map((finding) => ({
       findingId: finding.id!,
@@ -405,6 +408,10 @@ export function toSarif(report: ScanReport): SarifLog {
           schemaVersion: safeReport.schemaVersion,
           ...(safeReport.scope?.analysisBudget ? { analysisBudget: safeReport.scope.analysisBudget } : {}),
           ...(safeReport.checks.some(check => check.analysisBudget) ? { analysisBudgets: safeReport.checks.flatMap((check, checkIndex) => check.analysisBudget ? [{ checkIndex, checkId: check.id, analysisBudget: check.analysisBudget }] : []) } : {}),
+          ...(safeReport.checks.some(check => check.apiExecution) ? {
+            apiExecution: safeReport.checks.flatMap((check, checkIndex) => check.apiExecution
+              ? [{ checkIndex, checkId: check.id, apiExecution: check.apiExecution }] : []),
+          } : {}),
           ...(safeReport.checks.some(check => check.apiStateEvidence) ? {
             apiStateEvidence: safeReport.checks.flatMap((check, checkIndex) => check.apiStateEvidence
               ? [{ checkIndex, checkId: check.id, apiStateEvidence: check.apiStateEvidence }] : []),
@@ -464,6 +471,14 @@ export function toMarkdown(report: ScanReport, failOn: FailOn = 'high'): string 
       if (check.analysisBudget) lines.push(`  - AST analysis budget: ${budgetText(check.analysisBudget)}`);
       for (const note of check.notes) {
         lines.push(`  - Note: ${markdownInline(note)}`);
+      }
+      if (check.apiExecution) {
+        const e = check.apiExecution;
+        lines.push(`  - API execution ledger v1: ${e.status}; evaluated=${e.counts.evaluated ?? 'unknown'}, inconclusive=${e.counts.inconclusive ?? 'unknown'}, not attempted=${e.counts.notAttempted ?? 'unknown'}, HTTP attempts=${e.counts.httpAttempts ?? 'unknown'}. Declared metadata, not independent response proof.`);
+        for (const step of e.steps.filter(step => step.outcome !== 'evaluated')) {
+          const planned = e.plan!.steps[step.ordinal];
+          lines.push(`    - Step ${step.ordinal}: ${planned.phase}, actor index ${planned.actorIndex}${planned.caseIndex === undefined ? '' : `, case index ${planned.caseIndex}`}: ${step.outcome} (${step.reason}).`);
+        }
       }
       if (check.apiStateEvidence) {
         const e = check.apiStateEvidence;
@@ -645,6 +660,12 @@ function sanitiseChecks(input: CheckResult[] | undefined): CheckResult[] {
 
 function sanitiseCheck(input: CheckResult): CheckResult {
   let status = STATUSES.includes(input?.status) ? input.status : 'error';
+  const executionDescriptor = input && typeof input === 'object' && !utilTypes.isProxy(input)
+    ? Object.getOwnPropertyDescriptor(input, 'apiExecution') : undefined;
+  let apiExecution = executionDescriptor ? sanitiseApiExecutionLedger('value' in executionDescriptor ? executionDescriptor.value : undefined) : undefined;
+  if (apiExecution && (input.id !== 'api.authorization'
+    || (input.metrics?.requestCount !== undefined && input.metrics.requestCount !== apiExecution.counts.httpAttempts))) apiExecution = invalidApiExecutionLedger();
+  if (apiExecution && (apiExecution.status !== 'complete' || status === 'not_applicable') && status !== 'error') status = 'partial';
   const apiStateEvidence = input?.apiStateEvidence === undefined ? undefined : sanitiseApiStateEvidence(input.apiStateEvidence);
   if (input?.id === 'api.owned-state-oracle' && apiStateEvidence?.execution !== undefined && apiStateEvidence.execution !== 'completed' && status === 'completed') status = 'partial';
   const analysisBudget = sanitiseAnalysisBudget(input?.analysisBudget);
@@ -680,6 +701,7 @@ function sanitiseCheck(input: CheckResult): CheckResult {
     ...(analysisBudget ? { analysisBudget } : {}),
     ...(analysisGaps ? { analysisGaps } : {}),
     ...(apiStateEvidence ? { apiStateEvidence } : {}),
+    ...(apiExecution ? { apiExecution } : {}),
   };
 }
 

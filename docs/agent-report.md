@@ -65,6 +65,19 @@ Every projection treats incoming report data as untrusted. Original report JSON,
 SARIF results/rules/code flows, scan gate, scope, coverage and finding verification
 are unchanged; the source ruleset remains `.7`.
 
+## API execution navigation
+
+Prepared API runs include optional version-1 `checks[].apiExecution`: the same
+indexed GET plan as preflight, per-step evaluated/inconclusive/not-attempted
+outcomes, counted HTTP attempts and fixed diagnostic codes. It is projected to
+all four report formats; Markdown lists incomplete step indexes. A malformed
+present ledger becomes a fixed invalid envelope and an incomplete check,
+without dropping findings. Legacy reports without a ledger stay readable.
+See [the API execution contract](preview-0.4-api.md#계획-대비-실행-ledger).
+The redacted plan hash excludes targets, assertions and credentials; it is not
+an exact-policy commitment. These are declared execution facts, not independent
+HTTP evidence, exploit confirmation, an authenticated receipt or a verified fix.
+
 ## Scan gate and delivery
 
 `schemaVersion: "1.0.0"` identifies the agent contract independently of

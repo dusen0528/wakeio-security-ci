@@ -12,6 +12,9 @@
 
 별도의 실험적 [`repair` CLI](docs/repair-preview.md)는 검토한 로컬 수정안을 검증하거나 Codex/Claude를 선택적으로 연결합니다. 에이전트 호출에는 명시적 소스 전송 동의와 API 인증이 필요하며 모델 비용이 발생할 수 있습니다. 준비된 Docker 이미지와 고정 검증기로 private patch·검증 기록만 만들고 원본 적용·커밋은 하지 않습니다. 첫 지원 범위는 선언된 SQL fixture이며 범용 앱 수리 완료를 뜻하지 않습니다.
 
+API preview는 redacted index 기반 실행 ledger로 판정한 단계, 불확실한 단계,
+실행하지 못한 단계를 구분한다. [실행 계약](docs/preview-0.4-api.md#계획-대비-실행-ledger)을 참고한다.
+
 ## 무엇을 검사하나요?
 
 | 범위 | 확인할 수 있는 내용 | 기억해야 할 한계 |

@@ -60,6 +60,48 @@ export interface AstAnalysisBudget {
   effectiveProfile: AnalysisProfile;
   limits: { indexWork: number; flowWork: number; nodeVisits: number; functions: number; summaryWork: number; moduleEdges: number; callDepth: number; aliasSteps: number; traceSteps: number };
 }
+/** Redacted GET plan: indexes refer to the explicitly supplied policy arrays. */
+export interface ApiRequestPlanStep {
+  ordinal: number;
+  method: 'GET';
+  phase: 'identity-before' | 'owner-before' | 'deny' | 'owner-after' | 'identity-after';
+  actorIndex: number;
+  caseIndex?: number;
+}
+export interface ApiRequestPlan {
+  actorCount: number;
+  caseCount: number;
+  logicalRequests: number;
+  maximumHttpAttempts: number;
+  timeoutMs: number;
+  maximumResponseBytes: number;
+  maximumTotalResponseBytes: number;
+  allowPrivate: boolean;
+  steps: ApiRequestPlanStep[];
+}
+export interface ApiExecutionStep {
+  /** Planned ordinal, including steps that were never called. */
+  ordinal: number;
+  outcome: 'evaluated' | 'inconclusive' | 'not_attempted';
+  reason: 'evaluated' | 'assertion_inconclusive' | 'transport_error' | 'network_policy'
+    | 'request_budget' | 'body_budget' | 'cancelled' | 'deadline' | 'prerequisite_failed' | 'not_reached';
+  /** Zero-based offset into counted HTTP attempts; retries remain separately counted. */
+  attemptStart: number;
+  httpAttempts: number;
+  httpStatus: number | null;
+}
+/** Declared execution metadata only, not independent response evidence or authentication. */
+export interface ApiExecutionLedger {
+  version: 1;
+  basis: 'declared-api-execution';
+  status: 'complete' | 'partial' | 'invalid';
+  policyVersion: 1 | 2 | null;
+  planSha256: string | null;
+  plan: ApiRequestPlan | null;
+  steps: ApiExecutionStep[];
+  counts: { planned: number | null; evaluated: number | null; inconclusive: number | null; notAttempted: number | null; httpAttempts: number | null };
+  reasons: Array<'invalid_ledger' | 'legacy_policy' | 'run_incomplete' | 'incomplete_steps'>;
+}
 export interface CheckResult {
   analysisBudget?: AstAnalysisBudget;
   id: string;
@@ -70,6 +112,7 @@ export interface CheckResult {
   analysisGaps?: AnalysisGaps;
   /** Owned fixture observations only; not authentication of arbitrary external evidence. */
   apiStateEvidence?: ApiStateEvidence;
+  apiExecution?: ApiExecutionLedger;
 }
 export interface ApiStateEvidence {
   version: 1;
@@ -277,6 +320,7 @@ export interface AgentReport {
     analysisBudget?: AstAnalysisBudget;
     analysisGaps?: AnalysisGaps;
     apiStateEvidence?: ApiStateEvidence;
+    apiExecution?: ApiExecutionLedger;
   }>;
   findings: Array<{
     findingId: string;

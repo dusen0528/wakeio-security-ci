@@ -12,6 +12,10 @@ The default scan is a free local tool. It does not require a Wakeio account, sub
 
 An experimental, separate [`repair` CLI](docs/repair-preview.md) can verify a reviewed local proposal or optionally request one from Codex/Claude. Agent calls require explicit source-upload consent and API authentication; they may incur provider costs. Repair uses a prepared local Docker image and frozen verifier, writes private patch/verification artifacts only, and never applies changes or commits to the original checkout. Its initial SQL fixture support is not general-purpose application remediation.
 
+The API preview now records a redacted, indexed execution ledger so CI can
+separate evaluated probes from inconclusive and never-attempted steps.
+See the [execution contract](docs/preview-0.4-api.md#계획-대비-실행-ledger).
+
 ## What it checks
 
 | Scope | What Wakeio can observe | Boundary to keep in mind |

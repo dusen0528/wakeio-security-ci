@@ -11,3 +11,5 @@ export * from "./init.js";
 export * from "./schemathesis.js";
 
 export * from './api-state.js';
+
+export { sanitiseApiExecutionLedger } from './api-execution.js';
