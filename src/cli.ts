@@ -14,6 +14,7 @@ import { DEFAULT_TOOL_TIMEOUT_MS, MAX_TOOL_TIMEOUT_MS } from "./source/process.j
 import { buildScanScope, validateProjectId } from "./scan-scope.js";
 import { doctorMain } from "./doctor.js";
 import { initMain } from "./init.js";
+import { planMain } from "./plan.js";
 import { repairMain } from "./repair.js";
 
 const SEVERITY_VALUES = new Set(["critical", "high", "medium", "low", "info", "none"] as const);
@@ -49,6 +50,7 @@ export const USAGE = `Usage:
   wakeio-security-ci scan --url URL [options]
   wakeio-security-ci scan --source DIR --url URL [options]
   wakeio-security-ci scan --api-policy policy.json [options]
+  wakeio-security-ci plan --api-policy FILE | --openapi-input FILE [--allow-private] [--timeout-ms N]
   wakeio-security-ci compare --before report.json --after report.json --out DIR [--fail-on LEVEL]
   wakeio-security-ci doctor [--source DIR] [--tools ...] [--json] [--strict]
   wakeio-security-ci init [--source DIR] [--workflow FILE] [--out DIR] [--tools ...]
@@ -278,6 +280,7 @@ async function declaredScope(options: CliOptions, apiPolicy: ApiPolicy | undefin
 
 /** Executes a scan and writes public reports when scanning starts. */
 export async function main(argv: readonly string[] = process.argv.slice(2)): Promise<number> {
+  if (argv[0] === 'plan') return planMain(argv);
   if (argv[0] === 'compare') return runComparison(argv);
   if (argv[0] === 'doctor') return doctorMain(argv);
   if (argv[0] === 'init') return initMain(argv);

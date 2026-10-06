@@ -45,7 +45,7 @@ test('release npm archive exposes root and contracts types to strict TypeScript 
     await cp(join(root, 'node_modules', 'undici-types'), join(modules, 'undici-types'), { recursive: true });
     await writeFile(join(consumer, 'package.json'), JSON.stringify({ private: true, type: 'module' }));
     await writeFile(join(consumer, 'consumer.ts'), `
-import { runSource, buildOpenApiPolicy, runOpenApiPolicy, type OpenApiPolicyInput, type ApiProtectedExpectation, type UrlOptions, type SourceOptions, type CheckResult } from 'wakeio-security-ci';
+import { runSource, buildOpenApiPolicy, runOpenApiPolicy, preflightApiPolicy, preflightOpenApiPolicy, type ApiPreflightResult, type OpenApiPolicyInput, type ApiProtectedExpectation, type UrlOptions, type SourceOptions, type CheckResult } from 'wakeio-security-ci';
 import type { SourceOptions as ContractSourceOptions } from 'wakeio-security-ci/contracts';
 
 const options = { root: '.', tools: [], analysisProfile: 'extended' } satisfies SourceOptions;
@@ -55,7 +55,10 @@ void results;
 const protectedMarker: ApiProtectedExpectation = { jsonPointer: '/canary', equals: 'synthetic-only', match: 'json-values' };
 const urlOptions: UrlOptions = { url: 'https://fixture.invalid', signal: new AbortController().signal };
 function generatedPolicy(input: OpenApiPolicyInput): Promise<CheckResult[]> {
-  buildOpenApiPolicy(input);
+  const compiled = buildOpenApiPolicy(input);
+  const plan: ApiPreflightResult = preflightOpenApiPolicy({ input, env: {} });
+  const apiPlan: ApiPreflightResult = preflightApiPolicy({ policy: compiled, env: {} });
+  void [plan, apiPlan];
   return runOpenApiPolicy({ input, signal: new AbortController().signal });
 }
 void [protectedMarker, urlOptions, generatedPolicy];
@@ -97,6 +100,25 @@ const invalidContractOptions: ContractSourceOptions = { root: '.', tools: [], ti
     assert.equal(corpus.summary['json-values'].detectedPositiveTasks, 6);
     assert.equal(corpus.summary['json-values'].falsePositiveTasks, 0);
     assert.equal(corpus.summary['json-values'].incompleteErrorTasks, 12);
+    const planCli = join(installedPackage, 'build/src/cli.js');
+    const planEnv = { ...process.env, WAKEIO_OWNER_AUTH: 'Bearer packed-owner', WAKEIO_OTHER_AUTH: 'Bearer packed-other' };
+    const planRun = await exec(process.execPath, [planCli, 'plan', '--api-policy', join(installedPackage, 'examples/api-authorization-policy.json'), '--allow-private'], { cwd: consumer, env: planEnv, timeout: 5000 });
+    const plan = JSON.parse(planRun.stdout);
+    assert.equal(plan.status, 'ready');
+    assert.equal(plan.execution, 'not_run');
+    assert.equal(plan.networkRequests, 0);
+    assert.equal(plan.dnsLookups, 0);
+    assert.equal(plan.plan.logicalRequests, 8);
+    assert.equal(plan.plan.maximumHttpAttempts, 64);
+    assert.equal(planRun.stderr, '');
+    assert.doesNotMatch(planRun.stdout, /packed-owner|packed-other|127\.0\.0\.1|WAKEIO_OWNER_AUTH|demo-owner/);
+    await assert.rejects(exec(process.execPath, [planCli, 'plan', '--api-policy', join(installedPackage, 'examples/api-authorization-policy.json'), '--allow-private'], { cwd: consumer, env: { ...planEnv, WAKEIO_OTHER_AUTH: '' }, timeout: 5000 }), (error: any) => {
+      assert.equal(error.code, 2);
+      const failed = JSON.parse(error.stdout);
+      assert.equal(failed.status, 'blocked');
+      assert.equal(failed.issues[0].location, 'policy.actors[1].authorizationEnv');
+      return true;
+    });
     const example = join(installedPackage, 'examples/openapi-owned-fixture.mjs');
     const safe = await exec(process.execPath, [example], { cwd: consumer, timeout: 10_000 });
     assert.deepEqual(JSON.parse(safe.stdout), { ...JSON.parse(safe.stdout), cases: 4, status: 'completed', findings: 0, requests: 32 });

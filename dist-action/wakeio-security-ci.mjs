@@ -3052,13 +3052,13 @@ var require_typescript = __commonJS({
         return hasOwnProperty.call(map2, key2) ? map2[key2] : void 0;
       }
       function getOwnKeys(map2) {
-        const keys = [];
+        const keys2 = [];
         for (const key2 in map2) {
           if (hasOwnProperty.call(map2, key2)) {
-            keys.push(key2);
+            keys2.push(key2);
           }
         }
-        return keys;
+        return keys2;
       }
       function getAllKeys(obj) {
         const result2 = [];
@@ -3872,17 +3872,17 @@ var require_typescript = __commonJS({
           }
           return true;
         }
-        function fail2(message, stackCrawlMark) {
+        function fail3(message, stackCrawlMark) {
           debugger;
           const e = new Error(message ? `Debug Failure. ${message}` : "Debug Failure.");
           if (Error.captureStackTrace) {
-            Error.captureStackTrace(e, stackCrawlMark || fail2);
+            Error.captureStackTrace(e, stackCrawlMark || fail3);
           }
           throw e;
         }
-        Debug2.fail = fail2;
+        Debug2.fail = fail3;
         function failBadSyntaxKind(node, message, stackCrawlMark) {
-          return fail2(
+          return fail3(
             `${message || "Unexpected node."}\r
 Node ${formatSyntaxKind(node.kind)} was unexpected.`,
             stackCrawlMark || failBadSyntaxKind
@@ -3895,38 +3895,38 @@ Node ${formatSyntaxKind(node.kind)} was unexpected.`,
             if (verboseDebugInfo) {
               message += "\r\nVerbose Debug Information: " + (typeof verboseDebugInfo === "string" ? verboseDebugInfo : verboseDebugInfo());
             }
-            fail2(message, stackCrawlMark || assert);
+            fail3(message, stackCrawlMark || assert);
           }
         }
         Debug2.assert = assert;
         function assertEqual(a, b, msg, msg2, stackCrawlMark) {
           if (a !== b) {
             const message = msg ? msg2 ? `${msg} ${msg2}` : msg : "";
-            fail2(`Expected ${a} === ${b}. ${message}`, stackCrawlMark || assertEqual);
+            fail3(`Expected ${a} === ${b}. ${message}`, stackCrawlMark || assertEqual);
           }
         }
         Debug2.assertEqual = assertEqual;
         function assertLessThan(a, b, msg, stackCrawlMark) {
           if (a >= b) {
-            fail2(`Expected ${a} < ${b}. ${msg || ""}`, stackCrawlMark || assertLessThan);
+            fail3(`Expected ${a} < ${b}. ${msg || ""}`, stackCrawlMark || assertLessThan);
           }
         }
         Debug2.assertLessThan = assertLessThan;
         function assertLessThanOrEqual(a, b, stackCrawlMark) {
           if (a > b) {
-            fail2(`Expected ${a} <= ${b}`, stackCrawlMark || assertLessThanOrEqual);
+            fail3(`Expected ${a} <= ${b}`, stackCrawlMark || assertLessThanOrEqual);
           }
         }
         Debug2.assertLessThanOrEqual = assertLessThanOrEqual;
         function assertGreaterThanOrEqual(a, b, stackCrawlMark) {
           if (a < b) {
-            fail2(`Expected ${a} >= ${b}`, stackCrawlMark || assertGreaterThanOrEqual);
+            fail3(`Expected ${a} >= ${b}`, stackCrawlMark || assertGreaterThanOrEqual);
           }
         }
         Debug2.assertGreaterThanOrEqual = assertGreaterThanOrEqual;
         function assertIsDefined(value, message, stackCrawlMark) {
           if (value === void 0 || value === null) {
-            fail2(message, stackCrawlMark || assertIsDefined);
+            fail3(message, stackCrawlMark || assertIsDefined);
           }
         }
         Debug2.assertIsDefined = assertIsDefined;
@@ -3948,7 +3948,7 @@ Node ${formatSyntaxKind(node.kind)} was unexpected.`,
         Debug2.checkEachDefined = checkEachDefined;
         function assertNever(member, message = "Illegal value:", stackCrawlMark) {
           const detail = typeof member === "object" && hasProperty(member, "kind") && hasProperty(member, "pos") ? "SyntaxKind: " + formatSyntaxKind(member.kind) : JSON.stringify(member);
-          return fail2(`${message} ${detail}`, stackCrawlMark || assertNever);
+          return fail3(`${message} ${detail}`, stackCrawlMark || assertNever);
         }
         Debug2.assertNever = assertNever;
         function assertEachNode(nodes, test, message, stackCrawlMark) {
@@ -5412,16 +5412,16 @@ ${lanes.join("\n")}
             };
           }
         }
-        function dumpTypes(types) {
+        function dumpTypes(types4) {
           var _a2, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m, _n, _o, _p, _q, _r, _s;
           mark("beginDumpTypes");
           const typesPath = legend[legend.length - 1].typesPath;
           const typesFd = fs.openSync(typesPath, "w");
           const recursionIdentityMap = /* @__PURE__ */ new Map();
           fs.writeSync(typesFd, "[");
-          const numTypes = types.length;
+          const numTypes = types4.length;
           for (let i = 0; i < numTypes; i++) {
-            const type = types[i];
+            const type = types4[i];
             const objectFlags = type.objectFlags;
             const symbol = type.aliasSymbol ?? type.symbol;
             let display;
@@ -15405,11 +15405,11 @@ ${lanes.join("\n")}
           node = node.original;
         }
       }
-      function escapeLeadingUnderscores(identifier) {
-        return identifier.length >= 2 && identifier.charCodeAt(0) === 95 && identifier.charCodeAt(1) === 95 ? "_" + identifier : identifier;
+      function escapeLeadingUnderscores(identifier2) {
+        return identifier2.length >= 2 && identifier2.charCodeAt(0) === 95 && identifier2.charCodeAt(1) === 95 ? "_" + identifier2 : identifier2;
       }
-      function unescapeLeadingUnderscores(identifier) {
-        const id = identifier;
+      function unescapeLeadingUnderscores(identifier2) {
+        const id = identifier2;
         return id.length >= 3 && id.charCodeAt(0) === 95 && id.charCodeAt(1) === 95 && id.charCodeAt(2) === 95 ? id.substr(1) : id;
       }
       function idText(identifierOrPrivateName) {
@@ -18821,22 +18821,22 @@ ${lanes.join("\n")}
         return !!constructor && childIsDecorated(useLegacyDecorators, constructor, node);
       }
       function classElementOrClassElementParameterIsDecorated(useLegacyDecorators, node, parent2) {
-        let parameters;
+        let parameters2;
         if (isAccessor(node)) {
           const { firstAccessor, secondAccessor, setAccessor } = getAllAccessorDeclarations(parent2.members, node);
           const firstAccessorWithDecorators = hasDecorators(firstAccessor) ? firstAccessor : secondAccessor && hasDecorators(secondAccessor) ? secondAccessor : void 0;
           if (!firstAccessorWithDecorators || node !== firstAccessorWithDecorators) {
             return false;
           }
-          parameters = setAccessor == null ? void 0 : setAccessor.parameters;
+          parameters2 = setAccessor == null ? void 0 : setAccessor.parameters;
         } else if (isMethodDeclaration5(node)) {
-          parameters = node.parameters;
+          parameters2 = node.parameters;
         }
         if (nodeIsDecorated(useLegacyDecorators, node, parent2)) {
           return true;
         }
-        if (parameters) {
-          for (const parameter of parameters) {
+        if (parameters2) {
+          for (const parameter of parameters2) {
             if (parameterIsThisKeyword(parameter)) continue;
             if (nodeIsDecorated(useLegacyDecorators, parameter, node, parent2)) return true;
           }
@@ -24524,8 +24524,8 @@ ${lanes.join("\n")}
                   break;
                 case 196:
                   if (meaning & 262144) {
-                    const parameterName = location2.typeParameter.name;
-                    if (parameterName && name === parameterName.escapedText) {
+                    const parameterName2 = location2.typeParameter.name;
+                    if (parameterName2 && name === parameterName2.escapedText) {
                       result2 = location2.typeParameter.symbol;
                       break loop;
                     }
@@ -25360,8 +25360,8 @@ ${lanes.join("\n")}
           }
           return parenthesizeOperandOfTypeOperator(type);
         }
-        function parenthesizeElementTypesOfTupleType(types) {
-          return factory2.createNodeArray(sameMap(types, parenthesizeElementTypeOfTupleType));
+        function parenthesizeElementTypesOfTupleType(types4) {
+          return factory2.createNodeArray(sameMap(types4, parenthesizeElementTypeOfTupleType));
         }
         function parenthesizeElementTypeOfTupleType(type) {
           if (hasJSDocPostfixQuestion(type)) return factory2.createParenthesizedType(type);
@@ -27004,7 +27004,7 @@ ${lanes.join("\n")}
         function updatePropertyDeclaration2(node, modifiers, name, questionOrExclamationToken, type, initializer) {
           return node.modifiers !== modifiers || node.name !== name || node.questionToken !== (questionOrExclamationToken !== void 0 && isQuestionToken(questionOrExclamationToken) ? questionOrExclamationToken : void 0) || node.exclamationToken !== (questionOrExclamationToken !== void 0 && isExclamationToken(questionOrExclamationToken) ? questionOrExclamationToken : void 0) || node.type !== type || node.initializer !== initializer ? update(createPropertyDeclaration(modifiers, name, questionOrExclamationToken, type, initializer), node) : node;
         }
-        function createMethodSignature(modifiers, name, questionToken, typeParameters, parameters, type) {
+        function createMethodSignature(modifiers, name, questionToken, typeParameters, parameters2, type) {
           const node = createBaseDeclaration(
             174
             /* MethodSignature */
@@ -27013,7 +27013,7 @@ ${lanes.join("\n")}
           node.name = asName(name);
           node.questionToken = questionToken;
           node.typeParameters = asNodeArray(typeParameters);
-          node.parameters = asNodeArray(parameters);
+          node.parameters = asNodeArray(parameters2);
           node.type = type;
           node.transformFlags = 1;
           node.jsDoc = void 0;
@@ -27022,10 +27022,10 @@ ${lanes.join("\n")}
           node.typeArguments = void 0;
           return node;
         }
-        function updateMethodSignature(node, modifiers, name, questionToken, typeParameters, parameters, type) {
-          return node.modifiers !== modifiers || node.name !== name || node.questionToken !== questionToken || node.typeParameters !== typeParameters || node.parameters !== parameters || node.type !== type ? finishUpdateBaseSignatureDeclaration(createMethodSignature(modifiers, name, questionToken, typeParameters, parameters, type), node) : node;
+        function updateMethodSignature(node, modifiers, name, questionToken, typeParameters, parameters2, type) {
+          return node.modifiers !== modifiers || node.name !== name || node.questionToken !== questionToken || node.typeParameters !== typeParameters || node.parameters !== parameters2 || node.type !== type ? finishUpdateBaseSignatureDeclaration(createMethodSignature(modifiers, name, questionToken, typeParameters, parameters2, type), node) : node;
         }
-        function createMethodDeclaration(modifiers, asteriskToken, name, questionToken, typeParameters, parameters, type, body) {
+        function createMethodDeclaration(modifiers, asteriskToken, name, questionToken, typeParameters, parameters2, type, body) {
           const node = createBaseDeclaration(
             175
             /* MethodDeclaration */
@@ -27036,7 +27036,7 @@ ${lanes.join("\n")}
           node.questionToken = questionToken;
           node.exclamationToken = void 0;
           node.typeParameters = asNodeArray(typeParameters);
-          node.parameters = createNodeArray(parameters);
+          node.parameters = createNodeArray(parameters2);
           node.type = type;
           node.body = body;
           if (!node.body) {
@@ -27056,8 +27056,8 @@ ${lanes.join("\n")}
           node.returnFlowNode = void 0;
           return node;
         }
-        function updateMethodDeclaration(node, modifiers, asteriskToken, name, questionToken, typeParameters, parameters, type, body) {
-          return node.modifiers !== modifiers || node.asteriskToken !== asteriskToken || node.name !== name || node.questionToken !== questionToken || node.typeParameters !== typeParameters || node.parameters !== parameters || node.type !== type || node.body !== body ? finishUpdateMethodDeclaration(createMethodDeclaration(modifiers, asteriskToken, name, questionToken, typeParameters, parameters, type, body), node) : node;
+        function updateMethodDeclaration(node, modifiers, asteriskToken, name, questionToken, typeParameters, parameters2, type, body) {
+          return node.modifiers !== modifiers || node.asteriskToken !== asteriskToken || node.name !== name || node.questionToken !== questionToken || node.typeParameters !== typeParameters || node.parameters !== parameters2 || node.type !== type || node.body !== body ? finishUpdateMethodDeclaration(createMethodDeclaration(modifiers, asteriskToken, name, questionToken, typeParameters, parameters2, type, body), node) : node;
         }
         function finishUpdateMethodDeclaration(updated, original) {
           if (updated !== original) {
@@ -27089,13 +27089,13 @@ ${lanes.join("\n")}
           }
           return update(updated, original);
         }
-        function createConstructorDeclaration(modifiers, parameters, body) {
+        function createConstructorDeclaration(modifiers, parameters2, body) {
           const node = createBaseDeclaration(
             177
             /* Constructor */
           );
           node.modifiers = asNodeArray(modifiers);
-          node.parameters = createNodeArray(parameters);
+          node.parameters = createNodeArray(parameters2);
           node.body = body;
           if (!node.body) {
             node.transformFlags = 1;
@@ -27112,8 +27112,8 @@ ${lanes.join("\n")}
           node.returnFlowNode = void 0;
           return node;
         }
-        function updateConstructorDeclaration(node, modifiers, parameters, body) {
-          return node.modifiers !== modifiers || node.parameters !== parameters || node.body !== body ? finishUpdateConstructorDeclaration(createConstructorDeclaration(modifiers, parameters, body), node) : node;
+        function updateConstructorDeclaration(node, modifiers, parameters2, body) {
+          return node.modifiers !== modifiers || node.parameters !== parameters2 || node.body !== body ? finishUpdateConstructorDeclaration(createConstructorDeclaration(modifiers, parameters2, body), node) : node;
         }
         function finishUpdateConstructorDeclaration(updated, original) {
           if (updated !== original) {
@@ -27122,14 +27122,14 @@ ${lanes.join("\n")}
           }
           return finishUpdateBaseSignatureDeclaration(updated, original);
         }
-        function createGetAccessorDeclaration(modifiers, name, parameters, type, body) {
+        function createGetAccessorDeclaration(modifiers, name, parameters2, type, body) {
           const node = createBaseDeclaration(
             178
             /* GetAccessor */
           );
           node.modifiers = asNodeArray(modifiers);
           node.name = asName(name);
-          node.parameters = createNodeArray(parameters);
+          node.parameters = createNodeArray(parameters2);
           node.type = type;
           node.body = body;
           if (!node.body) {
@@ -27147,8 +27147,8 @@ ${lanes.join("\n")}
           node.returnFlowNode = void 0;
           return node;
         }
-        function updateGetAccessorDeclaration(node, modifiers, name, parameters, type, body) {
-          return node.modifiers !== modifiers || node.name !== name || node.parameters !== parameters || node.type !== type || node.body !== body ? finishUpdateGetAccessorDeclaration(createGetAccessorDeclaration(modifiers, name, parameters, type, body), node) : node;
+        function updateGetAccessorDeclaration(node, modifiers, name, parameters2, type, body) {
+          return node.modifiers !== modifiers || node.name !== name || node.parameters !== parameters2 || node.type !== type || node.body !== body ? finishUpdateGetAccessorDeclaration(createGetAccessorDeclaration(modifiers, name, parameters2, type, body), node) : node;
         }
         function finishUpdateGetAccessorDeclaration(updated, original) {
           if (updated !== original) {
@@ -27156,14 +27156,14 @@ ${lanes.join("\n")}
           }
           return finishUpdateBaseSignatureDeclaration(updated, original);
         }
-        function createSetAccessorDeclaration(modifiers, name, parameters, body) {
+        function createSetAccessorDeclaration(modifiers, name, parameters2, body) {
           const node = createBaseDeclaration(
             179
             /* SetAccessor */
           );
           node.modifiers = asNodeArray(modifiers);
           node.name = asName(name);
-          node.parameters = createNodeArray(parameters);
+          node.parameters = createNodeArray(parameters2);
           node.body = body;
           if (!node.body) {
             node.transformFlags = 1;
@@ -27181,8 +27181,8 @@ ${lanes.join("\n")}
           node.returnFlowNode = void 0;
           return node;
         }
-        function updateSetAccessorDeclaration(node, modifiers, name, parameters, body) {
-          return node.modifiers !== modifiers || node.name !== name || node.parameters !== parameters || node.body !== body ? finishUpdateSetAccessorDeclaration(createSetAccessorDeclaration(modifiers, name, parameters, body), node) : node;
+        function updateSetAccessorDeclaration(node, modifiers, name, parameters2, body) {
+          return node.modifiers !== modifiers || node.name !== name || node.parameters !== parameters2 || node.body !== body ? finishUpdateSetAccessorDeclaration(createSetAccessorDeclaration(modifiers, name, parameters2, body), node) : node;
         }
         function finishUpdateSetAccessorDeclaration(updated, original) {
           if (updated !== original) {
@@ -27191,13 +27191,13 @@ ${lanes.join("\n")}
           }
           return finishUpdateBaseSignatureDeclaration(updated, original);
         }
-        function createCallSignature(typeParameters, parameters, type) {
+        function createCallSignature(typeParameters, parameters2, type) {
           const node = createBaseDeclaration(
             180
             /* CallSignature */
           );
           node.typeParameters = asNodeArray(typeParameters);
-          node.parameters = asNodeArray(parameters);
+          node.parameters = asNodeArray(parameters2);
           node.type = type;
           node.transformFlags = 1;
           node.jsDoc = void 0;
@@ -27206,16 +27206,16 @@ ${lanes.join("\n")}
           node.typeArguments = void 0;
           return node;
         }
-        function updateCallSignature(node, typeParameters, parameters, type) {
-          return node.typeParameters !== typeParameters || node.parameters !== parameters || node.type !== type ? finishUpdateBaseSignatureDeclaration(createCallSignature(typeParameters, parameters, type), node) : node;
+        function updateCallSignature(node, typeParameters, parameters2, type) {
+          return node.typeParameters !== typeParameters || node.parameters !== parameters2 || node.type !== type ? finishUpdateBaseSignatureDeclaration(createCallSignature(typeParameters, parameters2, type), node) : node;
         }
-        function createConstructSignature(typeParameters, parameters, type) {
+        function createConstructSignature(typeParameters, parameters2, type) {
           const node = createBaseDeclaration(
             181
             /* ConstructSignature */
           );
           node.typeParameters = asNodeArray(typeParameters);
-          node.parameters = asNodeArray(parameters);
+          node.parameters = asNodeArray(parameters2);
           node.type = type;
           node.transformFlags = 1;
           node.jsDoc = void 0;
@@ -27224,16 +27224,16 @@ ${lanes.join("\n")}
           node.typeArguments = void 0;
           return node;
         }
-        function updateConstructSignature(node, typeParameters, parameters, type) {
-          return node.typeParameters !== typeParameters || node.parameters !== parameters || node.type !== type ? finishUpdateBaseSignatureDeclaration(createConstructSignature(typeParameters, parameters, type), node) : node;
+        function updateConstructSignature(node, typeParameters, parameters2, type) {
+          return node.typeParameters !== typeParameters || node.parameters !== parameters2 || node.type !== type ? finishUpdateBaseSignatureDeclaration(createConstructSignature(typeParameters, parameters2, type), node) : node;
         }
-        function createIndexSignature(modifiers, parameters, type) {
+        function createIndexSignature(modifiers, parameters2, type) {
           const node = createBaseDeclaration(
             182
             /* IndexSignature */
           );
           node.modifiers = asNodeArray(modifiers);
-          node.parameters = asNodeArray(parameters);
+          node.parameters = asNodeArray(parameters2);
           node.type = type;
           node.transformFlags = 1;
           node.jsDoc = void 0;
@@ -27242,8 +27242,8 @@ ${lanes.join("\n")}
           node.typeArguments = void 0;
           return node;
         }
-        function updateIndexSignature(node, modifiers, parameters, type) {
-          return node.parameters !== parameters || node.type !== type || node.modifiers !== modifiers ? finishUpdateBaseSignatureDeclaration(createIndexSignature(modifiers, parameters, type), node) : node;
+        function updateIndexSignature(node, modifiers, parameters2, type) {
+          return node.parameters !== parameters2 || node.type !== type || node.modifiers !== modifiers ? finishUpdateBaseSignatureDeclaration(createIndexSignature(modifiers, parameters2, type), node) : node;
         }
         function createTemplateLiteralTypeSpan(type, literal) {
           const node = createBaseNode(
@@ -27261,19 +27261,19 @@ ${lanes.join("\n")}
         function createKeywordTypeNode(kind) {
           return createToken(kind);
         }
-        function createTypePredicateNode(assertsModifier, parameterName, type) {
+        function createTypePredicateNode(assertsModifier, parameterName2, type) {
           const node = createBaseNode(
             183
             /* TypePredicate */
           );
           node.assertsModifier = assertsModifier;
-          node.parameterName = asName(parameterName);
+          node.parameterName = asName(parameterName2);
           node.type = type;
           node.transformFlags = 1;
           return node;
         }
-        function updateTypePredicateNode(node, assertsModifier, parameterName, type) {
-          return node.assertsModifier !== assertsModifier || node.parameterName !== parameterName || node.type !== type ? update(createTypePredicateNode(assertsModifier, parameterName, type), node) : node;
+        function updateTypePredicateNode(node, assertsModifier, parameterName2, type) {
+          return node.assertsModifier !== assertsModifier || node.parameterName !== parameterName2 || node.type !== type ? update(createTypePredicateNode(assertsModifier, parameterName2, type), node) : node;
         }
         function createTypeReferenceNode(typeName, typeArguments) {
           const node = createBaseNode(
@@ -27288,13 +27288,13 @@ ${lanes.join("\n")}
         function updateTypeReferenceNode(node, typeName, typeArguments) {
           return node.typeName !== typeName || node.typeArguments !== typeArguments ? update(createTypeReferenceNode(typeName, typeArguments), node) : node;
         }
-        function createFunctionTypeNode(typeParameters, parameters, type) {
+        function createFunctionTypeNode(typeParameters, parameters2, type) {
           const node = createBaseDeclaration(
             185
             /* FunctionType */
           );
           node.typeParameters = asNodeArray(typeParameters);
-          node.parameters = asNodeArray(parameters);
+          node.parameters = asNodeArray(parameters2);
           node.type = type;
           node.transformFlags = 1;
           node.modifiers = void 0;
@@ -27304,8 +27304,8 @@ ${lanes.join("\n")}
           node.typeArguments = void 0;
           return node;
         }
-        function updateFunctionTypeNode(node, typeParameters, parameters, type) {
-          return node.typeParameters !== typeParameters || node.parameters !== parameters || node.type !== type ? finishUpdateFunctionTypeNode(createFunctionTypeNode(typeParameters, parameters, type), node) : node;
+        function updateFunctionTypeNode(node, typeParameters, parameters2, type) {
+          return node.typeParameters !== typeParameters || node.parameters !== parameters2 || node.type !== type ? finishUpdateFunctionTypeNode(createFunctionTypeNode(typeParameters, parameters2, type), node) : node;
         }
         function finishUpdateFunctionTypeNode(updated, original) {
           if (updated !== original) {
@@ -27316,14 +27316,14 @@ ${lanes.join("\n")}
         function createConstructorTypeNode(...args) {
           return args.length === 4 ? createConstructorTypeNode1(...args) : args.length === 3 ? createConstructorTypeNode2(...args) : Debug.fail("Incorrect number of arguments specified.");
         }
-        function createConstructorTypeNode1(modifiers, typeParameters, parameters, type) {
+        function createConstructorTypeNode1(modifiers, typeParameters, parameters2, type) {
           const node = createBaseDeclaration(
             186
             /* ConstructorType */
           );
           node.modifiers = asNodeArray(modifiers);
           node.typeParameters = asNodeArray(typeParameters);
-          node.parameters = asNodeArray(parameters);
+          node.parameters = asNodeArray(parameters2);
           node.type = type;
           node.transformFlags = 1;
           node.jsDoc = void 0;
@@ -27332,23 +27332,23 @@ ${lanes.join("\n")}
           node.typeArguments = void 0;
           return node;
         }
-        function createConstructorTypeNode2(typeParameters, parameters, type) {
+        function createConstructorTypeNode2(typeParameters, parameters2, type) {
           return createConstructorTypeNode1(
             /*modifiers*/
             void 0,
             typeParameters,
-            parameters,
+            parameters2,
             type
           );
         }
         function updateConstructorTypeNode(...args) {
           return args.length === 5 ? updateConstructorTypeNode1(...args) : args.length === 4 ? updateConstructorTypeNode2(...args) : Debug.fail("Incorrect number of arguments specified.");
         }
-        function updateConstructorTypeNode1(node, modifiers, typeParameters, parameters, type) {
-          return node.modifiers !== modifiers || node.typeParameters !== typeParameters || node.parameters !== parameters || node.type !== type ? finishUpdateBaseSignatureDeclaration(createConstructorTypeNode(modifiers, typeParameters, parameters, type), node) : node;
+        function updateConstructorTypeNode1(node, modifiers, typeParameters, parameters2, type) {
+          return node.modifiers !== modifiers || node.typeParameters !== typeParameters || node.parameters !== parameters2 || node.type !== type ? finishUpdateBaseSignatureDeclaration(createConstructorTypeNode(modifiers, typeParameters, parameters2, type), node) : node;
         }
-        function updateConstructorTypeNode2(node, typeParameters, parameters, type) {
-          return updateConstructorTypeNode1(node, node.modifiers, typeParameters, parameters, type);
+        function updateConstructorTypeNode2(node, typeParameters, parameters2, type) {
+          return updateConstructorTypeNode1(node, node.modifiers, typeParameters, parameters2, type);
         }
         function createTypeQueryNode(exprName, typeArguments) {
           const node = createBaseNode(
@@ -27439,26 +27439,26 @@ ${lanes.join("\n")}
         function updateRestTypeNode(node, type) {
           return node.type !== type ? update(createRestTypeNode(type), node) : node;
         }
-        function createUnionOrIntersectionTypeNode(kind, types, parenthesize) {
+        function createUnionOrIntersectionTypeNode(kind, types4, parenthesize) {
           const node = createBaseNode(kind);
-          node.types = factory2.createNodeArray(parenthesize(types));
+          node.types = factory2.createNodeArray(parenthesize(types4));
           node.transformFlags = 1;
           return node;
         }
-        function updateUnionOrIntersectionTypeNode(node, types, parenthesize) {
-          return node.types !== types ? update(createUnionOrIntersectionTypeNode(node.kind, types, parenthesize), node) : node;
+        function updateUnionOrIntersectionTypeNode(node, types4, parenthesize) {
+          return node.types !== types4 ? update(createUnionOrIntersectionTypeNode(node.kind, types4, parenthesize), node) : node;
         }
-        function createUnionTypeNode(types) {
-          return createUnionOrIntersectionTypeNode(193, types, parenthesizerRules().parenthesizeConstituentTypesOfUnionType);
+        function createUnionTypeNode(types4) {
+          return createUnionOrIntersectionTypeNode(193, types4, parenthesizerRules().parenthesizeConstituentTypesOfUnionType);
         }
-        function updateUnionTypeNode(node, types) {
-          return updateUnionOrIntersectionTypeNode(node, types, parenthesizerRules().parenthesizeConstituentTypesOfUnionType);
+        function updateUnionTypeNode(node, types4) {
+          return updateUnionOrIntersectionTypeNode(node, types4, parenthesizerRules().parenthesizeConstituentTypesOfUnionType);
         }
-        function createIntersectionTypeNode(types) {
-          return createUnionOrIntersectionTypeNode(194, types, parenthesizerRules().parenthesizeConstituentTypesOfIntersectionType);
+        function createIntersectionTypeNode(types4) {
+          return createUnionOrIntersectionTypeNode(194, types4, parenthesizerRules().parenthesizeConstituentTypesOfIntersectionType);
         }
-        function updateIntersectionTypeNode(node, types) {
-          return updateUnionOrIntersectionTypeNode(node, types, parenthesizerRules().parenthesizeConstituentTypesOfIntersectionType);
+        function updateIntersectionTypeNode(node, types4) {
+          return updateUnionOrIntersectionTypeNode(node, types4, parenthesizerRules().parenthesizeConstituentTypesOfIntersectionType);
         }
         function createConditionalTypeNode(checkType, extendsType, trueType, falseType) {
           const node = createBaseNode(
@@ -27903,7 +27903,7 @@ ${lanes.join("\n")}
         function updateParenthesizedExpression(node, expression) {
           return node.expression !== expression ? update(createParenthesizedExpression(expression), node) : node;
         }
-        function createFunctionExpression(modifiers, asteriskToken, name, typeParameters, parameters, type, body) {
+        function createFunctionExpression(modifiers, asteriskToken, name, typeParameters, parameters2, type, body) {
           const node = createBaseDeclaration(
             219
             /* FunctionExpression */
@@ -27912,7 +27912,7 @@ ${lanes.join("\n")}
           node.asteriskToken = asteriskToken;
           node.name = asName(name);
           node.typeParameters = asNodeArray(typeParameters);
-          node.parameters = createNodeArray(parameters);
+          node.parameters = createNodeArray(parameters2);
           node.type = type;
           node.body = body;
           const isAsync = modifiersToFlags(node.modifiers) & 1024;
@@ -27928,17 +27928,17 @@ ${lanes.join("\n")}
           node.returnFlowNode = void 0;
           return node;
         }
-        function updateFunctionExpression(node, modifiers, asteriskToken, name, typeParameters, parameters, type, body) {
-          return node.name !== name || node.modifiers !== modifiers || node.asteriskToken !== asteriskToken || node.typeParameters !== typeParameters || node.parameters !== parameters || node.type !== type || node.body !== body ? finishUpdateBaseSignatureDeclaration(createFunctionExpression(modifiers, asteriskToken, name, typeParameters, parameters, type, body), node) : node;
+        function updateFunctionExpression(node, modifiers, asteriskToken, name, typeParameters, parameters2, type, body) {
+          return node.name !== name || node.modifiers !== modifiers || node.asteriskToken !== asteriskToken || node.typeParameters !== typeParameters || node.parameters !== parameters2 || node.type !== type || node.body !== body ? finishUpdateBaseSignatureDeclaration(createFunctionExpression(modifiers, asteriskToken, name, typeParameters, parameters2, type, body), node) : node;
         }
-        function createArrowFunction(modifiers, typeParameters, parameters, type, equalsGreaterThanToken, body) {
+        function createArrowFunction(modifiers, typeParameters, parameters2, type, equalsGreaterThanToken, body) {
           const node = createBaseDeclaration(
             220
             /* ArrowFunction */
           );
           node.modifiers = asNodeArray(modifiers);
           node.typeParameters = asNodeArray(typeParameters);
-          node.parameters = createNodeArray(parameters);
+          node.parameters = createNodeArray(parameters2);
           node.type = type;
           node.equalsGreaterThanToken = equalsGreaterThanToken ?? createToken(
             39
@@ -27956,8 +27956,8 @@ ${lanes.join("\n")}
           node.returnFlowNode = void 0;
           return node;
         }
-        function updateArrowFunction(node, modifiers, typeParameters, parameters, type, equalsGreaterThanToken, body) {
-          return node.modifiers !== modifiers || node.typeParameters !== typeParameters || node.parameters !== parameters || node.type !== type || node.equalsGreaterThanToken !== equalsGreaterThanToken || node.body !== body ? finishUpdateBaseSignatureDeclaration(createArrowFunction(modifiers, typeParameters, parameters, type, equalsGreaterThanToken, body), node) : node;
+        function updateArrowFunction(node, modifiers, typeParameters, parameters2, type, equalsGreaterThanToken, body) {
+          return node.modifiers !== modifiers || node.typeParameters !== typeParameters || node.parameters !== parameters2 || node.type !== type || node.equalsGreaterThanToken !== equalsGreaterThanToken || node.body !== body ? finishUpdateBaseSignatureDeclaration(createArrowFunction(modifiers, typeParameters, parameters2, type, equalsGreaterThanToken, body), node) : node;
         }
         function createDeleteExpression(expression) {
           const node = createBaseNode(
@@ -28671,7 +28671,7 @@ ${lanes.join("\n")}
         function updateVariableDeclarationList(node, declarations) {
           return node.declarations !== declarations ? update(createVariableDeclarationList(declarations, node.flags), node) : node;
         }
-        function createFunctionDeclaration(modifiers, asteriskToken, name, typeParameters, parameters, type, body) {
+        function createFunctionDeclaration(modifiers, asteriskToken, name, typeParameters, parameters2, type, body) {
           const node = createBaseDeclaration(
             263
             /* FunctionDeclaration */
@@ -28680,7 +28680,7 @@ ${lanes.join("\n")}
           node.asteriskToken = asteriskToken;
           node.name = asName(name);
           node.typeParameters = asNodeArray(typeParameters);
-          node.parameters = createNodeArray(parameters);
+          node.parameters = createNodeArray(parameters2);
           node.type = type;
           node.body = body;
           if (!node.body || modifiersToFlags(node.modifiers) & 128) {
@@ -28699,8 +28699,8 @@ ${lanes.join("\n")}
           node.returnFlowNode = void 0;
           return node;
         }
-        function updateFunctionDeclaration(node, modifiers, asteriskToken, name, typeParameters, parameters, type, body) {
-          return node.modifiers !== modifiers || node.asteriskToken !== asteriskToken || node.name !== name || node.typeParameters !== typeParameters || node.parameters !== parameters || node.type !== type || node.body !== body ? finishUpdateFunctionDeclaration(createFunctionDeclaration(modifiers, asteriskToken, name, typeParameters, parameters, type, body), node) : node;
+        function updateFunctionDeclaration(node, modifiers, asteriskToken, name, typeParameters, parameters2, type, body) {
+          return node.modifiers !== modifiers || node.asteriskToken !== asteriskToken || node.name !== name || node.typeParameters !== typeParameters || node.parameters !== parameters2 || node.type !== type || node.body !== body ? finishUpdateFunctionDeclaration(createFunctionDeclaration(modifiers, asteriskToken, name, typeParameters, parameters2, type, body), node) : node;
         }
         function finishUpdateFunctionDeclaration(updated, original) {
           if (updated !== original) {
@@ -29156,12 +29156,12 @@ ${lanes.join("\n")}
         function updateJSDocUnaryTypeWorker(kind, node, type) {
           return node.type !== type ? update(createJSDocUnaryTypeWorker(kind, type), node) : node;
         }
-        function createJSDocFunctionType(parameters, type) {
+        function createJSDocFunctionType(parameters2, type) {
           const node = createBaseDeclaration(
             318
             /* JSDocFunctionType */
           );
-          node.parameters = asNodeArray(parameters);
+          node.parameters = asNodeArray(parameters2);
           node.type = type;
           node.transformFlags = propagateChildrenFlags(node.parameters) | (node.type ? 1 : 0);
           node.jsDoc = void 0;
@@ -29170,8 +29170,8 @@ ${lanes.join("\n")}
           node.typeArguments = void 0;
           return node;
         }
-        function updateJSDocFunctionType(node, parameters, type) {
-          return node.parameters !== parameters || node.type !== type ? update(createJSDocFunctionType(parameters, type), node) : node;
+        function updateJSDocFunctionType(node, parameters2, type) {
+          return node.parameters !== parameters2 || node.type !== type ? update(createJSDocFunctionType(parameters2, type), node) : node;
         }
         function createJSDocTypeLiteral(propertyTags, isArrayType = false) {
           const node = createBaseDeclaration(
@@ -29196,21 +29196,21 @@ ${lanes.join("\n")}
         function updateJSDocTypeExpression(node, type) {
           return node.type !== type ? update(createJSDocTypeExpression(type), node) : node;
         }
-        function createJSDocSignature(typeParameters, parameters, type) {
+        function createJSDocSignature(typeParameters, parameters2, type) {
           const node = createBaseDeclaration(
             324
             /* JSDocSignature */
           );
           node.typeParameters = asNodeArray(typeParameters);
-          node.parameters = createNodeArray(parameters);
+          node.parameters = createNodeArray(parameters2);
           node.type = type;
           node.jsDoc = void 0;
           node.locals = void 0;
           node.nextContainer = void 0;
           return node;
         }
-        function updateJSDocSignature(node, typeParameters, parameters, type) {
-          return node.typeParameters !== typeParameters || node.parameters !== parameters || node.type !== type ? update(createJSDocSignature(typeParameters, parameters, type), node) : node;
+        function updateJSDocSignature(node, typeParameters, parameters2, type) {
+          return node.typeParameters !== typeParameters || node.parameters !== parameters2 || node.type !== type ? update(createJSDocSignature(typeParameters, parameters2, type), node) : node;
         }
         function getDefaultTagName(node) {
           const defaultTagName = getDefaultTagNameForKind(node.kind);
@@ -29636,13 +29636,13 @@ ${lanes.join("\n")}
         function updateDefaultClause(node, statements2) {
           return node.statements !== statements2 ? update(createDefaultClause(statements2), node) : node;
         }
-        function createHeritageClause(token, types) {
+        function createHeritageClause(token, types4) {
           const node = createBaseNode(
             299
             /* HeritageClause */
           );
           node.token = token;
-          node.types = createNodeArray(types);
+          node.types = createNodeArray(types4);
           node.transformFlags |= propagateChildrenFlags(node.types);
           switch (token) {
             case 96:
@@ -29656,8 +29656,8 @@ ${lanes.join("\n")}
           }
           return node;
         }
-        function updateHeritageClause(node, types) {
-          return node.types !== types ? update(createHeritageClause(node.token, types), node) : node;
+        function updateHeritageClause(node, types4) {
+          return node.types !== types4 ? update(createHeritageClause(node.token, types4), node) : node;
         }
         function createCatchClause(variableDeclaration, block) {
           const node = createBaseNode(
@@ -31458,7 +31458,7 @@ ${lanes.join("\n")}
             ]
           );
         }
-        function createAwaiterHelper(hasLexicalThis, argumentsExpression, promiseConstructor, parameters, body) {
+        function createAwaiterHelper(hasLexicalThis, argumentsExpression, promiseConstructor, parameters2, body) {
           context.requestEmitHelper(awaiterHelper);
           const generatorFunc = factory2.createFunctionExpression(
             /*modifiers*/
@@ -31471,7 +31471,7 @@ ${lanes.join("\n")}
             void 0,
             /*typeParameters*/
             void 0,
-            parameters ?? [],
+            parameters2 ?? [],
             /*type*/
             void 0,
             body
@@ -36205,11 +36205,11 @@ ${lanes.join("\n")}
           return finishNode(result2, pos);
         }
         function internIdentifier(text2) {
-          let identifier = identifiers.get(text2);
-          if (identifier === void 0) {
-            identifiers.set(text2, identifier = text2);
+          let identifier2 = identifiers.get(text2);
+          if (identifier2 === void 0) {
+            identifiers.set(text2, identifier2 = text2);
           }
-          return identifier;
+          return identifier2;
         }
         function createIdentifier(isIdentifier32, diagnosticMessage, privateIdentifierDiagnosticMessage) {
           if (isIdentifier32) {
@@ -37124,8 +37124,8 @@ ${lanes.join("\n")}
               return nodeIsMissing(node.typeName);
             case 185:
             case 186: {
-              const { parameters, type } = node;
-              return isMissingList(parameters) || typeHasArrowFunctionBlockingParseError(type);
+              const { parameters: parameters2, type } = node;
+              return isMissingList(parameters2) || typeHasArrowFunctionBlockingParseError(type);
             }
             case 197:
               return typeHasArrowFunctionBlockingParseError(node.type);
@@ -37178,7 +37178,7 @@ ${lanes.join("\n")}
           const pos = getNodePos();
           const hasJSDoc = hasPrecedingJSDocComment();
           if (tryParse(nextTokenIsOpenParen)) {
-            const parameters = parseParameters(
+            const parameters2 = parseParameters(
               4 | 32
               /* JSDoc */
             );
@@ -37187,7 +37187,7 @@ ${lanes.join("\n")}
               /*isType*/
               false
             );
-            return withJSDoc(finishNode(factory2.createJSDocFunctionType(parameters, type), pos), hasJSDoc);
+            return withJSDoc(finishNode(factory2.createJSDocFunctionType(parameters2, type), pos), hasJSDoc);
           }
           return finishNode(factory2.createTypeReferenceNode(
             parseIdentifierName(),
@@ -37431,10 +37431,10 @@ ${lanes.join("\n")}
           const savedAwaitContext = inAwaitContext();
           setYieldContext(!!(flags & 1));
           setAwaitContext(!!(flags & 2));
-          const parameters = flags & 32 ? parseDelimitedList(17, parseJSDocParameter) : parseDelimitedList(16, () => allowAmbiguity ? parseParameter(savedAwaitContext) : parseParameterForSpeculation(savedAwaitContext));
+          const parameters2 = flags & 32 ? parseDelimitedList(17, parseJSDocParameter) : parseDelimitedList(16, () => allowAmbiguity ? parseParameter(savedAwaitContext) : parseParameterForSpeculation(savedAwaitContext));
           setYieldContext(savedYieldContext);
           setAwaitContext(savedAwaitContext);
-          return parameters;
+          return parameters2;
         }
         function parseParameters(flags) {
           if (!parseExpected(
@@ -37443,7 +37443,7 @@ ${lanes.join("\n")}
           )) {
             return createMissingList();
           }
-          const parameters = parseParametersWorker(
+          const parameters2 = parseParametersWorker(
             flags,
             /*allowAmbiguity*/
             true
@@ -37452,7 +37452,7 @@ ${lanes.join("\n")}
             22
             /* CloseParenToken */
           );
-          return parameters;
+          return parameters2;
         }
         function parseTypeMemberSemicolon() {
           if (parseOptional(
@@ -37473,7 +37473,7 @@ ${lanes.join("\n")}
             );
           }
           const typeParameters = parseTypeParameters();
-          const parameters = parseParameters(
+          const parameters2 = parseParameters(
             4
             /* Type */
           );
@@ -37483,7 +37483,7 @@ ${lanes.join("\n")}
             true
           );
           parseTypeMemberSemicolon();
-          const node = kind === 180 ? factory2.createCallSignature(typeParameters, parameters, type) : factory2.createConstructSignature(typeParameters, parameters, type);
+          const node = kind === 180 ? factory2.createCallSignature(typeParameters, parameters2, type) : factory2.createConstructSignature(typeParameters, parameters2, type);
           return withJSDoc(finishNode(node, pos), hasJSDoc);
         }
         function isIndexSignature() {
@@ -37514,7 +37514,7 @@ ${lanes.join("\n")}
           return token() === 59 || token() === 28 || token() === 24;
         }
         function parseIndexSignatureDeclaration(pos, hasJSDoc, modifiers) {
-          const parameters = parseBracketedList(
+          const parameters2 = parseBracketedList(
             16,
             () => parseParameter(
               /*inOuterAwaitContext*/
@@ -37526,7 +37526,7 @@ ${lanes.join("\n")}
           );
           const type = parseTypeAnnotation();
           parseTypeMemberSemicolon();
-          const node = factory2.createIndexSignature(modifiers, parameters, type);
+          const node = factory2.createIndexSignature(modifiers, parameters2, type);
           return withJSDoc(finishNode(node, pos), hasJSDoc);
         }
         function parsePropertyOrMethodSignature(pos, hasJSDoc, modifiers) {
@@ -37538,7 +37538,7 @@ ${lanes.join("\n")}
           let node;
           if (token() === 21 || token() === 30) {
             const typeParameters = parseTypeParameters();
-            const parameters = parseParameters(
+            const parameters2 = parseParameters(
               4
               /* Type */
             );
@@ -37547,7 +37547,7 @@ ${lanes.join("\n")}
               /*isType*/
               true
             );
-            node = factory2.createMethodSignature(modifiers, name, questionToken, typeParameters, parameters, type);
+            node = factory2.createMethodSignature(modifiers, name, questionToken, typeParameters, parameters2, type);
           } else {
             const type = parseTypeAnnotation();
             node = factory2.createPropertySignature(modifiers, name, questionToken, type);
@@ -37838,7 +37838,7 @@ ${lanes.join("\n")}
           );
           Debug.assert(!modifiers || isConstructorType, "Per isStartOfFunctionOrConstructorType, a function type cannot have modifiers.");
           const typeParameters = parseTypeParameters();
-          const parameters = parseParameters(
+          const parameters2 = parseParameters(
             4
             /* Type */
           );
@@ -37847,7 +37847,7 @@ ${lanes.join("\n")}
             /*isType*/
             false
           );
-          const node = isConstructorType ? factory2.createConstructorTypeNode(modifiers, typeParameters, parameters, type) : factory2.createFunctionTypeNode(typeParameters, parameters, type);
+          const node = isConstructorType ? factory2.createConstructorTypeNode(modifiers, typeParameters, parameters2, type) : factory2.createFunctionTypeNode(typeParameters, parameters2, type);
           return withJSDoc(finishNode(node, pos), hasJSDoc);
         }
         function parseKeywordAndNoDot() {
@@ -38187,11 +38187,11 @@ ${lanes.join("\n")}
           const hasLeadingOperator = parseOptional(operator);
           let type = hasLeadingOperator && parseFunctionOrConstructorTypeToError(isUnionType) || parseConstituentType();
           if (token() === operator || hasLeadingOperator) {
-            const types = [type];
+            const types4 = [type];
             while (parseOptional(operator)) {
-              types.push(parseFunctionOrConstructorTypeToError(isUnionType) || parseConstituentType());
+              types4.push(parseFunctionOrConstructorTypeToError(isUnionType) || parseConstituentType());
             }
-            type = finishNode(createTypeNode(createNodeArray(types, pos)), pos);
+            type = finishNode(createTypeNode(createNodeArray(types4, pos)), pos);
           }
           return type;
         }
@@ -38278,12 +38278,12 @@ ${lanes.join("\n")}
             131
             /* AssertsKeyword */
           );
-          const parameterName = token() === 110 ? parseThisTypeNode() : parseIdentifier();
+          const parameterName2 = token() === 110 ? parseThisTypeNode() : parseIdentifier();
           const type = parseOptional(
             142
             /* IsKeyword */
           ) ? parseType() : void 0;
-          return finishNode(factory2.createTypePredicateNode(assertsModifier, parameterName, type), pos);
+          return finishNode(factory2.createTypePredicateNode(assertsModifier, parameterName2, type), pos);
         }
         function parseType() {
           if (contextFlags & 81920) {
@@ -38485,14 +38485,14 @@ ${lanes.join("\n")}
             ), pos);
           }
         }
-        function parseSimpleArrowFunctionExpression(pos, identifier, allowReturnTypeInArrowFunction, hasJSDoc, asyncModifier) {
+        function parseSimpleArrowFunctionExpression(pos, identifier2, allowReturnTypeInArrowFunction, hasJSDoc, asyncModifier) {
           Debug.assert(token() === 39, "parseSimpleArrowFunctionExpression should only have been called if we had a =>");
           const parameter = factory2.createParameterDeclaration(
             /*modifiers*/
             void 0,
             /*dotDotDotToken*/
             void 0,
-            identifier,
+            identifier2,
             /*questionToken*/
             void 0,
             /*type*/
@@ -38500,8 +38500,8 @@ ${lanes.join("\n")}
             /*initializer*/
             void 0
           );
-          finishNode(parameter, identifier.pos);
-          const parameters = createNodeArray([parameter], parameter.pos, parameter.end);
+          finishNode(parameter, identifier2.pos);
+          const parameters2 = createNodeArray([parameter], parameter.pos, parameter.end);
           const equalsGreaterThanToken = parseExpectedToken(
             39
             /* EqualsGreaterThanToken */
@@ -38515,7 +38515,7 @@ ${lanes.join("\n")}
             asyncModifier,
             /*typeParameters*/
             void 0,
-            parameters,
+            parameters2,
             /*type*/
             void 0,
             equalsGreaterThanToken,
@@ -38688,7 +38688,7 @@ ${lanes.join("\n")}
           const modifiers = parseModifiersForArrowFunction();
           const isAsync = some(modifiers, isAsyncModifier) ? 2 : 0;
           const typeParameters = parseTypeParameters();
-          let parameters;
+          let parameters2;
           if (!parseExpected(
             21
             /* OpenParenToken */
@@ -38696,16 +38696,16 @@ ${lanes.join("\n")}
             if (!allowAmbiguity) {
               return void 0;
             }
-            parameters = createMissingList();
+            parameters2 = createMissingList();
           } else {
             if (!allowAmbiguity) {
               const maybeParameters = parseParametersWorker(isAsync, allowAmbiguity);
               if (!maybeParameters) {
                 return void 0;
               }
-              parameters = maybeParameters;
+              parameters2 = maybeParameters;
             } else {
-              parameters = parseParametersWorker(isAsync, allowAmbiguity);
+              parameters2 = parseParametersWorker(isAsync, allowAmbiguity);
             }
             if (!parseExpected(
               22
@@ -38742,7 +38742,7 @@ ${lanes.join("\n")}
               return void 0;
             }
           }
-          const node = factory2.createArrowFunction(modifiers, typeParameters, parameters, type, equalsGreaterThanToken, body);
+          const node = factory2.createArrowFunction(modifiers, typeParameters, parameters2, type, equalsGreaterThanToken, body);
           return withJSDoc(finishNode(node, pos), hasJSDoc);
         }
         function parseArrowFunctionExpressionBody(isAsync, allowReturnTypeInArrowFunction) {
@@ -39854,7 +39854,7 @@ ${lanes.join("\n")}
           const isAsync = some(modifiers, isAsyncModifier) ? 2 : 0;
           const name = isGenerator && isAsync ? doInYieldAndAwaitContext(parseOptionalBindingIdentifier) : isGenerator ? doInYieldContext(parseOptionalBindingIdentifier) : isAsync ? doInAwaitContext(parseOptionalBindingIdentifier) : parseOptionalBindingIdentifier();
           const typeParameters = parseTypeParameters();
-          const parameters = parseParameters(isGenerator | isAsync);
+          const parameters2 = parseParameters(isGenerator | isAsync);
           const type = parseReturnType(
             59,
             /*isType*/
@@ -39862,7 +39862,7 @@ ${lanes.join("\n")}
           );
           const body = parseFunctionBlock(isGenerator | isAsync);
           setDecoratorContext(savedDecoratorContext);
-          const node = factory2.createFunctionExpression(modifiers, asteriskToken, name, typeParameters, parameters, type, body);
+          const node = factory2.createFunctionExpression(modifiers, asteriskToken, name, typeParameters, parameters2, type, body);
           return withJSDoc(finishNode(node, pos), hasJSDoc);
         }
         function parseOptionalBindingIdentifier() {
@@ -40878,7 +40878,7 @@ ${lanes.join("\n")}
             /*value*/
             true
           );
-          const parameters = parseParameters(isGenerator | isAsync);
+          const parameters2 = parseParameters(isGenerator | isAsync);
           const type = parseReturnType(
             59,
             /*isType*/
@@ -40886,7 +40886,7 @@ ${lanes.join("\n")}
           );
           const body = parseFunctionBlockOrSemicolon(isGenerator | isAsync, Diagnostics.or_expected);
           setAwaitContext(savedAwaitContext);
-          const node = factory2.createFunctionDeclaration(modifiers, asteriskToken, name, typeParameters, parameters, type, body);
+          const node = factory2.createFunctionDeclaration(modifiers, asteriskToken, name, typeParameters, parameters2, type, body);
           return withJSDoc(finishNode(node, pos), hasJSDoc);
         }
         function parseConstructorName() {
@@ -40907,7 +40907,7 @@ ${lanes.join("\n")}
           return tryParse(() => {
             if (parseConstructorName()) {
               const typeParameters = parseTypeParameters();
-              const parameters = parseParameters(
+              const parameters2 = parseParameters(
                 0
                 /* None */
               );
@@ -40917,7 +40917,7 @@ ${lanes.join("\n")}
                 false
               );
               const body = parseFunctionBlockOrSemicolon(0, Diagnostics.or_expected);
-              const node = factory2.createConstructorDeclaration(modifiers, parameters, body);
+              const node = factory2.createConstructorDeclaration(modifiers, parameters2, body);
               node.typeParameters = typeParameters;
               node.type = type;
               return withJSDoc(finishNode(node, pos), hasJSDoc);
@@ -40928,7 +40928,7 @@ ${lanes.join("\n")}
           const isGenerator = asteriskToken ? 1 : 0;
           const isAsync = some(modifiers, isAsyncModifier) ? 2 : 0;
           const typeParameters = parseTypeParameters();
-          const parameters = parseParameters(isGenerator | isAsync);
+          const parameters2 = parseParameters(isGenerator | isAsync);
           const type = parseReturnType(
             59,
             /*isType*/
@@ -40941,7 +40941,7 @@ ${lanes.join("\n")}
             name,
             questionToken,
             typeParameters,
-            parameters,
+            parameters2,
             type,
             body
           );
@@ -40993,7 +40993,7 @@ ${lanes.join("\n")}
         function parseAccessorDeclaration(pos, hasJSDoc, modifiers, kind, flags) {
           const name = parsePropertyName();
           const typeParameters = parseTypeParameters();
-          const parameters = parseParameters(
+          const parameters2 = parseParameters(
             0
             /* None */
           );
@@ -41003,7 +41003,7 @@ ${lanes.join("\n")}
             false
           );
           const body = parseFunctionBlockOrSemicolon(flags);
-          const node = kind === 178 ? factory2.createGetAccessorDeclaration(modifiers, name, parameters, type, body) : factory2.createSetAccessorDeclaration(modifiers, name, parameters, body);
+          const node = kind === 178 ? factory2.createGetAccessorDeclaration(modifiers, name, parameters2, type, body) : factory2.createSetAccessorDeclaration(modifiers, name, parameters2, body);
           node.typeParameters = typeParameters;
           if (isSetAccessorDeclaration5(node)) node.type = type;
           return withJSDoc(finishNode(node, pos), hasJSDoc);
@@ -41338,8 +41338,8 @@ ${lanes.join("\n")}
             /* ImplementsKeyword */
           );
           nextToken();
-          const types = parseDelimitedList(7, parseExpressionWithTypeArguments);
-          return finishNode(factory2.createHeritageClause(tok, types), pos);
+          const types4 = parseDelimitedList(7, parseExpressionWithTypeArguments);
+          return finishNode(factory2.createHeritageClause(tok, types4), pos);
         }
         function parseExpressionWithTypeArguments() {
           const pos = getNodePos();
@@ -41531,30 +41531,30 @@ ${lanes.join("\n")}
             /* ImportKeyword */
           );
           const afterImportPos = scanner2.getTokenFullStart();
-          let identifier;
+          let identifier2;
           if (isIdentifier22()) {
-            identifier = parseIdentifier();
+            identifier2 = parseIdentifier();
           }
           let phaseModifier;
-          if ((identifier == null ? void 0 : identifier.escapedText) === "type" && (token() !== 161 || isIdentifier22() && lookAhead(nextTokenIsFromKeywordOrEqualsToken)) && (isIdentifier22() || tokenAfterImportDefinitelyProducesImportDeclaration())) {
+          if ((identifier2 == null ? void 0 : identifier2.escapedText) === "type" && (token() !== 161 || isIdentifier22() && lookAhead(nextTokenIsFromKeywordOrEqualsToken)) && (isIdentifier22() || tokenAfterImportDefinitelyProducesImportDeclaration())) {
             phaseModifier = 156;
-            identifier = isIdentifier22() ? parseIdentifier() : void 0;
-          } else if ((identifier == null ? void 0 : identifier.escapedText) === "defer" && (token() === 161 ? !lookAhead(nextTokenIsStringLiteral) : token() !== 28 && token() !== 64)) {
+            identifier2 = isIdentifier22() ? parseIdentifier() : void 0;
+          } else if ((identifier2 == null ? void 0 : identifier2.escapedText) === "defer" && (token() === 161 ? !lookAhead(nextTokenIsStringLiteral) : token() !== 28 && token() !== 64)) {
             phaseModifier = 166;
-            identifier = isIdentifier22() ? parseIdentifier() : void 0;
+            identifier2 = isIdentifier22() ? parseIdentifier() : void 0;
           }
-          if (identifier && !tokenAfterImportedIdentifierDefinitelyProducesImportDeclaration() && phaseModifier !== 166) {
+          if (identifier2 && !tokenAfterImportedIdentifierDefinitelyProducesImportDeclaration() && phaseModifier !== 166) {
             return parseImportEqualsDeclaration(
               pos,
               hasJSDoc,
               modifiers,
-              identifier,
+              identifier2,
               phaseModifier === 156
               /* TypeKeyword */
             );
           }
           const importClause = tryParseImportClause(
-            identifier,
+            identifier2,
             afterImportPos,
             phaseModifier,
             /*skipJsDocLeadingAsterisks*/
@@ -41566,12 +41566,12 @@ ${lanes.join("\n")}
           const node = factory2.createImportDeclaration(modifiers, importClause, moduleSpecifier, attributes);
           return withJSDoc(finishNode(node, pos), hasJSDoc);
         }
-        function tryParseImportClause(identifier, pos, phaseModifier, skipJsDocLeadingAsterisks = false) {
+        function tryParseImportClause(identifier2, pos, phaseModifier, skipJsDocLeadingAsterisks = false) {
           let importClause;
-          if (identifier || // import id
+          if (identifier2 || // import id
           token() === 42 || // import *
           token() === 19) {
-            importClause = parseImportClause(identifier, pos, phaseModifier, skipJsDocLeadingAsterisks);
+            importClause = parseImportClause(identifier2, pos, phaseModifier, skipJsDocLeadingAsterisks);
             parseExpected(
               161
               /* FromKeyword */
@@ -41654,20 +41654,20 @@ ${lanes.join("\n")}
         function tokenAfterImportedIdentifierDefinitelyProducesImportDeclaration() {
           return token() === 28 || token() === 161;
         }
-        function parseImportEqualsDeclaration(pos, hasJSDoc, modifiers, identifier, isTypeOnly) {
+        function parseImportEqualsDeclaration(pos, hasJSDoc, modifiers, identifier2, isTypeOnly) {
           parseExpected(
             64
             /* EqualsToken */
           );
           const moduleReference = parseModuleReference();
           parseSemicolon();
-          const node = factory2.createImportEqualsDeclaration(modifiers, isTypeOnly, identifier, moduleReference);
+          const node = factory2.createImportEqualsDeclaration(modifiers, isTypeOnly, identifier2, moduleReference);
           const finished = withJSDoc(finishNode(node, pos), hasJSDoc);
           return finished;
         }
-        function parseImportClause(identifier, pos, phaseModifier, skipJsDocLeadingAsterisks) {
+        function parseImportClause(identifier2, pos, phaseModifier, skipJsDocLeadingAsterisks) {
           let namedBindings;
-          if (!identifier || parseOptional(
+          if (!identifier2 || parseOptional(
             28
             /* CommaToken */
           )) {
@@ -41682,7 +41682,7 @@ ${lanes.join("\n")}
             }
             if (skipJsDocLeadingAsterisks) scanner2.setSkipJsDocLeadingAsterisks(false);
           }
-          return finishNode(factory2.createImportClause(phaseModifier, identifier, namedBindings), pos);
+          return finishNode(factory2.createImportClause(phaseModifier, identifier2, namedBindings), pos);
         }
         function parseModuleReference() {
           return isExternalModuleReference22() ? parseExternalModuleReference() : parseEntityName(
@@ -42703,12 +42703,12 @@ ${lanes.join("\n")}
             }
             function parseImportTag(start2, tagName, margin, indentText) {
               const afterImportTagPos = scanner2.getTokenFullStart();
-              let identifier;
+              let identifier2;
               if (isIdentifier22()) {
-                identifier = parseIdentifier();
+                identifier2 = parseIdentifier();
               }
               const importClause = tryParseImportClause(
-                identifier,
+                identifier2,
                 afterImportTagPos,
                 156,
                 /*skipJsDocLeadingAsterisks*/
@@ -42847,18 +42847,18 @@ ${lanes.join("\n")}
             function parseCallbackTagParameters(indent3) {
               const pos = getNodePos();
               let child;
-              let parameters;
+              let parameters2;
               while (child = tryParse(() => parseChildParameterOrPropertyTag(4, indent3))) {
                 if (child.kind === 346) {
                   parseErrorAtRange(child.tagName, Diagnostics.A_JSDoc_template_tag_may_not_follow_a_typedef_callback_or_overload_tag);
                   break;
                 }
-                parameters = append(parameters, child);
+                parameters2 = append(parameters2, child);
               }
-              return createNodeArray(parameters || [], pos);
+              return createNodeArray(parameters2 || [], pos);
             }
             function parseJSDocSignature(start2, indent3) {
-              const parameters = parseCallbackTagParameters(indent3);
+              const parameters2 = parseCallbackTagParameters(indent3);
               const returnTag = tryParse(() => {
                 if (parseOptionalJsdoc(
                   60
@@ -42873,7 +42873,7 @@ ${lanes.join("\n")}
               return finishNode(factory2.createJSDocSignature(
                 /*typeParameters*/
                 void 0,
-                parameters,
+                parameters2,
                 returnTag
               ), start2);
             }
@@ -43553,13 +43553,13 @@ ${lanes.join("\n")}
               const typeReferenceDirectives = context.typeReferenceDirectives;
               const libReferenceDirectives = context.libReferenceDirectives;
               forEach(toArray(entryOrList), (arg) => {
-                const { types, lib, path, ["resolution-mode"]: res, preserve: _preserve } = arg.arguments;
+                const { types: types4, lib, path, ["resolution-mode"]: res, preserve: _preserve } = arg.arguments;
                 const preserve = _preserve === "true" ? true : void 0;
                 if (arg.arguments["no-default-lib"] === "true") {
                   context.hasNoDefaultLib = true;
-                } else if (types) {
-                  const parsed = parseResolutionMode(res, types.pos, types.end, reportDiagnostic);
-                  typeReferenceDirectives.push({ pos: types.pos, end: types.end, fileName: types.value, ...parsed ? { resolutionMode: parsed } : {}, ...preserve ? { preserve } : {} });
+                } else if (types4) {
+                  const parsed = parseResolutionMode(res, types4.pos, types4.end, reportDiagnostic);
+                  typeReferenceDirectives.push({ pos: types4.pos, end: types4.end, fileName: types4.value, ...parsed ? { resolutionMode: parsed } : {}, ...preserve ? { preserve } : {} });
                 } else if (lib) {
                   libReferenceDirectives.push({ pos: lib.pos, end: lib.end, fileName: lib.value, ...preserve ? { preserve } : {} });
                 } else if (path) {
@@ -47990,8 +47990,8 @@ ${lanes.join("\n")}
           function getCommonPrefix(directory, resolution) {
             const resolutionDirectory = toPath(getDirectoryPath(resolution), currentDirectory, getCanonicalFileName);
             let i = 0;
-            const limit = Math.min(directory.length, resolutionDirectory.length);
-            while (i < limit && directory.charCodeAt(i) === resolutionDirectory.charCodeAt(i)) {
+            const limit2 = Math.min(directory.length, resolutionDirectory.length);
+            while (i < limit2 && directory.charCodeAt(i) === resolutionDirectory.charCodeAt(i)) {
               i++;
             }
             if (i === directory.length && (resolutionDirectory.length === i || resolutionDirectory[i] === directorySeparator)) {
@@ -50166,7 +50166,7 @@ ${lanes.join("\n")}
               /*separateBeginAndEnd*/
               true
             );
-            bind(file);
+            bind2(file);
             (_b = tracing) == null ? void 0 : _b.pop();
             file.symbolCount = symbolCount;
             file.classifiableNames = classifiableNames;
@@ -50535,17 +50535,17 @@ ${lanes.join("\n")}
           blockScopeContainer = savedBlockScopeContainer;
         }
         function bindEachFunctionsFirst(nodes) {
-          bindEach(nodes, (n) => n.kind === 263 ? bind(n) : void 0);
-          bindEach(nodes, (n) => n.kind !== 263 ? bind(n) : void 0);
+          bindEach(nodes, (n) => n.kind === 263 ? bind2(n) : void 0);
+          bindEach(nodes, (n) => n.kind !== 263 ? bind2(n) : void 0);
         }
-        function bindEach(nodes, bindFunction = bind) {
+        function bindEach(nodes, bindFunction = bind2) {
           if (nodes === void 0) {
             return;
           }
           forEach(nodes, bindFunction);
         }
         function bindEachChild(node) {
-          forEachChild5(node, bind, bindEach);
+          forEachChild5(node, bind2, bindEach);
         }
         function bindChildren(node) {
           const saveInAssignmentPattern = inAssignmentPattern;
@@ -50649,7 +50649,7 @@ ${lanes.join("\n")}
             // In source files and blocks, bind functions first to match hoisting that occurs at runtime
             case 308: {
               bindEachFunctionsFirst(node.statements);
-              bind(node.endOfFileToken);
+              bind2(node.endOfFileToken);
               break;
             }
             case 242:
@@ -50892,7 +50892,7 @@ ${lanes.join("\n")}
           currentFalseTarget = savedFalseTarget;
         }
         function bindCondition(node, trueTarget, falseTarget) {
-          doWithConditionalBranches(bind, node, trueTarget, falseTarget);
+          doWithConditionalBranches(bind2, node, trueTarget, falseTarget);
           if (!node || !isLogicalAssignmentExpression(node) && !isLogicalExpression(node) && !(isOptionalChain(node) && isOutermostOptionalChain(node))) {
             addAntecedent(trueTarget, createFlowCondition(32, currentFlow, node));
             addAntecedent(falseTarget, createFlowCondition(64, currentFlow, node));
@@ -50903,7 +50903,7 @@ ${lanes.join("\n")}
           const saveContinueTarget = currentContinueTarget;
           currentBreakTarget = breakTarget;
           currentContinueTarget = continueTarget;
-          bind(node);
+          bind2(node);
           currentBreakTarget = saveBreakTarget;
           currentContinueTarget = saveContinueTarget;
         }
@@ -50945,7 +50945,7 @@ ${lanes.join("\n")}
           const preBodyLabel = createBranchLabel();
           const preIncrementorLabel = createBranchLabel();
           const postLoopLabel = createBranchLabel();
-          bind(node.initializer);
+          bind2(node.initializer);
           addAntecedent(preLoopLabel, currentFlow);
           currentFlow = preLoopLabel;
           bindCondition(node.condition, preBodyLabel, postLoopLabel);
@@ -50953,21 +50953,21 @@ ${lanes.join("\n")}
           bindIterativeStatement(node.statement, postLoopLabel, preIncrementorLabel);
           addAntecedent(preIncrementorLabel, currentFlow);
           currentFlow = finishFlowLabel(preIncrementorLabel);
-          bind(node.incrementor);
+          bind2(node.incrementor);
           addAntecedent(preLoopLabel, currentFlow);
           currentFlow = finishFlowLabel(postLoopLabel);
         }
         function bindForInOrForOfStatement(node) {
           const preLoopLabel = setContinueTarget(node, createLoopLabel());
           const postLoopLabel = createBranchLabel();
-          bind(node.expression);
+          bind2(node.expression);
           addAntecedent(preLoopLabel, currentFlow);
           currentFlow = preLoopLabel;
           if (node.kind === 251) {
-            bind(node.awaitModifier);
+            bind2(node.awaitModifier);
           }
           addAntecedent(postLoopLabel, currentFlow);
-          bind(node.initializer);
+          bind2(node.initializer);
           if (node.initializer.kind !== 262) {
             bindAssignmentTargetFlow(node.initializer);
           }
@@ -50981,17 +50981,17 @@ ${lanes.join("\n")}
           const postIfLabel = createBranchLabel();
           bindCondition(node.expression, thenLabel, elseLabel);
           currentFlow = finishFlowLabel(thenLabel);
-          bind(node.thenStatement);
+          bind2(node.thenStatement);
           addAntecedent(postIfLabel, currentFlow);
           currentFlow = finishFlowLabel(elseLabel);
-          bind(node.elseStatement);
+          bind2(node.elseStatement);
           addAntecedent(postIfLabel, currentFlow);
           currentFlow = finishFlowLabel(postIfLabel);
         }
         function bindReturnOrThrow(node) {
           const savedInReturnPosition = inReturnPosition;
           inReturnPosition = true;
-          bind(node.expression);
+          bind2(node.expression);
           inReturnPosition = savedInReturnPosition;
           if (node.kind === 254) {
             hasExplicitReturn = true;
@@ -51019,7 +51019,7 @@ ${lanes.join("\n")}
           }
         }
         function bindBreakOrContinueStatement(node) {
-          bind(node.label);
+          bind2(node.label);
           if (node.label) {
             const activeLabel = findActiveLabel(node.label.escapedText);
             if (activeLabel) {
@@ -51041,14 +51041,14 @@ ${lanes.join("\n")}
           }
           addAntecedent(exceptionLabel, currentFlow);
           currentExceptionTarget = exceptionLabel;
-          bind(node.tryBlock);
+          bind2(node.tryBlock);
           addAntecedent(normalExitLabel, currentFlow);
           if (node.catchClause) {
             currentFlow = finishFlowLabel(exceptionLabel);
             exceptionLabel = createBranchLabel();
             addAntecedent(exceptionLabel, currentFlow);
             currentExceptionTarget = exceptionLabel;
-            bind(node.catchClause);
+            bind2(node.catchClause);
             addAntecedent(normalExitLabel, currentFlow);
           }
           currentReturnTarget = saveReturnTarget;
@@ -51057,7 +51057,7 @@ ${lanes.join("\n")}
             const finallyLabel = createBranchLabel();
             finallyLabel.antecedent = concatenate(concatenate(normalExitLabel.antecedent, exceptionLabel.antecedent), returnLabel.antecedent);
             currentFlow = finallyLabel;
-            bind(node.finallyBlock);
+            bind2(node.finallyBlock);
             if (currentFlow.flags & 1) {
               currentFlow = unreachableFlow;
             } else {
@@ -51075,12 +51075,12 @@ ${lanes.join("\n")}
         }
         function bindSwitchStatement(node) {
           const postSwitchLabel = createBranchLabel();
-          bind(node.expression);
+          bind2(node.expression);
           const saveBreakTarget = currentBreakTarget;
           const savePreSwitchCaseFlow = preSwitchCaseFlow;
           currentBreakTarget = postSwitchLabel;
           preSwitchCaseFlow = currentFlow;
-          bind(node.caseBlock);
+          bind2(node.caseBlock);
           addAntecedent(postSwitchLabel, currentFlow);
           const hasDefault = forEach(
             node.caseBlock.clauses,
@@ -51105,7 +51105,7 @@ ${lanes.join("\n")}
               if (fallthroughFlow === unreachableFlow) {
                 currentFlow = preSwitchCaseFlow;
               }
-              bind(clauses[i]);
+              bind2(clauses[i]);
               i++;
             }
             const preCaseLabel = createBranchLabel();
@@ -51113,7 +51113,7 @@ ${lanes.join("\n")}
             addAntecedent(preCaseLabel, fallthroughFlow);
             currentFlow = finishFlowLabel(preCaseLabel);
             const clause = clauses[i];
-            bind(clause);
+            bind2(clause);
             fallthroughFlow = currentFlow;
             if (!(currentFlow.flags & 1) && i !== clauses.length - 1 && options.noFallthroughCasesInSwitch) {
               clause.fallthroughFlowNode = currentFlow;
@@ -51123,12 +51123,12 @@ ${lanes.join("\n")}
         function bindCaseClause(node) {
           const saveCurrentFlow = currentFlow;
           currentFlow = preSwitchCaseFlow;
-          bind(node.expression);
+          bind2(node.expression);
           currentFlow = saveCurrentFlow;
           bindEach(node.statements);
         }
         function bindExpressionStatement(node) {
-          bind(node.expression);
+          bind2(node.expression);
           maybeBindExpressionFlowIfCall(node.expression);
         }
         function maybeBindExpressionFlowIfCall(node) {
@@ -51148,8 +51148,8 @@ ${lanes.join("\n")}
             continueTarget: void 0,
             referenced: false
           };
-          bind(node.label);
-          bind(node.statement);
+          bind2(node.label);
+          bind2(node.statement);
           if (!activeLabelList.referenced && !options.allowUnusedLabels) {
             errorOrSuggestionOnNode(unusedLabelIsError(options), node.label, Diagnostics.Unused_label);
           }
@@ -51195,9 +51195,9 @@ ${lanes.join("\n")}
             bindCondition(node.left, trueTarget, preRightLabel);
           }
           currentFlow = finishFlowLabel(preRightLabel);
-          bind(node.operatorToken);
+          bind2(node.operatorToken);
           if (isLogicalOrCoalescingAssignmentOperator(node.operatorToken.kind)) {
-            doWithConditionalBranches(bind, node.right, trueTarget, falseTarget);
+            doWithConditionalBranches(bind2, node.right, trueTarget, falseTarget);
             bindAssignmentTargetFlow(node.left);
             addAntecedent(trueTarget, createFlowCondition(32, currentFlow, node));
             addAntecedent(falseTarget, createFlowCondition(64, currentFlow, node));
@@ -51229,16 +51229,16 @@ ${lanes.join("\n")}
         function bindDestructuringAssignmentFlow(node) {
           if (inAssignmentPattern) {
             inAssignmentPattern = false;
-            bind(node.operatorToken);
-            bind(node.right);
+            bind2(node.operatorToken);
+            bind2(node.right);
             inAssignmentPattern = true;
-            bind(node.left);
+            bind2(node.left);
           } else {
             inAssignmentPattern = true;
-            bind(node.left);
+            bind2(node.left);
             inAssignmentPattern = false;
-            bind(node.operatorToken);
-            bind(node.right);
+            bind2(node.operatorToken);
+            bind2(node.right);
           }
           bindAssignmentTargetFlow(node.left);
         }
@@ -51299,7 +51299,7 @@ ${lanes.join("\n")}
           }
           function onOperator(operatorToken, state, _node) {
             if (!state.skip) {
-              bind(operatorToken);
+              bind2(operatorToken);
             }
           }
           function onRight(right, state, node) {
@@ -51339,7 +51339,7 @@ ${lanes.join("\n")}
             if (node && isBinaryExpression6(node) && !isDestructuringAssignment(node)) {
               return node;
             }
-            bind(node);
+            bind2(node);
           }
         }
         function bindDeleteExpressionFlow(node) {
@@ -51360,15 +51360,15 @@ ${lanes.join("\n")}
           if (inReturnPosition) {
             node.flowNodeWhenTrue = currentFlow;
           }
-          bind(node.questionToken);
-          bind(node.whenTrue);
+          bind2(node.questionToken);
+          bind2(node.whenTrue);
           addAntecedent(postExpressionLabel, currentFlow);
           currentFlow = finishFlowLabel(falseLabel);
           if (inReturnPosition) {
             node.flowNodeWhenFalse = currentFlow;
           }
-          bind(node.colonToken);
-          bind(node.whenFalse);
+          bind2(node.colonToken);
+          bind2(node.whenFalse);
           addAntecedent(postExpressionLabel, currentFlow);
           currentFlow = hasFlowEffects ? finishFlowLabel(postExpressionLabel) : saveCurrentFlow;
           hasFlowEffects || (hasFlowEffects = saveHasFlowEffects);
@@ -51390,25 +51390,25 @@ ${lanes.join("\n")}
           }
         }
         function bindBindingElementFlow(node) {
-          bind(node.dotDotDotToken);
-          bind(node.propertyName);
+          bind2(node.dotDotDotToken);
+          bind2(node.propertyName);
           bindInitializer(node.initializer);
-          bind(node.name);
+          bind2(node.name);
         }
         function bindParameterFlow(node) {
           bindEach(node.modifiers);
-          bind(node.dotDotDotToken);
-          bind(node.questionToken);
-          bind(node.type);
+          bind2(node.dotDotDotToken);
+          bind2(node.questionToken);
+          bind2(node.type);
           bindInitializer(node.initializer);
-          bind(node.name);
+          bind2(node.name);
         }
         function bindInitializer(node) {
           if (!node) {
             return;
           }
           const entryFlow = currentFlow;
-          bind(node);
+          bind2(node);
           if (entryFlow === unreachableFlow || entryFlow === currentFlow) {
             return;
           }
@@ -51418,7 +51418,7 @@ ${lanes.join("\n")}
           currentFlow = finishFlowLabel(exitFlow);
         }
         function bindJSDocTypeAlias(node) {
-          bind(node.tagName);
+          bind2(node.tagName);
           if (node.kind !== 341 && node.fullName) {
             setParent(node.fullName, node);
             setParentRecursive(
@@ -51444,15 +51444,15 @@ ${lanes.join("\n")}
           }
         }
         function bindJSDocImportTag(node) {
-          bind(node.tagName);
-          bind(node.moduleSpecifier);
-          bind(node.attributes);
+          bind2(node.tagName);
+          bind2(node.moduleSpecifier);
+          bind2(node.attributes);
           if (typeof node.comment !== "string") {
             bindEach(node.comment);
           }
         }
         function bindOptionalExpression(node, trueTarget, falseTarget) {
-          doWithConditionalBranches(bind, node, trueTarget, falseTarget);
+          doWithConditionalBranches(bind2, node, trueTarget, falseTarget);
           if (!isOptionalChain(node) || isOutermostOptionalChain(node)) {
             addAntecedent(trueTarget, createFlowCondition(32, currentFlow, node));
             addAntecedent(falseTarget, createFlowCondition(64, currentFlow, node));
@@ -51461,15 +51461,15 @@ ${lanes.join("\n")}
         function bindOptionalChainRest(node) {
           switch (node.kind) {
             case 212:
-              bind(node.questionDotToken);
-              bind(node.name);
+              bind2(node.questionDotToken);
+              bind2(node.name);
               break;
             case 213:
-              bind(node.questionDotToken);
-              bind(node.argumentExpression);
+              bind2(node.questionDotToken);
+              bind2(node.argumentExpression);
               break;
             case 214:
-              bind(node.questionDotToken);
+              bind2(node.questionDotToken);
               bindEach(node.typeArguments);
               bindEach(node.arguments);
               break;
@@ -51521,7 +51521,7 @@ ${lanes.join("\n")}
             if (expr.kind === 219 || expr.kind === 220) {
               bindEach(node.typeArguments);
               bindEach(node.arguments);
-              bind(node.expression);
+              bind2(node.expression);
             } else {
               bindEachChild(node);
               if (node.expression.kind === 108) {
@@ -51761,7 +51761,7 @@ ${lanes.join("\n")}
               void 0
             );
             parent2 = typeAlias;
-            bind(typeAlias.typeExpression);
+            bind2(typeAlias.typeExpression);
             const declName = getNameOfDeclaration(typeAlias);
             if ((isJSDocEnumTag(typeAlias) || !typeAlias.fullName) && declName && isPropertyAccessEntityNameExpression(declName.parent)) {
               const isTopLevel = isTopLevelNamespaceAssignment(declName.parent);
@@ -51815,7 +51815,7 @@ ${lanes.join("\n")}
                 /* TypeAliasExcludes */
               );
             } else {
-              bind(typeAlias.fullName);
+              bind2(typeAlias.fullName);
             }
           }
           container = saveContainer;
@@ -51847,7 +51847,7 @@ ${lanes.join("\n")}
               void 0
             );
             parent2 = jsDocImportTag;
-            bind(jsDocImportTag.importClause);
+            bind2(jsDocImportTag.importClause);
           }
           container = saveContainer;
           lastContainer = saveLastContainer;
@@ -51911,10 +51911,10 @@ ${lanes.join("\n")}
         }
         function checkStrictModeEvalOrArguments(contextNode, name) {
           if (name && name.kind === 80) {
-            const identifier = name;
-            if (isEvalOrArgumentsIdentifier(identifier)) {
+            const identifier2 = name;
+            if (isEvalOrArgumentsIdentifier(identifier2)) {
               const span = getErrorSpanForNode(file, name);
-              file.bindDiagnostics.push(createFileDiagnostic(file, span.start, span.length, getStrictModeEvalOrArgumentsMessage(contextNode), idText(identifier)));
+              file.bindDiagnostics.push(createFileDiagnostic(file, span.start, span.length, getStrictModeEvalOrArgumentsMessage(contextNode), idText(identifier2)));
             }
           }
         }
@@ -51995,7 +51995,7 @@ ${lanes.join("\n")}
             });
           }
         }
-        function bind(node) {
+        function bind2(node) {
           if (!node) {
             return;
           }
@@ -52025,7 +52025,7 @@ ${lanes.join("\n")}
           if (hasJSDocNodes(node)) {
             if (isInJSFile(node)) {
               for (const j of node.jsDoc) {
-                bind(j);
+                bind2(j);
               }
             } else {
               for (const j of node.jsDoc) {
@@ -52351,7 +52351,7 @@ ${lanes.join("\n")}
             case 341:
               return (delayedTypeAliases || (delayedTypeAliases = [])).push(node);
             case 340:
-              return bind(node.typeExpression);
+              return bind2(node.typeExpression);
             case 352:
               return (jsDocImports || (jsDocImports = [])).push(node);
           }
@@ -54855,11 +54855,11 @@ ${lanes.join("\n")}
             return location2 ? getTypeOfSymbolAtLocation(symbol, location2) : errorType;
           },
           getTypeOfSymbol,
-          getSymbolsOfParameterPropertyDeclaration: (parameterIn, parameterName) => {
+          getSymbolsOfParameterPropertyDeclaration: (parameterIn, parameterName2) => {
             const parameter = getParseTreeNode(parameterIn, isParameter4);
             if (parameter === void 0) return Debug.fail("Cannot get symbols of a synthetic parameter that cannot be resolved to a parse-tree node.");
             Debug.assert(isParameterPropertyDeclaration(parameter, parameter.parent));
-            return getSymbolsOfParameterPropertyDeclaration(parameter, escapeLeadingUnderscores(parameterName));
+            return getSymbolsOfParameterPropertyDeclaration(parameter, escapeLeadingUnderscores(parameterName2));
           },
           getDeclaredTypeOfSymbol,
           getPropertiesOfType,
@@ -56268,18 +56268,18 @@ ${lanes.join("\n")}
             }
           }
         }
-        function getSymbolsOfParameterPropertyDeclaration(parameter, parameterName) {
+        function getSymbolsOfParameterPropertyDeclaration(parameter, parameterName2) {
           const constructorDeclaration = parameter.parent;
           const classDeclaration = parameter.parent.parent;
           const parameterSymbol = getSymbol2(
             constructorDeclaration.locals,
-            parameterName,
+            parameterName2,
             111551
             /* Value */
           );
           const propertySymbol = getSymbol2(
             getMembersOfSymbol(classDeclaration.symbol),
-            parameterName,
+            parameterName2,
             111551
             /* Value */
           );
@@ -60080,12 +60080,12 @@ ${lanes.join("\n")}
               type = type.origin;
             }
             if (type.flags & (1048576 | 2097152)) {
-              const types = type.flags & 1048576 ? formatUnionTypes(type.types, expandingEnum) : type.types;
-              if (length(types) === 1) {
-                return typeToTypeNodeHelper(types[0], context);
+              const types4 = type.flags & 1048576 ? formatUnionTypes(type.types, expandingEnum) : type.types;
+              if (length(types4) === 1) {
+                return typeToTypeNodeHelper(types4[0], context);
               }
               const typeNodes = mapToTypeNodes(
-                types,
+                types4,
                 context,
                 /*isBareList*/
                 true
@@ -60111,12 +60111,12 @@ ${lanes.join("\n")}
             }
             if (type.flags & 134217728) {
               const texts = type.texts;
-              const types = type.types;
+              const types4 = type.types;
               const templateHead = factory.createTemplateHead(texts[0]);
               const templateSpans = factory.createNodeArray(
-                map(types, (t, i) => factory.createTemplateLiteralTypeSpan(
+                map(types4, (t, i) => factory.createTemplateLiteralTypeSpan(
                   typeToTypeNodeHelper(t, context),
-                  (i < types.length - 1 ? factory.createTemplateMiddle : factory.createTemplateTail)(texts[i + 1])
+                  (i < types4.length - 1 ? factory.createTemplateMiddle : factory.createTemplateTail)(texts[i + 1])
                 ))
               );
               context.approximateLength += 2;
@@ -60483,14 +60483,14 @@ ${lanes.join("\n")}
               }
               const abstractSignatures = filter(resolved.constructSignatures, (signature) => !!(signature.flags & 4));
               if (some(abstractSignatures)) {
-                const types = map(abstractSignatures, getOrCreateTypeFromSignature);
+                const types4 = map(abstractSignatures, getOrCreateTypeFromSignature);
                 const typeElementCount = resolved.callSignatures.length + (resolved.constructSignatures.length - abstractSignatures.length) + resolved.indexInfos.length + // exclude `prototype` when writing a class expression as a type literal, as per
                 // the logic in `createTypeNodesFromResolvedType`.
                 (context.flags & 2048 ? countWhere(resolved.properties, (p) => !(p.flags & 4194304)) : length(resolved.properties));
                 if (typeElementCount) {
-                  types.push(getResolvedTypeWithoutAbstractConstructSignatures(resolved));
+                  types4.push(getResolvedTypeWithoutAbstractConstructSignatures(resolved));
                 }
-                return typeToTypeNodeHelper(getIntersectionType(types), context);
+                return typeToTypeNodeHelper(getIntersectionType(types4), context);
               }
               const restoreFlags = saveRestoreFlags(context);
               context.flags |= 4194304;
@@ -61021,8 +61021,8 @@ ${lanes.join("\n")}
             }
             return node;
           }
-          function mapToTypeNodes(types, context, isBareList) {
-            if (some(types)) {
+          function mapToTypeNodes(types4, context, isBareList) {
+            if (some(types4)) {
               if (checkTruncationLength(context)) {
                 context.out.truncated = true;
                 if (!isBareList) {
@@ -61036,18 +61036,18 @@ ${lanes.join("\n")}
                       void 0
                     )
                   ];
-                } else if (types.length > 2) {
+                } else if (types4.length > 2) {
                   return [
-                    typeToTypeNodeHelper(types[0], context),
+                    typeToTypeNodeHelper(types4[0], context),
                     context.flags & 1 ? addSyntheticLeadingComment(factory.createKeywordTypeNode(
                       133
                       /* AnyKeyword */
-                    ), 3, `... ${types.length - 2} more elided ...`) : factory.createTypeReferenceNode(
-                      `... ${types.length - 2} more ...`,
+                    ), 3, `... ${types4.length - 2} more elided ...`) : factory.createTypeReferenceNode(
+                      `... ${types4.length - 2} more ...`,
                       /*typeArguments*/
                       void 0
                     ),
-                    typeToTypeNodeHelper(types[types.length - 1], context)
+                    typeToTypeNodeHelper(types4[types4.length - 1], context)
                   ];
                 }
               }
@@ -61055,21 +61055,21 @@ ${lanes.join("\n")}
               const seenNames = mayHaveNameCollisions ? createMultiMap() : void 0;
               const result2 = [];
               let i = 0;
-              for (const type of types) {
+              for (const type of types4) {
                 i++;
-                if (checkTruncationLength(context) && i + 2 < types.length - 1) {
+                if (checkTruncationLength(context) && i + 2 < types4.length - 1) {
                   context.out.truncated = true;
                   result2.push(
                     context.flags & 1 ? addSyntheticLeadingComment(factory.createKeywordTypeNode(
                       133
                       /* AnyKeyword */
-                    ), 3, `... ${types.length - i} more elided ...`) : factory.createTypeReferenceNode(
-                      `... ${types.length - i} more ...`,
+                    ), 3, `... ${types4.length - i} more elided ...`) : factory.createTypeReferenceNode(
+                      `... ${types4.length - i} more ...`,
                       /*typeArguments*/
                       void 0
                     )
                   );
-                  const typeNode2 = typeToTypeNodeHelper(types[types.length - 1], context);
+                  const typeNode2 = typeToTypeNodeHelper(types4[types4.length - 1], context);
                   if (typeNode2) {
                     result2.push(typeNode2);
                   }
@@ -61087,9 +61087,9 @@ ${lanes.join("\n")}
               if (seenNames) {
                 const restoreFlags = saveRestoreFlags(context);
                 context.flags |= 64;
-                seenNames.forEach((types2) => {
-                  if (!arrayIsHomogeneous(types2, ([a], [b]) => typesAreSameReference(a, b))) {
-                    for (const [type, resultIndex] of types2) {
+                seenNames.forEach((types22) => {
+                  if (!arrayIsHomogeneous(types22, ([a], [b]) => typesAreSameReference(a, b))) {
+                    for (const [type, resultIndex] of types22) {
                       result2[resultIndex] = typeToTypeNodeHelper(type, context);
                     }
                   }
@@ -61151,7 +61151,7 @@ ${lanes.join("\n")}
             }
             const restoreFlags = saveRestoreFlags(context);
             context.flags &= ~256;
-            const parameters = (some(expandedParams, (p) => p !== expandedParams[expandedParams.length - 1] && !!(getCheckFlags(p) & 32768)) ? signature.parameters : expandedParams).map((parameter) => symbolToParameterDeclaration(
+            const parameters2 = (some(expandedParams, (p) => p !== expandedParams[expandedParams.length - 1] && !!(getCheckFlags(p) & 32768)) ? signature.parameters : expandedParams).map((parameter) => symbolToParameterDeclaration(
               parameter,
               context,
               kind === 177
@@ -61159,7 +61159,7 @@ ${lanes.join("\n")}
             ));
             const thisParameter = context.flags & 33554432 ? void 0 : tryGetThisParameterDeclaration(signature, context);
             if (thisParameter) {
-              parameters.unshift(thisParameter);
+              parameters2.unshift(thisParameter);
             }
             restoreFlags();
             const returnTypeNode = serializeReturnTypeForSignature(context, signature);
@@ -61171,7 +61171,7 @@ ${lanes.join("\n")}
                 /* Abstract */
               );
             }
-            const node = kind === 180 ? factory.createCallSignature(typeParameters, parameters, returnTypeNode) : kind === 181 ? factory.createConstructSignature(typeParameters, parameters, returnTypeNode) : kind === 174 ? factory.createMethodSignature(modifiers, (options == null ? void 0 : options.name) ?? factory.createIdentifier(""), options == null ? void 0 : options.questionToken, typeParameters, parameters, returnTypeNode) : kind === 175 ? factory.createMethodDeclaration(
+            const node = kind === 180 ? factory.createCallSignature(typeParameters, parameters2, returnTypeNode) : kind === 181 ? factory.createConstructSignature(typeParameters, parameters2, returnTypeNode) : kind === 174 ? factory.createMethodSignature(modifiers, (options == null ? void 0 : options.name) ?? factory.createIdentifier(""), options == null ? void 0 : options.questionToken, typeParameters, parameters2, returnTypeNode) : kind === 175 ? factory.createMethodDeclaration(
               modifiers,
               /*asteriskToken*/
               void 0,
@@ -61179,35 +61179,35 @@ ${lanes.join("\n")}
               /*questionToken*/
               void 0,
               typeParameters,
-              parameters,
+              parameters2,
               returnTypeNode,
               /*body*/
               void 0
             ) : kind === 177 ? factory.createConstructorDeclaration(
               modifiers,
-              parameters,
+              parameters2,
               /*body*/
               void 0
             ) : kind === 178 ? factory.createGetAccessorDeclaration(
               modifiers,
               (options == null ? void 0 : options.name) ?? factory.createIdentifier(""),
-              parameters,
+              parameters2,
               returnTypeNode,
               /*body*/
               void 0
             ) : kind === 179 ? factory.createSetAccessorDeclaration(
               modifiers,
               (options == null ? void 0 : options.name) ?? factory.createIdentifier(""),
-              parameters,
+              parameters2,
               /*body*/
               void 0
-            ) : kind === 182 ? factory.createIndexSignature(modifiers, parameters, returnTypeNode) : kind === 318 ? factory.createJSDocFunctionType(parameters, returnTypeNode) : kind === 185 ? factory.createFunctionTypeNode(typeParameters, parameters, returnTypeNode ?? factory.createTypeReferenceNode(factory.createIdentifier(""))) : kind === 186 ? factory.createConstructorTypeNode(modifiers, typeParameters, parameters, returnTypeNode ?? factory.createTypeReferenceNode(factory.createIdentifier(""))) : kind === 263 ? factory.createFunctionDeclaration(
+            ) : kind === 182 ? factory.createIndexSignature(modifiers, parameters2, returnTypeNode) : kind === 318 ? factory.createJSDocFunctionType(parameters2, returnTypeNode) : kind === 185 ? factory.createFunctionTypeNode(typeParameters, parameters2, returnTypeNode ?? factory.createTypeReferenceNode(factory.createIdentifier(""))) : kind === 186 ? factory.createConstructorTypeNode(modifiers, typeParameters, parameters2, returnTypeNode ?? factory.createTypeReferenceNode(factory.createIdentifier(""))) : kind === 263 ? factory.createFunctionDeclaration(
               modifiers,
               /*asteriskToken*/
               void 0,
               (options == null ? void 0 : options.name) ? cast(options.name, isIdentifier10) : factory.createIdentifier(""),
               typeParameters,
-              parameters,
+              parameters2,
               returnTypeNode,
               /*body*/
               void 0
@@ -61217,13 +61217,13 @@ ${lanes.join("\n")}
               void 0,
               (options == null ? void 0 : options.name) ? cast(options.name, isIdentifier10) : factory.createIdentifier(""),
               typeParameters,
-              parameters,
+              parameters2,
               returnTypeNode,
               factory.createBlock([])
             ) : kind === 220 ? factory.createArrowFunction(
               modifiers,
               typeParameters,
-              parameters,
+              parameters2,
               returnTypeNode,
               /*equalsGreaterThanToken*/
               void 0,
@@ -61481,13 +61481,13 @@ ${lanes.join("\n")}
               131
               /* AssertsKeyword */
             ) : void 0;
-            const parameterName = typePredicate.kind === 1 || typePredicate.kind === 3 ? setEmitFlags(
+            const parameterName2 = typePredicate.kind === 1 || typePredicate.kind === 3 ? setEmitFlags(
               factory.createIdentifier(typePredicate.parameterName),
               16777216
               /* NoAsciiEscaping */
             ) : factory.createThisTypeNode();
             const typeNode = typePredicate.type && typeToTypeNodeHelper(typePredicate.type, context);
-            return factory.createTypePredicateNode(assertsModifier, parameterName, typeNode);
+            return factory.createTypePredicateNode(assertsModifier, parameterName2, typeNode);
           }
           function getEffectiveParameterDeclaration(parameterSymbol) {
             const parameterDeclaration = getDeclarationOfKind(
@@ -61805,8 +61805,8 @@ ${lanes.join("\n")}
             return specifier;
           }
           function symbolToEntityNameNode(symbol) {
-            const identifier = factory.createIdentifier(unescapeLeadingUnderscores(symbol.escapedName));
-            return symbol.parent ? factory.createQualifiedName(symbolToEntityNameNode(symbol.parent), identifier) : identifier;
+            const identifier2 = factory.createIdentifier(unescapeLeadingUnderscores(symbol.escapedName));
+            return symbol.parent ? factory.createQualifiedName(symbolToEntityNameNode(symbol.parent), identifier2) : identifier2;
           }
           function symbolToTypeNode(symbol, context, meaning, overrideTypeArguments) {
             const chain = lookupSymbolChain(symbol, context, meaning, !(context.flags & 16384));
@@ -61939,21 +61939,21 @@ ${lanes.join("\n")}
                   return factory.createIndexedAccessTypeNode(factory.createTypeReferenceNode(LHS, typeParameterNodes), factory.createLiteralTypeNode(factory.createStringLiteral(symbolName2)));
                 }
               }
-              const identifier = setEmitFlags(
+              const identifier2 = setEmitFlags(
                 factory.createIdentifier(symbolName2),
                 16777216
                 /* NoAsciiEscaping */
               );
-              if (typeParameterNodes) setIdentifierTypeArguments(identifier, factory.createNodeArray(typeParameterNodes));
-              identifier.symbol = symbol2;
+              if (typeParameterNodes) setIdentifierTypeArguments(identifier2, factory.createNodeArray(typeParameterNodes));
+              identifier2.symbol = symbol2;
               if (index > stopper) {
                 const LHS = createAccessFromSymbolChain(chain2, index - 1, stopper);
                 if (!isEntityName(LHS)) {
                   return Debug.fail("Impossible construct - an export of an indexed access cannot be reachable");
                 }
-                return factory.createQualifiedName(LHS, identifier);
+                return factory.createQualifiedName(LHS, identifier2);
               }
-              return identifier;
+              return identifier2;
             }
           }
           function typeParameterShadowsOtherTypeParameterInScope(escapedName, context, type) {
@@ -62034,14 +62034,14 @@ ${lanes.join("\n")}
               if (index === 0) {
                 context.flags ^= 16777216;
               }
-              const identifier = setEmitFlags(
+              const identifier2 = setEmitFlags(
                 factory.createIdentifier(symbolName2),
                 16777216
                 /* NoAsciiEscaping */
               );
-              if (typeParameterNodes) setIdentifierTypeArguments(identifier, factory.createNodeArray(typeParameterNodes));
-              identifier.symbol = symbol2;
-              return index > 0 ? factory.createQualifiedName(createEntityNameFromSymbolChain(chain2, index - 1), identifier) : identifier;
+              if (typeParameterNodes) setIdentifierTypeArguments(identifier2, factory.createNodeArray(typeParameterNodes));
+              identifier2.symbol = symbol2;
+              return index > 0 ? factory.createQualifiedName(createEntityNameFromSymbolChain(chain2, index - 1), identifier2) : identifier2;
             }
           }
           function symbolToExpression(symbol, context, meaning) {
@@ -62064,15 +62064,15 @@ ${lanes.join("\n")}
                 return factory.createStringLiteral(specifier);
               }
               if (index === 0 || canUsePropertyAccess(symbolName2, languageVersion)) {
-                const identifier = setEmitFlags(
+                const identifier2 = setEmitFlags(
                   factory.createIdentifier(symbolName2),
                   16777216
                   /* NoAsciiEscaping */
                 );
-                if (typeParameterNodes) setIdentifierTypeArguments(identifier, factory.createNodeArray(typeParameterNodes));
-                identifier.symbol = symbol2;
+                if (typeParameterNodes) setIdentifierTypeArguments(identifier2, factory.createNodeArray(typeParameterNodes));
+                identifier2.symbol = symbol2;
                 context.approximateLength += 1 + symbolName2.length;
-                return index > 0 ? factory.createPropertyAccessExpression(createExpressionFromSymbolChain(chain2, index - 1), identifier) : identifier;
+                return index > 0 ? factory.createPropertyAccessExpression(createExpressionFromSymbolChain(chain2, index - 1), identifier2) : identifier2;
               } else {
                 if (firstChar === 91) {
                   symbolName2 = symbolName2.substring(1, symbolName2.length - 1);
@@ -62092,15 +62092,15 @@ ${lanes.join("\n")}
                   expression = factory.createNumericLiteral(+symbolName2);
                 }
                 if (!expression) {
-                  const identifier = setEmitFlags(
+                  const identifier2 = setEmitFlags(
                     factory.createIdentifier(symbolName2),
                     16777216
                     /* NoAsciiEscaping */
                   );
-                  if (typeParameterNodes) setIdentifierTypeArguments(identifier, factory.createNodeArray(typeParameterNodes));
-                  identifier.symbol = symbol2;
+                  if (typeParameterNodes) setIdentifierTypeArguments(identifier2, factory.createNodeArray(typeParameterNodes));
+                  identifier2.symbol = symbol2;
                   context.approximateLength += symbolName2.length;
-                  expression = identifier;
+                  expression = identifier2;
                 }
                 context.approximateLength += 2;
                 return factory.createElementAccessExpression(createExpressionFromSymbolChain(chain2, index - 1), expression);
@@ -64397,18 +64397,18 @@ ${lanes.join("\n")}
             return writer2;
           }
         }
-        function formatUnionTypes(types, expandingEnum) {
+        function formatUnionTypes(types4, expandingEnum) {
           const result2 = [];
           let flags = 0;
-          for (let i = 0; i < types.length; i++) {
-            const t = types[i];
+          for (let i = 0; i < types4.length; i++) {
+            const t = types4[i];
             flags |= t.flags;
             if (!(t.flags & 98304)) {
               if (t.flags & 512 || !expandingEnum && t.flags | 1056) {
                 const baseType = t.flags & 512 ? booleanType : getBaseTypeOfEnumLikeType(t);
                 if (baseType.flags & 1048576) {
                   const count = baseType.types.length;
-                  if (i + count <= types.length && getRegularTypeOfLiteralType(types[i + count - 1]) === getRegularTypeOfLiteralType(baseType.types[count - 1])) {
+                  if (i + count <= types4.length && getRegularTypeOfLiteralType(types4[i + count - 1]) === getRegularTypeOfLiteralType(baseType.types[count - 1])) {
                     result2.push(baseType);
                     i += count - 1;
                     continue;
@@ -64420,7 +64420,7 @@ ${lanes.join("\n")}
           }
           if (flags & 65536) result2.push(nullType);
           if (flags & 32768) result2.push(undefinedType);
-          return result2 || types;
+          return result2 || types4;
         }
         function visibilityToString(flags) {
           if (flags === 2) {
@@ -65218,7 +65218,7 @@ ${lanes.join("\n")}
             type = getFlowTypeInConstructor(symbol, getDeclaringConstructor(symbol));
           }
           if (!type) {
-            let types;
+            let types4;
             if (symbol.declarations) {
               let jsdocType;
               for (const declaration of symbol.declarations) {
@@ -65238,16 +65238,16 @@ ${lanes.join("\n")}
                   jsdocType = getAnnotatedTypeForAssignmentDeclaration(jsdocType, expression, symbol, declaration);
                 }
                 if (!jsdocType) {
-                  (types || (types = [])).push(isBinaryExpression6(expression) || isCallExpression11(expression) ? getInitializerTypeFromAssignmentDeclaration(symbol, resolvedSymbol, expression, kind) : neverType);
+                  (types4 || (types4 = [])).push(isBinaryExpression6(expression) || isCallExpression11(expression) ? getInitializerTypeFromAssignmentDeclaration(symbol, resolvedSymbol, expression, kind) : neverType);
                 }
               }
               type = jsdocType;
             }
             if (!type) {
-              if (!length(types)) {
+              if (!length(types4)) {
                 return errorType;
               }
-              let constructorTypes = definedInConstructor && symbol.declarations ? getConstructorDefinedThisAssignmentTypes(types, symbol.declarations) : void 0;
+              let constructorTypes = definedInConstructor && symbol.declarations ? getConstructorDefinedThisAssignmentTypes(types4, symbol.declarations) : void 0;
               if (definedInMethod) {
                 const propType = getTypeOfPropertyInBaseClass(symbol);
                 if (propType) {
@@ -65255,7 +65255,7 @@ ${lanes.join("\n")}
                   definedInConstructor = true;
                 }
               }
-              const sourceTypes = some(constructorTypes, (t) => !!(t.flags & ~98304)) ? constructorTypes : types;
+              const sourceTypes = some(constructorTypes, (t) => !!(t.flags & ~98304)) ? constructorTypes : types4;
               type = getUnionType(sourceTypes);
             }
           }
@@ -65435,9 +65435,9 @@ ${lanes.join("\n")}
           );
           return thisContainer.kind === 177 || thisContainer.kind === 263 || thisContainer.kind === 219 && !isPrototypePropertyAssignment(thisContainer.parent);
         }
-        function getConstructorDefinedThisAssignmentTypes(types, declarations) {
-          Debug.assert(types.length === declarations.length);
-          return types.filter((_, i) => {
+        function getConstructorDefinedThisAssignmentTypes(types4, declarations) {
+          Debug.assert(types4.length === declarations.length);
+          return types4.filter((_, i) => {
             const declaration = declarations[i];
             const expression = isBinaryExpression6(declaration) ? declaration : isBinaryExpression6(declaration.parent) ? declaration.parent : void 0;
             return expression && isDeclarationInConstructor(expression);
@@ -66888,8 +66888,8 @@ ${lanes.join("\n")}
             const typeArguments = getTypeArguments(type);
             return length(target.typeParameters) === length(typeArguments) ? createTypeReference(target, concatenate(typeArguments, [thisArgument || target.thisType])) : type;
           } else if (type.flags & 2097152) {
-            const types = sameMap(type.types, (t) => getTypeWithThisArgument(t, thisArgument, needApparentType));
-            return types !== type.types ? getIntersectionType(types) : type;
+            const types4 = sameMap(type.types, (t) => getTypeWithThisArgument(t, thisArgument, needApparentType));
+            return types4 !== type.types ? getIntersectionType(types4) : type;
           }
           return needApparentType ? getApparentType(type) : type;
         }
@@ -66957,11 +66957,11 @@ ${lanes.join("\n")}
           const paddedTypeArguments = typeArguments.length === typeParameters.length ? typeArguments : concatenate(typeArguments, [type]);
           resolveObjectTypeMembers(type, source, typeParameters, paddedTypeArguments);
         }
-        function createSignature(declaration, typeParameters, thisParameter, parameters, resolvedReturnType, resolvedTypePredicate, minArgumentCount, flags) {
+        function createSignature(declaration, typeParameters, thisParameter, parameters2, resolvedReturnType, resolvedTypePredicate, minArgumentCount, flags) {
           const sig = new Signature13(checker, flags);
           sig.declaration = declaration;
           sig.typeParameters = typeParameters;
-          sig.parameters = parameters;
+          sig.parameters = parameters2;
           sig.thisParameter = thisParameter;
           sig.resolvedReturnType = resolvedReturnType;
           sig.resolvedTypePredicate = resolvedTypePredicate;
@@ -67330,14 +67330,14 @@ ${lanes.join("\n")}
           }
           return result2;
         }
-        function getUnionIndexInfos(types) {
-          const sourceInfos = getIndexInfosOfType(types[0]);
+        function getUnionIndexInfos(types4) {
+          const sourceInfos = getIndexInfosOfType(types4[0]);
           if (sourceInfos) {
             const result2 = [];
             for (const info of sourceInfos) {
               const indexType = info.keyType;
-              if (every(types, (t) => !!getIndexInfoOfType(t, indexType))) {
-                result2.push(createIndexInfo(indexType, getUnionType(map(types, (t) => getIndexTypeOfType(t, indexType))), some(types, (t) => getIndexInfoOfType(t, indexType).isReadonly)));
+              if (every(types4, (t) => !!getIndexInfoOfType(t, indexType))) {
+                result2.push(createIndexInfo(indexType, getUnionType(map(types4, (t) => getIndexTypeOfType(t, indexType))), some(types4, (t) => getIndexInfoOfType(t, indexType).isReadonly)));
               }
             }
             return result2;
@@ -67361,13 +67361,13 @@ ${lanes.join("\n")}
         function intersectTypes(type1, type2) {
           return !type1 ? type2 : !type2 ? type1 : getIntersectionType([type1, type2]);
         }
-        function findMixins(types) {
-          const constructorTypeCount = countWhere(types, (t) => getSignaturesOfType(
+        function findMixins(types4) {
+          const constructorTypeCount = countWhere(types4, (t) => getSignaturesOfType(
             t,
             1
             /* Construct */
           ).length > 0);
-          const mixinFlags = map(types, isMixinConstructorType);
+          const mixinFlags = map(types4, isMixinConstructorType);
           if (constructorTypeCount > 0 && constructorTypeCount === countWhere(mixinFlags, (b) => b)) {
             const firstMixinIndex = mixinFlags.indexOf(
               /*searchElement*/
@@ -67377,14 +67377,14 @@ ${lanes.join("\n")}
           }
           return mixinFlags;
         }
-        function includeMixinType(type, types, mixinFlags, index) {
+        function includeMixinType(type, types4, mixinFlags, index) {
           const mixedTypes = [];
-          for (let i = 0; i < types.length; i++) {
+          for (let i = 0; i < types4.length; i++) {
             if (i === index) {
               mixedTypes.push(type);
             } else if (mixinFlags[i]) {
               mixedTypes.push(getReturnTypeOfSignature(getSignaturesOfType(
-                types[i],
+                types4[i],
                 1
                 /* Construct */
               )[0]));
@@ -67396,10 +67396,10 @@ ${lanes.join("\n")}
           let callSignatures;
           let constructSignatures;
           let indexInfos;
-          const types = type.types;
-          const mixinFlags = findMixins(types);
+          const types4 = type.types;
+          const mixinFlags = findMixins(types4);
           const mixinCount = countWhere(mixinFlags, (b) => b);
-          for (let i = 0; i < types.length; i++) {
+          for (let i = 0; i < types4.length; i++) {
             const t = type.types[i];
             if (!mixinFlags[i]) {
               let signatures = getSignaturesOfType(
@@ -67410,7 +67410,7 @@ ${lanes.join("\n")}
               if (signatures.length && mixinCount > 0) {
                 signatures = map(signatures, (s) => {
                   const clone2 = cloneSignature(s);
-                  clone2.resolvedReturnType = includeMixinType(getReturnTypeOfSignature(s), types, mixinFlags, i);
+                  clone2.resolvedReturnType = includeMixinType(getReturnTypeOfSignature(s), types4, mixinFlags, i);
                   return clone2;
                 });
               }
@@ -67651,8 +67651,8 @@ ${lanes.join("\n")}
             );
           }
           if (type.flags & 2097152) {
-            const types = type.types;
-            if (types.length === 2 && !!(types[0].flags & (4 | 8 | 64)) && types[1] === emptyTypeLiteralType) {
+            const types4 = type.types;
+            if (types4.length === 2 && !!(types4[0].flags & (4 | 8 | 64)) && types4[1] === emptyTypeLiteralType) {
               return type;
             }
             return getIntersectionType(sameMap(type.types, getLowerBoundOfKeyType));
@@ -67942,13 +67942,13 @@ ${lanes.join("\n")}
             return !!expected && isLiteralType(expected) && !isTypeAssignableTo(getTypeOfNode(property), expected);
           });
         }
-        function getAllPossiblePropertiesOfTypes(types) {
-          const unionType = getUnionType(types);
+        function getAllPossiblePropertiesOfTypes(types4) {
+          const unionType = getUnionType(types4);
           if (!(unionType.flags & 1048576)) {
             return getAugmentedPropertiesOfType(unionType);
           }
           const props = createSymbolTable();
-          for (const memberType of types) {
+          for (const memberType of types4) {
             for (const { escapedName } of getAugmentedPropertiesOfType(memberType)) {
               if (!props.has(escapedName)) {
                 const prop = createUnionOrIntersectionProperty(unionType, escapedName);
@@ -68045,10 +68045,10 @@ ${lanes.join("\n")}
         function getConstraintOfConditionalType(type) {
           return hasNonCircularBaseConstraint(type) ? getConstraintFromConditionalType(type) : void 0;
         }
-        function getEffectiveConstraintOfIntersection(types, targetIsUnion) {
+        function getEffectiveConstraintOfIntersection(types4, targetIsUnion) {
           let constraints;
           let hasDisjointDomainType = false;
-          for (const t of types) {
+          for (const t of types4) {
             if (t.flags & 465829888) {
               let constraint = getConstraintOfType(t);
               while (constraint && constraint.flags & (262144 | 4194304 | 16777216)) {
@@ -68066,7 +68066,7 @@ ${lanes.join("\n")}
           }
           if (constraints && (targetIsUnion || hasDisjointDomainType)) {
             if (hasDisjointDomainType) {
-              for (const t of types) {
+              for (const t of types4) {
                 if (t.flags & 469892092 || isEmptyAnonymousObjectType(t)) {
                   constraints = append(constraints, t);
                 }
@@ -68149,10 +68149,10 @@ ${lanes.join("\n")}
               return t.isThisType || !constraint ? constraint : getBaseConstraint(constraint);
             }
             if (t.flags & 3145728) {
-              const types = t.types;
+              const types4 = t.types;
               const baseTypes = [];
               let different = false;
-              for (const type2 of types) {
+              for (const type2 of types4) {
                 const baseType = getBaseConstraint(type2);
                 if (baseType) {
                   if (baseType !== type2) {
@@ -68166,15 +68166,15 @@ ${lanes.join("\n")}
               if (!different) {
                 return t;
               }
-              return t.flags & 1048576 && baseTypes.length === types.length ? getUnionType(baseTypes) : t.flags & 2097152 && baseTypes.length ? getIntersectionType(baseTypes) : void 0;
+              return t.flags & 1048576 && baseTypes.length === types4.length ? getUnionType(baseTypes) : t.flags & 2097152 && baseTypes.length ? getIntersectionType(baseTypes) : void 0;
             }
             if (t.flags & 4194304) {
               return stringNumberSymbolType;
             }
             if (t.flags & 134217728) {
-              const types = t.types;
-              const constraints = mapDefined(types, getBaseConstraint);
-              return constraints.length === types.length ? getTemplateLiteralType(t.texts, constraints) : stringType;
+              const types4 = t.types;
+              const constraints = mapDefined(types4, getBaseConstraint);
+              return constraints.length === types4.length ? getTemplateLiteralType(t.texts, constraints) : stringType;
             }
             if (t.flags & 268435456) {
               const constraint = getBaseConstraint(t.type);
@@ -68727,8 +68727,8 @@ ${lanes.join("\n")}
         function isOptionalPropertyDeclaration(node) {
           return isPropertyDeclaration2(node) && !hasAccessorModifier(node) && node.questionToken;
         }
-        function createTypePredicate(kind, parameterName, parameterIndex, type) {
-          return { kind, parameterName, parameterIndex, type };
+        function createTypePredicate(kind, parameterName2, parameterIndex, type) {
+          return { kind, parameterName: parameterName2, parameterIndex, type };
         }
         function getMinTypeArgumentCount(typeParameters) {
           let minTypeArgumentCount = 0;
@@ -68768,7 +68768,7 @@ ${lanes.join("\n")}
         function getSignatureFromDeclaration(declaration) {
           const links = getNodeLinks(declaration);
           if (!links.resolvedSignature) {
-            const parameters = [];
+            const parameters2 = [];
             let flags = 0;
             let minArgumentCount = 0;
             let thisParameter;
@@ -68804,14 +68804,14 @@ ${lanes.join("\n")}
                 hasThisParameter2 = true;
                 thisParameter = param.symbol;
               } else {
-                parameters.push(paramSymbol);
+                parameters2.push(paramSymbol);
               }
               if (type && type.kind === 202) {
                 flags |= 2;
               }
-              const isOptionalParameter2 = hasEffectiveQuestionToken(param) || isParameter4(param) && param.initializer || isRestParameter(param) || iife && parameters.length > iife.arguments.length && !type;
+              const isOptionalParameter2 = hasEffectiveQuestionToken(param) || isParameter4(param) && param.initializer || isRestParameter(param) || iife && parameters2.length > iife.arguments.length && !type;
               if (!isOptionalParameter2) {
-                minArgumentCount = parameters.length;
+                minArgumentCount = parameters2.length;
               }
             }
             if ((declaration.kind === 178 || declaration.kind === 179) && hasBindableName(declaration) && (!hasThisParameter2 || !thisParameter)) {
@@ -68831,7 +68831,7 @@ ${lanes.join("\n")}
             const hostDeclaration = isJSDocSignature(declaration) ? getEffectiveJSDocHost(declaration) : declaration;
             const classType = hostDeclaration && isConstructorDeclaration3(hostDeclaration) ? getDeclaredTypeOfClassOrInterface(getMergedSymbol(hostDeclaration.parent.symbol)) : void 0;
             const typeParameters = classType ? classType.localTypeParameters : getTypeParametersFromDeclaration(declaration);
-            if (hasRestParameter(declaration) || isInJSFile(declaration) && maybeAddJsSyntheticRestParameter(declaration, parameters)) {
+            if (hasRestParameter(declaration) || isInJSFile(declaration) && maybeAddJsSyntheticRestParameter(declaration, parameters2)) {
               flags |= 1;
             }
             if (isConstructorTypeNode(declaration) && hasSyntacticModifier(
@@ -68849,7 +68849,7 @@ ${lanes.join("\n")}
               declaration,
               typeParameters,
               thisParameter,
-              parameters,
+              parameters2,
               /*resolvedReturnType*/
               void 0,
               /*resolvedTypePredicate*/
@@ -68860,7 +68860,7 @@ ${lanes.join("\n")}
           }
           return links.resolvedSignature;
         }
-        function maybeAddJsSyntheticRestParameter(declaration, parameters) {
+        function maybeAddJsSyntheticRestParameter(declaration, parameters2) {
           if (isJSDocSignature(declaration) || !containsArgumentsReference(declaration)) {
             return false;
           }
@@ -68882,9 +68882,9 @@ ${lanes.join("\n")}
             syntheticArgsSymbol.links.deferralWriteConstituents = [anyArrayType];
           }
           if (lastParamVariadicType) {
-            parameters.pop();
+            parameters2.pop();
           }
-          parameters.push(syntheticArgsSymbol);
+          parameters2.push(syntheticArgsSymbol);
           return true;
         }
         function getSignatureOfTypeTag(node) {
@@ -69009,19 +69009,19 @@ ${lanes.join("\n")}
           return signature.resolvedTypePredicate === noTypePredicate ? void 0 : signature.resolvedTypePredicate;
         }
         function createTypePredicateFromTypePredicateNode(node, signature) {
-          const parameterName = node.parameterName;
+          const parameterName2 = node.parameterName;
           const type = node.type && getTypeFromTypeNode(node.type);
-          return parameterName.kind === 198 ? createTypePredicate(
+          return parameterName2.kind === 198 ? createTypePredicate(
             node.assertsModifier ? 2 : 0,
             /*parameterName*/
             void 0,
             /*parameterIndex*/
             void 0,
             type
-          ) : createTypePredicate(node.assertsModifier ? 3 : 1, parameterName.escapedText, findIndex(signature.parameters, (p) => p.escapedName === parameterName.escapedText), type);
+          ) : createTypePredicate(node.assertsModifier ? 3 : 1, parameterName2.escapedText, findIndex(signature.parameters, (p) => p.escapedName === parameterName2.escapedText), type);
         }
-        function getUnionOrIntersectionType(types, kind, unionReduction) {
-          return kind !== 2097152 ? getUnionType(types, unionReduction) : getIntersectionType(types);
+        function getUnionOrIntersectionType(types4, kind, unionReduction) {
+          return kind !== 2097152 ? getUnionType(types4, unionReduction) : getIntersectionType(types4);
         }
         function getReturnTypeOfSignature(signature) {
           if (!signature.resolvedReturnType) {
@@ -69369,15 +69369,15 @@ ${lanes.join("\n")}
           const host2 = isJSDocTemplateTag(tp.parent) ? getEffectiveContainerForJSDocTemplateTag(tp.parent) : tp.parent;
           return host2 && getSymbolOfNode(host2);
         }
-        function getTypeListId(types) {
+        function getTypeListId(types4) {
           let result2 = "";
-          if (types) {
-            const length2 = types.length;
+          if (types4) {
+            const length2 = types4.length;
             let i = 0;
             while (i < length2) {
-              const startId = types[i].id;
+              const startId = types4[i].id;
               let count = 1;
-              while (i + count < length2 && types[i + count].id === startId + count) {
+              while (i + count < length2 && types4[i + count].id === startId + count) {
                 count++;
               }
               if (result2.length) {
@@ -69395,9 +69395,9 @@ ${lanes.join("\n")}
         function getAliasId(aliasSymbol, aliasTypeArguments) {
           return aliasSymbol ? `@${getSymbolId(aliasSymbol)}` + (aliasTypeArguments ? `:${getTypeListId(aliasTypeArguments)}` : "") : "";
         }
-        function getPropagatingFlagsOfTypes(types, excludeKinds) {
+        function getPropagatingFlagsOfTypes(types4, excludeKinds) {
           let result2 = 0;
-          for (const type of types) {
+          for (const type of types4) {
             if (excludeKinds === void 0 || !(type.flags & excludeKinds)) {
               result2 |= getObjectFlags(type);
             }
@@ -69603,8 +69603,8 @@ ${lanes.join("\n")}
           return symbol.parent ? `${getSymbolPath(symbol.parent)}.${symbol.escapedName}` : symbol.escapedName;
         }
         function getUnresolvedSymbolForEntityName(name) {
-          const identifier = name.kind === 167 ? name.right : name.kind === 212 ? name.name : name;
-          const text2 = identifier.escapedText;
+          const identifier2 = name.kind === 167 ? name.right : name.kind === 212 ? name.name : name;
+          const text2 = identifier2.escapedText;
           if (text2) {
             const parentSymbol = name.kind === 167 ? getUnresolvedSymbolForEntityName(name.left) : name.kind === 212 ? getUnresolvedSymbolForEntityName(name.expression) : void 0;
             const path = parentSymbol ? `${getSymbolPath(parentSymbol)}.${text2}` : text2;
@@ -69934,16 +69934,16 @@ ${lanes.join("\n")}
           return symbol || reportErrors2 ? getTypeOfGlobalSymbol(symbol, arity) : void 0;
         }
         function getGlobalBuiltinTypes(typeNames, arity) {
-          let types;
+          let types4;
           for (const typeName of typeNames) {
-            types = append(types, getGlobalType(
+            types4 = append(types4, getGlobalType(
               typeName,
               arity,
               /*reportErrors*/
               false
             ));
           }
-          return types ?? emptyArray;
+          return types4 ?? emptyArray;
         }
         function getGlobalTypedPropertyDescriptorType() {
           return deferredGlobalTypedPropertyDescriptorType || (deferredGlobalTypedPropertyDescriptorType = getGlobalType(
@@ -70613,13 +70613,13 @@ ${lanes.join("\n")}
         function getTypeId(type) {
           return type.id;
         }
-        function containsType(types, type) {
-          return binarySearch(types, type, getTypeId, compareValues) >= 0;
+        function containsType(types4, type) {
+          return binarySearch(types4, type, getTypeId, compareValues) >= 0;
         }
-        function insertType(types, type) {
-          const index = binarySearch(types, type, getTypeId, compareValues);
+        function insertType(types4, type) {
+          const index = binarySearch(types4, type, getTypeId, compareValues);
           if (index < 0) {
-            types.splice(~index, 0, type);
+            types4.splice(~index, 0, type);
             return true;
           }
           return false;
@@ -70644,9 +70644,9 @@ ${lanes.join("\n")}
           }
           return includes;
         }
-        function addTypesToUnion(typeSet, includes, types) {
+        function addTypesToUnion(typeSet, includes, types4) {
           let lastType;
-          for (const type of types) {
+          for (const type of types4) {
             if (type !== lastType) {
               includes = type.flags & 1048576 ? addTypesToUnion(typeSet, includes | (isNamedUnionType(type) ? 1048576 : 0), type.types) : addTypeToUnion(typeSet, includes, type);
               lastType = type;
@@ -70654,38 +70654,38 @@ ${lanes.join("\n")}
           }
           return includes;
         }
-        function removeSubtypes(types, hasObjectTypes) {
+        function removeSubtypes(types4, hasObjectTypes) {
           var _a2;
-          if (types.length < 2) {
-            return types;
+          if (types4.length < 2) {
+            return types4;
           }
-          const id = getTypeListId(types);
+          const id = getTypeListId(types4);
           const match = subtypeReductionCache.get(id);
           if (match) {
             return match;
           }
-          const hasEmptyObject = hasObjectTypes && some(types, (t) => !!(t.flags & 524288) && !isGenericMappedType(t) && isEmptyResolvedType(resolveStructuredTypeMembers(t)));
-          const len = types.length;
+          const hasEmptyObject = hasObjectTypes && some(types4, (t) => !!(t.flags & 524288) && !isGenericMappedType(t) && isEmptyResolvedType(resolveStructuredTypeMembers(t)));
+          const len = types4.length;
           let i = len;
           let count = 0;
           while (i > 0) {
             i--;
-            const source = types[i];
+            const source = types4[i];
             if (hasEmptyObject || source.flags & 469499904) {
               if (source.flags & 262144 && getBaseConstraintOrType(source).flags & 1048576) {
-                if (isTypeRelatedTo(source, getUnionType(map(types, (t) => t === source ? neverType : t)), strictSubtypeRelation)) {
-                  orderedRemoveItemAt(types, i);
+                if (isTypeRelatedTo(source, getUnionType(map(types4, (t) => t === source ? neverType : t)), strictSubtypeRelation)) {
+                  orderedRemoveItemAt(types4, i);
                 }
                 continue;
               }
               const keyProperty = source.flags & (524288 | 2097152 | 58982400) ? find(getPropertiesOfType(source), (p) => isUnitType(getTypeOfSymbol(p))) : void 0;
               const keyPropertyType = keyProperty && getRegularTypeOfLiteralType(getTypeOfSymbol(keyProperty));
-              for (const target of types) {
+              for (const target of types4) {
                 if (source !== target) {
                   if (count === 1e5) {
                     const estimatedCount = count / (len - i) * len;
                     if (estimatedCount > 1e6) {
-                      (_a2 = tracing) == null ? void 0 : _a2.instant(tracing.Phase.CheckTypes, "removeSubtypes_DepthLimit", { typeIds: types.map((t) => t.id) });
+                      (_a2 = tracing) == null ? void 0 : _a2.instant(tracing.Phase.CheckTypes, "removeSubtypes_DepthLimit", { typeIds: types4.map((t) => t.id) });
                       error2(currentNode, Diagnostics.Expression_produces_a_union_type_that_is_too_complex_to_represent);
                       return void 0;
                     }
@@ -70698,37 +70698,37 @@ ${lanes.join("\n")}
                     }
                   }
                   if (isTypeRelatedTo(source, target, strictSubtypeRelation) && (!(getObjectFlags(getTargetType(source)) & 1) || !(getObjectFlags(getTargetType(target)) & 1) || isTypeDerivedFrom(source, target))) {
-                    orderedRemoveItemAt(types, i);
+                    orderedRemoveItemAt(types4, i);
                     break;
                   }
                 }
               }
             }
           }
-          subtypeReductionCache.set(id, types);
-          return types;
+          subtypeReductionCache.set(id, types4);
+          return types4;
         }
-        function removeRedundantLiteralTypes(types, includes, reduceVoidUndefined) {
-          let i = types.length;
+        function removeRedundantLiteralTypes(types4, includes, reduceVoidUndefined) {
+          let i = types4.length;
           while (i > 0) {
             i--;
-            const t = types[i];
+            const t = types4[i];
             const flags = t.flags;
-            const remove = flags & (128 | 134217728 | 268435456) && includes & 4 || flags & 256 && includes & 8 || flags & 2048 && includes & 64 || flags & 8192 && includes & 4096 || reduceVoidUndefined && flags & 32768 && includes & 16384 || isFreshLiteralType(t) && containsType(types, t.regularType);
+            const remove = flags & (128 | 134217728 | 268435456) && includes & 4 || flags & 256 && includes & 8 || flags & 2048 && includes & 64 || flags & 8192 && includes & 4096 || reduceVoidUndefined && flags & 32768 && includes & 16384 || isFreshLiteralType(t) && containsType(types4, t.regularType);
             if (remove) {
-              orderedRemoveItemAt(types, i);
+              orderedRemoveItemAt(types4, i);
             }
           }
         }
-        function removeStringLiteralsMatchedByTemplateLiterals(types) {
-          const templates = filter(types, isPatternLiteralType);
+        function removeStringLiteralsMatchedByTemplateLiterals(types4) {
+          const templates = filter(types4, isPatternLiteralType);
           if (templates.length) {
-            let i = types.length;
+            let i = types4.length;
             while (i > 0) {
               i--;
-              const t = types[i];
+              const t = types4[i];
               if (t.flags & 128 && some(templates, (template) => isTypeMatchedByTemplateLiteralOrStringMapping(t, template))) {
-                orderedRemoveItemAt(types, i);
+                orderedRemoveItemAt(types4, i);
               }
             }
           }
@@ -70736,9 +70736,9 @@ ${lanes.join("\n")}
         function isTypeMatchedByTemplateLiteralOrStringMapping(type, template) {
           return template.flags & 134217728 ? isTypeMatchedByTemplateLiteralType(type, template) : isMemberOfStringMapping(type, template);
         }
-        function removeConstrainedTypeVariables(types) {
+        function removeConstrainedTypeVariables(types4) {
           const typeVariables = [];
-          for (const type of types) {
+          for (const type of types4) {
             if (type.flags & 2097152 && getObjectFlags(type) & 67108864) {
               const index = type.types[0].flags & 8650752 ? 0 : 1;
               pushIfUnique(typeVariables, type.types[index]);
@@ -70746,7 +70746,7 @@ ${lanes.join("\n")}
           }
           for (const typeVariable of typeVariables) {
             const primitives = [];
-            for (const type of types) {
+            for (const type of types4) {
               if (type.flags & 2097152 && getObjectFlags(type) & 67108864) {
                 const index = type.types[0].flags & 8650752 ? 0 : 1;
                 if (type.types[index] === typeVariable) {
@@ -70756,26 +70756,26 @@ ${lanes.join("\n")}
             }
             const constraint = getBaseConstraintOfType(typeVariable);
             if (everyType(constraint, (t) => containsType(primitives, t))) {
-              let i = types.length;
+              let i = types4.length;
               while (i > 0) {
                 i--;
-                const type = types[i];
+                const type = types4[i];
                 if (type.flags & 2097152 && getObjectFlags(type) & 67108864) {
                   const index = type.types[0].flags & 8650752 ? 0 : 1;
                   if (type.types[index] === typeVariable && containsType(primitives, type.types[1 - index])) {
-                    orderedRemoveItemAt(types, i);
+                    orderedRemoveItemAt(types4, i);
                   }
                 }
               }
-              insertType(types, typeVariable);
+              insertType(types4, typeVariable);
             }
           }
         }
         function isNamedUnionType(type) {
           return !!(type.flags & 1048576 && (type.aliasSymbol || type.origin));
         }
-        function addNamedUnions(namedUnions, types) {
-          for (const t of types) {
+        function addNamedUnions(namedUnions, types4) {
+          for (const t of types4) {
             if (t.flags & 1048576) {
               const origin = t.origin;
               if (t.aliasSymbol || origin && !(origin.flags & 1048576)) {
@@ -70786,26 +70786,26 @@ ${lanes.join("\n")}
             }
           }
         }
-        function createOriginUnionOrIntersectionType(flags, types) {
+        function createOriginUnionOrIntersectionType(flags, types4) {
           const result2 = createOriginType(flags);
-          result2.types = types;
+          result2.types = types4;
           return result2;
         }
-        function getUnionType(types, unionReduction = 1, aliasSymbol, aliasTypeArguments, origin) {
-          if (types.length === 0) {
+        function getUnionType(types4, unionReduction = 1, aliasSymbol, aliasTypeArguments, origin) {
+          if (types4.length === 0) {
             return neverType;
           }
-          if (types.length === 1) {
-            return types[0];
+          if (types4.length === 1) {
+            return types4[0];
           }
-          if (types.length === 2 && !origin && (types[0].flags & 1048576 || types[1].flags & 1048576)) {
+          if (types4.length === 2 && !origin && (types4[0].flags & 1048576 || types4[1].flags & 1048576)) {
             const infix = unionReduction === 0 ? "N" : unionReduction === 2 ? "S" : "L";
-            const index = types[0].id < types[1].id ? 0 : 1;
-            const id = types[index].id + infix + types[1 - index].id + getAliasId(aliasSymbol, aliasTypeArguments);
+            const index = types4[0].id < types4[1].id ? 0 : 1;
+            const id = types4[index].id + infix + types4[1 - index].id + getAliasId(aliasSymbol, aliasTypeArguments);
             let type = unionOfUnionTypes.get(id);
             if (!type) {
               type = getUnionTypeWorker(
-                types,
+                types4,
                 unionReduction,
                 aliasSymbol,
                 aliasTypeArguments,
@@ -70816,11 +70816,11 @@ ${lanes.join("\n")}
             }
             return type;
           }
-          return getUnionTypeWorker(types, unionReduction, aliasSymbol, aliasTypeArguments, origin);
+          return getUnionTypeWorker(types4, unionReduction, aliasSymbol, aliasTypeArguments, origin);
         }
-        function getUnionTypeWorker(types, unionReduction, aliasSymbol, aliasTypeArguments, origin) {
+        function getUnionTypeWorker(types4, unionReduction, aliasSymbol, aliasTypeArguments, origin) {
           let typeSet = [];
-          const includes = addTypesToUnion(typeSet, 0, types);
+          const includes = addTypesToUnion(typeSet, 0, types4);
           if (unionReduction !== 0) {
             if (includes & 3) {
               return includes & 1 ? includes & 8388608 ? wildcardType : includes & 1073741824 ? errorType : anyType : unknownType;
@@ -70851,7 +70851,7 @@ ${lanes.join("\n")}
           }
           if (!origin && includes & 1048576) {
             const namedUnions = [];
-            addNamedUnions(namedUnions, types);
+            addNamedUnions(namedUnions, types4);
             const reducedTypes = [];
             for (const t of typeSet) {
               if (!some(namedUnions, (union) => containsType(union.types, t))) {
@@ -70874,7 +70874,7 @@ ${lanes.join("\n")}
         }
         function getUnionOrIntersectionTypePredicate(signatures, kind) {
           let last2;
-          const types = [];
+          const types4 = [];
           for (const sig of signatures) {
             const pred = getTypePredicateOfSignature(sig);
             if (pred) {
@@ -70882,7 +70882,7 @@ ${lanes.join("\n")}
                 return void 0;
               }
               last2 = pred;
-              types.push(pred.type);
+              types4.push(pred.type);
             } else {
               const returnType = kind !== 2097152 ? getReturnTypeOfSignature(sig) : void 0;
               if (returnType !== falseType && returnType !== regularFalseType) {
@@ -70893,20 +70893,20 @@ ${lanes.join("\n")}
           if (!last2) {
             return void 0;
           }
-          const compositeType = getUnionOrIntersectionType(types, kind);
+          const compositeType = getUnionOrIntersectionType(types4, kind);
           return createTypePredicate(last2.kind, last2.parameterName, last2.parameterIndex, compositeType);
         }
         function typePredicateKindsMatch(a, b) {
           return a.kind === b.kind && a.parameterIndex === b.parameterIndex;
         }
-        function getUnionTypeFromSortedList(types, precomputedObjectFlags, aliasSymbol, aliasTypeArguments, origin) {
-          if (types.length === 0) {
+        function getUnionTypeFromSortedList(types4, precomputedObjectFlags, aliasSymbol, aliasTypeArguments, origin) {
+          if (types4.length === 0) {
             return neverType;
           }
-          if (types.length === 1) {
-            return types[0];
+          if (types4.length === 1) {
+            return types4[0];
           }
-          const typeKey = !origin ? getTypeListId(types) : origin.flags & 1048576 ? `|${getTypeListId(origin.types)}` : origin.flags & 2097152 ? `&${getTypeListId(origin.types)}` : `#${origin.type.id}|${getTypeListId(types)}`;
+          const typeKey = !origin ? getTypeListId(types4) : origin.flags & 1048576 ? `|${getTypeListId(origin.types)}` : origin.flags & 2097152 ? `&${getTypeListId(origin.types)}` : `#${origin.type.id}|${getTypeListId(types4)}`;
           const id = typeKey + getAliasId(aliasSymbol, aliasTypeArguments);
           let type = unionTypes.get(id);
           if (!type) {
@@ -70915,16 +70915,16 @@ ${lanes.join("\n")}
               /* Union */
             );
             type.objectFlags = precomputedObjectFlags | getPropagatingFlagsOfTypes(
-              types,
+              types4,
               /*excludeKinds*/
               98304
               /* Nullable */
             );
-            type.types = types;
+            type.types = types4;
             type.origin = origin;
             type.aliasSymbol = aliasSymbol;
             type.aliasTypeArguments = aliasTypeArguments;
-            if (types.length === 2 && types[0].flags & 512 && types[1].flags & 512) {
+            if (types4.length === 2 && types4[0].flags & 512 && types4[1].flags & 512) {
               type.flags |= 16;
               type.intrinsicName = "boolean";
             }
@@ -70970,20 +70970,20 @@ ${lanes.join("\n")}
           }
           return includes;
         }
-        function addTypesToIntersection(typeSet, includes, types) {
-          for (const type of types) {
+        function addTypesToIntersection(typeSet, includes, types4) {
+          for (const type of types4) {
             includes = addTypeToIntersection(typeSet, includes, getRegularTypeOfLiteralType(type));
           }
           return includes;
         }
-        function removeRedundantSupertypes(types, includes) {
-          let i = types.length;
+        function removeRedundantSupertypes(types4, includes) {
+          let i = types4.length;
           while (i > 0) {
             i--;
-            const t = types[i];
+            const t = types4[i];
             const remove = t.flags & 4 && includes & (128 | 134217728 | 268435456) || t.flags & 8 && includes & 256 || t.flags & 64 && includes & 2048 || t.flags & 4096 && includes & 8192 || t.flags & 16384 && includes & 32768 || isEmptyAnonymousObjectType(t) && includes & 470302716;
             if (remove) {
-              orderedRemoveItemAt(types, i);
+              orderedRemoveItemAt(types4, i);
             }
           }
         }
@@ -71004,16 +71004,16 @@ ${lanes.join("\n")}
           }
           return true;
         }
-        function extractRedundantTemplateLiterals(types) {
-          let i = types.length;
-          const literals = filter(types, (t) => !!(t.flags & 128));
+        function extractRedundantTemplateLiterals(types4) {
+          let i = types4.length;
+          const literals = filter(types4, (t) => !!(t.flags & 128));
           while (i > 0) {
             i--;
-            const t = types[i];
+            const t = types4[i];
             if (!(t.flags & (134217728 | 268435456))) continue;
             for (const t2 of literals) {
               if (isTypeSubtypeOf(t2, t)) {
-                orderedRemoveItemAt(types, i);
+                orderedRemoveItemAt(types4, i);
                 break;
               } else if (isPatternLiteralType(t)) {
                 return true;
@@ -71022,23 +71022,23 @@ ${lanes.join("\n")}
           }
           return false;
         }
-        function removeFromEach(types, flag) {
-          for (let i = 0; i < types.length; i++) {
-            types[i] = filterType(types[i], (t) => !(t.flags & flag));
+        function removeFromEach(types4, flag) {
+          for (let i = 0; i < types4.length; i++) {
+            types4[i] = filterType(types4[i], (t) => !(t.flags & flag));
           }
         }
-        function intersectUnionsOfPrimitiveTypes(types) {
+        function intersectUnionsOfPrimitiveTypes(types4) {
           let unionTypes2;
-          const index = findIndex(types, (t) => !!(getObjectFlags(t) & 32768));
+          const index = findIndex(types4, (t) => !!(getObjectFlags(t) & 32768));
           if (index < 0) {
             return false;
           }
           let i = index + 1;
-          while (i < types.length) {
-            const t = types[i];
+          while (i < types4.length) {
+            const t = types4[i];
             if (getObjectFlags(t) & 32768) {
-              (unionTypes2 || (unionTypes2 = [types[index]])).push(t);
-              orderedRemoveItemAt(types, i);
+              (unionTypes2 || (unionTypes2 = [types4[index]])).push(t);
+              orderedRemoveItemAt(types4, i);
             } else {
               i++;
             }
@@ -71064,32 +71064,32 @@ ${lanes.join("\n")}
               }
             }
           }
-          types[index] = getUnionTypeFromSortedList(
+          types4[index] = getUnionTypeFromSortedList(
             result2,
             32768
             /* PrimitiveUnion */
           );
           return true;
         }
-        function createIntersectionType(types, objectFlags, aliasSymbol, aliasTypeArguments) {
+        function createIntersectionType(types4, objectFlags, aliasSymbol, aliasTypeArguments) {
           const result2 = createType(
             2097152
             /* Intersection */
           );
           result2.objectFlags = objectFlags | getPropagatingFlagsOfTypes(
-            types,
+            types4,
             /*excludeKinds*/
             98304
             /* Nullable */
           );
-          result2.types = types;
+          result2.types = types4;
           result2.aliasSymbol = aliasSymbol;
           result2.aliasTypeArguments = aliasTypeArguments;
           return result2;
         }
-        function getIntersectionType(types, flags = 0, aliasSymbol, aliasTypeArguments) {
+        function getIntersectionType(types4, flags = 0, aliasSymbol, aliasTypeArguments) {
           const typeMembershipMap = /* @__PURE__ */ new Map();
-          const includes = addTypesToIntersection(typeMembershipMap, 0, types);
+          const includes = addTypesToIntersection(typeMembershipMap, 0, types4);
           const typeSet = arrayFrom(typeMembershipMap.values());
           let objectFlags = 0;
           if (includes & 131072) {
@@ -71159,7 +71159,7 @@ ${lanes.join("\n")}
                   /* Null */
                 );
                 result2 = getUnionType([getIntersectionType(typeSet, flags), nullType], 1, aliasSymbol, aliasTypeArguments);
-              } else if (typeSet.length >= 3 && types.length > 2) {
+              } else if (typeSet.length >= 3 && types4.length > 2) {
                 const middle = Math.floor(typeSet.length / 2);
                 result2 = getIntersectionType([getIntersectionType(typeSet.slice(0, middle), flags), getIntersectionType(typeSet.slice(middle), flags)], flags, aliasSymbol, aliasTypeArguments);
               } else {
@@ -71177,28 +71177,28 @@ ${lanes.join("\n")}
           }
           return result2;
         }
-        function getCrossProductUnionSize(types) {
-          return reduceLeft(types, (n, t) => t.flags & 1048576 ? n * t.types.length : t.flags & 131072 ? 0 : n, 1);
+        function getCrossProductUnionSize(types4) {
+          return reduceLeft(types4, (n, t) => t.flags & 1048576 ? n * t.types.length : t.flags & 131072 ? 0 : n, 1);
         }
-        function checkCrossProductUnion(types) {
+        function checkCrossProductUnion(types4) {
           var _a2;
-          const size = getCrossProductUnionSize(types);
+          const size = getCrossProductUnionSize(types4);
           if (size >= 1e5) {
-            (_a2 = tracing) == null ? void 0 : _a2.instant(tracing.Phase.CheckTypes, "checkCrossProductUnion_DepthLimit", { typeIds: types.map((t) => t.id), size });
+            (_a2 = tracing) == null ? void 0 : _a2.instant(tracing.Phase.CheckTypes, "checkCrossProductUnion_DepthLimit", { typeIds: types4.map((t) => t.id), size });
             error2(currentNode, Diagnostics.Expression_produces_a_union_type_that_is_too_complex_to_represent);
             return false;
           }
           return true;
         }
-        function getCrossProductIntersections(types, flags) {
-          const count = getCrossProductUnionSize(types);
+        function getCrossProductIntersections(types4, flags) {
+          const count = getCrossProductUnionSize(types4);
           const intersections = [];
           for (let i = 0; i < count; i++) {
-            const constituents = types.slice();
+            const constituents = types4.slice();
             let n = i;
-            for (let j = types.length - 1; j >= 0; j--) {
-              if (types[j].flags & 1048576) {
-                const sourceTypes = types[j].types;
+            for (let j = types4.length - 1; j >= 0; j--) {
+              if (types4[j].flags & 1048576) {
+                const sourceTypes = types4[j].types;
                 const length2 = sourceTypes.length;
                 constituents[j] = sourceTypes[n % length2];
                 n = Math.floor(n / length2);
@@ -71212,18 +71212,18 @@ ${lanes.join("\n")}
         function getConstituentCount(type) {
           return !(type.flags & 3145728) || type.aliasSymbol ? 1 : type.flags & 1048576 && type.origin ? getConstituentCount(type.origin) : getConstituentCountOfTypes(type.types);
         }
-        function getConstituentCountOfTypes(types) {
-          return reduceLeft(types, (n, t) => n + getConstituentCount(t), 0);
+        function getConstituentCountOfTypes(types4) {
+          return reduceLeft(types4, (n, t) => n + getConstituentCount(t), 0);
         }
         function getTypeFromIntersectionTypeNode(node) {
           const links = getNodeLinks(node);
           if (!links.resolvedType) {
             const aliasSymbol = getAliasSymbolForTypeNode(node);
-            const types = map(node.types, getTypeFromTypeNode);
-            const emptyIndex = types.length === 2 ? types.indexOf(emptyTypeLiteralType) : -1;
-            const t = emptyIndex >= 0 ? types[1 - emptyIndex] : unknownType;
+            const types4 = map(node.types, getTypeFromTypeNode);
+            const emptyIndex = types4.length === 2 ? types4.indexOf(emptyTypeLiteralType) : -1;
+            const t = emptyIndex >= 0 ? types4[1 - emptyIndex] : unknownType;
             const noSupertypeReduction = !!(t.flags & (4 | 8 | 64) || t.flags & 134217728 && isPatternLiteralType(t));
-            links.resolvedType = getIntersectionType(types, noSupertypeReduction ? 1 : 0, aliasSymbol, getTypeArgumentsForAliasSymbol(aliasSymbol));
+            links.resolvedType = getIntersectionType(types4, noSupertypeReduction ? 1 : 0, aliasSymbol, getTypeArgumentsForAliasSymbol(aliasSymbol));
           }
           return links.resolvedType;
         }
@@ -71393,18 +71393,18 @@ ${lanes.join("\n")}
           }
           return links.resolvedType;
         }
-        function getTemplateLiteralType(texts, types) {
-          const unionIndex = findIndex(types, (t) => !!(t.flags & (131072 | 1048576)));
+        function getTemplateLiteralType(texts, types4) {
+          const unionIndex = findIndex(types4, (t) => !!(t.flags & (131072 | 1048576)));
           if (unionIndex >= 0) {
-            return checkCrossProductUnion(types) ? mapType(types[unionIndex], (t) => getTemplateLiteralType(texts, replaceElement(types, unionIndex, t))) : errorType;
+            return checkCrossProductUnion(types4) ? mapType(types4[unionIndex], (t) => getTemplateLiteralType(texts, replaceElement(types4, unionIndex, t))) : errorType;
           }
-          if (contains(types, wildcardType)) {
+          if (contains(types4, wildcardType)) {
             return wildcardType;
           }
           const newTypes = [];
           const newTexts = [];
           let text2 = texts[0];
-          if (!addSpans(texts, types)) {
+          if (!addSpans(texts, types4)) {
             return stringType;
           }
           if (newTypes.length === 0) {
@@ -71425,9 +71425,9 @@ ${lanes.join("\n")}
             templateLiteralTypes.set(id, type = createTemplateLiteralType(newTexts, newTypes));
           }
           return type;
-          function addSpans(texts2, types2) {
-            for (let i = 0; i < types2.length; i++) {
-              const t = types2[i];
+          function addSpans(texts2, types22) {
+            for (let i = 0; i < types22.length; i++) {
+              const t = types22[i];
               if (t.flags & (2944 | 65536 | 32768)) {
                 text2 += getTemplateStringForType(t) || "";
                 text2 += texts2[i + 1];
@@ -71449,13 +71449,13 @@ ${lanes.join("\n")}
         function getTemplateStringForType(type) {
           return type.flags & 128 ? type.value : type.flags & 256 ? "" + type.value : type.flags & 2048 ? pseudoBigIntToString(type.value) : type.flags & (512 | 98304) ? type.intrinsicName : void 0;
         }
-        function createTemplateLiteralType(texts, types) {
+        function createTemplateLiteralType(texts, types4) {
           const type = createType(
             134217728
             /* TemplateLiteral */
           );
           type.texts = texts;
-          type.types = types;
+          type.types = types4;
           return type;
         }
         function getStringMappingType(symbol, type) {
@@ -71480,18 +71480,18 @@ ${lanes.join("\n")}
           }
           return str;
         }
-        function applyTemplateStringMapping(symbol, texts, types) {
+        function applyTemplateStringMapping(symbol, texts, types4) {
           switch (intrinsicTypeKinds.get(symbol.escapedName)) {
             case 0:
-              return [texts.map((t) => t.toUpperCase()), types.map((t) => getStringMappingType(symbol, t))];
+              return [texts.map((t) => t.toUpperCase()), types4.map((t) => getStringMappingType(symbol, t))];
             case 1:
-              return [texts.map((t) => t.toLowerCase()), types.map((t) => getStringMappingType(symbol, t))];
+              return [texts.map((t) => t.toLowerCase()), types4.map((t) => getStringMappingType(symbol, t))];
             case 2:
-              return [texts[0] === "" ? texts : [texts[0].charAt(0).toUpperCase() + texts[0].slice(1), ...texts.slice(1)], texts[0] === "" ? [getStringMappingType(symbol, types[0]), ...types.slice(1)] : types];
+              return [texts[0] === "" ? texts : [texts[0].charAt(0).toUpperCase() + texts[0].slice(1), ...texts.slice(1)], texts[0] === "" ? [getStringMappingType(symbol, types4[0]), ...types4.slice(1)] : types4];
             case 3:
-              return [texts[0] === "" ? texts : [texts[0].charAt(0).toLowerCase() + texts[0].slice(1), ...texts.slice(1)], texts[0] === "" ? [getStringMappingType(symbol, types[0]), ...types.slice(1)] : types];
+              return [texts[0] === "" ? texts : [texts[0].charAt(0).toLowerCase() + texts[0].slice(1), ...texts.slice(1)], texts[0] === "" ? [getStringMappingType(symbol, types4[0]), ...types4.slice(1)] : types4];
           }
-          return [texts, types];
+          return [texts, types4];
         }
         function getStringMappingTypeForGenericType(symbol, type) {
           const id = `${getSymbolId(symbol)},${getTypeId(type)}`;
@@ -71649,10 +71649,10 @@ ${lanes.join("\n")}
                   diagnostics.add(createDiagnosticForNode(accessExpression, Diagnostics.Property_0_does_not_exist_on_type_1, indexType.value, typeToString(objectType)));
                   return undefinedType;
                 } else if (indexType.flags & (8 | 4)) {
-                  const types = map(objectType.properties, (property) => {
+                  const types4 = map(objectType.properties, (property) => {
                     return getTypeOfSymbol(property);
                   });
-                  return getUnionType(append(types, undefinedType));
+                  return getUnionType(append(types4, undefinedType));
                 }
               }
               if (objectType.symbol === globalThisSymbol && propName !== void 0 && globalThisSymbol.exports.has(propName) && globalThisSymbol.exports.get(propName).flags & 418) {
@@ -71810,14 +71810,14 @@ ${lanes.join("\n")}
         }
         function distributeIndexOverObjectType(objectType, indexType, writing) {
           if (objectType.flags & 1048576 || objectType.flags & 2097152 && !shouldDeferIndexType(objectType)) {
-            const types = map(objectType.types, (t) => getSimplifiedType(getIndexedAccessType(t, indexType), writing));
-            return objectType.flags & 2097152 || writing ? getIntersectionType(types) : getUnionType(types);
+            const types4 = map(objectType.types, (t) => getSimplifiedType(getIndexedAccessType(t, indexType), writing));
+            return objectType.flags & 2097152 || writing ? getIntersectionType(types4) : getUnionType(types4);
           }
         }
         function distributeObjectOverIndexType(objectType, indexType, writing) {
           if (indexType.flags & 1048576) {
-            const types = map(indexType.types, (t) => getSimplifiedType(getIndexedAccessType(objectType, t), writing));
-            return writing ? getIntersectionType(types) : getUnionType(types);
+            const types4 = map(indexType.types, (t) => getSimplifiedType(getIndexedAccessType(objectType, t), writing));
+            return writing ? getIntersectionType(types4) : getUnionType(types4);
           }
         }
         function getSimplifiedIndexedAccessType(type, writing) {
@@ -71903,13 +71903,13 @@ ${lanes.join("\n")}
         function getIndexedAccessType(objectType, indexType, accessFlags = 0, accessNode, aliasSymbol, aliasTypeArguments) {
           return getIndexedAccessTypeOrUndefined(objectType, indexType, accessFlags, accessNode, aliasSymbol, aliasTypeArguments) || (accessNode ? errorType : unknownType);
         }
-        function indexTypeLessThan(indexType, limit) {
+        function indexTypeLessThan(indexType, limit2) {
           return everyType(indexType, (t) => {
             if (t.flags & 384) {
               const propName = getPropertyNameFromType(t);
               if (isNumericLiteralName(propName)) {
                 const index = +propName;
-                return index >= 0 && index < limit;
+                return index >= 0 && index < limit2;
               }
             }
             return false;
@@ -72366,10 +72366,10 @@ ${lanes.join("\n")}
               return right;
             }
             if (left.flags & 2097152) {
-              const types = left.types;
-              const lastLeft = types[types.length - 1];
+              const types4 = left.types;
+              const lastLeft = types4[types4.length - 1];
               if (isNonGenericObjectType(lastLeft) && isNonGenericObjectType(right)) {
-                return getIntersectionType(concatenate(types.slice(0, types.length - 1), [getSpreadType(lastLeft, right, symbol, objectFlags, readonly)]));
+                return getIntersectionType(concatenate(types4.slice(0, types4.length - 1), [getSpreadType(lastLeft, right, symbol, objectFlags, readonly)]));
               }
             }
             return getIntersectionType([left, right]);
@@ -72692,8 +72692,8 @@ ${lanes.join("\n")}
           }
           return items;
         }
-        function instantiateTypes(types, mapper) {
-          return instantiateList(types, mapper, instantiateType);
+        function instantiateTypes(types4, mapper) {
+          return instantiateList(types4, mapper, instantiateType);
         }
         function instantiateSignatures(signatures, mapper) {
           return instantiateList(signatures, mapper, instantiateSignature);
@@ -73129,9 +73129,9 @@ ${lanes.join("\n")}
           }
           if (flags & 3145728) {
             const origin = type.flags & 1048576 ? type.origin : void 0;
-            const types = origin && origin.flags & 3145728 ? origin.types : type.types;
-            const newTypes = instantiateTypes(types, mapper);
-            if (newTypes === types && aliasSymbol === type.aliasSymbol) {
+            const types4 = origin && origin.flags & 3145728 ? origin.types : type.types;
+            const newTypes = instantiateTypes(types4, mapper);
+            if (newTypes === types4 && aliasSymbol === type.aliasSymbol) {
               return type;
             }
             const newAliasSymbol = aliasSymbol || type.aliasSymbol;
@@ -74074,8 +74074,8 @@ ${lanes.join("\n")}
         function isUnknownLikeUnionType(type) {
           if (strictNullChecks && type.flags & 1048576) {
             if (!(type.objectFlags & 33554432)) {
-              const types = type.types;
-              type.objectFlags |= 33554432 | (types.length >= 3 && types[0].flags & 32768 && types[1].flags & 65536 && some(types, isEmptyAnonymousObjectType) ? 67108864 : 0);
+              const types4 = type.types;
+              type.objectFlags |= 33554432 | (types4.length >= 3 && types4[0].flags & 32768 && types4[1].flags & 65536 && some(types4, isEmptyAnonymousObjectType) ? 67108864 : 0);
             }
             return !!(type.objectFlags & 67108864);
           }
@@ -74629,8 +74629,8 @@ ${lanes.join("\n")}
               return -1;
             }
             if (source2.flags & 470302716 && target2.flags & 1048576) {
-              const types = target2.types;
-              const candidate = types.length === 2 && types[0].flags & 98304 ? types[1] : types.length === 3 && types[0].flags & 98304 && types[1].flags & 98304 ? types[2] : void 0;
+              const types4 = target2.types;
+              const candidate = types4.length === 2 && types4[0].flags & 98304 ? types4[1] : types4.length === 3 && types4[0].flags & 98304 && types4[1].flags & 98304 ? types4[2] : void 0;
               if (candidate && !(candidate.flags & 98304)) {
                 target2 = getNormalizedType(
                   candidate,
@@ -74783,7 +74783,7 @@ ${lanes.join("\n")}
               }
             }
           }
-          function getTypeOfPropertyInTypes(types, name) {
+          function getTypeOfPropertyInTypes(types4, name) {
             const appendPropType = (propTypes, type) => {
               var _a22;
               type = getApparentType(type);
@@ -74792,7 +74792,7 @@ ${lanes.join("\n")}
               return append(propTypes, propType);
             };
             return getUnionType(reduceLeft(
-              types,
+              types4,
               appendPropType,
               /*initial*/
               void 0
@@ -76830,16 +76830,16 @@ ${lanes.join("\n")}
           return findMatchingDiscriminantType(source, target, isRelatedTo) || findMatchingTypeReferenceOrTypeAliasReference(source, target) || findBestTypeForObjectLiteral(source, target) || findBestTypeForInvokable(source, target) || findMostOverlappyType(source, target);
         }
         function discriminateTypeByDiscriminableItems(target, discriminators, related) {
-          const types = target.types;
-          const include = types.map(
+          const types4 = target.types;
+          const include = types4.map(
             (t) => t.flags & 402784252 ? 0 : -1
             /* True */
           );
           for (const [getDiscriminatingType, propertyName2] of discriminators) {
             let matched = false;
-            for (let i = 0; i < types.length; i++) {
+            for (let i = 0; i < types4.length; i++) {
               if (include[i]) {
-                const targetType = getTypeOfPropertyOrIndexSignatureOfType(types[i], propertyName2);
+                const targetType = getTypeOfPropertyOrIndexSignatureOfType(types4[i], propertyName2);
                 if (targetType) {
                   if (someType(getDiscriminatingType(), (t) => !!related(t, targetType))) {
                     matched = true;
@@ -76849,7 +76849,7 @@ ${lanes.join("\n")}
                 }
               }
             }
-            for (let i = 0; i < types.length; i++) {
+            for (let i = 0; i < types4.length; i++) {
               if (include[i] === 3) {
                 include[i] = matched ? 0 : -1;
               }
@@ -76860,7 +76860,7 @@ ${lanes.join("\n")}
             0
             /* False */
           ) ? getUnionType(
-            types.filter((_, i) => include[i]),
+            types4.filter((_, i) => include[i]),
             0
             /* None */
           ) : target;
@@ -77220,9 +77220,9 @@ ${lanes.join("\n")}
         function compareTypePredicatesIdentical(source, target, compareTypes) {
           return !(source && target && typePredicateKindsMatch(source, target)) ? 0 : source.type === target.type ? -1 : source.type && target.type ? compareTypes(source.type, target.type) : 0;
         }
-        function literalTypesWithSameBaseType(types) {
+        function literalTypesWithSameBaseType(types4) {
           let commonBaseType;
-          for (const t of types) {
+          for (const t of types4) {
             if (!(t.flags & 131072)) {
               const baseType = getBaseTypeOfLiteralType(t);
               commonBaseType ?? (commonBaseType = baseType);
@@ -77233,27 +77233,27 @@ ${lanes.join("\n")}
           }
           return true;
         }
-        function getCombinedTypeFlags(types) {
-          return reduceLeft(types, (flags, t) => flags | (t.flags & 1048576 ? getCombinedTypeFlags(t.types) : t.flags), 0);
+        function getCombinedTypeFlags(types4) {
+          return reduceLeft(types4, (flags, t) => flags | (t.flags & 1048576 ? getCombinedTypeFlags(t.types) : t.flags), 0);
         }
-        function getCommonSupertype(types) {
-          if (types.length === 1) {
-            return types[0];
+        function getCommonSupertype(types4) {
+          if (types4.length === 1) {
+            return types4[0];
           }
-          const primaryTypes = strictNullChecks ? sameMap(types, (t) => filterType(t, (u) => !(u.flags & 98304))) : types;
+          const primaryTypes = strictNullChecks ? sameMap(types4, (t) => filterType(t, (u) => !(u.flags & 98304))) : types4;
           const superTypeOrUnion = literalTypesWithSameBaseType(primaryTypes) ? getUnionType(primaryTypes) : getSingleCommonSupertype(primaryTypes);
-          return primaryTypes === types ? superTypeOrUnion : getNullableType(
+          return primaryTypes === types4 ? superTypeOrUnion : getNullableType(
             superTypeOrUnion,
-            getCombinedTypeFlags(types) & 98304
+            getCombinedTypeFlags(types4) & 98304
             /* Nullable */
           );
         }
-        function getSingleCommonSupertype(types) {
-          const candidate = reduceLeft(types, (s, t) => isTypeStrictSubtypeOf(s, t) ? t : s);
-          return every(types, (t) => t === candidate || isTypeStrictSubtypeOf(t, candidate)) ? candidate : reduceLeft(types, (s, t) => isTypeSubtypeOf(s, t) ? t : s);
+        function getSingleCommonSupertype(types4) {
+          const candidate = reduceLeft(types4, (s, t) => isTypeStrictSubtypeOf(s, t) ? t : s);
+          return every(types4, (t) => t === candidate || isTypeStrictSubtypeOf(t, candidate)) ? candidate : reduceLeft(types4, (s, t) => isTypeSubtypeOf(s, t) ? t : s);
         }
-        function getCommonSubtype(types) {
-          return reduceLeft(types, (s, t) => isTypeSubtypeOf(t, s) ? t : s);
+        function getCommonSubtype(types4) {
+          return reduceLeft(types4, (s, t) => isTypeSubtypeOf(t, s) ? t : s);
         }
         function isArrayType(type) {
           return !!(getObjectFlags(type) & 4) && (type.target === globalArrayType || type.target === globalReadonlyArrayType);
@@ -78558,9 +78558,9 @@ ${lanes.join("\n")}
             }
             return void 0;
           }
-          function getSingleTypeVariableFromIntersectionTypes(types) {
+          function getSingleTypeVariableFromIntersectionTypes(types4) {
             let typeVariable;
-            for (const type of types) {
+            for (const type of types4) {
               const t = type.flags & 2097152 && find(type.types, (t2) => !!getInferenceInfoForType(t2));
               if (!t || typeVariable && t !== typeVariable) {
                 return void 0;
@@ -78691,11 +78691,11 @@ ${lanes.join("\n")}
           }
           function inferToTemplateLiteralType(source, target) {
             const matches = inferTypesFromTemplateLiteralType(source, target);
-            const types = target.types;
+            const types4 = target.types;
             if (matches || every(target.texts, (s) => s.length === 0)) {
-              for (let i = 0; i < types.length; i++) {
+              for (let i = 0; i < types4.length; i++) {
                 const source2 = matches ? matches[i] : neverType;
-                const target2 = types[i];
+                const target2 = types4[i];
                 if (source2.flags & 128 && target2.flags & 8650752) {
                   const inferenceContext = getInferenceInfoForType(target2);
                   const constraint = inferenceContext ? getBaseConstraintOfType(inferenceContext.typeParameter) : void 0;
@@ -79270,10 +79270,10 @@ ${lanes.join("\n")}
           }
           return result2;
         }
-        function mapTypesByKeyProperty(types, name) {
+        function mapTypesByKeyProperty(types4, name) {
           const map2 = /* @__PURE__ */ new Map();
           let count = 0;
-          for (const type of types) {
+          for (const type of types4) {
             if (type.flags & (524288 | 2097152 | 58982400)) {
               const discriminant = getTypeOfPropertyOfType(type, name);
               if (discriminant) {
@@ -79295,16 +79295,16 @@ ${lanes.join("\n")}
               }
             }
           }
-          return count >= 10 && count * 2 >= types.length ? map2 : void 0;
+          return count >= 10 && count * 2 >= types4.length ? map2 : void 0;
         }
         function getKeyPropertyName(unionType) {
-          const types = unionType.types;
-          if (types.length < 10 || getObjectFlags(unionType) & 32768 || countWhere(types, (t) => !!(t.flags & (524288 | 58982400))) < 10) {
+          const types4 = unionType.types;
+          if (types4.length < 10 || getObjectFlags(unionType) & 32768 || countWhere(types4, (t) => !!(t.flags & (524288 | 58982400))) < 10) {
             return void 0;
           }
           if (unionType.keyPropertyName === void 0) {
-            const keyPropertyName = forEach(types, (t) => t.flags & (524288 | 58982400) ? forEach(getPropertiesOfType(t), (p) => isUnitType(getTypeOfSymbol(p)) ? p.escapedName : void 0) : void 0);
-            const mapByKeyProperty = keyPropertyName && mapTypesByKeyProperty(types, keyPropertyName);
+            const keyPropertyName = forEach(types4, (t) => t.flags & (524288 | 58982400) ? forEach(getPropertiesOfType(t), (p) => isUnitType(getTypeOfSymbol(p)) ? p.escapedName : void 0) : void 0);
+            const mapByKeyProperty = keyPropertyName && mapTypesByKeyProperty(types4, keyPropertyName);
             unionType.keyPropertyName = mapByKeyProperty ? keyPropertyName : "";
             unionType.constituentMap = mapByKeyProperty;
           }
@@ -79661,8 +79661,8 @@ ${lanes.join("\n")}
           }
           return witnesses;
         }
-        function eachTypeContainedIn(source, types) {
-          return source.flags & 1048576 ? !forEach(source.types, (t) => !contains(types, t)) : contains(types, source);
+        function eachTypeContainedIn(source, types4) {
+          return source.flags & 1048576 ? !forEach(source.types, (t) => !contains(types4, t)) : contains(types4, source);
         }
         function isTypeSubsetOf(source, target) {
           return !!(source === target || source.flags & 131072 || target.flags & 1048576 && isTypeSubsetOfUnion(source, target));
@@ -79695,9 +79695,9 @@ ${lanes.join("\n")}
         }
         function filterType(type, f) {
           if (type.flags & 1048576) {
-            const types = type.types;
-            const filtered = filter(types, f);
-            if (filtered === types) {
+            const types4 = type.types;
+            const filtered = filter(types4, f);
+            if (filtered === types4) {
               return type;
             }
             const origin = type.origin;
@@ -79705,7 +79705,7 @@ ${lanes.join("\n")}
             if (origin && origin.flags & 1048576) {
               const originTypes = origin.types;
               const originFiltered = filter(originTypes, (t) => !!(t.flags & 1048576) || f(t));
-              if (originTypes.length - originFiltered.length === types.length - filtered.length) {
+              if (originTypes.length - originFiltered.length === types4.length - filtered.length) {
                 if (originFiltered.length === 1) {
                   return originFiltered[0];
                 }
@@ -79738,10 +79738,10 @@ ${lanes.join("\n")}
             return mapper(type);
           }
           const origin = type.origin;
-          const types = origin && origin.flags & 1048576 ? origin.types : type.types;
+          const types4 = origin && origin.flags & 1048576 ? origin.types : type.types;
           let mappedTypes;
           let changed = false;
-          for (const t of types) {
+          for (const t of types4) {
             const mapped = t.flags & 1048576 ? mapType(t, mapper, noReductions) : mapper(t);
             changed || (changed = t !== mapped);
             if (mapped) {
@@ -79840,9 +79840,9 @@ ${lanes.join("\n")}
         function getElementTypeOfEvolvingArrayType(type) {
           return getObjectFlags(type) & 256 ? type.elementType : neverType;
         }
-        function isEvolvingArrayTypeList(types) {
+        function isEvolvingArrayTypeList(types4) {
           let hasEvolvingArrayType = false;
-          for (const t of types) {
+          for (const t of types4) {
             if (!(t.flags & 131072)) {
               if (!(getObjectFlags(t) & 256)) {
                 return false;
@@ -80525,11 +80525,11 @@ ${lanes.join("\n")}
             cache.set(key22, result2);
             return result2;
           }
-          function getUnionOrEvolvingArrayType(types, subtypeReduction) {
-            if (isEvolvingArrayTypeList(types)) {
-              return getEvolvingArrayType(getUnionType(map(types, getElementTypeOfEvolvingArrayType)));
+          function getUnionOrEvolvingArrayType(types4, subtypeReduction) {
+            if (isEvolvingArrayTypeList(types4)) {
+              return getEvolvingArrayType(getUnionType(map(types4, getElementTypeOfEvolvingArrayType)));
             }
-            const result2 = recombineUnknownType(getUnionType(sameMap(types, finalizeEvolvingArrayType), subtypeReduction));
+            const result2 = recombineUnknownType(getUnionType(sameMap(types4, finalizeEvolvingArrayType), subtypeReduction));
             if (result2 !== declaredType && result2.flags & declaredType.flags & 1048576 && arrayIsEqualTo(result2.types, declaredType.types)) {
               return declaredType;
             }
@@ -81094,11 +81094,11 @@ ${lanes.join("\n")}
           function isMatchingConstructorReference(expr) {
             return (isPropertyAccessExpression10(expr) && idText(expr.name) === "constructor" || isElementAccessExpression8(expr) && isStringLiteralLike7(expr.argumentExpression) && expr.argumentExpression.text === "constructor") && isMatchingReference(reference, expr.expression);
           }
-          function narrowTypeByConstructor(type, operator, identifier, assumeTrue) {
+          function narrowTypeByConstructor(type, operator, identifier2, assumeTrue) {
             if (assumeTrue ? operator !== 35 && operator !== 37 : operator !== 36 && operator !== 38) {
               return type;
             }
-            const identifierType = getTypeOfExpression(identifier);
+            const identifierType = getTypeOfExpression(identifier2);
             if (!isFunctionType(identifierType) && !isConstructorType(identifierType)) {
               return type;
             }
@@ -83095,7 +83095,7 @@ ${lanes.join("\n")}
             type,
             (t) => {
               if (t.flags & 2097152) {
-                let types;
+                let types4;
                 let indexInfoCandidates;
                 let ignoreIndexInfos = false;
                 for (const constituentType of t.types) {
@@ -83104,7 +83104,7 @@ ${lanes.join("\n")}
                   }
                   if (isGenericMappedType(constituentType) && getMappedTypeNameTypeKind(constituentType) !== 2) {
                     const substitutedType = getIndexedMappedTypeSubstitutedTypeOfContextualType(constituentType, name, nameType);
-                    types = appendContextualPropertyTypeConstituent(types, substitutedType);
+                    types4 = appendContextualPropertyTypeConstituent(types4, substitutedType);
                     continue;
                   }
                   const propertyType = getTypeOfConcretePropertyOfContextualType(constituentType, name);
@@ -83116,21 +83116,21 @@ ${lanes.join("\n")}
                   }
                   ignoreIndexInfos = true;
                   indexInfoCandidates = void 0;
-                  types = appendContextualPropertyTypeConstituent(types, propertyType);
+                  types4 = appendContextualPropertyTypeConstituent(types4, propertyType);
                 }
                 if (indexInfoCandidates) {
                   for (const candidate of indexInfoCandidates) {
                     const indexInfoType = getTypeFromIndexInfosOfContextualType(candidate, name, nameType);
-                    types = appendContextualPropertyTypeConstituent(types, indexInfoType);
+                    types4 = appendContextualPropertyTypeConstituent(types4, indexInfoType);
                   }
                 }
-                if (!types) {
+                if (!types4) {
                   return;
                 }
-                if (types.length === 1) {
-                  return types[0];
+                if (types4.length === 1) {
+                  return types4[0];
                 }
-                return getIntersectionType(types);
+                return getIntersectionType(types4);
               }
               if (!(t.flags & 524288)) {
                 return;
@@ -83141,8 +83141,8 @@ ${lanes.join("\n")}
             true
           );
         }
-        function appendContextualPropertyTypeConstituent(types, type) {
-          return type ? append(types, type.flags & 1 ? unknownType : type) : types;
+        function appendContextualPropertyTypeConstituent(types4, type) {
+          return type ? append(types4, type.flags & 1 ? unknownType : type) : types4;
         }
         function getIndexedMappedTypeSubstitutedTypeOfContextualType(type, name, nameType) {
           const propertyNameType = nameType || getStringLiteralType(unescapeLeadingUnderscores(name));
@@ -83866,8 +83866,8 @@ ${lanes.join("\n")}
             return getContextualCallSignature(type, node);
           }
           let signatureList;
-          const types = type.types;
-          for (const current of types) {
+          const types4 = type.types;
+          for (const current of types4) {
             const signature = getContextualCallSignature(current, node);
             if (signature) {
               if (!signatureList) {
@@ -86206,7 +86206,7 @@ ${lanes.join("\n")}
               return createArrayType(checkIteratedTypeOrElementType(33, spreadType, undefinedType, arg.kind === 231 ? arg.expression : arg), inConstContext);
             }
           }
-          const types = [];
+          const types4 = [];
           const flags = [];
           const names = [];
           for (let i = index; i < argCount; i++) {
@@ -86214,13 +86214,13 @@ ${lanes.join("\n")}
             if (isSpreadArgument(arg)) {
               const spreadType = arg.kind === 238 ? arg.type : checkExpression(arg.expression);
               if (isArrayLikeType(spreadType)) {
-                types.push(spreadType);
+                types4.push(spreadType);
                 flags.push(
                   8
                   /* Variadic */
                 );
               } else {
-                types.push(checkIteratedTypeOrElementType(33, spreadType, undefinedType, arg.kind === 231 ? arg.expression : arg));
+                types4.push(checkIteratedTypeOrElementType(33, spreadType, undefinedType, arg.kind === 231 ? arg.expression : arg));
                 flags.push(
                   4
                   /* Rest */
@@ -86239,7 +86239,7 @@ ${lanes.join("\n")}
                 402784252 | 4194304 | 134217728 | 268435456
                 /* StringMapping */
               );
-              types.push(hasPrimitiveContextualType ? getRegularTypeOfLiteralType(argType) : getWidenedLiteralType(argType));
+              types4.push(hasPrimitiveContextualType ? getRegularTypeOfLiteralType(argType) : getWidenedLiteralType(argType));
               flags.push(
                 1
                 /* Required */
@@ -86251,7 +86251,7 @@ ${lanes.join("\n")}
               names.push(void 0);
             }
           }
-          return createTupleType(types, flags, inConstContext && !someType(restType, isMutableArrayLikeType), names);
+          return createTupleType(types4, flags, inConstContext && !someType(restType, isMutableArrayLikeType), names);
         }
         function checkTypeArguments(signature, typeArgumentNodes, reportErrors2, headMessage) {
           const isJavascript = isInJSFile(signature.declaration);
@@ -87114,11 +87114,11 @@ ${lanes.join("\n")}
             thisParameter = createCombinedSymbolFromTypes(thisParameters, thisParameters.map(getTypeOfParameter));
           }
           const { min: minArgumentCount, max: maxNonRestParam } = minAndMax(candidates, getNumNonRestParameters);
-          const parameters = [];
+          const parameters2 = [];
           for (let i = 0; i < maxNonRestParam; i++) {
             const symbols = mapDefined(candidates, (s) => signatureHasRestParameter(s) ? i < s.parameters.length - 1 ? s.parameters[i] : last(s.parameters) : i < s.parameters.length ? s.parameters[i] : void 0);
             Debug.assert(symbols.length !== 0);
-            parameters.push(createCombinedSymbolFromTypes(symbols, mapDefined(candidates, (candidate) => tryGetTypeAtPosition(candidate, i))));
+            parameters2.push(createCombinedSymbolFromTypes(symbols, mapDefined(candidates, (candidate) => tryGetTypeAtPosition(candidate, i))));
           }
           const restParameterSymbols = mapDefined(candidates, (c) => signatureHasRestParameter(c) ? last(c.parameters) : void 0);
           let flags = 128;
@@ -87128,7 +87128,7 @@ ${lanes.join("\n")}
               2
               /* Subtype */
             ));
-            parameters.push(createCombinedSymbolForOverloadFailure(restParameterSymbols, type));
+            parameters2.push(createCombinedSymbolForOverloadFailure(restParameterSymbols, type));
             flags |= 1;
           }
           if (candidates.some(signatureHasLiteralTypes)) {
@@ -87140,7 +87140,7 @@ ${lanes.join("\n")}
             void 0,
             // Before calling this we tested for `!candidates.some(c => !!c.typeParameters)`.
             thisParameter,
-            parameters,
+            parameters2,
             /*resolvedReturnType*/
             getIntersectionType(candidates.map(getReturnTypeOfSignature)),
             /*resolvedTypePredicate*/
@@ -87153,9 +87153,9 @@ ${lanes.join("\n")}
           const numParams = signature.parameters.length;
           return signatureHasRestParameter(signature) ? numParams - 1 : numParams;
         }
-        function createCombinedSymbolFromTypes(sources, types) {
+        function createCombinedSymbolFromTypes(sources, types4) {
           return createCombinedSymbolForOverloadFailure(sources, getUnionType(
-            types,
+            types4,
             2
             /* Subtype */
           ));
@@ -87401,8 +87401,8 @@ ${lanes.join("\n")}
           }
           const firstBase = baseTypes[0];
           if (firstBase.flags & 2097152) {
-            const types = firstBase.types;
-            const mixinFlags = findMixins(types);
+            const types4 = firstBase.types;
+            const mixinFlags = findMixins(types4);
             let i = 0;
             for (const intersectionMember of firstBase.types) {
               if (!mixinFlags[i]) {
@@ -87463,9 +87463,9 @@ ${lanes.join("\n")}
           const awaitedType = getAwaitedType(apparentType);
           const maybeMissingAwait = awaitedType && getSignaturesOfType(awaitedType, kind).length > 0;
           if (apparentType.flags & 1048576) {
-            const types = apparentType.types;
+            const types4 = apparentType.types;
             let hasSignatures2 = false;
-            for (const constituent of types) {
+            for (const constituent of types4) {
               const signatures = getSignaturesOfType(constituent, kind);
               if (signatures.length !== 0) {
                 hasSignatures2 = true;
@@ -88642,18 +88642,18 @@ ${lanes.join("\n")}
           if (restType && pos >= parameterCount - 1) {
             return pos === parameterCount - 1 ? restType : createArrayType(getIndexedAccessType(restType, numberType));
           }
-          const types = [];
+          const types4 = [];
           const flags = [];
           const names = [];
           for (let i = pos; i < parameterCount; i++) {
             if (!restType || i < parameterCount - 1) {
-              types.push(getTypeAtPosition(source, i));
+              types4.push(getTypeAtPosition(source, i));
               flags.push(
                 i < minArgumentCount ? 1 : 2
                 /* Optional */
               );
             } else {
-              types.push(restType);
+              types4.push(restType);
               flags.push(
                 8
                 /* Variadic */
@@ -88661,7 +88661,7 @@ ${lanes.join("\n")}
             }
             names.push(getNameableDeclarationAtPosition(source, i));
           }
-          return createTupleType(types, flags, readonly, names);
+          return createTupleType(types4, flags, readonly, names);
         }
         function getRestOrAnyTypeAtPosition(source, pos) {
           const restType = getRestTypeAtPosition(source, pos);
@@ -89198,11 +89198,11 @@ ${lanes.join("\n")}
             ) : void 0;
             nextType = some(nextTypes) ? getIntersectionType(nextTypes) : void 0;
           } else {
-            const types = checkAndAggregateReturnExpressionTypes(func, checkMode);
-            if (!types) {
+            const types4 = checkAndAggregateReturnExpressionTypes(func, checkMode);
+            if (!types4) {
               return functionFlags & 2 ? createPromiseReturnType(func, neverType) : neverType;
             }
-            if (types.length === 0) {
+            if (types4.length === 0) {
               const contextualReturnType = getContextualReturnType(
                 func,
                 /*contextFlags*/
@@ -89215,7 +89215,7 @@ ${lanes.join("\n")}
               );
             }
             returnType = getUnionType(
-              types,
+              types4,
               2
               /* Subtype */
             );
@@ -89992,8 +89992,8 @@ ${lanes.join("\n")}
             return true;
           }
           if (type.flags & 3145728) {
-            const types = type.types;
-            for (const t of types) {
+            const types4 = type.types;
+            for (const t of types4) {
               if (maybeTypeOfKind(t, kind)) {
                 return true;
               }
@@ -91169,7 +91169,7 @@ ${lanes.join("\n")}
         }
         function checkTemplateExpression(node) {
           const texts = [node.head.text];
-          const types = [];
+          const types4 = [];
           for (const span of node.templateSpans) {
             const type = checkExpression(span.expression);
             if (maybeTypeOfKindConsideringBaseConstraint(
@@ -91180,7 +91180,7 @@ ${lanes.join("\n")}
               error2(span.expression, Diagnostics.Implicit_conversion_of_a_symbol_to_a_string_will_fail_at_runtime_Consider_wrapping_this_expression_in_String);
             }
             texts.push(span.literal.text);
-            types.push(isTypeAssignableTo(type, templateConstraintType) ? type : stringType);
+            types4.push(isTypeAssignableTo(type, templateConstraintType) ? type : stringType);
           }
           const evaluated = node.parent.kind !== 216 && evaluate(node).value;
           if (evaluated) {
@@ -91191,7 +91191,7 @@ ${lanes.join("\n")}
             /*contextFlags*/
             void 0
           ) || unknownType, isTemplateLiteralContextualType)) {
-            return getTemplateLiteralType(texts, types);
+            return getTemplateLiteralType(texts, types4);
           }
           return stringType;
         }
@@ -91368,8 +91368,8 @@ ${lanes.join("\n")}
         function isLiteralOfContextualType(candidateType, contextualType) {
           if (contextualType) {
             if (contextualType.flags & 3145728) {
-              const types = contextualType.types;
-              return some(types, (t) => isLiteralOfContextualType(candidateType, t));
+              const types4 = contextualType.types;
+              return some(types4, (t) => isLiteralOfContextualType(candidateType, t));
             }
             if (contextualType.flags & 58982400) {
               const constraint = getBaseConstraintOfType(contextualType) || unknownType;
@@ -91953,11 +91953,11 @@ ${lanes.join("\n")}
             return;
           }
           checkSourceElement(node.type);
-          const { parameterName } = node;
+          const { parameterName: parameterName2 } = node;
           if (typePredicate.kind !== 0 && typePredicate.kind !== 2) {
             if (typePredicate.parameterIndex >= 0) {
               if (signatureHasRestParameter(signature) && typePredicate.parameterIndex === signature.parameters.length - 1) {
-                error2(parameterName, Diagnostics.A_type_predicate_cannot_reference_a_rest_parameter);
+                error2(parameterName2, Diagnostics.A_type_predicate_cannot_reference_a_rest_parameter);
               } else {
                 if (typePredicate.type) {
                   const leadingError = () => chainDiagnosticMessages(
@@ -91975,10 +91975,10 @@ ${lanes.join("\n")}
                   );
                 }
               }
-            } else if (parameterName) {
+            } else if (parameterName2) {
               let hasReportedError = false;
               for (const { name } of parent2.parameters) {
-                if (isBindingPattern2(name) && checkIfTypePredicateVariableIsDeclaredInBindingPattern(name, parameterName, typePredicate.parameterName)) {
+                if (isBindingPattern2(name) && checkIfTypePredicateVariableIsDeclaredInBindingPattern(name, parameterName2, typePredicate.parameterName)) {
                   hasReportedError = true;
                   break;
                 }
@@ -93435,7 +93435,7 @@ ${lanes.join("\n")}
           }
           checkTypeAssignableTo(returnType, expectedReturnType, node.expression, headMessage);
         }
-        function createCallSignature(typeParameters, thisParameter, parameters, returnType, typePredicate, minArgumentCount = parameters.length, flags = 0) {
+        function createCallSignature(typeParameters, thisParameter, parameters2, returnType, typePredicate, minArgumentCount = parameters2.length, flags = 0) {
           const decl = factory.createFunctionTypeNode(
             /*typeParameters*/
             void 0,
@@ -93445,10 +93445,10 @@ ${lanes.join("\n")}
               /* AnyKeyword */
             )
           );
-          return createSignature(decl, typeParameters, thisParameter, parameters, returnType, typePredicate, minArgumentCount, flags);
+          return createSignature(decl, typeParameters, thisParameter, parameters2, returnType, typePredicate, minArgumentCount, flags);
         }
-        function createFunctionType(typeParameters, thisParameter, parameters, returnType, typePredicate, minArgumentCount, flags) {
-          const signature = createCallSignature(typeParameters, thisParameter, parameters, returnType, typePredicate, minArgumentCount, flags);
+        function createFunctionType(typeParameters, thisParameter, parameters2, returnType, typePredicate, minArgumentCount, flags) {
+          const signature = createCallSignature(typeParameters, thisParameter, parameters2, returnType, typePredicate, minArgumentCount, flags);
           return getOrCreateTypeFromSignature(signature);
         }
         function createGetterFunctionType(type) {
@@ -93488,9 +93488,9 @@ ${lanes.join("\n")}
             }
           }
         }
-        function getEntityNameForDecoratorMetadataFromTypeList(types) {
+        function getEntityNameForDecoratorMetadataFromTypeList(types4) {
           let commonEntityName;
-          for (let typeNode of types) {
+          for (let typeNode of types4) {
             while (typeNode.kind === 197 || typeNode.kind === 203) {
               typeNode = typeNode.type;
             }
@@ -94053,8 +94053,8 @@ ${lanes.join("\n")}
             }
           });
         }
-        function needCollisionCheckForIdentifier(node, identifier, name) {
-          if ((identifier == null ? void 0 : identifier.escapedText) !== name) {
+        function needCollisionCheckForIdentifier(node, identifier2, name) {
+          if ((identifier2 == null ? void 0 : identifier2.escapedText) !== name) {
             return false;
           }
           if (node.kind === 173 || node.kind === 172 || node.kind === 175 || node.kind === 174 || node.kind === 178 || node.kind === 179 || node.kind === 304) {
@@ -95685,11 +95685,11 @@ ${lanes.join("\n")}
           const jsdocParameters = filter(getJSDocTags(node), isJSDocParameterTag);
           if (!length(jsdocParameters)) return;
           const isJs = isInJSFile(node);
-          const parameters = /* @__PURE__ */ new Set();
+          const parameters2 = /* @__PURE__ */ new Set();
           const excludedParameters = /* @__PURE__ */ new Set();
           forEach(node.parameters, ({ name }, index) => {
             if (isIdentifier10(name)) {
-              parameters.add(name.escapedText);
+              parameters2.add(name.escapedText);
             }
             if (isBindingPattern2(name)) {
               excludedParameters.add(index);
@@ -95699,12 +95699,12 @@ ${lanes.join("\n")}
           if (containsArguments) {
             const lastJSDocParamIndex = jsdocParameters.length - 1;
             const lastJSDocParam = jsdocParameters[lastJSDocParamIndex];
-            if (isJs && lastJSDocParam && isIdentifier10(lastJSDocParam.name) && lastJSDocParam.typeExpression && lastJSDocParam.typeExpression.type && !parameters.has(lastJSDocParam.name.escapedText) && !excludedParameters.has(lastJSDocParamIndex) && !isArrayType(getTypeFromTypeNode(lastJSDocParam.typeExpression.type))) {
+            if (isJs && lastJSDocParam && isIdentifier10(lastJSDocParam.name) && lastJSDocParam.typeExpression && lastJSDocParam.typeExpression.type && !parameters2.has(lastJSDocParam.name.escapedText) && !excludedParameters.has(lastJSDocParamIndex) && !isArrayType(getTypeFromTypeNode(lastJSDocParam.typeExpression.type))) {
               error2(lastJSDocParam.name, Diagnostics.JSDoc_param_tag_has_name_0_but_there_is_no_parameter_with_that_name_It_would_match_arguments_if_it_had_an_array_type, idText(lastJSDocParam.name));
             }
           } else {
             forEach(jsdocParameters, ({ name, isNameFirst }, index) => {
-              if (excludedParameters.has(index) || isIdentifier10(name) && parameters.has(name.escapedText)) {
+              if (excludedParameters.has(index) || isIdentifier10(name) && parameters2.has(name.escapedText)) {
                 return;
               }
               if (isQualifiedName(name)) {
@@ -96610,15 +96610,15 @@ ${lanes.join("\n")}
             void 0
           );
           if (expr.kind === 80) {
-            const identifier = expr;
-            if (isInfinityOrNaNString(identifier.escapedText) && symbol === getGlobalSymbol(
-              identifier.escapedText,
+            const identifier2 = expr;
+            if (isInfinityOrNaNString(identifier2.escapedText) && symbol === getGlobalSymbol(
+              identifier2.escapedText,
               111551,
               /*diagnostic*/
               void 0
             )) {
               return evaluatorResult(
-                +identifier.escapedText,
+                +identifier2.escapedText,
                 /*isSyntacticallyString*/
                 false
               );
@@ -100529,17 +100529,17 @@ ${lanes.join("\n")}
           }
           return false;
         }
-        function checkGrammarParameterList(parameters) {
+        function checkGrammarParameterList(parameters2) {
           let seenOptionalParameter = false;
-          const parameterCount = parameters.length;
+          const parameterCount = parameters2.length;
           for (let i = 0; i < parameterCount; i++) {
-            const parameter = parameters[i];
+            const parameter = parameters2[i];
             if (parameter.dotDotDotToken) {
               if (i !== parameterCount - 1) {
                 return grammarErrorOnNode(parameter.dotDotDotToken, Diagnostics.A_rest_parameter_must_be_last_in_a_parameter_list);
               }
               if (!(parameter.flags & 33554432)) {
-                checkGrammarForDisallowedTrailingComma(parameters, Diagnostics.A_rest_parameter_or_binding_pattern_may_not_have_a_trailing_comma);
+                checkGrammarForDisallowedTrailingComma(parameters2, Diagnostics.A_rest_parameter_or_binding_pattern_may_not_have_a_trailing_comma);
               }
               if (parameter.questionToken) {
                 return grammarErrorOnNode(parameter.questionToken, Diagnostics.A_rest_parameter_cannot_be_optional);
@@ -100557,8 +100557,8 @@ ${lanes.join("\n")}
             }
           }
         }
-        function getNonSimpleParameters(parameters) {
-          return filter(parameters, (parameter) => !!parameter.initializer || isBindingPattern2(parameter.name) || isRestParameter(parameter));
+        function getNonSimpleParameters(parameters2) {
+          return filter(parameters2, (parameter) => !!parameter.initializer || isBindingPattern2(parameter.name) || isRestParameter(parameter));
         }
         function checkGrammarForUseStrictSimpleParameterList(node) {
           if (languageVersion >= 3) {
@@ -100665,15 +100665,15 @@ ${lanes.join("\n")}
           return false;
         }
         function checkGrammarHeritageClause(node) {
-          const types = node.types;
-          if (checkGrammarForDisallowedTrailingComma(types)) {
+          const types4 = node.types;
+          if (checkGrammarForDisallowedTrailingComma(types4)) {
             return true;
           }
-          if (types && types.length === 0) {
+          if (types4 && types4.length === 0) {
             const listType = tokenToString(node.token);
-            return grammarErrorAtPos(node, types.pos, 0, Diagnostics._0_list_cannot_be_empty, listType);
+            return grammarErrorAtPos(node, types4.pos, 0, Diagnostics._0_list_cannot_be_empty, listType);
           }
-          return some(types, checkGrammarExpressionWithTypeArguments);
+          return some(types4, checkGrammarExpressionWithTypeArguments);
         }
         function checkGrammarExpressionWithTypeArguments(node) {
           if (isExpressionWithTypeArguments(node) && isImportKeyword(node.expression) && node.typeArguments) {
@@ -102006,20 +102006,20 @@ ${lanes.join("\n")}
         context.suspendLexicalEnvironment();
         return updated;
       }
-      function addDefaultValueAssignmentsIfNeeded(parameters, context) {
+      function addDefaultValueAssignmentsIfNeeded(parameters2, context) {
         let result2;
-        for (let i = 0; i < parameters.length; i++) {
-          const parameter = parameters[i];
+        for (let i = 0; i < parameters2.length; i++) {
+          const parameter = parameters2[i];
           const updated = addDefaultValueAssignmentIfNeeded(parameter, context);
           if (result2 || updated !== parameter) {
-            if (!result2) result2 = parameters.slice(0, i);
+            if (!result2) result2 = parameters2.slice(0, i);
             result2[i] = updated;
           }
         }
         if (result2) {
-          return setTextRange(context.factory.createNodeArray(result2, parameters.hasTrailingComma), parameters);
+          return setTextRange(context.factory.createNodeArray(result2, parameters2.hasTrailingComma), parameters2);
         }
-        return parameters;
+        return parameters2;
       }
       function addDefaultValueAssignmentIfNeeded(parameter, context) {
         return parameter.dotDotDotToken ? parameter : isBindingPattern2(parameter.name) ? addDefaultValueAssignmentForBindingPattern(parameter, context) : parameter.initializer ? addDefaultValueAssignmentForInitializer(parameter, parameter.name, parameter.initializer, context) : parameter;
@@ -104552,12 +104552,12 @@ ${lanes.join("\n")}
       function getDecoratorsOfParameters(node) {
         let decorators;
         if (node) {
-          const parameters = node.parameters;
-          const firstParameterIsThis = parameters.length > 0 && parameterIsThisKeyword(parameters[0]);
+          const parameters2 = node.parameters;
+          const firstParameterIsThis = parameters2.length > 0 && parameterIsThisKeyword(parameters2[0]);
           const firstParameterOffset = firstParameterIsThis ? 1 : 0;
-          const numParameters = firstParameterIsThis ? parameters.length - 1 : parameters.length;
+          const numParameters = firstParameterIsThis ? parameters2.length - 1 : parameters2.length;
           for (let i = 0; i < numParameters; i++) {
-            const parameter = parameters[i + firstParameterOffset];
+            const parameter = parameters2[i + firstParameterOffset];
             if (decorators || hasDecorators(parameter)) {
               if (!decorators) {
                 decorators = new Array(numParameters);
@@ -104570,13 +104570,13 @@ ${lanes.join("\n")}
       }
       function getAllDecoratorsOfClass(node, useLegacyDecorators) {
         const decorators = getDecorators(node);
-        const parameters = useLegacyDecorators ? getDecoratorsOfParameters(getFirstConstructorWithBody(node)) : void 0;
-        if (!some(decorators) && !some(parameters)) {
+        const parameters2 = useLegacyDecorators ? getDecoratorsOfParameters(getFirstConstructorWithBody(node)) : void 0;
+        if (!some(decorators) && !some(parameters2)) {
           return void 0;
         }
         return {
           decorators,
-          parameters
+          parameters: parameters2
         };
       }
       function getAllDecoratorsOfClassElement(member, parent2, useLegacyDecorators) {
@@ -104614,13 +104614,13 @@ ${lanes.join("\n")}
           return void 0;
         }
         const decorators = getDecorators(firstAccessorWithDecorators);
-        const parameters = useLegacyDecorators ? getDecoratorsOfParameters(setAccessor) : void 0;
-        if (!some(decorators) && !some(parameters)) {
+        const parameters2 = useLegacyDecorators ? getDecoratorsOfParameters(setAccessor) : void 0;
+        if (!some(decorators) && !some(parameters2)) {
           return void 0;
         }
         return {
           decorators,
-          parameters,
+          parameters: parameters2,
           getDecorators: getAccessor && getDecorators(getAccessor),
           setDecorators: setAccessor && getDecorators(setAccessor)
         };
@@ -104630,11 +104630,11 @@ ${lanes.join("\n")}
           return void 0;
         }
         const decorators = getDecorators(method);
-        const parameters = useLegacyDecorators ? getDecoratorsOfParameters(method) : void 0;
-        if (!some(decorators) && !some(parameters)) {
+        const parameters2 = useLegacyDecorators ? getDecoratorsOfParameters(method) : void 0;
+        if (!some(decorators) && !some(parameters2)) {
           return void 0;
         }
-        return { decorators, parameters };
+        return { decorators, parameters: parameters2 };
       }
       function getAllDecoratorsOfProperty(property) {
         const decorators = getDecorators(property);
@@ -106700,7 +106700,7 @@ ${lanes.join("\n")}
               emitFlags |= 1024;
             }
           }
-          const parameterName = getNamespaceParameterName(node);
+          const parameterName2 = getNamespaceParameterName(node);
           const containerName = getNamespaceContainerName(node);
           const exportName = isExportOfNamespace(node) ? factory2.getExternalModuleOrNamespaceExportName(
             currentNamespaceContainerName,
@@ -106749,7 +106749,7 @@ ${lanes.join("\n")}
                   void 0,
                   /*dotDotDotToken*/
                   void 0,
-                  parameterName
+                  parameterName2
                 )],
                 /*type*/
                 void 0,
@@ -106909,7 +106909,7 @@ ${lanes.join("\n")}
               emitFlags |= 1024;
             }
           }
-          const parameterName = getNamespaceParameterName(node);
+          const parameterName2 = getNamespaceParameterName(node);
           const containerName = getNamespaceContainerName(node);
           const exportName = isExportOfNamespace(node) ? factory2.getExternalModuleOrNamespaceExportName(
             currentNamespaceContainerName,
@@ -106958,7 +106958,7 @@ ${lanes.join("\n")}
                   void 0,
                   /*dotDotDotToken*/
                   void 0,
-                  parameterName
+                  parameterName2
                 )],
                 /*type*/
                 void 0,
@@ -108854,18 +108854,18 @@ ${lanes.join("\n")}
           }
           const extendsClauseElement = getEffectiveBaseTypeNode(container);
           const isDerivedClass = !!(extendsClauseElement && skipOuterExpressions(extendsClauseElement.expression).kind !== 106);
-          const parameters = visitParameterList(constructor ? constructor.parameters : void 0, visitor, context);
+          const parameters2 = visitParameterList(constructor ? constructor.parameters : void 0, visitor, context);
           const body = transformConstructorBody(container, constructor, isDerivedClass);
           if (!body) {
             return constructor;
           }
           if (constructor) {
-            Debug.assert(parameters);
+            Debug.assert(parameters2);
             return factory2.updateConstructorDeclaration(
               constructor,
               /*modifiers*/
               void 0,
-              parameters,
+              parameters2,
               body
             );
           }
@@ -108875,7 +108875,7 @@ ${lanes.join("\n")}
                 factory2.createConstructorDeclaration(
                   /*modifiers*/
                   void 0,
-                  parameters ?? [],
+                  parameters2 ?? [],
                   body
                 ),
                 constructor || container
@@ -109435,7 +109435,7 @@ ${lanes.join("\n")}
         function createHoistedVariableForClass(name, node, suffix) {
           const { className } = getPrivateIdentifierEnvironment().data;
           const prefix = className ? { prefix: "_", node: className, suffix: "_" } : "_";
-          const identifier = typeof name === "object" ? factory2.getGeneratedNameForNode(name, 16 | 8, prefix, suffix) : typeof name === "string" ? factory2.createUniqueName(name, 16, prefix, suffix) : factory2.createTempVariable(
+          const identifier2 = typeof name === "object" ? factory2.getGeneratedNameForNode(name, 16 | 8, prefix, suffix) : typeof name === "string" ? factory2.createUniqueName(name, 16, prefix, suffix) : factory2.createTempVariable(
             /*recordTempVariable*/
             void 0,
             /*reservedInNestedScopes*/
@@ -109448,11 +109448,11 @@ ${lanes.join("\n")}
             32768
             /* BlockScopedBindingInLoop */
           )) {
-            addBlockScopedVariable(identifier);
+            addBlockScopedVariable(identifier2);
           } else {
-            hoistVariableDeclaration(identifier);
+            hoistVariableDeclaration(identifier2);
           }
-          return identifier;
+          return identifier2;
         }
         function createHoistedVariableForPrivateName(name, suffix) {
           const text2 = tryGetTextOfPropertyName(name);
@@ -109795,10 +109795,10 @@ ${lanes.join("\n")}
           const valueDeclaration = isClassLike(node) ? getFirstConstructorWithBody(node) : isFunctionLike2(node) && nodeIsPresent(node.body) ? node : void 0;
           const expressions = [];
           if (valueDeclaration) {
-            const parameters = getParametersOfDecoratedDeclaration(valueDeclaration, container);
-            const numParameters = parameters.length;
+            const parameters2 = getParametersOfDecoratedDeclaration(valueDeclaration, container);
+            const numParameters = parameters2.length;
             for (let i = 0; i < numParameters; i++) {
-              const parameter = parameters[i];
+              const parameter = parameters2[i];
               if (i === 0 && isIdentifier10(parameter.name) && parameter.name.escapedText === "this") {
                 continue;
               }
@@ -109951,9 +109951,9 @@ ${lanes.join("\n")}
               return Debug.failBadSyntaxKind(node);
           }
         }
-        function serializeUnionOrIntersectionConstituents(types, isIntersection) {
+        function serializeUnionOrIntersectionConstituents(types4, isIntersection) {
           let serializedType;
-          for (let typeNode of types) {
+          for (let typeNode of types4) {
             typeNode = skipTypeParentheses(typeNode);
             if (typeNode.kind === 146) {
               if (isIntersection) return factory2.createVoidZero();
@@ -111610,7 +111610,7 @@ ${lanes.join("\n")}
         function visitConstructorDeclaration(node) {
           enterClassElement(node);
           const modifiers = visitNodes2(node.modifiers, modifierVisitor, isModifier);
-          const parameters = visitNodes2(node.parameters, visitor, isParameter4);
+          const parameters2 = visitNodes2(node.parameters, visitor, isParameter4);
           let body;
           if (node.body && classInfo) {
             const initializerStatements = prepareConstructor(classInfo.class, classInfo);
@@ -111641,7 +111641,7 @@ ${lanes.join("\n")}
           }
           body ?? (body = visitNode(node.body, visitor, isBlock3));
           exitClassElement();
-          return factory2.updateConstructorDeclaration(node, modifiers, parameters, body);
+          return factory2.updateConstructorDeclaration(node, modifiers, parameters2, body);
         }
         function finishClassElement(updated, original) {
           if (updated !== original) {
@@ -111775,7 +111775,7 @@ ${lanes.join("\n")}
             exitClassElement();
             return finishClassElement(createMethodDescriptorForwarder(modifiers, name, descriptorName), node);
           } else {
-            const parameters = visitNodes2(node.parameters, visitor, isParameter4);
+            const parameters2 = visitNodes2(node.parameters, visitor, isParameter4);
             const body = visitNode(node.body, visitor, isBlock3);
             exitClassElement();
             return finishClassElement(factory2.updateMethodDeclaration(
@@ -111787,7 +111787,7 @@ ${lanes.join("\n")}
               void 0,
               /*typeParameters*/
               void 0,
-              parameters,
+              parameters2,
               /*type*/
               void 0,
               body
@@ -111801,14 +111801,14 @@ ${lanes.join("\n")}
             exitClassElement();
             return finishClassElement(createGetAccessorDescriptorForwarder(modifiers, name, descriptorName), node);
           } else {
-            const parameters = visitNodes2(node.parameters, visitor, isParameter4);
+            const parameters2 = visitNodes2(node.parameters, visitor, isParameter4);
             const body = visitNode(node.body, visitor, isBlock3);
             exitClassElement();
             return finishClassElement(factory2.updateGetAccessorDeclaration(
               node,
               modifiers,
               name,
-              parameters,
+              parameters2,
               /*type*/
               void 0,
               body
@@ -111822,10 +111822,10 @@ ${lanes.join("\n")}
             exitClassElement();
             return finishClassElement(createSetAccessorDescriptorForwarder(modifiers, name, descriptorName), node);
           } else {
-            const parameters = visitNodes2(node.parameters, visitor, isParameter4);
+            const parameters2 = visitNodes2(node.parameters, visitor, isParameter4);
             const body = visitNode(node.body, visitor, isBlock3);
             exitClassElement();
-            return finishClassElement(factory2.updateSetAccessorDeclaration(node, modifiers, name, parameters, body), node);
+            return finishClassElement(factory2.updateSetAccessorDeclaration(node, modifiers, name, parameters2, body), node);
           }
         }
         function visitClassStaticBlockDeclaration(node) {
@@ -112409,7 +112409,7 @@ ${lanes.join("\n")}
           }
           return expression;
         }
-        function createDescriptorMethod(original, name, modifiers, asteriskToken, kind, parameters, body) {
+        function createDescriptorMethod(original, name, modifiers, asteriskToken, kind, parameters2, body) {
           const func = factory2.createFunctionExpression(
             modifiers,
             asteriskToken,
@@ -112417,7 +112417,7 @@ ${lanes.join("\n")}
             void 0,
             /*typeParameters*/
             void 0,
-            parameters,
+            parameters2,
             /*type*/
             void 0,
             body ?? factory2.createBlock([])
@@ -112932,7 +112932,7 @@ ${lanes.join("\n")}
           return updated;
         }
         function visitMethodDeclaration(node) {
-          let parameters;
+          let parameters2;
           const functionFlags = getFunctionFlags(node);
           const savedLexicalArgumentsBinding = lexicalArgumentsBinding;
           lexicalArgumentsBinding = void 0;
@@ -112945,10 +112945,10 @@ ${lanes.join("\n")}
             void 0,
             /*typeParameters*/
             void 0,
-            parameters = functionFlags & 2 ? transformAsyncFunctionParameterList(node) : visitParameterList(node.parameters, visitor, context),
+            parameters2 = functionFlags & 2 ? transformAsyncFunctionParameterList(node) : visitParameterList(node.parameters, visitor, context),
             /*type*/
             void 0,
-            functionFlags & 2 ? transformAsyncFunctionBody(node, parameters) : transformMethodBody(node)
+            functionFlags & 2 ? transformAsyncFunctionBody(node, parameters2) : transformMethodBody(node)
           );
           lexicalArgumentsBinding = savedLexicalArgumentsBinding;
           return updated;
@@ -112982,7 +112982,7 @@ ${lanes.join("\n")}
           return updated;
         }
         function visitFunctionDeclaration(node) {
-          let parameters;
+          let parameters2;
           const savedLexicalArgumentsBinding = lexicalArgumentsBinding;
           lexicalArgumentsBinding = void 0;
           const functionFlags = getFunctionFlags(node);
@@ -112993,16 +112993,16 @@ ${lanes.join("\n")}
             node.name,
             /*typeParameters*/
             void 0,
-            parameters = functionFlags & 2 ? transformAsyncFunctionParameterList(node) : visitParameterList(node.parameters, visitor, context),
+            parameters2 = functionFlags & 2 ? transformAsyncFunctionParameterList(node) : visitParameterList(node.parameters, visitor, context),
             /*type*/
             void 0,
-            functionFlags & 2 ? transformAsyncFunctionBody(node, parameters) : visitFunctionBody(node.body, visitor, context)
+            functionFlags & 2 ? transformAsyncFunctionBody(node, parameters2) : visitFunctionBody(node.body, visitor, context)
           );
           lexicalArgumentsBinding = savedLexicalArgumentsBinding;
           return updated;
         }
         function visitFunctionExpression(node) {
-          let parameters;
+          let parameters2;
           const savedLexicalArgumentsBinding = lexicalArgumentsBinding;
           lexicalArgumentsBinding = void 0;
           const functionFlags = getFunctionFlags(node);
@@ -113013,27 +113013,27 @@ ${lanes.join("\n")}
             node.name,
             /*typeParameters*/
             void 0,
-            parameters = functionFlags & 2 ? transformAsyncFunctionParameterList(node) : visitParameterList(node.parameters, visitor, context),
+            parameters2 = functionFlags & 2 ? transformAsyncFunctionParameterList(node) : visitParameterList(node.parameters, visitor, context),
             /*type*/
             void 0,
-            functionFlags & 2 ? transformAsyncFunctionBody(node, parameters) : visitFunctionBody(node.body, visitor, context)
+            functionFlags & 2 ? transformAsyncFunctionBody(node, parameters2) : visitFunctionBody(node.body, visitor, context)
           );
           lexicalArgumentsBinding = savedLexicalArgumentsBinding;
           return updated;
         }
         function visitArrowFunction(node) {
-          let parameters;
+          let parameters2;
           const functionFlags = getFunctionFlags(node);
           return factory2.updateArrowFunction(
             node,
             visitNodes2(node.modifiers, visitor, isModifier),
             /*typeParameters*/
             void 0,
-            parameters = functionFlags & 2 ? transformAsyncFunctionParameterList(node) : visitParameterList(node.parameters, visitor, context),
+            parameters2 = functionFlags & 2 ? transformAsyncFunctionParameterList(node) : visitParameterList(node.parameters, visitor, context),
             /*type*/
             void 0,
             node.equalsGreaterThanToken,
-            functionFlags & 2 ? transformAsyncFunctionBody(node, parameters) : visitFunctionBody(node.body, visitor, context)
+            functionFlags & 2 ? transformAsyncFunctionBody(node, parameters2) : visitFunctionBody(node.body, visitor, context)
           );
         }
         function recordDeclarationName({ name }, names) {
@@ -114464,15 +114464,15 @@ ${lanes.join("\n")}
           return visitEachChild(node, visitor, context);
         }
         function collectParametersWithPrecedingObjectRestOrSpread(node) {
-          let parameters;
+          let parameters2;
           for (const parameter of node.parameters) {
-            if (parameters) {
-              parameters.add(parameter);
+            if (parameters2) {
+              parameters2.add(parameter);
             } else if (parameter.transformFlags & 65536) {
-              parameters = /* @__PURE__ */ new Set();
+              parameters2 = /* @__PURE__ */ new Set();
             }
           }
-          return parameters;
+          return parameters2;
         }
         function visitConstructorDeclaration(node) {
           const savedEnclosingFunctionFlags = enclosingFunctionFlags;
@@ -118614,7 +118614,7 @@ ${lanes.join("\n")}
           );
           const savedConvertedLoopState = convertedLoopState;
           convertedLoopState = void 0;
-          const parameters = visitParameterList(node.parameters, visitor, context);
+          const parameters2 = visitParameterList(node.parameters, visitor, context);
           const body = transformFunctionBody2(node);
           const name = hierarchyFacts & 32768 ? factory2.getLocalName(node) : node.name;
           exitSubtree(
@@ -118632,7 +118632,7 @@ ${lanes.join("\n")}
             name,
             /*typeParameters*/
             void 0,
-            parameters,
+            parameters2,
             /*type*/
             void 0,
             body
@@ -118646,7 +118646,7 @@ ${lanes.join("\n")}
             65
             /* FunctionIncludes */
           );
-          const parameters = visitParameterList(node.parameters, visitor, context);
+          const parameters2 = visitParameterList(node.parameters, visitor, context);
           const body = transformFunctionBody2(node);
           const name = hierarchyFacts & 32768 ? factory2.getLocalName(node) : node.name;
           exitSubtree(
@@ -118663,7 +118663,7 @@ ${lanes.join("\n")}
             name,
             /*typeParameters*/
             void 0,
-            parameters,
+            parameters2,
             /*type*/
             void 0,
             body
@@ -118681,7 +118681,7 @@ ${lanes.join("\n")}
             65
             /* FunctionIncludes */
           );
-          const parameters = visitParameterList(node.parameters, visitor, context);
+          const parameters2 = visitParameterList(node.parameters, visitor, context);
           const body = transformFunctionBody2(node);
           if (hierarchyFacts & 32768 && !name && (node.kind === 263 || node.kind === 219)) {
             name = factory2.getGeneratedNameForNode(node);
@@ -118702,7 +118702,7 @@ ${lanes.join("\n")}
                 name,
                 /*typeParameters*/
                 void 0,
-                parameters,
+                parameters2,
                 /*type*/
                 void 0,
                 body
@@ -119662,8 +119662,8 @@ ${lanes.join("\n")}
               if (!extraVariableDeclarations) {
                 extraVariableDeclarations = [];
               }
-              for (const identifier of state.hoistedLocalVariables) {
-                extraVariableDeclarations.push(factory2.createVariableDeclaration(identifier));
+              for (const identifier2 of state.hoistedLocalVariables) {
+                extraVariableDeclarations.push(factory2.createVariableDeclaration(identifier2));
               }
             }
           }
@@ -120204,12 +120204,12 @@ ${lanes.join("\n")}
             /* FunctionIncludes */
           );
           let updated;
-          const parameters = visitParameterList(node.parameters, visitor, context);
+          const parameters2 = visitParameterList(node.parameters, visitor, context);
           const body = transformFunctionBody2(node);
           if (node.kind === 178) {
-            updated = factory2.updateGetAccessorDeclaration(node, node.modifiers, node.name, parameters, node.type, body);
+            updated = factory2.updateGetAccessorDeclaration(node, node.modifiers, node.name, parameters2, node.type, body);
           } else {
-            updated = factory2.updateSetAccessorDeclaration(node, node.modifiers, node.name, parameters, body);
+            updated = factory2.updateSetAccessorDeclaration(node, node.modifiers, node.name, parameters2, body);
           }
           exitSubtree(
             ancestorFacts,
@@ -123752,7 +123752,7 @@ ${lanes.join("\n")}
         function createImportCallExpressionAMD(arg, containsLexicalThis) {
           const resolve12 = factory2.createUniqueName("resolve");
           const reject = factory2.createUniqueName("reject");
-          const parameters = [
+          const parameters2 = [
             factory2.createParameterDeclaration(
               /*modifiers*/
               void 0,
@@ -123787,7 +123787,7 @@ ${lanes.join("\n")}
               void 0,
               /*typeParameters*/
               void 0,
-              parameters,
+              parameters2,
               /*type*/
               void 0,
               /*equalsGreaterThanToken*/
@@ -123804,7 +123804,7 @@ ${lanes.join("\n")}
               void 0,
               /*typeParameters*/
               void 0,
-              parameters,
+              parameters2,
               /*type*/
               void 0,
               body
@@ -123862,7 +123862,7 @@ ${lanes.join("\n")}
           if (getESModuleInterop(compilerOptions)) {
             requireCall = emitHelpers().createImportStarHelper(requireCall);
           }
-          const parameters = needSyncEval ? [
+          const parameters2 = needSyncEval ? [
             factory2.createParameterDeclaration(
               /*modifiers*/
               void 0,
@@ -123880,7 +123880,7 @@ ${lanes.join("\n")}
               /*typeParameters*/
               void 0,
               /*parameters*/
-              parameters,
+              parameters2,
               /*type*/
               void 0,
               /*equalsGreaterThanToken*/
@@ -123898,7 +123898,7 @@ ${lanes.join("\n")}
               /*typeParameters*/
               void 0,
               /*parameters*/
-              parameters,
+              parameters2,
               /*type*/
               void 0,
               factory2.createBlock([factory2.createReturnStatement(requireCall)])
@@ -125218,7 +125218,7 @@ ${lanes.join("\n")}
           const setters = [];
           for (const group2 of dependencyGroups) {
             const localName = forEach(group2.externalImports, (i) => getLocalNameForExternalImport(factory2, i, currentSourceFile));
-            const parameterName = localName ? factory2.getGeneratedNameForNode(localName) : factory2.createUniqueName("");
+            const parameterName2 = localName ? factory2.getGeneratedNameForNode(localName) : factory2.createUniqueName("");
             const statements2 = [];
             for (const entry of group2.externalImports) {
               const importVariableName = getLocalNameForExternalImport(factory2, entry, currentSourceFile);
@@ -125232,7 +125232,7 @@ ${lanes.join("\n")}
                   Debug.assert(importVariableName !== void 0);
                   statements2.push(
                     factory2.createExpressionStatement(
-                      factory2.createAssignment(importVariableName, parameterName)
+                      factory2.createAssignment(importVariableName, parameterName2)
                     )
                   );
                   if (hasSyntacticModifier(
@@ -125248,7 +125248,7 @@ ${lanes.join("\n")}
                           void 0,
                           [
                             factory2.createStringLiteral(idText(importVariableName)),
-                            parameterName
+                            parameterName2
                           ]
                         )
                       )
@@ -125265,7 +125265,7 @@ ${lanes.join("\n")}
                           factory2.createPropertyAssignment(
                             factory2.createStringLiteral(moduleExportNameTextUnescaped(e.name)),
                             factory2.createElementAccessExpression(
-                              parameterName,
+                              parameterName2,
                               factory2.createStringLiteral(moduleExportNameTextUnescaped(e.propertyName || e.name))
                             )
                           )
@@ -125294,7 +125294,7 @@ ${lanes.join("\n")}
                             void 0,
                             [
                               factory2.createStringLiteral(moduleExportNameTextUnescaped(entry.exportClause.name)),
-                              parameterName
+                              parameterName2
                             ]
                           )
                         )
@@ -125307,7 +125307,7 @@ ${lanes.join("\n")}
                           exportStarFunction,
                           /*typeArguments*/
                           void 0,
-                          [parameterName]
+                          [parameterName2]
                         )
                       )
                     );
@@ -125330,7 +125330,7 @@ ${lanes.join("\n")}
                   void 0,
                   /*dotDotDotToken*/
                   void 0,
-                  parameterName
+                  parameterName2
                 )],
                 /*type*/
                 void 0,
@@ -129314,7 +129314,7 @@ ${lanes.join("\n")}
               /*modifiers*/
               void 0,
               factory2.createVariableDeclarationList(
-                blockScopedVariableDeclarations.map((identifier) => factory2.createVariableDeclaration(identifier)),
+                blockScopedVariableDeclarations.map((identifier2) => factory2.createVariableDeclaration(identifier2)),
                 1
                 /* Let */
               )
@@ -133012,7 +133012,7 @@ ${lanes.join("\n")}
         function emitTripleSlashDirectivesIfNeeded(node) {
           if (node.isDeclarationFile) emitTripleSlashDirectives(node.hasNoDefaultLib, node.referencedFiles, node.typeReferenceDirectives, node.libReferenceDirectives);
         }
-        function emitTripleSlashDirectives(hasNoDefaultLib, files, types, libs2) {
+        function emitTripleSlashDirectives(hasNoDefaultLib, files, types4, libs2) {
           if (hasNoDefaultLib) {
             writeComment(`/// <reference no-default-lib="true"/>`);
             writeLine();
@@ -133040,7 +133040,7 @@ ${lanes.join("\n")}
             }
           }
           writeDirectives("path", files);
-          writeDirectives("types", types);
+          writeDirectives("types", types4);
           writeDirectives("lib", libs2);
         }
         function emitSourceFileWorker(node) {
@@ -133281,34 +133281,34 @@ ${lanes.join("\n")}
           }
           emitList(parentNode, typeParameters, 53776 | (isArrowFunction6(parentNode) ? 64 : 0));
         }
-        function emitParameters(parentNode, parameters) {
+        function emitParameters(parentNode, parameters2) {
           emitList(
             parentNode,
-            parameters,
+            parameters2,
             2576
             /* Parameters */
           );
         }
-        function canEmitSimpleArrowHead(parentNode, parameters) {
-          const parameter = singleOrUndefined(parameters);
+        function canEmitSimpleArrowHead(parentNode, parameters2) {
+          const parameter = singleOrUndefined(parameters2);
           return parameter && parameter.pos === parentNode.pos && isArrowFunction6(parentNode) && !parentNode.type && !some(parentNode.modifiers) && !some(parentNode.typeParameters) && !some(parameter.modifiers) && !parameter.dotDotDotToken && !parameter.questionToken && !parameter.type && !parameter.initializer && isIdentifier10(parameter.name);
         }
-        function emitParametersForArrow(parentNode, parameters) {
-          if (canEmitSimpleArrowHead(parentNode, parameters)) {
+        function emitParametersForArrow(parentNode, parameters2) {
+          if (canEmitSimpleArrowHead(parentNode, parameters2)) {
             emitList(
               parentNode,
-              parameters,
+              parameters2,
               2576 & ~2048
               /* Parenthesis */
             );
           } else {
-            emitParameters(parentNode, parameters);
+            emitParameters(parentNode, parameters2);
           }
         }
-        function emitParametersForIndexSignature(parentNode, parameters) {
+        function emitParametersForIndexSignature(parentNode, parameters2) {
           emitList(
             parentNode,
-            parameters,
+            parameters2,
             8848
             /* IndexSignatureParameters */
           );
@@ -137669,42 +137669,42 @@ ${lanes.join("\n")}
         function getSourceFileFromReference(referencingFile, ref) {
           return getSourceFileFromReferenceWorker(resolveTripleslashReference(ref.fileName, referencingFile.fileName), getSourceFile);
         }
-        function getSourceFileFromReferenceWorker(fileName, getSourceFile2, fail2, reason) {
+        function getSourceFileFromReferenceWorker(fileName, getSourceFile2, fail3, reason) {
           if (hasExtension(fileName)) {
             const canonicalFileName = host.getCanonicalFileName(fileName);
             if (!options.allowNonTsExtensions && !forEach(flatten(supportedExtensionsWithJsonIfResolveJsonModule), (extension2) => fileExtensionIs(canonicalFileName, extension2))) {
-              if (fail2) {
+              if (fail3) {
                 if (hasJSFileExtension(canonicalFileName)) {
-                  fail2(Diagnostics.File_0_is_a_JavaScript_file_Did_you_mean_to_enable_the_allowJs_option, fileName);
+                  fail3(Diagnostics.File_0_is_a_JavaScript_file_Did_you_mean_to_enable_the_allowJs_option, fileName);
                 } else {
-                  fail2(Diagnostics.File_0_has_an_unsupported_extension_The_only_supported_extensions_are_1, fileName, "'" + flatten(supportedExtensions).join("', '") + "'");
+                  fail3(Diagnostics.File_0_has_an_unsupported_extension_The_only_supported_extensions_are_1, fileName, "'" + flatten(supportedExtensions).join("', '") + "'");
                 }
               }
               return void 0;
             }
             const sourceFile = getSourceFile2(fileName);
-            if (fail2) {
+            if (fail3) {
               if (!sourceFile) {
                 const redirect = getRedirectFromSourceFile(fileName);
                 if (redirect == null ? void 0 : redirect.outputDts) {
-                  fail2(Diagnostics.Output_file_0_has_not_been_built_from_source_file_1, redirect.outputDts, fileName);
+                  fail3(Diagnostics.Output_file_0_has_not_been_built_from_source_file_1, redirect.outputDts, fileName);
                 } else {
-                  fail2(Diagnostics.File_0_not_found, fileName);
+                  fail3(Diagnostics.File_0_not_found, fileName);
                 }
               } else if (isReferencedFile(reason) && canonicalFileName === host.getCanonicalFileName(getSourceFileByPath(reason.file).fileName)) {
-                fail2(Diagnostics.A_file_cannot_have_a_reference_to_itself);
+                fail3(Diagnostics.A_file_cannot_have_a_reference_to_itself);
               }
             }
             return sourceFile;
           } else {
             const sourceFileNoExtension = options.allowNonTsExtensions && getSourceFile2(fileName);
             if (sourceFileNoExtension) return sourceFileNoExtension;
-            if (fail2 && options.allowNonTsExtensions) {
-              fail2(Diagnostics.File_0_not_found, fileName);
+            if (fail3 && options.allowNonTsExtensions) {
+              fail3(Diagnostics.File_0_not_found, fileName);
               return void 0;
             }
             const sourceFileWithAddedExtension = forEach(supportedExtensions[0], (extension2) => getSourceFile2(fileName + extension2));
-            if (fail2 && !sourceFileWithAddedExtension) fail2(Diagnostics.Could_not_resolve_the_path_0_with_the_extensions_Colon_1, fileName, "'" + flatten(supportedExtensions).join("', '") + "'");
+            if (fail3 && !sourceFileWithAddedExtension) fail3(Diagnostics.Could_not_resolve_the_path_0_with_the_extensions_Colon_1, fileName, "'" + flatten(supportedExtensions).join("', '") + "'");
             return sourceFileWithAddedExtension;
           }
         }
@@ -139741,9 +139741,9 @@ ${lanes.join("\n")}
             const path = queue.pop();
             if (!seenMap.has(path)) {
               seenMap.add(path);
-              const references = state.referencedMap.getValues(path);
-              if (references) {
-                for (const key2 of references.keys()) {
+              const references2 = state.referencedMap.getValues(path);
+              if (references2) {
+                for (const key2 of references2.keys()) {
                   queue.push(key2);
                 }
               }
@@ -139763,8 +139763,8 @@ ${lanes.join("\n")}
           return state.allFileNames;
         }
         function getReferencedByPaths(state, referencedFilePath) {
-          const keys = state.referencedMap.getKeys(referencedFilePath);
-          return keys ? arrayFrom(keys.keys()) : [];
+          const keys2 = state.referencedMap.getKeys(referencedFilePath);
+          return keys2 ? arrayFrom(keys2.keys()) : [];
         }
         BuilderState2.getReferencedByPaths = getReferencedByPaths;
         function containsOnlyAmbientModules(sourceFile) {
@@ -140331,8 +140331,8 @@ ${lanes.join("\n")}
         );
         (_b = state.referencedMap.getKeys(affectedFile.resolvedPath)) == null ? void 0 : _b.forEach((exportedFromPath) => {
           if (handleDtsMayChangeOfGlobalScope(state, exportedFromPath, invalidateJsFiles, cancellationToken, host)) return true;
-          const references = state.referencedMap.getKeys(exportedFromPath);
-          return references && forEachKey(references, (filePath) => handleDtsMayChangeOfFileAndExportsOfFile(
+          const references2 = state.referencedMap.getKeys(exportedFromPath);
+          return references2 && forEachKey(references2, (filePath) => handleDtsMayChangeOfFileAndExportsOfFile(
             state,
             filePath,
             invalidateJsFiles,
@@ -147339,15 +147339,15 @@ ${lanes.join("\n")}
               }
             }
             if (isTypePredicateNode(node)) {
-              let parameterName;
+              let parameterName2;
               if (isIdentifier10(node.parameterName)) {
                 const { node: result2, introducesError } = resolver.trackExistingEntityName(context, node.parameterName);
                 if (introducesError) markError();
-                parameterName = result2;
+                parameterName2 = result2;
               } else {
-                parameterName = factory.cloneNode(node.parameterName);
+                parameterName2 = factory.cloneNode(node.parameterName);
               }
-              return factory.updateTypePredicateNode(node, factory.cloneNode(node.assertsModifier), parameterName, visitNode(node.type, visitExistingNodeTreeSymbols, isTypeNode));
+              return factory.updateTypePredicateNode(node, factory.cloneNode(node.assertsModifier), parameterName2, visitNode(node.type, visitExistingNodeTreeSymbols, isTypeNode));
             }
             if (isTupleTypeNode(node) || isTypeLiteralNode(node) || isMappedTypeNode(node)) {
               const visited = visitEachChild2(node, visitExistingNodeTreeSymbols);
@@ -147861,11 +147861,11 @@ ${lanes.join("\n")}
             context
           );
           const typeParameters = reuseTypeParameters(fnNode.typeParameters, context);
-          const parameters = fnNode.parameters.map((p) => ensureParameter(p, context));
+          const parameters2 = fnNode.parameters.map((p) => ensureParameter(p, context));
           return syntacticResult(
             factory.createFunctionTypeNode(
               typeParameters,
-              parameters,
+              parameters2,
               returnType
             )
           );
@@ -148063,7 +148063,7 @@ ${lanes.join("\n")}
             context
           );
           const typeParameters = reuseTypeParameters(method.typeParameters, context);
-          const parameters = method.parameters.map((p) => ensureParameter(p, context));
+          const parameters2 = method.parameters.map((p) => ensureParameter(p, context));
           if (isConstContext) {
             return factory.createPropertySignature(
               [factory.createModifier(
@@ -148074,7 +148074,7 @@ ${lanes.join("\n")}
               reuseNode(context, method.questionToken),
               factory.createFunctionTypeNode(
                 typeParameters,
-                parameters,
+                parameters2,
                 returnType
               )
             );
@@ -148087,7 +148087,7 @@ ${lanes.join("\n")}
               reuseNode(context, name),
               reuseNode(context, method.questionToken),
               typeParameters,
-              parameters,
+              parameters2,
               returnType
             );
           }
@@ -148098,13 +148098,13 @@ ${lanes.join("\n")}
           const setAccessorType = allAccessors.setAccessor && getTypeAnnotationFromAccessor(allAccessors.setAccessor);
           if (getAccessorType !== void 0 && setAccessorType !== void 0) {
             return withNewScope(context, accessor, () => {
-              const parameters = accessor.parameters.map((p) => ensureParameter(p, context));
+              const parameters2 = accessor.parameters.map((p) => ensureParameter(p, context));
               if (isGetAccessor(accessor)) {
                 return factory.updateGetAccessorDeclaration(
                   accessor,
                   [],
                   reuseNode(context, name),
-                  parameters,
+                  parameters2,
                   serializeExistingTypeNodeWithFallback(getAccessorType, context),
                   /*body*/
                   void 0
@@ -148114,7 +148114,7 @@ ${lanes.join("\n")}
                   accessor,
                   [],
                   reuseNode(context, name),
-                  parameters,
+                  parameters2,
                   /*body*/
                   void 0
                 );
@@ -150160,8 +150160,8 @@ ${lanes.join("\n")}
         if (!type.isIntersection()) {
           return false;
         }
-        const { types, checker } = type;
-        return types.length === 2 && (areIntersectedTypesAvoidingStringReduction(checker, types[0], types[1]) || areIntersectedTypesAvoidingStringReduction(checker, types[1], types[0]));
+        const { types: types4, checker } = type;
+        return types4.length === 2 && (areIntersectedTypesAvoidingStringReduction(checker, types4[0], types4[1]) || areIntersectedTypesAvoidingStringReduction(checker, types4[1], types4[0]));
       }
       function isInsideTemplateLiteral(node, position, sourceFile) {
         return isTemplateLiteralKind(node.kind) && (node.getStart(sourceFile) < position && position < node.end) || !!node.isUnterminated && position === node.end;
@@ -154339,37 +154339,37 @@ ${lanes.join("\n")}
           characterSpans: breakIntoCharacterSpans(text2)
         };
       }
-      function breakIntoCharacterSpans(identifier) {
+      function breakIntoCharacterSpans(identifier2) {
         return breakIntoSpans(
-          identifier,
+          identifier2,
           /*word*/
           false
         );
       }
-      function breakIntoWordSpans(identifier) {
+      function breakIntoWordSpans(identifier2) {
         return breakIntoSpans(
-          identifier,
+          identifier2,
           /*word*/
           true
         );
       }
-      function breakIntoSpans(identifier, word) {
+      function breakIntoSpans(identifier2, word) {
         const result2 = [];
         let wordStart = 0;
-        for (let i = 1; i < identifier.length; i++) {
-          const lastIsDigit = isDigit2(identifier.charCodeAt(i - 1));
-          const currentIsDigit = isDigit2(identifier.charCodeAt(i));
-          const hasTransitionFromLowerToUpper = transitionFromLowerToUpper(identifier, word, i);
-          const hasTransitionFromUpperToLower = word && transitionFromUpperToLower(identifier, i, wordStart);
-          if (charIsPunctuation(identifier.charCodeAt(i - 1)) || charIsPunctuation(identifier.charCodeAt(i)) || lastIsDigit !== currentIsDigit || hasTransitionFromLowerToUpper || hasTransitionFromUpperToLower) {
-            if (!isAllPunctuation(identifier, wordStart, i)) {
+        for (let i = 1; i < identifier2.length; i++) {
+          const lastIsDigit = isDigit2(identifier2.charCodeAt(i - 1));
+          const currentIsDigit = isDigit2(identifier2.charCodeAt(i));
+          const hasTransitionFromLowerToUpper = transitionFromLowerToUpper(identifier2, word, i);
+          const hasTransitionFromUpperToLower = word && transitionFromUpperToLower(identifier2, i, wordStart);
+          if (charIsPunctuation(identifier2.charCodeAt(i - 1)) || charIsPunctuation(identifier2.charCodeAt(i)) || lastIsDigit !== currentIsDigit || hasTransitionFromLowerToUpper || hasTransitionFromUpperToLower) {
+            if (!isAllPunctuation(identifier2, wordStart, i)) {
               result2.push(createTextSpan(wordStart, i - wordStart));
             }
             wordStart = i;
           }
         }
-        if (!isAllPunctuation(identifier, wordStart, identifier.length)) {
-          result2.push(createTextSpan(wordStart, identifier.length - wordStart));
+        if (!isAllPunctuation(identifier2, wordStart, identifier2.length)) {
+          result2.push(createTextSpan(wordStart, identifier2.length - wordStart));
         }
         return result2;
       }
@@ -154402,15 +154402,15 @@ ${lanes.join("\n")}
         }
         return false;
       }
-      function isAllPunctuation(identifier, start, end) {
-        return every2(identifier, (ch) => charIsPunctuation(ch) && ch !== 95, start, end);
+      function isAllPunctuation(identifier2, start, end) {
+        return every2(identifier2, (ch) => charIsPunctuation(ch) && ch !== 95, start, end);
       }
-      function transitionFromUpperToLower(identifier, index, wordStart) {
-        return index !== wordStart && index + 1 < identifier.length && isUpperCaseLetter(identifier.charCodeAt(index)) && isLowerCaseLetter(identifier.charCodeAt(index + 1)) && every2(identifier, isUpperCaseLetter, wordStart, index);
+      function transitionFromUpperToLower(identifier2, index, wordStart) {
+        return index !== wordStart && index + 1 < identifier2.length && isUpperCaseLetter(identifier2.charCodeAt(index)) && isLowerCaseLetter(identifier2.charCodeAt(index + 1)) && every2(identifier2, isUpperCaseLetter, wordStart, index);
       }
-      function transitionFromLowerToUpper(identifier, word, index) {
-        const lastIsUpper = isUpperCaseLetter(identifier.charCodeAt(index - 1));
-        const currentIsUpper = isUpperCaseLetter(identifier.charCodeAt(index));
+      function transitionFromLowerToUpper(identifier2, word, index) {
+        const lastIsUpper = isUpperCaseLetter(identifier2.charCodeAt(index - 1));
+        const currentIsUpper = isUpperCaseLetter(identifier2.charCodeAt(index));
         return currentIsUpper && (!word || !lastIsUpper);
       }
       function everyInRange(start, end, pred) {
@@ -158026,9 +158026,9 @@ interface Symbol {
           if (!info || ts_refactor_exports.isRefactorErrorInfo(info)) {
             return void 0;
           }
-          const { references, declaration, replacement } = info;
+          const { references: references2, declaration, replacement } = info;
           const edits = ts_textChanges_exports.ChangeTracker.with(context, (tracker) => {
-            for (const node of references) {
+            for (const node of references2) {
               const closestStringIdentifierParent = isStringLiteral6(replacement) && isIdentifier10(node) && walkUpParenthesizedExpressions(node.parent);
               if (closestStringIdentifierParent && isTemplateSpan(closestStringIdentifierParent) && !isTaggedTemplateExpression2(closestStringIdentifierParent.parent.parent)) {
                 replaceTemplateStringVariableWithLiteral(tracker, file, closestStringIdentifierParent, replacement);
@@ -158056,8 +158056,8 @@ interface Symbol {
           if (isDeclarationExported(parent2)) {
             return void 0;
           }
-          const references = getReferenceNodes(parent2, checker, file);
-          return references && { references, declaration: parent2, replacement: parent2.initializer };
+          const references2 = getReferenceNodes(parent2, checker, file);
+          return references2 && { references: references2, declaration: parent2, replacement: parent2.initializer };
         }
         if (tryWithReferenceToken) {
           let definition = checker.resolveName(
@@ -158078,8 +158078,8 @@ interface Symbol {
           if (isDeclarationExported(declaration)) {
             return void 0;
           }
-          const references = getReferenceNodes(declaration, checker, file);
-          return references && { references, declaration, replacement: declaration.initializer };
+          const references2 = getReferenceNodes(declaration, checker, file);
+          return references2 && { references: references2, declaration, replacement: declaration.initializer };
         }
         return { error: getLocaleSpecificMessage(Diagnostics.Could_not_find_variable_to_inline) };
       }
@@ -158088,7 +158088,7 @@ interface Symbol {
         return some(variableStatement.modifiers, isExportModifier);
       }
       function getReferenceNodes(declaration, checker, file) {
-        const references = [];
+        const references2 = [];
         const cannotInline = ts_FindAllReferences_exports.Core.eachSymbolReferenceInFile(declaration.name, checker, file, (ref) => {
           if (ts_FindAllReferences_exports.isWriteAccessForReference(ref) && !isShorthandPropertyAssignment7(ref.parent)) {
             return true;
@@ -158102,9 +158102,9 @@ interface Symbol {
           if (textRangeContainsPositionInclusive(declaration, ref.pos)) {
             return true;
           }
-          references.push(ref);
+          references2.push(ref);
         });
-        return references.length === 0 || cannotInline ? void 0 : references;
+        return references2.length === 0 || cannotInline ? void 0 : references2;
       }
       function getReplacementExpression(reference, replacement) {
         replacement = getSynthesizedDeepClone(replacement);
@@ -158841,12 +158841,12 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         const classNames = isConstructorDeclaration3(functionDeclaration) ? getClassNames(functionDeclaration) : [];
         const names = deduplicate([...functionNames, ...classNames], equateValues);
         const checker = program.getTypeChecker();
-        const references = flatMap(
+        const references2 = flatMap(
           names,
           /*mapfn*/
           (name) => ts_FindAllReferences_exports.getReferenceEntriesForNode(-1, name, program, program.getSourceFiles(), cancellationToken)
         );
-        const groupedReferences = groupReferences(references);
+        const groupedReferences = groupReferences(references2);
         if (!every(
           groupedReferences.declarations,
           /*callback*/
@@ -159083,9 +159083,9 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         }
         return true;
       }
-      function isValidParameterNodeArray(parameters, checker) {
-        return getRefactorableParametersLength(parameters) >= minimumParameterLength && every(
-          parameters,
+      function isValidParameterNodeArray(parameters2, checker) {
+        return getRefactorableParametersLength(parameters2) >= minimumParameterLength && every(
+          parameters2,
           /*callback*/
           (paramDecl) => isValidParameterDeclaration(paramDecl, checker)
         );
@@ -159100,20 +159100,20 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
       function isValidVariableDeclaration(node) {
         return isVariableDeclaration8(node) && isVarConst(node) && isIdentifier10(node.name) && !node.type;
       }
-      function hasThisParameter(parameters) {
-        return parameters.length > 0 && isThis(parameters[0].name);
+      function hasThisParameter(parameters2) {
+        return parameters2.length > 0 && isThis(parameters2[0].name);
       }
-      function getRefactorableParametersLength(parameters) {
-        if (hasThisParameter(parameters)) {
-          return parameters.length - 1;
+      function getRefactorableParametersLength(parameters2) {
+        if (hasThisParameter(parameters2)) {
+          return parameters2.length - 1;
         }
-        return parameters.length;
+        return parameters2.length;
       }
-      function getRefactorableParameters(parameters) {
-        if (hasThisParameter(parameters)) {
-          parameters = factory.createNodeArray(parameters.slice(1), parameters.hasTrailingComma);
+      function getRefactorableParameters(parameters2) {
+        if (hasThisParameter(parameters2)) {
+          parameters2 = factory.createNodeArray(parameters2.slice(1), parameters2.hasTrailingComma);
         }
-        return parameters;
+        return parameters2;
       }
       function createPropertyOrShorthandAssignment(name, initializer) {
         if (isIdentifier10(initializer) && getTextOfIdentifierOrLiteral(initializer) === name) {
@@ -159122,20 +159122,20 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         return factory.createPropertyAssignment(name, initializer);
       }
       function createNewArgument(functionDeclaration, functionArguments) {
-        const parameters = getRefactorableParameters(functionDeclaration.parameters);
-        const hasRestParameter2 = isRestParameter(last(parameters));
-        const nonRestArguments = hasRestParameter2 ? functionArguments.slice(0, parameters.length - 1) : functionArguments;
+        const parameters2 = getRefactorableParameters(functionDeclaration.parameters);
+        const hasRestParameter2 = isRestParameter(last(parameters2));
+        const nonRestArguments = hasRestParameter2 ? functionArguments.slice(0, parameters2.length - 1) : functionArguments;
         const properties = map(nonRestArguments, (arg, i) => {
-          const parameterName = getParameterName(parameters[i]);
-          const property = createPropertyOrShorthandAssignment(parameterName, arg);
+          const parameterName2 = getParameterName(parameters2[i]);
+          const property = createPropertyOrShorthandAssignment(parameterName2, arg);
           suppressLeadingAndTrailingTrivia(property.name);
           if (isPropertyAssignment8(property)) suppressLeadingAndTrailingTrivia(property.initializer);
           copyComments(arg, property);
           return property;
         });
-        if (hasRestParameter2 && functionArguments.length >= parameters.length) {
-          const restArguments = functionArguments.slice(parameters.length - 1);
-          const restProperty = factory.createPropertyAssignment(getParameterName(last(parameters)), factory.createArrayLiteralExpression(restArguments));
+        if (hasRestParameter2 && functionArguments.length >= parameters2.length) {
+          const restArguments = functionArguments.slice(parameters2.length - 1);
+          const restProperty = factory.createPropertyAssignment(getParameterName(last(parameters2)), factory.createArrayLiteralExpression(restArguments));
           properties.push(restProperty);
         }
         const objectLiteral = factory.createObjectLiteralExpression(
@@ -159202,8 +159202,8 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           }
           return element;
         }
-        function createParameterTypeNode(parameters) {
-          const members = map(parameters, createPropertySignatureFromParameterDeclaration);
+        function createParameterTypeNode(parameters2) {
+          const members = map(parameters2, createPropertySignatureFromParameterDeclaration);
           const typeNode = addEmitFlags(
             factory.createTypeLiteralNode(members),
             1
@@ -160363,7 +160363,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         const isJS = isInJSFile(scope);
         const functionName = factory.createIdentifier(functionNameText);
         let returnType;
-        const parameters = [];
+        const parameters2 = [];
         const callArguments = [];
         let writes;
         usagesInScope.forEach((usage, name) => {
@@ -160393,7 +160393,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
             void 0,
             typeNode
           );
-          parameters.push(paramDecl);
+          parameters2.push(paramDecl);
           if (usage.usage === 2) {
             (writes || (writes = [])).push(usage);
           }
@@ -160448,13 +160448,13 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
             /*questionToken*/
             void 0,
             typeParameters,
-            parameters,
+            parameters2,
             returnType,
             body
           );
         } else {
           if (callThis) {
-            parameters.unshift(
+            parameters2.unshift(
               factory.createParameterDeclaration(
                 /*modifiers*/
                 void 0,
@@ -160487,7 +160487,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
             ) : void 0,
             functionName,
             typeParameters,
-            parameters,
+            parameters2,
             returnType,
             body
           );
@@ -160864,15 +160864,15 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           ));
           if (!functionSignature) return { variableType: variableType2, initializer: initializer2 };
           if (!!functionSignature.getTypeParameters()) return { variableType: variableType2, initializer: initializer2 };
-          const parameters = [];
+          const parameters2 = [];
           let hasAny = false;
           for (const p of initializer2.parameters) {
             if (p.type) {
-              parameters.push(p);
+              parameters2.push(p);
             } else {
               const paramType = checker.getTypeAtLocation(p);
               if (paramType === checker.getAnyType()) hasAny = true;
-              parameters.push(factory.updateParameterDeclaration(p, p.modifiers, p.dotDotDotToken, p.name, p.questionToken, p.type || checker.typeToTypeNode(
+              parameters2.push(factory.updateParameterDeclaration(p, p.modifiers, p.dotDotDotToken, p.name, p.questionToken, p.type || checker.typeToTypeNode(
                 paramType,
                 scope,
                 1,
@@ -160884,7 +160884,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           if (hasAny) return { variableType: variableType2, initializer: initializer2 };
           variableType2 = void 0;
           if (isArrowFunction6(initializer2)) {
-            initializer2 = factory.updateArrowFunction(initializer2, canHaveModifiers2(node) ? getModifiers2(node) : void 0, initializer2.typeParameters, parameters, initializer2.type || checker.typeToTypeNode(
+            initializer2 = factory.updateArrowFunction(initializer2, canHaveModifiers2(node) ? getModifiers2(node) : void 0, initializer2.typeParameters, parameters2, initializer2.type || checker.typeToTypeNode(
               functionSignature.getReturnType(),
               scope,
               1,
@@ -160893,10 +160893,10 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
             ), initializer2.equalsGreaterThanToken, initializer2.body);
           } else {
             if (functionSignature && !!functionSignature.thisParameter) {
-              const firstParameter = firstOrUndefined(parameters);
+              const firstParameter = firstOrUndefined(parameters2);
               if (!firstParameter || isIdentifier10(firstParameter.name) && firstParameter.name.escapedText !== "this") {
                 const thisType = checker.getTypeOfSymbolAtLocation(functionSignature.thisParameter, node);
-                parameters.splice(
+                parameters2.splice(
                   0,
                   0,
                   factory.createParameterDeclaration(
@@ -160918,7 +160918,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
                 );
               }
             }
-            initializer2 = factory.updateFunctionExpression(initializer2, canHaveModifiers2(node) ? getModifiers2(node) : void 0, initializer2.asteriskToken, initializer2.name, initializer2.typeParameters, parameters, initializer2.type || checker.typeToTypeNode(
+            initializer2 = factory.updateFunctionExpression(initializer2, canHaveModifiers2(node) ? getModifiers2(node) : void 0, initializer2.asteriskToken, initializer2.name, initializer2.typeParameters, parameters2, initializer2.type || checker.typeToTypeNode(
               functionSignature.getReturnType(),
               scope,
               1
@@ -161290,8 +161290,8 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
             }
           }
         }
-        function recordUsagebySymbol(identifier, usage, isTypeName) {
-          const symbol = getSymbolReferencedByIdentifier(identifier);
+        function recordUsagebySymbol(identifier2, usage, isTypeName) {
+          const symbol = getSymbolReferencedByIdentifier(identifier2);
           if (!symbol) {
             return void 0;
           }
@@ -161303,9 +161303,9 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           seenUsages.set(symbolId, usage);
           if (lastUsage) {
             for (const perScope of usagesPerScope) {
-              const prevEntry = perScope.usages.get(identifier.text);
+              const prevEntry = perScope.usages.get(identifier2.text);
               if (prevEntry) {
-                perScope.usages.set(identifier.text, { usage, symbol, node: identifier });
+                perScope.usages.set(identifier2.text, { usage, symbol, node: identifier2 });
               }
             }
             return symbolId;
@@ -161319,7 +161319,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
             return void 0;
           }
           if (targetRange.facts & 2 && usage === 2) {
-            const diag2 = createDiagnosticForNode(identifier, Messages.cannotExtractRangeThatContainsWritesToReferencesLocatedOutsideOfTheTargetRangeInGenerators);
+            const diag2 = createDiagnosticForNode(identifier2, Messages.cannotExtractRangeThatContainsWritesToReferencesLocatedOutsideOfTheTargetRangeInGenerators);
             for (const errors of functionErrorsPerScope) {
               errors.push(diag2);
             }
@@ -161345,12 +161345,12 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
                 substitutionsPerScope[i].set(symbolId, substitution);
               } else if (isTypeName) {
                 if (!(symbol.flags & 262144)) {
-                  const diag2 = createDiagnosticForNode(identifier, Messages.typeWillNotBeVisibleInTheNewScope);
+                  const diag2 = createDiagnosticForNode(identifier2, Messages.typeWillNotBeVisibleInTheNewScope);
                   functionErrorsPerScope[i].push(diag2);
                   constantErrorsPerScope[i].push(diag2);
                 }
               } else {
-                usagesPerScope[i].usages.set(identifier.text, { usage, symbol, node: identifier });
+                usagesPerScope[i].usages.set(identifier2.text, { usage, symbol, node: identifier2 });
               }
             }
           }
@@ -161377,8 +161377,8 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           }
           forEachChild5(node, checkForUsedDeclarations);
         }
-        function getSymbolReferencedByIdentifier(identifier) {
-          return identifier.parent && isShorthandPropertyAssignment7(identifier.parent) && identifier.parent.name === identifier ? checker.getShorthandAssignmentValueSymbol(identifier.parent) : checker.getSymbolAtLocation(identifier);
+        function getSymbolReferencedByIdentifier(identifier2) {
+          return identifier2.parent && isShorthandPropertyAssignment7(identifier2.parent) && identifier2.parent.name === identifier2 ? checker.getShorthandAssignmentValueSymbol(identifier2.parent) : checker.getSymbolAtLocation(identifier2);
         }
         function tryReplaceWithQualifiedNameOrPropertyAccess(symbol, scopeDecl, isTypeNode2) {
           if (!symbol) {
@@ -164933,8 +164933,8 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         let declarations;
         if (symbol && symbol.declarations) {
           const indices = indicesOf(symbol.declarations);
-          const keys = map(symbol.declarations, (decl) => ({ file: decl.getSourceFile().fileName, pos: decl.pos }));
-          indices.sort((a, b) => compareStringsCaseSensitive(keys[a].file, keys[b].file) || keys[a].pos - keys[b].pos);
+          const keys2 = map(symbol.declarations, (decl) => ({ file: decl.getSourceFile().fileName, pos: decl.pos }));
+          indices.sort((a, b) => compareStringsCaseSensitive(keys2[a].file, keys2[b].file) || keys2[a].pos - keys2[b].pos);
           const sortedDeclarations = map(indices, (i) => symbol.declarations[i]);
           let lastDecl;
           for (const decl of sortedDeclarations) {
@@ -165629,8 +165629,8 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         }
         let isCompleteFix = identifiers.isCompleteFix;
         let initializers;
-        for (const identifier of identifiers.identifiers) {
-          const symbol = checker.getSymbolAtLocation(identifier);
+        for (const identifier2 of identifiers.identifiers) {
+          const symbol = checker.getSymbolAtLocation(identifier2);
           if (!symbol) {
             continue;
           }
@@ -165651,7 +165651,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           }
           const diagnostics = program.getSemanticDiagnostics(sourceFile, cancellationToken);
           const isUsedElsewhere = ts_FindAllReferences_exports.Core.eachSymbolReferenceInFile(variableName, checker, sourceFile, (reference) => {
-            return identifier !== reference && !symbolReferenceIsAlsoMissingAwait(reference, diagnostics, sourceFile, checker);
+            return identifier2 !== reference && !symbolReferenceIsAlsoMissingAwait(reference, diagnostics, sourceFile, checker);
           });
           if (isUsedElsewhere) {
             isCompleteFix = false;
@@ -165829,12 +165829,12 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         }
       }
       function arrayElementCouldBeVariableDeclaration(expression, checker) {
-        const identifier = isIdentifier10(expression) ? expression : isAssignmentExpression(
+        const identifier2 = isIdentifier10(expression) ? expression : isAssignmentExpression(
           expression,
           /*excludeCompoundAssignment*/
           true
         ) && isIdentifier10(expression.left) ? expression.left : void 0;
-        return !!identifier && !checker.getSymbolAtLocation(identifier);
+        return !!identifier2 && !checker.getSymbolAtLocation(identifier2);
       }
       function isPossiblyPartOfCommaSeperatedInitializer(node) {
         switch (node.kind) {
@@ -166762,8 +166762,8 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
                 synthNamesMap.set(symbolIdString, newName);
                 collidingSymbolMap.add(originalName, symbol);
               } else {
-                const identifier = getSynthesizedDeepClone(node);
-                synthNamesMap.set(symbolIdString, createSynthIdentifier(identifier));
+                const identifier2 = getSynthesizedDeepClone(node);
+                synthNamesMap.set(symbolIdString, createSynthIdentifier(identifier2));
                 collidingSymbolMap.add(originalName, symbol);
               }
             }
@@ -166797,8 +166797,8 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
       }
       function getNewNameIfConflict(name, originalNames) {
         const numVarsSameName = (originalNames.get(name.text) || emptyArray).length;
-        const identifier = numVarsSameName === 0 ? name : factory.createIdentifier(name.text + "_" + numVarsSameName);
-        return createSynthIdentifier(identifier);
+        const identifier2 = numVarsSameName === 0 ? name : factory.createIdentifier(name.text + "_" + numVarsSameName);
+        return createSynthIdentifier(identifier2);
       }
       function hasFailed() {
         return !codeActionSucceeded;
@@ -167252,7 +167252,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         return innerCbBody;
       }
       function getArgBindingName(funcNode, transformer) {
-        const types = [];
+        const types4 = [];
         let name;
         if (isFunctionLikeDeclaration(funcNode)) {
           if (funcNode.parameters.length > 0) {
@@ -167276,14 +167276,14 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           });
           return createSynthBindingPattern(bindingName, elements);
         }
-        function getMapEntryOrDefault(identifier) {
-          const originalNode = getOriginalNode2(identifier);
+        function getMapEntryOrDefault(identifier2) {
+          const originalNode = getOriginalNode2(identifier2);
           const symbol = getSymbol2(originalNode);
           if (!symbol) {
-            return createSynthIdentifier(identifier, types);
+            return createSynthIdentifier(identifier2, types4);
           }
           const mapEntry = transformer.synthNamesMap.get(getSymbolId(symbol).toString());
-          return mapEntry || createSynthIdentifier(identifier, types);
+          return mapEntry || createSynthIdentifier(identifier2, types4);
         }
         function getSymbol2(node) {
           var _a2;
@@ -167302,11 +167302,11 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         }
         return every(bindingName.elements, isEmptyBindingName);
       }
-      function createSynthIdentifier(identifier, types = []) {
-        return { kind: 0, identifier, types, hasBeenDeclared: false, hasBeenReferenced: false };
+      function createSynthIdentifier(identifier2, types4 = []) {
+        return { kind: 0, identifier: identifier2, types: types4, hasBeenDeclared: false, hasBeenReferenced: false };
       }
-      function createSynthBindingPattern(bindingPattern, elements = emptyArray, types = []) {
-        return { kind: 1, bindingPattern, elements, types };
+      function createSynthBindingPattern(bindingPattern, elements = emptyArray, types4 = []) {
+        return { kind: 1, bindingPattern, elements, types: types4 };
       }
       function referenceSynthIdentifier(synthId) {
         synthId.hasBeenReferenced = true;
@@ -171929,7 +171929,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         }
       }
       function updateParameters(importAdder, scriptTarget, node, newParameters) {
-        const parameters = map(node.parameters, (p) => factory.createParameterDeclaration(
+        const parameters2 = map(node.parameters, (p) => factory.createParameterDeclaration(
           p.modifiers,
           p.dotDotDotToken,
           p.name,
@@ -171938,8 +171938,8 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           p.initializer
         ));
         for (const { pos, declaration } of newParameters) {
-          const prev = pos > 0 ? parameters[pos - 1] : void 0;
-          parameters.splice(
+          const prev = pos > 0 ? parameters2[pos - 1] : void 0;
+          parameters2.splice(
             pos,
             0,
             factory.updateParameterDeclaration(
@@ -171956,7 +171956,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
             )
           );
         }
-        return parameters;
+        return parameters2;
       }
       function getOverloads(implementation, declarations) {
         const overloads = [];
@@ -172496,19 +172496,19 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
             names.add(tag.name.escapedText);
           }
         }
-        const parameterName = firstDefined(signature.parameters, (p) => isIdentifier10(p.name) && !names.has(p.name.escapedText) ? p.name.getText(sourceFile) : void 0);
-        if (parameterName === void 0) return void 0;
+        const parameterName2 = firstDefined(signature.parameters, (p) => isIdentifier10(p.name) && !names.has(p.name.escapedText) ? p.name.getText(sourceFile) : void 0);
+        if (parameterName2 === void 0) return void 0;
         const newJSDocParameterTag = factory.updateJSDocParameterTag(
           jsDocParameterTag,
           jsDocParameterTag.tagName,
-          factory.createIdentifier(parameterName),
+          factory.createIdentifier(parameterName2),
           jsDocParameterTag.isBracketed,
           jsDocParameterTag.typeExpression,
           jsDocParameterTag.isNameFirst,
           jsDocParameterTag.comment
         );
         const changes = ts_textChanges_exports.ChangeTracker.with(context, (changeTracker) => changeTracker.replaceJSDocComment(sourceFile, jsDocHost, map(tags, (t) => t === jsDocParameterTag ? newJSDocParameterTag : t)));
-        return createCodeFixActionWithoutFixAll(renameUnmatchedParameter, changes, [Diagnostics.Rename_param_tag_name_0_to_1, name.getText(sourceFile), parameterName]);
+        return createCodeFixActionWithoutFixAll(renameUnmatchedParameter, changes, [Diagnostics.Rename_param_tag_name_0_to_1, name.getText(sourceFile), parameterName2]);
       }
       function getInfo14(sourceFile, pos) {
         const token = getTokenAtPosition(sourceFile, pos);
@@ -172543,10 +172543,10 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         fixIds: [fixId33]
       });
       function getImportDeclaration(sourceFile, program, start) {
-        const identifier = tryCast(getTokenAtPosition(sourceFile, start), isIdentifier10);
-        if (!identifier || identifier.parent.kind !== 184) return;
+        const identifier2 = tryCast(getTokenAtPosition(sourceFile, start), isIdentifier10);
+        if (!identifier2 || identifier2.parent.kind !== 184) return;
         const checker = program.getTypeChecker();
-        const symbol = checker.getSymbolAtLocation(identifier);
+        const symbol = checker.getSymbolAtLocation(identifier2);
         return find((symbol == null ? void 0 : symbol.declarations) || emptyArray, or(isImportClause4, isImportSpecifier5, isImportEqualsDeclaration3));
       }
       function doTypeOnlyImportChange(changes, sourceFile, importDeclaration, program) {
@@ -172901,10 +172901,10 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         return !!ts_FindAllReferences_exports.Core.eachSymbolReferenceInFile(name, checker, sourceFile, (reference) => isIdentifier10(reference) && isCallExpression11(reference.parent) && reference.parent.arguments.includes(reference));
       }
       function isLastParameter(func, parameter, isFixAll) {
-        const parameters = func.parameters;
-        const index = parameters.indexOf(parameter);
+        const parameters2 = func.parameters;
+        const index = parameters2.indexOf(parameter);
         Debug.assert(index !== -1, "The parameter should already be in the list");
-        return isFixAll ? parameters.slice(index + 1).every((p) => isIdentifier10(p.name) && !p.symbol.isReferenced) : index === parameters.length - 1;
+        return isFixAll ? parameters2.slice(index + 1).every((p) => isIdentifier10(p.name) && !p.symbol.isReferenced) : index === parameters2.length - 1;
       }
       function mayDeleteExpression(node) {
         return (isBinaryExpression6(node.parent) && node.parent.left === node || (isPostfixUnaryExpression5(node.parent) || isPrefixUnaryExpression5(node.parent)) && node.parent.operand === node) && isExpressionStatement6(node.parent.parent);
@@ -173888,7 +173888,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
               /*multiLine*/
               true
             ),
-            (types) => factory.createTupleTypeNode(types.map(factory.createRestTypeNode))
+            (types4) => factory.createTupleTypeNode(types4.map(factory.createRestTypeNode))
           );
         }
         function typeFromObjectSpreadAssignment(node, name = "temp") {
@@ -174454,11 +174454,11 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         }
       }
       function annotateThis(changes, sourceFile, containingFunction, program, host, cancellationToken) {
-        const references = getFunctionReferences(containingFunction, sourceFile, program, cancellationToken);
-        if (!references || !references.length) {
+        const references2 = getFunctionReferences(containingFunction, sourceFile, program, cancellationToken);
+        if (!references2 || !references2.length) {
           return;
         }
-        const thisInference = inferTypeFromReferences(program, references, cancellationToken).thisParameter();
+        const thisInference = inferTypeFromReferences(program, references2, cancellationToken).thisParameter();
         const typeNode = getTypeNodeIfAccessible(thisInference, containingFunction, program, host);
         if (!typeNode) {
           return;
@@ -174603,12 +174603,12 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         return mapDefined(ts_FindAllReferences_exports.getReferenceEntriesForNode(-1, token, program, program.getSourceFiles(), cancellationToken), (entry) => entry.kind !== ts_FindAllReferences_exports.EntryKind.Span ? tryCast(entry.node, isIdentifier10) : void 0);
       }
       function inferTypeForVariableFromUsage(token, program, cancellationToken) {
-        const references = getReferences(token, program, cancellationToken);
-        return inferTypeFromReferences(program, references, cancellationToken).single();
+        const references2 = getReferences(token, program, cancellationToken);
+        return inferTypeFromReferences(program, references2, cancellationToken).single();
       }
       function inferTypeForParametersFromUsage(func, sourceFile, program, cancellationToken) {
-        const references = getFunctionReferences(func, sourceFile, program, cancellationToken);
-        return references && inferTypeFromReferences(program, references, cancellationToken).parameters(func) || func.parameters.map((p) => ({
+        const references2 = getFunctionReferences(func, sourceFile, program, cancellationToken);
+        return references2 && inferTypeFromReferences(program, references2, cancellationToken).parameters(func) || func.parameters.map((p) => ({
           declaration: p,
           type: isIdentifier10(p.name) ? inferTypeForVariableFromUsage(p.name, program, cancellationToken) : program.getTypeChecker().getAnyType()
         }));
@@ -174635,7 +174635,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         }
         return getReferences(searchToken, program, cancellationToken);
       }
-      function inferTypeFromReferences(program, references, cancellationToken) {
+      function inferTypeFromReferences(program, references2, cancellationToken) {
         const checker = program.getTypeChecker();
         const builtinConstructors = {
           string: () => checker.getStringType(),
@@ -174651,7 +174651,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         ];
         return {
           single: single2,
-          parameters,
+          parameters: parameters2,
           thisParameter
         };
         function createEmptyUsage() {
@@ -174701,39 +174701,39 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           };
         }
         function single2() {
-          return combineTypes(inferTypesFromReferencesSingle(references));
+          return combineTypes(inferTypesFromReferencesSingle(references2));
         }
-        function parameters(declaration) {
-          if (references.length === 0 || !declaration.parameters) {
+        function parameters2(declaration) {
+          if (references2.length === 0 || !declaration.parameters) {
             return void 0;
           }
           const usage = createEmptyUsage();
-          for (const reference of references) {
+          for (const reference of references2) {
             cancellationToken.throwIfCancellationRequested();
             calculateUsageOfNode(reference, usage);
           }
           const calls = [...usage.constructs || [], ...usage.calls || []];
           return declaration.parameters.map((parameter, parameterIndex) => {
-            const types = [];
+            const types4 = [];
             const isRest = isRestParameter(parameter);
             let isOptional = false;
             for (const call of calls) {
               if (call.argumentTypes.length <= parameterIndex) {
                 isOptional = isInJSFile(declaration);
-                types.push(checker.getUndefinedType());
+                types4.push(checker.getUndefinedType());
               } else if (isRest) {
                 for (let i = parameterIndex; i < call.argumentTypes.length; i++) {
-                  types.push(checker.getBaseTypeOfLiteralType(call.argumentTypes[i]));
+                  types4.push(checker.getBaseTypeOfLiteralType(call.argumentTypes[i]));
                 }
               } else {
-                types.push(checker.getBaseTypeOfLiteralType(call.argumentTypes[parameterIndex]));
+                types4.push(checker.getBaseTypeOfLiteralType(call.argumentTypes[parameterIndex]));
               }
             }
             if (isIdentifier10(parameter.name)) {
               const inferred = inferTypesFromReferencesSingle(getReferences(parameter.name, program, cancellationToken));
-              types.push(...isRest ? mapDefined(inferred, checker.getElementTypeOfArrayType) : inferred);
+              types4.push(...isRest ? mapDefined(inferred, checker.getElementTypeOfArrayType) : inferred);
             }
-            const type = combineTypes(types);
+            const type = combineTypes(types4);
             return {
               type: isRest ? checker.createArrayType(type) : type,
               isOptional: isOptional && !isRest,
@@ -174743,15 +174743,15 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         }
         function thisParameter() {
           const usage = createEmptyUsage();
-          for (const reference of references) {
+          for (const reference of references2) {
             cancellationToken.throwIfCancellationRequested();
             calculateUsageOfNode(reference, usage);
           }
           return combineTypes(usage.candidateThisTypes || emptyArray);
         }
-        function inferTypesFromReferencesSingle(references2) {
+        function inferTypesFromReferencesSingle(references22) {
           const usage = createEmptyUsage();
-          for (const reference of references2) {
+          for (const reference of references22) {
             cancellationToken.throwIfCancellationRequested();
             calculateUsageOfNode(reference, usage);
           }
@@ -175071,10 +175071,10 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
               numberIndexReadonly = numberIndexReadonly || numberIndexInfo.isReadonly;
             }
           }
-          const members = mapEntries(props, (name, types) => {
-            const isOptional = types.length < anons.length ? 16777216 : 0;
+          const members = mapEntries(props, (name, types4) => {
+            const isOptional = types4.length < anons.length ? 16777216 : 0;
             const s = checker.createSymbol(4 | isOptional, name);
-            s.links.type = checker.getUnionType(types);
+            s.links.type = checker.getUnionType(types4);
             return [name, s];
           });
           const indexInfos = [];
@@ -175090,40 +175090,40 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         }
         function inferTypes(usage) {
           var _a2, _b, _c;
-          const types = [];
+          const types4 = [];
           if (usage.isNumber) {
-            types.push(checker.getNumberType());
+            types4.push(checker.getNumberType());
           }
           if (usage.isString) {
-            types.push(checker.getStringType());
+            types4.push(checker.getStringType());
           }
           if (usage.isNumberOrString) {
-            types.push(checker.getUnionType([checker.getStringType(), checker.getNumberType()]));
+            types4.push(checker.getUnionType([checker.getStringType(), checker.getNumberType()]));
           }
           if (usage.numberIndex) {
-            types.push(checker.createArrayType(combineFromUsage(usage.numberIndex)));
+            types4.push(checker.createArrayType(combineFromUsage(usage.numberIndex)));
           }
           if (((_a2 = usage.properties) == null ? void 0 : _a2.size) || ((_b = usage.constructs) == null ? void 0 : _b.length) || usage.stringIndex) {
-            types.push(inferStructuralType(usage));
+            types4.push(inferStructuralType(usage));
           }
           const candidateTypes = (usage.candidateTypes || []).map((t) => checker.getBaseTypeOfLiteralType(t));
           const callsType = ((_c = usage.calls) == null ? void 0 : _c.length) ? inferStructuralType(usage) : void 0;
           if (callsType && candidateTypes) {
-            types.push(checker.getUnionType(
+            types4.push(checker.getUnionType(
               [callsType, ...candidateTypes],
               2
               /* Subtype */
             ));
           } else {
             if (callsType) {
-              types.push(callsType);
+              types4.push(callsType);
             }
             if (length(candidateTypes)) {
-              types.push(...candidateTypes);
+              types4.push(...candidateTypes);
             }
           }
-          types.push(...inferNamedTypesFromProperties(usage));
-          return types;
+          types4.push(...inferNamedTypesFromProperties(usage));
+          return types4;
         }
         function inferStructuralType(usage) {
           const members = /* @__PURE__ */ new Map();
@@ -175153,9 +175153,9 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         }
         function inferNamedTypesFromProperties(usage) {
           if (!usage.properties || !usage.properties.size) return [];
-          const types = builtins.filter((t) => allPropertiesAreAssignableToUsage(t, usage));
-          if (0 < types.length && types.length < 3) {
-            return types.map((t) => inferInstantiationFromUsage(t, usage));
+          const types4 = builtins.filter((t) => allPropertiesAreAssignableToUsage(t, usage));
+          if (0 < types4.length && types4.length < 3) {
+            return types4.map((t) => inferInstantiationFromUsage(t, usage));
           }
           return [];
         }
@@ -175185,13 +175185,13 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           const generic = type.target;
           const singleTypeParameter = singleOrUndefined(generic.typeParameters);
           if (!singleTypeParameter) return type;
-          const types = [];
+          const types4 = [];
           usage.properties.forEach((propUsage, name) => {
             const genericPropertyType = checker.getTypeOfPropertyOfType(generic, name);
             Debug.assert(!!genericPropertyType, "generic should have all the properties of its reference.");
-            types.push(...inferTypeParameters(genericPropertyType, combineFromUsage(propUsage), singleTypeParameter));
+            types4.push(...inferTypeParameters(genericPropertyType, combineFromUsage(propUsage), singleTypeParameter));
           });
-          return builtinConstructors[type.symbol.escapedName](combineTypes(types));
+          return builtinConstructors[type.symbol.escapedName](combineTypes(types4));
         }
         function inferTypeParameters(genericType, usageType, typeParameter) {
           if (genericType === typeParameter) {
@@ -175201,15 +175201,15 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           } else if (getObjectFlags(genericType) & 4 && getObjectFlags(usageType) & 4) {
             const genericArgs = checker.getTypeArguments(genericType);
             const usageArgs = checker.getTypeArguments(usageType);
-            const types = [];
+            const types4 = [];
             if (genericArgs && usageArgs) {
               for (let i = 0; i < genericArgs.length; i++) {
                 if (usageArgs[i]) {
-                  types.push(...inferTypeParameters(genericArgs[i], usageArgs[i], typeParameter));
+                  types4.push(...inferTypeParameters(genericArgs[i], usageArgs[i], typeParameter));
                 }
               }
             }
-            return types;
+            return types4;
           }
           const genericSigs = checker.getSignaturesOfType(
             genericType,
@@ -175228,7 +175228,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         }
         function inferFromSignatures(genericSig, usageSig, typeParameter) {
           var _a2;
-          const types = [];
+          const types4 = [];
           for (let i = 0; i < genericSig.parameters.length; i++) {
             const genericParam = genericSig.parameters[i];
             const usageParam = usageSig.parameters[i];
@@ -175242,12 +175242,12 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
               genericParamType = elementType;
             }
             const targetType = ((_a2 = tryCast(usageParam, isTransientSymbol)) == null ? void 0 : _a2.links.type) || (usageParam.valueDeclaration ? checker.getTypeOfSymbolAtLocation(usageParam, usageParam.valueDeclaration) : checker.getAnyType());
-            types.push(...inferTypeParameters(genericParamType, targetType, typeParameter));
+            types4.push(...inferTypeParameters(genericParamType, targetType, typeParameter));
           }
           const genericReturn = checker.getReturnTypeOfSignature(genericSig);
           const usageReturn = checker.getReturnTypeOfSignature(usageSig);
-          types.push(...inferTypeParameters(genericReturn, usageReturn, typeParameter));
-          return types;
+          types4.push(...inferTypeParameters(genericReturn, usageReturn, typeParameter));
+          return types4;
         }
         function getFunctionFromCalls(calls) {
           return checker.createAnonymousType(
@@ -175260,7 +175260,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           );
         }
         function getSignatureFromCalls(calls) {
-          const parameters2 = [];
+          const parameters22 = [];
           const length2 = Math.max(...calls.map((c) => c.argumentTypes.length));
           for (let i = 0; i < length2; i++) {
             const symbol = checker.createSymbol(1, escapeLeadingUnderscores(`arg${i}`));
@@ -175268,7 +175268,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
             if (calls.some((call) => call.argumentTypes[i] === void 0)) {
               symbol.flags |= 16777216;
             }
-            parameters2.push(symbol);
+            parameters22.push(symbol);
           }
           const returnType = combineFromUsage(combineUsages(calls.map((call) => call.return_)));
           return checker.createSignature(
@@ -175278,7 +175278,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
             void 0,
             /*thisParameter*/
             void 0,
-            parameters2,
+            parameters22,
             returnType,
             /*typePredicate*/
             void 0,
@@ -175507,13 +175507,13 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
               } else {
                 Debug.assertNode(accessor, isSetAccessorDeclaration5, "The counterpart to a getter should be a setter");
                 const parameter = getSetAccessorValueParameter(accessor);
-                const parameterName = parameter && isIdentifier10(parameter.name) ? idText(parameter.name) : void 0;
+                const parameterName2 = parameter && isIdentifier10(parameter.name) ? idText(parameter.name) : void 0;
                 addClassElement(factory.createSetAccessorDeclaration(
                   modifiers,
                   createName(declarationName2),
                   createDummyParameters(
                     1,
-                    [parameterName],
+                    [parameterName2],
                     [createTypeNode(typeNode2)],
                     1,
                     /*inJs*/
@@ -175628,7 +175628,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           return void 0;
         }
         let typeParameters = isJs ? void 0 : signatureDeclaration.typeParameters;
-        let parameters = signatureDeclaration.parameters;
+        let parameters2 = signatureDeclaration.parameters;
         let type = isJs ? void 0 : getSynthesizedDeepClone(signatureDeclaration.type);
         if (importAdder) {
           if (typeParameters) {
@@ -175661,7 +175661,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
               typeParameters = setTextRange(factory.createNodeArray(newTypeParameters, typeParameters.hasTrailingComma), typeParameters);
             }
           }
-          const newParameters = sameMap(parameters, (parameterDecl) => {
+          const newParameters = sameMap(parameters2, (parameterDecl) => {
             let type2 = isJs ? void 0 : parameterDecl.type;
             if (type2) {
               const importableReference = tryGetAutoImportableReferenceFromTypeNode(type2, scriptTarget);
@@ -175680,8 +175680,8 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
               parameterDecl.initializer
             );
           });
-          if (parameters !== newParameters) {
-            parameters = setTextRange(factory.createNodeArray(newParameters, parameters.hasTrailingComma), parameters);
+          if (parameters2 !== newParameters) {
+            parameters2 = setTextRange(factory.createNodeArray(newParameters, parameters2.hasTrailingComma), parameters2);
           }
           if (type) {
             const importableReference = tryGetAutoImportableReferenceFromTypeNode(type, scriptTarget);
@@ -175697,16 +175697,16 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         ) : void 0;
         const asteriskToken = signatureDeclaration.asteriskToken;
         if (isFunctionExpression6(signatureDeclaration)) {
-          return factory.updateFunctionExpression(signatureDeclaration, modifiers, signatureDeclaration.asteriskToken, tryCast(name, isIdentifier10), typeParameters, parameters, type, body ?? signatureDeclaration.body);
+          return factory.updateFunctionExpression(signatureDeclaration, modifiers, signatureDeclaration.asteriskToken, tryCast(name, isIdentifier10), typeParameters, parameters2, type, body ?? signatureDeclaration.body);
         }
         if (isArrowFunction6(signatureDeclaration)) {
-          return factory.updateArrowFunction(signatureDeclaration, modifiers, typeParameters, parameters, type, signatureDeclaration.equalsGreaterThanToken, body ?? signatureDeclaration.body);
+          return factory.updateArrowFunction(signatureDeclaration, modifiers, typeParameters, parameters2, type, signatureDeclaration.equalsGreaterThanToken, body ?? signatureDeclaration.body);
         }
         if (isMethodDeclaration5(signatureDeclaration)) {
-          return factory.updateMethodDeclaration(signatureDeclaration, modifiers, asteriskToken, name ?? factory.createIdentifier(""), questionToken, typeParameters, parameters, type, body);
+          return factory.updateMethodDeclaration(signatureDeclaration, modifiers, asteriskToken, name ?? factory.createIdentifier(""), questionToken, typeParameters, parameters2, type, body);
         }
         if (isFunctionDeclaration5(signatureDeclaration)) {
-          return factory.updateFunctionDeclaration(signatureDeclaration, modifiers, signatureDeclaration.asteriskToken, tryCast(name, isIdentifier10), typeParameters, parameters, type, body ?? signatureDeclaration.body);
+          return factory.updateFunctionDeclaration(signatureDeclaration, modifiers, signatureDeclaration.asteriskToken, tryCast(name, isIdentifier10), typeParameters, parameters2, type, body ?? signatureDeclaration.body);
         }
         return void 0;
       }
@@ -175736,7 +175736,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           /* AsteriskToken */
         ) : void 0;
         const typeParameters = isJs ? void 0 : createTypeParametersForArguments(checker, argumentTypeParameters, typeArguments);
-        const parameters = createDummyParameters(
+        const parameters2 = createDummyParameters(
           args.length,
           names,
           argumentTypeNodes,
@@ -175762,7 +175762,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
               /*questionToken*/
               void 0,
               typeParameters,
-              parameters,
+              parameters2,
               type,
               createStubbedMethodBody(quotePreference)
             );
@@ -175773,7 +175773,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
               /*questionToken*/
               void 0,
               typeParameters,
-              parameters,
+              parameters2,
               type === void 0 ? factory.createKeywordTypeNode(
                 159
                 /* UnknownKeyword */
@@ -175786,7 +175786,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
               asteriskToken,
               name,
               typeParameters,
-              parameters,
+              parameters2,
               type,
               createStubbedBody(Diagnostics.Function_not_implemented.message, quotePreference)
             );
@@ -175935,36 +175935,36 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         }
         return type.flags & 262144 ? (_a2 = type.getSymbol()) == null ? void 0 : _a2.getName() : void 0;
       }
-      function createDummyParameters(argCount, names, types, minArgumentCount, inJs) {
-        const parameters = [];
+      function createDummyParameters(argCount, names, types4, minArgumentCount, inJs) {
+        const parameters2 = [];
         const parameterNameCounts = /* @__PURE__ */ new Map();
         for (let i = 0; i < argCount; i++) {
-          const parameterName = (names == null ? void 0 : names[i]) || `arg${i}`;
-          const parameterNameCount = parameterNameCounts.get(parameterName);
-          parameterNameCounts.set(parameterName, (parameterNameCount || 0) + 1);
+          const parameterName2 = (names == null ? void 0 : names[i]) || `arg${i}`;
+          const parameterNameCount = parameterNameCounts.get(parameterName2);
+          parameterNameCounts.set(parameterName2, (parameterNameCount || 0) + 1);
           const newParameter = factory.createParameterDeclaration(
             /*modifiers*/
             void 0,
             /*dotDotDotToken*/
             void 0,
             /*name*/
-            parameterName + (parameterNameCount || ""),
+            parameterName2 + (parameterNameCount || ""),
             /*questionToken*/
             minArgumentCount !== void 0 && i >= minArgumentCount ? factory.createToken(
               58
               /* QuestionToken */
             ) : void 0,
             /*type*/
-            inJs ? void 0 : (types == null ? void 0 : types[i]) || factory.createKeywordTypeNode(
+            inJs ? void 0 : (types4 == null ? void 0 : types4[i]) || factory.createKeywordTypeNode(
               159
               /* UnknownKeyword */
             ),
             /*initializer*/
             void 0
           );
-          parameters.push(newParameter);
+          parameters2.push(newParameter);
         }
-        return parameters;
+        return parameters2;
       }
       function createMethodImplementingSignatures(checker, context, enclosingDeclaration, signatures, name, optional, modifiers, quotePreference, body) {
         let maxArgsSignature = signatures[0];
@@ -175981,7 +175981,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         }
         const maxNonRestArgs = maxArgsSignature.parameters.length - (signatureHasRestParameter(maxArgsSignature) ? 1 : 0);
         const maxArgsParameterSymbolNames = maxArgsSignature.parameters.map((symbol) => symbol.name);
-        const parameters = createDummyParameters(
+        const parameters2 = createDummyParameters(
           maxNonRestArgs,
           maxArgsParameterSymbolNames,
           /*types*/
@@ -176011,7 +176011,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
             /*initializer*/
             void 0
           );
-          parameters.push(restParameter);
+          parameters2.push(restParameter);
         }
         return createStubbedMethod(
           modifiers,
@@ -176019,7 +176019,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           optional,
           /*typeParameters*/
           void 0,
-          parameters,
+          parameters2,
           getReturnTypeFromSignatures(signatures, checker, context, enclosingDeclaration),
           quotePreference,
           body
@@ -176031,7 +176031,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           return checker.typeToTypeNode(type, enclosingDeclaration, 1, 8, getNoopSymbolTrackerWithResolver(context));
         }
       }
-      function createStubbedMethod(modifiers, name, optional, typeParameters, parameters, returnType, quotePreference, body) {
+      function createStubbedMethod(modifiers, name, optional, typeParameters, parameters2, returnType, quotePreference, body) {
         return factory.createMethodDeclaration(
           modifiers,
           /*asteriskToken*/
@@ -176042,7 +176042,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
             /* QuestionToken */
           ) : void 0,
           typeParameters,
-          parameters,
+          parameters2,
           returnType,
           body || createStubbedMethodBody(quotePreference)
         );
@@ -176365,8 +176365,8 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           const typeChecker = program.getTypeChecker();
           const type = typeChecker.getTypeFromTypeNode(typeNode);
           if (!typeChecker.isTypeAssignableTo(typeChecker.getUndefinedType(), type)) {
-            const types = isUnionTypeNode(typeNode) ? typeNode.types : [typeNode];
-            return factory.createUnionTypeNode([...types, factory.createKeywordTypeNode(
+            const types4 = isUnionTypeNode(typeNode) ? typeNode.types : [typeNode];
+            return factory.createUnionTypeNode([...types4, factory.createKeywordTypeNode(
               157
               /* UndefinedKeyword */
             )]);
@@ -176546,8 +176546,8 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           157
           /* UndefinedKeyword */
         );
-        const types = isUnionTypeNode(info.type) ? info.type.types.concat(undefinedTypeNode) : [info.type, undefinedTypeNode];
-        const unionTypeNode = factory.createUnionTypeNode(types);
+        const types4 = isUnionTypeNode(info.type) ? info.type.types.concat(undefinedTypeNode) : [info.type, undefinedTypeNode];
+        const unionTypeNode = factory.createUnionTypeNode(types4);
         if (info.isJs) {
           changeTracker.addJSDocTags(sourceFile, info.prop, [factory.createJSDocTypeTag(
             /*tagName*/
@@ -178362,20 +178362,20 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
       }
       function generateIdentifierForArbitraryString(text2, languageVersion) {
         let needsUnderscore = false;
-        let identifier = "";
+        let identifier2 = "";
         let ch;
         for (let i = 0; i < text2.length; i += ch !== void 0 && ch >= 65536 ? 2 : 1) {
           ch = text2.codePointAt(i);
           if (ch !== void 0 && (i === 0 ? isIdentifierStart(ch, languageVersion) : isIdentifierPart(ch, languageVersion))) {
-            if (needsUnderscore) identifier += "_";
-            identifier += String.fromCodePoint(ch);
+            if (needsUnderscore) identifier2 += "_";
+            identifier2 += String.fromCodePoint(ch);
             needsUnderscore = false;
           } else {
             needsUnderscore = true;
           }
         }
-        if (needsUnderscore) identifier += "_";
-        return identifier || "_";
+        if (needsUnderscore) identifier2 += "_";
+        return identifier2 || "_";
       }
       function isClassLikeMemberCompletion(symbol, location2, sourceFile) {
         if (isInJSFile(location2)) {
@@ -178661,7 +178661,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
                 true
               );
             }
-            const parameters = typeNode.parameters.map(
+            const parameters2 = typeNode.parameters.map(
               (typedParam) => factory.createParameterDeclaration(
                 /*modifiers*/
                 void 0,
@@ -178684,7 +178684,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
               void 0,
               /*typeParameters*/
               void 0,
-              parameters,
+              parameters2,
               /*type*/
               void 0,
               body
@@ -178991,8 +178991,8 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           const symbolDeclaration = symbol.valueDeclaration ?? ((_a2 = symbol.declarations) == null ? void 0 : _a2[0]);
           if (closestSymbolDeclaration && symbolDeclaration) {
             if (isParameter4(closestSymbolDeclaration) && isParameter4(symbolDeclaration)) {
-              const parameters = closestSymbolDeclaration.parent.parameters;
-              if (symbolDeclaration.pos >= closestSymbolDeclaration.pos && symbolDeclaration.pos < parameters.end) {
+              const parameters2 = closestSymbolDeclaration.parent.parameters;
+              if (symbolDeclaration.pos >= closestSymbolDeclaration.pos && symbolDeclaration.pos < parameters2.end) {
                 return false;
               }
             } else if (isTypeParameterDeclaration(closestSymbolDeclaration) && isTypeParameterDeclaration(symbolDeclaration)) {
@@ -181763,11 +181763,11 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           }
         }
         function fromContextualType(contextFlags = 4) {
-          const types = getStringLiteralTypes(getContextualTypeFromParent(node, typeChecker, contextFlags));
-          if (!types.length) {
+          const types4 = getStringLiteralTypes(getContextualTypeFromParent(node, typeChecker, contextFlags));
+          if (!types4.length) {
             return;
           }
-          return { kind: 2, types, isNewIdentifier: false };
+          return { kind: 2, types: types4, isNewIdentifier: false };
         }
       }
       function walkUpParentheses(node) {
@@ -181788,7 +181788,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         const uniques = /* @__PURE__ */ new Set();
         const editingArgument = isJsxOpeningLikeElement(call) ? Debug.checkDefined(findAncestor(arg.parent, isJsxAttribute3)) : arg;
         const candidates = checker.getCandidateSignaturesForStringLiteralCompletions(call, editingArgument);
-        const types = flatMap(candidates, (candidate) => {
+        const types4 = flatMap(candidates, (candidate) => {
           if (!signatureHasRestParameter(candidate) && argumentInfo.argumentCount > candidate.parameters.length) return;
           let type = candidate.getTypeParameterAtPosition(argumentInfo.argumentIndex);
           if (isJsxOpeningLikeElement(call)) {
@@ -181800,7 +181800,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           isNewIdentifier = isNewIdentifier || !!(type.flags & 4);
           return getStringLiteralTypes(type, uniques);
         });
-        return length(types) ? { kind: 2, types, isNewIdentifier } : void 0;
+        return length(types4) ? { kind: 2, types: types4, isNewIdentifier } : void 0;
       }
       function stringLiteralCompletionsFromProperties(type) {
         return type && {
@@ -182075,10 +182075,10 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           comparePaths2
         );
       }
-      function addCompletionEntriesFromPathsOrExportsOrImports(result2, isExports, isImports, fragment, baseDirectory, extensionOptions, program, host, moduleSpecifierResolutionHost, keys, getPatternsForKey, comparePaths2) {
+      function addCompletionEntriesFromPathsOrExportsOrImports(result2, isExports, isImports, fragment, baseDirectory, extensionOptions, program, host, moduleSpecifierResolutionHost, keys2, getPatternsForKey, comparePaths2) {
         let pathResults = [];
         let matchedPath;
-        for (const key2 of keys) {
+        for (const key2 of keys2) {
           if (key2 === ".") continue;
           const keyWithoutLeadingDotSlash = key2.replace(/^\.\//, "") + ((isExports || isImports) && endsWith(key2, "/") ? "*" : "");
           const patterns = getPatternsForKey(key2);
@@ -182240,7 +182240,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           if (typeof lookupTable !== "object" || lookupTable === null) {
             return;
           }
-          const keys = getOwnKeys(lookupTable);
+          const keys2 = getOwnKeys(lookupTable);
           const conditions = getConditions(compilerOptions, mode);
           addCompletionEntriesFromPathsOrExportsOrImports(
             result2,
@@ -182252,7 +182252,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
             program,
             host,
             moduleSpecifierResolutionHost,
-            keys,
+            keys2,
             (key2) => {
               const pattern = getPatternFromFirstMatchingCondition(lookupTable[key2], conditions);
               if (pattern === void 0) {
@@ -183236,11 +183236,11 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         const checker = program.getTypeChecker();
         const adjustedNode = Core.getAdjustedNode(node, options);
         const symbol = isDefinitionForReference(adjustedNode) ? checker.getSymbolAtLocation(adjustedNode) : void 0;
-        return !referencedSymbols || !referencedSymbols.length ? void 0 : mapDefined(referencedSymbols, ({ definition, references }) => (
+        return !referencedSymbols || !referencedSymbols.length ? void 0 : mapDefined(referencedSymbols, ({ definition, references: references2 }) => (
           // Only include referenced symbols that have a valid definition.
           definition && {
             definition: checker.runWithCancellationToken(cancellationToken, (checker2) => definitionToReferencedSymbolDefinitionInfo(definition, checker2, node)),
-            references: references.map((r) => toReferencedSymbolEntry(r, symbol))
+            references: references2.map((r) => toReferencedSymbolEntry(r, symbol))
           }
         ));
       }
@@ -183681,8 +183681,8 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           }
           const aliasedSymbol = getMergedAliasedSymbolOfNamespaceExportDeclaration(node, symbol, checker);
           const moduleReferencesOfExportTarget = aliasedSymbol && getReferencedSymbolsForModuleIfDeclaredBySourceFile(aliasedSymbol, program, sourceFiles, cancellationToken, options, sourceFilesSet);
-          const references = getReferencedSymbolsForSymbol(symbol, node, sourceFiles, sourceFilesSet, checker, cancellationToken, options);
-          return mergeReferences(program, moduleReferences, references, moduleReferencesOfExportTarget);
+          const references2 = getReferencedSymbolsForSymbol(symbol, node, sourceFiles, sourceFilesSet, checker, cancellationToken, options);
+          return mergeReferences(program, moduleReferences, references2, moduleReferencesOfExportTarget);
         }
         Core2.getReferencedSymbolsForNode = getReferencedSymbolsForNode;
         function getAdjustedNode2(node, options) {
@@ -183714,8 +183714,8 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         Core2.getReferencesForFileName = getReferencesForFileName;
         function getReferencesForNonModule(referencedFile, refFileMap, program) {
           let entries;
-          const references = refFileMap.get(referencedFile.path) || emptyArray;
-          for (const ref of references) {
+          const references2 = refFileMap.get(referencedFile.path) || emptyArray;
+          for (const ref of references2) {
             if (isReferencedFile(ref)) {
               const referencingFile = program.getSourceFileByPath(ref.file);
               const location2 = getReferencedFileLocation(program, ref);
@@ -183764,13 +183764,13 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         }
         function mergeReferences(program, ...referencesToMerge) {
           let result2;
-          for (const references of referencesToMerge) {
-            if (!references || !references.length) continue;
+          for (const references2 of referencesToMerge) {
+            if (!references2 || !references2.length) continue;
             if (!result2) {
-              result2 = references;
+              result2 = references2;
               continue;
             }
-            for (const entry of references) {
+            for (const entry of references2) {
               if (!entry.definition || entry.definition.type !== 0) {
                 result2.push(entry);
                 continue;
@@ -183805,7 +183805,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         }
         function getReferencedSymbolsForModule(program, symbol, excludeImportTypeOfExportEquals, sourceFiles, sourceFilesSet) {
           Debug.assert(!!symbol.valueDeclaration);
-          const references = mapDefined(findModuleReferences(program, sourceFiles, symbol), (reference) => {
+          const references2 = mapDefined(findModuleReferences(program, sourceFiles, symbol), (reference) => {
             if (reference.kind === "import") {
               const parent2 = reference.literal.parent;
               if (isLiteralTypeNode(parent2)) {
@@ -183836,7 +183836,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
                   break;
                 case 268:
                   if (sourceFilesSet.has(decl.getSourceFile().fileName)) {
-                    references.push(nodeEntry(decl.name));
+                    references2.push(nodeEntry(decl.name));
                   }
                   break;
                 default:
@@ -183853,11 +183853,11 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
               const sourceFile = decl.getSourceFile();
               if (sourceFilesSet.has(sourceFile.fileName)) {
                 const node = isBinaryExpression6(decl) && isPropertyAccessExpression10(decl.left) ? decl.left.expression : isExportAssignment3(decl) ? Debug.checkDefined(findChildOfKind(decl, 95, sourceFile)) : getNameOfDeclaration(decl) || decl;
-                references.push(nodeEntry(node));
+                references2.push(nodeEntry(node));
               }
             }
           }
-          return references.length ? [{ definition: { type: 0, symbol }, references }] : emptyArray;
+          return references2.length ? [{ definition: { type: 0, symbol }, references: references2 }] : emptyArray;
         }
         function isReadonlyTypeOperator(node) {
           return node.kind === 148 && isTypeOperatorNode(node.parent) && node.parent.operator === 148;
@@ -184047,12 +184047,12 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
            */
           referenceAdder(searchSymbol) {
             const symbolId = getSymbolId(searchSymbol);
-            let references = this.symbolIdToReferences[symbolId];
-            if (!references) {
-              references = this.symbolIdToReferences[symbolId] = [];
-              this.result.push({ definition: { type: 0, symbol: searchSymbol }, references });
+            let references2 = this.symbolIdToReferences[symbolId];
+            if (!references2) {
+              references2 = this.symbolIdToReferences[symbolId] = [];
+              this.result.push({ definition: { type: 0, symbol: searchSymbol }, references: references2 });
             }
-            return (node, kind) => references.push(nodeEntry(node, kind));
+            return (node, kind) => references2.push(nodeEntry(node, kind));
           }
           /** Add a reference with no associated definition. */
           addStringOrCommentReference(fileName, textSpan) {
@@ -184309,11 +184309,11 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         function getLabelReferencesInNode(container, targetLabel) {
           const sourceFile = container.getSourceFile();
           const labelName = targetLabel.text;
-          const references = mapDefined(getPossibleSymbolReferenceNodes(sourceFile, labelName, container), (node) => (
+          const references2 = mapDefined(getPossibleSymbolReferenceNodes(sourceFile, labelName, container), (node) => (
             // Only pick labels that are either the target label, or have a target that is the target label
             node === targetLabel || isJumpStatementTarget(node) && getTargetLabel(node, labelName) === targetLabel ? nodeEntry(node) : void 0
           ));
-          return [{ definition: { type: 1, node: targetLabel }, references }];
+          return [{ definition: { type: 1, node: targetLabel }, references: references2 }];
         }
         function isValidReferencePosition(node, searchSymbolName) {
           switch (node.kind) {
@@ -184338,7 +184338,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           }
         }
         function getAllReferencesForImportMeta(sourceFiles, cancellationToken) {
-          const references = flatMap(sourceFiles, (sourceFile) => {
+          const references2 = flatMap(sourceFiles, (sourceFile) => {
             cancellationToken.throwIfCancellationRequested();
             return mapDefined(getPossibleSymbolReferenceNodes(sourceFile, "meta", sourceFile), (node) => {
               const parent2 = node.parent;
@@ -184347,10 +184347,10 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
               }
             });
           });
-          return references.length ? [{ definition: { type: 2, node: references[0].node }, references }] : void 0;
+          return references2.length ? [{ definition: { type: 2, node: references2[0].node }, references: references2 }] : void 0;
         }
         function getAllReferencesForKeyword(sourceFiles, keywordKind, cancellationToken, filter2) {
-          const references = flatMap(sourceFiles, (sourceFile) => {
+          const references2 = flatMap(sourceFiles, (sourceFile) => {
             cancellationToken.throwIfCancellationRequested();
             return mapDefined(getPossibleSymbolReferenceNodes(sourceFile, tokenToString(keywordKind), sourceFile), (referenceLocation) => {
               if (referenceLocation.kind === keywordKind && (!filter2 || filter2(referenceLocation))) {
@@ -184358,7 +184358,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
               }
             });
           });
-          return references.length ? [{ definition: { type: 2, node: references[0].node }, references }] : void 0;
+          return references2.length ? [{ definition: { type: 2, node: references2[0].node }, references: references2 }] : void 0;
         }
         function getReferencesInSourceFile(sourceFile, search, state, addReferencesHere = true) {
           state.cancellationToken.throwIfCancellationRequested();
@@ -184729,7 +184729,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
               return void 0;
           }
           const sourceFile = searchSpaceNode.getSourceFile();
-          const references = mapDefined(getPossibleSymbolReferenceNodes(sourceFile, "super", searchSpaceNode), (node) => {
+          const references2 = mapDefined(getPossibleSymbolReferenceNodes(sourceFile, "super", searchSpaceNode), (node) => {
             if (node.kind !== 108) {
               return;
             }
@@ -184740,7 +184740,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
             );
             return container && isStatic(container) === !!staticFlag && container.parent.symbol === searchSpaceNode.symbol ? nodeEntry(node) : void 0;
           });
-          return [{ definition: { type: 0, symbol: searchSpaceNode.symbol }, references }];
+          return [{ definition: { type: 0, symbol: searchSpaceNode.symbol }, references: references2 }];
         }
         function isParameterName(node) {
           return node.kind === 80 && node.parent.kind === 170 && node.parent.name === node;
@@ -184784,7 +184784,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
             default:
               return void 0;
           }
-          const references = flatMap(searchSpaceNode.kind === 308 ? sourceFiles : [searchSpaceNode.getSourceFile()], (sourceFile) => {
+          const references2 = flatMap(searchSpaceNode.kind === 308 ? sourceFiles : [searchSpaceNode.getSourceFile()], (sourceFile) => {
             cancellationToken.throwIfCancellationRequested();
             return getPossibleSymbolReferenceNodes(sourceFile, "this", isSourceFile4(searchSpaceNode) ? sourceFile : searchSpaceNode).filter((node) => {
               if (!isThis(node)) {
@@ -184814,15 +184814,15 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
               }
             });
           }).map((n) => nodeEntry(n));
-          const thisParameter = firstDefined(references, (r) => isParameter4(r.node.parent) ? r.node : void 0);
+          const thisParameter = firstDefined(references2, (r) => isParameter4(r.node.parent) ? r.node : void 0);
           return [{
             definition: { type: 3, node: thisParameter || thisOrSuperKeyword },
-            references
+            references: references2
           }];
         }
         function getReferencesForStringLiteral(node, sourceFiles, checker, cancellationToken) {
           const type = getContextualTypeFromParentOrAncestorTypeNode(node, checker);
-          const references = flatMap(sourceFiles, (sourceFile) => {
+          const references2 = flatMap(sourceFiles, (sourceFile) => {
             cancellationToken.throwIfCancellationRequested();
             return mapDefined(getPossibleSymbolReferenceNodes(sourceFile, node.text), (ref) => {
               if (isStringLiteralLike7(ref) && ref.text === node.text) {
@@ -184847,7 +184847,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           });
           return [{
             definition: { type: 4, node },
-            references
+            references: references2
           }];
         }
         function isStringLiteralPropertyReference(node, checker) {
@@ -185845,12 +185845,12 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
             const identifierInfo = checker.getParameterIdentifierInfoAtPosition(signature, signatureParamPos);
             signatureParamPos = signatureParamPos + (spreadArgs || 1);
             if (identifierInfo) {
-              const { parameter, parameterName, isRestParameter: isFirstVariadicArgument } = identifierInfo;
-              const isParameterNameNotSameAsArgument = preferences.includeInlayParameterNameHintsWhenArgumentMatchesName || !identifierOrAccessExpressionPostfixMatchesParameterName(arg, parameterName);
+              const { parameter, parameterName: parameterName2, isRestParameter: isFirstVariadicArgument } = identifierInfo;
+              const isParameterNameNotSameAsArgument = preferences.includeInlayParameterNameHintsWhenArgumentMatchesName || !identifierOrAccessExpressionPostfixMatchesParameterName(arg, parameterName2);
               if (!isParameterNameNotSameAsArgument && !isFirstVariadicArgument) {
                 continue;
               }
-              const name = unescapeLeadingUnderscores(parameterName);
+              const name = unescapeLeadingUnderscores(parameterName2);
               if (leadingCommentsContainsParameterName(arg, name)) {
                 continue;
               }
@@ -185858,12 +185858,12 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
             }
           }
         }
-        function identifierOrAccessExpressionPostfixMatchesParameterName(expr, parameterName) {
+        function identifierOrAccessExpressionPostfixMatchesParameterName(expr, parameterName2) {
           if (isIdentifier10(expr)) {
-            return expr.text === parameterName;
+            return expr.text === parameterName2;
           }
           if (isPropertyAccessExpression10(expr)) {
-            return expr.name.text === parameterName;
+            return expr.name.text === parameterName2;
           }
           return false;
         }
@@ -186813,7 +186813,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         if (!commentOwnerInfo) {
           return void 0;
         }
-        const { commentOwner, parameters, hasReturn: hasReturn2 } = commentOwnerInfo;
+        const { commentOwner, parameters: parameters2, hasReturn: hasReturn2 } = commentOwnerInfo;
         const commentOwnerJsDoc = hasJSDocNodes(commentOwner) && commentOwner.jsDoc ? commentOwner.jsDoc : void 0;
         const lastJsDoc = lastOrUndefined(commentOwnerJsDoc);
         if (commentOwner.getStart(sourceFile) < position || lastJsDoc && existingDocComment && lastJsDoc !== existingDocComment) {
@@ -186821,7 +186821,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         }
         const indentationStr = getIndentationStringAtPosition(sourceFile, position);
         const isJavaScriptFile = hasJSFileExtension(sourceFile.fileName);
-        const tags = (parameters ? parameterDocComments(parameters || [], isJavaScriptFile, indentationStr, newLine) : "") + (hasReturn2 ? returnsDocComment(indentationStr, newLine) : "");
+        const tags = (parameters2 ? parameterDocComments(parameters2 || [], isJavaScriptFile, indentationStr, newLine) : "") + (hasReturn2 ? returnsDocComment(indentationStr, newLine) : "");
         const openComment = "/**";
         const closeComment = " */";
         const hasTag = length(getJSDocTags(commentOwner)) > 0;
@@ -186840,8 +186840,8 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         for (; pos <= position && isWhiteSpaceSingleLine(text2.charCodeAt(pos)); pos++) ;
         return text2.slice(lineStart, pos);
       }
-      function parameterDocComments(parameters, isJavaScriptFile, indentationStr, newLine) {
-        return parameters.map(({ name, dotDotDotToken }, i) => {
+      function parameterDocComments(parameters2, isJavaScriptFile, indentationStr, newLine) {
+        return parameters2.map(({ name, dotDotDotToken }, i) => {
           const paramName = name.kind === 80 ? name.text : "param" + i;
           const type = isJavaScriptFile ? dotDotDotToken ? "{...any} " : "{any} " : "";
           return `${indentationStr} * @param ${type}${paramName}${newLine}`;
@@ -187350,8 +187350,8 @@ ${content}
           }
         }
         return usedImports;
-        function isDeclarationUsed(identifier) {
-          return jsxElementsPresent && (identifier.text === jsxNamespace || jsxFragmentFactory && identifier.text === jsxFragmentFactory) && jsxModeNeedsExplicitImport(compilerOptions.jsx) || ts_FindAllReferences_exports.Core.isSymbolReferencedInFile(identifier, typeChecker, sourceFile);
+        function isDeclarationUsed(identifier2) {
+          return jsxElementsPresent && (identifier2.text === jsxNamespace || jsxFragmentFactory && identifier2.text === jsxFragmentFactory) && jsxModeNeedsExplicitImport(compilerOptions.jsx) || ts_FindAllReferences_exports.Core.isSymbolReferencedInFile(identifier2, typeChecker, sourceFile);
         }
       }
       function getExternalModuleName2(specifier) {
@@ -188790,7 +188790,7 @@ ${content}
       function getTypeHelpItem(symbol, typeParameters, checker, enclosingDeclaration, sourceFile) {
         const typeSymbolDisplay = symbolToDisplayParts(checker, symbol);
         const printer = createPrinterWithRemoveComments();
-        const parameters = typeParameters.map((t) => createSignatureHelpParameterForTypeParameter(t, checker, enclosingDeclaration, sourceFile, printer));
+        const parameters2 = typeParameters.map((t) => createSignatureHelpParameterForTypeParameter(t, checker, enclosingDeclaration, sourceFile, printer));
         const documentation = symbol.getDocumentationComment(checker);
         const tags = symbol.getJsDocTags(checker);
         const prefixDisplayParts = [...typeSymbolDisplay, punctuationPart(
@@ -188800,7 +188800,7 @@ ${content}
         return { isVariadic: false, prefixDisplayParts, suffixDisplayParts: [punctuationPart(
           32
           /* GreaterThanToken */
-        )], separatorDisplayParts, parameters, documentation, tags };
+        )], separatorDisplayParts, parameters: parameters2, documentation, tags };
       }
       var separatorDisplayParts = [punctuationPart(
         28
@@ -188808,12 +188808,12 @@ ${content}
       ), spacePart()];
       function getSignatureHelpItem(candidateSignature, callTargetDisplayParts, isTypeParameterList, checker, enclosingDeclaration, sourceFile) {
         const infos = (isTypeParameterList ? itemInfoForTypeParameters : itemInfoForParameters)(candidateSignature, checker, enclosingDeclaration, sourceFile);
-        return map(infos, ({ isVariadic, parameters, prefix, suffix }) => {
+        return map(infos, ({ isVariadic, parameters: parameters2, prefix, suffix }) => {
           const prefixDisplayParts = [...callTargetDisplayParts, ...prefix];
           const suffixDisplayParts = [...suffix, ...returnTypeToDisplayParts(candidateSignature, enclosingDeclaration, checker)];
           const documentation = candidateSignature.getDocumentationComment(checker);
           const tags = candidateSignature.getJsDocTags();
-          return { isVariadic, prefixDisplayParts, suffixDisplayParts, separatorDisplayParts, parameters, documentation, tags };
+          return { isVariadic, prefixDisplayParts, suffixDisplayParts, separatorDisplayParts, parameters: parameters2, documentation, tags };
         });
       }
       function returnTypeToDisplayParts(candidateSignature, enclosingDeclaration, checker) {
@@ -188843,14 +188843,14 @@ ${content}
       function itemInfoForTypeParameters(candidateSignature, checker, enclosingDeclaration, sourceFile) {
         const typeParameters = (candidateSignature.target || candidateSignature).typeParameters;
         const printer = createPrinterWithRemoveComments();
-        const parameters = (typeParameters || emptyArray).map((t) => createSignatureHelpParameterForTypeParameter(t, checker, enclosingDeclaration, sourceFile, printer));
+        const parameters2 = (typeParameters || emptyArray).map((t) => createSignatureHelpParameterForTypeParameter(t, checker, enclosingDeclaration, sourceFile, printer));
         const thisParameter = candidateSignature.thisParameter ? [checker.symbolToParameterDeclaration(candidateSignature.thisParameter, enclosingDeclaration, signatureHelpNodeBuilderFlags)] : [];
         return checker.getExpandedParameters(candidateSignature).map((paramList) => {
           const params = factory.createNodeArray([...thisParameter, ...map(paramList, (param) => checker.symbolToParameterDeclaration(param, enclosingDeclaration, signatureHelpNodeBuilderFlags))]);
           const parameterParts = mapToDisplayParts((writer) => {
             printer.writeList(2576, params, sourceFile, writer);
           });
-          return { isVariadic: false, parameters, prefix: [punctuationPart(
+          return { isVariadic: false, parameters: parameters2, prefix: [punctuationPart(
             30
             /* LessThanToken */
           )], suffix: [punctuationPart(
@@ -190428,12 +190428,12 @@ ${content}
           }
           this.newFileChanges.add(fileName, { oldFile, statements: statements2 });
         }
-        insertFirstParameter(sourceFile, parameters, newParam) {
-          const p0 = firstOrUndefined(parameters);
+        insertFirstParameter(sourceFile, parameters2, newParam) {
+          const p0 = firstOrUndefined(parameters2);
           if (p0) {
             this.insertNodeBefore(sourceFile, p0, newParam);
           } else {
-            this.insertNodeAt(sourceFile, parameters.pos, newParam);
+            this.insertNodeAt(sourceFile, parameters2.pos, newParam);
           }
         }
         insertNodeBefore(sourceFile, before, newNode, blankLineBetween = false, options = {}) {
@@ -197880,10 +197880,10 @@ ${options.prefix}` : "\n" : options.prefix
             }
           }
         }
-        const bind = createBinder2(overloads, binder2);
+        const bind2 = createBinder2(overloads, binder2);
         return call;
         function call(...args) {
-          const index = bind(args);
+          const index = bind2(args);
           const fn = index !== void 0 ? overloads[index] : void 0;
           if (typeof fn === "function") {
             return fn(...args);
@@ -201281,10 +201281,10 @@ ${options.prefix}` : "\n" : options.prefix
               }
             }
           }
-          const references = program.getResolvedProjectReferences();
+          const references2 = program.getResolvedProjectReferences();
           let referencesAddded = 0;
-          if ((references == null ? void 0 : references.length) && hostProject.projectService.getHostPreferences().includeCompletionsForModuleExports) {
-            references.forEach((ref) => {
+          if ((references2 == null ? void 0 : references2.length) && hostProject.projectService.getHostPreferences().includeCompletionsForModuleExports) {
+            references2.forEach((ref) => {
               if (ref == null ? void 0 : ref.commandLine.options.outFile) {
                 referencesAddded += addRootNames(filterEntrypoints([
                   changeExtension(ref.commandLine.options.outFile, ".d.ts")
@@ -208478,14 +208478,14 @@ Project '${project.projectName}' (${ProjectKind[project.projectKind]}) ${counter
           const file = toNormalizedPath(args.file);
           const projects = this.getProjects(args);
           const position = this.getPositionInFile(args, file);
-          const references = getReferencesWorker(
+          const references2 = getReferencesWorker(
             projects,
             this.getDefaultProject(args),
             { fileName: args.file, pos: position },
             this.host.useCaseSensitiveFileNames,
             this.logger
           );
-          if (!simplifiedResult) return references;
+          if (!simplifiedResult) return references2;
           const preferences = this.getPreferences(file);
           const defaultProject = this.getDefaultProject(args);
           const scriptInfo = defaultProject.getScriptInfoForNormalizedPath(file);
@@ -208494,7 +208494,7 @@ Project '${project.projectName}' (${ProjectKind[project.projectKind]}) ${counter
           const nameSpan = nameInfo && nameInfo.textSpan;
           const symbolStartOffset = nameSpan ? scriptInfo.positionToLineOffset(nameSpan.start).offset : 0;
           const symbolName2 = nameSpan ? scriptInfo.getSnapshot().getText(nameSpan.start, textSpanEnd(nameSpan)) : "";
-          const refs = flatMap(references, (referencedSymbol) => {
+          const refs = flatMap(references2, (referencedSymbol) => {
             return referencedSymbol.references.map((entry) => referenceEntryToReferencesResponseItem(this.projectService, entry, preferences));
           });
           return { refs, symbolName: symbolName2, symbolStartOffset, symbolDisplayString };
@@ -208515,23 +208515,23 @@ Project '${project.projectName}' (${ProjectKind[project.projectKind]}) ${counter
               return project.getLanguageService().getFileReferences(fileName);
             }
           );
-          let references;
+          let references2;
           if (isArray(perProjectResults)) {
-            references = perProjectResults;
+            references2 = perProjectResults;
           } else {
-            references = [];
+            references2 = [];
             const seen = createDocumentSpanSet(this.host.useCaseSensitiveFileNames);
             perProjectResults.forEach((projectOutputs) => {
               for (const referenceEntry of projectOutputs) {
                 if (!seen.has(referenceEntry)) {
-                  references.push(referenceEntry);
+                  references2.push(referenceEntry);
                   seen.add(referenceEntry);
                 }
               }
             });
           }
-          if (!simplifiedResult) return references;
-          const refs = references.map((entry) => referenceEntryToReferencesResponseItem(this.projectService, entry, preferences));
+          if (!simplifiedResult) return references2;
+          const refs = references2.map((entry) => referenceEntryToReferencesResponseItem(this.projectService, entry, preferences));
           return {
             refs,
             symbolName: `"${args.file}"`
@@ -210786,7 +210786,7 @@ function resolveAnalysisBudget(profile = "default") {
   return Object.freeze({ revision: "ast-work-v1", requestedProfile: profile, effectiveProfile: profile, limits: profile === "default" ? DEFAULT : EXTENDED });
 }
 var object = (x) => !!x && typeof x === "object" && !Array.isArray(x);
-var exactKeys = (x, keys) => Object.keys(x).length === keys.length && keys.every((k) => Object.hasOwn(x, k));
+var exactKeys = (x, keys2) => Object.keys(x).length === keys2.length && keys2.every((k) => Object.hasOwn(x, k));
 function sanitiseAnalysisBudget(input) {
   if (!object(input) || !exactKeys(input, ["revision", "requestedProfile", "effectiveProfile", "limits"]) || input.revision !== "ast-work-v1" || !["default", "extended"].includes(input.requestedProfile) || input.effectiveProfile !== input.requestedProfile || !object(input.limits))
     return void 0;
@@ -211129,16 +211129,16 @@ var SqlRoleModel = class {
     const stringKeys = /* @__PURE__ */ new Set(["connectionString", "host", "database", "user", "password", "application_name"]);
     const numbers = /* @__PURE__ */ new Set(["port", "connectionTimeoutMillis", ...kind === "Pool" ? ["max", "min", "idleTimeoutMillis", "maxUses", "maxLifetimeSeconds"] : []]);
     const booleans = /* @__PURE__ */ new Set(["keepAlive", "ssl", ...kind === "Pool" ? ["allowExitOnIdle"] : []]);
-    const keys = /* @__PURE__ */ new Set();
+    const keys2 = /* @__PURE__ */ new Set();
     for (const property of args[0].properties) {
       if (!this.tick())
         return false;
       if (!ts.isPropertyAssignment(property))
         return false;
       const name = key(property.name);
-      if (!name || keys.has(name))
+      if (!name || keys2.has(name))
         return false;
-      keys.add(name);
+      keys2.add(name);
       const value = unwrap(property.initializer);
       if (stringKeys.has(name)) {
         if (ts.isStringLiteralLike(value))
@@ -211978,16 +211978,16 @@ var StaticModules = class {
           this.opaqueClassScopeFiles.add(node.getSourceFile());
         const symbol = this.symbol(node);
         if (symbol) {
-          const references = this.references.get(symbol) ?? [];
-          references.push(node);
-          this.references.set(symbol, references);
+          const references2 = this.references.get(symbol) ?? [];
+          references2.push(node);
+          this.references.set(symbol, references2);
           this.identifierReferences += 1;
         }
         if (["module", "exports"].includes(node.text) && !(ts2.isPropertyAccessExpression(node.parent) && node.parent.name === node)) {
           const file = node.getSourceFile();
-          const references = this.cjsReferences.get(file) ?? [];
-          references.push(node);
-          this.cjsReferences.set(file, references);
+          const references2 = this.cjsReferences.get(file) ?? [];
+          references2.push(node);
+          this.cjsReferences.set(file, references2);
         }
         if (node.text === "URLSearchParams")
           this.nativeBoundaryNodes.push(node);
@@ -212318,17 +212318,17 @@ var StaticModules = class {
   }
   objectRefCall(ref, methods, childSlot) {
     let node = ref;
-    const keys = [];
+    const keys2 = [];
     while (ts2.isPropertyAccessExpression(node.parent) && node.parent.expression === node) {
-      if (!this.tick() || keys.length >= 2)
+      if (!this.tick() || keys2.length >= 2)
         return void 0;
-      keys.push(node.parent.name.text);
+      keys2.push(node.parent.name.text);
       node = node.parent;
     }
     const call = node.parent;
-    if (!ts2.isCallExpression(call) || call.expression !== node || childSlot !== void 0 && keys.length !== 1 || childSlot === void 0 && keys.length !== 1 && keys.length !== 2)
+    if (!ts2.isCallExpression(call) || call.expression !== node || childSlot !== void 0 && keys2.length !== 1 || childSlot === void 0 && keys2.length !== 1 && keys2.length !== 2)
       return void 0;
-    const target = methods.get(childSlot ?? (keys.length === 1 ? "" : keys[0]))?.get(keys.at(-1));
+    const target = methods.get(childSlot ?? (keys2.length === 1 ? "" : keys2[0]))?.get(keys2.at(-1));
     return target ? { call, target } : void 0;
   }
   objectRefs(symbol, group, childSlot, declaration) {
@@ -212485,7 +212485,7 @@ var StaticModules = class {
       const group = { file, methods: /* @__PURE__ */ new Map(), allowed: /* @__PURE__ */ new Set(), symbols: [], callableSymbols: /* @__PURE__ */ new Set(), valid: true };
       const flat = /* @__PURE__ */ new Map();
       group.methods.set("", flat);
-      const keys = /* @__PURE__ */ new Set();
+      const keys2 = /* @__PURE__ */ new Set();
       const wholes = [];
       let properties = 0, observed = false;
       const put = (key2, value, before) => {
@@ -212494,10 +212494,10 @@ var StaticModules = class {
           group.valid = false;
           return;
         }
-        if (!key2 || key2 === "__proto__" || keys.has(key2))
+        if (!key2 || key2 === "__proto__" || keys2.has(key2))
           group.valid = false;
         if (key2)
-          keys.add(key2);
+          keys2.add(key2);
         if (!value) {
           group.valid = false;
           return;
@@ -212576,7 +212576,7 @@ var StaticModules = class {
             }
             const key2 = !ts2.isSpreadAssignment(property) ? nameOf(property.name) : void 0;
             const value = ts2.isShorthandPropertyAssignment(property) ? property.name : ts2.isPropertyAssignment(property) ? property.initializer : ts2.isMethodDeclaration(property) ? property : void 0;
-            if (!key2 || key2 === "__proto__" || keys.has(key2))
+            if (!key2 || key2 === "__proto__" || keys2.has(key2))
               group.valid = false;
             if (!value) {
               group.valid = false;
@@ -212584,13 +212584,13 @@ var StaticModules = class {
             }
             if (ts2.isStringLiteralLike(value) || ts2.isNumericLiteral(value) || [ts2.SyntaxKind.TrueKeyword, ts2.SyntaxKind.FalseKeyword, ts2.SyntaxKind.NullKeyword].includes(value.kind)) {
               if (key2)
-                keys.add(key2);
+                keys2.add(key2);
               continue;
             }
             const child = ts2.isIdentifier(value) ? this.objectConst(value) : void 0;
             if (child?.initializer && ts2.isObjectLiteralExpression(child.initializer)) {
               if (key2)
-                keys.add(key2);
+                keys2.add(key2);
               if (child.pos > literal.pos)
                 group.valid = false;
               const methods = this.objectMethods(child.initializer);
@@ -212872,20 +212872,20 @@ var StaticModules = class {
           link(consumer, group);
         }
     }
-    const invalid2 = [...this.objectExports.values()].filter((group) => !group.valid);
-    for (let i = 0; i < invalid2.length; i += 1) {
+    const invalid3 = [...this.objectExports.values()].filter((group) => !group.valid);
+    for (let i = 0; i < invalid3.length; i += 1) {
       if (!this.tick()) {
         workComplete = false;
         break;
       }
-      for (const group of dependents.get(invalid2[i]) ?? []) {
+      for (const group of dependents.get(invalid3[i]) ?? []) {
         if (!this.tick()) {
           workComplete = false;
           break;
         }
         if (group.valid) {
           group.valid = false;
-          invalid2.push(group);
+          invalid3.push(group);
         }
       }
     }
@@ -212922,7 +212922,7 @@ var StaticModules = class {
     return producer?.singletonProof?.exportClosed ? producer.constructorClass : void 0;
   }
   literalContainer(value) {
-    const keys = /* @__PURE__ */ new Set();
+    const keys2 = /* @__PURE__ */ new Set();
     if (ts2.isArrayLiteralExpression(value)) {
       for (const item of value.elements)
         if (!this.singletonTick() || !this.primitive(item))
@@ -212935,9 +212935,9 @@ var StaticModules = class {
       if (!this.singletonTick() || !ts2.isPropertyAssignment(item) || ts2.isComputedPropertyName(item.name))
         return false;
       const key2 = nameOf(item.name);
-      if (!key2 || keys.has(key2) || ["constructor", "prototype", "__proto__"].includes(key2) || !this.primitive(item.initializer))
+      if (!key2 || keys2.has(key2) || ["constructor", "prototype", "__proto__"].includes(key2) || !this.primitive(item.initializer))
         return false;
-      keys.add(key2);
+      keys2.add(key2);
     }
     return true;
   }
@@ -213024,17 +213024,17 @@ var StaticModules = class {
           if (!helper || helper === classNode)
             return { ok: false, soft };
           fields.set(left.name.text, "instance");
-          const keys = /* @__PURE__ */ new Set();
+          const keys2 = /* @__PURE__ */ new Set();
           for (const member2 of helper.members) {
             if (!this.singletonTick())
               return { ok: false, soft };
             if (ts2.isMethodDeclaration(member2)) {
               const key2 = nameOf(member2.name);
               if (key2 && !ts2.isComputedPropertyName(member2.name))
-                keys.add(key2);
+                keys2.add(key2);
             }
           }
-          instances.set(left.name.text, keys);
+          instances.set(left.name.text, keys2);
           if (selectedHelper === helper)
             selected += 1;
           else if (selectedHelper) {
@@ -213135,8 +213135,8 @@ var StaticModules = class {
           this.singletonReasons.set(group, /* @__PURE__ */ new Set(["receiver_capability"]));
           continue;
         }
-        const own2 = this.consumerCapability(group);
-        ok = own2.ok;
+        const own3 = this.consumerCapability(group);
+        ok = own3.ok;
         for (const helper of helpers.get(group) ?? []) {
           if (!this.singletonTick()) {
             ok = false;
@@ -213249,7 +213249,7 @@ var StaticModules = class {
         if (ts2.isNewExpression(value) && value.arguments?.length)
           group.valid = false;
         const exportClosed = group.valid;
-        const keys = /* @__PURE__ */ new Set();
+        const keys2 = /* @__PURE__ */ new Set();
         if (classNode.heritageClauses?.length || classNode.modifiers?.length)
           group.valid = false;
         for (const member of classNode.members) {
@@ -213262,11 +213262,11 @@ var StaticModules = class {
           if (ts2.isMethodDeclaration(member) && this.functionSet.has(member))
             this.externalEntries.add(member);
           const key2 = ts2.isMethodDeclaration(member) ? nameOf(member.name) : void 0;
-          if (!ts2.isMethodDeclaration(member) || !member.body || !key2 || ts2.isComputedPropertyName(member.name) || ["constructor", "prototype", "__proto__"].includes(key2) || keys.has(key2) || member.asteriskToken || member.modifiers?.some((m) => m.kind !== ts2.SyntaxKind.AsyncKeyword)) {
+          if (!ts2.isMethodDeclaration(member) || !member.body || !key2 || ts2.isComputedPropertyName(member.name) || ["constructor", "prototype", "__proto__"].includes(key2) || keys2.has(key2) || member.asteriskToken || member.modifiers?.some((m) => m.kind !== ts2.SyntaxKind.AsyncKeyword)) {
             group.valid = false;
             continue;
           }
-          keys.add(key2);
+          keys2.add(key2);
           group.methods.get("").set(key2, member);
           if (group.receiver)
             this.methodReceivers.set(member, group);
@@ -213696,11 +213696,11 @@ var NativeQueryModel = class {
       const symbol = modules.symbol(declaration.name);
       if (!symbol)
         continue;
-      const references = modules.references.get(symbol);
-      if (!references?.length)
+      const references2 = modules.references.get(symbol);
+      if (!references2?.length)
         continue;
       let declared = false;
-      const valid = references.every((reference) => {
+      const valid = references2.every((reference) => {
         if (!tick())
           return false;
         if (reference === declaration.name) {
@@ -213997,10 +213997,10 @@ var HttpRoleModel = class {
         this.pristine = false;
     }
     for (const symbol of this.bindings.keys()) {
-      const references = modules.references.get(symbol);
-      if (!references?.length || modules.mutated.has(symbol) || modules.mutatedMembers.has(symbol))
+      const references2 = modules.references.get(symbol);
+      if (!references2?.length || modules.mutated.has(symbol) || modules.mutatedMembers.has(symbol))
         this.pristine = false;
-      for (const reference of references ?? []) {
+      for (const reference of references2 ?? []) {
         if (!tick()) {
           this.pristine = false;
           break;
@@ -214046,16 +214046,16 @@ var HttpRoleModel = class {
     };
     if (node.properties.length > 16)
       return finish(false);
-    const keys = /* @__PURE__ */ new Set();
+    const keys2 = /* @__PURE__ */ new Set();
     let hasUrl = false;
     for (const property of node.properties) {
       if (!this.tick())
         return finish(false);
       if (ts5.isShorthandPropertyAssignment(property)) {
         const key3 = property.name.text;
-        if (property.objectAssignmentInitializer || !["url", "data"].includes(key3) || keys.has(key3))
+        if (property.objectAssignmentInitializer || !["url", "data"].includes(key3) || keys2.has(key3))
           return finish(false);
-        keys.add(key3);
+        keys2.add(key3);
         if (key3 === "url")
           hasUrl = true;
         continue;
@@ -214063,9 +214063,9 @@ var HttpRoleModel = class {
       if (!ts5.isPropertyAssignment(property) || ts5.isComputedPropertyName(property.name) || !(ts5.isIdentifier(property.name) || ts5.isStringLiteralLike(property.name)))
         return finish(false);
       const key2 = property.name.text;
-      if (keys.has(key2))
+      if (keys2.has(key2))
         return finish(false);
-      keys.add(key2);
+      keys2.add(key2);
       if (key2 === "url") {
         hasUrl = true;
         if (!this.sideEffectFree(property.initializer))
@@ -214101,10 +214101,10 @@ var HttpRoleModel = class {
     if (!ts5.isVariableDeclaration(declaration) || declaration.initializer !== parent || !ts5.isIdentifier(declaration.name) || !ts5.isVariableDeclarationList(declaration.parent) || !(declaration.parent.flags & ts5.NodeFlags.Const))
       return finish(false);
     const symbol = this.modules.symbol(declaration.name);
-    const references = symbol && this.modules.references.get(symbol);
-    if (!symbol || !references?.length || this.modules.mutated.has(symbol) || this.modules.mutatedMembers.has(symbol))
+    const references2 = symbol && this.modules.references.get(symbol);
+    if (!symbol || !references2?.length || this.modules.mutated.has(symbol) || this.modules.mutatedMembers.has(symbol))
       return finish(false);
-    for (const reference of references) {
+    for (const reference of references2) {
       if (!this.tick())
         return finish(false);
       if (reference === declaration.name)
@@ -216241,7 +216241,7 @@ function findSnapshotInputFlows(files, limits = FLOW_LIMITS, parseErrorCount = 0
     indexedAstNodes: session.modules.indexedAstNodes,
     symbolLookups: session.modules.symbolLookups,
     identifierReferences: session.modules.identifierReferences,
-    cjsReferences: [...session.modules.cjsReferences.values()].reduce((sum, references) => sum + references.length, 0),
+    cjsReferences: [...session.modules.cjsReferences.values()].reduce((sum, references2) => sum + references2.length, 0),
     nativeBoundaryNodes: session.modules.nativeBoundaryNodes.length,
     newExpressionsIndexed: session.modules.newExpressions.length,
     topLevelDeclared: files.length,
@@ -217591,9 +217591,9 @@ function rlsOperation(statement, identifierStatement = statement) {
   const action = /\b(DISABLE|ENABLE)\s+ROW\s+LEVEL\s+SECURITY\b/i.exec(statement);
   if (!action)
     return void 0;
-  const identifier = '(?:"(?:[^"]|"")*"|[A-Za-z_][A-Za-z0-9_$]*)';
+  const identifier2 = '(?:"(?:[^"]|"")*"|[A-Za-z_][A-Za-z0-9_$]*)';
   const prefix = /\bALTER\s+TABLE\s+?(?:(?:IF\s+)?EXISTS\s+)?(?:ONLY\s+)?/i.exec(statement);
-  const tableMatch = prefix ? new RegExp(`^(${identifier}(?:\\s*\\.\\s*${identifier})?)`, "i").exec(identifierStatement.slice(prefix.index + prefix[0].length)) : null;
+  const tableMatch = prefix ? new RegExp(`^(${identifier2}(?:\\s*\\.\\s*${identifier2})?)`, "i").exec(identifierStatement.slice(prefix.index + prefix[0].length)) : null;
   return { action: action[1].toLowerCase(), ...tableMatch ? { table: normalizedTable(tableMatch[1]) } : {} };
 }
 function finding(input) {
@@ -217653,11 +217653,11 @@ function migrationFindings(file) {
   return { findings, incomplete: !masked.complete };
 }
 function tableReference(statement, identifierStatement, keyword) {
-  const identifier = '(?:"(?:[^"]|"")*"|[A-Za-z_][A-Za-z0-9_$]*)';
+  const identifier2 = '(?:"(?:[^"]|"")*"|[A-Za-z_][A-Za-z0-9_$]*)';
   const prefix = keyword === "CREATE TABLE" ? /\bCREATE\s+TABLE\s+?(?:(?:IF\s+)?NOT\s+EXISTS\s+)?(?:ONLY\s+)?/i.exec(statement) : /\bGRANT\b[\s\S]*?\bON\s+?(?:TABLE\s+)?/i.exec(statement);
   if (!prefix)
     return void 0;
-  const match = new RegExp(`^(${identifier}(?:\\s*\\.\\s*${identifier})?)`, "i").exec(identifierStatement.slice(prefix.index + prefix[0].length));
+  const match = new RegExp(`^(${identifier2}(?:\\s*\\.\\s*${identifier2})?)`, "i").exec(identifierStatement.slice(prefix.index + prefix[0].length));
   return match ? { table: normalizedTable(match[1]), index: prefix.index + prefix[0].length + match.index } : void 0;
 }
 function grantExposesRows(statement) {
@@ -217970,7 +217970,7 @@ function severityFrom(value, fallback = "medium") {
 function referencesFrom(value) {
   if (!Array.isArray(value))
     return void 0;
-  const references = value.map((entry) => {
+  const references2 = value.map((entry) => {
     if (typeof entry === "string")
       return entry.trim();
     const object4 = objectValue(entry);
@@ -217978,7 +217978,7 @@ function referencesFrom(value) {
       throw new Error("scanner output has an invalid reference");
     return object4.url.trim();
   }).filter((entry) => /^https?:\/\/[^\s]{1,500}$/i.test(entry)).slice(0, 5);
-  return references.length > 0 ? references : void 0;
+  return references2.length > 0 ? references2 : void 0;
 }
 function pathFromScanner(value, stageDir, allowed) {
   if (typeof value !== "string" || value.length === 0)
@@ -219019,9 +219019,9 @@ async function runBandit(context) {
     home: join3(dirname3(context.stageDir), "home"),
     signal: context.signal
   });
-  const failure = processFailure(result2, context.timeoutMs);
-  if (failure)
-    return errorCheck(failure);
+  const failure2 = processFailure(result2, context.timeoutMs);
+  if (failure2)
+    return errorCheck(failure2);
   try {
     const parsed = parseBanditOutput(result2.stdout, context.stageDir, files);
     if (result2.exitCode === 1 && parsed.findings.length === 0 && parsed.status === "completed") {
@@ -219098,7 +219098,7 @@ function nativeJson(text2) {
     if (text2[cursor] === "{") {
       cursor++;
       space();
-      const keys = /* @__PURE__ */ new Set();
+      const keys2 = /* @__PURE__ */ new Set();
       if (text2[cursor] === "}") {
         cursor++;
         return;
@@ -219106,9 +219106,9 @@ function nativeJson(text2) {
       while (true) {
         space();
         const key2 = string();
-        if (keys.has(key2))
+        if (keys2.has(key2))
           throw new Error("duplicate");
-        keys.add(key2);
+        keys2.add(key2);
         space();
         if (text2[cursor++] !== ":")
           throw new Error("colon");
@@ -219235,7 +219235,7 @@ function parseNativeOutput(stdout, exitCode2, stage, inputFiles) {
   const findings = [], reasons = /* @__PURE__ */ new Set();
   const files = new Map(inputFiles.map((file) => [file.path, file]));
   const positionCache = /* @__PURE__ */ new Map();
-  let ignored = 0, invalid2 = 0, errors = 0, skipped = 0, scanned = 0;
+  let ignored = 0, invalid3 = 0, errors = 0, skipped = 0, scanned = 0;
   const metrics = () => ({
     profile: OPENGREP_PROFILE,
     filesDeclared: inputFiles.length,
@@ -219243,7 +219243,7 @@ function parseNativeOutput(stdout, exitCode2, stage, inputFiles) {
     nativeErrors: errors,
     skippedRules: skipped,
     ignoredFindings: ignored,
-    invalidFindings: invalid2,
+    invalidFindings: invalid3,
     engineExit: exitCode2 ?? "unknown",
     incompleteReasons: [...reasons].sort().join(","),
     rulePackSha256: OWN_RULES_SHA256
@@ -219344,7 +219344,7 @@ function parseNativeOutput(stdout, exitCode2, stage, inputFiles) {
         ...staticFlow ? { staticFlow } : {}
       });
     } catch {
-      invalid2++;
+      invalid3++;
       reasons.add("invalid_finding");
     }
   }
@@ -220131,9 +220131,9 @@ async function runGitleaks(context) {
     "0",
     context.stageDir
   ], { cwd: context.stageDir, timeoutMs: context.timeoutMs, home: join5(dirname5(context.stageDir), "home"), signal: context.signal });
-  const failure = processFailure2(result2, "Gitleaks", context.timeoutMs);
-  if (failure)
-    return errorCheck2("source.gitleaks", failure);
+  const failure2 = processFailure2(result2, "Gitleaks", context.timeoutMs);
+  if (failure2)
+    return errorCheck2("source.gitleaks", failure2);
   try {
     const parsed = parseGitleaksOutput(result2.stdout, context.stageDir, context.snapshot.files);
     if (result2.exitCode === 1 && parsed.findings.length === 0)
@@ -220179,9 +220179,9 @@ async function runOsv(context) {
     signal: context.signal,
     ...preparedDb ? { environment: { OSV_SCANNER_LOCAL_DB_CACHE_DIRECTORY: preparedDb } } : {}
   });
-  const failure = processFailure2(result2, "OSV-Scanner", context.timeoutMs);
-  if (failure)
-    return errorCheck2("source.osv", failure);
+  const failure2 = processFailure2(result2, "OSV-Scanner", context.timeoutMs);
+  if (failure2)
+    return errorCheck2("source.osv", failure2);
   try {
     const parsed = parseOsvOutput(result2.stdout, context.stageDir, context.snapshot.files);
     const packageCount = typeof parsed.metrics?.packageCount === "number" ? parsed.metrics.packageCount : 0;
@@ -220239,9 +220239,9 @@ async function runTrivy(context) {
     privateModules,
     context.stageDir
   ], { cwd: context.stageDir, timeoutMs: context.timeoutMs, home: join5(dirname5(context.stageDir), "home"), signal: context.signal });
-  const failure = processFailure2(result2, "Trivy", context.timeoutMs);
-  if (failure)
-    return errorCheck2("source.trivy", failure);
+  const failure2 = processFailure2(result2, "Trivy", context.timeoutMs);
+  if (failure2)
+    return errorCheck2("source.trivy", failure2);
   try {
     const parsed = ensureParsedResult("source.trivy", parseTrivyOutput(result2.stdout, context.stageDir, context.snapshot.files));
     if (result2.exitCode === 1 && parsed.findings.length === 0)
@@ -228617,14 +228617,21 @@ async function lookupAddresses(hostname, signal, allowPrivate) {
     fail("dns_empty", "hostname has no usable A/AAAA answers");
   return validated;
 }
-async function resolveAddresses(url, signal, allowPrivate) {
+function validateStaticTarget(url, allowPrivate) {
   if (isIP(url.hostname) !== 0) {
     if (isAlwaysForbiddenAddress(url.hostname) || !allowPrivate && isPrivateAddress(url.hostname))
       fail("blocked_address", "target address is not allowed");
-    return [{ address: url.hostname, family: isIP(url.hostname) }];
+  } else {
+    if (!allowPrivate && (url.hostname === "localhost" || url.hostname.endsWith(".local")))
+      fail("private_hostname", "private hostname is not allowed");
+    if (hostAlwaysForbidden(url.hostname))
+      fail("metadata_host", "metadata and internal hostnames are not allowed");
   }
-  if (!allowPrivate && (url.hostname === "localhost" || url.hostname.endsWith(".local")))
-    fail("private_hostname", "private hostname is not allowed");
+}
+async function resolveAddresses(url, signal, allowPrivate) {
+  validateStaticTarget(url, allowPrivate);
+  if (isIP(url.hostname) !== 0)
+    return [{ address: url.hostname, family: isIP(url.hostname) }];
   return lookupAddresses(url.hostname, signal, allowPrivate);
 }
 function headerValues(headers, name) {
@@ -229398,8 +229405,8 @@ function* scanSecretAssignments(text2) {
 var META_PRESCAN_BYTES = 1024;
 var MAX_CHARSET_LENGTH = 64;
 function charsetParameter(value) {
-  const parameters = value.split(";").slice(1);
-  const declarations = parameters.filter((part) => /^\s*charset(?:\s|=|$)/i.test(part));
+  const parameters2 = value.split(";").slice(1);
+  const declarations = parameters2.filter((part) => /^\s*charset(?:\s|=|$)/i.test(part));
   if (declarations.length === 0)
     return void 0;
   const match = /^\s*charset\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"']+))\s*$/i.exec(declarations[0]);
@@ -231268,7 +231275,7 @@ function sanitiseFinding(input) {
   const severity = SEVERITIES.includes(input?.severity) ? input.severity : "info";
   const confidence = CONFIDENCES.includes(input?.confidence) ? input.confidence : "low";
   const kind = KINDS.includes(input?.kind) ? input.kind : "candidate";
-  const references = Array.isArray(input?.references) ? input.references.map((reference) => safeHttpUrl(reference)).filter((reference) => reference !== void 0) : void 0;
+  const references2 = Array.isArray(input?.references) ? input.references.map((reference) => safeHttpUrl(reference)).filter((reference) => reference !== void 0) : void 0;
   const location2 = sanitiseLocation(input?.location);
   const staticFlow = sanitiseStaticFlow(input?.staticFlow);
   const comparisonKey = typeof input?.comparisonKey === "string" && /^[a-f0-9]{64}$/.test(input.comparisonKey) ? input.comparisonKey : void 0;
@@ -231283,7 +231290,7 @@ function sanitiseFinding(input) {
     remediation: safeText(input?.remediation, "Review the finding and verify the affected scope."),
     ...comparisonKey ? { comparisonKey } : {},
     ...staticFlow ? { staticFlow } : {},
-    ...references && references.length > 0 ? { references } : {}
+    ...references2 && references2.length > 0 ? { references: references2 } : {}
   };
 }
 function sanitiseStaticFlow(input) {
@@ -231498,7 +231505,7 @@ async function readJsonInput(path, maxBytes = 16 * 1024 * 1024) {
     if (length !== before.size || after.size !== before.size || after.mtimeMs !== before.mtimeMs || after.ctimeMs !== before.ctimeMs) {
       throw new Error("JSON input changed while reading");
     }
-    return JSON.parse(buffer.subarray(0, length).toString("utf8"));
+    return JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(buffer.subarray(0, length)));
   } finally {
     await handle.close();
   }
@@ -231509,42 +231516,42 @@ var severities = ["info", "low", "medium", "high", "critical"];
 var record2 = (x) => !!x && typeof x === "object" && !Array.isArray(x);
 var text = (x) => typeof x === "string";
 function parseScanReport(input) {
-  const invalid2 = () => {
+  const invalid3 = () => {
     throw new Error("Invalid scan report");
   };
   if (!record2(input))
-    return invalid2();
+    return invalid3();
   if (input.schemaVersion !== "1.0.0" || !text(input.toolVersion) || !input.toolVersion || !["source", "url", "both", "api", "combined"].includes(input.mode) || !text(input.startedAt) || !Number.isFinite(Date.parse(input.startedAt)) || !text(input.finishedAt) || !Number.isFinite(Date.parse(input.finishedAt)) || !Array.isArray(input.checks) || input.checks.length > 1e3)
-    return invalid2();
+    return invalid3();
   const checkIds = /* @__PURE__ */ new Set();
   let count = 0;
   for (const check of input.checks) {
     if (!record2(check) || !text(check.id) || !check.id || checkIds.has(check.id) || !["completed", "partial", "error", "skipped", "not_applicable"].includes(check.status) || !Array.isArray(check.findings) || !Array.isArray(check.notes) || !check.notes.every(text))
-      return invalid2();
+      return invalid3();
     if (check.analysisBudget !== void 0 && !sanitiseAnalysisBudget(check.analysisBudget))
-      return invalid2();
+      return invalid3();
     checkIds.add(check.id);
     count += check.findings.length;
     if (count > 5e4 || check.status === "not_applicable" && check.findings.length)
-      return invalid2();
+      return invalid3();
     for (const finding2 of check.findings) {
       if (!record2(finding2) || !text(finding2.ruleId) || !finding2.ruleId || !text(finding2.title) || !text(finding2.description) || !text(finding2.remediation) || !severities.includes(finding2.severity) || !["low", "medium", "high"].includes(finding2.confidence) || !["observation", "candidate", "advisory"].includes(finding2.kind) || !record2(finding2.location))
-        return invalid2();
+        return invalid3();
       if (finding2.comparisonKey !== void 0 && (!text(finding2.comparisonKey) || !/^[a-f0-9]{64}$/.test(finding2.comparisonKey)))
-        return invalid2();
+        return invalid3();
       for (const key2 of ["path", "url"])
         if (finding2.location[key2] !== void 0 && !text(finding2.location[key2]))
-          return invalid2();
+          return invalid3();
       for (const key2 of ["line", "column"])
         if (finding2.location[key2] !== void 0 && (!Number.isSafeInteger(finding2.location[key2]) || finding2.location[key2] < 1))
-          return invalid2();
+          return invalid3();
     }
   }
   if (input.scope !== void 0 && !validScope(input.scope))
-    return invalid2();
+    return invalid3();
   const safe = sanitiseReport(input);
   if (new Set(safe.checks.map((check) => check.id)).size !== safe.checks.length)
-    return invalid2();
+    return invalid3();
   return safe;
 }
 async function readScanReport(path) {
@@ -231778,10 +231785,109 @@ async function writeComparison(result2, outDir) {
     "",
     "## Limits",
     "",
-    ...result2.limitations.map((limit) => `- ${limit}`),
+    ...result2.limitations.map((limit2) => `- ${limit2}`),
     ""
   ];
   await writeArtifacts(outDir, [["comparison.json", JSON.stringify(result2, null, 2) + "\n"], ["comparison.md", lines.join("\n")]]);
+}
+
+// build/src/api-policy-error.js
+var ApiPolicyError = class extends Error {
+  code;
+  location = "policy";
+  constructor(code, message) {
+    super(message);
+    this.name = "ApiPolicyError";
+    this.code = code;
+  }
+};
+
+// build/src/api.js
+import { types as types2 } from "node:util";
+
+// build/src/json-snapshot.js
+import { types } from "node:util";
+var JSON_MAX_INPUT_BYTES = 1024 * 1024;
+var JSON_MAX_INPUT_NODES = 2e4;
+var JSON_MAX_DEPTH = 40;
+function fail2() {
+  throw new TypeError("invalid_bounded_json");
+}
+function snapshotJsonData(input, invalid3 = fail2, limit2 = fail2) {
+  let nodes = 0, bytes = 0;
+  const active = /* @__PURE__ */ new Set();
+  const count = (value) => {
+    bytes += Buffer.byteLength(value, "utf8");
+    if (bytes > JSON_MAX_INPUT_BYTES)
+      limit2();
+  };
+  const string = (value) => {
+    if (value.length > JSON_MAX_INPUT_BYTES)
+      limit2();
+    count(JSON.stringify(value));
+  };
+  const copy = (value, depth) => {
+    if (++nodes > JSON_MAX_INPUT_NODES || depth > JSON_MAX_DEPTH)
+      limit2();
+    if (value === null || typeof value === "boolean") {
+      count(String(value));
+      return value;
+    }
+    if (typeof value === "string") {
+      string(value);
+      return value;
+    }
+    if (typeof value === "number") {
+      if (!Number.isFinite(value))
+        invalid3();
+      count(String(value));
+      return value;
+    }
+    if (typeof value !== "object" || types.isProxy(value) || active.has(value))
+      invalid3();
+    const array = Array.isArray(value);
+    const prototype = Object.getPrototypeOf(value);
+    if (array ? prototype !== Array.prototype : prototype !== Object.prototype && prototype !== null)
+      invalid3();
+    if (Object.getOwnPropertySymbols(value).length !== 0)
+      invalid3();
+    const descriptors = Object.getOwnPropertyDescriptors(value);
+    const names = Object.keys(descriptors);
+    if (names.length > JSON_MAX_INPUT_NODES - nodes)
+      limit2();
+    active.add(value);
+    count("{}");
+    if (array) {
+      if (value.length > JSON_MAX_INPUT_NODES - nodes || names.length !== value.length + 1)
+        invalid3();
+      const result3 = [];
+      for (let i = 0; i < value.length; i++) {
+        const descriptor = descriptors[String(i)];
+        if (!descriptor || !descriptor.enumerable || !("value" in descriptor))
+          invalid3();
+        if (i > 0)
+          count(",");
+        result3.push(copy(descriptor.value, depth + 1));
+      }
+      active.delete(value);
+      return result3;
+    }
+    const result2 = /* @__PURE__ */ Object.create(null);
+    for (let i = 0; i < names.length; i++) {
+      const name = names[i];
+      const descriptor = descriptors[name];
+      if (!descriptor.enumerable || !("value" in descriptor))
+        invalid3();
+      if (i > 0)
+        count(",");
+      string(name);
+      count(":");
+      result2[name] = copy(descriptor.value, depth + 1);
+    }
+    active.delete(value);
+    return result2;
+  };
+  return copy(input, 0);
 }
 
 // build/src/api-state-capture.js
@@ -231797,6 +231903,7 @@ var API_MAX_CASES = 20;
 var API_MAX_REQUESTS = Math.min(MAX_REQUESTS, 64);
 var API_MAX_TIMEOUT_MS = 12e4;
 var API_DEFAULT_TIMEOUT_MS = 3e4;
+var API_MAX_SINGLE_BODY_BYTES = MAX_SINGLE_BODY_BYTES;
 var API_MAX_TOTAL_BODY_BYTES = 10 * 1024 * 1024;
 function createApiRunControl(timeoutMs, signal) {
   if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > API_MAX_TIMEOUT_MS) {
@@ -231824,19 +231931,24 @@ var MAX_AUTHORIZATION_LENGTH2 = 8192;
 var API_SCOPE_NOTE = "API authorization preview sends bounded read-only GET requests from an explicit policy; it does not write, fuzz, execute browser code, follow redirects, or prove complete API security.";
 var API_MAX_EVIDENCE_NODES = 1e4;
 var API_MAX_EVIDENCE_DEPTH = 64;
-var ApiPolicyError = class extends Error {
-  code;
-  constructor(code, message) {
-    super(message);
-    this.name = "ApiPolicyError";
-    this.code = code;
-  }
-};
 function invalid(message) {
   throw new ApiPolicyError("invalid_policy", message);
 }
+function policyLocation(location2, read) {
+  try {
+    return read();
+  } catch (error) {
+    if (error instanceof ApiPolicyError) {
+      if (error.location === "policy")
+        error.location = location2;
+      else if (!error.location.startsWith("policy."))
+        error.location = `${location2}.${error.location}`;
+    }
+    throw error;
+  }
+}
 function isRecord(value) {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
+  return typeof value === "object" && value !== null && !types2.isProxy(value) && !Array.isArray(value);
 }
 function hasOwn(value, key2) {
   return Object.prototype.hasOwnProperty.call(value, key2);
@@ -231934,11 +232046,11 @@ function parseActor(value, version) {
   const id = safeIdentifier(value.id, "actor id");
   const actor = { id };
   if (hasOwn(value, "authorizationEnv"))
-    actor.authorizationEnv = safeEnvironmentName(value.authorizationEnv);
+    actor.authorizationEnv = policyLocation("authorizationEnv", () => safeEnvironmentName(value.authorizationEnv));
   if (id === "anonymous" && actor.authorizationEnv !== void 0)
     invalid("anonymous actor cannot carry credentials");
   if (hasOwn(value, "identity"))
-    actor.identity = parseIdentity(value.identity);
+    actor.identity = policyLocation("identity", () => parseIdentity(value.identity));
   if (version === 1 && actor.identity !== void 0)
     invalid("policy version 1 actors may not declare identity; migrate to version 2");
   if (version === 2) {
@@ -232000,11 +232112,11 @@ function parseCase(value, version) {
   exactKeys3(value, ["id", "path", "allow", "deny"], [], "case");
   const id = safeIdentifier(value.id, "case id");
   const path = safePolicyPath(value.path);
-  const allow = parseAllow(value.allow, version);
+  const allow = policyLocation("allow", () => parseAllow(value.allow, version));
   if (!Array.isArray(value.deny) || value.deny.length === 0 || value.deny.length > MAX_ACTORS) {
     invalid("case deny must be a bounded non-empty array");
   }
-  const deny = value.deny.map((entry) => parseDeny(entry, version));
+  const deny = value.deny.map((entry, index) => policyLocation(`deny[${index}]`, () => parseDeny(entry, version)));
   if (new Set(deny.map((entry) => entry.actor)).size !== deny.length)
     invalid("case deny actors may not be duplicated");
   return { id, path, allow, deny };
@@ -232024,29 +232136,46 @@ function normalizeBaseUrl(value) {
   return normalized;
 }
 function parseApiPolicy(input) {
+  try {
+    input = snapshotJsonData(input);
+  } catch {
+    invalid("policy must be bounded JSON data without accessors or custom objects");
+  }
   if (!isRecord(input))
     invalid("policy must be a JSON object");
   exactKeys3(input, ["version", "baseUrl", "actors", "cases"], [], "policy");
   const version = input.version === API_POLICY_VERSION || input.version === API_POLICY_LEGACY_VERSION ? input.version : void 0;
   if (version === void 0)
     invalid("policy version is unsupported");
-  const baseUrl = normalizeBaseUrl(input.baseUrl);
+  const baseUrl = policyLocation("policy.baseUrl", () => normalizeBaseUrl(input.baseUrl));
   if (!Array.isArray(input.actors) || input.actors.length === 0 || input.actors.length > MAX_ACTORS) {
     invalid("actors must be a bounded non-empty array");
   }
-  const actors = input.actors.map((actor) => parseActor(actor, version));
-  const actorIds = new Set(actors.map((actor) => actor.id));
-  if (actorIds.size !== actors.length)
-    invalid("actor ids may not be duplicated");
-  const authorizationEnvs = actors.map((actor) => actor.authorizationEnv).filter((value) => value !== void 0);
-  if (new Set(authorizationEnvs).size !== authorizationEnvs.length)
-    invalid("authorizationEnv may not be reused");
+  const actors = input.actors.map((actor, index) => policyLocation(`policy.actors[${index}]`, () => parseActor(actor, version)));
+  const actorIds = /* @__PURE__ */ new Set();
+  actors.forEach((actor, index) => {
+    if (actorIds.has(actor.id))
+      policyLocation(`policy.actors[${index}].id`, () => invalid("actor ids may not be duplicated"));
+    actorIds.add(actor.id);
+  });
+  const seenEnvs = /* @__PURE__ */ new Set();
+  actors.forEach((actor, index) => {
+    if (actor.authorizationEnv === void 0)
+      return;
+    if (seenEnvs.has(actor.authorizationEnv))
+      policyLocation(`policy.actors[${index}].authorizationEnv`, () => invalid("authorizationEnv may not be reused"));
+    seenEnvs.add(actor.authorizationEnv);
+  });
   if (!Array.isArray(input.cases) || input.cases.length === 0 || input.cases.length > API_MAX_CASES) {
     invalid(`cases must contain between 1 and ${API_MAX_CASES} entries`);
   }
-  const cases = input.cases.map((entry) => parseCase(entry, version));
-  if (new Set(cases.map((entry) => entry.id)).size !== cases.length)
-    invalid("case ids may not be duplicated");
+  const cases = input.cases.map((entry, index) => policyLocation(`policy.cases[${index}]`, () => parseCase(entry, version)));
+  const caseIds = /* @__PURE__ */ new Set();
+  cases.forEach((entry, index) => {
+    if (caseIds.has(entry.id))
+      policyLocation(`policy.cases[${index}].id`, () => invalid("case ids may not be duplicated"));
+    caseIds.add(entry.id);
+  });
   const parsedCases = [];
   const resolvePath = (path, label) => {
     let requestUrl;
@@ -232091,17 +232220,20 @@ function parseApiPolicy(input) {
     if (actor.identity)
       identities.set(actor.id, { ...actor.identity, requestUrl: resolvePath(actor.identity.path, "identity") });
   }
-  for (const entry of parsedCases) {
-    if (!actorById.has(entry.allow.actor))
-      invalid("allow actor must refer to a configured actor");
-    if (actorById.get(entry.allow.actor)?.authorizationEnv === void 0)
-      invalid("allow actor must have an authorizationEnv");
-    for (const deny of entry.deny) {
-      if (!actorById.has(deny.actor))
-        invalid("deny actor must refer to a configured actor");
-      if (deny.actor === entry.allow.actor)
-        invalid("deny actor may not equal the allow actor");
-    }
+  for (const [caseIndex, entry] of parsedCases.entries()) {
+    policyLocation(`policy.cases[${caseIndex}].allow.actor`, () => {
+      if (!actorById.has(entry.allow.actor))
+        invalid("allow actor must refer to a configured actor");
+      if (actorById.get(entry.allow.actor)?.authorizationEnv === void 0)
+        invalid("allow actor must have an authorizationEnv");
+    });
+    for (const [denyIndex, deny] of entry.deny.entries())
+      policyLocation(`policy.cases[${caseIndex}].deny[${denyIndex}].actor`, () => {
+        if (!actorById.has(deny.actor))
+          invalid("deny actor must refer to a configured actor");
+        if (deny.actor === entry.allow.actor)
+          invalid("deny actor may not equal the allow actor");
+      });
   }
   const identityCount = version === 2 ? actors.filter((actor) => actor.authorizationEnv !== void 0).length : 0;
   const expectedRequests = identityCount * 2 + parsedCases.reduce((sum, entry) => sum + 2 + entry.deny.length, 0);
@@ -232120,6 +232252,136 @@ function parseApiPolicy(input) {
   };
   return { policy, baseUrl, cases: parsedCases, identities, expectedRequests, legacy: version === API_POLICY_LEGACY_VERSION };
 }
+var PREFLIGHT_LIMITATIONS = [
+  "Configuration only: no requests or DNS lookups were made; no scan findings or security verdict exist.",
+  "Indexes refer to the input arrays; target URLs, paths, caller identifiers, environment names and assertion values are omitted.",
+  "Runtime must revalidate credentials, DNS answers, pinned connections, responses, principal identity and owner controls.",
+  "The logical GET plan includes before/after controls; failed controls or cancellation may skip steps. Address retries share the HTTP attempt cap.",
+  "GET-only does not establish that an application route has no side effects. Use only explicitly authorized synthetic resources.",
+  "No target discovery, write requests, fuzzing, response-schema validation or whole-service security coverage."
+];
+function blockedApiPreflight(code, location2, message) {
+  return {
+    version: 1,
+    kind: "api-preflight",
+    status: "blocked",
+    execution: "not_run",
+    networkRequests: 0,
+    dnsLookups: 0,
+    policyVersion: null,
+    issues: [{ code, location: location2, message }],
+    plan: null,
+    limitations: [...PREFLIGHT_LIMITATIONS]
+  };
+}
+var ApiPreparationError = class extends Error {
+  issue;
+  constructor(issue2) {
+    super(issue2.message);
+    this.issue = issue2;
+  }
+};
+function preparationError(code, location2, message) {
+  throw new ApiPreparationError({ code, location: location2, message });
+}
+function prepareApiRun(options) {
+  if (!isRecord(options))
+    preparationError("invalid_options", "options", "Provide a plain API run options object.");
+  const proto = Object.getPrototypeOf(options);
+  const descriptors = Object.getOwnPropertyDescriptors(options);
+  if (proto !== Object.prototype && proto !== null || Object.getOwnPropertySymbols(options).length || Object.keys(descriptors).some((key2) => !["policy", "allowPrivate", "timeoutMs", "env", "signal"].includes(key2)) || Object.values(descriptors).some((value) => !("value" in value) || !value.enumerable)) {
+    preparationError("invalid_options", "options", "Use only documented data properties; accessors and custom objects are unsupported.");
+  }
+  if (options.signal !== void 0 && (types2.isProxy(options.signal) || !(options.signal instanceof AbortSignal)))
+    preparationError("invalid_options", "signal", "signal must be an AbortSignal.");
+  if (options.allowPrivate !== void 0 && typeof options.allowPrivate !== "boolean")
+    preparationError("invalid_options", "allowPrivate", "allowPrivate must be boolean.");
+  const timeoutMs = options.timeoutMs === void 0 ? API_DEFAULT_TIMEOUT_MS : options.timeoutMs;
+  if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > API_MAX_TIMEOUT_MS)
+    preparationError("invalid_options", "timeoutMs", `Set timeoutMs between 1 and ${API_MAX_TIMEOUT_MS}.`);
+  let parsed;
+  try {
+    parsed = parseApiPolicy(options.policy);
+  } catch (error) {
+    preparationError("invalid_policy", error instanceof ApiPolicyError ? error.location : "policy", error instanceof ApiPolicyError ? error.message : "Provide a valid bounded API policy JSON object.");
+  }
+  const env = options.env === void 0 ? process.env : options.env;
+  if (!env || typeof env !== "object" || types2.isProxy(env) || Array.isArray(env))
+    preparationError("invalid_environment", "env", "Provide an environment object with data properties.");
+  const principals = /* @__PURE__ */ new Set();
+  parsed.policy.actors.forEach((actor, actorIndex) => {
+    if (!actor.identity)
+      return;
+    if (principals.has(actor.identity.equals))
+      preparationError("duplicate_principal", `policy.actors[${actorIndex}].identity.equals`, "Distinct authenticated actors require distinct expected principal markers; organization markers may be shared.");
+    principals.add(actor.identity.equals);
+  });
+  const credentials = resolveCredentials(parsed, env);
+  if (parsed.baseUrl.protocol === "http:" && credentials.hasAuthenticatedActor && !(options.allowPrivate === true && isLoopbackHostname(parsed.baseUrl.hostname))) {
+    preparationError("insecure_authenticated_transport", "policy.baseUrl", "Use HTTPS for authenticated targets; HTTP is limited to explicit private loopback fixtures.");
+  }
+  return { parsed, credentials, timeoutMs };
+}
+function preflightApiPolicy(options) {
+  try {
+    const { parsed, timeoutMs } = prepareApiRun(options);
+    const issues = [];
+    if (parsed.legacy)
+      issues.push({ code: "legacy_policy", location: "policy.version", message: "Migrate to version 2 with identity and protected-canary assertions; version 1 cannot establish a clean authorization result." });
+    if (options.signal && Object.getOwnPropertyDescriptor(AbortSignal.prototype, "aborted").get.call(options.signal))
+      issues.push({ code: "cancelled", location: "signal", message: "The supplied cancellation signal is already aborted." });
+    try {
+      validateStaticTarget(parsed.baseUrl, options.allowPrivate === true);
+    } catch {
+      issues.push({ code: "blocked_target", location: "policy.baseUrl", message: "The target violates static network policy; metadata and forbidden ranges stay blocked even with allowPrivate." });
+    }
+    const steps = [];
+    const indexes = new Map(parsed.policy.actors.map((actor, index) => [actor.id, index]));
+    const add2 = (phase, actor, caseIndex) => {
+      steps.push({ ordinal: steps.length, method: "GET", phase, actorIndex: indexes.get(actor), ...caseIndex === void 0 ? {} : { caseIndex } });
+    };
+    if (!parsed.legacy) {
+      for (const actor of parsed.policy.actors)
+        if (actor.identity)
+          add2("identity-before", actor.id);
+    }
+    parsed.cases.forEach((entry, caseIndex) => {
+      add2("owner-before", entry.allow.actor, caseIndex);
+      for (const deny of entry.deny)
+        add2("deny", deny.actor, caseIndex);
+      add2("owner-after", entry.allow.actor, caseIndex);
+    });
+    if (!parsed.legacy) {
+      for (const actor of parsed.policy.actors)
+        if (actor.identity)
+          add2("identity-after", actor.id);
+    }
+    return {
+      version: 1,
+      kind: "api-preflight",
+      status: issues.length ? "blocked" : "ready",
+      execution: "not_run",
+      networkRequests: 0,
+      dnsLookups: 0,
+      policyVersion: parsed.policy.version,
+      issues,
+      plan: {
+        actorCount: parsed.policy.actors.length,
+        caseCount: parsed.cases.length,
+        logicalRequests: parsed.expectedRequests,
+        maximumHttpAttempts: API_MAX_REQUESTS,
+        timeoutMs,
+        maximumResponseBytes: API_MAX_SINGLE_BODY_BYTES,
+        maximumTotalResponseBytes: API_MAX_TOTAL_BODY_BYTES,
+        allowPrivate: options.allowPrivate === true,
+        steps
+      },
+      limitations: [...PREFLIGHT_LIMITATIONS]
+    };
+  } catch (error) {
+    return error instanceof ApiPreparationError ? blockedApiPreflight(error.issue.code, error.issue.location, error.issue.message) : blockedApiPreflight("invalid_options", "options", "Could not validate the supplied configuration data.");
+  }
+}
 function codeOf2(error) {
   if (error instanceof UrlNetworkError)
     return error.code;
@@ -232137,7 +232399,7 @@ function validAuthorization(value) {
     return false;
   for (const character of value) {
     const code = character.charCodeAt(0);
-    if (code < 32 || code === 127)
+    if (code < 32 || code === 127 || code > 255)
       return false;
   }
   return true;
@@ -232146,15 +232408,17 @@ function resolveCredentials(parsed, env) {
   const values = /* @__PURE__ */ new Map();
   const seenValues = /* @__PURE__ */ new Set();
   let hasAuthenticatedActor = false;
-  for (const actor of parsed.policy.actors) {
+  for (const [actorIndex, actor] of parsed.policy.actors.entries()) {
     if (actor.authorizationEnv === void 0)
       continue;
     hasAuthenticatedActor = true;
-    const value = Object.prototype.hasOwnProperty.call(env, actor.authorizationEnv) ? env[actor.authorizationEnv] : void 0;
+    const descriptor = Object.getOwnPropertyDescriptor(env, actor.authorizationEnv);
+    const value = descriptor && "value" in descriptor ? descriptor.value : void 0;
+    const location2 = `policy.actors[${actorIndex}].authorizationEnv`;
     if (!validAuthorization(value))
-      invalid("an authorization environment variable is missing or invalid");
+      preparationError("invalid_credentials", location2, "Set the referenced environment variable to a non-empty valid HTTP header value; accessors and inherited values are unsupported.");
     if (seenValues.has(value))
-      invalid("authorization credentials must resolve to distinct values");
+      preparationError("duplicate_credentials", location2, "The referenced authorization value must differ from every other authenticated actor.");
     seenValues.add(value);
     values.set(actor.id, value);
   }
@@ -232527,36 +232791,13 @@ function errorCheck3(code, note, metrics = {}) {
 }
 async function runApiPolicy(options) {
   const startedAt = performance.now();
-  if (!isRecord(options))
-    return [errorCheck3("invalid_options", "API policy options are invalid.")];
-  if (options.signal !== void 0 && !(options.signal instanceof AbortSignal)) {
-    return [errorCheck3("invalid_options", "signal must be an AbortSignal.")];
-  }
-  if (hasOwn(options, "allowPrivate") && options.allowPrivate !== void 0 && typeof options.allowPrivate !== "boolean") {
-    return [errorCheck3("invalid_options", "allowPrivate must be boolean.")];
-  }
-  const timeoutMs = options.timeoutMs === void 0 ? API_DEFAULT_TIMEOUT_MS : options.timeoutMs;
-  if (typeof timeoutMs !== "number" || !Number.isSafeInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > API_MAX_TIMEOUT_MS) {
-    return [errorCheck3("invalid_options", `timeoutMs must be between 1 and ${API_MAX_TIMEOUT_MS}.`)];
-  }
-  let parsed;
+  let prepared;
   try {
-    parsed = parseApiPolicy(options.policy);
+    prepared = prepareApiRun(options);
   } catch (error) {
-    return [errorCheck3(codeOf2(error), "API policy could not be validated; no requests were made.")];
+    return [errorCheck3(error instanceof ApiPreparationError ? ["invalid_credentials", "duplicate_credentials"].includes(error.issue.code) ? "invalid_policy" : error.issue.code : "invalid_options", error instanceof ApiPreparationError ? `${error.issue.message} Validation failed; no requests were made.` : "API options could not be validated; no requests were made.")];
   }
-  const env = options.env === void 0 ? process.env : options.env;
-  if (!env || typeof env !== "object")
-    return [errorCheck3("invalid_environment", "API authorization environment is invalid; no requests were made.")];
-  let credentials;
-  try {
-    credentials = resolveCredentials(parsed, env);
-  } catch (error) {
-    return [errorCheck3(codeOf2(error), "API authorization credentials are missing or invalid; no requests were made.")];
-  }
-  if (parsed.baseUrl.protocol === "http:" && credentials.hasAuthenticatedActor && !(options.allowPrivate === true && isLoopbackHostname(parsed.baseUrl.hostname))) {
-    return [errorCheck3("insecure_authenticated_transport", "Authenticated API policies require HTTPS; HTTP is allowed only for an explicit private loopback fixture.")];
-  }
+  const { parsed, credentials, timeoutMs } = prepared;
   const notes = [API_SCOPE_NOTE];
   const findings = [];
   const controller = createApiRunControl(timeoutMs, options.signal);
@@ -233345,6 +233586,386 @@ async function ensureParentDirectories(file) {
   }
 }
 
+// build/src/openapi.js
+import { types as types3 } from "node:util";
+var OPENAPI_MAX_DEPTH = JSON_MAX_DEPTH;
+var OPENAPI_MAX_REFERENCES = 256;
+var OPENAPI_MAX_PATHS = 1e3;
+var OPENAPI_MAX_PARAMETERS = 32;
+var OpenApiPolicyError = class extends Error {
+  location = "input";
+  code;
+  constructor(code, message) {
+    super(message);
+    this.name = "OpenApiPolicyError";
+    this.code = code;
+  }
+};
+function inputLocation(location2, read) {
+  try {
+    return read();
+  } catch (error) {
+    if (error instanceof OpenApiPolicyError && error.location === "input")
+      error.location = location2;
+    throw error;
+  }
+}
+function invalid2(message = "OpenAPI policy input is invalid.") {
+  throw new OpenApiPolicyError("invalid_openapi_policy", message);
+}
+function unsupported(message = "The selected OpenAPI feature is unsupported.") {
+  throw new OpenApiPolicyError("unsupported_openapi", message);
+}
+function limit() {
+  throw new OpenApiPolicyError("openapi_limit", "OpenAPI compilation budget exceeded.");
+}
+function record3(value) {
+  return value !== null && typeof value === "object" && !types3.isProxy(value) && !Array.isArray(value);
+}
+function own2(value, key2) {
+  return Object.prototype.hasOwnProperty.call(value, key2);
+}
+function keys(value, required, optional = []) {
+  if (required.some((key2) => !own2(value, key2)) || Object.keys(value).some((key2) => !required.includes(key2) && !optional.includes(key2)))
+    invalid2();
+}
+function identifier(value) {
+  if (typeof value !== "string" || !/^[A-Za-z][A-Za-z0-9_-]{0,63}$/.test(value))
+    invalid2();
+  return value;
+}
+function references(document) {
+  let referenceCount = 0;
+  const targets = /* @__PURE__ */ new WeakMap();
+  const pointer = (ref) => {
+    if (typeof ref !== "string" || ref.length > 512 || !ref.startsWith("#/") || ref.includes("%"))
+      unsupported();
+    let current = document;
+    for (const encoded of ref.slice(2).split("/")) {
+      if (/~(?![01])/.test(encoded))
+        invalid2();
+      const part = encoded.replace(/~1/g, "/").replace(/~0/g, "~");
+      if (Array.isArray(current)) {
+        if (!/^(0|[1-9][0-9]*)$/.test(part) || !Number.isSafeInteger(Number(part)) || Number(part) >= current.length)
+          invalid2();
+        current = current[Number(part)];
+      } else {
+        if (!record3(current) || !own2(current, part))
+          invalid2();
+        current = current[part];
+      }
+    }
+    if (!record3(current))
+      invalid2();
+    return current;
+  };
+  const active = /* @__PURE__ */ new Set(), done = /* @__PURE__ */ new Set();
+  const visit = (value, depth) => {
+    if (value === null || typeof value !== "object")
+      return;
+    if (depth > OPENAPI_MAX_DEPTH)
+      limit();
+    if (active.has(value))
+      invalid2("Cyclic OpenAPI references are unsupported.");
+    if (done.has(value))
+      return;
+    active.add(value);
+    if (record3(value) && own2(value, "$ref")) {
+      if (++referenceCount > OPENAPI_MAX_REFERENCES)
+        limit();
+      if (Object.keys(value).length !== 1)
+        unsupported("OpenAPI reference siblings are unsupported.");
+      const target = pointer(value.$ref);
+      targets.set(value, target);
+      visit(target, depth + 1);
+    } else {
+      for (const child of Object.values(value))
+        visit(child, depth + 1);
+    }
+    active.delete(value);
+    done.add(value);
+  };
+  visit(document, 0);
+  return (value) => {
+    let depth = 0;
+    while (record3(value) && own2(value, "$ref")) {
+      if (++depth > OPENAPI_MAX_DEPTH)
+        limit();
+      value = targets.get(value);
+    }
+    if (!record3(value))
+      invalid2();
+    return value;
+  };
+}
+function pathParts(value) {
+  if (typeof value !== "string" || value.length > 2048 || !value.startsWith("/") || value.startsWith("//"))
+    invalid2();
+  const parts = value.slice(1).split("/");
+  for (let i = 0; i < parts.length; i++) {
+    const part = parts[i];
+    if (part === "" && i === parts.length - 1)
+      continue;
+    if (/^\{[A-Za-z][A-Za-z0-9_-]{0,63}\}$/.test(part))
+      continue;
+    if (!/^[A-Za-z0-9_.~-]+$/.test(part) || part === "." || part === "..")
+      unsupported("Only simple absolute OpenAPI path templates are supported.");
+  }
+  return parts;
+}
+function parameterName(value) {
+  if (typeof value !== "string" || value.length < 1 || value.length > 128 || /[\x00-\x20\x7f]/.test(value))
+    invalid2();
+  return value;
+}
+function parameters(path, operation, resolve12) {
+  const merged = /* @__PURE__ */ new Map();
+  for (const container of [path, operation]) {
+    if (!own2(container, "parameters"))
+      continue;
+    if (!Array.isArray(container.parameters) || container.parameters.length > OPENAPI_MAX_PARAMETERS)
+      invalid2();
+    const seen = /* @__PURE__ */ new Set();
+    for (const item of container.parameters) {
+      const parameter = resolve12(item);
+      const name = parameterName(parameter.name);
+      if (!["path", "query", "header", "cookie"].includes(parameter.in))
+        invalid2();
+      if (own2(parameter, "required") && typeof parameter.required !== "boolean")
+        invalid2();
+      const key2 = `${parameter.in}:${name}`;
+      if (seen.has(key2))
+        invalid2();
+      seen.add(key2);
+      merged.set(key2, parameter);
+    }
+  }
+  if (merged.size > OPENAPI_MAX_PARAMETERS)
+    limit();
+  return merged;
+}
+function bind(parameter, value, resolve12) {
+  if (parameter.required !== true || own2(parameter, "content") || own2(parameter, "style") && parameter.style !== "simple" || own2(parameter, "explode") && parameter.explode !== false || own2(parameter, "allowReserved") && parameter.allowReserved !== false)
+    unsupported();
+  const schema2 = resolve12(parameter.schema);
+  keys(schema2, ["type"], ["enum", "title", "description", "example", "examples", "default", "deprecated"]);
+  if (!["string", "integer", "number", "boolean"].includes(schema2.type))
+    unsupported();
+  const typeMatches = schema2.type === "integer" ? typeof value === "number" && Number.isSafeInteger(value) : typeof value === schema2.type;
+  if (!typeMatches || value === null || typeof value === "number" && !Number.isFinite(value))
+    invalid2();
+  if (own2(schema2, "enum")) {
+    if (!Array.isArray(schema2.enum) || schema2.enum.length < 1 || schema2.enum.length > 128 || schema2.enum.some((entry) => entry !== null && !["string", "number", "boolean"].includes(typeof entry)) || !schema2.enum.includes(value))
+      invalid2();
+  }
+  const text2 = String(value);
+  if (text2.length < 1 || text2.length > 128 || !/^[A-Za-z0-9_~-][A-Za-z0-9_.~-]*$/.test(text2))
+    invalid2("Path bindings must be short synthetic URL-safe segments.");
+  return text2;
+}
+function buildOpenApiPolicy(input) {
+  const copied = snapshotJsonData(input, () => invalid2(), limit);
+  if (!record3(copied))
+    invalid2();
+  keys(copied, ["document", "baseUrl", "actors", "operations", "cases"]);
+  const document = copied.document;
+  if (!record3(document) || typeof document.openapi !== "string" || !/^3\.(0|1)\.[0-9]+$/.test(document.openapi) || !record3(document.paths))
+    unsupported();
+  const resolve12 = references(document);
+  const documentedPaths = document.paths;
+  const paths = Object.keys(documentedPaths).filter((key2) => !key2.startsWith("x-"));
+  if (paths.length === 0 || paths.length > OPENAPI_MAX_PATHS)
+    limit();
+  const templates = new Map(paths.map((path) => [path, pathParts(path)]));
+  if (typeof copied.baseUrl !== "string" || copied.baseUrl.includes("?") || copied.baseUrl.includes("#"))
+    invalid2();
+  try {
+    const base = new URL(copied.baseUrl);
+    if (!["http:", "https:"].includes(base.protocol) || base.pathname !== "/" || base.username || base.password)
+      invalid2();
+  } catch {
+    invalid2("An explicit HTTP(S) origin is required.");
+  }
+  if (!Array.isArray(copied.operations) || copied.operations.length < 1 || copied.operations.length > API_MAX_REQUESTS)
+    invalid2();
+  const baseUrl = copied.baseUrl;
+  const selected = /* @__PURE__ */ new Map(), concrete = /* @__PURE__ */ new Set();
+  copied.operations.forEach((value, index) => inputLocation(`input.operations[${index}]`, () => {
+    if (!record3(value))
+      invalid2();
+    keys(value, ["id", "path", "method"], ["operationId", "pathParameters"]);
+    const id = identifier(value.id);
+    if (selected.has(id) || value.method !== "GET" || typeof value.path !== "string" || !templates.has(value.path) || !own2(documentedPaths, value.path))
+      invalid2();
+    const parts = templates.get(value.path);
+    const pathItem = resolve12(documentedPaths[value.path]);
+    if (!own2(pathItem, "get") || !record3(pathItem.get) || own2(pathItem.get, "$ref"))
+      unsupported();
+    const operation = pathItem.get;
+    if (own2(operation, "requestBody") || own2(operation, "callbacks"))
+      unsupported();
+    if (own2(value, "operationId") && (typeof value.operationId !== "string" || value.operationId.length < 1 || value.operationId.length > 128 || value.operationId !== operation.operationId))
+      invalid2();
+    const bindings = own2(value, "pathParameters") ? value.pathParameters : /* @__PURE__ */ Object.create(null);
+    if (!record3(bindings))
+      invalid2();
+    const names = new Set(parts.filter((part) => part.startsWith("{")).map((part) => part.slice(1, -1)));
+    if (Object.keys(bindings).length !== names.size || Object.keys(bindings).some((name) => !names.has(name)))
+      invalid2();
+    const parametersByName = parameters(pathItem, operation, resolve12);
+    const bound = /* @__PURE__ */ new Map();
+    for (const parameter of parametersByName.values()) {
+      if (parameter.in !== "path") {
+        if (parameter.required === true)
+          unsupported();
+        continue;
+      }
+      const name = parameter.name;
+      if (!names.has(name) || !own2(bindings, name))
+        invalid2();
+      bound.set(name, bind(parameter, bindings[name], resolve12));
+    }
+    if (bound.size !== names.size)
+      invalid2();
+    const rendered = `/${parts.map((part) => part.startsWith("{") ? bound.get(part.slice(1, -1)) : part).join("/")}`;
+    if (rendered.length > 2048 || new URL(rendered, baseUrl).pathname !== rendered || concrete.has(rendered))
+      invalid2();
+    const renderedParts = rendered.slice(1).split("/");
+    for (const [otherPath, otherParts] of templates) {
+      if (otherPath !== value.path && otherParts.length === renderedParts.length && otherParts.every((part, i) => part.startsWith("{") || part === renderedParts[i]))
+        invalid2("An OpenAPI path binding is ambiguous.");
+    }
+    selected.set(id, rendered);
+    concrete.add(rendered);
+  }));
+  if (!Array.isArray(copied.cases))
+    invalid2();
+  const cases = copied.cases.map((value, index) => inputLocation(`input.cases[${index}]`, () => {
+    if (!record3(value))
+      invalid2();
+    keys(value, ["id", "operation", "allow", "deny"]);
+    const operation = identifier(value.operation);
+    const path = selected.get(operation);
+    if (path === void 0)
+      invalid2();
+    return { id: value.id, path, allow: value.allow, deny: value.deny };
+  }));
+  let parsed;
+  try {
+    parsed = parseApiPolicy({ version: 2, baseUrl: copied.baseUrl, actors: copied.actors, cases });
+  } catch (error) {
+    if (error instanceof ApiPolicyError) {
+      const translated = new OpenApiPolicyError("invalid_openapi_policy", error.message);
+      translated.location = error.location.replace(/^policy/, "input");
+      throw translated;
+    }
+    throw error;
+  }
+  if (parsed.policy.version !== 2)
+    invalid2();
+  for (const [index, actor] of parsed.policy.actors.entries()) {
+    if (actor.identity && !concrete.has(actor.identity.path))
+      inputLocation(`input.actors[${index}].identity.path`, () => invalid2("Identity controls must be explicitly allowlisted GET paths."));
+  }
+  return parsed.policy;
+}
+var SCOPE_NOTE2 = "OpenAPI adapter uses only explicit synthetic GET selections and caller assertions; it does not discover targets, generate payloads, validate response schemas, or establish whole-API coverage.";
+function prepareOpenApiPolicy(options) {
+  if (!record3(options))
+    invalid2();
+  const prototype = Object.getPrototypeOf(options);
+  if (prototype !== Object.prototype && prototype !== null || Object.getOwnPropertySymbols(options).length !== 0)
+    invalid2();
+  keys(options, ["input"], ["allowPrivate", "timeoutMs", "env", "signal"]);
+  if (Object.values(Object.getOwnPropertyDescriptors(options)).some((descriptor) => !("value" in descriptor) || !descriptor.enumerable))
+    invalid2();
+  return buildOpenApiPolicy(options.input);
+}
+function preflightOpenApiPolicy(options) {
+  try {
+    const policy = prepareOpenApiPolicy(options);
+    const result2 = preflightApiPolicy({ policy, allowPrivate: options.allowPrivate, timeoutMs: options.timeoutMs, env: options.env, signal: options.signal });
+    result2.limitations.unshift(SCOPE_NOTE2);
+    return result2;
+  } catch (error) {
+    const result2 = preflightApiPolicy({ policy: null });
+    result2.issues = [{
+      code: error instanceof OpenApiPolicyError ? error.code : "invalid_openapi_policy",
+      location: error instanceof OpenApiPolicyError ? error.location : "input",
+      message: error instanceof OpenApiPolicyError ? error.message : "Provide a valid bounded OpenAPI input with explicit GET selections and bindings."
+    }];
+    result2.limitations.unshift(SCOPE_NOTE2);
+    return result2;
+  }
+}
+
+// build/src/plan.js
+var USAGE = `Usage:
+  wakeio-security-ci plan --api-policy FILE [--allow-private] [--timeout-ms N]
+  wakeio-security-ci plan --openapi-input FILE [--allow-private] [--timeout-ms N]
+
+Validate local JSON and print a redacted GET plan without DNS, HTTP or scan reports.
+Use exactly one input. Timeout is 1..120000 ms. Exit 0 means configuration ready;
+exit 2 means blocked. Neither exit is a security result or permission to scan.
+`;
+function failure(code, location2, message) {
+  const result2 = preflightApiPolicy({ policy: null });
+  result2.issues = [{ code, location: location2, message }];
+  return result2;
+}
+async function planMain(argv) {
+  if (argv.length === 2 && ["--help", "-h"].includes(argv[1])) {
+    process.stdout.write(USAGE);
+    return 0;
+  }
+  let kind, file;
+  let allowPrivate = false, timeoutMs, result2;
+  const seen = /* @__PURE__ */ new Set();
+  try {
+    for (let index = 1; index < argv.length; index++) {
+      const [flag, ...assigned] = argv[index].split("=");
+      if (!["--api-policy", "--openapi-input", "--allow-private", "--timeout-ms"].includes(flag) || seen.has(flag))
+        throw Error("usage");
+      seen.add(flag);
+      if (flag === "--allow-private") {
+        if (assigned.length)
+          throw Error("usage");
+        allowPrivate = true;
+      } else {
+        const value = assigned.length ? assigned.join("=") : argv[++index];
+        if (!value || value.startsWith("-"))
+          throw Error("usage");
+        if (flag === "--timeout-ms") {
+          if (!/^\d+$/.test(value))
+            throw Error("usage");
+          timeoutMs = Number(value);
+          if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > API_MAX_TIMEOUT_MS)
+            throw Error("usage");
+        } else {
+          if (kind)
+            throw Error("usage");
+          kind = flag;
+          file = value;
+        }
+      }
+    }
+    if (!kind || !file)
+      throw Error("usage");
+  } catch {
+    result2 = failure("invalid_arguments", "arguments", "Use plan with exactly one --api-policy or --openapi-input file; optional --allow-private and --timeout-ms (1..120000).");
+    process.stdout.write(JSON.stringify(result2, null, 2) + "\n");
+    return 2;
+  }
+  try {
+    const input = await readJsonInput(file, 1024 * 1024);
+    result2 = kind === "--api-policy" ? preflightApiPolicy({ policy: input, allowPrivate, timeoutMs }) : preflightOpenApiPolicy({ input, allowPrivate, timeoutMs });
+  } catch {
+    result2 = failure("invalid_input_file", "input", "Use a readable, stable regular JSON file no larger than 1 MiB; symlinks and non-file inputs are unsupported.");
+  }
+  process.stdout.write(JSON.stringify(result2, null, 2) + "\n");
+  return result2.status === "ready" ? 0 : 2;
+}
+
 // build/src/repair.js
 import { dirname as dirname7, join as join9, relative as relative7, resolve as resolve10, sep as sep5 } from "node:path";
 import { constants as constants6 } from "node:fs";
@@ -233516,8 +234137,8 @@ var digest2 = (data) => createHash6("sha256").update(data).digest("hex");
 var SHA = /^[a-f0-9]{64}$/;
 var inside = (root, path) => path === root || path.startsWith(root.endsWith(sep5) ? root : root + sep5);
 var object3 = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
-function exact(v, keys) {
-  if (!object3(v) || Object.keys(v).length !== keys.length || keys.some((k) => !Object.hasOwn(v, k)))
+function exact(v, keys2) {
+  if (!object3(v) || Object.keys(v).length !== keys2.length || keys2.some((k) => !Object.hasOwn(v, k)))
     throw new Error("invalid");
 }
 async function readBounded(path, cap = 128 * 1024) {
@@ -233865,11 +234486,12 @@ var CliUsageError = class extends Error {
     this.name = "CliUsageError";
   }
 };
-var USAGE = `Usage:
+var USAGE2 = `Usage:
   wakeio-security-ci scan --source DIR [options]
   wakeio-security-ci scan --url URL [options]
   wakeio-security-ci scan --source DIR --url URL [options]
   wakeio-security-ci scan --api-policy policy.json [options]
+  wakeio-security-ci plan --api-policy FILE | --openapi-input FILE [--allow-private] [--timeout-ms N]
   wakeio-security-ci compare --before report.json --after report.json --out DIR [--fail-on LEVEL]
   wakeio-security-ci doctor [--source DIR] [--tools ...] [--json] [--strict]
   wakeio-security-ci init [--source DIR] [--workflow FILE] [--out DIR] [--tools ...]
@@ -234126,6 +234748,8 @@ async function declaredScope(options, apiPolicy) {
   });
 }
 async function main(argv = process.argv.slice(2)) {
+  if (argv[0] === "plan")
+    return planMain(argv);
   if (argv[0] === "compare")
     return runComparison(argv);
   if (argv[0] === "doctor")
@@ -234141,11 +234765,11 @@ async function main(argv = process.argv.slice(2)) {
     const message = error instanceof CliUsageError ? error.message : "invalid command line";
     process.stderr.write(`Error: ${message}
 
-${USAGE}`);
+${USAGE2}`);
     return 2;
   }
   if ("help" in parsed) {
-    process.stdout.write(USAGE);
+    process.stdout.write(USAGE2);
     return 0;
   }
   const controller = new AbortController();
@@ -234263,7 +234887,7 @@ if (process.argv[1] && canonicalFile(process.argv[1]) === canonicalFile(fileURLT
 }
 export {
   CliUsageError,
-  USAGE,
+  USAGE2 as USAGE,
   main,
   parseCliArgs,
   parseCompareArgs

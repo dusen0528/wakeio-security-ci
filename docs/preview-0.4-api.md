@@ -1,6 +1,66 @@
 # 0.4 API authorization preview
 
-이 문서는 2026-09-16 기준 API 권한 preview 사용법이다. 무료 OSS CLI는 사용자가 지정한 합성 fixture에 제한된 GET 요청만 보내며, 소스 업로드·LLM 호출·결제·외부 target 탐색을 하지 않는다.
+이 문서는 API 권한 preview와 2026-10-06에 추가한 zero-network preflight 사용법이다. `plan`은 로컬 설정만 확인한다. 별도의 API 실행은 사용자가 지정한 합성 fixture에 제한된 GET 요청만 보내며, 소스 업로드·LLM 호출·결제·외부 target 탐색을 하지 않는다.
+
+## Zero-network staging preflight
+
+현재 checkout을 빌드한 뒤 `plan`으로 실행 준비 상태를 확인한다. 아래 OpenAPI 예제는 문서·GET 허용 목록·path binding·actor·canary를 모두 담은 **합성 설정**이며 `https://staging.example.invalid`는 실제 대상이 아니다. 이 명령은 네트워크에 연결하지 않는다.
+
+```sh
+npm run build
+WAKEIO_OWNER_AUTH='Bearer synthetic-owner' \
+WAKEIO_OTHER_AUTH='Bearer synthetic-other' \
+node build/src/cli.js plan --openapi-input examples/openapi-preflight-input.json
+
+# 기존 loopback API 정책도 서버를 시작하지 않고 확인할 수 있다.
+WAKEIO_OWNER_AUTH='Bearer synthetic-owner' \
+WAKEIO_OTHER_AUTH='Bearer synthetic-other' \
+node build/src/cli.js plan \
+  --api-policy examples/api-authorization-policy.json \
+  --allow-private --timeout-ms 5000
+```
+
+- `--api-policy FILE` 또는 `--openapi-input FILE` 중 하나만 사용한다. OpenAPI 입력은 원본 schema 파일만이 아니라 [전체 wrapper JSON](../examples/openapi-preflight-input.json)이다.
+- 선택 옵션은 `--allow-private`, `--timeout-ms N`이다. timeout은 1..120000 ms, 기본 30000 ms다. 계획에 표시할 실행 시간 예산이며 실제 실행에는 옵션을 별도로 전달한다. `--out`, `--tools`, `--url` 등 scan 옵션을 섞지 않는다.
+- 입력은 1 MiB 이하의 읽을 수 있는 일반 JSON 파일이다. symlink나 FIFO 같은 비파일 입력은 지원하지 않는다. 원격 schema나 YAML을 읽지 않는다.
+- 결과와 설정 오류는 stdout의 JSON이다. 종료 코드 `0`은 설정 `ready`, `2`는 `blocked`이며 `1`로 finding을 보고하지 않는다. DNS 조회·HTTP 요청·서버 시작·scan 보고서 작성은 없다. `plan --help`는 사용법 텍스트를 출력한다.
+
+### 결과 읽기와 오류 수정
+
+SDK와 CLI는 같은 `version: 1`, `kind: "api-preflight"` 결과를 사용한다. `status`는 `ready` 또는 `blocked`, `execution`은 항상 `not_run`, `networkRequests`와 `dnsLookups`는 항상 `0`이다. 고정된 `issues[].code`·`message`와 구조상의 `location`으로 설정 문제를 찾는다. 유효한 계획을 만들 수 없으면 `plan`은 `null`이며, 계획이 있어도 차단 사유가 있으면 실행 준비가 된 것이 아니다.
+
+`plan.steps`는 0부터 시작하는 `ordinal`, `method: "GET"`, `phase`, `actorIndex`, 필요한 경우 `caseIndex`를 담는다. `actorIndex`와 `caseIndex`도 입력의 `actors`·`cases` 배열을 가리키는 0-based index이며 OpenAPI `operations` 배열 index가 아니다. identity-before → case별 owner-before·deny·owner-after → identity-after 순서다. 예제는 identity 4회, owner 2회, deny 2회로 `logicalRequests: 8`이다.
+
+`maximumHttpAttempts: 64`는 실제 실행에서 주소 재시도까지 공유하는 상한이며 64회 요청을 보내겠다는 뜻이 아니다. `timeoutMs`, `maximumResponseBytes`, `maximumTotalResponseBytes`, `allowPrivate`와 actor/case 수도 함께 표시한다. 실패한 control이나 취소로 일부 단계가 생략될 수 있어 논리 계획은 실제 요청 수를 보장하지 않는다.
+
+출력에는 대상 URL·요청 경로·actor/case ID·환경변수 이름·principal/resource/canary 값·credential 값이 없다. 원본 입력은 사용자가 로컬에서 대조한다. 예를 들어 `policy.actors[1].authorizationEnv`의 `invalid_credentials`는 두 번째 actor의 `authorizationEnv`를 원본에서 확인하고 해당 환경변수를 설정하라는 뜻이다. OpenAPI 입력에서도 `actors[1]`을 확인한다. 같은 credential 값은 서로 다른 환경변수 이름으로 설정해도 `duplicate_credentials`로 차단한다. `duplicate_principal`은 각 authenticated actor의 기대 principal이 같다는 뜻이며, 서로 다른 principal이 같은 organization marker를 공유하는 것은 허용한다. 이것은 선언값 검사일 뿐 실제 계정 구분을 입증하지 않는다.
+
+### SDK
+
+```js
+import { readFile } from 'node:fs/promises';
+import { preflightApiPolicy, preflightOpenApiPolicy } from './build/src/index.js';
+
+const input = JSON.parse(await readFile('examples/openapi-preflight-input.json', 'utf8'));
+const env = {
+  WAKEIO_OWNER_AUTH: 'Bearer synthetic-owner',
+  WAKEIO_OTHER_AUTH: 'Bearer synthetic-other',
+};
+const result = preflightOpenApiPolicy({ input, env, timeoutMs: 5000 });
+console.log(JSON.stringify(result, null, 2));
+
+// 기존 API 정책: preflightApiPolicy({ policy, env, allowPrivate, timeoutMs })
+// env를 생략하면 process.env를 사용한다. 두 함수 모두 동기식이며 요청하지 않는다.
+```
+
+### 실행 전에 사용자가 확인할 것
+
+1. 실제 staging origin과 identity/resource endpoint 각각의 실행 권한을 확인한다. OpenAPI 문서나 `ready`가 실행 승인을 대신하지 않는다.
+2. 전용 합성 계정, 다른 principal, 소유 관계가 명확한 합성 객체, 공개 resource ID와 구별되는 합성 canary를 준비한다. 실제 개인정보나 운영 비밀을 canary로 사용하지 않는다.
+3. allowlist의 모든 GET을 직접 검토한다. GET이어도 잘못 구현된 route는 상태를 바꾸거나 외부 동작을 일으킬 수 있으며 preflight는 부작용이 없음을 입증하지 않는다.
+4. 환경변수가 존재하고 header 형식이 맞아도 token이 유효하거나 새롭다는 뜻은 아니다. DNS 해석·주소 pinning·TLS·실제 principal·owner/deny 응답은 승인된 실행에서 다시 확인해야 한다. `--allow-private`는 metadata/금지 주소 보호를 해제하지 않는다.
+
+실제 staging 주소·계정·승인은 이 작업에 제공되지 않았고 외부 staging은 테스트하지 않았다. 위 합성 placeholder로 `ready`가 나와도 보안 통과가 아니다. 기존 API 실행 동작은 유지하며 `scan --api-policy` 또는 `runApiPolicy`/`runOpenApiPolicy`를 별도로 호출한다. `scan --openapi-input`은 지원하지 않는다.
 
 ## 합성 fixture 실행
 
@@ -71,6 +131,6 @@ node build/src/cli.js scan \
 
 SDK의 `buildOpenApiPolicy(input)`은 네트워크 없이 v2 정책을 만들고, `runOpenApiPolicy({ input, env, signal, timeoutMs, allowPrivate })`는 기존 API 실행기에 그대로 위임한다. `input`은 parsed JSON `document`, 명시적 origin `baseUrl`, v2 `actors`, GET `operations` 허용 목록, operation ID를 참조하는 `cases`를 받는다. `/whoami` 같은 identity control 경로도 목록에 넣어야 한다. 각 operation에는 정확한 문서 path template과 사용자가 제공한 단순 scalar `pathParameters`만 사용한다.
 
-OpenAPI 3.0/3.1의 제한된 부분집합이며 1 MiB/20,000-node/깊이 40/256-reference compile 예산이 있다. 같은 문서 JSON-pointer `$ref`만 해석하며 remote/file reference, 순환 reference, 모호한 경로, 필수 query/header/cookie, request body, callback, 지원하지 않는 parameter schema/serialization은 실행 전에 거부한다. `servers`, example/default, security 선언에서 주소·credential·payload를 자동으로 만들지 않는다. 응답 schema 검증이나 일반 fuzzing은 제공하지 않는다. CLI의 새 flag는 없으며 기존 `--api-policy` 입력 또는 SDK를 사용한다.
+OpenAPI 3.0/3.1의 제한된 부분집합이며 1 MiB/20,000-node/깊이 40/256-reference compile 예산이 있다. 같은 문서 JSON-pointer `$ref`만 해석하며 remote/file reference, 순환 reference, 모호한 경로, 필수 query/header/cookie, request body, callback, 지원하지 않는 parameter schema/serialization은 실행 전에 거부한다. `servers`, example/default, security 선언에서 주소·credential·payload를 자동으로 만들지 않는다. 응답 schema 검증이나 일반 fuzzing은 제공하지 않는다. CLI의 `plan --openapi-input FILE`은 네트워크 없는 준비 확인 전용이다. 실행은 기존 `scan --api-policy FILE` 또는 SDK를 사용하며 `scan --openapi-input`은 지원하지 않는다.
 
 `node examples/openapi-owned-fixture.mjs`는 새 자체 fixture를 생성해 32개의 GET으로 정상 대조군을 검사한다. `--vulnerable`은 중첩 JSON 노출 대조군을 실행하며 high finding 때문에 exit 1이 정상 기대값이다. 둘 다 종료 시 합성 객체와 서버를 정리하며 외부 target 입력은 받지 않는다.

@@ -1,6 +1,11 @@
+import { ApiPolicyError } from "./api-policy-error.js";
+import { types } from "node:util";
+import { snapshotJsonData, JSON_MAX_INPUT_BYTES, JSON_MAX_INPUT_NODES, JSON_MAX_DEPTH } from "./json-snapshot.js";
 import {
   API_MAX_REQUESTS,
   parseApiPolicy,
+  preflightApiPolicy,
+  type ApiPreflightResult,
   runApiPolicy,
   type ApiAllowExpectationV2,
   type ApiDenyExpectationV2,
@@ -10,9 +15,9 @@ import {
 import type { CheckResult } from "./contracts.js";
 
 /** Compilation is bounded independently of the existing API execution budgets. */
-export const OPENAPI_MAX_INPUT_BYTES = 1024 * 1024;
-export const OPENAPI_MAX_INPUT_NODES = 20_000;
-export const OPENAPI_MAX_DEPTH = 40;
+export const OPENAPI_MAX_INPUT_BYTES = JSON_MAX_INPUT_BYTES;
+export const OPENAPI_MAX_INPUT_NODES = JSON_MAX_INPUT_NODES;
+export const OPENAPI_MAX_DEPTH = JSON_MAX_DEPTH;
 export const OPENAPI_MAX_REFERENCES = 256;
 export const OPENAPI_MAX_PATHS = 1_000;
 export const OPENAPI_MAX_PARAMETERS = 32;
@@ -52,12 +57,18 @@ export interface OpenApiRunOptions extends Omit<ApiRunOptions, "policy"> {
 
 /** Messages and codes are fixed; untrusted schema text and values are never included. */
 export class OpenApiPolicyError extends Error {
+  location = "input";
   readonly code: "invalid_openapi_policy" | "openapi_limit" | "unsupported_openapi";
   constructor(code: OpenApiPolicyError["code"], message: string) {
     super(message);
     this.name = "OpenApiPolicyError";
     this.code = code;
   }
+}
+
+function inputLocation<T>(location: string, read: () => T): T {
+  try { return read(); }
+  catch (error) { if (error instanceof OpenApiPolicyError && error.location === 'input') error.location = location; throw error; }
 }
 
 type RecordValue = Record<string, unknown>;
@@ -69,7 +80,7 @@ function unsupported(message = "The selected OpenAPI feature is unsupported."): 
 }
 function limit(): never { throw new OpenApiPolicyError("openapi_limit", "OpenAPI compilation budget exceeded."); }
 function record(value: unknown): value is RecordValue {
-  return value !== null && typeof value === "object" && !Array.isArray(value);
+  return value !== null && typeof value === "object" && !types.isProxy(value) && !Array.isArray(value);
 }
 function own(value: RecordValue, key: string): boolean { return Object.prototype.hasOwnProperty.call(value, key); }
 function keys(value: RecordValue, required: string[], optional: string[] = []): void {
@@ -78,55 +89,6 @@ function keys(value: RecordValue, required: string[], optional: string[] = []): 
 function identifier(value: unknown): string {
   if (typeof value !== "string" || !/^[A-Za-z][A-Za-z0-9_-]{0,63}$/.test(value)) invalid();
   return value;
-}
-
-/** Snapshot data properties without invoking getters, toJSON, or caller mutation later. */
-function snapshot(input: unknown): unknown {
-  let nodes = 0, bytes = 0;
-  const active = new Set<object>();
-  const count = (value: string) => { bytes += Buffer.byteLength(value, "utf8"); if (bytes > OPENAPI_MAX_INPUT_BYTES) limit(); };
-  const string = (value: string) => { if (value.length > OPENAPI_MAX_INPUT_BYTES) limit(); count(JSON.stringify(value)); };
-  const copy = (value: unknown, depth: number): unknown => {
-    if (++nodes > OPENAPI_MAX_INPUT_NODES || depth > OPENAPI_MAX_DEPTH) limit();
-    if (value === null || typeof value === "boolean") { count(String(value)); return value; }
-    if (typeof value === "string") { string(value); return value; }
-    if (typeof value === "number") { if (!Number.isFinite(value)) invalid(); count(String(value)); return value; }
-    if (typeof value !== "object" || active.has(value)) invalid();
-    const array = Array.isArray(value);
-    const prototype = Object.getPrototypeOf(value);
-    if (array ? prototype !== Array.prototype : prototype !== Object.prototype && prototype !== null) invalid();
-    if (Object.getOwnPropertySymbols(value).length !== 0) invalid();
-    const descriptors = Object.getOwnPropertyDescriptors(value);
-    const names = Object.keys(descriptors);
-    if (names.length > OPENAPI_MAX_INPUT_NODES - nodes) limit();
-    active.add(value);
-    count("{}"); // Container delimiters have the same byte count for arrays.
-    if (array) {
-      if (value.length > OPENAPI_MAX_INPUT_NODES - nodes || names.length !== value.length + 1) invalid();
-      const result: unknown[] = [];
-      for (let i = 0; i < value.length; i++) {
-        const descriptor = descriptors[String(i)];
-        if (!descriptor || !descriptor.enumerable || !("value" in descriptor)) invalid();
-        if (i > 0) count(",");
-        result.push(copy(descriptor.value, depth + 1));
-      }
-      active.delete(value);
-      return result;
-    }
-    const result = Object.create(null) as RecordValue;
-    for (let i = 0; i < names.length; i++) {
-      const name = names[i]!;
-      const descriptor = descriptors[name]!;
-      if (!descriptor.enumerable || !("value" in descriptor)) invalid();
-      if (i > 0) count(",");
-      string(name);
-      count(":");
-      result[name] = copy(descriptor.value, depth + 1);
-    }
-    active.delete(value);
-    return result;
-  };
-  return copy(input, 0);
 }
 
 /** Resolve JSON pointers in the supplied document only. Never access a network or file. */
@@ -238,13 +200,14 @@ function bind(parameter: RecordValue, value: unknown, resolve: (value: unknown) 
 
 /** Compile only explicit synthetic GET selections into the existing v2 policy contract. */
 export function buildOpenApiPolicy(input: unknown): ApiPolicyV2 {
-  const copied = snapshot(input);
+  const copied = snapshotJsonData(input, () => invalid(), limit);
   if (!record(copied)) invalid();
   keys(copied, ["document", "baseUrl", "actors", "operations", "cases"]);
   const document = copied.document;
   if (!record(document) || typeof document.openapi !== "string" || !/^3\.(0|1)\.[0-9]+$/.test(document.openapi) || !record(document.paths)) unsupported();
   const resolve = references(document);
-  const paths = Object.keys(document.paths).filter((key) => !key.startsWith("x-"));
+  const documentedPaths = document.paths;
+  const paths = Object.keys(documentedPaths).filter((key) => !key.startsWith("x-"));
   if (paths.length === 0 || paths.length > OPENAPI_MAX_PATHS) limit();
   const templates = new Map(paths.map((path) => [path, pathParts(path)]));
   if (typeof copied.baseUrl !== "string" || copied.baseUrl.includes("?") || copied.baseUrl.includes("#")) invalid();
@@ -253,14 +216,15 @@ export function buildOpenApiPolicy(input: unknown): ApiPolicyV2 {
     if (!["http:", "https:"].includes(base.protocol) || base.pathname !== "/" || base.username || base.password) invalid();
   } catch { invalid("An explicit HTTP(S) origin is required."); }
   if (!Array.isArray(copied.operations) || copied.operations.length < 1 || copied.operations.length > API_MAX_REQUESTS) invalid();
+  const baseUrl = copied.baseUrl;
   const selected = new Map<string, string>(), concrete = new Set<string>();
-  for (const value of copied.operations) {
+  copied.operations.forEach((value, index) => inputLocation(`input.operations[${index}]`, () => {
     if (!record(value)) invalid();
     keys(value, ["id", "path", "method"], ["operationId", "pathParameters"]);
     const id = identifier(value.id);
-    if (selected.has(id) || value.method !== "GET" || typeof value.path !== "string" || !templates.has(value.path) || !own(document.paths, value.path)) invalid();
+    if (selected.has(id) || value.method !== "GET" || typeof value.path !== "string" || !templates.has(value.path) || !own(documentedPaths, value.path)) invalid();
     const parts = templates.get(value.path)!;
-    const pathItem = resolve(document.paths[value.path]);
+    const pathItem = resolve(documentedPaths[value.path]);
     if (!own(pathItem, "get") || !record(pathItem.get) || own(pathItem.get, "$ref")) unsupported();
     const operation = pathItem.get;
     if (own(operation, "requestBody") || own(operation, "callbacks")) unsupported();
@@ -279,7 +243,7 @@ export function buildOpenApiPolicy(input: unknown): ApiPolicyV2 {
     }
     if (bound.size !== names.size) invalid();
     const rendered = `/${parts.map((part) => part.startsWith("{") ? bound.get(part.slice(1, -1))! : part).join("/")}`;
-    if (rendered.length > 2048 || new URL(rendered, copied.baseUrl).pathname !== rendered || concrete.has(rendered)) invalid();
+    if (rendered.length > 2048 || new URL(rendered, baseUrl).pathname !== rendered || concrete.has(rendered)) invalid();
     // A binding must not land on a different documented static/templated operation.
     const renderedParts = rendered.slice(1).split("/");
     for (const [otherPath, otherParts] of templates) {
@@ -287,21 +251,30 @@ export function buildOpenApiPolicy(input: unknown): ApiPolicyV2 {
     }
     selected.set(id, rendered);
     concrete.add(rendered);
-  }
+  }));
   if (!Array.isArray(copied.cases)) invalid();
-  const cases = copied.cases.map((value) => {
+  const cases = copied.cases.map((value, index) => inputLocation(`input.cases[${index}]`, () => {
     if (!record(value)) invalid();
     keys(value, ["id", "operation", "allow", "deny"]);
     const operation = identifier(value.operation);
     const path = selected.get(operation);
     if (path === undefined) invalid();
     return { id: value.id, path, allow: value.allow, deny: value.deny };
-  });
+  }));
   // Keep v2 assertions intact: the policy parser, not this adapter, owns them.
-  const parsed = parseApiPolicy({ version: 2, baseUrl: copied.baseUrl, actors: copied.actors, cases });
+  let parsed: ReturnType<typeof parseApiPolicy>;
+  try { parsed = parseApiPolicy({ version: 2, baseUrl: copied.baseUrl, actors: copied.actors, cases }); }
+  catch (error) {
+    if (error instanceof ApiPolicyError) {
+      const translated = new OpenApiPolicyError('invalid_openapi_policy', error.message);
+      translated.location = error.location.replace(/^policy/, 'input');
+      throw translated;
+    }
+    throw error;
+  }
   if (parsed.policy.version !== 2) invalid();
-  for (const actor of parsed.policy.actors) {
-    if (actor.identity && !concrete.has(actor.identity.path)) invalid("Identity controls must be explicitly allowlisted GET paths.");
+  for (const [index, actor] of parsed.policy.actors.entries()) {
+    if (actor.identity && !concrete.has(actor.identity.path)) inputLocation(`input.actors[${index}].identity.path`, () => invalid("Identity controls must be explicitly allowlisted GET paths."));
   }
   return parsed.policy;
 }
@@ -311,19 +284,37 @@ function errorCheck(code: string): CheckResult[] {
   return [{ id: "api.authorization", status: "error", findings: [], notes: [SCOPE_NOTE, "OpenAPI policy could not be validated; no requests were made."], metrics: { requestCount: 0, bytesInspected: 0, errorCode: code } }];
 }
 
+/** Validate the wrapper without evaluating getters. Compilation snapshots all input data. */
+function prepareOpenApiPolicy(options: OpenApiRunOptions): ApiPolicyV2 {
+  if (!record(options)) invalid();
+  const prototype = Object.getPrototypeOf(options);
+  if ((prototype !== Object.prototype && prototype !== null) || Object.getOwnPropertySymbols(options).length !== 0) invalid();
+  keys(options as unknown as RecordValue, ["input"], ["allowPrivate", "timeoutMs", "env", "signal"]);
+  if (Object.values(Object.getOwnPropertyDescriptors(options)).some((descriptor) => !("value" in descriptor) || !descriptor.enumerable)) invalid();
+  return buildOpenApiPolicy(options.input);
+}
+
+/** Offline plan from the exact compiler/executor validation path, without exposing input values. */
+export function preflightOpenApiPolicy(options: OpenApiRunOptions): ApiPreflightResult {
+  try {
+    const policy = prepareOpenApiPolicy(options);
+    const result = preflightApiPolicy({ policy, allowPrivate: options.allowPrivate, timeoutMs: options.timeoutMs, env: options.env, signal: options.signal });
+    result.limitations.unshift(SCOPE_NOTE);
+    return result;
+  } catch (error) {
+    const result = preflightApiPolicy({ policy: null });
+    result.issues = [{ code: error instanceof OpenApiPolicyError ? error.code : 'invalid_openapi_policy', location: error instanceof OpenApiPolicyError ? error.location : 'input',
+      message: error instanceof OpenApiPolicyError ? error.message : 'Provide a valid bounded OpenAPI input with explicit GET selections and bindings.' }];
+    result.limitations.unshift(SCOPE_NOTE);
+    return result;
+  }
+}
+
 /** Reuse the API runner's credential, network, request/body-budget and cancellation controls. */
 export async function runOpenApiPolicy(options: OpenApiRunOptions): Promise<CheckResult[]> {
   let policy: ApiPolicyV2;
-  try {
-    if (!record(options)) invalid();
-    const prototype = Object.getPrototypeOf(options);
-    if ((prototype !== Object.prototype && prototype !== null) || Object.getOwnPropertySymbols(options).length !== 0) invalid();
-    keys(options as unknown as RecordValue, ["input"], ["allowPrivate", "timeoutMs", "env", "signal"]);
-    if (Object.values(Object.getOwnPropertyDescriptors(options)).some((descriptor) => !("value" in descriptor))) invalid();
-    policy = buildOpenApiPolicy(options.input);
-  } catch (error) {
-    return errorCheck(error instanceof OpenApiPolicyError ? error.code : "invalid_openapi_policy");
-  }
+  try { policy = prepareOpenApiPolicy(options); }
+  catch (error) { return errorCheck(error instanceof OpenApiPolicyError ? error.code : "invalid_openapi_policy"); }
   const checks = await runApiPolicy({ policy, allowPrivate: options.allowPrivate, timeoutMs: options.timeoutMs, env: options.env, signal: options.signal });
   for (const check of checks) check.notes.unshift(SCOPE_NOTE);
   return checks;

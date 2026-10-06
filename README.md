@@ -166,6 +166,22 @@ Findings are labeled as candidates, observations, or advisories. Missing tools, 
 
 ## Read-only API policy and comparison
 
+Before an authorized staging run, the current source checkout can check local configuration without contacting the target:
+
+```sh
+# Synthetic placeholders only; this command never sends them to a server.
+WAKEIO_OWNER_AUTH='Bearer synthetic-owner' \
+WAKEIO_OTHER_AUTH='Bearer synthetic-other' \
+node build/src/cli.js plan --openapi-input examples/openapi-preflight-input.json
+
+# Or inspect an existing API policy, using its referenced environment variables.
+node build/src/cli.js plan --api-policy /path/to/your-api-policy.json
+```
+
+`plan` accepts exactly one input, plus optional `--allow-private` and `--timeout-ms 1..120000`. Results and configuration errors are JSON: exit `0` means configuration `ready`; exit `2` means `blocked`. It performs no DNS lookups or HTTP requests and writes no scan reports. The redacted plan shows indexed GET steps and request/time/response budgets without target URLs, request paths, caller IDs, environment-variable names or assertion values. The complete [synthetic OpenAPI input](examples/openapi-preflight-input.json) uses an `.invalid` placeholder, not a tested staging service.
+
+Readiness is neither permission to scan nor a security pass. Manually verify the authorized endpoints, synthetic accounts/resources and possible GET side effects; credential freshness, DNS, TLS and response controls still require an authorized runtime check. See the [preflight guide](docs/preview-0.4-api.md#zero-network-staging-preflight) for SDK usage and indexed diagnostics. `--openapi-input` is plan-only; API execution still uses `scan --api-policy` or the SDK.
+
 An API policy names the identity endpoint, expected principal, owner and other actors, resource identity, protected-data canary, and acceptable denial statuses. Credentials are referenced by environment-variable name. Identity controls and owner positive controls run around the deny probes. A protected canary received by the wrong actor is a finding even when the HTTP status is `403`; a repeated public ID by itself is not proof of a leak.
 
 ```sh

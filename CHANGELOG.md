@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Add zero-network API/OpenAPI `plan` CLI and SDK preflight with redacted
+  indexed diagnostics, ordered GET/control steps and separate logical/transport
+  request budgets. Configuration readiness is never a scan or security verdict.
+- Reuse bounded descriptor-safe JSON snapshots and runtime credential validation;
+  reject invalid header values, accessor credentials and duplicate principal
+  expectations before HTTP. Keep cancellation and incomplete outcomes intact.
+
 - Resolve static script/module collection against the first HTML document base,
   decode explicit BOM/header/early-meta encodings, retain partial findings on
   bounded parser failure, and preserve scan reports after SIGINT/SIGTERM.

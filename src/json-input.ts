@@ -18,7 +18,7 @@ export async function readJsonInput(path: string, maxBytes = 16 * 1024 * 1024): 
     if (length !== before.size || after.size !== before.size || after.mtimeMs !== before.mtimeMs || after.ctimeMs !== before.ctimeMs) {
       throw new Error('JSON input changed while reading');
     }
-    return JSON.parse(buffer.subarray(0, length).toString('utf8'));
+    return JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(buffer.subarray(0, length)));
   } finally {
     await handle.close();
   }

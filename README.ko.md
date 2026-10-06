@@ -164,6 +164,22 @@ node build/src/cli.js scan \
 
 ## 읽기 전용 API 정책과 비교
 
+현재 소스 checkout에서는 staging 실행 전에 대상에 연결하지 않고 로컬 설정을 확인할 수 있습니다.
+
+```sh
+# 합성 placeholder만 사용하며 서버로 전송하지 않습니다.
+WAKEIO_OWNER_AUTH='Bearer synthetic-owner' \
+WAKEIO_OTHER_AUTH='Bearer synthetic-other' \
+node build/src/cli.js plan --openapi-input examples/openapi-preflight-input.json
+
+# 기존 API 정책은 해당 정책이 참조하는 환경변수를 준비한 뒤 확인합니다.
+node build/src/cli.js plan --api-policy /path/to/your-api-policy.json
+```
+
+`plan`은 입력 하나와 선택적인 `--allow-private`, `--timeout-ms 1..120000`을 받습니다. 결과와 설정 오류는 JSON이며 종료 코드 `0`은 설정 `ready`, `2`는 `blocked`입니다. DNS 조회·HTTP 요청·scan 보고서 작성은 하지 않습니다. GET 순서와 요청·시간·응답 예산은 배열 index로 보여 주고 대상 URL·요청 경로·사용자 지정 ID·환경변수 이름·assertion 값은 출력하지 않습니다. [완전한 합성 OpenAPI 입력](examples/openapi-preflight-input.json)의 `.invalid` 주소는 실제로 검증한 staging이 아닙니다.
+
+`ready`는 실행 승인이나 보안 통과가 아닙니다. 허가받은 endpoint, 합성 계정·리소스, GET의 부작용 가능성을 직접 확인해야 하며 자격증명 유효성·DNS·TLS·응답 control은 승인된 실제 실행에서 확인합니다. SDK와 index 기반 오류 확인은 [preflight 안내](docs/preview-0.4-api.md#zero-network-staging-preflight)를 참고하세요. `--openapi-input`은 `plan` 전용이며 API 실행은 기존 `scan --api-policy` 또는 SDK를 사용합니다.
+
 API 정책은 identity endpoint와 기대 principal, 소유자·다른 계정·비로그인 actor, 리소스 식별자, 보호 데이터 canary, 허용할 거부 상태를 선언합니다. 자격증명은 환경변수 이름으로 참조합니다. identity와 소유자의 정상 접근을 deny probe 전후에 확인합니다. 다른 actor가 보호 canary를 받으면 HTTP 상태가 `403`이어도 발견 결과입니다. 오류 응답에 공개 ID만 반복된 경우만으로 정보 유출을 확정하지 않습니다.
 
 ```sh
