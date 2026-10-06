@@ -90,6 +90,9 @@ export class StaticModules {
   private readonly loaderReferences: ts.Identifier[] = [];
   private readonly unsupportedObjectLoads: Array<{node: ts.Node; specifier?: string}> = [];
   private readonly receiverDependent = new Set<ts.FunctionLikeDeclaration>();
+  private readonly localClassCalls = new Map<ts.CallExpression, ts.FunctionLikeDeclaration>();
+  private readonly localExportBindings = new Set<ts.Symbol>();
+  private readonly opaqueClassScopeFiles = new Set<ts.SourceFile>();
   private objectValidationComplete = false;
   private readonly classes = new Set<ts.ClassDeclaration>();
   private readonly classThis = new Map<ts.ClassDeclaration, ts.Node[]>();
@@ -214,6 +217,7 @@ export class StaticModules {
       if (ts.isImportEqualsDeclaration(node) && ts.isExternalModuleReference(node.moduleReference) && node.moduleReference.expression && ts.isStringLiteralLike(node.moduleReference.expression) && /^(pg(?:\/|$)|pg-native$|pg-pool$)/.test(node.moduleReference.expression.text)) this.sqlLoads.push({specifier:node.moduleReference.expression.text,node});
       if (ts.isExportDeclaration(node) && node.moduleSpecifier && ts.isStringLiteralLike(node.moduleSpecifier) && /^(pg(?:\/|$)|pg-native$|pg-pool$)/.test(node.moduleSpecifier.text)) this.sqlLoads.push({specifier:node.moduleSpecifier.text,node});
       if (ts.isIdentifier(node)) {
+        if (node.text === 'eval' || node.text === 'Function') this.opaqueClassScopeFiles.add(node.getSourceFile());
         const symbol = this.symbol(node);
         if (symbol) {
           const references = this.references.get(symbol) ?? [];
@@ -229,6 +233,7 @@ export class StaticModules {
         if (['Object','String','Array','Reflect','process','globalThis'].includes(node.text)) this.sqlBoundaryNodes.push(node);
         if (node.text === 'require') this.loaderReferences.push(node);
       }
+      if (ts.isWithStatement(node)) this.opaqueClassScopeFiles.add(node.getSourceFile());
       if (node.kind === ts.SyntaxKind.ThisKeyword || node.kind === ts.SyntaxKind.SuperKeyword) {
         // Include lexical outer methods as well as nested bodies. No receiver
         // environment is added to the scalar summary/cache contract.
@@ -269,6 +274,7 @@ export class StaticModules {
       for (const fn of exported.values()) if (fn) this.externalEntries.add(fn);
     }
     this.collectObjectExports(files);
+    this.collectLocalClassCalls();
     // Pure binding pass: missing/unsupported calls are diagnosed only when analyzed.
     const helperEdges = new Map<ts.FunctionLikeDeclaration | ts.SourceFile, Set<ts.FunctionLikeDeclaration>>();
     for (const call of this.calls) {
@@ -394,6 +400,7 @@ export class StaticModules {
         for (const specifier of statement.exportClause.elements) {
           if (!this.tick()) break;
           const local = this.checker.getExportSpecifierLocalTargetSymbol(specifier);
+          if (local) this.localExportBindings.add(local);
           put(specifier.name.text, local?.declarations?.[0]);
         }
       }
@@ -1266,6 +1273,86 @@ export class StaticModules {
     return call.pos < declaration.pos && this.ownerOf(call) === this.ownerOf(declaration);
   }
 
+  /** Receiver-independent local methods use ordinary scalar summaries only after
+   * a closed constructor/instance reference audit. No class or heap state is modeled. */
+  private collectLocalClassCalls(): void {
+    if (!this.objectScopeComplete) return;
+    for (const classNode of this.classes) {
+      if (!this.tick()) return;
+      const file = classNode.getSourceFile();
+      if (!classNode.name || classNode.modifiers?.length || classNode.heritageClauses?.length
+        || this.opaqueClassScopeFiles.has(file)) continue;
+      const classSymbol = this.symbol(classNode.name);
+      if (!classSymbol || classSymbol.declarations?.length !== 1 || classSymbol.declarations[0] !== classNode
+        || this.mutated.has(classSymbol) || this.mutatedMembers.has(classSymbol)
+        || this.localExportBindings.has(classSymbol)) continue;
+
+      const methods = new Map<string, ts.FunctionLikeDeclaration>();
+      let valid = true, constructors = 0;
+      for (const member of classNode.members) {
+        if (!this.tick()) return;
+        if (ts.isConstructorDeclaration(member)) {
+          constructors += 1;
+          // Even apparently harmless field initialization may override a method
+          // or expose a receiver. Only the default/empty constructor is covered.
+          if (constructors > 1 || !member.body || member.body.statements.length
+            || member.parameters.length || member.modifiers?.length) valid = false;
+          continue;
+        }
+        const key = ts.isMethodDeclaration(member) ? nameOf(member.name) : undefined;
+        if (!ts.isMethodDeclaration(member) || !member.body || !this.functionSet.has(member)
+          || !key || ts.isComputedPropertyName(member.name) || methods.has(key)
+          || ['constructor', 'prototype', '__proto__'].includes(key) || member.asteriskToken || member.questionToken
+          || member.modifiers?.some(modifier => modifier.kind !== ts.SyntaxKind.AsyncKeyword)
+          || this.receiverDependent.has(member)) { valid = false; continue; }
+        for (const parameter of member.parameters) {
+          if (!this.tick()) return;
+          if (parameter.modifiers?.length || ts.isIdentifier(parameter.name) && parameter.name.text === 'this') valid = false;
+        }
+        methods.set(key, member);
+      }
+      if (!valid || !methods.size) continue;
+
+      const instances = new Map<ts.Symbol, ts.VariableDeclaration>();
+      for (const ref of this.references.get(classSymbol) ?? []) {
+        if (!this.tick()) return;
+        if (ref === classNode.name) continue;
+        const creation = ref.parent;
+        const declaration = ts.isNewExpression(creation) ? creation.parent : undefined;
+        if (ref.getSourceFile() !== file || !ts.isNewExpression(creation) || creation.expression !== ref
+          || creation.arguments?.length || classNode.end > creation.pos
+          || !declaration || !ts.isVariableDeclaration(declaration) || declaration.initializer !== creation
+          || this.objectConst(declaration.name) !== declaration) { valid = false; break; }
+        const symbol = this.symbol(declaration.name);
+        const statement = declaration.parent.parent;
+        if (!symbol || this.mutatedMembers.has(symbol) || this.localExportBindings.has(symbol)
+          || !ts.isVariableStatement(statement) || statement.modifiers?.length) { valid = false; break; }
+        instances.set(symbol, declaration);
+      }
+      if (!valid || !instances.size) continue;
+
+      const calls = new Map<ts.CallExpression, ts.FunctionLikeDeclaration>();
+      for (const [symbol, declaration] of instances) {
+        for (const ref of this.references.get(symbol) ?? []) {
+          if (!this.tick()) return;
+          if (ref === declaration.name) continue;
+          const access = ref.parent;
+          const call = ts.isPropertyAccessExpression(access) ? access.parent : undefined;
+          const target = ts.isPropertyAccessExpression(access) ? methods.get(access.name.text) : undefined;
+          if (ref.getSourceFile() !== file || !ts.isPropertyAccessExpression(access) || access.expression !== ref
+            || access.questionDotToken || !call || !ts.isCallExpression(call) || call.expression !== access
+            || call.questionDotToken || !target || this.beforeInitialization(call, declaration)) { valid = false; break; }
+          calls.set(call, target);
+        }
+        if (!valid) break;
+      }
+      if (valid) for (const [call, target] of calls) {
+        if (!this.tick()) return;
+        this.localClassCalls.set(call, target);
+      }
+    }
+  }
+
   resolveCall(call: ts.CallExpression, count = true, receiver?: SingletonReceiver): CallResolution {
     // The constructor's binding pass (count=false) precedes final proof validation.
     if (count && !this.proofsReady) return { kind: 'unsupported' };
@@ -1279,7 +1366,10 @@ export class StaticModules {
       return receiver && group.receiver === receiver && mode!==undefined && mode!=='rejected' && this.objectValidationComplete && this.objectScopeComplete && target
         ? {kind:mode==='conditional' ? 'declared' : 'resolved',target,receiver} : {kind:'export_unsupported'};
     }
-    if (!ts.isIdentifier(call.expression)) return this.objectCall(call, count);
+    if (!ts.isIdentifier(call.expression)) {
+      const target = this.localClassCalls.get(call);
+      return target ? {kind: 'resolved', target} : this.objectCall(call, count);
+    }
     const symbol = this.symbol(call.expression);
     if (!symbol) return { kind: "external" };
     if (symbol.declarations?.length !== 1) return { kind: "unsupported" };
@@ -1318,6 +1408,7 @@ export class StaticModules {
   /** A syntactically local callable must not be reclassified by its SQL-shaped name. */
   localCallable(call: ts.CallExpression): boolean {
     if (!this.proofsReady) return false;
+    if (this.localClassCalls.has(call)) return true;
     if (ts.isIdentifier(call.expression)) {
       const declarations = this.symbol(call.expression)?.declarations;
       return declarations?.some((declaration) => ts.isFunctionDeclaration(declaration)

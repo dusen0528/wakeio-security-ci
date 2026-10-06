@@ -29,7 +29,7 @@ function usage() {
     "  --engine-module PATH     Trusted local module exporting runSource (default: build/src/index.js).",
     "  --engine-label LABEL     Explicit label for the runtime under measurement.",
     "  --corpus PATH            Corpus JSON path (default: benchmarks/corpus.json).",
-    "  --out-dir PATH           Directory for benchmark.json and benchmark.md (default: benchmarks/results).",
+    "  --out-dir PATH           Directory for JSON, Markdown and failure artifacts (default: benchmarks/results).",
     "  --help                   Show this message.",
   ].join("\n");
 }
@@ -179,42 +179,53 @@ async function copyFixture(source, target) {
 
 function checkStatus(checks, id) {
   const check = checks.find((entry) => entry && entry.id === id);
-  if (!check || (check.status !== "completed" && check.status !== "not_applicable")) {
-    throw new Error(`${id} did not complete for fixture (${check?.status ?? "missing"})`);
-  }
-  return check;
+  const statuses = new Set(["completed", "partial", "error", "skipped", "not_applicable"]);
+  return { id, status: check ? (statuses.has(check.status) ? check.status : "invalid") : "missing" };
 }
 
-function analyzeCase(entry, checks, durationMs) {
-  const inventory = checkStatus(checks, "source.inventory");
-  const ast = checkStatus(checks, "source.builtin-ast");
-  if (inventory.status !== "completed") throw new Error(`${entry.id}: source inventory is ${inventory.status}`);
-  if (ast.status !== "completed") throw new Error(`${entry.id}: built-in AST check is ${ast.status}`);
-  const observed = checks.flatMap((check) => Array.isArray(check?.findings) ? check.findings.map(signature) : []);
-  const supportedExpected = entry.expectedFindings.filter((finding) => finding.support === "supported");
-  const knownExpected = entry.expectedFindings.filter((finding) => finding.support === "known_miss");
-  const unmatched = [...observed];
-  let truePositives = 0;
-  let falseNegatives = 0;
+function compareFindings(expectedFindings, observedFindings) {
+  const unmatched = [...observedFindings];
+  const missed = [];
+  let supportedTruePositives = 0;
+  let supportedFalseNegatives = 0;
   let knownMisses = 0;
   let knownMissesResolved = 0;
-  for (const expected of supportedExpected) {
-    const index = unmatched.findIndex((candidate) => matches(expected, candidate));
-    if (index < 0) falseNegatives += 1;
-    else {
-      truePositives += 1;
+  // Supported expectations take precedence if optional columns overlap.
+  const expected = [...expectedFindings].sort((left, right) => Number(left.support === "known_miss") - Number(right.support === "known_miss"));
+  for (const finding of expected) {
+    const index = unmatched.findIndex((candidate) => matches(finding, candidate));
+    if (index < 0) {
+      missed.push(finding);
+      if (finding.support === "supported") supportedFalseNegatives += 1;
+      else knownMisses += 1;
+    } else {
       unmatched.splice(index, 1);
+      if (finding.support === "supported") supportedTruePositives += 1;
+      else knownMissesResolved += 1;
     }
   }
-  for (const expected of knownExpected) {
-    const index = unmatched.findIndex((candidate) => matches(expected, candidate));
-    if (index < 0) knownMisses += 1;
-    else {
-      knownMissesResolved += 1;
-      unmatched.splice(index, 1);
-    }
-  }
-  const falsePositives = unmatched.length;
+  return {
+    counts: {
+      truePositives: supportedTruePositives + knownMissesResolved,
+      falsePositives: unmatched.length,
+      falseNegatives: supportedFalseNegatives + knownMisses,
+      supportedTruePositives,
+      supportedFalseNegatives,
+      knownMisses,
+      knownMissesResolved,
+    },
+    missedFindings: missed,
+    unexpectedFindings: unmatched,
+  };
+}
+
+function analyzeCase(entry, checks, durationMs, scanError = false) {
+  if (!Array.isArray(checks)) throw new Error(`${entry.id}: runSource must return a check array`);
+  const checkStatuses = [checkStatus(checks, "source.inventory"), checkStatus(checks, "source.builtin-ast")];
+  if (scanError) checkStatuses.push({ id: "benchmark.scan", status: "error" });
+  const complete = checkStatuses.every((check) => check.status === "completed");
+  const observed = checks.flatMap((check) => Array.isArray(check?.findings) ? check.findings.map(signature) : []);
+  const { counts } = compareFindings(entry.expectedFindings, observed);
   return {
     id: entry.id,
     classification: entry.classification,
@@ -225,8 +236,10 @@ function analyzeCase(entry, checks, durationMs) {
     whyFixed: entry.whyFixed,
     expectedFindings: entry.expectedFindings,
     observedFindings: observed,
+    complete,
+    checkStatuses,
     durationMs,
-    counts: { truePositives, falsePositives, falseNegatives, knownMisses, knownMissesResolved },
+    counts,
   };
 }
 
@@ -235,16 +248,12 @@ function percentage(numerator, denominator) {
 }
 
 function addRuleCount(map, ruleId) {
-  if (!map.has(ruleId)) map.set(ruleId, { ruleId, truePositives: 0, falsePositives: 0, falseNegatives: 0, knownMisses: 0, knownMissesResolved: 0 });
+  if (!map.has(ruleId)) map.set(ruleId, { ruleId, truePositives: 0, falsePositives: 0, falseNegatives: 0, supportedTruePositives: 0, supportedFalseNegatives: 0, knownMisses: 0, knownMissesResolved: 0 });
   return map.get(ruleId);
 }
 
 function aggregate(corpus, caseResults, engine, startedAt, durationMs) {
-  let truePositives = 0;
-  let falsePositives = 0;
-  let falseNegatives = 0;
-  let knownMisses = 0;
-  let knownMissesResolved = 0;
+  const counts = { truePositives: 0, falsePositives: 0, falseNegatives: 0, supportedTruePositives: 0, supportedFalseNegatives: 0, knownMisses: 0, knownMissesResolved: 0 };
   let supportedExpectedFindings = 0;
   let knownUnsupportedExpectedFindings = 0;
   let falsePositiveCases = 0;
@@ -257,57 +266,41 @@ function aggregate(corpus, caseResults, engine, startedAt, durationMs) {
       coveredRuleIds.add(finding.ruleId);
       if (finding.support === "supported") supportedExpectedFindings += 1;
       else knownUnsupportedExpectedFindings += 1;
-      addRuleCount(ruleMap, finding.ruleId);
     }
   }
   for (const result of caseResults) {
+    for (const [name, value] of Object.entries(result.counts)) counts[name] += value;
     for (const finding of result.observedFindings) coveredRuleIds.add(finding.ruleId);
-    const unmatched = [...result.observedFindings];
-    for (const expected of result.expectedFindings) {
-      const rule = addRuleCount(ruleMap, expected.ruleId);
-      const index = unmatched.findIndex((candidate) => matches(expected, candidate));
-      if (index >= 0) {
-        unmatched.splice(index, 1);
-        if (expected.support === "supported") {
-          truePositives += 1;
-          rule.truePositives += 1;
-        } else {
-          knownMissesResolved += 1;
-          rule.knownMissesResolved += 1;
-        }
-      } else if (expected.support === "supported") {
-        falseNegatives += 1;
-        rule.falseNegatives += 1;
-      } else {
-        knownMisses += 1;
-        rule.knownMisses += 1;
-      }
+    const ruleIds = new Set([...result.expectedFindings, ...result.observedFindings].map((finding) => finding.ruleId));
+    for (const ruleId of ruleIds) {
+      const rule = addRuleCount(ruleMap, ruleId);
+      const compared = compareFindings(result.expectedFindings.filter((finding) => finding.ruleId === ruleId), result.observedFindings.filter((finding) => finding.ruleId === ruleId));
+      for (const [name, value] of Object.entries(compared.counts)) rule[name] += value;
     }
-    falsePositives += unmatched.length;
-    if (unmatched.length > 0) {
+    if (result.counts.falsePositives > 0) {
       falsePositiveCases += 1;
       if (result.classification === "fixed") fixedFalsePositiveCases += 1;
     }
-    for (const finding of unmatched) addRuleCount(ruleMap, finding.ruleId).falsePositives += 1;
     if (result.counts.falseNegatives > 0) falseNegativeCases += 1;
   }
   const allExpectedFindings = supportedExpectedFindings + knownUnsupportedExpectedFindings;
-  const allDetectedExpectedFindings = truePositives + knownMissesResolved;
-  const allFalseNegatives = falseNegatives + knownMisses;
-  const strictRegressions = falsePositives + falseNegatives;
+  const strictRegressions = counts.falsePositives + counts.supportedFalseNegatives;
+  const completedCases = caseResults.filter((entry) => entry.complete).length;
   const ruleMetrics = [...ruleMap.values()].sort((left, right) => left.ruleId.localeCompare(right.ruleId));
   return {
-    schemaVersion: "1.0.0",
+    schemaVersion: "2.0.0",
     corpusVersion: corpus.corpusVersion,
     generatedAt: new Date().toISOString(),
     startedAt,
     measurementScope: corpus.scope,
     unsupportedScope: corpus.unsupportedScope,
     engine,
-    success: true,
+    success: completedCases === corpus.cases.length,
     durationMs,
     summary: {
       totalCases: corpus.cases.length,
+      completedCases,
+      incompleteCases: corpus.cases.length - completedCases,
       vulnerableCases: corpus.cases.filter((entry) => entry.classification === "vulnerable").length,
       fixedCases: corpus.cases.filter((entry) => entry.classification === "fixed").length,
       supportedExpectationCases: corpus.cases.filter((entry) => entry.expectedFindings.some((finding) => finding.support === "supported")).length,
@@ -315,22 +308,18 @@ function aggregate(corpus, caseResults, engine, startedAt, durationMs) {
       supportedExpectedFindings,
       knownUnsupportedExpectedFindings,
       allExpectedFindings,
-      allDetectedExpectedFindings,
-      allFalseNegatives,
-      truePositives,
-      falsePositives,
-      falseNegatives,
-      precision: percentage(truePositives, truePositives + falsePositives),
-      recall: percentage(truePositives, truePositives + falseNegatives),
-      supportedPrecision: percentage(truePositives, truePositives + falsePositives),
-      supportedRecall: percentage(truePositives, truePositives + falseNegatives),
-      allCorpusRecall: percentage(allDetectedExpectedFindings, allExpectedFindings),
+      allDetectedExpectedFindings: counts.truePositives,
+      allFalseNegatives: counts.falseNegatives,
+      ...counts,
+      precision: percentage(counts.truePositives, counts.truePositives + counts.falsePositives),
+      recall: percentage(counts.truePositives, allExpectedFindings),
+      supportedPrecision: percentage(counts.supportedTruePositives, counts.supportedTruePositives + counts.falsePositives),
+      supportedRecall: percentage(counts.supportedTruePositives, supportedExpectedFindings),
+      allCorpusRecall: percentage(counts.truePositives, allExpectedFindings),
       falsePositiveCases,
       fixedFalsePositiveCases,
       falseNegativeCases,
       fixedCaseFalsePositiveRate: percentage(fixedFalsePositiveCases, corpus.cases.filter((entry) => entry.classification === "fixed").length),
-      knownMisses,
-      knownMissesResolved,
       strictRegressions,
       coveredRuleIds: [...coveredRuleIds].sort(),
     },
@@ -372,9 +361,18 @@ export async function runBenchmark(runSource, options = {}) {
       await copyFixture(fixture, scanRoot);
       // The only target operation is the existing public scan entry point. No
       // package manager, shell, test runner, or fixture module is invoked.
-      const checks = await runSource({ root: scanRoot, tools: [] });
+      let checks;
+      let scanError = false;
+      try {
+        checks = await runSource({ root: scanRoot, tools: [] });
+      } catch {
+        // Do not serialize arbitrary engine error text: it may include source
+        // values. Retain the failed coverage state and keep measuring cases.
+        checks = [];
+        scanError = true;
+      }
       const caseDuration = Number((performance.now() - caseStarted).toFixed(3));
-      caseResults.push(analyzeCase(entry, checks, caseDuration));
+      caseResults.push(analyzeCase(entry, checks, caseDuration, scanError));
     } finally {
       await rm(parent, { recursive: true, force: true });
     }
@@ -405,27 +403,36 @@ export function renderMarkdown(report) {
     `- Measurement duration: ${report.durationMs} ms`,
     `- Scope: ${report.measurementScope}`,
     "",
-    "## Counts",
+    "## Primary all-corpus counts",
+    "",
+    "Known misses are included in TP/FN and the recall denominator. Incomplete cases retain all expectations; inspect coverage before interpreting these counts.",
     "",
     "| Metric | Count |",
     "| --- | ---: |",
     `| Cases | ${summary.totalCases} (${summary.vulnerableCases} vulnerable / ${summary.fixedCases} fixed) |`,
-    `| Supported expected findings | ${summary.supportedExpectedFindings} |`,
+    `| Completed / incomplete cases | ${summary.completedCases} / ${summary.incompleteCases} |`,
     `| All expected findings (including known unsupported) | ${summary.allExpectedFindings} |`,
-    `| All expected findings detected | ${summary.allDetectedExpectedFindings} |`,
     `| True positives | ${summary.truePositives} |`,
     `| False positives | ${summary.falsePositives} |`,
-    `| Supported false negatives | ${summary.falseNegatives} |`,
-    `| All-corpus false negatives (including known misses) | ${summary.allFalseNegatives} |`,
-    `| Supported precision | ${formatCount(summary.supportedPrecision)} |`,
-    `| Supported recall (known misses excluded) | ${formatCount(summary.supportedRecall)} |`,
-    `| All-corpus expected recall (known misses included) | ${formatCount(summary.allCorpusRecall)} |`,
+    `| False negatives (including known misses) | ${summary.falseNegatives} |`,
+    `| All-corpus precision | ${formatCount(summary.precision)} |`,
+    `| All-corpus expected recall (known misses included) | ${formatCount(summary.recall)} |`,
     `| False-positive cases (all classifications) | ${summary.falsePositiveCases} |`,
     `| Fixed false-positive cases | ${summary.fixedFalsePositiveCases} |`,
     `| Fixed case FP rate (fixed cases only) | ${formatCount(summary.fixedCaseFalsePositiveRate)} |`,
+    "",
+    "## Secondary supported-only metrics and strict gate",
+    "",
+    "| Metric | Count |",
+    "| --- | ---: |",
+    `| Supported expected findings | ${summary.supportedExpectedFindings} |`,
+    `| Supported true positives | ${summary.supportedTruePositives} |`,
+    `| Supported false negatives | ${summary.supportedFalseNegatives} |`,
+    `| Supported precision | ${formatCount(summary.supportedPrecision)} |`,
+    `| Supported recall (known misses excluded) | ${formatCount(summary.supportedRecall)} |`,
     `| Known unsupported expected findings | ${summary.knownUnsupportedExpectedFindings} |`,
-    `| Known misses (excluded from supported FN denominator) | ${summary.knownMisses} |`,
-    `| Known misses resolved | ${summary.knownMissesResolved} |`,
+    `| Known misses (subset of primary FN) | ${summary.knownMisses} |`,
+    `| Known misses resolved (subset of primary TP) | ${summary.knownMissesResolved} |`,
     `| Strict regressions (FP + supported FN) | ${summary.strictRegressions} |`,
     "",
     `Covered rule IDs: ${summary.coveredRuleIds.map((ruleId) => `\`${ruleId}\``).join(", ")}.`,
@@ -434,9 +441,9 @@ export function renderMarkdown(report) {
     "",
     ...report.unsupportedScope.map((entry) => `- ${entry}`),
     "",
-    "## Per-rule counts",
+    "## Per-rule all-corpus counts",
     "",
-    "| Rule ID | TP | FP | FN | Known miss | Known resolved |",
+    "| Rule ID | TP | FP | FN | Known miss (subset FN) | Known resolved (subset TP) |",
     "| --- | ---: | ---: | ---: | ---: | ---: |",
     ...report.ruleMetrics.map((metric) => `| \`${metric.ruleId}\` | ${metric.truePositives} | ${metric.falsePositives} | ${metric.falseNegatives} | ${metric.knownMisses} | ${metric.knownMissesResolved} |`),
     "",
@@ -450,13 +457,13 @@ export function renderMarkdown(report) {
     "",
     "Each case keeps a high-level explanation and mapped signatures. Source values are intentionally omitted from this report.",
     "",
-    "| Case | Class | Framework | Expected | Observed | TP | FP | FN | Known miss | ms |",
-    "| --- | --- | --- | --- | --- | ---: | ---: | ---: | ---: | ---: |",
-    ...report.cases.map((entry) => `| \`${entry.id}\` | ${entry.classification} | ${entry.framework} | ${findingText(entry.expectedFindings)} | ${findingText(entry.observedFindings)} | ${entry.counts.truePositives} | ${entry.counts.falsePositives} | ${entry.counts.falseNegatives} | ${entry.counts.knownMisses} | ${entry.durationMs} |`),
+    "| Case | Class | Complete | Framework | Expected | Observed | TP | FP | FN | Known miss (subset FN) | ms |",
+    "| --- | --- | --- | --- | --- | --- | ---: | ---: | ---: | ---: | ---: |",
+    ...report.cases.map((entry) => `| \`${entry.id}\` | ${entry.classification} | ${entry.complete ? "yes" : "NO"} | ${entry.framework} | ${findingText(entry.expectedFindings)} | ${findingText(entry.observedFindings)} | ${entry.counts.truePositives} | ${entry.counts.falsePositives} | ${entry.counts.falseNegatives} | ${entry.counts.knownMisses} | ${entry.durationMs} |`),
     "",
     "## Interpretation",
     "",
-    "Default benchmark execution is successful when all fixtures were measured, even when supported false positives or false negatives exist. `--strict` turns those supported regressions into exit code 1. Any expectations explicitly labelled known_miss remain separate from supported recall. The current v2 corpus promotes its two historical local/relative-module SQL misses to supported expectations; strict mode includes them. Archived baseline reports retain their original labels and denominators.",
+    "Primary TP/FN, precision and recall include every expected finding, including known_miss. Supported-only fields are secondary compatibility metrics. `--strict` gates FP + supported FN (exit 1), without requiring documented known misses to resolve. Partial, skipped, missing or failed inventory/AST checks make success false and exit 2 in either mode; their unobserved expectations remain in the primary FN denominator. A completed fixed case with no findings is distinct from an incomplete case with no findings. The failure artifact contains mapped synthetic signatures and coverage states, never fixture source or engine error text.",
     "",
   ];
   return lines.join("\n");
@@ -503,12 +510,24 @@ export async function writeBenchmarkReports(report, outDir) {
   await mkdir(targetDir, { recursive: true, mode: 0o700 });
   const jsonPath = join(targetDir, "benchmark.json");
   const markdownPath = join(targetDir, "benchmark.md");
+  const failuresPath = join(targetDir, "benchmark-failures.json");
   await rejectSymlinkChain(targetDir);
   await rejectSymlinkFile(jsonPath);
   await rejectSymlinkFile(markdownPath);
+  await rejectSymlinkFile(failuresPath);
   await writeFile(jsonPath, `${JSON.stringify(report, null, 2)}\n`, { encoding: "utf8", mode: 0o600 });
   await writeFile(markdownPath, renderMarkdown(report), { encoding: "utf8", mode: 0o600 });
-  return { jsonPath, markdownPath };
+  const failures = {
+    schemaVersion: report.schemaVersion,
+    corpusVersion: report.corpusVersion,
+    engine: report.engine,
+    cases: report.cases.filter((entry) => !entry.complete || entry.counts.falsePositives > 0 || entry.counts.falseNegatives > 0).map((entry) => {
+      const compared = compareFindings(entry.expectedFindings, entry.observedFindings);
+      return { id: entry.id, fixture: entry.fixture, complete: entry.complete, checkStatuses: entry.checkStatuses, expectedFindings: entry.expectedFindings, observedFindings: entry.observedFindings, missedFindings: compared.missedFindings, unexpectedFindings: compared.unexpectedFindings };
+    }),
+  };
+  await writeFile(failuresPath, `${JSON.stringify(failures, null, 2)}\n`, { encoding: "utf8", mode: 0o600 });
+  return { jsonPath, markdownPath, failuresPath };
 }
 
 function packageVersionCandidate(modulePath) {

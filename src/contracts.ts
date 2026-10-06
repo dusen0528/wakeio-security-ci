@@ -214,7 +214,7 @@ export interface ReportSummary {
     mode: Mode;
     fingerprint?: string;
     ruleset?: string;
-    toolSelection: 'unknown';
+    toolSelection: 'unknown' | 'built_in_only' | 'external_tools_selected' | 'native_preview_selected';
     wholeProjectCoverage: 'not_established';
   };
   nextRead: {

@@ -1,5 +1,23 @@
 # Changelog
 
+## Unreleased
+
+- Add bounded Express `res.send`/status-chain and explicit HTML Response/NextResponse
+  candidates with actionable titles and redacted source-to-sink evidence.
+- Resolve receiver-independent methods on audited immutable local class instances;
+  keep general class dispatch and Koa input semantics outside this support boundary.
+- Expand the inspectable source corpus from 30 to 50 cases. Benchmark schema 2
+  makes all-corpus metrics primary, includes known misses in the denominator,
+  and retains scoped failure signatures for incomplete or missed cases.
+- Track bounded literal Express response MIME so plain text is not mislabeled HTML
+  and JSON serialization with a pre-existing HTML type retains a candidate.
+- Ship declarations and conditional type exports for strict TypeScript SDK users;
+  align report/package versions and expose structured requested-tool selection.
+- Accept OSV-Scanner 2.6's omitted empty vulnerabilities field while keeping null,
+  invalid types, invalid inventory and contradictory process results fail-closed.
+- Ruleset `2026-10-05.18`; no public finding-contract, external worker, network,
+  repair or published package-version change.
+
 ## 0.4.0 — bounded source and fixture verification release
 
 - Extend bounded JS/TS static flow analysis with interprocedural and selected local-module/object flows, SQL/HTTP/fork argument roles, immutable value qualifiers, parse diagnostics, and explicit analysis budgets/gaps. These are static candidates; runtime exploitability and remediation remain unverified.

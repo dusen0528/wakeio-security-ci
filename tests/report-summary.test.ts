@@ -5,7 +5,7 @@ import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import type { AnalysisGap, CheckResult, FailOn, Finding } from '../src/contracts.js';
-import { createReport, evaluateGate, sanitiseReport, toAgentReport, toMarkdown, toReportSummary, toSarif, writeReports } from '../src/report.js';
+import { REPORT_TOOL_VERSION, createReport, evaluateGate, sanitiseReport, toAgentReport, toMarkdown, toReportSummary, toSarif, writeReports } from '../src/report.js';
 
 const startedAt = '2026-10-05T00:00:00.000Z';
 const finding = (severity: Finding['severity'] = 'high', line = 3): Finding => ({
@@ -217,4 +217,22 @@ test('reason totals retain thirteen rows while summary omissions and first item 
   assert.deepEqual(report.scope, legacy.scope); assert.equal(report.checks[0].status, legacy.checks[0].status);
   assert.deepEqual((toSarif(report) as any).runs[0].results, (toSarif(legacy) as any).runs[0].results);
   assert.equal(report.checks[0].analysisGaps!.items.length, 5);
+});
+
+
+test('summary exposes typed requested-tool scope without parsing notes or inferring installation', async () => {
+  for (const [requestedTools, nativePreviewSelected, expected] of [
+    ['none', false, 'built_in_only'], ['none', true, 'native_preview_selected'],
+    ['gitleaks,osv,trivy', false, 'external_tools_selected'], ['bandit', false, 'external_tools_selected'],
+    ['unknown-tool', false, 'unknown'], ['osv,', false, 'unknown'],
+  ] as const) {
+    const inventory: CheckResult = { id:'source.inventory', status:'completed', findings:[], notes:[], metrics:{requestedTools,nativePreviewSelected} };
+    const report = createReport([inventory], 'source', startedAt);
+    assert.equal(toReportSummary(report).scope.toolSelection, expected);
+    assert.equal(toAgentReport(report).summary!.scope.toolSelection, expected);
+    assert.match(toMarkdown(report), new RegExp('tool selection='+expected));
+    assert.equal(toReportSummary(createReport([inventory,inventory], 'source', startedAt)).scope.toolSelection, 'unknown');
+  }
+  const pkg=JSON.parse(await readFile(new URL('../../package.json',import.meta.url),'utf8'));
+  assert.equal(REPORT_TOOL_VERSION,pkg.version);
 });

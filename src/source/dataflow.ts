@@ -13,6 +13,9 @@ export interface InputFlowUse {
   kind: "assignment" | "call" | "jsx";
   argumentFlows?: Array<{ index: number; certainty: "tainted" | "unknown"; staticFlow?: StaticFlow; fixedDestination?: boolean }>;
   localCall?: boolean;
+  /** Internal sink shape only; framework identity and runtime rendering stay unverified. */
+  htmlResponse?: "express" | "web";
+  htmlResponseMime?: "default" | "html" | "unknown";
   httpRole?: HttpRoleUse;
   sqlRole?: SqlRoleUse;
   forkRole?: ForkRoleUse;
@@ -32,8 +35,33 @@ type RootKind =
   | "formData"
   | "searchParams";
 
+type ExpressMime = "default" | "html" | "non_html" | "unknown";
+interface ExpressResponseState {
+  readonly identity: object;
+  mime: ExpressMime;
+  valid: boolean;
+  /** General container/heap alias effects are outside the MIME exclusion proof. */
+  contained?: boolean;
+}
+
+function joinResponse(left?: ExpressResponseState, right?: ExpressResponseState): ExpressResponseState | undefined {
+  return left && right && left.identity === right.identity
+    ? { identity: left.identity, mime: left.mime === right.mime ? left.mime : "unknown", valid: left.valid && right.valid, contained: left.contained || right.contained }
+    : undefined;
+}
+
+function containResponse(value: FlowValue): void {
+  if (!value.expressResponse) return;
+  value.expressResponse.contained = true;
+  // Retain the positive HTML candidate, but never a stale non-HTML exclusion.
+  if (value.expressResponse.mime !== "html") value.expressResponse.mime = "unknown";
+}
+
 interface FlowValue {
   kind: "safe" | "unknown" | "tainted" | "root";
+  expressResponse?: ExpressResponseState;
+  /** Object/array literal type for Express default JSON serialization only. */
+  expressObjectBody?: boolean;
   root?: RootKind;
   inputRelated?: boolean;
   properties?: ReadonlyMap<string, FlowValue>;
@@ -277,7 +305,7 @@ function joinValues(left: FlowValue, right: FlowValue): FlowValue {
     const leftCharacters = fixedSqlCharacters(left), rightCharacters = fixedSqlCharacters(right);
     const sqlFixedText = leftCharacters !== undefined && rightCharacters !== undefined
       ? { maxCharacters: Math.max(leftCharacters, rightCharacters) } : undefined;
-    return { ...result, ...(properties ? { properties } : {}), sqlFixedText, sqlArray, sqlConfig, sqlScalarUnavailable:left.sqlScalarUnavailable || right.sqlScalarUnavailable, sqlCallback:left.sqlCallback || right.sqlCallback, sqlDataUnavailable:left.sqlDataUnavailable || right.sqlDataUnavailable, httpTargetUnavailable:httpUnavailable([left,right]), urlFragments, nativeQuery: left.nativeQuery === true && right.nativeQuery === true, queryContent: sharedQueryContent, httpConfig };
+    return { ...result, expressResponse: joinResponse(left.expressResponse, right.expressResponse), expressObjectBody: left.expressObjectBody === true && right.expressObjectBody === true, ...(properties ? { properties } : {}), sqlFixedText, sqlArray, sqlConfig, sqlScalarUnavailable:left.sqlScalarUnavailable || right.sqlScalarUnavailable, sqlCallback:left.sqlCallback || right.sqlCallback, sqlDataUnavailable:left.sqlDataUnavailable || right.sqlDataUnavailable, httpTargetUnavailable:httpUnavailable([left,right]), urlFragments, nativeQuery: left.nativeQuery === true && right.nativeQuery === true, queryContent: sharedQueryContent, httpConfig };
   };
   if (left.kind === right.kind && (left.kind !== "root" || left.root === right.root)) {
     if (left.kind === "root") return withProperties(left);
@@ -339,7 +367,15 @@ class FlowEnv {
   }
 
   clone(): FlowEnv {
-    const env = new FlowEnv(this.scopes.map((scope) => new Map(scope)));
+    // Copy MIME state per control-flow branch while preserving direct aliases.
+    const states = new Map<ExpressResponseState, ExpressResponseState>();
+    const clone = (value: FlowValue): FlowValue => {
+      if (!value.expressResponse) return value;
+      let state = states.get(value.expressResponse);
+      if (!state) { state = { ...value.expressResponse }; states.set(value.expressResponse, state); }
+      return { ...value, expressResponse: state };
+    };
+    const env = new FlowEnv(this.scopes.map((scope) => new Map([...scope].map(([key, value]) => [key, clone(value)]))));
     env.terminated = this.terminated;
     return env;
   }
@@ -373,6 +409,7 @@ class FlowEnv {
       if (path.length === 1) this.assign(path[0], value);
       return;
     }
+    containResponse(value);
     const update = (base: FlowValue, index: number): FlowValue => {
       const property = path[index];
       const properties = new Map(base.properties ?? []);
@@ -382,7 +419,12 @@ class FlowEnv {
         properties.set(property, update(properties.get(property) ?? UNKNOWN, index + 1));
       }
       const combined = combineValues([base, value]);
-      return { ...combined, properties };
+      // These documented data fields do not replace the response API shape.
+      // Unknown API writes (including send/status/prototype) invalidate it.
+      const benignResponseWrite = index === 1 && ['locals', 'statusCode', 'statusMessage'].includes(property);
+      if (base.expressResponse && !benignResponseWrite) base.expressResponse.valid = false;
+      const expressResponse = benignResponseWrite ? base.expressResponse : undefined;
+      return { ...combined, expressResponse, expressObjectBody: base.expressObjectBody, properties };
     };
     this.assign(path[0], update(this.resolve(path[0]), 1));
   }
@@ -402,6 +444,10 @@ class FlowEnv {
     const live = branches.filter((branch) => !branch.terminated);
     if (live.length === 0) { this.terminated = true; return; }
     branches = live;
+    const responseStates = new Map<object, ExpressResponseState>();
+    for (const scope of this.scopes) for (const value of scope.values()) {
+      if (value.expressResponse) responseStates.set(value.expressResponse.identity, value.expressResponse);
+    }
     for (let depth = 0; depth < this.scopes.length; depth += 1) {
       const names = new Set<string>(this.scopes[depth].keys());
       for (const branch of branches) {
@@ -409,7 +455,15 @@ class FlowEnv {
       }
       for (const name of names) {
         const values = branches.map((branch) => branch.scopes[depth]?.get(name) ?? this.scopes[depth].get(name) ?? UNKNOWN);
-        this.scopes[depth].set(name, values.reduce(joinValues));
+        const joined = values.reduce(joinValues);
+        if (joined.expressResponse) {
+          const state = responseStates.get(joined.expressResponse.identity) ?? joined.expressResponse;
+          state.mime = joined.expressResponse.mime; state.valid = joined.expressResponse.valid;
+          state.contained = joined.expressResponse.contained;
+          responseStates.set(state.identity, state);
+          joined.expressResponse = state;
+        }
+        this.scopes[depth].set(name, joined);
       }
     }
   }
@@ -449,13 +503,13 @@ export function observedGapLocation(node: ts.Node, files: ReadonlyMap<string, ts
 interface FunctionSummary { returned: FlowValue; }
 // Mutable content must not be reused through a cached return or skipped side effect.
 function hasMutableQuery(value: FlowValue, seen = new Set<FlowValue>(), depth = 0): boolean {
-  if (value.queryContent || seen.has(value) || depth > 16 || seen.size > 128) return true;
+  if (value.expressResponse || value.queryContent || seen.has(value) || depth > 16 || seen.size > 128) return true;
   seen.add(value);
   return [...value.properties?.values() ?? []].some((item) => hasMutableQuery(item, seen, depth + 1));
 }
 
 function contextValue(value: FlowValue): unknown {
-  return [value.kind, value.root, value.inputRelated, value.trace, value.traceTruncated, value.urlFragments, value.nativeQuery, value.queryContent ? queryContent(value) : undefined,
+  return [value.kind, value.root, value.expressResponse ? [value.expressResponse.mime, value.expressResponse.valid, value.expressResponse.contained] : undefined, value.expressObjectBody, value.inputRelated, value.trace, value.traceTruncated, value.urlFragments, value.nativeQuery, value.queryContent ? queryContent(value) : undefined,
     value.httpTargetUnavailable, value.sqlScalarUnavailable, value.sqlFixedText?.maxCharacters, value.sqlCallback, value.sqlDataUnavailable, value.sqlArray ? [value.sqlArray.node.getSourceFile().fileName,value.sqlArray.node.pos,value.sqlArray.closed,value.sqlArray.count] : undefined,
     value.sqlConfig ? [value.sqlConfig.node.getSourceFile().fileName,value.sqlConfig.node.pos,value.sqlConfig.closed,contextValue(value.sqlConfig.text),value.sqlConfig.values ? contextValue(value.sqlConfig.values) : undefined] : undefined,
     value.httpConfig ? [value.httpConfig.node.getSourceFile().fileName, value.httpConfig.node.pos, value.httpConfig.closed,
@@ -668,7 +722,11 @@ class DataflowAnalyzer {
     const env = new FlowEnv();
     for (const [index, parameter] of functionLike.parameters.entries()) {
       if (actuals) this.declareBinding(parameter.name, traced(actuals[index] ?? UNKNOWN, parameter, "parameter"), env, true);
-      else this.declareParameter(parameter, env);
+      else if (index === 1 && ts.isIdentifier(parameter.name) && /^(res|response)$/.test(parameter.name.text)
+        && functionLike.parameters[0] && ts.isIdentifier(functionLike.parameters[0].name)
+        && /^(req|request)$/.test(functionLike.parameters[0].name.text)) {
+        this.declareBinding(parameter.name, { ...UNKNOWN, expressResponse: { identity: {}, mime: "default", valid: true } }, env, true);
+      } else this.declareParameter(parameter, env);
     }
     const body = functionBody(functionLike);
     if (!body) return UNKNOWN;
@@ -993,6 +1051,9 @@ class DataflowAnalyzer {
     if (ts.isCallExpression(expression)) {
       this.analyzeExpression(expression.expression, env);
       const callee = expression.expression;
+      const response = ts.isPropertyAccessExpression(callee) ? this.evalExpression(callee.expression, env) : undefined;
+      // Body interpretation happens when send/json runs, after argument evaluation.
+      const responseState = response?.expressResponse;
       // Preserve operand order in this syntax-shaped lane: later writes cannot replace earlier actual evidence.
       const args = evaluationShapedCallee(callee) ? expression.arguments.map(argument => {
         this.analyzeExpression(argument, env);
@@ -1014,17 +1075,35 @@ class DataflowAnalyzer {
             combineValues([receiver.queryContent.value, ...args]), [receiver]));
         }
       }
-      this.session?.invoke(expression, args,this.receiver,this.declared);
+      if (responseState?.valid && ts.isPropertyAccessExpression(callee)) {
+        this.updateResponseMime(callee.name.text, expression.arguments, responseState);
+        if (responseState.contained && responseState.mime !== "html") responseState.mime = "unknown";
+      }
+      const invoked = this.session?.invoke(expression, args,this.receiver,this.declared);
+      if (invoked === undefined) {
+        // An opaque consumer may change headers; never reuse a stale non-HTML
+        // exclusion after the response capability escapes to that consumer.
+        for (const value of args) if (value.expressResponse) value.expressResponse.mime = "unknown";
+        if (responseState?.valid && ts.isPropertyAccessExpression(callee)
+          && !["send", "json", "status", "type", "contentType", "set", "header", "setHeader", "append", "removeHeader"].includes(callee.name.text)) responseState.mime = "unknown";
+      }
       const argumentFlows: NonNullable<InputFlowUse["argumentFlows"]> = [];
       for (let index = 0; index < expression.arguments.length; index += 1) {
         const value = args[index];
         if (isInputRelated(value)) argumentFlows.push({ index, certainty: !this.declared && value.kind === "tainted" ? "tainted" : "unknown", staticFlow: evidence(value, expression), fixedDestination: !this.declared && fixedQueryDestination(value.urlFragments) });
       }
+      const responseMethod = ts.isPropertyAccessExpression(callee) ? callee.name.text : undefined;
+      const htmlResponse = responseState?.valid && expression.arguments.length === 1
+        && (responseMethod === "send" || responseMethod === "json")
+        && (responseState.mime === "html" || responseState.mime === "unknown"
+          || responseMethod === "send" && responseState.mime === "default" && !args[0]?.expressObjectBody)
+        ? "express" as const : undefined;
+      const htmlResponseMime = htmlResponse && responseState?.mime !== "non_html" ? responseState?.mime : undefined;
       const httpRole = this.httpRole(expression, args[0]);
       const sqlRole = this.sqlRole(expression, args);
       const forkRole = this.session?.forkModel.role(expression);
       if (argumentFlows.length > 0 || httpRole || sqlRole || forkRole) this.uses.push({ node: expression, kind: "call", argumentFlows,
-        localCall: this.session?.modules.localCallable(expression), ...(httpRole ? { httpRole } : {}), ...(sqlRole ? { sqlRole } : {}), ...(forkRole ? { forkRole } : {}), localForkCall: this.session?.localForkCalls.get(expression) });
+        localCall: this.session?.modules.localCallable(expression), ...(htmlResponse ? { htmlResponse, htmlResponseMime } : {}), ...(httpRole ? { httpRole } : {}), ...(sqlRole ? { sqlRole } : {}), ...(forkRole ? { forkRole } : {}), localForkCall: this.session?.localForkCalls.get(expression) });
       return;
     }
     if (ts.isNewExpression(expression)) {
@@ -1042,7 +1121,17 @@ class DataflowAnalyzer {
         }
         this.evaluationActuals.set(expression, { env, values });
         if (argumentFlows.length > 0) this.uses.push({ node: expression, kind: 'call', argumentFlows });
-      } else for (const argument of expression.arguments ?? []) this.analyzeExpression(argument, env);
+      } else {
+        const htmlResponse = this.isHtmlResponse(expression);
+        let responseBody: FlowValue | undefined;
+        for (const [index, argument] of (expression.arguments ?? []).entries()) {
+          this.analyzeExpression(argument, env);
+          // Capture actual body before later options can reassign its binding.
+          if (htmlResponse && index === 0) responseBody = this.evalExpression(argument, env);
+        }
+        if (responseBody && isInputRelated(responseBody)) this.uses.push({ node: expression, kind: "call", htmlResponse: "web",
+          argumentFlows: [{ index: 0, certainty: !this.declared && responseBody.kind === "tainted" ? "tainted" : "unknown", staticFlow: evidence(responseBody, expression) }] });
+      }
       return;
     }
     if (ts.isPrefixUnaryExpression(expression)) {
@@ -1219,6 +1308,81 @@ class DataflowAnalyzer {
     return { bound:true,inputRelated,outcome:'unknown_role',certainty:'unknown',...(flow ? {staticFlow:{...flow,truncated:true}} : {}) };
   }
 
+  /** Literal same-response MIME state only; no header values are retained in reports. */
+  private updateResponseMime(method: string, args: readonly ts.Expression[], state: ExpressResponseState): void {
+    const literal = (value: ts.Expression | undefined): string | undefined => value && ts.isStringLiteralLike(value) ? value.text.trim().toLowerCase() : undefined;
+    const mime = (value: ts.Expression | undefined, extension = false): ExpressMime => {
+      const text = literal(value)?.split(";", 1)[0].trim();
+      if (text === "text/html" || extension && text === "html") return "html";
+      if (["text/plain", "application/json"].includes(text ?? "") || extension && ["txt", "text", "json"].includes(text ?? "")) return "non_html";
+      return "unknown";
+    };
+    if (method === "type" || method === "contentType") { state.mime = args.length === 1 ? mime(args[0], true) : "unknown"; return; }
+    if (method === "removeHeader") {
+      const header = literal(args[0]);
+      if (args.length !== 1 || header === undefined) state.mime = "unknown";
+      else if (header === "content-type") state.mime = "default";
+      return;
+    }
+    if (!["set", "header", "setHeader", "append"].includes(method)) return;
+    if (args.length === 2) {
+      const header = literal(args[0]);
+      if (header === undefined) state.mime = "unknown";
+      else if (header === "content-type") state.mime = method === "append" ? "unknown" : mime(args[1]);
+      return;
+    }
+    if ((method === "set" || method === "header") && args.length === 1 && ts.isObjectLiteralExpression(args[0])) {
+      for (const property of args[0].properties) {
+        if (this.session && !this.session.tick()) { state.mime = "unknown"; return; }
+        if (!ts.isPropertyAssignment(property) || ts.isComputedPropertyName(property.name)) { state.mime = "unknown"; return; }
+        if (propertyName(property.name)?.toLowerCase() === "content-type") state.mime = mime(property.initializer);
+      }
+      return;
+    }
+    state.mime = "unknown";
+  }
+
+  /** Closed literal HTML headers only. No inferred MIME type for a plain Response body. */
+  private isHtmlResponse(node: ts.NewExpression): boolean {
+    if (!ts.isIdentifier(node.expression) || node.arguments?.length !== 2) return false;
+    const symbol = this.session?.modules.symbol(node.expression);
+    const declaration = symbol?.declarations?.length === 1 ? symbol.declarations[0] : undefined;
+    const nextImport = declaration && ts.isImportSpecifier(declaration)
+      && !declaration.isTypeOnly && !declaration.parent.parent.isTypeOnly
+      && (declaration.propertyName ?? declaration.name).text === "NextResponse"
+      && ts.isImportDeclaration(declaration.parent.parent.parent)
+      && ts.isStringLiteral(declaration.parent.parent.parent.moduleSpecifier)
+      && declaration.parent.parent.parent.moduleSpecifier.text === "next/server";
+    if (!(node.expression.text === "Response" && !symbol) && !nextImport) return false;
+    const options = node.arguments[1];
+    if (!ts.isObjectLiteralExpression(options)) return false;
+    let headers: ts.ObjectLiteralExpression | undefined;
+    const optionNames = new Set<string>();
+    for (const property of options.properties) {
+      if (this.session && !this.session.tick()) return false;
+      if (!ts.isPropertyAssignment(property) || ts.isComputedPropertyName(property.name)) return false;
+      const name = propertyName(property.name);
+      if (!name || optionNames.has(name)) return false;
+      optionNames.add(name);
+      if (name === "headers") {
+        if (!ts.isObjectLiteralExpression(property.initializer)) return false;
+        headers = property.initializer;
+      }
+    }
+    if (!headers) return false;
+    let html = false;
+    const names = new Set<string>();
+    for (const property of headers.properties) {
+      if (this.session && !this.session.tick()) return false;
+      if (!ts.isPropertyAssignment(property) || ts.isComputedPropertyName(property.name)) return false;
+      const name = propertyName(property.name)?.toLowerCase();
+      if (!name || names.has(name) || !ts.isStringLiteralLike(property.initializer)) return false;
+      names.add(name);
+      if (name === "content-type") html = /^text\/html(?:\s*;|\s*$)/i.test(property.initializer.text.trim());
+    }
+    return html;
+  }
+
   private evalExpression(expression: ts.Expression, env: FlowEnv): FlowValue {
     if (this.session && !this.session.tick()) return UNKNOWN;
     if (ts.isIdentifier(expression)) {
@@ -1257,8 +1421,9 @@ class DataflowAnalyzer {
         properties.set(String(index), withoutUrlProof(value));
         values.push(value);
       });
+      for (const value of values) containResponse(value);
       const combined = combineValues(values);
-      return { ...combined, properties, ...(this.session?.sqlModel ? { sqlArray:{ node:expression,closed:this.session.sqlModel.closedArray(expression) && !combined.sqlDataUnavailable,count:expression.elements.length } } : {}) };
+      return { ...combined, expressObjectBody: true, properties, ...(this.session?.sqlModel ? { sqlArray:{ node:expression,closed:this.session.sqlModel.closedArray(expression) && !combined.sqlDataUnavailable,count:expression.elements.length } } : {}) };
     }
     if (ts.isObjectLiteralExpression(expression)) {
       const properties = new Map<string, FlowValue>();
@@ -1299,9 +1464,10 @@ class DataflowAnalyzer {
           for (const [key, propertyValue] of value.properties ?? []) properties.set(key, withoutUrlProof(propertyValue));
         }
       }
+      for (const value of values) containResponse(value);
       const combined = combineValues(values);
       const closed = this.session?.httpModel.closedShape(expression) === true;
-      return { ...combined, properties, sqlDataUnavailable:combined.sqlDataUnavailable || dataUnavailable, ...(sqlText ? {sqlConfig:{node:expression,closed:this.session?.sqlModel.closedConfig(expression)===true,text:sqlText,values:sqlValues}} : {}), ...(target ? { httpConfig: { node: expression, closed,
+      return { ...combined, expressObjectBody: true, properties, sqlDataUnavailable:combined.sqlDataUnavailable || dataUnavailable, ...(sqlText ? {sqlConfig:{node:expression,closed:this.session?.sqlModel.closedConfig(expression)===true,text:sqlText,values:sqlValues}} : {}), ...(target ? { httpConfig: { node: expression, closed,
         fixedInitialUrl: target.kind === 'safe' && !target.httpTargetUnavailable && fixedInitialHttpUrl(target.urlFragments),
         encodedQueryInitialUrl: !target.httpTargetUnavailable && fixedQueryDestination(target.urlFragments), target } } : {}) };
     }
@@ -1347,6 +1513,11 @@ class DataflowAnalyzer {
         return { ...traced(inheritTrace(serialized, [currentQuery(receiver)]), expression, 'call'),
           urlFragments: receiver.nativeQuery ? [{ encodedQuery: true }] : undefined,
           traceTruncated: receiver.traceTruncated || !receiver.nativeQuery, httpTargetUnavailable:httpUnavailable([receiver]) };
+      }
+      // MIME setters are applied once during ordered statement analysis; reads
+      // of fluent return values must not replay earlier header writes.
+      if (receiver?.expressResponse?.valid && ["status", "type", "contentType", "set", "header", "append"].includes(method ?? "")) {
+        return { ...UNKNOWN, expressResponse: receiver.expressResponse };
       }
       if (method === "json" && receiver?.kind === "root" && receiver.root === "request") return withHttpUnavailable(traced(inheritTrace(TAINTED, [receiver]), expression, "source"), [receiver,...args]);
       if (method === "get" && receiver?.kind === "root" && (receiver.root === "searchParams" || receiver.root === "formData")) return withHttpUnavailable(traced(inheritTrace(TAINTED, [receiver]), expression, "source"), [receiver,...args]);

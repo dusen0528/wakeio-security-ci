@@ -48,7 +48,7 @@ with equal names, and separate scans do not share a context-free safe result.
 ## Limitations versus incomplete work
 
 Package/dynamic imports, namespace/default imports, re-exports, mutable or
-escaped exports, class dispatch, callback execution, free-variable captures,
+escaped exports, general class dispatch beyond the local subset below, callback execution, free-variable captures,
 full module initialization and framework/authentication/database semantics are
 outside this declared model. Mutable/overwritten export maps and implicit
 cross-file script globals cannot reuse a stale safe summary. Unknown calls are
@@ -133,14 +133,48 @@ Unsafe paths and unknown proof fields are dropped. The agent uses
 Severity and confidence remain separate. Scan-gate/digest/delivery semantics
 remain as documented in [agent-report.md](agent-report.md).
 
-The unchanged 30 fixture sources retain 15 vulnerable and 15 fixed cases.
-Corpus v2 promotes the two historical local/relative-module SQL misses to
-supported expectations (13 to 15 supported findings), so future misses fail
-strict gating. Baseline archives retain their historical v1 labels/counts.
-Generic development safe pairs and independently added acceptance cases test
-model boundaries; neither is a statistical blind holdout or production recall
-estimate. Fixed-origin URLSearchParams encoded-query outbound precision is a
-separate follow-up and is not solved by this change.
+Corpus v3 retains the original 30 sources and adds ten realistic vulnerable/fixed
+pairs: 50 cases, 25 expected findings. Primary precision/recall include the Koa
+known miss; supported-only metrics remain secondary. The current local engine
+finds 24/25 expectations with 0 extra findings on this corpus, versus 18/25 from
+the frozen v0.4.0 engine on the same bytes. These inspectable regression fixtures
+are not a statistical blind holdout or a production accuracy estimate.
+
+## Express/Next response and local class subset (ruleset 2026-10-05.18)
+
+- Request/response-shaped handlers with first parameter `req`/`request` and
+  second `res`/`response` now track response binding through direct aliases,
+  supported helper arguments, documented `locals`/`statusCode`/`statusMessage`
+  writes, and documented response chains. Same-response literal `type`, `set`,
+  `header` and `setHeader` calls track HTML versus plain-text/JSON MIME; direct
+  aliases and control-flow joins preserve that state. Explicit HTML MIME keeps
+  `res.json` and object/array bodies as candidates because serialization does not
+  reset an existing Content-Type. Dynamic/opaque header state stays uncertain;
+  opaque response consumers invalidate prior non-HTML exclusions. Storing a response
+  in object/array containers or property slots permanently disables MIME exclusions
+  for that response in the current analysis; general heap aliases are not resolved. Default JSON,
+  known non-HTML MIME and static bodies are excluded under this API convention.
+  Source type, framework registration and overridden APIs are not proven;
+  reflection and general object/heap aliasing are not a binding-closure proof. Arbitrary fluent chains, renamed entry parameters and opaque
+  object returns are not covered by this addition.
+- Global `new Response` and a named `NextResponse` import from `next/server`
+  report input bodies only with a closed literal `text/html` header. JSON/plain
+  responses, shadowed constructors, spread/dynamic headers and duplicate header
+  names are not classified as HTML by this rule. This is an API-shaped candidate,
+  not runtime binding or rendering proof. The model follows the documented
+  [Express send contract](https://expressjs.com/en/5x/api/response/#res.send)
+  and [NextResponse API](https://nextjs.org/docs/app/api-reference/functions/next-response).
+- A same-file top-level named class can resolve a direct method call on an
+  immutable top-level `const instance = new Class()` when every observed class
+  and instance use stays inside that subset. Constructors must be absent or
+  empty; methods must be receiver-independent. Exports, mutation, aliases,
+  escape, inheritance, fields, accessors, computed methods, generators and
+  opaque eval/Function/with syntax veto this certificate. This adds scalar
+  argument-to-method flows, not a heap/constructor or general class model.
+- Existing finding fields, rule IDs, evidence redaction and candidate semantics
+  are unchanged. New HTML titles include the next action in one line. SQL,
+  outbound, URL scanning, API workers and repair scope are not expanded.
+
 
 
 ## URL destination qualifier (ruleset 2026-10-05.2)

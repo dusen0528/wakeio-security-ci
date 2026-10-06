@@ -4,6 +4,18 @@ import { nextGapReview } from './analysis-gaps.js';
 const SUMMARY_CHECK_LIMIT = 6;
 const SUMMARY_GAP_LIMIT = 3;
 
+function selectedTools(report: ScanReport): ReportSummary['scope']['toolSelection'] {
+  const inventories = report.checks.filter(check => check.id === 'source.inventory');
+  if (inventories.length !== 1) return 'unknown';
+  const metrics = inventories[0].metrics;
+  if (!metrics || typeof metrics.nativePreviewSelected !== 'boolean') return 'unknown';
+  if (metrics.requestedTools === 'none') return metrics.nativePreviewSelected ? 'native_preview_selected' : 'built_in_only';
+  if (typeof metrics.requestedTools !== 'string') return 'unknown';
+  const tools = metrics.requestedTools.split(',');
+  return tools.length > 0 && tools.every(tool => ['gitleaks', 'osv', 'trivy', 'bandit'].includes(tool))
+    ? 'external_tools_selected' : 'unknown';
+}
+
 /** Internal pure projection. Callers supply the public sanitised report and its existing gate. */
 export function projectReportSummary(report: ScanReport, gate: ScanGate): ReportSummary {
   const blocking = new Set(gate.blockingFindingIds);
@@ -56,7 +68,7 @@ export function projectReportSummary(report: ScanReport, gate: ScanGate): Report
     incompleteChecks: incomplete, omittedIncompleteChecks: incompleteCount - incomplete.length,
     scope: { mode: report.mode,
       ...(report.scope ? { fingerprint: report.scope.fingerprint, ruleset: report.scope.ruleset, ...(report.scope.analysisBudget ? { analysisProfile: report.scope.analysisBudget.effectiveProfile, analysisBudgetRevision: report.scope.analysisBudget.revision } : {}) } : {}),
-      toolSelection: 'unknown', wholeProjectCoverage: 'not_established' },
+      toolSelection: selectedTools(report), wholeProjectCoverage: 'not_established' },
     nextRead,
   };
 }

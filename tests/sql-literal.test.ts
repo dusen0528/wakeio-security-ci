@@ -106,6 +106,6 @@ test('phase caps and incomplete scope remain fail-closed and public output never
  for(const cap of [{indexWork:1},{flowWork:1},{nodeVisits:1}]){const limited=runBuiltinAst(snapshot({'entry.ts':code}),false,{...FLOW_LIMITS,...cap});assert.equal(limited.status,'partial');assert.equal(limited.metrics?.sqlValuesOnlyExcluded,0);assert.equal(evaluateGate(createReport([limited],'source','2026-10-05T00:00:00.000Z'),'none').exitCode,2);}
  const incomplete=snapshot({'entry.ts':code});incomplete.complete=false;const failed=runBuiltinAst(incomplete,false);assert.equal(sql(failed).length,1);assert.equal(sql(failed)[0].confidence,'low');
  const risk=run(prefix+`function route(req){db.query(req.query.statement,[req.body.id])}`);const report=createReport([risk],'source','2026-10-05T00:00:00.000Z');const agent=toAgentReport(report,'high');
- assert.equal(RULESET_VERSION,'2026-10-05.17');assert.equal(agent.scanGate.exitCode,1);assert.equal(agent.findings[0].verification.vulnerabilityConfirmed,false);
+ assert.equal(RULESET_VERSION,'2026-10-05.18');assert.equal(agent.scanGate.exitCode,1);assert.equal(agent.findings[0].verification.vulnerabilityConfirmed,false);
  for(const output of [JSON.stringify(report),JSON.stringify(agent),JSON.stringify(toSarif(report)),toMarkdown(report)]){assert.doesNotMatch(output,/sqlFixedText|maxCharacters|req\.query\.statement|SELECT a WHERE/);assert.match(output,/Request input reaches a SQL statement text argument/);}
 });

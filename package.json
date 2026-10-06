@@ -18,9 +18,16 @@
   "bin": {
     "wakeio-security-ci": "./build/src/cli.js"
   },
+  "types": "./build/src/index.d.ts",
   "exports": {
-    ".": "./build/src/index.js",
-    "./contracts": "./build/src/contracts.js"
+    ".": {
+      "types": "./build/src/index.d.ts",
+      "default": "./build/src/index.js"
+    },
+    "./contracts": {
+      "types": "./build/src/contracts.d.ts",
+      "default": "./build/src/contracts.js"
+    }
   },
   "files": [
     "build/src",

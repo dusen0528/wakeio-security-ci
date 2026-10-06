@@ -403,6 +403,8 @@ function inventoryCheck(snapshot: SourceSnapshot, tools: ToolName[], nativeSelec
     findings: [],
     notes,
     metrics: {
+      requestedTools: tools.length ? tools.join(",") : "none",
+      nativePreviewSelected: nativeSelected,
       filesSelected: snapshot.files.length,
       bytesSelected: snapshot.totalBytes,
       ignoredFiles: snapshot.ignoredFiles,

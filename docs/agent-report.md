@@ -48,10 +48,12 @@ checks. Unknown accounting remains unknown/null, not zero. With no typed gap,
 Representative items are navigation, not an exhaustive or ranked cause list.
 
 `scope` records the declared mode and optional fingerprint/ruleset; it does not
-establish whole-project coverage. `toolSelection` is `unknown`: current reports
-do not contain typed requested-tool selection, and the summary does not parse
-notes to infer missing installations, disabled tools or applicability. Existing
-typed statuses/provenance remain available in the original report. A
+establish whole-project coverage. `toolSelection` is projected from the source
+inventory's structured requested-tool metrics: `built_in_only`,
+`external_tools_selected`, or `native_preview_selected`. Older reports, invalid
+metadata or ambiguous duplicate inventories retain `unknown`. The summary never
+parses notes or confuses selection with installation, execution or applicability.
+Existing typed statuses/provenance remain available in the original report. A
 `module_missing` gap does not by itself prescribe installing a dependency.
 
 `nextRead` copies a recorded gap's fixed `nextReview` and optional reported

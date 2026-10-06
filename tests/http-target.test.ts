@@ -162,7 +162,7 @@ test('new check metric and residual actual trace project through four sanitized 
   const check=run(text);assert.equal(outbound(check).length,1);
   const report=createReport([check],'source','2026-10-05T00:00:00.000Z');
   const agent=toAgentReport(report,'high'),sarif=toSarif(report),md=toMarkdown(report);
-  assert.equal(RULESET_VERSION,'2026-10-05.17');assert.equal(evaluateGate(report,'high').exitCode,1);assert.equal(agent.scanGate.exitCode,1);
+  assert.equal(RULESET_VERSION,'2026-10-05.18');assert.equal(evaluateGate(report,'high').exitCode,1);assert.equal(agent.scanGate.exitCode,1);
   assert.equal(agent.findings[0].verification.vulnerabilityConfirmed,false);assert.equal(agent.findings[0].verification.state,'not_run');
   for(const output of [JSON.stringify(report),JSON.stringify(sarif),md,JSON.stringify(agent)]) {
     assert.ok(!output.includes('fixed.example'));assert.ok(!output.includes('req.query.host'));
