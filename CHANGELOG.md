@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Recognize renamed request/response parameters at narrowly bound Express app,
+  Router, HTTP route and middleware registrations; preserve MIME safeguards and
+  reject unsupported callback, alias, mutation and loader identities.
 - Add bounded Express `res.send`/status-chain and explicit HTML Response/NextResponse
   candidates with actionable titles and redacted source-to-sink evidence.
 - Resolve receiver-independent methods on audited immutable local class instances;
@@ -15,7 +18,7 @@
   align report/package versions and expose structured requested-tool selection.
 - Accept OSV-Scanner 2.6's omitted empty vulnerabilities field while keeping null,
   invalid types, invalid inventory and contradictory process results fail-closed.
-- Ruleset `2026-10-05.18`; no public finding-contract, external worker, network,
+- Ruleset `2026-10-06.1`; no public finding-contract, external worker, network,
   repair or published package-version change.
 
 ## 0.4.0 — bounded source and fixture verification release

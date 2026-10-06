@@ -208,7 +208,7 @@ test("all four report projections preserve position-only static evidence and unv
     assert.match(toMarkdown(safe),/Static source flow/);
     assert.match(JSON.stringify(toSarif(safe)),/codeFlows/);
     assert.equal(JSON.stringify(agent).includes('req.query.sql'),false);
-    assert.equal(RULESET_VERSION,'2026-10-05.18');
+    assert.equal(RULESET_VERSION,'2026-10-06.1');
     const out=join(parent,'out');
     await writeReports(safe,out);
     const persisted=JSON.parse(await readFile(join(out,'agent-report.json'),'utf8'));

@@ -6,6 +6,7 @@ import { NativeQueryModel, boundedFragments, fixedQueryDestination, type UrlFrag
 import { ForkRoleModel, type ForkRoleUse } from './fork-role.js';
 import { SqlRoleModel, type SqlRoleUse } from './sql-role.js';
 import { HttpRoleModel, fixedInitialHttpUrl, legacyAxiosRequest, type HttpRoleUse } from './http-role.js';
+import { ExpressRoleModel } from './express-role.js';
 
 /** A source-to-sink use found by the bounded, same-function analysis. */
 export interface InputFlowUse {
@@ -528,6 +529,7 @@ class FlowSession {
   readonly httpModel: HttpRoleModel;
   readonly sqlModel: SqlRoleModel;
   readonly forkModel: ForkRoleModel;
+  readonly expressModel: ExpressRoleModel;
   readonly active = new Set<string>();
   readonly cache = new Map<string, FunctionSummary>();
   readonly localForkCalls = new WeakMap<ts.CallExpression, { complete: boolean }>();
@@ -567,6 +569,7 @@ class FlowSession {
     this.httpModel = new HttpRoleModel(this.modules, () => this.tick(), roleProofScopeComplete, this.indexComplete);
     this.sqlModel = new SqlRoleModel(this.modules, () => this.tick(), roleProofScopeComplete, this.indexComplete);
     this.forkModel = new ForkRoleModel(this.modules, () => this.tick(), roleProofScopeComplete, this.indexComplete);
+    this.expressModel = new ExpressRoleModel(this.modules, () => this.tick(), this.indexComplete);
     this.modules.finishIndex(this.indexComplete);
     this.phase = 'flow';
   }
@@ -720,8 +723,13 @@ class DataflowAnalyzer {
   analyzeFunction(functionLike: ts.FunctionLikeDeclaration, actuals?: readonly FlowValue[], receiver?: SingletonReceiver, declared=false): FlowValue {
     this.receiver=receiver; this.declared=declared;
     const env = new FlowEnv();
+    const expressEntry = this.session?.expressModel.entry(functionLike);
     for (const [index, parameter] of functionLike.parameters.entries()) {
       if (actuals) this.declareBinding(parameter.name, traced(actuals[index] ?? UNKNOWN, parameter, "parameter"), env, true);
+      else if (expressEntry) this.declareBinding(parameter.name,
+        index === expressEntry.request ? rootValue('request')
+          : index === expressEntry.response ? { ...UNKNOWN, expressResponse: { identity: {}, mime: 'default', valid: true } }
+            : UNKNOWN, env, true);
       else if (index === 1 && ts.isIdentifier(parameter.name) && /^(res|response)$/.test(parameter.name.text)
         && functionLike.parameters[0] && ts.isIdentifier(functionLike.parameters[0].name)
         && /^(req|request)$/.test(functionLike.parameters[0].name.text)) {
@@ -1564,6 +1572,7 @@ export function findSnapshotInputFlows(files: readonly ts.SourceFile[], limits: 
   session.run(files);
   return { uses: session.uses, reasons: [...session.reasons].sort(), analysisGaps: session.diagnostics.result(), metrics: {
     flowModel: "bounded-static-local-relative-v1", budgetModel: "shared-index-separate-flow-v1", entrySeedModel: "request_shaped_uncalled_exported_or_callback_escaped_function",
+    expressEntryModel: 'lexical-express-registration-v1',
     nodeVisits: session.nodeVisits, indexWork: session.indexWork, flowWork: session.flowWork,
     maxIndexWork: session.maxIndexWork, maxFlowWork: session.maxFlowWork,
     indexComplete: session.indexComplete, rootInventoryComplete: session.indexComplete,

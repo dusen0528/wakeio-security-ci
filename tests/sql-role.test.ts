@@ -141,7 +141,7 @@ test('SQL qualification retains shell HTML outbound taint and applies scope/budg
 
 test('four public projections keep actual text evidence, fixed titles, unverified status and redaction',()=>{
  const r=run(prefix+"function route(req){db.query({values:[req.query.payload],text:req.query.sql})}");const report=createReport([r],'source','2026-10-05T00:00:00.000Z');const agent=toAgentReport(report,'high');
- assert.equal(RULESET_VERSION,'2026-10-05.18');assert.equal(evaluateGate(report,'high').exitCode,1);
+ assert.equal(RULESET_VERSION,'2026-10-06.1');assert.equal(evaluateGate(report,'high').exitCode,1);
  assert.equal(agent.findings[0].verification.vulnerabilityConfirmed,false);assert.equal(agent.findings[0].verification.state,'not_run');
  for(const output of [JSON.stringify(report),JSON.stringify(agent),JSON.stringify(toSarif(report)),toMarkdown(report)]){
  assert.match(output,/Request input reaches a SQL statement text argument/);assert.doesNotMatch(output,/req\.query\.sql|SELECT id FROM/);

@@ -93,7 +93,7 @@ test('cycle/index/scope/flow/summary limits preserve partial gate and known expo
 });
 test('four projections retain unverified candidate, IDs and the current semantic version',()=>{
  const input=route('req.query.value');
- const check=run(files(input)),report=createReport([check],'source',new Date());assert.equal(RULESET_VERSION,'2026-10-05.18');assert.equal(fork(check).length,1);
+ const check=run(files(input)),report=createReport([check],'source',new Date());assert.equal(RULESET_VERSION,'2026-10-06.1');assert.equal(fork(check).length,1);
  const agent=toAgentReport(report);assert.equal(agent.scanGate.exitCode,1);assert.ok(agent.findings.every(f=>f.verification.vulnerabilityConfirmed===false&&f.verification.remediationVerified===false));
  assert.match(toMarkdown(report),/Node fork module path/);assert.match(JSON.stringify(toSarif(report)),/ast:fork-module-path/);assert.equal(toSarif(report).runs[0].results?.[0].ruleId,report.checks[0].findings[0].ruleId);
  assertRedacted(check,input,['req.query.value','api.jobs.run(req.query.value)']);

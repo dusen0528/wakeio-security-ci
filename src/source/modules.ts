@@ -78,6 +78,8 @@ export class StaticModules {
   readonly forkLoads: ts.Node[] = [];
   readonly axiosLoads: Array<ts.CallExpression | ts.ImportEqualsDeclaration | ts.ExportDeclaration> = [];
   readonly cjsReferences = new Map<ts.SourceFile, ts.Identifier[]>();
+  readonly requireReferences: ts.Identifier[] = [];
+  readonly expressOpaqueLoads: ts.Node[] = [];
   readonly indexWalkFiles = new Set<ts.SourceFile>();
   indexedAstNodes = 0;
   symbolLookups = 0;
@@ -184,6 +186,7 @@ export class StaticModules {
       }
       if (ts.isCallExpression(node) && node.expression.kind === ts.SyntaxKind.ImportKeyword) {
         const specifier = node.arguments.length === 1 ? staticLoadExpression(node.arguments[0]) : undefined;
+        if (specifier && ts.isStringLiteralLike(specifier) && specifier.text === 'express') this.expressOpaqueLoads.push(node);
         this.unsupportedObjectLoads.push({node, specifier: specifier
           && ts.isStringLiteralLike(specifier) ? specifier.text : undefined});
       }
@@ -191,6 +194,7 @@ export class StaticModules {
         specifier: ts.isStringLiteralLike(node.moduleSpecifier) ? node.moduleSpecifier.text : undefined});
       if (ts.isImportEqualsDeclaration(node) && ts.isExternalModuleReference(node.moduleReference)) {
         const specifier = node.moduleReference.expression;
+        if (specifier && ts.isStringLiteralLike(specifier) && specifier.text === 'express') this.expressOpaqueLoads.push(node);
         this.unsupportedObjectLoads.push({node, specifier: specifier && ts.isStringLiteralLike(specifier) ? specifier.text : undefined});
       }
       if (ts.isCallExpression(node) && node.arguments.length >= 1) {
@@ -217,6 +221,7 @@ export class StaticModules {
       if (ts.isImportEqualsDeclaration(node) && ts.isExternalModuleReference(node.moduleReference) && node.moduleReference.expression && ts.isStringLiteralLike(node.moduleReference.expression) && /^(pg(?:\/|$)|pg-native$|pg-pool$)/.test(node.moduleReference.expression.text)) this.sqlLoads.push({specifier:node.moduleReference.expression.text,node});
       if (ts.isExportDeclaration(node) && node.moduleSpecifier && ts.isStringLiteralLike(node.moduleSpecifier) && /^(pg(?:\/|$)|pg-native$|pg-pool$)/.test(node.moduleSpecifier.text)) this.sqlLoads.push({specifier:node.moduleSpecifier.text,node});
       if (ts.isIdentifier(node)) {
+        if (node.text === 'require' && !(ts.isPropertyAccessExpression(node.parent) && node.parent.name === node)) this.requireReferences.push(node);
         if (node.text === 'eval' || node.text === 'Function') this.opaqueClassScopeFiles.add(node.getSourceFile());
         const symbol = this.symbol(node);
         if (symbol) {

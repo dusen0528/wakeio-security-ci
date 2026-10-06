@@ -140,6 +140,52 @@ finds 24/25 expectations with 0 extra findings on this corpus, versus 18/25 from
 the frozen v0.4.0 engine on the same bytes. These inspectable regression fixtures
 are not a statistical blind holdout or a production accuracy estimate.
 
+## Express registration positions (ruleset 2026-10-06.1)
+
+An additional lexical entry model recognizes renamed request/response parameters
+only at supported same-file Express registrations. It reuses the bounded shared
+index; analyzed code, imports and dependencies are never executed.
+
+- Exact `express` default/default-as, namespace and named `Router` imports, plus
+  unshadowed static `require('express')` and `Router` destructuring, establish
+  factory shapes. Immutable same-file const factory/router aliases are supported.
+- `express()` and `Router()` establish app/router shapes. Literal-path `get`,
+  `post`, `put`, `patch`, `delete`, `head`, `options`, `all`, `use` with or without
+  a literal mount path, and `route(path)` HTTP chains establish handler slots.
+  Paths can be literal strings, regexes or bounded literal arrays. Unrelated
+  callbacks, including `listen`, `engine`, `on` and `param`, are not seeded.
+- Inline callbacks, immutable named local callbacks and bounded literal callback
+  arrays use request/response positions 0/1. Exactly four ordinary parameters use
+  error-handler positions 1/2. Other parameters are unknown regardless of name.
+  Actual helper-call arguments still take precedence over entry seeds, and named
+  registered handlers retain a separate entry analysis after fixed local calls.
+- Known binding/member changes, shared-prototype access, opaque escapes, and
+  mutation of named handler arity revoke positional qualification. This audit is
+  conservative across the observed Express package family. Reassigned/escaped
+  global require loaders, dynamic Express imports and incomplete indexing do not
+  establish positional identity. Safe const aliases and mounting one recognized
+  router with another's `use` remain in scope.
+- Direct ESM default exports of a recognized app/router retain same-file
+  registration candidates. Exporting a binding does not invoke or rewrite it;
+  behavior of consumers of that export is not certified. Exported containers
+  and opaque calls still do not qualify.
+
+Named array variables, spreads, dynamic path/method names, imported handlers,
+wrapper-returned callbacks, bound functions, generators, default/rest/TypeScript
+`this` parameters, and more than four parameters are outside this model. It is
+not a proof of runtime registration, dependency authenticity, callback reachability
+or middleware ordering. Deferred bodies assume initialization as in the existing
+local-call model. Each entry starts with the existing response MIME convention;
+upstream middleware header changes are not composed across registrations.
+The earlier request-shaped-name heuristic remains available outside this subset;
+absence of a finding for an unsupported renamed callback is not a safety verdict.
+
+The model follows the official [routing guide](https://expressjs.com/en/guide/routing/),
+[middleware guide](https://expressjs.com/en/guide/using-middleware/) and
+[router arity dispatch](https://github.com/pillarjs/router/blob/master/lib/layer.js).
+New regression tests are separate from the unchanged 50-case synthetic benchmark;
+its remaining Koa miss stays in the denominator.
+
 ## Express/Next response and local class subset (ruleset 2026-10-05.18)
 
 - Request/response-shaped handlers with first parameter `req`/`request` and
@@ -155,8 +201,8 @@ are not a statistical blind holdout or a production accuracy estimate.
   for that response in the current analysis; general heap aliases are not resolved. Default JSON,
   known non-HTML MIME and static bodies are excluded under this API convention.
   Source type, framework registration and overridden APIs are not proven;
-  reflection and general object/heap aliasing are not a binding-closure proof. Arbitrary fluent chains, renamed entry parameters and opaque
-  object returns are not covered by this addition.
+  reflection and general object/heap aliasing are not a binding-closure proof. Arbitrary fluent chains and opaque object returns are not covered by this addition.
+  Renamed parameters are supported only by the separately bounded registration model below.
 - Global `new Response` and a named `NextResponse` import from `next/server`
   report input bodies only with a closed literal `text/html` header. JSON/plain
   responses, shadowed constructors, spread/dynamic headers and duplicate header
