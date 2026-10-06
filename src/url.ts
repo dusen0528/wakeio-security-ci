@@ -21,6 +21,7 @@ import {
 } from "./url-observations.js";
 import { analyzeCsp } from "./url-csp.js";
 import { scanModuleReferences, type ModuleReferenceScan } from "./url-modules.js";
+import { scanSecretAssignments } from "./url-secret-assignments.js";
 
 const DEFAULT_TIMEOUT_MS = 30_000;
 const DEFAULT_MAX_PAGES = 1;
@@ -276,7 +277,7 @@ function supabaseKeyKind(text: string, value: string, index: number): SupabaseKe
 interface SecretRule {
   ruleId: string;
   title: string;
-  regex: RegExp;
+  regex: RegExp | typeof scanSecretAssignments;
 }
 
 const SECRET_RULES: SecretRule[] = [
@@ -285,7 +286,7 @@ const SECRET_RULES: SecretRule[] = [
   { ruleId: "url.secret-jwt-candidate", title: "JWT-like token candidate", regex: /\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b/g },
   // Literal values only: environment/config references are not credentials
   // exposed in the fetched response and should not become noisy findings.
-  { ruleId: "url.secret-assignment", title: "Secret-shaped assignment candidate", regex: /\b(?:[A-Za-z0-9]+[_-])*(?:api[_-]?key|secret(?:[_-]?key)?|service[_-]?role(?:[_-]?key)?|access[_-]?(?:key|token)|auth(?:orization)?|password|passwd|private[_-]?key|client[_-]?secret|session[_-]?token)\b\s*["']?\s*[:=]\s*(?:"[^"\r\n]{8,}"|'[^'\r\n]{8,}'|[A-Za-z0-9+/_=-]{16,})/gi },
+  { ruleId: "url.secret-assignment", title: "Secret-shaped assignment candidate", regex: scanSecretAssignments },
   { ruleId: "url.secret-bearer", title: "Bearer credential candidate", regex: /\bBearer\s+[A-Za-z0-9._~+/=-]{12,}/gi },
 ];
 
@@ -293,9 +294,8 @@ function scanSecrets(state: ScanState, text: string, url: NormalizedUrl | string
   const starts = documentStarts ?? lineStarts(text);
   let scanned = 0;
   for (const rule of SECRET_RULES) {
-    rule.regex.lastIndex = 0;
-    let match: RegExpExecArray | null;
-    while ((match = rule.regex.exec(text)) !== null) {
+    const matches = typeof rule.regex === "function" ? rule.regex(text) : text.matchAll(rule.regex);
+    for (const match of matches) {
       scanned += 1;
       if (scanned > MAX_PATTERN_MATCHES_PER_SCAN || state.findingsCapped) {
         state.incomplete = true;
@@ -317,7 +317,6 @@ function scanSecrets(state: ScanState, text: string, url: NormalizedUrl | string
       // still depend on RLS and grants, but their presence in browser content
       // is not itself a secret exposure.
       if (supabaseKind === "public-anon" || supabaseKind === "public-publishable") {
-        if (match[0].length === 0) rule.regex.lastIndex += 1;
         continue;
       }
       const candidateRuleId = supabaseKind === "service" ? "url.secret-supabase-service-key" : rule.ruleId;
@@ -339,7 +338,6 @@ function scanSecrets(state: ScanState, text: string, url: NormalizedUrl | string
         remediation: "Remove credentials from browser-delivered content and rotate any exposed credential through the owning provider.",
         references: ["https://owasp.org/www-community/vulnerabilities/Use_of_hard-coded_password"],
       });
-      if (match[0].length === 0) rule.regex.lastIndex += 1;
     }
   }
 }

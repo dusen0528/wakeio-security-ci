@@ -229354,6 +229354,35 @@ function scanModuleReferences(text2) {
   };
 }
 
+// build/src/url-secret-assignments.js
+function* scanSecretAssignments(text2) {
+  const names = /\b[A-Za-z0-9]+(?:[_-][A-Za-z0-9]+)*/g;
+  const secretName = /^(?:[A-Za-z0-9]+[_-])*(?:api[_-]?key|secret(?:[_-]?key)?|service[_-]?role(?:[_-]?key)?|access[_-]?(?:key|token)|auth(?:orization)?|password|passwd|private[_-]?key|client[_-]?secret|session[_-]?token)$/i;
+  const whitespace = /\s*/y;
+  const literal = /"[^"\r\n]{8,}"|'[^'\r\n]{8,}'|[A-Za-z0-9+/_=-]{16,}/y;
+  const skipWhitespace = (offset) => {
+    whitespace.lastIndex = offset;
+    whitespace.exec(text2);
+    return whitespace.lastIndex;
+  };
+  for (let name = names.exec(text2); name; name = names.exec(text2)) {
+    const nameEnd = names.lastIndex;
+    if (text2[nameEnd] === "_" || !secretName.test(name[0]))
+      continue;
+    let cursor = skipWhitespace(nameEnd);
+    if (text2[cursor] === '"' || text2[cursor] === "'")
+      cursor = skipWhitespace(cursor + 1);
+    if (text2[cursor] !== ":" && text2[cursor] !== "=")
+      continue;
+    literal.lastIndex = skipWhitespace(cursor + 1);
+    const value = literal.exec(text2);
+    if (!value)
+      continue;
+    names.lastIndex = literal.lastIndex;
+    yield { 0: text2.slice(name.index, literal.lastIndex), index: name.index };
+  }
+}
+
 // build/src/url.js
 var DEFAULT_TIMEOUT_MS = 3e4;
 var DEFAULT_MAX_PAGES = 1;
@@ -229519,16 +229548,15 @@ var SECRET_RULES = [
   { ruleId: "url.secret-jwt-candidate", title: "JWT-like token candidate", regex: /\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b/g },
   // Literal values only: environment/config references are not credentials
   // exposed in the fetched response and should not become noisy findings.
-  { ruleId: "url.secret-assignment", title: "Secret-shaped assignment candidate", regex: /\b(?:[A-Za-z0-9]+[_-])*(?:api[_-]?key|secret(?:[_-]?key)?|service[_-]?role(?:[_-]?key)?|access[_-]?(?:key|token)|auth(?:orization)?|password|passwd|private[_-]?key|client[_-]?secret|session[_-]?token)\b\s*["']?\s*[:=]\s*(?:"[^"\r\n]{8,}"|'[^'\r\n]{8,}'|[A-Za-z0-9+/_=-]{16,})/gi },
+  { ruleId: "url.secret-assignment", title: "Secret-shaped assignment candidate", regex: scanSecretAssignments },
   { ruleId: "url.secret-bearer", title: "Bearer credential candidate", regex: /\bBearer\s+[A-Za-z0-9._~+/=-]{12,}/gi }
 ];
 function scanSecrets(state, text2, url, baseOffset = 0, documentStarts, documentText) {
   const starts = documentStarts ?? lineStarts2(text2);
   let scanned = 0;
   for (const rule of SECRET_RULES) {
-    rule.regex.lastIndex = 0;
-    let match;
-    while ((match = rule.regex.exec(text2)) !== null) {
+    const matches = typeof rule.regex === "function" ? rule.regex(text2) : text2.matchAll(rule.regex);
+    for (const match of matches) {
       scanned += 1;
       if (scanned > MAX_PATTERN_MATCHES_PER_SCAN || state.findingsCapped) {
         state.incomplete = true;
@@ -229548,8 +229576,6 @@ function scanSecrets(state, text2, url, baseOffset = 0, documentStarts, document
       }
       const supabaseKind = supabaseKeyKind(text2, candidateValue, candidateValueIndex);
       if (supabaseKind === "public-anon" || supabaseKind === "public-publishable") {
-        if (match[0].length === 0)
-          rule.regex.lastIndex += 1;
         continue;
       }
       const candidateRuleId = supabaseKind === "service" ? "url.secret-supabase-service-key" : rule.ruleId;
@@ -229567,8 +229593,6 @@ function scanSecrets(state, text2, url, baseOffset = 0, documentStarts, document
         remediation: "Remove credentials from browser-delivered content and rotate any exposed credential through the owning provider.",
         references: ["https://owasp.org/www-community/vulnerabilities/Use_of_hard-coded_password"]
       });
-      if (match[0].length === 0)
-        rule.regex.lastIndex += 1;
     }
   }
 }

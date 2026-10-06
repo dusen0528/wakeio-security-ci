@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Replace the URL secret-assignment prefix search with consuming token matching,
+  retaining literal detection/redaction while avoiding quadratic failed matches
+  on long hyphenated input or whitespace. Add bounded subprocess regression
+  guards; URL timeouts still do not preempt arbitrary synchronous parsing.
 - Recognize renamed request/response parameters at narrowly bound Express app,
   Router, HTTP route and middleware registrations; preserve MIME safeguards and
   reject unsupported callback, alias, mutation and loader identities.
