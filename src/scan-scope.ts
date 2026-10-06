@@ -44,6 +44,8 @@ export interface ScopeInputs {
   apiPolicy?: unknown;
   ruleset: string;
   nativePreview?: { executable: string };
+  /** Active DAST selection; absent keeps pre-existing fingerprints unchanged. */
+  dast?: unknown;
 }
 
 export function validateProjectId(value: unknown): string | undefined {
@@ -188,6 +190,7 @@ export async function buildScanScope(inputs: ScopeInputs): Promise<ScanScope> {
     pages: [...(inputs.pages ?? [])],
     maxPages: inputs.maxPages ?? null,
     apiPolicy: inputs.apiPolicy ?? null,
+    ...(inputs.dast !== undefined ? { dast: inputs.dast } : {}),
     // Preserve non-native fingerprints; selection is an explicit model change.
     ...(inputs.nativePreview ? { nativePreview: { profile: OPENGREP_PROFILE, enginePin: OPENGREP_SHA256, rulePackPin: OWN_RULES_SHA256,
       runtimeMs: Math.min(inputs.timeoutMs ?? 10_000, 10_000), outputBytes: 8 * 1024 * 1024, sampledRssBytes: 512 * 1024 * 1024 } } : {}),

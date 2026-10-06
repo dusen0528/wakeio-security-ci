@@ -2302,7 +2302,7 @@ var require_typescript = __commonJS({
         walkUpParenthesizedTypesAndGetParentAndChild: () => walkUpParenthesizedTypesAndGetParentAndChild,
         whitespaceOrMapCommentRegExp: () => whitespaceOrMapCommentRegExp,
         writeCommentRange: () => writeCommentRange,
-        writeFile: () => writeFile7,
+        writeFile: () => writeFile8,
         writeFileEnsuringDirectories: () => writeFileEnsuringDirectories,
         zipWith: () => zipWith
       });
@@ -3052,13 +3052,13 @@ var require_typescript = __commonJS({
         return hasOwnProperty.call(map2, key2) ? map2[key2] : void 0;
       }
       function getOwnKeys(map2) {
-        const keys = [];
+        const keys2 = [];
         for (const key2 in map2) {
           if (hasOwnProperty.call(map2, key2)) {
-            keys.push(key2);
+            keys2.push(key2);
           }
         }
-        return keys;
+        return keys2;
       }
       function getAllKeys(obj) {
         const result2 = [];
@@ -7963,7 +7963,7 @@ ${lanes.join("\n")}
         getCurrentDirectory,
         getAccessibleSortedChildDirectories,
         fileSystemEntryExists,
-        realpath: realpath4,
+        realpath: realpath5,
         setTimeout: setTimeout2,
         clearTimeout: clearTimeout2
       }) {
@@ -8139,7 +8139,7 @@ ${lanes.join("\n")}
         function updateChildWatches(parentDir, parentDirPath, options) {
           const parentWatcher = cache.get(parentDirPath);
           if (!parentWatcher) return false;
-          const target = normalizePath(realpath4(parentDir));
+          const target = normalizePath(realpath5(parentDir));
           let hasChanges;
           let newChildWatches;
           if (filePathComparer(target, parentDir) === 0) {
@@ -8150,7 +8150,7 @@ ${lanes.join("\n")}
                 /* Directory */
               ) ? mapDefined(getAccessibleSortedChildDirectories(parentDir), (child) => {
                 const childFullName = getNormalizedAbsolutePath(child, parentDir);
-                return !isIgnoredPath(childFullName, options) && filePathComparer(childFullName, normalizePath(realpath4(childFullName))) === 0 ? childFullName : void 0;
+                return !isIgnoredPath(childFullName, options) && filePathComparer(childFullName, normalizePath(realpath5(childFullName))) === 0 ? childFullName : void 0;
               }) : emptyArray,
               parentWatcher.childWatches,
               (child, childWatcher) => filePathComparer(child, childWatcher.dirName),
@@ -8234,7 +8234,7 @@ ${lanes.join("\n")}
         getCurrentDirectory,
         fsSupportsRecursiveFsWatch,
         getAccessibleSortedChildDirectories,
-        realpath: realpath4,
+        realpath: realpath5,
         tscWatchFile,
         useNonPollingWatchers,
         tscWatchDirectory,
@@ -8374,7 +8374,7 @@ ${lanes.join("\n")}
               fileSystemEntryExists,
               getAccessibleSortedChildDirectories,
               watchDirectory: nonRecursiveWatchDirectory,
-              realpath: realpath4,
+              realpath: realpath5,
               setTimeout: setTimeout2,
               clearTimeout: clearTimeout2
             });
@@ -8613,7 +8613,7 @@ ${lanes.join("\n")}
             // (ref: https://github.com/nodejs/node/pull/2649 and https://github.com/Microsoft/TypeScript/issues/4643)
             fsSupportsRecursiveFsWatch,
             getAccessibleSortedChildDirectories: (path) => getAccessibleFileSystemEntries(path).directories,
-            realpath: realpath4,
+            realpath: realpath5,
             tscWatchFile: process.env.TSC_WATCHFILE,
             useNonPollingWatchers: !!process.env.TSC_NONPOLLING_WATCHER,
             tscWatchDirectory: process.env.TSC_WATCHDIRECTORY,
@@ -8634,7 +8634,7 @@ ${lanes.join("\n")}
             writeOutputIsTTY() {
               return process.stdout.isTTY;
             },
-            readFile: readFile2,
+            readFile: readFile4,
             writeFile: writeFile22,
             watchFile: watchFile2,
             watchDirectory,
@@ -8675,9 +8675,9 @@ ${lanes.join("\n")}
               return process.memoryUsage().heapUsed;
             },
             getFileSize(path) {
-              const stat = statSync(path);
-              if (stat == null ? void 0 : stat.isFile()) {
-                return stat.size;
+              const stat2 = statSync(path);
+              if (stat2 == null ? void 0 : stat2.isFile()) {
+                return stat2.size;
               }
               return 0;
             },
@@ -8687,7 +8687,7 @@ ${lanes.join("\n")}
             enableCPUProfiler,
             disableCPUProfiler,
             cpuProfilingEnabled: () => !!activeSession || contains(process.execArgv, "--cpu-prof") || contains(process.execArgv, "--prof"),
-            realpath: realpath4,
+            realpath: realpath5,
             debugMode: !!process.env.NODE_INSPECTOR_IPC || !!process.env.VSCODE_INSPECTOR_OPTIONS || some(process.execArgv, (arg) => /^--(?:inspect|debug)(?:-brk)?(?:=\d+)?$/i.test(arg)) || !!process.recordreplay,
             tryEnableSourceMapsForHost() {
               try {
@@ -8840,7 +8840,7 @@ ${lanes.join("\n")}
               callback
             );
           }
-          function readFile2(fileName, _encoding) {
+          function readFile4(fileName, _encoding) {
             let buffer;
             try {
               buffer = _fs.readFileSync(fileName);
@@ -8895,19 +8895,19 @@ ${lanes.join("\n")}
                 if (entry === "." || entry === "..") {
                   continue;
                 }
-                let stat;
+                let stat2;
                 if (typeof dirent === "string" || dirent.isSymbolicLink()) {
                   const name = combinePaths(path, entry);
-                  stat = statSync(name);
-                  if (!stat) {
+                  stat2 = statSync(name);
+                  if (!stat2) {
                     continue;
                   }
                 } else {
-                  stat = dirent;
+                  stat2 = dirent;
                 }
-                if (stat.isFile()) {
+                if (stat2.isFile()) {
                   files.push(entry);
-                } else if (stat.isDirectory()) {
+                } else if (stat2.isDirectory()) {
                   directories.push(entry);
                 }
               }
@@ -8919,18 +8919,18 @@ ${lanes.join("\n")}
             }
           }
           function readDirectory(path, extensions, excludes, includes, depth) {
-            return matchFiles(path, extensions, excludes, includes, useCaseSensitiveFileNames2, process.cwd(), depth, getAccessibleFileSystemEntries, realpath4);
+            return matchFiles(path, extensions, excludes, includes, useCaseSensitiveFileNames2, process.cwd(), depth, getAccessibleFileSystemEntries, realpath5);
           }
           function fileSystemEntryExists(path, entryKind) {
-            const stat = statSync(path);
-            if (!stat) {
+            const stat2 = statSync(path);
+            if (!stat2) {
               return false;
             }
             switch (entryKind) {
               case 0:
-                return stat.isFile();
+                return stat2.isFile();
               case 1:
-                return stat.isDirectory();
+                return stat2.isDirectory();
               default:
                 return false;
             }
@@ -8955,7 +8955,7 @@ ${lanes.join("\n")}
           function fsRealPathHandlingLongPath(path) {
             return path.length < 260 ? _fs.realpathSync.native(path) : _fs.realpathSync(path);
           }
-          function realpath4(path) {
+          function realpath5(path) {
             try {
               return fsRealpath(path);
             } catch {
@@ -9083,8 +9083,8 @@ ${lanes.join("\n")}
           const authorityEnd = path.indexOf(directorySeparator, authorityStart);
           if (authorityEnd !== -1) {
             const scheme = path.slice(0, schemeEnd);
-            const authority = path.slice(authorityStart, authorityEnd);
-            if (scheme === "file" && (authority === "" || authority === "localhost") && isVolumeCharacter(path.charCodeAt(authorityEnd + 1))) {
+            const authority2 = path.slice(authorityStart, authorityEnd);
+            if (scheme === "file" && (authority2 === "" || authority2 === "localhost") && isVolumeCharacter(path.charCodeAt(authorityEnd + 1))) {
               const volumeSeparatorEnd = getFileUrlVolumeSeparatorEnd(path, authorityEnd + 2);
               if (volumeSeparatorEnd !== -1) {
                 if (path.charCodeAt(volumeSeparatorEnd) === 47) {
@@ -18821,22 +18821,22 @@ ${lanes.join("\n")}
         return !!constructor && childIsDecorated(useLegacyDecorators, constructor, node);
       }
       function classElementOrClassElementParameterIsDecorated(useLegacyDecorators, node, parent2) {
-        let parameters;
+        let parameters2;
         if (isAccessor(node)) {
           const { firstAccessor, secondAccessor, setAccessor } = getAllAccessorDeclarations(parent2.members, node);
           const firstAccessorWithDecorators = hasDecorators(firstAccessor) ? firstAccessor : secondAccessor && hasDecorators(secondAccessor) ? secondAccessor : void 0;
           if (!firstAccessorWithDecorators || node !== firstAccessorWithDecorators) {
             return false;
           }
-          parameters = setAccessor == null ? void 0 : setAccessor.parameters;
+          parameters2 = setAccessor == null ? void 0 : setAccessor.parameters;
         } else if (isMethodDeclaration5(node)) {
-          parameters = node.parameters;
+          parameters2 = node.parameters;
         }
         if (nodeIsDecorated(useLegacyDecorators, node, parent2)) {
           return true;
         }
-        if (parameters) {
-          for (const parameter of parameters) {
+        if (parameters2) {
+          for (const parameter of parameters2) {
             if (parameterIsThisKeyword(parameter)) continue;
             if (nodeIsDecorated(useLegacyDecorators, parameter, node, parent2)) return true;
           }
@@ -20945,7 +20945,7 @@ ${lanes.join("\n")}
         sourceFilePath = isSourceFileInCommonSourceDirectory ? sourceFilePath.substring(commonSourceDirectory.length) : sourceFilePath;
         return combinePaths(newDirPath, sourceFilePath);
       }
-      function writeFile7(host, diagnostics, fileName, text2, writeByteOrderMark, sourceFiles, data) {
+      function writeFile8(host, diagnostics, fileName, text2, writeByteOrderMark, sourceFiles, data) {
         host.writeFile(
           fileName,
           text2,
@@ -22039,15 +22039,15 @@ ${lanes.join("\n")}
         if (isAccessExpression(name.parent) && isRightSideOfAccessExpression(name)) {
           return walkAccessExpression(name.parent);
         }
-        function walkAccessExpression(access5) {
-          if (access5.kind === 212) {
-            const res = action(access5.name);
+        function walkAccessExpression(access6) {
+          if (access6.kind === 212) {
+            const res = action(access6.name);
             if (res !== void 0) {
               return res;
             }
-          } else if (access5.kind === 213) {
-            if (isIdentifier10(access5.argumentExpression) || isStringLiteralLike7(access5.argumentExpression)) {
-              const res = action(access5.argumentExpression);
+          } else if (access6.kind === 213) {
+            if (isIdentifier10(access6.argumentExpression) || isStringLiteralLike7(access6.argumentExpression)) {
+              const res = action(access6.argumentExpression);
               if (res !== void 0) {
                 return res;
               }
@@ -22055,11 +22055,11 @@ ${lanes.join("\n")}
               return void 0;
             }
           }
-          if (isAccessExpression(access5.expression)) {
-            return walkAccessExpression(access5.expression);
+          if (isAccessExpression(access6.expression)) {
+            return walkAccessExpression(access6.expression);
           }
-          if (isIdentifier10(access5.expression)) {
-            return action(access5.expression);
+          if (isIdentifier10(access6.expression)) {
+            return action(access6.expression);
           }
           return void 0;
         }
@@ -23034,7 +23034,7 @@ ${lanes.join("\n")}
       function getRegexFromPattern(pattern, useCaseSensitiveFileNames2) {
         return new RegExp(pattern, useCaseSensitiveFileNames2 ? "" : "i");
       }
-      function matchFiles(path, extensions, excludes, includes, useCaseSensitiveFileNames2, currentDirectory, depth, getFileSystemEntries, realpath4) {
+      function matchFiles(path, extensions, excludes, includes, useCaseSensitiveFileNames2, currentDirectory, depth, getFileSystemEntries, realpath5) {
         path = normalizePath(path);
         currentDirectory = normalizePath(currentDirectory);
         const patterns = getFileMatcherPatterns(path, excludes, includes, useCaseSensitiveFileNames2, currentDirectory);
@@ -23049,7 +23049,7 @@ ${lanes.join("\n")}
         }
         return flatten(results);
         function visitDirectory(path2, absolutePath, depth2) {
-          const canonicalPath = toCanonical(realpath4(absolutePath));
+          const canonicalPath = toCanonical(realpath5(absolutePath));
           if (visited.has(canonicalPath)) return;
           visited.set(canonicalPath, true);
           const { files, directories } = getFileSystemEntries(path2);
@@ -24524,8 +24524,8 @@ ${lanes.join("\n")}
                   break;
                 case 196:
                   if (meaning & 262144) {
-                    const parameterName = location2.typeParameter.name;
-                    if (parameterName && name === parameterName.escapedText) {
+                    const parameterName2 = location2.typeParameter.name;
+                    if (parameterName2 && name === parameterName2.escapedText) {
                       result2 = location2.typeParameter.symbol;
                       break loop;
                     }
@@ -27004,7 +27004,7 @@ ${lanes.join("\n")}
         function updatePropertyDeclaration2(node, modifiers, name, questionOrExclamationToken, type, initializer) {
           return node.modifiers !== modifiers || node.name !== name || node.questionToken !== (questionOrExclamationToken !== void 0 && isQuestionToken(questionOrExclamationToken) ? questionOrExclamationToken : void 0) || node.exclamationToken !== (questionOrExclamationToken !== void 0 && isExclamationToken(questionOrExclamationToken) ? questionOrExclamationToken : void 0) || node.type !== type || node.initializer !== initializer ? update(createPropertyDeclaration(modifiers, name, questionOrExclamationToken, type, initializer), node) : node;
         }
-        function createMethodSignature(modifiers, name, questionToken, typeParameters, parameters, type) {
+        function createMethodSignature(modifiers, name, questionToken, typeParameters, parameters2, type) {
           const node = createBaseDeclaration(
             174
             /* MethodSignature */
@@ -27013,7 +27013,7 @@ ${lanes.join("\n")}
           node.name = asName(name);
           node.questionToken = questionToken;
           node.typeParameters = asNodeArray(typeParameters);
-          node.parameters = asNodeArray(parameters);
+          node.parameters = asNodeArray(parameters2);
           node.type = type;
           node.transformFlags = 1;
           node.jsDoc = void 0;
@@ -27022,10 +27022,10 @@ ${lanes.join("\n")}
           node.typeArguments = void 0;
           return node;
         }
-        function updateMethodSignature(node, modifiers, name, questionToken, typeParameters, parameters, type) {
-          return node.modifiers !== modifiers || node.name !== name || node.questionToken !== questionToken || node.typeParameters !== typeParameters || node.parameters !== parameters || node.type !== type ? finishUpdateBaseSignatureDeclaration(createMethodSignature(modifiers, name, questionToken, typeParameters, parameters, type), node) : node;
+        function updateMethodSignature(node, modifiers, name, questionToken, typeParameters, parameters2, type) {
+          return node.modifiers !== modifiers || node.name !== name || node.questionToken !== questionToken || node.typeParameters !== typeParameters || node.parameters !== parameters2 || node.type !== type ? finishUpdateBaseSignatureDeclaration(createMethodSignature(modifiers, name, questionToken, typeParameters, parameters2, type), node) : node;
         }
-        function createMethodDeclaration(modifiers, asteriskToken, name, questionToken, typeParameters, parameters, type, body) {
+        function createMethodDeclaration(modifiers, asteriskToken, name, questionToken, typeParameters, parameters2, type, body) {
           const node = createBaseDeclaration(
             175
             /* MethodDeclaration */
@@ -27036,7 +27036,7 @@ ${lanes.join("\n")}
           node.questionToken = questionToken;
           node.exclamationToken = void 0;
           node.typeParameters = asNodeArray(typeParameters);
-          node.parameters = createNodeArray(parameters);
+          node.parameters = createNodeArray(parameters2);
           node.type = type;
           node.body = body;
           if (!node.body) {
@@ -27056,8 +27056,8 @@ ${lanes.join("\n")}
           node.returnFlowNode = void 0;
           return node;
         }
-        function updateMethodDeclaration(node, modifiers, asteriskToken, name, questionToken, typeParameters, parameters, type, body) {
-          return node.modifiers !== modifiers || node.asteriskToken !== asteriskToken || node.name !== name || node.questionToken !== questionToken || node.typeParameters !== typeParameters || node.parameters !== parameters || node.type !== type || node.body !== body ? finishUpdateMethodDeclaration(createMethodDeclaration(modifiers, asteriskToken, name, questionToken, typeParameters, parameters, type, body), node) : node;
+        function updateMethodDeclaration(node, modifiers, asteriskToken, name, questionToken, typeParameters, parameters2, type, body) {
+          return node.modifiers !== modifiers || node.asteriskToken !== asteriskToken || node.name !== name || node.questionToken !== questionToken || node.typeParameters !== typeParameters || node.parameters !== parameters2 || node.type !== type || node.body !== body ? finishUpdateMethodDeclaration(createMethodDeclaration(modifiers, asteriskToken, name, questionToken, typeParameters, parameters2, type, body), node) : node;
         }
         function finishUpdateMethodDeclaration(updated, original) {
           if (updated !== original) {
@@ -27089,13 +27089,13 @@ ${lanes.join("\n")}
           }
           return update(updated, original);
         }
-        function createConstructorDeclaration(modifiers, parameters, body) {
+        function createConstructorDeclaration(modifiers, parameters2, body) {
           const node = createBaseDeclaration(
             177
             /* Constructor */
           );
           node.modifiers = asNodeArray(modifiers);
-          node.parameters = createNodeArray(parameters);
+          node.parameters = createNodeArray(parameters2);
           node.body = body;
           if (!node.body) {
             node.transformFlags = 1;
@@ -27112,8 +27112,8 @@ ${lanes.join("\n")}
           node.returnFlowNode = void 0;
           return node;
         }
-        function updateConstructorDeclaration(node, modifiers, parameters, body) {
-          return node.modifiers !== modifiers || node.parameters !== parameters || node.body !== body ? finishUpdateConstructorDeclaration(createConstructorDeclaration(modifiers, parameters, body), node) : node;
+        function updateConstructorDeclaration(node, modifiers, parameters2, body) {
+          return node.modifiers !== modifiers || node.parameters !== parameters2 || node.body !== body ? finishUpdateConstructorDeclaration(createConstructorDeclaration(modifiers, parameters2, body), node) : node;
         }
         function finishUpdateConstructorDeclaration(updated, original) {
           if (updated !== original) {
@@ -27122,14 +27122,14 @@ ${lanes.join("\n")}
           }
           return finishUpdateBaseSignatureDeclaration(updated, original);
         }
-        function createGetAccessorDeclaration(modifiers, name, parameters, type, body) {
+        function createGetAccessorDeclaration(modifiers, name, parameters2, type, body) {
           const node = createBaseDeclaration(
             178
             /* GetAccessor */
           );
           node.modifiers = asNodeArray(modifiers);
           node.name = asName(name);
-          node.parameters = createNodeArray(parameters);
+          node.parameters = createNodeArray(parameters2);
           node.type = type;
           node.body = body;
           if (!node.body) {
@@ -27147,8 +27147,8 @@ ${lanes.join("\n")}
           node.returnFlowNode = void 0;
           return node;
         }
-        function updateGetAccessorDeclaration(node, modifiers, name, parameters, type, body) {
-          return node.modifiers !== modifiers || node.name !== name || node.parameters !== parameters || node.type !== type || node.body !== body ? finishUpdateGetAccessorDeclaration(createGetAccessorDeclaration(modifiers, name, parameters, type, body), node) : node;
+        function updateGetAccessorDeclaration(node, modifiers, name, parameters2, type, body) {
+          return node.modifiers !== modifiers || node.name !== name || node.parameters !== parameters2 || node.type !== type || node.body !== body ? finishUpdateGetAccessorDeclaration(createGetAccessorDeclaration(modifiers, name, parameters2, type, body), node) : node;
         }
         function finishUpdateGetAccessorDeclaration(updated, original) {
           if (updated !== original) {
@@ -27156,14 +27156,14 @@ ${lanes.join("\n")}
           }
           return finishUpdateBaseSignatureDeclaration(updated, original);
         }
-        function createSetAccessorDeclaration(modifiers, name, parameters, body) {
+        function createSetAccessorDeclaration(modifiers, name, parameters2, body) {
           const node = createBaseDeclaration(
             179
             /* SetAccessor */
           );
           node.modifiers = asNodeArray(modifiers);
           node.name = asName(name);
-          node.parameters = createNodeArray(parameters);
+          node.parameters = createNodeArray(parameters2);
           node.body = body;
           if (!node.body) {
             node.transformFlags = 1;
@@ -27181,8 +27181,8 @@ ${lanes.join("\n")}
           node.returnFlowNode = void 0;
           return node;
         }
-        function updateSetAccessorDeclaration(node, modifiers, name, parameters, body) {
-          return node.modifiers !== modifiers || node.name !== name || node.parameters !== parameters || node.body !== body ? finishUpdateSetAccessorDeclaration(createSetAccessorDeclaration(modifiers, name, parameters, body), node) : node;
+        function updateSetAccessorDeclaration(node, modifiers, name, parameters2, body) {
+          return node.modifiers !== modifiers || node.name !== name || node.parameters !== parameters2 || node.body !== body ? finishUpdateSetAccessorDeclaration(createSetAccessorDeclaration(modifiers, name, parameters2, body), node) : node;
         }
         function finishUpdateSetAccessorDeclaration(updated, original) {
           if (updated !== original) {
@@ -27191,13 +27191,13 @@ ${lanes.join("\n")}
           }
           return finishUpdateBaseSignatureDeclaration(updated, original);
         }
-        function createCallSignature(typeParameters, parameters, type) {
+        function createCallSignature(typeParameters, parameters2, type) {
           const node = createBaseDeclaration(
             180
             /* CallSignature */
           );
           node.typeParameters = asNodeArray(typeParameters);
-          node.parameters = asNodeArray(parameters);
+          node.parameters = asNodeArray(parameters2);
           node.type = type;
           node.transformFlags = 1;
           node.jsDoc = void 0;
@@ -27206,16 +27206,16 @@ ${lanes.join("\n")}
           node.typeArguments = void 0;
           return node;
         }
-        function updateCallSignature(node, typeParameters, parameters, type) {
-          return node.typeParameters !== typeParameters || node.parameters !== parameters || node.type !== type ? finishUpdateBaseSignatureDeclaration(createCallSignature(typeParameters, parameters, type), node) : node;
+        function updateCallSignature(node, typeParameters, parameters2, type) {
+          return node.typeParameters !== typeParameters || node.parameters !== parameters2 || node.type !== type ? finishUpdateBaseSignatureDeclaration(createCallSignature(typeParameters, parameters2, type), node) : node;
         }
-        function createConstructSignature(typeParameters, parameters, type) {
+        function createConstructSignature(typeParameters, parameters2, type) {
           const node = createBaseDeclaration(
             181
             /* ConstructSignature */
           );
           node.typeParameters = asNodeArray(typeParameters);
-          node.parameters = asNodeArray(parameters);
+          node.parameters = asNodeArray(parameters2);
           node.type = type;
           node.transformFlags = 1;
           node.jsDoc = void 0;
@@ -27224,16 +27224,16 @@ ${lanes.join("\n")}
           node.typeArguments = void 0;
           return node;
         }
-        function updateConstructSignature(node, typeParameters, parameters, type) {
-          return node.typeParameters !== typeParameters || node.parameters !== parameters || node.type !== type ? finishUpdateBaseSignatureDeclaration(createConstructSignature(typeParameters, parameters, type), node) : node;
+        function updateConstructSignature(node, typeParameters, parameters2, type) {
+          return node.typeParameters !== typeParameters || node.parameters !== parameters2 || node.type !== type ? finishUpdateBaseSignatureDeclaration(createConstructSignature(typeParameters, parameters2, type), node) : node;
         }
-        function createIndexSignature(modifiers, parameters, type) {
+        function createIndexSignature(modifiers, parameters2, type) {
           const node = createBaseDeclaration(
             182
             /* IndexSignature */
           );
           node.modifiers = asNodeArray(modifiers);
-          node.parameters = asNodeArray(parameters);
+          node.parameters = asNodeArray(parameters2);
           node.type = type;
           node.transformFlags = 1;
           node.jsDoc = void 0;
@@ -27242,8 +27242,8 @@ ${lanes.join("\n")}
           node.typeArguments = void 0;
           return node;
         }
-        function updateIndexSignature(node, modifiers, parameters, type) {
-          return node.parameters !== parameters || node.type !== type || node.modifiers !== modifiers ? finishUpdateBaseSignatureDeclaration(createIndexSignature(modifiers, parameters, type), node) : node;
+        function updateIndexSignature(node, modifiers, parameters2, type) {
+          return node.parameters !== parameters2 || node.type !== type || node.modifiers !== modifiers ? finishUpdateBaseSignatureDeclaration(createIndexSignature(modifiers, parameters2, type), node) : node;
         }
         function createTemplateLiteralTypeSpan(type, literal) {
           const node = createBaseNode(
@@ -27261,19 +27261,19 @@ ${lanes.join("\n")}
         function createKeywordTypeNode(kind) {
           return createToken(kind);
         }
-        function createTypePredicateNode(assertsModifier, parameterName, type) {
+        function createTypePredicateNode(assertsModifier, parameterName2, type) {
           const node = createBaseNode(
             183
             /* TypePredicate */
           );
           node.assertsModifier = assertsModifier;
-          node.parameterName = asName(parameterName);
+          node.parameterName = asName(parameterName2);
           node.type = type;
           node.transformFlags = 1;
           return node;
         }
-        function updateTypePredicateNode(node, assertsModifier, parameterName, type) {
-          return node.assertsModifier !== assertsModifier || node.parameterName !== parameterName || node.type !== type ? update(createTypePredicateNode(assertsModifier, parameterName, type), node) : node;
+        function updateTypePredicateNode(node, assertsModifier, parameterName2, type) {
+          return node.assertsModifier !== assertsModifier || node.parameterName !== parameterName2 || node.type !== type ? update(createTypePredicateNode(assertsModifier, parameterName2, type), node) : node;
         }
         function createTypeReferenceNode(typeName, typeArguments) {
           const node = createBaseNode(
@@ -27288,13 +27288,13 @@ ${lanes.join("\n")}
         function updateTypeReferenceNode(node, typeName, typeArguments) {
           return node.typeName !== typeName || node.typeArguments !== typeArguments ? update(createTypeReferenceNode(typeName, typeArguments), node) : node;
         }
-        function createFunctionTypeNode(typeParameters, parameters, type) {
+        function createFunctionTypeNode(typeParameters, parameters2, type) {
           const node = createBaseDeclaration(
             185
             /* FunctionType */
           );
           node.typeParameters = asNodeArray(typeParameters);
-          node.parameters = asNodeArray(parameters);
+          node.parameters = asNodeArray(parameters2);
           node.type = type;
           node.transformFlags = 1;
           node.modifiers = void 0;
@@ -27304,8 +27304,8 @@ ${lanes.join("\n")}
           node.typeArguments = void 0;
           return node;
         }
-        function updateFunctionTypeNode(node, typeParameters, parameters, type) {
-          return node.typeParameters !== typeParameters || node.parameters !== parameters || node.type !== type ? finishUpdateFunctionTypeNode(createFunctionTypeNode(typeParameters, parameters, type), node) : node;
+        function updateFunctionTypeNode(node, typeParameters, parameters2, type) {
+          return node.typeParameters !== typeParameters || node.parameters !== parameters2 || node.type !== type ? finishUpdateFunctionTypeNode(createFunctionTypeNode(typeParameters, parameters2, type), node) : node;
         }
         function finishUpdateFunctionTypeNode(updated, original) {
           if (updated !== original) {
@@ -27316,14 +27316,14 @@ ${lanes.join("\n")}
         function createConstructorTypeNode(...args) {
           return args.length === 4 ? createConstructorTypeNode1(...args) : args.length === 3 ? createConstructorTypeNode2(...args) : Debug.fail("Incorrect number of arguments specified.");
         }
-        function createConstructorTypeNode1(modifiers, typeParameters, parameters, type) {
+        function createConstructorTypeNode1(modifiers, typeParameters, parameters2, type) {
           const node = createBaseDeclaration(
             186
             /* ConstructorType */
           );
           node.modifiers = asNodeArray(modifiers);
           node.typeParameters = asNodeArray(typeParameters);
-          node.parameters = asNodeArray(parameters);
+          node.parameters = asNodeArray(parameters2);
           node.type = type;
           node.transformFlags = 1;
           node.jsDoc = void 0;
@@ -27332,23 +27332,23 @@ ${lanes.join("\n")}
           node.typeArguments = void 0;
           return node;
         }
-        function createConstructorTypeNode2(typeParameters, parameters, type) {
+        function createConstructorTypeNode2(typeParameters, parameters2, type) {
           return createConstructorTypeNode1(
             /*modifiers*/
             void 0,
             typeParameters,
-            parameters,
+            parameters2,
             type
           );
         }
         function updateConstructorTypeNode(...args) {
           return args.length === 5 ? updateConstructorTypeNode1(...args) : args.length === 4 ? updateConstructorTypeNode2(...args) : Debug.fail("Incorrect number of arguments specified.");
         }
-        function updateConstructorTypeNode1(node, modifiers, typeParameters, parameters, type) {
-          return node.modifiers !== modifiers || node.typeParameters !== typeParameters || node.parameters !== parameters || node.type !== type ? finishUpdateBaseSignatureDeclaration(createConstructorTypeNode(modifiers, typeParameters, parameters, type), node) : node;
+        function updateConstructorTypeNode1(node, modifiers, typeParameters, parameters2, type) {
+          return node.modifiers !== modifiers || node.typeParameters !== typeParameters || node.parameters !== parameters2 || node.type !== type ? finishUpdateBaseSignatureDeclaration(createConstructorTypeNode(modifiers, typeParameters, parameters2, type), node) : node;
         }
-        function updateConstructorTypeNode2(node, typeParameters, parameters, type) {
-          return updateConstructorTypeNode1(node, node.modifiers, typeParameters, parameters, type);
+        function updateConstructorTypeNode2(node, typeParameters, parameters2, type) {
+          return updateConstructorTypeNode1(node, node.modifiers, typeParameters, parameters2, type);
         }
         function createTypeQueryNode(exprName, typeArguments) {
           const node = createBaseNode(
@@ -27903,7 +27903,7 @@ ${lanes.join("\n")}
         function updateParenthesizedExpression(node, expression) {
           return node.expression !== expression ? update(createParenthesizedExpression(expression), node) : node;
         }
-        function createFunctionExpression(modifiers, asteriskToken, name, typeParameters, parameters, type, body) {
+        function createFunctionExpression(modifiers, asteriskToken, name, typeParameters, parameters2, type, body) {
           const node = createBaseDeclaration(
             219
             /* FunctionExpression */
@@ -27912,7 +27912,7 @@ ${lanes.join("\n")}
           node.asteriskToken = asteriskToken;
           node.name = asName(name);
           node.typeParameters = asNodeArray(typeParameters);
-          node.parameters = createNodeArray(parameters);
+          node.parameters = createNodeArray(parameters2);
           node.type = type;
           node.body = body;
           const isAsync = modifiersToFlags(node.modifiers) & 1024;
@@ -27928,17 +27928,17 @@ ${lanes.join("\n")}
           node.returnFlowNode = void 0;
           return node;
         }
-        function updateFunctionExpression(node, modifiers, asteriskToken, name, typeParameters, parameters, type, body) {
-          return node.name !== name || node.modifiers !== modifiers || node.asteriskToken !== asteriskToken || node.typeParameters !== typeParameters || node.parameters !== parameters || node.type !== type || node.body !== body ? finishUpdateBaseSignatureDeclaration(createFunctionExpression(modifiers, asteriskToken, name, typeParameters, parameters, type, body), node) : node;
+        function updateFunctionExpression(node, modifiers, asteriskToken, name, typeParameters, parameters2, type, body) {
+          return node.name !== name || node.modifiers !== modifiers || node.asteriskToken !== asteriskToken || node.typeParameters !== typeParameters || node.parameters !== parameters2 || node.type !== type || node.body !== body ? finishUpdateBaseSignatureDeclaration(createFunctionExpression(modifiers, asteriskToken, name, typeParameters, parameters2, type, body), node) : node;
         }
-        function createArrowFunction(modifiers, typeParameters, parameters, type, equalsGreaterThanToken, body) {
+        function createArrowFunction(modifiers, typeParameters, parameters2, type, equalsGreaterThanToken, body) {
           const node = createBaseDeclaration(
             220
             /* ArrowFunction */
           );
           node.modifiers = asNodeArray(modifiers);
           node.typeParameters = asNodeArray(typeParameters);
-          node.parameters = createNodeArray(parameters);
+          node.parameters = createNodeArray(parameters2);
           node.type = type;
           node.equalsGreaterThanToken = equalsGreaterThanToken ?? createToken(
             39
@@ -27956,8 +27956,8 @@ ${lanes.join("\n")}
           node.returnFlowNode = void 0;
           return node;
         }
-        function updateArrowFunction(node, modifiers, typeParameters, parameters, type, equalsGreaterThanToken, body) {
-          return node.modifiers !== modifiers || node.typeParameters !== typeParameters || node.parameters !== parameters || node.type !== type || node.equalsGreaterThanToken !== equalsGreaterThanToken || node.body !== body ? finishUpdateBaseSignatureDeclaration(createArrowFunction(modifiers, typeParameters, parameters, type, equalsGreaterThanToken, body), node) : node;
+        function updateArrowFunction(node, modifiers, typeParameters, parameters2, type, equalsGreaterThanToken, body) {
+          return node.modifiers !== modifiers || node.typeParameters !== typeParameters || node.parameters !== parameters2 || node.type !== type || node.equalsGreaterThanToken !== equalsGreaterThanToken || node.body !== body ? finishUpdateBaseSignatureDeclaration(createArrowFunction(modifiers, typeParameters, parameters2, type, equalsGreaterThanToken, body), node) : node;
         }
         function createDeleteExpression(expression) {
           const node = createBaseNode(
@@ -28671,7 +28671,7 @@ ${lanes.join("\n")}
         function updateVariableDeclarationList(node, declarations) {
           return node.declarations !== declarations ? update(createVariableDeclarationList(declarations, node.flags), node) : node;
         }
-        function createFunctionDeclaration(modifiers, asteriskToken, name, typeParameters, parameters, type, body) {
+        function createFunctionDeclaration(modifiers, asteriskToken, name, typeParameters, parameters2, type, body) {
           const node = createBaseDeclaration(
             263
             /* FunctionDeclaration */
@@ -28680,7 +28680,7 @@ ${lanes.join("\n")}
           node.asteriskToken = asteriskToken;
           node.name = asName(name);
           node.typeParameters = asNodeArray(typeParameters);
-          node.parameters = createNodeArray(parameters);
+          node.parameters = createNodeArray(parameters2);
           node.type = type;
           node.body = body;
           if (!node.body || modifiersToFlags(node.modifiers) & 128) {
@@ -28699,8 +28699,8 @@ ${lanes.join("\n")}
           node.returnFlowNode = void 0;
           return node;
         }
-        function updateFunctionDeclaration(node, modifiers, asteriskToken, name, typeParameters, parameters, type, body) {
-          return node.modifiers !== modifiers || node.asteriskToken !== asteriskToken || node.name !== name || node.typeParameters !== typeParameters || node.parameters !== parameters || node.type !== type || node.body !== body ? finishUpdateFunctionDeclaration(createFunctionDeclaration(modifiers, asteriskToken, name, typeParameters, parameters, type, body), node) : node;
+        function updateFunctionDeclaration(node, modifiers, asteriskToken, name, typeParameters, parameters2, type, body) {
+          return node.modifiers !== modifiers || node.asteriskToken !== asteriskToken || node.name !== name || node.typeParameters !== typeParameters || node.parameters !== parameters2 || node.type !== type || node.body !== body ? finishUpdateFunctionDeclaration(createFunctionDeclaration(modifiers, asteriskToken, name, typeParameters, parameters2, type, body), node) : node;
         }
         function finishUpdateFunctionDeclaration(updated, original) {
           if (updated !== original) {
@@ -29156,12 +29156,12 @@ ${lanes.join("\n")}
         function updateJSDocUnaryTypeWorker(kind, node, type) {
           return node.type !== type ? update(createJSDocUnaryTypeWorker(kind, type), node) : node;
         }
-        function createJSDocFunctionType(parameters, type) {
+        function createJSDocFunctionType(parameters2, type) {
           const node = createBaseDeclaration(
             318
             /* JSDocFunctionType */
           );
-          node.parameters = asNodeArray(parameters);
+          node.parameters = asNodeArray(parameters2);
           node.type = type;
           node.transformFlags = propagateChildrenFlags(node.parameters) | (node.type ? 1 : 0);
           node.jsDoc = void 0;
@@ -29170,8 +29170,8 @@ ${lanes.join("\n")}
           node.typeArguments = void 0;
           return node;
         }
-        function updateJSDocFunctionType(node, parameters, type) {
-          return node.parameters !== parameters || node.type !== type ? update(createJSDocFunctionType(parameters, type), node) : node;
+        function updateJSDocFunctionType(node, parameters2, type) {
+          return node.parameters !== parameters2 || node.type !== type ? update(createJSDocFunctionType(parameters2, type), node) : node;
         }
         function createJSDocTypeLiteral(propertyTags, isArrayType = false) {
           const node = createBaseDeclaration(
@@ -29196,21 +29196,21 @@ ${lanes.join("\n")}
         function updateJSDocTypeExpression(node, type) {
           return node.type !== type ? update(createJSDocTypeExpression(type), node) : node;
         }
-        function createJSDocSignature(typeParameters, parameters, type) {
+        function createJSDocSignature(typeParameters, parameters2, type) {
           const node = createBaseDeclaration(
             324
             /* JSDocSignature */
           );
           node.typeParameters = asNodeArray(typeParameters);
-          node.parameters = createNodeArray(parameters);
+          node.parameters = createNodeArray(parameters2);
           node.type = type;
           node.jsDoc = void 0;
           node.locals = void 0;
           node.nextContainer = void 0;
           return node;
         }
-        function updateJSDocSignature(node, typeParameters, parameters, type) {
-          return node.typeParameters !== typeParameters || node.parameters !== parameters || node.type !== type ? update(createJSDocSignature(typeParameters, parameters, type), node) : node;
+        function updateJSDocSignature(node, typeParameters, parameters2, type) {
+          return node.typeParameters !== typeParameters || node.parameters !== parameters2 || node.type !== type ? update(createJSDocSignature(typeParameters, parameters2, type), node) : node;
         }
         function getDefaultTagName(node) {
           const defaultTagName = getDefaultTagNameForKind(node.kind);
@@ -31312,11 +31312,11 @@ ${lanes.join("\n")}
             )
           );
         }
-        function createESDecorateClassElementAccessObject(name, access5) {
+        function createESDecorateClassElementAccessObject(name, access6) {
           const properties = [];
           properties.push(createESDecorateClassElementAccessHasMethod(name));
-          if (access5.get) properties.push(createESDecorateClassElementAccessGetMethod(name));
-          if (access5.set) properties.push(createESDecorateClassElementAccessSetMethod(name));
+          if (access6.get) properties.push(createESDecorateClassElementAccessGetMethod(name));
+          if (access6.set) properties.push(createESDecorateClassElementAccessSetMethod(name));
           return factory2.createObjectLiteralExpression(properties);
         }
         function createESDecorateClassElementContextObject(contextIn) {
@@ -31458,7 +31458,7 @@ ${lanes.join("\n")}
             ]
           );
         }
-        function createAwaiterHelper(hasLexicalThis, argumentsExpression, promiseConstructor, parameters, body) {
+        function createAwaiterHelper(hasLexicalThis, argumentsExpression, promiseConstructor, parameters2, body) {
           context.requestEmitHelper(awaiterHelper);
           const generatorFunc = factory2.createFunctionExpression(
             /*modifiers*/
@@ -31471,7 +31471,7 @@ ${lanes.join("\n")}
             void 0,
             /*typeParameters*/
             void 0,
-            parameters ?? [],
+            parameters2 ?? [],
             /*type*/
             void 0,
             body
@@ -37124,8 +37124,8 @@ ${lanes.join("\n")}
               return nodeIsMissing(node.typeName);
             case 185:
             case 186: {
-              const { parameters, type } = node;
-              return isMissingList(parameters) || typeHasArrowFunctionBlockingParseError(type);
+              const { parameters: parameters2, type } = node;
+              return isMissingList(parameters2) || typeHasArrowFunctionBlockingParseError(type);
             }
             case 197:
               return typeHasArrowFunctionBlockingParseError(node.type);
@@ -37178,7 +37178,7 @@ ${lanes.join("\n")}
           const pos = getNodePos();
           const hasJSDoc = hasPrecedingJSDocComment();
           if (tryParse(nextTokenIsOpenParen)) {
-            const parameters = parseParameters(
+            const parameters2 = parseParameters(
               4 | 32
               /* JSDoc */
             );
@@ -37187,7 +37187,7 @@ ${lanes.join("\n")}
               /*isType*/
               false
             );
-            return withJSDoc(finishNode(factory2.createJSDocFunctionType(parameters, type), pos), hasJSDoc);
+            return withJSDoc(finishNode(factory2.createJSDocFunctionType(parameters2, type), pos), hasJSDoc);
           }
           return finishNode(factory2.createTypeReferenceNode(
             parseIdentifierName(),
@@ -37431,10 +37431,10 @@ ${lanes.join("\n")}
           const savedAwaitContext = inAwaitContext();
           setYieldContext(!!(flags & 1));
           setAwaitContext(!!(flags & 2));
-          const parameters = flags & 32 ? parseDelimitedList(17, parseJSDocParameter) : parseDelimitedList(16, () => allowAmbiguity ? parseParameter(savedAwaitContext) : parseParameterForSpeculation(savedAwaitContext));
+          const parameters2 = flags & 32 ? parseDelimitedList(17, parseJSDocParameter) : parseDelimitedList(16, () => allowAmbiguity ? parseParameter(savedAwaitContext) : parseParameterForSpeculation(savedAwaitContext));
           setYieldContext(savedYieldContext);
           setAwaitContext(savedAwaitContext);
-          return parameters;
+          return parameters2;
         }
         function parseParameters(flags) {
           if (!parseExpected(
@@ -37443,7 +37443,7 @@ ${lanes.join("\n")}
           )) {
             return createMissingList();
           }
-          const parameters = parseParametersWorker(
+          const parameters2 = parseParametersWorker(
             flags,
             /*allowAmbiguity*/
             true
@@ -37452,7 +37452,7 @@ ${lanes.join("\n")}
             22
             /* CloseParenToken */
           );
-          return parameters;
+          return parameters2;
         }
         function parseTypeMemberSemicolon() {
           if (parseOptional(
@@ -37473,7 +37473,7 @@ ${lanes.join("\n")}
             );
           }
           const typeParameters = parseTypeParameters();
-          const parameters = parseParameters(
+          const parameters2 = parseParameters(
             4
             /* Type */
           );
@@ -37483,7 +37483,7 @@ ${lanes.join("\n")}
             true
           );
           parseTypeMemberSemicolon();
-          const node = kind === 180 ? factory2.createCallSignature(typeParameters, parameters, type) : factory2.createConstructSignature(typeParameters, parameters, type);
+          const node = kind === 180 ? factory2.createCallSignature(typeParameters, parameters2, type) : factory2.createConstructSignature(typeParameters, parameters2, type);
           return withJSDoc(finishNode(node, pos), hasJSDoc);
         }
         function isIndexSignature() {
@@ -37514,7 +37514,7 @@ ${lanes.join("\n")}
           return token() === 59 || token() === 28 || token() === 24;
         }
         function parseIndexSignatureDeclaration(pos, hasJSDoc, modifiers) {
-          const parameters = parseBracketedList(
+          const parameters2 = parseBracketedList(
             16,
             () => parseParameter(
               /*inOuterAwaitContext*/
@@ -37526,7 +37526,7 @@ ${lanes.join("\n")}
           );
           const type = parseTypeAnnotation();
           parseTypeMemberSemicolon();
-          const node = factory2.createIndexSignature(modifiers, parameters, type);
+          const node = factory2.createIndexSignature(modifiers, parameters2, type);
           return withJSDoc(finishNode(node, pos), hasJSDoc);
         }
         function parsePropertyOrMethodSignature(pos, hasJSDoc, modifiers) {
@@ -37538,7 +37538,7 @@ ${lanes.join("\n")}
           let node;
           if (token() === 21 || token() === 30) {
             const typeParameters = parseTypeParameters();
-            const parameters = parseParameters(
+            const parameters2 = parseParameters(
               4
               /* Type */
             );
@@ -37547,7 +37547,7 @@ ${lanes.join("\n")}
               /*isType*/
               true
             );
-            node = factory2.createMethodSignature(modifiers, name, questionToken, typeParameters, parameters, type);
+            node = factory2.createMethodSignature(modifiers, name, questionToken, typeParameters, parameters2, type);
           } else {
             const type = parseTypeAnnotation();
             node = factory2.createPropertySignature(modifiers, name, questionToken, type);
@@ -37838,7 +37838,7 @@ ${lanes.join("\n")}
           );
           Debug.assert(!modifiers || isConstructorType, "Per isStartOfFunctionOrConstructorType, a function type cannot have modifiers.");
           const typeParameters = parseTypeParameters();
-          const parameters = parseParameters(
+          const parameters2 = parseParameters(
             4
             /* Type */
           );
@@ -37847,7 +37847,7 @@ ${lanes.join("\n")}
             /*isType*/
             false
           );
-          const node = isConstructorType ? factory2.createConstructorTypeNode(modifiers, typeParameters, parameters, type) : factory2.createFunctionTypeNode(typeParameters, parameters, type);
+          const node = isConstructorType ? factory2.createConstructorTypeNode(modifiers, typeParameters, parameters2, type) : factory2.createFunctionTypeNode(typeParameters, parameters2, type);
           return withJSDoc(finishNode(node, pos), hasJSDoc);
         }
         function parseKeywordAndNoDot() {
@@ -38278,12 +38278,12 @@ ${lanes.join("\n")}
             131
             /* AssertsKeyword */
           );
-          const parameterName = token() === 110 ? parseThisTypeNode() : parseIdentifier();
+          const parameterName2 = token() === 110 ? parseThisTypeNode() : parseIdentifier();
           const type = parseOptional(
             142
             /* IsKeyword */
           ) ? parseType() : void 0;
-          return finishNode(factory2.createTypePredicateNode(assertsModifier, parameterName, type), pos);
+          return finishNode(factory2.createTypePredicateNode(assertsModifier, parameterName2, type), pos);
         }
         function parseType() {
           if (contextFlags & 81920) {
@@ -38501,7 +38501,7 @@ ${lanes.join("\n")}
             void 0
           );
           finishNode(parameter, identifier.pos);
-          const parameters = createNodeArray([parameter], parameter.pos, parameter.end);
+          const parameters2 = createNodeArray([parameter], parameter.pos, parameter.end);
           const equalsGreaterThanToken = parseExpectedToken(
             39
             /* EqualsGreaterThanToken */
@@ -38515,7 +38515,7 @@ ${lanes.join("\n")}
             asyncModifier,
             /*typeParameters*/
             void 0,
-            parameters,
+            parameters2,
             /*type*/
             void 0,
             equalsGreaterThanToken,
@@ -38688,7 +38688,7 @@ ${lanes.join("\n")}
           const modifiers = parseModifiersForArrowFunction();
           const isAsync = some(modifiers, isAsyncModifier) ? 2 : 0;
           const typeParameters = parseTypeParameters();
-          let parameters;
+          let parameters2;
           if (!parseExpected(
             21
             /* OpenParenToken */
@@ -38696,16 +38696,16 @@ ${lanes.join("\n")}
             if (!allowAmbiguity) {
               return void 0;
             }
-            parameters = createMissingList();
+            parameters2 = createMissingList();
           } else {
             if (!allowAmbiguity) {
               const maybeParameters = parseParametersWorker(isAsync, allowAmbiguity);
               if (!maybeParameters) {
                 return void 0;
               }
-              parameters = maybeParameters;
+              parameters2 = maybeParameters;
             } else {
-              parameters = parseParametersWorker(isAsync, allowAmbiguity);
+              parameters2 = parseParametersWorker(isAsync, allowAmbiguity);
             }
             if (!parseExpected(
               22
@@ -38742,7 +38742,7 @@ ${lanes.join("\n")}
               return void 0;
             }
           }
-          const node = factory2.createArrowFunction(modifiers, typeParameters, parameters, type, equalsGreaterThanToken, body);
+          const node = factory2.createArrowFunction(modifiers, typeParameters, parameters2, type, equalsGreaterThanToken, body);
           return withJSDoc(finishNode(node, pos), hasJSDoc);
         }
         function parseArrowFunctionExpressionBody(isAsync, allowReturnTypeInArrowFunction) {
@@ -39854,7 +39854,7 @@ ${lanes.join("\n")}
           const isAsync = some(modifiers, isAsyncModifier) ? 2 : 0;
           const name = isGenerator && isAsync ? doInYieldAndAwaitContext(parseOptionalBindingIdentifier) : isGenerator ? doInYieldContext(parseOptionalBindingIdentifier) : isAsync ? doInAwaitContext(parseOptionalBindingIdentifier) : parseOptionalBindingIdentifier();
           const typeParameters = parseTypeParameters();
-          const parameters = parseParameters(isGenerator | isAsync);
+          const parameters2 = parseParameters(isGenerator | isAsync);
           const type = parseReturnType(
             59,
             /*isType*/
@@ -39862,7 +39862,7 @@ ${lanes.join("\n")}
           );
           const body = parseFunctionBlock(isGenerator | isAsync);
           setDecoratorContext(savedDecoratorContext);
-          const node = factory2.createFunctionExpression(modifiers, asteriskToken, name, typeParameters, parameters, type, body);
+          const node = factory2.createFunctionExpression(modifiers, asteriskToken, name, typeParameters, parameters2, type, body);
           return withJSDoc(finishNode(node, pos), hasJSDoc);
         }
         function parseOptionalBindingIdentifier() {
@@ -40878,7 +40878,7 @@ ${lanes.join("\n")}
             /*value*/
             true
           );
-          const parameters = parseParameters(isGenerator | isAsync);
+          const parameters2 = parseParameters(isGenerator | isAsync);
           const type = parseReturnType(
             59,
             /*isType*/
@@ -40886,7 +40886,7 @@ ${lanes.join("\n")}
           );
           const body = parseFunctionBlockOrSemicolon(isGenerator | isAsync, Diagnostics.or_expected);
           setAwaitContext(savedAwaitContext);
-          const node = factory2.createFunctionDeclaration(modifiers, asteriskToken, name, typeParameters, parameters, type, body);
+          const node = factory2.createFunctionDeclaration(modifiers, asteriskToken, name, typeParameters, parameters2, type, body);
           return withJSDoc(finishNode(node, pos), hasJSDoc);
         }
         function parseConstructorName() {
@@ -40907,7 +40907,7 @@ ${lanes.join("\n")}
           return tryParse(() => {
             if (parseConstructorName()) {
               const typeParameters = parseTypeParameters();
-              const parameters = parseParameters(
+              const parameters2 = parseParameters(
                 0
                 /* None */
               );
@@ -40917,7 +40917,7 @@ ${lanes.join("\n")}
                 false
               );
               const body = parseFunctionBlockOrSemicolon(0, Diagnostics.or_expected);
-              const node = factory2.createConstructorDeclaration(modifiers, parameters, body);
+              const node = factory2.createConstructorDeclaration(modifiers, parameters2, body);
               node.typeParameters = typeParameters;
               node.type = type;
               return withJSDoc(finishNode(node, pos), hasJSDoc);
@@ -40928,7 +40928,7 @@ ${lanes.join("\n")}
           const isGenerator = asteriskToken ? 1 : 0;
           const isAsync = some(modifiers, isAsyncModifier) ? 2 : 0;
           const typeParameters = parseTypeParameters();
-          const parameters = parseParameters(isGenerator | isAsync);
+          const parameters2 = parseParameters(isGenerator | isAsync);
           const type = parseReturnType(
             59,
             /*isType*/
@@ -40941,7 +40941,7 @@ ${lanes.join("\n")}
             name,
             questionToken,
             typeParameters,
-            parameters,
+            parameters2,
             type,
             body
           );
@@ -40993,7 +40993,7 @@ ${lanes.join("\n")}
         function parseAccessorDeclaration(pos, hasJSDoc, modifiers, kind, flags) {
           const name = parsePropertyName();
           const typeParameters = parseTypeParameters();
-          const parameters = parseParameters(
+          const parameters2 = parseParameters(
             0
             /* None */
           );
@@ -41003,7 +41003,7 @@ ${lanes.join("\n")}
             false
           );
           const body = parseFunctionBlockOrSemicolon(flags);
-          const node = kind === 178 ? factory2.createGetAccessorDeclaration(modifiers, name, parameters, type, body) : factory2.createSetAccessorDeclaration(modifiers, name, parameters, body);
+          const node = kind === 178 ? factory2.createGetAccessorDeclaration(modifiers, name, parameters2, type, body) : factory2.createSetAccessorDeclaration(modifiers, name, parameters2, body);
           node.typeParameters = typeParameters;
           if (isSetAccessorDeclaration5(node)) node.type = type;
           return withJSDoc(finishNode(node, pos), hasJSDoc);
@@ -42847,18 +42847,18 @@ ${lanes.join("\n")}
             function parseCallbackTagParameters(indent3) {
               const pos = getNodePos();
               let child;
-              let parameters;
+              let parameters2;
               while (child = tryParse(() => parseChildParameterOrPropertyTag(4, indent3))) {
                 if (child.kind === 346) {
                   parseErrorAtRange(child.tagName, Diagnostics.A_JSDoc_template_tag_may_not_follow_a_typedef_callback_or_overload_tag);
                   break;
                 }
-                parameters = append(parameters, child);
+                parameters2 = append(parameters2, child);
               }
-              return createNodeArray(parameters || [], pos);
+              return createNodeArray(parameters2 || [], pos);
             }
             function parseJSDocSignature(start2, indent3) {
-              const parameters = parseCallbackTagParameters(indent3);
+              const parameters2 = parseCallbackTagParameters(indent3);
               const returnTag = tryParse(() => {
                 if (parseOptionalJsdoc(
                   60
@@ -42873,7 +42873,7 @@ ${lanes.join("\n")}
               return finishNode(factory2.createJSDocSignature(
                 /*typeParameters*/
                 void 0,
-                parameters,
+                parameters2,
                 returnTag
               ), start2);
             }
@@ -45396,7 +45396,7 @@ ${lanes.join("\n")}
         const possibleOption = getSpellingSuggestion(unknownOption, diagnostics.optionDeclarations, getOptionName);
         return possibleOption ? createDiagnosticForNodeInSourceFileOrCompilerDiagnostic(sourceFile, node, diagnostics.unknownDidYouMeanDiagnostic, unknownOptionErrorText || unknownOption, possibleOption.name) : createDiagnosticForNodeInSourceFileOrCompilerDiagnostic(sourceFile, node, diagnostics.unknownOptionDiagnostic, unknownOptionErrorText || unknownOption);
       }
-      function parseCommandLineWorker(diagnostics, commandLine, readFile2) {
+      function parseCommandLineWorker(diagnostics, commandLine, readFile4) {
         const options = {};
         let watchOptions;
         const fileNames = [];
@@ -45444,7 +45444,7 @@ ${lanes.join("\n")}
           }
         }
         function parseResponseFile(fileName) {
-          const text2 = tryReadFile(fileName, readFile2 || ((fileName2) => sys.readFile(fileName2)));
+          const text2 = tryReadFile(fileName, readFile4 || ((fileName2) => sys.readFile(fileName2)));
           if (!isString(text2)) {
             errors.push(text2);
             return;
@@ -45547,8 +45547,8 @@ ${lanes.join("\n")}
         unknownDidYouMeanDiagnostic: Diagnostics.Unknown_compiler_option_0_Did_you_mean_1,
         optionTypeMismatchDiagnostic: Diagnostics.Compiler_option_0_expects_an_argument
       };
-      function parseCommandLine(commandLine, readFile2) {
-        return parseCommandLineWorker(compilerOptionsDidYouMeanDiagnostics, commandLine, readFile2);
+      function parseCommandLine(commandLine, readFile4) {
+        return parseCommandLineWorker(compilerOptionsDidYouMeanDiagnostics, commandLine, readFile4);
       }
       function getOptionFromName(optionName, allowShort) {
         return getOptionDeclarationFromName(getOptionsNameMap, optionName, allowShort);
@@ -45630,8 +45630,8 @@ ${lanes.join("\n")}
           watchOptionsToExtend
         );
       }
-      function readConfigFile(fileName, readFile2) {
-        const textOrDiagnostic = tryReadFile(fileName, readFile2);
+      function readConfigFile(fileName, readFile4) {
+        const textOrDiagnostic = tryReadFile(fileName, readFile4);
         return isString(textOrDiagnostic) ? parseConfigFileTextToJson(fileName, textOrDiagnostic) : { config: {}, error: textOrDiagnostic };
       }
       function parseConfigFileTextToJson(fileName, jsonText) {
@@ -45646,14 +45646,14 @@ ${lanes.join("\n")}
           error: jsonSourceFile.parseDiagnostics.length ? jsonSourceFile.parseDiagnostics[0] : void 0
         };
       }
-      function readJsonConfigFile(fileName, readFile2) {
-        const textOrDiagnostic = tryReadFile(fileName, readFile2);
+      function readJsonConfigFile(fileName, readFile4) {
+        const textOrDiagnostic = tryReadFile(fileName, readFile4);
         return isString(textOrDiagnostic) ? parseJsonText(fileName, textOrDiagnostic) : { fileName, parseDiagnostics: [textOrDiagnostic] };
       }
-      function tryReadFile(fileName, readFile2) {
+      function tryReadFile(fileName, readFile4) {
         let text2;
         try {
-          text2 = readFile2(fileName);
+          text2 = readFile4(fileName);
         } catch (e) {
           return createCompilerDiagnostic(Diagnostics.Cannot_read_file_0_Colon_1, fileName, e.message);
         }
@@ -47990,8 +47990,8 @@ ${lanes.join("\n")}
           function getCommonPrefix(directory, resolution) {
             const resolutionDirectory = toPath(getDirectoryPath(resolution), currentDirectory, getCanonicalFileName);
             let i = 0;
-            const limit = Math.min(directory.length, resolutionDirectory.length);
-            while (i < limit && directory.charCodeAt(i) === resolutionDirectory.charCodeAt(i)) {
+            const limit2 = Math.min(directory.length, resolutionDirectory.length);
+            while (i < limit2 && directory.charCodeAt(i) === resolutionDirectory.charCodeAt(i)) {
               i++;
             }
             if (i === directory.length && (resolutionDirectory.length === i || resolutionDirectory[i] === directorySeparator)) {
@@ -54855,11 +54855,11 @@ ${lanes.join("\n")}
             return location2 ? getTypeOfSymbolAtLocation(symbol, location2) : errorType;
           },
           getTypeOfSymbol,
-          getSymbolsOfParameterPropertyDeclaration: (parameterIn, parameterName) => {
+          getSymbolsOfParameterPropertyDeclaration: (parameterIn, parameterName2) => {
             const parameter = getParseTreeNode(parameterIn, isParameter4);
             if (parameter === void 0) return Debug.fail("Cannot get symbols of a synthetic parameter that cannot be resolved to a parse-tree node.");
             Debug.assert(isParameterPropertyDeclaration(parameter, parameter.parent));
-            return getSymbolsOfParameterPropertyDeclaration(parameter, escapeLeadingUnderscores(parameterName));
+            return getSymbolsOfParameterPropertyDeclaration(parameter, escapeLeadingUnderscores(parameterName2));
           },
           getDeclaredTypeOfSymbol,
           getPropertiesOfType,
@@ -56268,18 +56268,18 @@ ${lanes.join("\n")}
             }
           }
         }
-        function getSymbolsOfParameterPropertyDeclaration(parameter, parameterName) {
+        function getSymbolsOfParameterPropertyDeclaration(parameter, parameterName2) {
           const constructorDeclaration = parameter.parent;
           const classDeclaration = parameter.parent.parent;
           const parameterSymbol = getSymbol2(
             constructorDeclaration.locals,
-            parameterName,
+            parameterName2,
             111551
             /* Value */
           );
           const propertySymbol = getSymbol2(
             getMembersOfSymbol(classDeclaration.symbol),
-            parameterName,
+            parameterName2,
             111551
             /* Value */
           );
@@ -58833,7 +58833,7 @@ ${lanes.join("\n")}
           return false;
         }
         function isTypeSymbolAccessible(typeSymbol, enclosingDeclaration) {
-          const access5 = isSymbolAccessibleWorker(
+          const access6 = isSymbolAccessibleWorker(
             typeSymbol,
             enclosingDeclaration,
             788968,
@@ -58842,10 +58842,10 @@ ${lanes.join("\n")}
             /*allowModules*/
             true
           );
-          return access5.accessibility === 0;
+          return access6.accessibility === 0;
         }
         function isValueSymbolAccessible(typeSymbol, enclosingDeclaration) {
-          const access5 = isSymbolAccessibleWorker(
+          const access6 = isSymbolAccessibleWorker(
             typeSymbol,
             enclosingDeclaration,
             111551,
@@ -58854,10 +58854,10 @@ ${lanes.join("\n")}
             /*allowModules*/
             true
           );
-          return access5.accessibility === 0;
+          return access6.accessibility === 0;
         }
         function isSymbolAccessibleByFlags(typeSymbol, enclosingDeclaration, flags) {
-          const access5 = isSymbolAccessibleWorker(
+          const access6 = isSymbolAccessibleWorker(
             typeSymbol,
             enclosingDeclaration,
             flags,
@@ -58866,7 +58866,7 @@ ${lanes.join("\n")}
             /*allowModules*/
             false
           );
-          return access5.accessibility === 0;
+          return access6.accessibility === 0;
         }
         function isAnySymbolAccessible(symbols, enclosingDeclaration, initialSymbol, meaning, shouldComputeAliasesToMakeVisible, allowModules) {
           if (!length(symbols)) return;
@@ -61151,7 +61151,7 @@ ${lanes.join("\n")}
             }
             const restoreFlags = saveRestoreFlags(context);
             context.flags &= ~256;
-            const parameters = (some(expandedParams, (p) => p !== expandedParams[expandedParams.length - 1] && !!(getCheckFlags(p) & 32768)) ? signature.parameters : expandedParams).map((parameter) => symbolToParameterDeclaration(
+            const parameters2 = (some(expandedParams, (p) => p !== expandedParams[expandedParams.length - 1] && !!(getCheckFlags(p) & 32768)) ? signature.parameters : expandedParams).map((parameter) => symbolToParameterDeclaration(
               parameter,
               context,
               kind === 177
@@ -61159,7 +61159,7 @@ ${lanes.join("\n")}
             ));
             const thisParameter = context.flags & 33554432 ? void 0 : tryGetThisParameterDeclaration(signature, context);
             if (thisParameter) {
-              parameters.unshift(thisParameter);
+              parameters2.unshift(thisParameter);
             }
             restoreFlags();
             const returnTypeNode = serializeReturnTypeForSignature(context, signature);
@@ -61171,7 +61171,7 @@ ${lanes.join("\n")}
                 /* Abstract */
               );
             }
-            const node = kind === 180 ? factory.createCallSignature(typeParameters, parameters, returnTypeNode) : kind === 181 ? factory.createConstructSignature(typeParameters, parameters, returnTypeNode) : kind === 174 ? factory.createMethodSignature(modifiers, (options == null ? void 0 : options.name) ?? factory.createIdentifier(""), options == null ? void 0 : options.questionToken, typeParameters, parameters, returnTypeNode) : kind === 175 ? factory.createMethodDeclaration(
+            const node = kind === 180 ? factory.createCallSignature(typeParameters, parameters2, returnTypeNode) : kind === 181 ? factory.createConstructSignature(typeParameters, parameters2, returnTypeNode) : kind === 174 ? factory.createMethodSignature(modifiers, (options == null ? void 0 : options.name) ?? factory.createIdentifier(""), options == null ? void 0 : options.questionToken, typeParameters, parameters2, returnTypeNode) : kind === 175 ? factory.createMethodDeclaration(
               modifiers,
               /*asteriskToken*/
               void 0,
@@ -61179,35 +61179,35 @@ ${lanes.join("\n")}
               /*questionToken*/
               void 0,
               typeParameters,
-              parameters,
+              parameters2,
               returnTypeNode,
               /*body*/
               void 0
             ) : kind === 177 ? factory.createConstructorDeclaration(
               modifiers,
-              parameters,
+              parameters2,
               /*body*/
               void 0
             ) : kind === 178 ? factory.createGetAccessorDeclaration(
               modifiers,
               (options == null ? void 0 : options.name) ?? factory.createIdentifier(""),
-              parameters,
+              parameters2,
               returnTypeNode,
               /*body*/
               void 0
             ) : kind === 179 ? factory.createSetAccessorDeclaration(
               modifiers,
               (options == null ? void 0 : options.name) ?? factory.createIdentifier(""),
-              parameters,
+              parameters2,
               /*body*/
               void 0
-            ) : kind === 182 ? factory.createIndexSignature(modifiers, parameters, returnTypeNode) : kind === 318 ? factory.createJSDocFunctionType(parameters, returnTypeNode) : kind === 185 ? factory.createFunctionTypeNode(typeParameters, parameters, returnTypeNode ?? factory.createTypeReferenceNode(factory.createIdentifier(""))) : kind === 186 ? factory.createConstructorTypeNode(modifiers, typeParameters, parameters, returnTypeNode ?? factory.createTypeReferenceNode(factory.createIdentifier(""))) : kind === 263 ? factory.createFunctionDeclaration(
+            ) : kind === 182 ? factory.createIndexSignature(modifiers, parameters2, returnTypeNode) : kind === 318 ? factory.createJSDocFunctionType(parameters2, returnTypeNode) : kind === 185 ? factory.createFunctionTypeNode(typeParameters, parameters2, returnTypeNode ?? factory.createTypeReferenceNode(factory.createIdentifier(""))) : kind === 186 ? factory.createConstructorTypeNode(modifiers, typeParameters, parameters2, returnTypeNode ?? factory.createTypeReferenceNode(factory.createIdentifier(""))) : kind === 263 ? factory.createFunctionDeclaration(
               modifiers,
               /*asteriskToken*/
               void 0,
               (options == null ? void 0 : options.name) ? cast(options.name, isIdentifier10) : factory.createIdentifier(""),
               typeParameters,
-              parameters,
+              parameters2,
               returnTypeNode,
               /*body*/
               void 0
@@ -61217,13 +61217,13 @@ ${lanes.join("\n")}
               void 0,
               (options == null ? void 0 : options.name) ? cast(options.name, isIdentifier10) : factory.createIdentifier(""),
               typeParameters,
-              parameters,
+              parameters2,
               returnTypeNode,
               factory.createBlock([])
             ) : kind === 220 ? factory.createArrowFunction(
               modifiers,
               typeParameters,
-              parameters,
+              parameters2,
               returnTypeNode,
               /*equalsGreaterThanToken*/
               void 0,
@@ -61481,13 +61481,13 @@ ${lanes.join("\n")}
               131
               /* AssertsKeyword */
             ) : void 0;
-            const parameterName = typePredicate.kind === 1 || typePredicate.kind === 3 ? setEmitFlags(
+            const parameterName2 = typePredicate.kind === 1 || typePredicate.kind === 3 ? setEmitFlags(
               factory.createIdentifier(typePredicate.parameterName),
               16777216
               /* NoAsciiEscaping */
             ) : factory.createThisTypeNode();
             const typeNode = typePredicate.type && typeToTypeNodeHelper(typePredicate.type, context);
-            return factory.createTypePredicateNode(assertsModifier, parameterName, typeNode);
+            return factory.createTypePredicateNode(assertsModifier, parameterName2, typeNode);
           }
           function getEffectiveParameterDeclaration(parameterSymbol) {
             const parameterDeclaration = getDeclarationOfKind(
@@ -66957,11 +66957,11 @@ ${lanes.join("\n")}
           const paddedTypeArguments = typeArguments.length === typeParameters.length ? typeArguments : concatenate(typeArguments, [type]);
           resolveObjectTypeMembers(type, source, typeParameters, paddedTypeArguments);
         }
-        function createSignature(declaration, typeParameters, thisParameter, parameters, resolvedReturnType, resolvedTypePredicate, minArgumentCount, flags) {
+        function createSignature(declaration, typeParameters, thisParameter, parameters2, resolvedReturnType, resolvedTypePredicate, minArgumentCount, flags) {
           const sig = new Signature13(checker, flags);
           sig.declaration = declaration;
           sig.typeParameters = typeParameters;
-          sig.parameters = parameters;
+          sig.parameters = parameters2;
           sig.thisParameter = thisParameter;
           sig.resolvedReturnType = resolvedReturnType;
           sig.resolvedTypePredicate = resolvedTypePredicate;
@@ -68727,8 +68727,8 @@ ${lanes.join("\n")}
         function isOptionalPropertyDeclaration(node) {
           return isPropertyDeclaration2(node) && !hasAccessorModifier(node) && node.questionToken;
         }
-        function createTypePredicate(kind, parameterName, parameterIndex, type) {
-          return { kind, parameterName, parameterIndex, type };
+        function createTypePredicate(kind, parameterName2, parameterIndex, type) {
+          return { kind, parameterName: parameterName2, parameterIndex, type };
         }
         function getMinTypeArgumentCount(typeParameters) {
           let minTypeArgumentCount = 0;
@@ -68768,7 +68768,7 @@ ${lanes.join("\n")}
         function getSignatureFromDeclaration(declaration) {
           const links = getNodeLinks(declaration);
           if (!links.resolvedSignature) {
-            const parameters = [];
+            const parameters2 = [];
             let flags = 0;
             let minArgumentCount = 0;
             let thisParameter;
@@ -68804,14 +68804,14 @@ ${lanes.join("\n")}
                 hasThisParameter2 = true;
                 thisParameter = param.symbol;
               } else {
-                parameters.push(paramSymbol);
+                parameters2.push(paramSymbol);
               }
               if (type && type.kind === 202) {
                 flags |= 2;
               }
-              const isOptionalParameter2 = hasEffectiveQuestionToken(param) || isParameter4(param) && param.initializer || isRestParameter(param) || iife && parameters.length > iife.arguments.length && !type;
+              const isOptionalParameter2 = hasEffectiveQuestionToken(param) || isParameter4(param) && param.initializer || isRestParameter(param) || iife && parameters2.length > iife.arguments.length && !type;
               if (!isOptionalParameter2) {
-                minArgumentCount = parameters.length;
+                minArgumentCount = parameters2.length;
               }
             }
             if ((declaration.kind === 178 || declaration.kind === 179) && hasBindableName(declaration) && (!hasThisParameter2 || !thisParameter)) {
@@ -68831,7 +68831,7 @@ ${lanes.join("\n")}
             const hostDeclaration = isJSDocSignature(declaration) ? getEffectiveJSDocHost(declaration) : declaration;
             const classType = hostDeclaration && isConstructorDeclaration3(hostDeclaration) ? getDeclaredTypeOfClassOrInterface(getMergedSymbol(hostDeclaration.parent.symbol)) : void 0;
             const typeParameters = classType ? classType.localTypeParameters : getTypeParametersFromDeclaration(declaration);
-            if (hasRestParameter(declaration) || isInJSFile(declaration) && maybeAddJsSyntheticRestParameter(declaration, parameters)) {
+            if (hasRestParameter(declaration) || isInJSFile(declaration) && maybeAddJsSyntheticRestParameter(declaration, parameters2)) {
               flags |= 1;
             }
             if (isConstructorTypeNode(declaration) && hasSyntacticModifier(
@@ -68849,7 +68849,7 @@ ${lanes.join("\n")}
               declaration,
               typeParameters,
               thisParameter,
-              parameters,
+              parameters2,
               /*resolvedReturnType*/
               void 0,
               /*resolvedTypePredicate*/
@@ -68860,7 +68860,7 @@ ${lanes.join("\n")}
           }
           return links.resolvedSignature;
         }
-        function maybeAddJsSyntheticRestParameter(declaration, parameters) {
+        function maybeAddJsSyntheticRestParameter(declaration, parameters2) {
           if (isJSDocSignature(declaration) || !containsArgumentsReference(declaration)) {
             return false;
           }
@@ -68882,9 +68882,9 @@ ${lanes.join("\n")}
             syntheticArgsSymbol.links.deferralWriteConstituents = [anyArrayType];
           }
           if (lastParamVariadicType) {
-            parameters.pop();
+            parameters2.pop();
           }
-          parameters.push(syntheticArgsSymbol);
+          parameters2.push(syntheticArgsSymbol);
           return true;
         }
         function getSignatureOfTypeTag(node) {
@@ -69009,16 +69009,16 @@ ${lanes.join("\n")}
           return signature.resolvedTypePredicate === noTypePredicate ? void 0 : signature.resolvedTypePredicate;
         }
         function createTypePredicateFromTypePredicateNode(node, signature) {
-          const parameterName = node.parameterName;
+          const parameterName2 = node.parameterName;
           const type = node.type && getTypeFromTypeNode(node.type);
-          return parameterName.kind === 198 ? createTypePredicate(
+          return parameterName2.kind === 198 ? createTypePredicate(
             node.assertsModifier ? 2 : 0,
             /*parameterName*/
             void 0,
             /*parameterIndex*/
             void 0,
             type
-          ) : createTypePredicate(node.assertsModifier ? 3 : 1, parameterName.escapedText, findIndex(signature.parameters, (p) => p.escapedName === parameterName.escapedText), type);
+          ) : createTypePredicate(node.assertsModifier ? 3 : 1, parameterName2.escapedText, findIndex(signature.parameters, (p) => p.escapedName === parameterName2.escapedText), type);
         }
         function getUnionOrIntersectionType(types, kind, unionReduction) {
           return kind !== 2097152 ? getUnionType(types, unionReduction) : getIntersectionType(types);
@@ -71903,13 +71903,13 @@ ${lanes.join("\n")}
         function getIndexedAccessType(objectType, indexType, accessFlags = 0, accessNode, aliasSymbol, aliasTypeArguments) {
           return getIndexedAccessTypeOrUndefined(objectType, indexType, accessFlags, accessNode, aliasSymbol, aliasTypeArguments) || (accessNode ? errorType : unknownType);
         }
-        function indexTypeLessThan(indexType, limit) {
+        function indexTypeLessThan(indexType, limit2) {
           return everyType(indexType, (t) => {
             if (t.flags & 384) {
               const propName = getPropertyNameFromType(t);
               if (isNumericLiteralName(propName)) {
                 const index = +propName;
-                return index >= 0 && index < limit;
+                return index >= 0 && index < limit2;
               }
             }
             return false;
@@ -79176,19 +79176,19 @@ ${lanes.join("\n")}
           }
           return false;
         }
-        function getAccessedPropertyName(access5) {
-          if (isPropertyAccessExpression10(access5)) {
-            return access5.name.escapedText;
+        function getAccessedPropertyName(access6) {
+          if (isPropertyAccessExpression10(access6)) {
+            return access6.name.escapedText;
           }
-          if (isElementAccessExpression8(access5)) {
-            return tryGetElementAccessExpressionName(access5);
+          if (isElementAccessExpression8(access6)) {
+            return tryGetElementAccessExpressionName(access6);
           }
-          if (isBindingElement5(access5)) {
-            const name = getDestructuringPropertyName(access5);
+          if (isBindingElement5(access6)) {
+            const name = getDestructuringPropertyName(access6);
             return name ? escapeLeadingUnderscores(name) : void 0;
           }
-          if (isParameter4(access5)) {
-            return "" + access5.parent.parameters.indexOf(access5);
+          if (isParameter4(access6)) {
+            return "" + access6.parent.parameters.indexOf(access6);
           }
           return void 0;
         }
@@ -80403,9 +80403,9 @@ ${lanes.join("\n")}
                   type = narrowTypeBySwitchOptionalChainContainment(type, flow.node, (t) => !(t.flags & 131072 || t.flags & 128 && t.value === "undefined"));
                 }
               }
-              const access5 = getDiscriminantPropertyAccess(expr, type);
-              if (access5) {
-                type = narrowTypeBySwitchOnDiscriminantProperty(type, access5, flow.node);
+              const access6 = getDiscriminantPropertyAccess(expr, type);
+              if (access6) {
+                type = narrowTypeBySwitchOnDiscriminantProperty(type, access6, flow.node);
               }
             }
             return createFlowType(type, isIncomplete(flowType));
@@ -80567,26 +80567,26 @@ ${lanes.join("\n")}
           }
           function getDiscriminantPropertyAccess(expr, computedType) {
             if (declaredType.flags & 1048576 || computedType.flags & 1048576) {
-              const access5 = getCandidateDiscriminantPropertyAccess(expr);
-              if (access5) {
-                const name = getAccessedPropertyName(access5);
+              const access6 = getCandidateDiscriminantPropertyAccess(expr);
+              if (access6) {
+                const name = getAccessedPropertyName(access6);
                 if (name) {
                   const type = declaredType.flags & 1048576 && isTypeSubsetOf(computedType, declaredType) ? declaredType : computedType;
                   if (isDiscriminantProperty(type, name)) {
-                    return access5;
+                    return access6;
                   }
                 }
               }
             }
             return void 0;
           }
-          function narrowTypeByDiscriminant(type, access5, narrowType2) {
-            const propName = getAccessedPropertyName(access5);
+          function narrowTypeByDiscriminant(type, access6, narrowType2) {
+            const propName = getAccessedPropertyName(access6);
             if (propName === void 0) {
               return type;
             }
-            const optionalChain = isOptionalChain(access5);
-            const removeNullable = strictNullChecks && (optionalChain || isNonNullAccess(access5)) && maybeTypeOfKind(
+            const optionalChain = isOptionalChain(access6);
+            const removeNullable = strictNullChecks && (optionalChain || isNonNullAccess(access6)) && maybeTypeOfKind(
               type,
               98304
               /* Nullable */
@@ -80606,27 +80606,27 @@ ${lanes.join("\n")}
               return !(discriminantType.flags & 131072) && !(narrowedPropType.flags & 131072) && areTypesComparable(narrowedPropType, discriminantType);
             });
           }
-          function narrowTypeByDiscriminantProperty(type, access5, operator, value, assumeTrue) {
+          function narrowTypeByDiscriminantProperty(type, access6, operator, value, assumeTrue) {
             if ((operator === 37 || operator === 38) && type.flags & 1048576) {
               const keyPropertyName = getKeyPropertyName(type);
-              if (keyPropertyName && keyPropertyName === getAccessedPropertyName(access5)) {
+              if (keyPropertyName && keyPropertyName === getAccessedPropertyName(access6)) {
                 const candidate = getConstituentTypeForKeyType(type, getTypeOfExpression(value));
                 if (candidate) {
                   return operator === (assumeTrue ? 37 : 38) ? candidate : isUnitType(getTypeOfPropertyOfType(candidate, keyPropertyName) || unknownType) ? removeType(type, candidate) : type;
                 }
               }
             }
-            return narrowTypeByDiscriminant(type, access5, (t) => narrowTypeByEquality(t, operator, value, assumeTrue));
+            return narrowTypeByDiscriminant(type, access6, (t) => narrowTypeByEquality(t, operator, value, assumeTrue));
           }
-          function narrowTypeBySwitchOnDiscriminantProperty(type, access5, data) {
-            if (data.clauseStart < data.clauseEnd && type.flags & 1048576 && getKeyPropertyName(type) === getAccessedPropertyName(access5)) {
+          function narrowTypeBySwitchOnDiscriminantProperty(type, access6, data) {
+            if (data.clauseStart < data.clauseEnd && type.flags & 1048576 && getKeyPropertyName(type) === getAccessedPropertyName(access6)) {
               const clauseTypes = getSwitchClauseTypes(data.switchStatement).slice(data.clauseStart, data.clauseEnd);
               const candidate = getUnionType(map(clauseTypes, (t) => getConstituentTypeForKeyType(type, t) || unknownType));
               if (candidate !== unknownType) {
                 return candidate;
               }
             }
-            return narrowTypeByDiscriminant(type, access5, (t) => narrowTypeBySwitchOnDiscriminant(t, data));
+            return narrowTypeByDiscriminant(type, access6, (t) => narrowTypeBySwitchOnDiscriminant(t, data));
           }
           function narrowTypeByTruthiness(type, expr, assumeTrue) {
             if (isMatchingReference(reference, expr)) {
@@ -80643,9 +80643,9 @@ ${lanes.join("\n")}
                 /* NEUndefinedOrNull */
               );
             }
-            const access5 = getDiscriminantPropertyAccess(expr, type);
-            if (access5) {
-              return narrowTypeByDiscriminant(type, access5, (t) => getTypeWithFacts(
+            const access6 = getDiscriminantPropertyAccess(expr, type);
+            if (access6) {
+              return narrowTypeByDiscriminant(type, access6, (t) => getTypeWithFacts(
                 t,
                 assumeTrue ? 4194304 : 8388608
                 /* Falsy */
@@ -81273,9 +81273,9 @@ ${lanes.join("\n")}
                     /* NEUndefinedOrNull */
                   );
                 }
-                const access5 = getDiscriminantPropertyAccess(predicateArgument, type);
-                if (access5) {
-                  return narrowTypeByDiscriminant(type, access5, (t) => getNarrowedType(
+                const access6 = getDiscriminantPropertyAccess(predicateArgument, type);
+                if (access6) {
+                  return narrowTypeByDiscriminant(type, access6, (t) => getNarrowedType(
                     t,
                     predicate.type,
                     assumeTrue,
@@ -81335,9 +81335,9 @@ ${lanes.join("\n")}
                 /* EQUndefinedOrNull */
               );
             }
-            const access5 = getDiscriminantPropertyAccess(expr, type);
-            if (access5) {
-              return narrowTypeByDiscriminant(type, access5, (t) => getTypeWithFacts(
+            const access6 = getDiscriminantPropertyAccess(expr, type);
+            if (access6) {
+              return narrowTypeByDiscriminant(type, access6, (t) => getTypeWithFacts(
                 t,
                 assumePresent ? 2097152 : 262144
                 /* EQUndefinedOrNull */
@@ -87114,11 +87114,11 @@ ${lanes.join("\n")}
             thisParameter = createCombinedSymbolFromTypes(thisParameters, thisParameters.map(getTypeOfParameter));
           }
           const { min: minArgumentCount, max: maxNonRestParam } = minAndMax(candidates, getNumNonRestParameters);
-          const parameters = [];
+          const parameters2 = [];
           for (let i = 0; i < maxNonRestParam; i++) {
             const symbols = mapDefined(candidates, (s) => signatureHasRestParameter(s) ? i < s.parameters.length - 1 ? s.parameters[i] : last(s.parameters) : i < s.parameters.length ? s.parameters[i] : void 0);
             Debug.assert(symbols.length !== 0);
-            parameters.push(createCombinedSymbolFromTypes(symbols, mapDefined(candidates, (candidate) => tryGetTypeAtPosition(candidate, i))));
+            parameters2.push(createCombinedSymbolFromTypes(symbols, mapDefined(candidates, (candidate) => tryGetTypeAtPosition(candidate, i))));
           }
           const restParameterSymbols = mapDefined(candidates, (c) => signatureHasRestParameter(c) ? last(c.parameters) : void 0);
           let flags = 128;
@@ -87128,7 +87128,7 @@ ${lanes.join("\n")}
               2
               /* Subtype */
             ));
-            parameters.push(createCombinedSymbolForOverloadFailure(restParameterSymbols, type));
+            parameters2.push(createCombinedSymbolForOverloadFailure(restParameterSymbols, type));
             flags |= 1;
           }
           if (candidates.some(signatureHasLiteralTypes)) {
@@ -87140,7 +87140,7 @@ ${lanes.join("\n")}
             void 0,
             // Before calling this we tested for `!candidates.some(c => !!c.typeParameters)`.
             thisParameter,
-            parameters,
+            parameters2,
             /*resolvedReturnType*/
             getIntersectionType(candidates.map(getReturnTypeOfSignature)),
             /*resolvedTypePredicate*/
@@ -91953,11 +91953,11 @@ ${lanes.join("\n")}
             return;
           }
           checkSourceElement(node.type);
-          const { parameterName } = node;
+          const { parameterName: parameterName2 } = node;
           if (typePredicate.kind !== 0 && typePredicate.kind !== 2) {
             if (typePredicate.parameterIndex >= 0) {
               if (signatureHasRestParameter(signature) && typePredicate.parameterIndex === signature.parameters.length - 1) {
-                error2(parameterName, Diagnostics.A_type_predicate_cannot_reference_a_rest_parameter);
+                error2(parameterName2, Diagnostics.A_type_predicate_cannot_reference_a_rest_parameter);
               } else {
                 if (typePredicate.type) {
                   const leadingError = () => chainDiagnosticMessages(
@@ -91975,10 +91975,10 @@ ${lanes.join("\n")}
                   );
                 }
               }
-            } else if (parameterName) {
+            } else if (parameterName2) {
               let hasReportedError = false;
               for (const { name } of parent2.parameters) {
-                if (isBindingPattern2(name) && checkIfTypePredicateVariableIsDeclaredInBindingPattern(name, parameterName, typePredicate.parameterName)) {
+                if (isBindingPattern2(name) && checkIfTypePredicateVariableIsDeclaredInBindingPattern(name, parameterName2, typePredicate.parameterName)) {
                   hasReportedError = true;
                   break;
                 }
@@ -93435,7 +93435,7 @@ ${lanes.join("\n")}
           }
           checkTypeAssignableTo(returnType, expectedReturnType, node.expression, headMessage);
         }
-        function createCallSignature(typeParameters, thisParameter, parameters, returnType, typePredicate, minArgumentCount = parameters.length, flags = 0) {
+        function createCallSignature(typeParameters, thisParameter, parameters2, returnType, typePredicate, minArgumentCount = parameters2.length, flags = 0) {
           const decl = factory.createFunctionTypeNode(
             /*typeParameters*/
             void 0,
@@ -93445,10 +93445,10 @@ ${lanes.join("\n")}
               /* AnyKeyword */
             )
           );
-          return createSignature(decl, typeParameters, thisParameter, parameters, returnType, typePredicate, minArgumentCount, flags);
+          return createSignature(decl, typeParameters, thisParameter, parameters2, returnType, typePredicate, minArgumentCount, flags);
         }
-        function createFunctionType(typeParameters, thisParameter, parameters, returnType, typePredicate, minArgumentCount, flags) {
-          const signature = createCallSignature(typeParameters, thisParameter, parameters, returnType, typePredicate, minArgumentCount, flags);
+        function createFunctionType(typeParameters, thisParameter, parameters2, returnType, typePredicate, minArgumentCount, flags) {
+          const signature = createCallSignature(typeParameters, thisParameter, parameters2, returnType, typePredicate, minArgumentCount, flags);
           return getOrCreateTypeFromSignature(signature);
         }
         function createGetterFunctionType(type) {
@@ -95685,11 +95685,11 @@ ${lanes.join("\n")}
           const jsdocParameters = filter(getJSDocTags(node), isJSDocParameterTag);
           if (!length(jsdocParameters)) return;
           const isJs = isInJSFile(node);
-          const parameters = /* @__PURE__ */ new Set();
+          const parameters2 = /* @__PURE__ */ new Set();
           const excludedParameters = /* @__PURE__ */ new Set();
           forEach(node.parameters, ({ name }, index) => {
             if (isIdentifier10(name)) {
-              parameters.add(name.escapedText);
+              parameters2.add(name.escapedText);
             }
             if (isBindingPattern2(name)) {
               excludedParameters.add(index);
@@ -95699,12 +95699,12 @@ ${lanes.join("\n")}
           if (containsArguments) {
             const lastJSDocParamIndex = jsdocParameters.length - 1;
             const lastJSDocParam = jsdocParameters[lastJSDocParamIndex];
-            if (isJs && lastJSDocParam && isIdentifier10(lastJSDocParam.name) && lastJSDocParam.typeExpression && lastJSDocParam.typeExpression.type && !parameters.has(lastJSDocParam.name.escapedText) && !excludedParameters.has(lastJSDocParamIndex) && !isArrayType(getTypeFromTypeNode(lastJSDocParam.typeExpression.type))) {
+            if (isJs && lastJSDocParam && isIdentifier10(lastJSDocParam.name) && lastJSDocParam.typeExpression && lastJSDocParam.typeExpression.type && !parameters2.has(lastJSDocParam.name.escapedText) && !excludedParameters.has(lastJSDocParamIndex) && !isArrayType(getTypeFromTypeNode(lastJSDocParam.typeExpression.type))) {
               error2(lastJSDocParam.name, Diagnostics.JSDoc_param_tag_has_name_0_but_there_is_no_parameter_with_that_name_It_would_match_arguments_if_it_had_an_array_type, idText(lastJSDocParam.name));
             }
           } else {
             forEach(jsdocParameters, ({ name, isNameFirst }, index) => {
-              if (excludedParameters.has(index) || isIdentifier10(name) && parameters.has(name.escapedText)) {
+              if (excludedParameters.has(index) || isIdentifier10(name) && parameters2.has(name.escapedText)) {
                 return;
               }
               if (isQualifiedName(name)) {
@@ -100529,17 +100529,17 @@ ${lanes.join("\n")}
           }
           return false;
         }
-        function checkGrammarParameterList(parameters) {
+        function checkGrammarParameterList(parameters2) {
           let seenOptionalParameter = false;
-          const parameterCount = parameters.length;
+          const parameterCount = parameters2.length;
           for (let i = 0; i < parameterCount; i++) {
-            const parameter = parameters[i];
+            const parameter = parameters2[i];
             if (parameter.dotDotDotToken) {
               if (i !== parameterCount - 1) {
                 return grammarErrorOnNode(parameter.dotDotDotToken, Diagnostics.A_rest_parameter_must_be_last_in_a_parameter_list);
               }
               if (!(parameter.flags & 33554432)) {
-                checkGrammarForDisallowedTrailingComma(parameters, Diagnostics.A_rest_parameter_or_binding_pattern_may_not_have_a_trailing_comma);
+                checkGrammarForDisallowedTrailingComma(parameters2, Diagnostics.A_rest_parameter_or_binding_pattern_may_not_have_a_trailing_comma);
               }
               if (parameter.questionToken) {
                 return grammarErrorOnNode(parameter.questionToken, Diagnostics.A_rest_parameter_cannot_be_optional);
@@ -100557,8 +100557,8 @@ ${lanes.join("\n")}
             }
           }
         }
-        function getNonSimpleParameters(parameters) {
-          return filter(parameters, (parameter) => !!parameter.initializer || isBindingPattern2(parameter.name) || isRestParameter(parameter));
+        function getNonSimpleParameters(parameters2) {
+          return filter(parameters2, (parameter) => !!parameter.initializer || isBindingPattern2(parameter.name) || isRestParameter(parameter));
         }
         function checkGrammarForUseStrictSimpleParameterList(node) {
           if (languageVersion >= 3) {
@@ -102006,20 +102006,20 @@ ${lanes.join("\n")}
         context.suspendLexicalEnvironment();
         return updated;
       }
-      function addDefaultValueAssignmentsIfNeeded(parameters, context) {
+      function addDefaultValueAssignmentsIfNeeded(parameters2, context) {
         let result2;
-        for (let i = 0; i < parameters.length; i++) {
-          const parameter = parameters[i];
+        for (let i = 0; i < parameters2.length; i++) {
+          const parameter = parameters2[i];
           const updated = addDefaultValueAssignmentIfNeeded(parameter, context);
           if (result2 || updated !== parameter) {
-            if (!result2) result2 = parameters.slice(0, i);
+            if (!result2) result2 = parameters2.slice(0, i);
             result2[i] = updated;
           }
         }
         if (result2) {
-          return setTextRange(context.factory.createNodeArray(result2, parameters.hasTrailingComma), parameters);
+          return setTextRange(context.factory.createNodeArray(result2, parameters2.hasTrailingComma), parameters2);
         }
-        return parameters;
+        return parameters2;
       }
       function addDefaultValueAssignmentIfNeeded(parameter, context) {
         return parameter.dotDotDotToken ? parameter : isBindingPattern2(parameter.name) ? addDefaultValueAssignmentForBindingPattern(parameter, context) : parameter.initializer ? addDefaultValueAssignmentForInitializer(parameter, parameter.name, parameter.initializer, context) : parameter;
@@ -104552,12 +104552,12 @@ ${lanes.join("\n")}
       function getDecoratorsOfParameters(node) {
         let decorators;
         if (node) {
-          const parameters = node.parameters;
-          const firstParameterIsThis = parameters.length > 0 && parameterIsThisKeyword(parameters[0]);
+          const parameters2 = node.parameters;
+          const firstParameterIsThis = parameters2.length > 0 && parameterIsThisKeyword(parameters2[0]);
           const firstParameterOffset = firstParameterIsThis ? 1 : 0;
-          const numParameters = firstParameterIsThis ? parameters.length - 1 : parameters.length;
+          const numParameters = firstParameterIsThis ? parameters2.length - 1 : parameters2.length;
           for (let i = 0; i < numParameters; i++) {
-            const parameter = parameters[i + firstParameterOffset];
+            const parameter = parameters2[i + firstParameterOffset];
             if (decorators || hasDecorators(parameter)) {
               if (!decorators) {
                 decorators = new Array(numParameters);
@@ -104570,13 +104570,13 @@ ${lanes.join("\n")}
       }
       function getAllDecoratorsOfClass(node, useLegacyDecorators) {
         const decorators = getDecorators(node);
-        const parameters = useLegacyDecorators ? getDecoratorsOfParameters(getFirstConstructorWithBody(node)) : void 0;
-        if (!some(decorators) && !some(parameters)) {
+        const parameters2 = useLegacyDecorators ? getDecoratorsOfParameters(getFirstConstructorWithBody(node)) : void 0;
+        if (!some(decorators) && !some(parameters2)) {
           return void 0;
         }
         return {
           decorators,
-          parameters
+          parameters: parameters2
         };
       }
       function getAllDecoratorsOfClassElement(member, parent2, useLegacyDecorators) {
@@ -104614,13 +104614,13 @@ ${lanes.join("\n")}
           return void 0;
         }
         const decorators = getDecorators(firstAccessorWithDecorators);
-        const parameters = useLegacyDecorators ? getDecoratorsOfParameters(setAccessor) : void 0;
-        if (!some(decorators) && !some(parameters)) {
+        const parameters2 = useLegacyDecorators ? getDecoratorsOfParameters(setAccessor) : void 0;
+        if (!some(decorators) && !some(parameters2)) {
           return void 0;
         }
         return {
           decorators,
-          parameters,
+          parameters: parameters2,
           getDecorators: getAccessor && getDecorators(getAccessor),
           setDecorators: setAccessor && getDecorators(setAccessor)
         };
@@ -104630,11 +104630,11 @@ ${lanes.join("\n")}
           return void 0;
         }
         const decorators = getDecorators(method);
-        const parameters = useLegacyDecorators ? getDecoratorsOfParameters(method) : void 0;
-        if (!some(decorators) && !some(parameters)) {
+        const parameters2 = useLegacyDecorators ? getDecoratorsOfParameters(method) : void 0;
+        if (!some(decorators) && !some(parameters2)) {
           return void 0;
         }
-        return { decorators, parameters };
+        return { decorators, parameters: parameters2 };
       }
       function getAllDecoratorsOfProperty(property) {
         const decorators = getDecorators(property);
@@ -106700,7 +106700,7 @@ ${lanes.join("\n")}
               emitFlags |= 1024;
             }
           }
-          const parameterName = getNamespaceParameterName(node);
+          const parameterName2 = getNamespaceParameterName(node);
           const containerName = getNamespaceContainerName(node);
           const exportName = isExportOfNamespace(node) ? factory2.getExternalModuleOrNamespaceExportName(
             currentNamespaceContainerName,
@@ -106749,7 +106749,7 @@ ${lanes.join("\n")}
                   void 0,
                   /*dotDotDotToken*/
                   void 0,
-                  parameterName
+                  parameterName2
                 )],
                 /*type*/
                 void 0,
@@ -106909,7 +106909,7 @@ ${lanes.join("\n")}
               emitFlags |= 1024;
             }
           }
-          const parameterName = getNamespaceParameterName(node);
+          const parameterName2 = getNamespaceParameterName(node);
           const containerName = getNamespaceContainerName(node);
           const exportName = isExportOfNamespace(node) ? factory2.getExternalModuleOrNamespaceExportName(
             currentNamespaceContainerName,
@@ -106958,7 +106958,7 @@ ${lanes.join("\n")}
                   void 0,
                   /*dotDotDotToken*/
                   void 0,
-                  parameterName
+                  parameterName2
                 )],
                 /*type*/
                 void 0,
@@ -108854,18 +108854,18 @@ ${lanes.join("\n")}
           }
           const extendsClauseElement = getEffectiveBaseTypeNode(container);
           const isDerivedClass = !!(extendsClauseElement && skipOuterExpressions(extendsClauseElement.expression).kind !== 106);
-          const parameters = visitParameterList(constructor ? constructor.parameters : void 0, visitor, context);
+          const parameters2 = visitParameterList(constructor ? constructor.parameters : void 0, visitor, context);
           const body = transformConstructorBody(container, constructor, isDerivedClass);
           if (!body) {
             return constructor;
           }
           if (constructor) {
-            Debug.assert(parameters);
+            Debug.assert(parameters2);
             return factory2.updateConstructorDeclaration(
               constructor,
               /*modifiers*/
               void 0,
-              parameters,
+              parameters2,
               body
             );
           }
@@ -108875,7 +108875,7 @@ ${lanes.join("\n")}
                 factory2.createConstructorDeclaration(
                   /*modifiers*/
                   void 0,
-                  parameters ?? [],
+                  parameters2 ?? [],
                   body
                 ),
                 constructor || container
@@ -109795,10 +109795,10 @@ ${lanes.join("\n")}
           const valueDeclaration = isClassLike(node) ? getFirstConstructorWithBody(node) : isFunctionLike2(node) && nodeIsPresent(node.body) ? node : void 0;
           const expressions = [];
           if (valueDeclaration) {
-            const parameters = getParametersOfDecoratedDeclaration(valueDeclaration, container);
-            const numParameters = parameters.length;
+            const parameters2 = getParametersOfDecoratedDeclaration(valueDeclaration, container);
+            const numParameters = parameters2.length;
             for (let i = 0; i < numParameters; i++) {
-              const parameter = parameters[i];
+              const parameter = parameters2[i];
               if (i === 0 && isIdentifier10(parameter.name) && parameter.name.escapedText === "this") {
                 continue;
               }
@@ -111610,7 +111610,7 @@ ${lanes.join("\n")}
         function visitConstructorDeclaration(node) {
           enterClassElement(node);
           const modifiers = visitNodes2(node.modifiers, modifierVisitor, isModifier);
-          const parameters = visitNodes2(node.parameters, visitor, isParameter4);
+          const parameters2 = visitNodes2(node.parameters, visitor, isParameter4);
           let body;
           if (node.body && classInfo) {
             const initializerStatements = prepareConstructor(classInfo.class, classInfo);
@@ -111641,7 +111641,7 @@ ${lanes.join("\n")}
           }
           body ?? (body = visitNode(node.body, visitor, isBlock3));
           exitClassElement();
-          return factory2.updateConstructorDeclaration(node, modifiers, parameters, body);
+          return factory2.updateConstructorDeclaration(node, modifiers, parameters2, body);
         }
         function finishClassElement(updated, original) {
           if (updated !== original) {
@@ -111775,7 +111775,7 @@ ${lanes.join("\n")}
             exitClassElement();
             return finishClassElement(createMethodDescriptorForwarder(modifiers, name, descriptorName), node);
           } else {
-            const parameters = visitNodes2(node.parameters, visitor, isParameter4);
+            const parameters2 = visitNodes2(node.parameters, visitor, isParameter4);
             const body = visitNode(node.body, visitor, isBlock3);
             exitClassElement();
             return finishClassElement(factory2.updateMethodDeclaration(
@@ -111787,7 +111787,7 @@ ${lanes.join("\n")}
               void 0,
               /*typeParameters*/
               void 0,
-              parameters,
+              parameters2,
               /*type*/
               void 0,
               body
@@ -111801,14 +111801,14 @@ ${lanes.join("\n")}
             exitClassElement();
             return finishClassElement(createGetAccessorDescriptorForwarder(modifiers, name, descriptorName), node);
           } else {
-            const parameters = visitNodes2(node.parameters, visitor, isParameter4);
+            const parameters2 = visitNodes2(node.parameters, visitor, isParameter4);
             const body = visitNode(node.body, visitor, isBlock3);
             exitClassElement();
             return finishClassElement(factory2.updateGetAccessorDeclaration(
               node,
               modifiers,
               name,
-              parameters,
+              parameters2,
               /*type*/
               void 0,
               body
@@ -111822,10 +111822,10 @@ ${lanes.join("\n")}
             exitClassElement();
             return finishClassElement(createSetAccessorDescriptorForwarder(modifiers, name, descriptorName), node);
           } else {
-            const parameters = visitNodes2(node.parameters, visitor, isParameter4);
+            const parameters2 = visitNodes2(node.parameters, visitor, isParameter4);
             const body = visitNode(node.body, visitor, isBlock3);
             exitClassElement();
-            return finishClassElement(factory2.updateSetAccessorDeclaration(node, modifiers, name, parameters, body), node);
+            return finishClassElement(factory2.updateSetAccessorDeclaration(node, modifiers, name, parameters2, body), node);
           }
         }
         function visitClassStaticBlockDeclaration(node) {
@@ -112409,7 +112409,7 @@ ${lanes.join("\n")}
           }
           return expression;
         }
-        function createDescriptorMethod(original, name, modifiers, asteriskToken, kind, parameters, body) {
+        function createDescriptorMethod(original, name, modifiers, asteriskToken, kind, parameters2, body) {
           const func = factory2.createFunctionExpression(
             modifiers,
             asteriskToken,
@@ -112417,7 +112417,7 @@ ${lanes.join("\n")}
             void 0,
             /*typeParameters*/
             void 0,
-            parameters,
+            parameters2,
             /*type*/
             void 0,
             body ?? factory2.createBlock([])
@@ -112932,7 +112932,7 @@ ${lanes.join("\n")}
           return updated;
         }
         function visitMethodDeclaration(node) {
-          let parameters;
+          let parameters2;
           const functionFlags = getFunctionFlags(node);
           const savedLexicalArgumentsBinding = lexicalArgumentsBinding;
           lexicalArgumentsBinding = void 0;
@@ -112945,10 +112945,10 @@ ${lanes.join("\n")}
             void 0,
             /*typeParameters*/
             void 0,
-            parameters = functionFlags & 2 ? transformAsyncFunctionParameterList(node) : visitParameterList(node.parameters, visitor, context),
+            parameters2 = functionFlags & 2 ? transformAsyncFunctionParameterList(node) : visitParameterList(node.parameters, visitor, context),
             /*type*/
             void 0,
-            functionFlags & 2 ? transformAsyncFunctionBody(node, parameters) : transformMethodBody(node)
+            functionFlags & 2 ? transformAsyncFunctionBody(node, parameters2) : transformMethodBody(node)
           );
           lexicalArgumentsBinding = savedLexicalArgumentsBinding;
           return updated;
@@ -112982,7 +112982,7 @@ ${lanes.join("\n")}
           return updated;
         }
         function visitFunctionDeclaration(node) {
-          let parameters;
+          let parameters2;
           const savedLexicalArgumentsBinding = lexicalArgumentsBinding;
           lexicalArgumentsBinding = void 0;
           const functionFlags = getFunctionFlags(node);
@@ -112993,16 +112993,16 @@ ${lanes.join("\n")}
             node.name,
             /*typeParameters*/
             void 0,
-            parameters = functionFlags & 2 ? transformAsyncFunctionParameterList(node) : visitParameterList(node.parameters, visitor, context),
+            parameters2 = functionFlags & 2 ? transformAsyncFunctionParameterList(node) : visitParameterList(node.parameters, visitor, context),
             /*type*/
             void 0,
-            functionFlags & 2 ? transformAsyncFunctionBody(node, parameters) : visitFunctionBody(node.body, visitor, context)
+            functionFlags & 2 ? transformAsyncFunctionBody(node, parameters2) : visitFunctionBody(node.body, visitor, context)
           );
           lexicalArgumentsBinding = savedLexicalArgumentsBinding;
           return updated;
         }
         function visitFunctionExpression(node) {
-          let parameters;
+          let parameters2;
           const savedLexicalArgumentsBinding = lexicalArgumentsBinding;
           lexicalArgumentsBinding = void 0;
           const functionFlags = getFunctionFlags(node);
@@ -113013,27 +113013,27 @@ ${lanes.join("\n")}
             node.name,
             /*typeParameters*/
             void 0,
-            parameters = functionFlags & 2 ? transformAsyncFunctionParameterList(node) : visitParameterList(node.parameters, visitor, context),
+            parameters2 = functionFlags & 2 ? transformAsyncFunctionParameterList(node) : visitParameterList(node.parameters, visitor, context),
             /*type*/
             void 0,
-            functionFlags & 2 ? transformAsyncFunctionBody(node, parameters) : visitFunctionBody(node.body, visitor, context)
+            functionFlags & 2 ? transformAsyncFunctionBody(node, parameters2) : visitFunctionBody(node.body, visitor, context)
           );
           lexicalArgumentsBinding = savedLexicalArgumentsBinding;
           return updated;
         }
         function visitArrowFunction(node) {
-          let parameters;
+          let parameters2;
           const functionFlags = getFunctionFlags(node);
           return factory2.updateArrowFunction(
             node,
             visitNodes2(node.modifiers, visitor, isModifier),
             /*typeParameters*/
             void 0,
-            parameters = functionFlags & 2 ? transformAsyncFunctionParameterList(node) : visitParameterList(node.parameters, visitor, context),
+            parameters2 = functionFlags & 2 ? transformAsyncFunctionParameterList(node) : visitParameterList(node.parameters, visitor, context),
             /*type*/
             void 0,
             node.equalsGreaterThanToken,
-            functionFlags & 2 ? transformAsyncFunctionBody(node, parameters) : visitFunctionBody(node.body, visitor, context)
+            functionFlags & 2 ? transformAsyncFunctionBody(node, parameters2) : visitFunctionBody(node.body, visitor, context)
           );
         }
         function recordDeclarationName({ name }, names) {
@@ -114464,15 +114464,15 @@ ${lanes.join("\n")}
           return visitEachChild(node, visitor, context);
         }
         function collectParametersWithPrecedingObjectRestOrSpread(node) {
-          let parameters;
+          let parameters2;
           for (const parameter of node.parameters) {
-            if (parameters) {
-              parameters.add(parameter);
+            if (parameters2) {
+              parameters2.add(parameter);
             } else if (parameter.transformFlags & 65536) {
-              parameters = /* @__PURE__ */ new Set();
+              parameters2 = /* @__PURE__ */ new Set();
             }
           }
-          return parameters;
+          return parameters2;
         }
         function visitConstructorDeclaration(node) {
           const savedEnclosingFunctionFlags = enclosingFunctionFlags;
@@ -118614,7 +118614,7 @@ ${lanes.join("\n")}
           );
           const savedConvertedLoopState = convertedLoopState;
           convertedLoopState = void 0;
-          const parameters = visitParameterList(node.parameters, visitor, context);
+          const parameters2 = visitParameterList(node.parameters, visitor, context);
           const body = transformFunctionBody2(node);
           const name = hierarchyFacts & 32768 ? factory2.getLocalName(node) : node.name;
           exitSubtree(
@@ -118632,7 +118632,7 @@ ${lanes.join("\n")}
             name,
             /*typeParameters*/
             void 0,
-            parameters,
+            parameters2,
             /*type*/
             void 0,
             body
@@ -118646,7 +118646,7 @@ ${lanes.join("\n")}
             65
             /* FunctionIncludes */
           );
-          const parameters = visitParameterList(node.parameters, visitor, context);
+          const parameters2 = visitParameterList(node.parameters, visitor, context);
           const body = transformFunctionBody2(node);
           const name = hierarchyFacts & 32768 ? factory2.getLocalName(node) : node.name;
           exitSubtree(
@@ -118663,7 +118663,7 @@ ${lanes.join("\n")}
             name,
             /*typeParameters*/
             void 0,
-            parameters,
+            parameters2,
             /*type*/
             void 0,
             body
@@ -118681,7 +118681,7 @@ ${lanes.join("\n")}
             65
             /* FunctionIncludes */
           );
-          const parameters = visitParameterList(node.parameters, visitor, context);
+          const parameters2 = visitParameterList(node.parameters, visitor, context);
           const body = transformFunctionBody2(node);
           if (hierarchyFacts & 32768 && !name && (node.kind === 263 || node.kind === 219)) {
             name = factory2.getGeneratedNameForNode(node);
@@ -118702,7 +118702,7 @@ ${lanes.join("\n")}
                 name,
                 /*typeParameters*/
                 void 0,
-                parameters,
+                parameters2,
                 /*type*/
                 void 0,
                 body
@@ -120204,12 +120204,12 @@ ${lanes.join("\n")}
             /* FunctionIncludes */
           );
           let updated;
-          const parameters = visitParameterList(node.parameters, visitor, context);
+          const parameters2 = visitParameterList(node.parameters, visitor, context);
           const body = transformFunctionBody2(node);
           if (node.kind === 178) {
-            updated = factory2.updateGetAccessorDeclaration(node, node.modifiers, node.name, parameters, node.type, body);
+            updated = factory2.updateGetAccessorDeclaration(node, node.modifiers, node.name, parameters2, node.type, body);
           } else {
-            updated = factory2.updateSetAccessorDeclaration(node, node.modifiers, node.name, parameters, body);
+            updated = factory2.updateSetAccessorDeclaration(node, node.modifiers, node.name, parameters2, body);
           }
           exitSubtree(
             ancestorFacts,
@@ -123752,7 +123752,7 @@ ${lanes.join("\n")}
         function createImportCallExpressionAMD(arg, containsLexicalThis) {
           const resolve12 = factory2.createUniqueName("resolve");
           const reject = factory2.createUniqueName("reject");
-          const parameters = [
+          const parameters2 = [
             factory2.createParameterDeclaration(
               /*modifiers*/
               void 0,
@@ -123787,7 +123787,7 @@ ${lanes.join("\n")}
               void 0,
               /*typeParameters*/
               void 0,
-              parameters,
+              parameters2,
               /*type*/
               void 0,
               /*equalsGreaterThanToken*/
@@ -123804,7 +123804,7 @@ ${lanes.join("\n")}
               void 0,
               /*typeParameters*/
               void 0,
-              parameters,
+              parameters2,
               /*type*/
               void 0,
               body
@@ -123862,7 +123862,7 @@ ${lanes.join("\n")}
           if (getESModuleInterop(compilerOptions)) {
             requireCall = emitHelpers().createImportStarHelper(requireCall);
           }
-          const parameters = needSyncEval ? [
+          const parameters2 = needSyncEval ? [
             factory2.createParameterDeclaration(
               /*modifiers*/
               void 0,
@@ -123880,7 +123880,7 @@ ${lanes.join("\n")}
               /*typeParameters*/
               void 0,
               /*parameters*/
-              parameters,
+              parameters2,
               /*type*/
               void 0,
               /*equalsGreaterThanToken*/
@@ -123898,7 +123898,7 @@ ${lanes.join("\n")}
               /*typeParameters*/
               void 0,
               /*parameters*/
-              parameters,
+              parameters2,
               /*type*/
               void 0,
               factory2.createBlock([factory2.createReturnStatement(requireCall)])
@@ -125218,7 +125218,7 @@ ${lanes.join("\n")}
           const setters = [];
           for (const group2 of dependencyGroups) {
             const localName = forEach(group2.externalImports, (i) => getLocalNameForExternalImport(factory2, i, currentSourceFile));
-            const parameterName = localName ? factory2.getGeneratedNameForNode(localName) : factory2.createUniqueName("");
+            const parameterName2 = localName ? factory2.getGeneratedNameForNode(localName) : factory2.createUniqueName("");
             const statements2 = [];
             for (const entry of group2.externalImports) {
               const importVariableName = getLocalNameForExternalImport(factory2, entry, currentSourceFile);
@@ -125232,7 +125232,7 @@ ${lanes.join("\n")}
                   Debug.assert(importVariableName !== void 0);
                   statements2.push(
                     factory2.createExpressionStatement(
-                      factory2.createAssignment(importVariableName, parameterName)
+                      factory2.createAssignment(importVariableName, parameterName2)
                     )
                   );
                   if (hasSyntacticModifier(
@@ -125248,7 +125248,7 @@ ${lanes.join("\n")}
                           void 0,
                           [
                             factory2.createStringLiteral(idText(importVariableName)),
-                            parameterName
+                            parameterName2
                           ]
                         )
                       )
@@ -125265,7 +125265,7 @@ ${lanes.join("\n")}
                           factory2.createPropertyAssignment(
                             factory2.createStringLiteral(moduleExportNameTextUnescaped(e.name)),
                             factory2.createElementAccessExpression(
-                              parameterName,
+                              parameterName2,
                               factory2.createStringLiteral(moduleExportNameTextUnescaped(e.propertyName || e.name))
                             )
                           )
@@ -125294,7 +125294,7 @@ ${lanes.join("\n")}
                             void 0,
                             [
                               factory2.createStringLiteral(moduleExportNameTextUnescaped(entry.exportClause.name)),
-                              parameterName
+                              parameterName2
                             ]
                           )
                         )
@@ -125307,7 +125307,7 @@ ${lanes.join("\n")}
                           exportStarFunction,
                           /*typeArguments*/
                           void 0,
-                          [parameterName]
+                          [parameterName2]
                         )
                       )
                     );
@@ -125330,7 +125330,7 @@ ${lanes.join("\n")}
                   void 0,
                   /*dotDotDotToken*/
                   void 0,
-                  parameterName
+                  parameterName2
                 )],
                 /*type*/
                 void 0,
@@ -129696,7 +129696,7 @@ ${lanes.join("\n")}
             return;
           }
           const buildInfo = host.getBuildInfo() || { version };
-          writeFile7(
+          writeFile8(
             host,
             emitterDiagnostics,
             buildInfoPath,
@@ -129908,7 +129908,7 @@ ${lanes.join("\n")}
             }
             if (sourceMapFilePath) {
               const sourceMap = sourceMapGenerator.toString();
-              writeFile7(
+              writeFile8(
                 host,
                 emitterDiagnostics,
                 sourceMapFilePath,
@@ -129923,7 +129923,7 @@ ${lanes.join("\n")}
           }
           const text2 = writer.getText();
           const data = { sourceMapUrlPos, diagnostics: transform2.diagnostics };
-          writeFile7(host, emitterDiagnostics, jsFilePath, text2, !!compilerOptions.emitBOM, sourceFiles, data);
+          writeFile8(host, emitterDiagnostics, jsFilePath, text2, !!compilerOptions.emitBOM, sourceFiles, data);
           writer.clear();
           return !data.skippedDtsWrite;
         }
@@ -133281,34 +133281,34 @@ ${lanes.join("\n")}
           }
           emitList(parentNode, typeParameters, 53776 | (isArrowFunction6(parentNode) ? 64 : 0));
         }
-        function emitParameters(parentNode, parameters) {
+        function emitParameters(parentNode, parameters2) {
           emitList(
             parentNode,
-            parameters,
+            parameters2,
             2576
             /* Parameters */
           );
         }
-        function canEmitSimpleArrowHead(parentNode, parameters) {
-          const parameter = singleOrUndefined(parameters);
+        function canEmitSimpleArrowHead(parentNode, parameters2) {
+          const parameter = singleOrUndefined(parameters2);
           return parameter && parameter.pos === parentNode.pos && isArrowFunction6(parentNode) && !parentNode.type && !some(parentNode.modifiers) && !some(parentNode.typeParameters) && !some(parameter.modifiers) && !parameter.dotDotDotToken && !parameter.questionToken && !parameter.type && !parameter.initializer && isIdentifier10(parameter.name);
         }
-        function emitParametersForArrow(parentNode, parameters) {
-          if (canEmitSimpleArrowHead(parentNode, parameters)) {
+        function emitParametersForArrow(parentNode, parameters2) {
+          if (canEmitSimpleArrowHead(parentNode, parameters2)) {
             emitList(
               parentNode,
-              parameters,
+              parameters2,
               2576 & ~2048
               /* Parenthesis */
             );
           } else {
-            emitParameters(parentNode, parameters);
+            emitParameters(parentNode, parameters2);
           }
         }
-        function emitParametersForIndexSignature(parentNode, parameters) {
+        function emitParametersForIndexSignature(parentNode, parameters2) {
           emitList(
             parentNode,
-            parameters,
+            parameters2,
             8848
             /* IndexSignatureParameters */
           );
@@ -134771,7 +134771,7 @@ ${lanes.join("\n")}
           addOrDeleteFileOrDirectory,
           addOrDeleteFile,
           clearCache,
-          realpath: host.realpath && realpath4
+          realpath: host.realpath && realpath5
         };
         function toPath3(fileName) {
           return toPath(fileName, currentDirectory, getCanonicalFileName);
@@ -134882,7 +134882,7 @@ ${lanes.join("\n")}
           const rootResult = tryReadDirectory2(rootDir, rootDirPath);
           let rootSymLinkResult;
           if (rootResult !== void 0) {
-            return matchFiles(rootDir, extensions, excludes, includes, useCaseSensitiveFileNames2, currentDirectory, depth, getFileSystemEntries, realpath4);
+            return matchFiles(rootDir, extensions, excludes, includes, useCaseSensitiveFileNames2, currentDirectory, depth, getFileSystemEntries, realpath5);
           }
           return host.readDirectory(rootDir, extensions, excludes, includes, depth);
           function getFileSystemEntries(dir) {
@@ -134911,7 +134911,7 @@ ${lanes.join("\n")}
             return result2;
           }
         }
-        function realpath4(s) {
+        function realpath5(s) {
           return host.realpath ? host.realpath(s) : s;
         }
         function clearFirstAncestorEntry(fileOrDirectoryPath) {
@@ -135311,12 +135311,12 @@ ${lanes.join("\n")}
       function createCompilerHost(options, setParentNodes) {
         return createCompilerHostWorker(options, setParentNodes);
       }
-      function createGetSourceFile(readFile2, setParentNodes) {
+      function createGetSourceFile(readFile4, setParentNodes) {
         return (fileName, languageVersionOrOptions, onError) => {
           let text2;
           try {
             mark("beforeIORead");
-            text2 = readFile2(fileName);
+            text2 = readFile4(fileName);
             mark("afterIORead");
             measure("I/O Read", "beforeIORead", "afterIORead");
           } catch (e) {
@@ -135366,7 +135366,7 @@ ${lanes.join("\n")}
           return getDirectoryPath(normalizePath(system.getExecutingFilePath()));
         }
         const newLine = getNewLineCharacter(options);
-        const realpath4 = system.realpath && ((path) => system.realpath(path));
+        const realpath5 = system.realpath && ((path) => system.realpath(path));
         const compilerHost = {
           getSourceFile: createGetSourceFile((fileName) => compilerHost.readFile(fileName), setParentNodes),
           getDefaultLibLocation,
@@ -135386,7 +135386,7 @@ ${lanes.join("\n")}
           directoryExists: (directoryName) => system.directoryExists(directoryName),
           getEnvironmentVariable: (name) => system.getEnvironmentVariable ? system.getEnvironmentVariable(name) : "",
           getDirectories: (path) => system.getDirectories(path),
-          realpath: realpath4,
+          realpath: realpath5,
           readDirectory: (path, extensions, include, exclude, depth) => system.readDirectory(path, extensions, include, exclude, depth),
           createDirectory: (d) => system.createDirectory(d),
           createHash: maybeBind(system, system.createHash)
@@ -136220,7 +136220,7 @@ ${lanes.join("\n")}
           getRedirectFromOutput,
           forEachResolvedProjectReference: forEachResolvedProjectReference2
         });
-        const readFile2 = host.readFile.bind(host);
+        const readFile4 = host.readFile.bind(host);
         (_e = tracing) == null ? void 0 : _e.push(tracing.Phase.Program, "shouldProgramCreateNewSourceFiles", { hasOldProgram: !!oldProgram });
         const shouldCreateNewSourceFile = shouldProgramCreateNewSourceFiles(oldProgram, options);
         (_f = tracing) == null ? void 0 : _f.pop();
@@ -136446,7 +136446,7 @@ ${lanes.join("\n")}
           shouldTransformImportCall,
           emitBuildInfo,
           fileExists,
-          readFile: readFile2,
+          readFile: readFile4,
           directoryExists,
           getSymlinkCache,
           realpath: (_o = host.realpath) == null ? void 0 : _o.bind(host),
@@ -139741,9 +139741,9 @@ ${lanes.join("\n")}
             const path = queue.pop();
             if (!seenMap.has(path)) {
               seenMap.add(path);
-              const references = state.referencedMap.getValues(path);
-              if (references) {
-                for (const key2 of references.keys()) {
+              const references2 = state.referencedMap.getValues(path);
+              if (references2) {
+                for (const key2 of references2.keys()) {
                   queue.push(key2);
                 }
               }
@@ -139763,8 +139763,8 @@ ${lanes.join("\n")}
           return state.allFileNames;
         }
         function getReferencedByPaths(state, referencedFilePath) {
-          const keys = state.referencedMap.getKeys(referencedFilePath);
-          return keys ? arrayFrom(keys.keys()) : [];
+          const keys2 = state.referencedMap.getKeys(referencedFilePath);
+          return keys2 ? arrayFrom(keys2.keys()) : [];
         }
         BuilderState2.getReferencedByPaths = getReferencedByPaths;
         function containsOnlyAmbientModules(sourceFile) {
@@ -140331,8 +140331,8 @@ ${lanes.join("\n")}
         );
         (_b = state.referencedMap.getKeys(affectedFile.resolvedPath)) == null ? void 0 : _b.forEach((exportedFromPath) => {
           if (handleDtsMayChangeOfGlobalScope(state, exportedFromPath, invalidateJsFiles, cancellationToken, host)) return true;
-          const references = state.referencedMap.getKeys(exportedFromPath);
-          return references && forEachKey(references, (filePath) => handleDtsMayChangeOfFileAndExportsOfFile(
+          const references2 = state.referencedMap.getKeys(exportedFromPath);
+          return references2 && forEachKey(references2, (filePath) => handleDtsMayChangeOfFileAndExportsOfFile(
             state,
             filePath,
             invalidateJsFiles,
@@ -147339,15 +147339,15 @@ ${lanes.join("\n")}
               }
             }
             if (isTypePredicateNode(node)) {
-              let parameterName;
+              let parameterName2;
               if (isIdentifier10(node.parameterName)) {
                 const { node: result2, introducesError } = resolver.trackExistingEntityName(context, node.parameterName);
                 if (introducesError) markError();
-                parameterName = result2;
+                parameterName2 = result2;
               } else {
-                parameterName = factory.cloneNode(node.parameterName);
+                parameterName2 = factory.cloneNode(node.parameterName);
               }
-              return factory.updateTypePredicateNode(node, factory.cloneNode(node.assertsModifier), parameterName, visitNode(node.type, visitExistingNodeTreeSymbols, isTypeNode));
+              return factory.updateTypePredicateNode(node, factory.cloneNode(node.assertsModifier), parameterName2, visitNode(node.type, visitExistingNodeTreeSymbols, isTypeNode));
             }
             if (isTupleTypeNode(node) || isTypeLiteralNode(node) || isMappedTypeNode(node)) {
               const visited = visitEachChild2(node, visitExistingNodeTreeSymbols);
@@ -147861,11 +147861,11 @@ ${lanes.join("\n")}
             context
           );
           const typeParameters = reuseTypeParameters(fnNode.typeParameters, context);
-          const parameters = fnNode.parameters.map((p) => ensureParameter(p, context));
+          const parameters2 = fnNode.parameters.map((p) => ensureParameter(p, context));
           return syntacticResult(
             factory.createFunctionTypeNode(
               typeParameters,
-              parameters,
+              parameters2,
               returnType
             )
           );
@@ -148063,7 +148063,7 @@ ${lanes.join("\n")}
             context
           );
           const typeParameters = reuseTypeParameters(method.typeParameters, context);
-          const parameters = method.parameters.map((p) => ensureParameter(p, context));
+          const parameters2 = method.parameters.map((p) => ensureParameter(p, context));
           if (isConstContext) {
             return factory.createPropertySignature(
               [factory.createModifier(
@@ -148074,7 +148074,7 @@ ${lanes.join("\n")}
               reuseNode(context, method.questionToken),
               factory.createFunctionTypeNode(
                 typeParameters,
-                parameters,
+                parameters2,
                 returnType
               )
             );
@@ -148087,7 +148087,7 @@ ${lanes.join("\n")}
               reuseNode(context, name),
               reuseNode(context, method.questionToken),
               typeParameters,
-              parameters,
+              parameters2,
               returnType
             );
           }
@@ -148098,13 +148098,13 @@ ${lanes.join("\n")}
           const setAccessorType = allAccessors.setAccessor && getTypeAnnotationFromAccessor(allAccessors.setAccessor);
           if (getAccessorType !== void 0 && setAccessorType !== void 0) {
             return withNewScope(context, accessor, () => {
-              const parameters = accessor.parameters.map((p) => ensureParameter(p, context));
+              const parameters2 = accessor.parameters.map((p) => ensureParameter(p, context));
               if (isGetAccessor(accessor)) {
                 return factory.updateGetAccessorDeclaration(
                   accessor,
                   [],
                   reuseNode(context, name),
-                  parameters,
+                  parameters2,
                   serializeExistingTypeNodeWithFallback(getAccessorType, context),
                   /*body*/
                   void 0
@@ -148114,7 +148114,7 @@ ${lanes.join("\n")}
                   accessor,
                   [],
                   reuseNode(context, name),
-                  parameters,
+                  parameters2,
                   /*body*/
                   void 0
                 );
@@ -155440,7 +155440,7 @@ interface Symbol {
         emptyChildItemArray = [];
       }
       function nodeText(node) {
-        return cleanText2(node.getText(curSourceFile));
+        return cleanText3(node.getText(curSourceFile));
       }
       function navigationBarNodeKind(n) {
         return n.node.kind;
@@ -155977,12 +155977,12 @@ interface Symbol {
       }
       function getItemName(node, name) {
         if (node.kind === 268) {
-          return cleanText2(getModuleName(node));
+          return cleanText3(getModuleName(node));
         }
         if (name) {
           const text2 = isIdentifier10(name) ? name.text : isElementAccessExpression8(name) ? `[${nodeText(name.argumentExpression)}]` : nodeText(name);
           if (text2.length > 0) {
-            return cleanText2(text2);
+            return cleanText3(text2);
           }
         }
         switch (node.kind) {
@@ -156139,9 +156139,9 @@ interface Symbol {
       function getFunctionOrClassName(node) {
         const { parent: parent2 } = node;
         if (node.name && getFullWidth(node.name) > 0) {
-          return cleanText2(declarationNameToString(node.name));
+          return cleanText3(declarationNameToString(node.name));
         } else if (isVariableDeclaration8(parent2)) {
-          return cleanText2(declarationNameToString(parent2.name));
+          return cleanText3(declarationNameToString(parent2.name));
         } else if (isBinaryExpression6(parent2) && parent2.operatorToken.kind === 64) {
           return nodeText(parent2.left).replace(whiteSpaceRegex, "");
         } else if (isPropertyAssignment8(parent2)) {
@@ -156153,11 +156153,11 @@ interface Symbol {
         } else if (isCallExpression11(parent2)) {
           let name = getCalledExpressionName(parent2.expression);
           if (name !== void 0) {
-            name = cleanText2(name);
+            name = cleanText3(name);
             if (name.length > maxLength) {
               return `${name} callback`;
             }
-            const args = cleanText2(mapDefined(parent2.arguments, (a) => isStringLiteralLike7(a) || isTemplateLiteral(a) ? a.getText(curSourceFile) : void 0).join(", "));
+            const args = cleanText3(mapDefined(parent2.arguments, (a) => isStringLiteralLike7(a) || isTemplateLiteral(a) ? a.getText(curSourceFile) : void 0).join(", "));
             return `${name}(${args}) callback`;
           }
         }
@@ -156184,7 +156184,7 @@ interface Symbol {
             return false;
         }
       }
-      function cleanText2(text2) {
+      function cleanText3(text2) {
         text2 = text2.length > maxLength ? text2.substring(0, maxLength) + "..." : text2;
         return text2.replace(/\\?(?:\r?\n|[\r\u2028\u2029])/g, "");
       }
@@ -156680,13 +156680,13 @@ interface Symbol {
         for (const element of toConvert.elements) {
           const propertyName2 = element.propertyName || element.name;
           ts_FindAllReferences_exports.Core.eachSymbolReferenceInFile(element.name, checker, sourceFile, (id) => {
-            const access5 = propertyName2.kind === 11 ? factory.createElementAccessExpression(factory.createIdentifier(namespaceImportName), factory.cloneNode(propertyName2)) : factory.createPropertyAccessExpression(factory.createIdentifier(namespaceImportName), factory.cloneNode(propertyName2));
+            const access6 = propertyName2.kind === 11 ? factory.createElementAccessExpression(factory.createIdentifier(namespaceImportName), factory.cloneNode(propertyName2)) : factory.createPropertyAccessExpression(factory.createIdentifier(namespaceImportName), factory.cloneNode(propertyName2));
             if (isShorthandPropertyAssignment7(id.parent)) {
-              changes.replaceNode(sourceFile, id.parent, factory.createPropertyAssignment(id.text, access5));
+              changes.replaceNode(sourceFile, id.parent, factory.createPropertyAssignment(id.text, access6));
             } else if (isExportSpecifier(id.parent)) {
               neededNamedImports.add(element);
             } else {
-              changes.replaceNode(sourceFile, id, access5);
+              changes.replaceNode(sourceFile, id, access6);
             }
           });
         }
@@ -158026,9 +158026,9 @@ interface Symbol {
           if (!info || ts_refactor_exports.isRefactorErrorInfo(info)) {
             return void 0;
           }
-          const { references, declaration, replacement } = info;
+          const { references: references2, declaration, replacement } = info;
           const edits = ts_textChanges_exports.ChangeTracker.with(context, (tracker) => {
-            for (const node of references) {
+            for (const node of references2) {
               const closestStringIdentifierParent = isStringLiteral6(replacement) && isIdentifier10(node) && walkUpParenthesizedExpressions(node.parent);
               if (closestStringIdentifierParent && isTemplateSpan(closestStringIdentifierParent) && !isTaggedTemplateExpression2(closestStringIdentifierParent.parent.parent)) {
                 replaceTemplateStringVariableWithLiteral(tracker, file, closestStringIdentifierParent, replacement);
@@ -158056,8 +158056,8 @@ interface Symbol {
           if (isDeclarationExported(parent2)) {
             return void 0;
           }
-          const references = getReferenceNodes(parent2, checker, file);
-          return references && { references, declaration: parent2, replacement: parent2.initializer };
+          const references2 = getReferenceNodes(parent2, checker, file);
+          return references2 && { references: references2, declaration: parent2, replacement: parent2.initializer };
         }
         if (tryWithReferenceToken) {
           let definition = checker.resolveName(
@@ -158078,8 +158078,8 @@ interface Symbol {
           if (isDeclarationExported(declaration)) {
             return void 0;
           }
-          const references = getReferenceNodes(declaration, checker, file);
-          return references && { references, declaration, replacement: declaration.initializer };
+          const references2 = getReferenceNodes(declaration, checker, file);
+          return references2 && { references: references2, declaration, replacement: declaration.initializer };
         }
         return { error: getLocaleSpecificMessage(Diagnostics.Could_not_find_variable_to_inline) };
       }
@@ -158088,7 +158088,7 @@ interface Symbol {
         return some(variableStatement.modifiers, isExportModifier);
       }
       function getReferenceNodes(declaration, checker, file) {
-        const references = [];
+        const references2 = [];
         const cannotInline = ts_FindAllReferences_exports.Core.eachSymbolReferenceInFile(declaration.name, checker, file, (ref) => {
           if (ts_FindAllReferences_exports.isWriteAccessForReference(ref) && !isShorthandPropertyAssignment7(ref.parent)) {
             return true;
@@ -158102,9 +158102,9 @@ interface Symbol {
           if (textRangeContainsPositionInclusive(declaration, ref.pos)) {
             return true;
           }
-          references.push(ref);
+          references2.push(ref);
         });
-        return references.length === 0 || cannotInline ? void 0 : references;
+        return references2.length === 0 || cannotInline ? void 0 : references2;
       }
       function getReplacementExpression(reference, replacement) {
         replacement = getSynthesizedDeepClone(replacement);
@@ -158841,12 +158841,12 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         const classNames = isConstructorDeclaration3(functionDeclaration) ? getClassNames(functionDeclaration) : [];
         const names = deduplicate([...functionNames, ...classNames], equateValues);
         const checker = program.getTypeChecker();
-        const references = flatMap(
+        const references2 = flatMap(
           names,
           /*mapfn*/
           (name) => ts_FindAllReferences_exports.getReferenceEntriesForNode(-1, name, program, program.getSourceFiles(), cancellationToken)
         );
-        const groupedReferences = groupReferences(references);
+        const groupedReferences = groupReferences(references2);
         if (!every(
           groupedReferences.declarations,
           /*callback*/
@@ -159083,9 +159083,9 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         }
         return true;
       }
-      function isValidParameterNodeArray(parameters, checker) {
-        return getRefactorableParametersLength(parameters) >= minimumParameterLength && every(
-          parameters,
+      function isValidParameterNodeArray(parameters2, checker) {
+        return getRefactorableParametersLength(parameters2) >= minimumParameterLength && every(
+          parameters2,
           /*callback*/
           (paramDecl) => isValidParameterDeclaration(paramDecl, checker)
         );
@@ -159100,20 +159100,20 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
       function isValidVariableDeclaration(node) {
         return isVariableDeclaration8(node) && isVarConst(node) && isIdentifier10(node.name) && !node.type;
       }
-      function hasThisParameter(parameters) {
-        return parameters.length > 0 && isThis(parameters[0].name);
+      function hasThisParameter(parameters2) {
+        return parameters2.length > 0 && isThis(parameters2[0].name);
       }
-      function getRefactorableParametersLength(parameters) {
-        if (hasThisParameter(parameters)) {
-          return parameters.length - 1;
+      function getRefactorableParametersLength(parameters2) {
+        if (hasThisParameter(parameters2)) {
+          return parameters2.length - 1;
         }
-        return parameters.length;
+        return parameters2.length;
       }
-      function getRefactorableParameters(parameters) {
-        if (hasThisParameter(parameters)) {
-          parameters = factory.createNodeArray(parameters.slice(1), parameters.hasTrailingComma);
+      function getRefactorableParameters(parameters2) {
+        if (hasThisParameter(parameters2)) {
+          parameters2 = factory.createNodeArray(parameters2.slice(1), parameters2.hasTrailingComma);
         }
-        return parameters;
+        return parameters2;
       }
       function createPropertyOrShorthandAssignment(name, initializer) {
         if (isIdentifier10(initializer) && getTextOfIdentifierOrLiteral(initializer) === name) {
@@ -159122,20 +159122,20 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         return factory.createPropertyAssignment(name, initializer);
       }
       function createNewArgument(functionDeclaration, functionArguments) {
-        const parameters = getRefactorableParameters(functionDeclaration.parameters);
-        const hasRestParameter2 = isRestParameter(last(parameters));
-        const nonRestArguments = hasRestParameter2 ? functionArguments.slice(0, parameters.length - 1) : functionArguments;
+        const parameters2 = getRefactorableParameters(functionDeclaration.parameters);
+        const hasRestParameter2 = isRestParameter(last(parameters2));
+        const nonRestArguments = hasRestParameter2 ? functionArguments.slice(0, parameters2.length - 1) : functionArguments;
         const properties = map(nonRestArguments, (arg, i) => {
-          const parameterName = getParameterName(parameters[i]);
-          const property = createPropertyOrShorthandAssignment(parameterName, arg);
+          const parameterName2 = getParameterName(parameters2[i]);
+          const property = createPropertyOrShorthandAssignment(parameterName2, arg);
           suppressLeadingAndTrailingTrivia(property.name);
           if (isPropertyAssignment8(property)) suppressLeadingAndTrailingTrivia(property.initializer);
           copyComments(arg, property);
           return property;
         });
-        if (hasRestParameter2 && functionArguments.length >= parameters.length) {
-          const restArguments = functionArguments.slice(parameters.length - 1);
-          const restProperty = factory.createPropertyAssignment(getParameterName(last(parameters)), factory.createArrayLiteralExpression(restArguments));
+        if (hasRestParameter2 && functionArguments.length >= parameters2.length) {
+          const restArguments = functionArguments.slice(parameters2.length - 1);
+          const restProperty = factory.createPropertyAssignment(getParameterName(last(parameters2)), factory.createArrayLiteralExpression(restArguments));
           properties.push(restProperty);
         }
         const objectLiteral = factory.createObjectLiteralExpression(
@@ -159202,8 +159202,8 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           }
           return element;
         }
-        function createParameterTypeNode(parameters) {
-          const members = map(parameters, createPropertySignatureFromParameterDeclaration);
+        function createParameterTypeNode(parameters2) {
+          const members = map(parameters2, createPropertySignatureFromParameterDeclaration);
           const typeNode = addEmitFlags(
             factory.createTypeLiteralNode(members),
             1
@@ -160363,7 +160363,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         const isJS = isInJSFile(scope);
         const functionName = factory.createIdentifier(functionNameText);
         let returnType;
-        const parameters = [];
+        const parameters2 = [];
         const callArguments = [];
         let writes;
         usagesInScope.forEach((usage, name) => {
@@ -160393,7 +160393,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
             void 0,
             typeNode
           );
-          parameters.push(paramDecl);
+          parameters2.push(paramDecl);
           if (usage.usage === 2) {
             (writes || (writes = [])).push(usage);
           }
@@ -160448,13 +160448,13 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
             /*questionToken*/
             void 0,
             typeParameters,
-            parameters,
+            parameters2,
             returnType,
             body
           );
         } else {
           if (callThis) {
-            parameters.unshift(
+            parameters2.unshift(
               factory.createParameterDeclaration(
                 /*modifiers*/
                 void 0,
@@ -160487,7 +160487,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
             ) : void 0,
             functionName,
             typeParameters,
-            parameters,
+            parameters2,
             returnType,
             body
           );
@@ -160864,15 +160864,15 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           ));
           if (!functionSignature) return { variableType: variableType2, initializer: initializer2 };
           if (!!functionSignature.getTypeParameters()) return { variableType: variableType2, initializer: initializer2 };
-          const parameters = [];
+          const parameters2 = [];
           let hasAny = false;
           for (const p of initializer2.parameters) {
             if (p.type) {
-              parameters.push(p);
+              parameters2.push(p);
             } else {
               const paramType = checker.getTypeAtLocation(p);
               if (paramType === checker.getAnyType()) hasAny = true;
-              parameters.push(factory.updateParameterDeclaration(p, p.modifiers, p.dotDotDotToken, p.name, p.questionToken, p.type || checker.typeToTypeNode(
+              parameters2.push(factory.updateParameterDeclaration(p, p.modifiers, p.dotDotDotToken, p.name, p.questionToken, p.type || checker.typeToTypeNode(
                 paramType,
                 scope,
                 1,
@@ -160884,7 +160884,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           if (hasAny) return { variableType: variableType2, initializer: initializer2 };
           variableType2 = void 0;
           if (isArrowFunction6(initializer2)) {
-            initializer2 = factory.updateArrowFunction(initializer2, canHaveModifiers2(node) ? getModifiers2(node) : void 0, initializer2.typeParameters, parameters, initializer2.type || checker.typeToTypeNode(
+            initializer2 = factory.updateArrowFunction(initializer2, canHaveModifiers2(node) ? getModifiers2(node) : void 0, initializer2.typeParameters, parameters2, initializer2.type || checker.typeToTypeNode(
               functionSignature.getReturnType(),
               scope,
               1,
@@ -160893,10 +160893,10 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
             ), initializer2.equalsGreaterThanToken, initializer2.body);
           } else {
             if (functionSignature && !!functionSignature.thisParameter) {
-              const firstParameter = firstOrUndefined(parameters);
+              const firstParameter = firstOrUndefined(parameters2);
               if (!firstParameter || isIdentifier10(firstParameter.name) && firstParameter.name.escapedText !== "this") {
                 const thisType = checker.getTypeOfSymbolAtLocation(functionSignature.thisParameter, node);
-                parameters.splice(
+                parameters2.splice(
                   0,
                   0,
                   factory.createParameterDeclaration(
@@ -160918,7 +160918,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
                 );
               }
             }
-            initializer2 = factory.updateFunctionExpression(initializer2, canHaveModifiers2(node) ? getModifiers2(node) : void 0, initializer2.asteriskToken, initializer2.name, initializer2.typeParameters, parameters, initializer2.type || checker.typeToTypeNode(
+            initializer2 = factory.updateFunctionExpression(initializer2, canHaveModifiers2(node) ? getModifiers2(node) : void 0, initializer2.asteriskToken, initializer2.name, initializer2.typeParameters, parameters2, initializer2.type || checker.typeToTypeNode(
               functionSignature.getReturnType(),
               scope,
               1
@@ -164933,8 +164933,8 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         let declarations;
         if (symbol && symbol.declarations) {
           const indices = indicesOf(symbol.declarations);
-          const keys = map(symbol.declarations, (decl) => ({ file: decl.getSourceFile().fileName, pos: decl.pos }));
-          indices.sort((a, b) => compareStringsCaseSensitive(keys[a].file, keys[b].file) || keys[a].pos - keys[b].pos);
+          const keys2 = map(symbol.declarations, (decl) => ({ file: decl.getSourceFile().fileName, pos: decl.pos }));
+          indices.sort((a, b) => compareStringsCaseSensitive(keys2[a].file, keys2[b].file) || keys2[a].pos - keys2[b].pos);
           const sortedDeclarations = map(indices, (i) => symbol.declarations[i]);
           let lastDecl;
           for (const decl of sortedDeclarations) {
@@ -171929,7 +171929,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         }
       }
       function updateParameters(importAdder, scriptTarget, node, newParameters) {
-        const parameters = map(node.parameters, (p) => factory.createParameterDeclaration(
+        const parameters2 = map(node.parameters, (p) => factory.createParameterDeclaration(
           p.modifiers,
           p.dotDotDotToken,
           p.name,
@@ -171938,8 +171938,8 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           p.initializer
         ));
         for (const { pos, declaration } of newParameters) {
-          const prev = pos > 0 ? parameters[pos - 1] : void 0;
-          parameters.splice(
+          const prev = pos > 0 ? parameters2[pos - 1] : void 0;
+          parameters2.splice(
             pos,
             0,
             factory.updateParameterDeclaration(
@@ -171956,7 +171956,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
             )
           );
         }
-        return parameters;
+        return parameters2;
       }
       function getOverloads(implementation, declarations) {
         const overloads = [];
@@ -172496,19 +172496,19 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
             names.add(tag.name.escapedText);
           }
         }
-        const parameterName = firstDefined(signature.parameters, (p) => isIdentifier10(p.name) && !names.has(p.name.escapedText) ? p.name.getText(sourceFile) : void 0);
-        if (parameterName === void 0) return void 0;
+        const parameterName2 = firstDefined(signature.parameters, (p) => isIdentifier10(p.name) && !names.has(p.name.escapedText) ? p.name.getText(sourceFile) : void 0);
+        if (parameterName2 === void 0) return void 0;
         const newJSDocParameterTag = factory.updateJSDocParameterTag(
           jsDocParameterTag,
           jsDocParameterTag.tagName,
-          factory.createIdentifier(parameterName),
+          factory.createIdentifier(parameterName2),
           jsDocParameterTag.isBracketed,
           jsDocParameterTag.typeExpression,
           jsDocParameterTag.isNameFirst,
           jsDocParameterTag.comment
         );
         const changes = ts_textChanges_exports.ChangeTracker.with(context, (changeTracker) => changeTracker.replaceJSDocComment(sourceFile, jsDocHost, map(tags, (t) => t === jsDocParameterTag ? newJSDocParameterTag : t)));
-        return createCodeFixActionWithoutFixAll(renameUnmatchedParameter, changes, [Diagnostics.Rename_param_tag_name_0_to_1, name.getText(sourceFile), parameterName]);
+        return createCodeFixActionWithoutFixAll(renameUnmatchedParameter, changes, [Diagnostics.Rename_param_tag_name_0_to_1, name.getText(sourceFile), parameterName2]);
       }
       function getInfo14(sourceFile, pos) {
         const token = getTokenAtPosition(sourceFile, pos);
@@ -172901,10 +172901,10 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         return !!ts_FindAllReferences_exports.Core.eachSymbolReferenceInFile(name, checker, sourceFile, (reference) => isIdentifier10(reference) && isCallExpression11(reference.parent) && reference.parent.arguments.includes(reference));
       }
       function isLastParameter(func, parameter, isFixAll) {
-        const parameters = func.parameters;
-        const index = parameters.indexOf(parameter);
+        const parameters2 = func.parameters;
+        const index = parameters2.indexOf(parameter);
         Debug.assert(index !== -1, "The parameter should already be in the list");
-        return isFixAll ? parameters.slice(index + 1).every((p) => isIdentifier10(p.name) && !p.symbol.isReferenced) : index === parameters.length - 1;
+        return isFixAll ? parameters2.slice(index + 1).every((p) => isIdentifier10(p.name) && !p.symbol.isReferenced) : index === parameters2.length - 1;
       }
       function mayDeleteExpression(node) {
         return (isBinaryExpression6(node.parent) && node.parent.left === node || (isPostfixUnaryExpression5(node.parent) || isPrefixUnaryExpression5(node.parent)) && node.parent.operand === node) && isExpressionStatement6(node.parent.parent);
@@ -174454,11 +174454,11 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         }
       }
       function annotateThis(changes, sourceFile, containingFunction, program, host, cancellationToken) {
-        const references = getFunctionReferences(containingFunction, sourceFile, program, cancellationToken);
-        if (!references || !references.length) {
+        const references2 = getFunctionReferences(containingFunction, sourceFile, program, cancellationToken);
+        if (!references2 || !references2.length) {
           return;
         }
-        const thisInference = inferTypeFromReferences(program, references, cancellationToken).thisParameter();
+        const thisInference = inferTypeFromReferences(program, references2, cancellationToken).thisParameter();
         const typeNode = getTypeNodeIfAccessible(thisInference, containingFunction, program, host);
         if (!typeNode) {
           return;
@@ -174603,12 +174603,12 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         return mapDefined(ts_FindAllReferences_exports.getReferenceEntriesForNode(-1, token, program, program.getSourceFiles(), cancellationToken), (entry) => entry.kind !== ts_FindAllReferences_exports.EntryKind.Span ? tryCast(entry.node, isIdentifier10) : void 0);
       }
       function inferTypeForVariableFromUsage(token, program, cancellationToken) {
-        const references = getReferences(token, program, cancellationToken);
-        return inferTypeFromReferences(program, references, cancellationToken).single();
+        const references2 = getReferences(token, program, cancellationToken);
+        return inferTypeFromReferences(program, references2, cancellationToken).single();
       }
       function inferTypeForParametersFromUsage(func, sourceFile, program, cancellationToken) {
-        const references = getFunctionReferences(func, sourceFile, program, cancellationToken);
-        return references && inferTypeFromReferences(program, references, cancellationToken).parameters(func) || func.parameters.map((p) => ({
+        const references2 = getFunctionReferences(func, sourceFile, program, cancellationToken);
+        return references2 && inferTypeFromReferences(program, references2, cancellationToken).parameters(func) || func.parameters.map((p) => ({
           declaration: p,
           type: isIdentifier10(p.name) ? inferTypeForVariableFromUsage(p.name, program, cancellationToken) : program.getTypeChecker().getAnyType()
         }));
@@ -174635,7 +174635,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         }
         return getReferences(searchToken, program, cancellationToken);
       }
-      function inferTypeFromReferences(program, references, cancellationToken) {
+      function inferTypeFromReferences(program, references2, cancellationToken) {
         const checker = program.getTypeChecker();
         const builtinConstructors = {
           string: () => checker.getStringType(),
@@ -174651,7 +174651,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         ];
         return {
           single: single2,
-          parameters,
+          parameters: parameters2,
           thisParameter
         };
         function createEmptyUsage() {
@@ -174701,14 +174701,14 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           };
         }
         function single2() {
-          return combineTypes(inferTypesFromReferencesSingle(references));
+          return combineTypes(inferTypesFromReferencesSingle(references2));
         }
-        function parameters(declaration) {
-          if (references.length === 0 || !declaration.parameters) {
+        function parameters2(declaration) {
+          if (references2.length === 0 || !declaration.parameters) {
             return void 0;
           }
           const usage = createEmptyUsage();
-          for (const reference of references) {
+          for (const reference of references2) {
             cancellationToken.throwIfCancellationRequested();
             calculateUsageOfNode(reference, usage);
           }
@@ -174743,15 +174743,15 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         }
         function thisParameter() {
           const usage = createEmptyUsage();
-          for (const reference of references) {
+          for (const reference of references2) {
             cancellationToken.throwIfCancellationRequested();
             calculateUsageOfNode(reference, usage);
           }
           return combineTypes(usage.candidateThisTypes || emptyArray);
         }
-        function inferTypesFromReferencesSingle(references2) {
+        function inferTypesFromReferencesSingle(references22) {
           const usage = createEmptyUsage();
-          for (const reference of references2) {
+          for (const reference of references22) {
             cancellationToken.throwIfCancellationRequested();
             calculateUsageOfNode(reference, usage);
           }
@@ -175260,7 +175260,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           );
         }
         function getSignatureFromCalls(calls) {
-          const parameters2 = [];
+          const parameters22 = [];
           const length2 = Math.max(...calls.map((c) => c.argumentTypes.length));
           for (let i = 0; i < length2; i++) {
             const symbol = checker.createSymbol(1, escapeLeadingUnderscores(`arg${i}`));
@@ -175268,7 +175268,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
             if (calls.some((call) => call.argumentTypes[i] === void 0)) {
               symbol.flags |= 16777216;
             }
-            parameters2.push(symbol);
+            parameters22.push(symbol);
           }
           const returnType = combineFromUsage(combineUsages(calls.map((call) => call.return_)));
           return checker.createSignature(
@@ -175278,7 +175278,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
             void 0,
             /*thisParameter*/
             void 0,
-            parameters2,
+            parameters22,
             returnType,
             /*typePredicate*/
             void 0,
@@ -175507,13 +175507,13 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
               } else {
                 Debug.assertNode(accessor, isSetAccessorDeclaration5, "The counterpart to a getter should be a setter");
                 const parameter = getSetAccessorValueParameter(accessor);
-                const parameterName = parameter && isIdentifier10(parameter.name) ? idText(parameter.name) : void 0;
+                const parameterName2 = parameter && isIdentifier10(parameter.name) ? idText(parameter.name) : void 0;
                 addClassElement(factory.createSetAccessorDeclaration(
                   modifiers,
                   createName(declarationName2),
                   createDummyParameters(
                     1,
-                    [parameterName],
+                    [parameterName2],
                     [createTypeNode(typeNode2)],
                     1,
                     /*inJs*/
@@ -175628,7 +175628,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           return void 0;
         }
         let typeParameters = isJs ? void 0 : signatureDeclaration.typeParameters;
-        let parameters = signatureDeclaration.parameters;
+        let parameters2 = signatureDeclaration.parameters;
         let type = isJs ? void 0 : getSynthesizedDeepClone(signatureDeclaration.type);
         if (importAdder) {
           if (typeParameters) {
@@ -175661,7 +175661,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
               typeParameters = setTextRange(factory.createNodeArray(newTypeParameters, typeParameters.hasTrailingComma), typeParameters);
             }
           }
-          const newParameters = sameMap(parameters, (parameterDecl) => {
+          const newParameters = sameMap(parameters2, (parameterDecl) => {
             let type2 = isJs ? void 0 : parameterDecl.type;
             if (type2) {
               const importableReference = tryGetAutoImportableReferenceFromTypeNode(type2, scriptTarget);
@@ -175680,8 +175680,8 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
               parameterDecl.initializer
             );
           });
-          if (parameters !== newParameters) {
-            parameters = setTextRange(factory.createNodeArray(newParameters, parameters.hasTrailingComma), parameters);
+          if (parameters2 !== newParameters) {
+            parameters2 = setTextRange(factory.createNodeArray(newParameters, parameters2.hasTrailingComma), parameters2);
           }
           if (type) {
             const importableReference = tryGetAutoImportableReferenceFromTypeNode(type, scriptTarget);
@@ -175697,16 +175697,16 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         ) : void 0;
         const asteriskToken = signatureDeclaration.asteriskToken;
         if (isFunctionExpression6(signatureDeclaration)) {
-          return factory.updateFunctionExpression(signatureDeclaration, modifiers, signatureDeclaration.asteriskToken, tryCast(name, isIdentifier10), typeParameters, parameters, type, body ?? signatureDeclaration.body);
+          return factory.updateFunctionExpression(signatureDeclaration, modifiers, signatureDeclaration.asteriskToken, tryCast(name, isIdentifier10), typeParameters, parameters2, type, body ?? signatureDeclaration.body);
         }
         if (isArrowFunction6(signatureDeclaration)) {
-          return factory.updateArrowFunction(signatureDeclaration, modifiers, typeParameters, parameters, type, signatureDeclaration.equalsGreaterThanToken, body ?? signatureDeclaration.body);
+          return factory.updateArrowFunction(signatureDeclaration, modifiers, typeParameters, parameters2, type, signatureDeclaration.equalsGreaterThanToken, body ?? signatureDeclaration.body);
         }
         if (isMethodDeclaration5(signatureDeclaration)) {
-          return factory.updateMethodDeclaration(signatureDeclaration, modifiers, asteriskToken, name ?? factory.createIdentifier(""), questionToken, typeParameters, parameters, type, body);
+          return factory.updateMethodDeclaration(signatureDeclaration, modifiers, asteriskToken, name ?? factory.createIdentifier(""), questionToken, typeParameters, parameters2, type, body);
         }
         if (isFunctionDeclaration5(signatureDeclaration)) {
-          return factory.updateFunctionDeclaration(signatureDeclaration, modifiers, signatureDeclaration.asteriskToken, tryCast(name, isIdentifier10), typeParameters, parameters, type, body ?? signatureDeclaration.body);
+          return factory.updateFunctionDeclaration(signatureDeclaration, modifiers, signatureDeclaration.asteriskToken, tryCast(name, isIdentifier10), typeParameters, parameters2, type, body ?? signatureDeclaration.body);
         }
         return void 0;
       }
@@ -175736,7 +175736,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           /* AsteriskToken */
         ) : void 0;
         const typeParameters = isJs ? void 0 : createTypeParametersForArguments(checker, argumentTypeParameters, typeArguments);
-        const parameters = createDummyParameters(
+        const parameters2 = createDummyParameters(
           args.length,
           names,
           argumentTypeNodes,
@@ -175762,7 +175762,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
               /*questionToken*/
               void 0,
               typeParameters,
-              parameters,
+              parameters2,
               type,
               createStubbedMethodBody(quotePreference)
             );
@@ -175773,7 +175773,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
               /*questionToken*/
               void 0,
               typeParameters,
-              parameters,
+              parameters2,
               type === void 0 ? factory.createKeywordTypeNode(
                 159
                 /* UnknownKeyword */
@@ -175786,7 +175786,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
               asteriskToken,
               name,
               typeParameters,
-              parameters,
+              parameters2,
               type,
               createStubbedBody(Diagnostics.Function_not_implemented.message, quotePreference)
             );
@@ -175936,19 +175936,19 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         return type.flags & 262144 ? (_a2 = type.getSymbol()) == null ? void 0 : _a2.getName() : void 0;
       }
       function createDummyParameters(argCount, names, types, minArgumentCount, inJs) {
-        const parameters = [];
+        const parameters2 = [];
         const parameterNameCounts = /* @__PURE__ */ new Map();
         for (let i = 0; i < argCount; i++) {
-          const parameterName = (names == null ? void 0 : names[i]) || `arg${i}`;
-          const parameterNameCount = parameterNameCounts.get(parameterName);
-          parameterNameCounts.set(parameterName, (parameterNameCount || 0) + 1);
+          const parameterName2 = (names == null ? void 0 : names[i]) || `arg${i}`;
+          const parameterNameCount = parameterNameCounts.get(parameterName2);
+          parameterNameCounts.set(parameterName2, (parameterNameCount || 0) + 1);
           const newParameter = factory.createParameterDeclaration(
             /*modifiers*/
             void 0,
             /*dotDotDotToken*/
             void 0,
             /*name*/
-            parameterName + (parameterNameCount || ""),
+            parameterName2 + (parameterNameCount || ""),
             /*questionToken*/
             minArgumentCount !== void 0 && i >= minArgumentCount ? factory.createToken(
               58
@@ -175962,9 +175962,9 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
             /*initializer*/
             void 0
           );
-          parameters.push(newParameter);
+          parameters2.push(newParameter);
         }
-        return parameters;
+        return parameters2;
       }
       function createMethodImplementingSignatures(checker, context, enclosingDeclaration, signatures, name, optional, modifiers, quotePreference, body) {
         let maxArgsSignature = signatures[0];
@@ -175981,7 +175981,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         }
         const maxNonRestArgs = maxArgsSignature.parameters.length - (signatureHasRestParameter(maxArgsSignature) ? 1 : 0);
         const maxArgsParameterSymbolNames = maxArgsSignature.parameters.map((symbol) => symbol.name);
-        const parameters = createDummyParameters(
+        const parameters2 = createDummyParameters(
           maxNonRestArgs,
           maxArgsParameterSymbolNames,
           /*types*/
@@ -176011,7 +176011,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
             /*initializer*/
             void 0
           );
-          parameters.push(restParameter);
+          parameters2.push(restParameter);
         }
         return createStubbedMethod(
           modifiers,
@@ -176019,7 +176019,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           optional,
           /*typeParameters*/
           void 0,
-          parameters,
+          parameters2,
           getReturnTypeFromSignatures(signatures, checker, context, enclosingDeclaration),
           quotePreference,
           body
@@ -176031,7 +176031,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           return checker.typeToTypeNode(type, enclosingDeclaration, 1, 8, getNoopSymbolTrackerWithResolver(context));
         }
       }
-      function createStubbedMethod(modifiers, name, optional, typeParameters, parameters, returnType, quotePreference, body) {
+      function createStubbedMethod(modifiers, name, optional, typeParameters, parameters2, returnType, quotePreference, body) {
         return factory.createMethodDeclaration(
           modifiers,
           /*asteriskToken*/
@@ -176042,7 +176042,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
             /* QuestionToken */
           ) : void 0,
           typeParameters,
-          parameters,
+          parameters2,
           returnType,
           body || createStubbedMethodBody(quotePreference)
         );
@@ -178661,7 +178661,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
                 true
               );
             }
-            const parameters = typeNode.parameters.map(
+            const parameters2 = typeNode.parameters.map(
               (typedParam) => factory.createParameterDeclaration(
                 /*modifiers*/
                 void 0,
@@ -178684,7 +178684,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
               void 0,
               /*typeParameters*/
               void 0,
-              parameters,
+              parameters2,
               /*type*/
               void 0,
               body
@@ -178991,8 +178991,8 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           const symbolDeclaration = symbol.valueDeclaration ?? ((_a2 = symbol.declarations) == null ? void 0 : _a2[0]);
           if (closestSymbolDeclaration && symbolDeclaration) {
             if (isParameter4(closestSymbolDeclaration) && isParameter4(symbolDeclaration)) {
-              const parameters = closestSymbolDeclaration.parent.parameters;
-              if (symbolDeclaration.pos >= closestSymbolDeclaration.pos && symbolDeclaration.pos < parameters.end) {
+              const parameters2 = closestSymbolDeclaration.parent.parameters;
+              if (symbolDeclaration.pos >= closestSymbolDeclaration.pos && symbolDeclaration.pos < parameters2.end) {
                 return false;
               }
             } else if (isTypeParameterDeclaration(closestSymbolDeclaration) && isTypeParameterDeclaration(symbolDeclaration)) {
@@ -182075,10 +182075,10 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           comparePaths2
         );
       }
-      function addCompletionEntriesFromPathsOrExportsOrImports(result2, isExports, isImports, fragment, baseDirectory, extensionOptions, program, host, moduleSpecifierResolutionHost, keys, getPatternsForKey, comparePaths2) {
+      function addCompletionEntriesFromPathsOrExportsOrImports(result2, isExports, isImports, fragment, baseDirectory, extensionOptions, program, host, moduleSpecifierResolutionHost, keys2, getPatternsForKey, comparePaths2) {
         let pathResults = [];
         let matchedPath;
-        for (const key2 of keys) {
+        for (const key2 of keys2) {
           if (key2 === ".") continue;
           const keyWithoutLeadingDotSlash = key2.replace(/^\.\//, "") + ((isExports || isImports) && endsWith(key2, "/") ? "*" : "");
           const patterns = getPatternsForKey(key2);
@@ -182240,7 +182240,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           if (typeof lookupTable !== "object" || lookupTable === null) {
             return;
           }
-          const keys = getOwnKeys(lookupTable);
+          const keys2 = getOwnKeys(lookupTable);
           const conditions = getConditions(compilerOptions, mode);
           addCompletionEntriesFromPathsOrExportsOrImports(
             result2,
@@ -182252,7 +182252,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
             program,
             host,
             moduleSpecifierResolutionHost,
-            keys,
+            keys2,
             (key2) => {
               const pattern = getPatternFromFirstMatchingCondition(lookupTable[key2], conditions);
               if (pattern === void 0) {
@@ -183236,11 +183236,11 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         const checker = program.getTypeChecker();
         const adjustedNode = Core.getAdjustedNode(node, options);
         const symbol = isDefinitionForReference(adjustedNode) ? checker.getSymbolAtLocation(adjustedNode) : void 0;
-        return !referencedSymbols || !referencedSymbols.length ? void 0 : mapDefined(referencedSymbols, ({ definition, references }) => (
+        return !referencedSymbols || !referencedSymbols.length ? void 0 : mapDefined(referencedSymbols, ({ definition, references: references2 }) => (
           // Only include referenced symbols that have a valid definition.
           definition && {
             definition: checker.runWithCancellationToken(cancellationToken, (checker2) => definitionToReferencedSymbolDefinitionInfo(definition, checker2, node)),
-            references: references.map((r) => toReferencedSymbolEntry(r, symbol))
+            references: references2.map((r) => toReferencedSymbolEntry(r, symbol))
           }
         ));
       }
@@ -183681,8 +183681,8 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           }
           const aliasedSymbol = getMergedAliasedSymbolOfNamespaceExportDeclaration(node, symbol, checker);
           const moduleReferencesOfExportTarget = aliasedSymbol && getReferencedSymbolsForModuleIfDeclaredBySourceFile(aliasedSymbol, program, sourceFiles, cancellationToken, options, sourceFilesSet);
-          const references = getReferencedSymbolsForSymbol(symbol, node, sourceFiles, sourceFilesSet, checker, cancellationToken, options);
-          return mergeReferences(program, moduleReferences, references, moduleReferencesOfExportTarget);
+          const references2 = getReferencedSymbolsForSymbol(symbol, node, sourceFiles, sourceFilesSet, checker, cancellationToken, options);
+          return mergeReferences(program, moduleReferences, references2, moduleReferencesOfExportTarget);
         }
         Core2.getReferencedSymbolsForNode = getReferencedSymbolsForNode;
         function getAdjustedNode2(node, options) {
@@ -183714,8 +183714,8 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         Core2.getReferencesForFileName = getReferencesForFileName;
         function getReferencesForNonModule(referencedFile, refFileMap, program) {
           let entries;
-          const references = refFileMap.get(referencedFile.path) || emptyArray;
-          for (const ref of references) {
+          const references2 = refFileMap.get(referencedFile.path) || emptyArray;
+          for (const ref of references2) {
             if (isReferencedFile(ref)) {
               const referencingFile = program.getSourceFileByPath(ref.file);
               const location2 = getReferencedFileLocation(program, ref);
@@ -183764,13 +183764,13 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         }
         function mergeReferences(program, ...referencesToMerge) {
           let result2;
-          for (const references of referencesToMerge) {
-            if (!references || !references.length) continue;
+          for (const references2 of referencesToMerge) {
+            if (!references2 || !references2.length) continue;
             if (!result2) {
-              result2 = references;
+              result2 = references2;
               continue;
             }
-            for (const entry of references) {
+            for (const entry of references2) {
               if (!entry.definition || entry.definition.type !== 0) {
                 result2.push(entry);
                 continue;
@@ -183805,7 +183805,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         }
         function getReferencedSymbolsForModule(program, symbol, excludeImportTypeOfExportEquals, sourceFiles, sourceFilesSet) {
           Debug.assert(!!symbol.valueDeclaration);
-          const references = mapDefined(findModuleReferences(program, sourceFiles, symbol), (reference) => {
+          const references2 = mapDefined(findModuleReferences(program, sourceFiles, symbol), (reference) => {
             if (reference.kind === "import") {
               const parent2 = reference.literal.parent;
               if (isLiteralTypeNode(parent2)) {
@@ -183836,7 +183836,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
                   break;
                 case 268:
                   if (sourceFilesSet.has(decl.getSourceFile().fileName)) {
-                    references.push(nodeEntry(decl.name));
+                    references2.push(nodeEntry(decl.name));
                   }
                   break;
                 default:
@@ -183853,11 +183853,11 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
               const sourceFile = decl.getSourceFile();
               if (sourceFilesSet.has(sourceFile.fileName)) {
                 const node = isBinaryExpression6(decl) && isPropertyAccessExpression10(decl.left) ? decl.left.expression : isExportAssignment3(decl) ? Debug.checkDefined(findChildOfKind(decl, 95, sourceFile)) : getNameOfDeclaration(decl) || decl;
-                references.push(nodeEntry(node));
+                references2.push(nodeEntry(node));
               }
             }
           }
-          return references.length ? [{ definition: { type: 0, symbol }, references }] : emptyArray;
+          return references2.length ? [{ definition: { type: 0, symbol }, references: references2 }] : emptyArray;
         }
         function isReadonlyTypeOperator(node) {
           return node.kind === 148 && isTypeOperatorNode(node.parent) && node.parent.operator === 148;
@@ -184047,12 +184047,12 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
            */
           referenceAdder(searchSymbol) {
             const symbolId = getSymbolId(searchSymbol);
-            let references = this.symbolIdToReferences[symbolId];
-            if (!references) {
-              references = this.symbolIdToReferences[symbolId] = [];
-              this.result.push({ definition: { type: 0, symbol: searchSymbol }, references });
+            let references2 = this.symbolIdToReferences[symbolId];
+            if (!references2) {
+              references2 = this.symbolIdToReferences[symbolId] = [];
+              this.result.push({ definition: { type: 0, symbol: searchSymbol }, references: references2 });
             }
-            return (node, kind) => references.push(nodeEntry(node, kind));
+            return (node, kind) => references2.push(nodeEntry(node, kind));
           }
           /** Add a reference with no associated definition. */
           addStringOrCommentReference(fileName, textSpan) {
@@ -184309,11 +184309,11 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         function getLabelReferencesInNode(container, targetLabel) {
           const sourceFile = container.getSourceFile();
           const labelName = targetLabel.text;
-          const references = mapDefined(getPossibleSymbolReferenceNodes(sourceFile, labelName, container), (node) => (
+          const references2 = mapDefined(getPossibleSymbolReferenceNodes(sourceFile, labelName, container), (node) => (
             // Only pick labels that are either the target label, or have a target that is the target label
             node === targetLabel || isJumpStatementTarget(node) && getTargetLabel(node, labelName) === targetLabel ? nodeEntry(node) : void 0
           ));
-          return [{ definition: { type: 1, node: targetLabel }, references }];
+          return [{ definition: { type: 1, node: targetLabel }, references: references2 }];
         }
         function isValidReferencePosition(node, searchSymbolName) {
           switch (node.kind) {
@@ -184338,7 +184338,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           }
         }
         function getAllReferencesForImportMeta(sourceFiles, cancellationToken) {
-          const references = flatMap(sourceFiles, (sourceFile) => {
+          const references2 = flatMap(sourceFiles, (sourceFile) => {
             cancellationToken.throwIfCancellationRequested();
             return mapDefined(getPossibleSymbolReferenceNodes(sourceFile, "meta", sourceFile), (node) => {
               const parent2 = node.parent;
@@ -184347,10 +184347,10 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
               }
             });
           });
-          return references.length ? [{ definition: { type: 2, node: references[0].node }, references }] : void 0;
+          return references2.length ? [{ definition: { type: 2, node: references2[0].node }, references: references2 }] : void 0;
         }
         function getAllReferencesForKeyword(sourceFiles, keywordKind, cancellationToken, filter2) {
-          const references = flatMap(sourceFiles, (sourceFile) => {
+          const references2 = flatMap(sourceFiles, (sourceFile) => {
             cancellationToken.throwIfCancellationRequested();
             return mapDefined(getPossibleSymbolReferenceNodes(sourceFile, tokenToString(keywordKind), sourceFile), (referenceLocation) => {
               if (referenceLocation.kind === keywordKind && (!filter2 || filter2(referenceLocation))) {
@@ -184358,7 +184358,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
               }
             });
           });
-          return references.length ? [{ definition: { type: 2, node: references[0].node }, references }] : void 0;
+          return references2.length ? [{ definition: { type: 2, node: references2[0].node }, references: references2 }] : void 0;
         }
         function getReferencesInSourceFile(sourceFile, search, state, addReferencesHere = true) {
           state.cancellationToken.throwIfCancellationRequested();
@@ -184729,7 +184729,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
               return void 0;
           }
           const sourceFile = searchSpaceNode.getSourceFile();
-          const references = mapDefined(getPossibleSymbolReferenceNodes(sourceFile, "super", searchSpaceNode), (node) => {
+          const references2 = mapDefined(getPossibleSymbolReferenceNodes(sourceFile, "super", searchSpaceNode), (node) => {
             if (node.kind !== 108) {
               return;
             }
@@ -184740,7 +184740,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
             );
             return container && isStatic(container) === !!staticFlag && container.parent.symbol === searchSpaceNode.symbol ? nodeEntry(node) : void 0;
           });
-          return [{ definition: { type: 0, symbol: searchSpaceNode.symbol }, references }];
+          return [{ definition: { type: 0, symbol: searchSpaceNode.symbol }, references: references2 }];
         }
         function isParameterName(node) {
           return node.kind === 80 && node.parent.kind === 170 && node.parent.name === node;
@@ -184784,7 +184784,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
             default:
               return void 0;
           }
-          const references = flatMap(searchSpaceNode.kind === 308 ? sourceFiles : [searchSpaceNode.getSourceFile()], (sourceFile) => {
+          const references2 = flatMap(searchSpaceNode.kind === 308 ? sourceFiles : [searchSpaceNode.getSourceFile()], (sourceFile) => {
             cancellationToken.throwIfCancellationRequested();
             return getPossibleSymbolReferenceNodes(sourceFile, "this", isSourceFile4(searchSpaceNode) ? sourceFile : searchSpaceNode).filter((node) => {
               if (!isThis(node)) {
@@ -184814,15 +184814,15 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
               }
             });
           }).map((n) => nodeEntry(n));
-          const thisParameter = firstDefined(references, (r) => isParameter4(r.node.parent) ? r.node : void 0);
+          const thisParameter = firstDefined(references2, (r) => isParameter4(r.node.parent) ? r.node : void 0);
           return [{
             definition: { type: 3, node: thisParameter || thisOrSuperKeyword },
-            references
+            references: references2
           }];
         }
         function getReferencesForStringLiteral(node, sourceFiles, checker, cancellationToken) {
           const type = getContextualTypeFromParentOrAncestorTypeNode(node, checker);
-          const references = flatMap(sourceFiles, (sourceFile) => {
+          const references2 = flatMap(sourceFiles, (sourceFile) => {
             cancellationToken.throwIfCancellationRequested();
             return mapDefined(getPossibleSymbolReferenceNodes(sourceFile, node.text), (ref) => {
               if (isStringLiteralLike7(ref) && ref.text === node.text) {
@@ -184847,7 +184847,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           });
           return [{
             definition: { type: 4, node },
-            references
+            references: references2
           }];
         }
         function isStringLiteralPropertyReference(node, checker) {
@@ -185845,12 +185845,12 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
             const identifierInfo = checker.getParameterIdentifierInfoAtPosition(signature, signatureParamPos);
             signatureParamPos = signatureParamPos + (spreadArgs || 1);
             if (identifierInfo) {
-              const { parameter, parameterName, isRestParameter: isFirstVariadicArgument } = identifierInfo;
-              const isParameterNameNotSameAsArgument = preferences.includeInlayParameterNameHintsWhenArgumentMatchesName || !identifierOrAccessExpressionPostfixMatchesParameterName(arg, parameterName);
+              const { parameter, parameterName: parameterName2, isRestParameter: isFirstVariadicArgument } = identifierInfo;
+              const isParameterNameNotSameAsArgument = preferences.includeInlayParameterNameHintsWhenArgumentMatchesName || !identifierOrAccessExpressionPostfixMatchesParameterName(arg, parameterName2);
               if (!isParameterNameNotSameAsArgument && !isFirstVariadicArgument) {
                 continue;
               }
-              const name = unescapeLeadingUnderscores(parameterName);
+              const name = unescapeLeadingUnderscores(parameterName2);
               if (leadingCommentsContainsParameterName(arg, name)) {
                 continue;
               }
@@ -185858,12 +185858,12 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
             }
           }
         }
-        function identifierOrAccessExpressionPostfixMatchesParameterName(expr, parameterName) {
+        function identifierOrAccessExpressionPostfixMatchesParameterName(expr, parameterName2) {
           if (isIdentifier10(expr)) {
-            return expr.text === parameterName;
+            return expr.text === parameterName2;
           }
           if (isPropertyAccessExpression10(expr)) {
-            return expr.name.text === parameterName;
+            return expr.name.text === parameterName2;
           }
           return false;
         }
@@ -186813,7 +186813,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         if (!commentOwnerInfo) {
           return void 0;
         }
-        const { commentOwner, parameters, hasReturn: hasReturn2 } = commentOwnerInfo;
+        const { commentOwner, parameters: parameters2, hasReturn: hasReturn2 } = commentOwnerInfo;
         const commentOwnerJsDoc = hasJSDocNodes(commentOwner) && commentOwner.jsDoc ? commentOwner.jsDoc : void 0;
         const lastJsDoc = lastOrUndefined(commentOwnerJsDoc);
         if (commentOwner.getStart(sourceFile) < position || lastJsDoc && existingDocComment && lastJsDoc !== existingDocComment) {
@@ -186821,7 +186821,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         }
         const indentationStr = getIndentationStringAtPosition(sourceFile, position);
         const isJavaScriptFile = hasJSFileExtension(sourceFile.fileName);
-        const tags = (parameters ? parameterDocComments(parameters || [], isJavaScriptFile, indentationStr, newLine) : "") + (hasReturn2 ? returnsDocComment(indentationStr, newLine) : "");
+        const tags = (parameters2 ? parameterDocComments(parameters2 || [], isJavaScriptFile, indentationStr, newLine) : "") + (hasReturn2 ? returnsDocComment(indentationStr, newLine) : "");
         const openComment = "/**";
         const closeComment = " */";
         const hasTag = length(getJSDocTags(commentOwner)) > 0;
@@ -186840,8 +186840,8 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         for (; pos <= position && isWhiteSpaceSingleLine(text2.charCodeAt(pos)); pos++) ;
         return text2.slice(lineStart, pos);
       }
-      function parameterDocComments(parameters, isJavaScriptFile, indentationStr, newLine) {
-        return parameters.map(({ name, dotDotDotToken }, i) => {
+      function parameterDocComments(parameters2, isJavaScriptFile, indentationStr, newLine) {
+        return parameters2.map(({ name, dotDotDotToken }, i) => {
           const paramName = name.kind === 80 ? name.text : "param" + i;
           const type = isJavaScriptFile ? dotDotDotToken ? "{...any} " : "{any} " : "";
           return `${indentationStr} * @param ${type}${paramName}${newLine}`;
@@ -188790,7 +188790,7 @@ ${content}
       function getTypeHelpItem(symbol, typeParameters, checker, enclosingDeclaration, sourceFile) {
         const typeSymbolDisplay = symbolToDisplayParts(checker, symbol);
         const printer = createPrinterWithRemoveComments();
-        const parameters = typeParameters.map((t) => createSignatureHelpParameterForTypeParameter(t, checker, enclosingDeclaration, sourceFile, printer));
+        const parameters2 = typeParameters.map((t) => createSignatureHelpParameterForTypeParameter(t, checker, enclosingDeclaration, sourceFile, printer));
         const documentation = symbol.getDocumentationComment(checker);
         const tags = symbol.getJsDocTags(checker);
         const prefixDisplayParts = [...typeSymbolDisplay, punctuationPart(
@@ -188800,7 +188800,7 @@ ${content}
         return { isVariadic: false, prefixDisplayParts, suffixDisplayParts: [punctuationPart(
           32
           /* GreaterThanToken */
-        )], separatorDisplayParts, parameters, documentation, tags };
+        )], separatorDisplayParts, parameters: parameters2, documentation, tags };
       }
       var separatorDisplayParts = [punctuationPart(
         28
@@ -188808,12 +188808,12 @@ ${content}
       ), spacePart()];
       function getSignatureHelpItem(candidateSignature, callTargetDisplayParts, isTypeParameterList, checker, enclosingDeclaration, sourceFile) {
         const infos = (isTypeParameterList ? itemInfoForTypeParameters : itemInfoForParameters)(candidateSignature, checker, enclosingDeclaration, sourceFile);
-        return map(infos, ({ isVariadic, parameters, prefix, suffix }) => {
+        return map(infos, ({ isVariadic, parameters: parameters2, prefix, suffix }) => {
           const prefixDisplayParts = [...callTargetDisplayParts, ...prefix];
           const suffixDisplayParts = [...suffix, ...returnTypeToDisplayParts(candidateSignature, enclosingDeclaration, checker)];
           const documentation = candidateSignature.getDocumentationComment(checker);
           const tags = candidateSignature.getJsDocTags();
-          return { isVariadic, prefixDisplayParts, suffixDisplayParts, separatorDisplayParts, parameters, documentation, tags };
+          return { isVariadic, prefixDisplayParts, suffixDisplayParts, separatorDisplayParts, parameters: parameters2, documentation, tags };
         });
       }
       function returnTypeToDisplayParts(candidateSignature, enclosingDeclaration, checker) {
@@ -188843,14 +188843,14 @@ ${content}
       function itemInfoForTypeParameters(candidateSignature, checker, enclosingDeclaration, sourceFile) {
         const typeParameters = (candidateSignature.target || candidateSignature).typeParameters;
         const printer = createPrinterWithRemoveComments();
-        const parameters = (typeParameters || emptyArray).map((t) => createSignatureHelpParameterForTypeParameter(t, checker, enclosingDeclaration, sourceFile, printer));
+        const parameters2 = (typeParameters || emptyArray).map((t) => createSignatureHelpParameterForTypeParameter(t, checker, enclosingDeclaration, sourceFile, printer));
         const thisParameter = candidateSignature.thisParameter ? [checker.symbolToParameterDeclaration(candidateSignature.thisParameter, enclosingDeclaration, signatureHelpNodeBuilderFlags)] : [];
         return checker.getExpandedParameters(candidateSignature).map((paramList) => {
           const params = factory.createNodeArray([...thisParameter, ...map(paramList, (param) => checker.symbolToParameterDeclaration(param, enclosingDeclaration, signatureHelpNodeBuilderFlags))]);
           const parameterParts = mapToDisplayParts((writer) => {
             printer.writeList(2576, params, sourceFile, writer);
           });
-          return { isVariadic: false, parameters, prefix: [punctuationPart(
+          return { isVariadic: false, parameters: parameters2, prefix: [punctuationPart(
             30
             /* LessThanToken */
           )], suffix: [punctuationPart(
@@ -190428,12 +190428,12 @@ ${content}
           }
           this.newFileChanges.add(fileName, { oldFile, statements: statements2 });
         }
-        insertFirstParameter(sourceFile, parameters, newParam) {
-          const p0 = firstOrUndefined(parameters);
+        insertFirstParameter(sourceFile, parameters2, newParam) {
+          const p0 = firstOrUndefined(parameters2);
           if (p0) {
             this.insertNodeBefore(sourceFile, p0, newParam);
           } else {
-            this.insertNodeAt(sourceFile, parameters.pos, newParam);
+            this.insertNodeAt(sourceFile, parameters2.pos, newParam);
           }
         }
         insertNodeBefore(sourceFile, before, newNode, blankLineBetween = false, options = {}) {
@@ -197805,7 +197805,7 @@ ${options.prefix}` : "\n" : options.prefix
         walkUpParenthesizedTypesAndGetParentAndChild: () => walkUpParenthesizedTypesAndGetParentAndChild,
         whitespaceOrMapCommentRegExp: () => whitespaceOrMapCommentRegExp,
         writeCommentRange: () => writeCommentRange,
-        writeFile: () => writeFile7,
+        writeFile: () => writeFile8,
         writeFileEnsuringDirectories: () => writeFileEnsuringDirectories,
         zipWith: () => zipWith
       });
@@ -199045,9 +199045,9 @@ ${options.prefix}` : "\n" : options.prefix
             if (this.host.realpath) {
               Debug.assert(!!this.containingProjects.length);
               const project = this.containingProjects[0];
-              const realpath4 = this.host.realpath(this.path);
-              if (realpath4) {
-                this.realpath = project.toPath(realpath4);
+              const realpath5 = this.host.realpath(this.path);
+              if (realpath5) {
+                this.realpath = project.toPath(realpath5);
                 if (this.realpath !== this.path) {
                   project.projectService.realpathToScriptInfos.add(this.realpath, this);
                 }
@@ -201281,10 +201281,10 @@ ${options.prefix}` : "\n" : options.prefix
               }
             }
           }
-          const references = program.getResolvedProjectReferences();
+          const references2 = program.getResolvedProjectReferences();
           let referencesAddded = 0;
-          if ((references == null ? void 0 : references.length) && hostProject.projectService.getHostPreferences().includeCompletionsForModuleExports) {
-            references.forEach((ref) => {
+          if ((references2 == null ? void 0 : references2.length) && hostProject.projectService.getHostPreferences().includeCompletionsForModuleExports) {
+            references2.forEach((ref) => {
               if (ref == null ? void 0 : ref.commandLine.options.outFile) {
                 referencesAddded += addRootNames(filterEntrypoints([
                   changeExtension(ref.commandLine.options.outFile, ".d.ts")
@@ -203069,9 +203069,9 @@ ${options.prefix}` : "\n" : options.prefix
           this.filenameToScriptInfo.delete(info.path);
           this.filenameToScriptInfoVersion.set(info.path, info.textStorage.version);
           this.stopWatchingScriptInfo(info);
-          const realpath4 = info.getRealpathIfDifferent();
-          if (realpath4) {
-            this.realpathToScriptInfos.remove(realpath4, info);
+          const realpath5 = info.getRealpathIfDifferent();
+          if (realpath5) {
+            this.realpathToScriptInfos.remove(realpath5, info);
           }
           info.closeSourceMapFileWatcher();
         }
@@ -203960,9 +203960,9 @@ All files are: ${JSON.stringify(names)}`,
         getSymlinkedProjects(info) {
           let projects;
           if (this.realpathToScriptInfos) {
-            const realpath4 = info.getRealpathIfDifferent();
-            if (realpath4) {
-              forEach(this.realpathToScriptInfos.get(realpath4), combineProjects);
+            const realpath5 = info.getRealpathIfDifferent();
+            if (realpath5) {
+              forEach(this.realpathToScriptInfos.get(realpath5), combineProjects);
             }
             forEach(this.realpathToScriptInfos.get(info.path), combineProjects);
           }
@@ -208478,14 +208478,14 @@ Project '${project.projectName}' (${ProjectKind[project.projectKind]}) ${counter
           const file = toNormalizedPath(args.file);
           const projects = this.getProjects(args);
           const position = this.getPositionInFile(args, file);
-          const references = getReferencesWorker(
+          const references2 = getReferencesWorker(
             projects,
             this.getDefaultProject(args),
             { fileName: args.file, pos: position },
             this.host.useCaseSensitiveFileNames,
             this.logger
           );
-          if (!simplifiedResult) return references;
+          if (!simplifiedResult) return references2;
           const preferences = this.getPreferences(file);
           const defaultProject = this.getDefaultProject(args);
           const scriptInfo = defaultProject.getScriptInfoForNormalizedPath(file);
@@ -208494,7 +208494,7 @@ Project '${project.projectName}' (${ProjectKind[project.projectKind]}) ${counter
           const nameSpan = nameInfo && nameInfo.textSpan;
           const symbolStartOffset = nameSpan ? scriptInfo.positionToLineOffset(nameSpan.start).offset : 0;
           const symbolName2 = nameSpan ? scriptInfo.getSnapshot().getText(nameSpan.start, textSpanEnd(nameSpan)) : "";
-          const refs = flatMap(references, (referencedSymbol) => {
+          const refs = flatMap(references2, (referencedSymbol) => {
             return referencedSymbol.references.map((entry) => referenceEntryToReferencesResponseItem(this.projectService, entry, preferences));
           });
           return { refs, symbolName: symbolName2, symbolStartOffset, symbolDisplayString };
@@ -208515,23 +208515,23 @@ Project '${project.projectName}' (${ProjectKind[project.projectKind]}) ${counter
               return project.getLanguageService().getFileReferences(fileName);
             }
           );
-          let references;
+          let references2;
           if (isArray(perProjectResults)) {
-            references = perProjectResults;
+            references2 = perProjectResults;
           } else {
-            references = [];
+            references2 = [];
             const seen = createDocumentSpanSet(this.host.useCaseSensitiveFileNames);
             perProjectResults.forEach((projectOutputs) => {
               for (const referenceEntry of projectOutputs) {
                 if (!seen.has(referenceEntry)) {
-                  references.push(referenceEntry);
+                  references2.push(referenceEntry);
                   seen.add(referenceEntry);
                 }
               }
             });
           }
-          if (!simplifiedResult) return references;
-          const refs = references.map((entry) => referenceEntryToReferencesResponseItem(this.projectService, entry, preferences));
+          if (!simplifiedResult) return references2;
+          const refs = references2.map((entry) => referenceEntryToReferencesResponseItem(this.projectService, entry, preferences));
           return {
             refs,
             symbolName: `"${args.file}"`
@@ -210786,7 +210786,7 @@ function resolveAnalysisBudget(profile = "default") {
   return Object.freeze({ revision: "ast-work-v1", requestedProfile: profile, effectiveProfile: profile, limits: profile === "default" ? DEFAULT : EXTENDED });
 }
 var object = (x) => !!x && typeof x === "object" && !Array.isArray(x);
-var exactKeys = (x, keys) => Object.keys(x).length === keys.length && keys.every((k) => Object.hasOwn(x, k));
+var exactKeys = (x, keys2) => Object.keys(x).length === keys2.length && keys2.every((k) => Object.hasOwn(x, k));
 function sanitiseAnalysisBudget(input) {
   if (!object(input) || !exactKeys(input, ["revision", "requestedProfile", "effectiveProfile", "limits"]) || input.revision !== "ast-work-v1" || !["default", "extended"].includes(input.requestedProfile) || input.effectiveProfile !== input.requestedProfile || !object(input.limits))
     return void 0;
@@ -210802,7 +210802,7 @@ function sameAnalysisBudget(a, b) {
 
 // build/src/cli.js
 import { realpathSync } from "node:fs";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath as fileURLToPath2 } from "node:url";
 import { isAbsolute as isAbsolute8, resolve as resolve11 } from "node:path";
 
 // build/src/source.js
@@ -211129,16 +211129,16 @@ var SqlRoleModel = class {
     const stringKeys = /* @__PURE__ */ new Set(["connectionString", "host", "database", "user", "password", "application_name"]);
     const numbers = /* @__PURE__ */ new Set(["port", "connectionTimeoutMillis", ...kind === "Pool" ? ["max", "min", "idleTimeoutMillis", "maxUses", "maxLifetimeSeconds"] : []]);
     const booleans = /* @__PURE__ */ new Set(["keepAlive", "ssl", ...kind === "Pool" ? ["allowExitOnIdle"] : []]);
-    const keys = /* @__PURE__ */ new Set();
+    const keys2 = /* @__PURE__ */ new Set();
     for (const property of args[0].properties) {
       if (!this.tick())
         return false;
       if (!ts.isPropertyAssignment(property))
         return false;
       const name = key(property.name);
-      if (!name || keys.has(name))
+      if (!name || keys2.has(name))
         return false;
-      keys.add(name);
+      keys2.add(name);
       const value = unwrap(property.initializer);
       if (stringKeys.has(name)) {
         if (ts.isStringLiteralLike(value))
@@ -211978,16 +211978,16 @@ var StaticModules = class {
           this.opaqueClassScopeFiles.add(node.getSourceFile());
         const symbol = this.symbol(node);
         if (symbol) {
-          const references = this.references.get(symbol) ?? [];
-          references.push(node);
-          this.references.set(symbol, references);
+          const references2 = this.references.get(symbol) ?? [];
+          references2.push(node);
+          this.references.set(symbol, references2);
           this.identifierReferences += 1;
         }
         if (["module", "exports"].includes(node.text) && !(ts2.isPropertyAccessExpression(node.parent) && node.parent.name === node)) {
           const file = node.getSourceFile();
-          const references = this.cjsReferences.get(file) ?? [];
-          references.push(node);
-          this.cjsReferences.set(file, references);
+          const references2 = this.cjsReferences.get(file) ?? [];
+          references2.push(node);
+          this.cjsReferences.set(file, references2);
         }
         if (node.text === "URLSearchParams")
           this.nativeBoundaryNodes.push(node);
@@ -212318,17 +212318,17 @@ var StaticModules = class {
   }
   objectRefCall(ref, methods, childSlot) {
     let node = ref;
-    const keys = [];
+    const keys2 = [];
     while (ts2.isPropertyAccessExpression(node.parent) && node.parent.expression === node) {
-      if (!this.tick() || keys.length >= 2)
+      if (!this.tick() || keys2.length >= 2)
         return void 0;
-      keys.push(node.parent.name.text);
+      keys2.push(node.parent.name.text);
       node = node.parent;
     }
     const call = node.parent;
-    if (!ts2.isCallExpression(call) || call.expression !== node || childSlot !== void 0 && keys.length !== 1 || childSlot === void 0 && keys.length !== 1 && keys.length !== 2)
+    if (!ts2.isCallExpression(call) || call.expression !== node || childSlot !== void 0 && keys2.length !== 1 || childSlot === void 0 && keys2.length !== 1 && keys2.length !== 2)
       return void 0;
-    const target = methods.get(childSlot ?? (keys.length === 1 ? "" : keys[0]))?.get(keys.at(-1));
+    const target = methods.get(childSlot ?? (keys2.length === 1 ? "" : keys2[0]))?.get(keys2.at(-1));
     return target ? { call, target } : void 0;
   }
   objectRefs(symbol, group, childSlot, declaration) {
@@ -212485,7 +212485,7 @@ var StaticModules = class {
       const group = { file, methods: /* @__PURE__ */ new Map(), allowed: /* @__PURE__ */ new Set(), symbols: [], callableSymbols: /* @__PURE__ */ new Set(), valid: true };
       const flat = /* @__PURE__ */ new Map();
       group.methods.set("", flat);
-      const keys = /* @__PURE__ */ new Set();
+      const keys2 = /* @__PURE__ */ new Set();
       const wholes = [];
       let properties = 0, observed = false;
       const put = (key2, value, before) => {
@@ -212494,10 +212494,10 @@ var StaticModules = class {
           group.valid = false;
           return;
         }
-        if (!key2 || key2 === "__proto__" || keys.has(key2))
+        if (!key2 || key2 === "__proto__" || keys2.has(key2))
           group.valid = false;
         if (key2)
-          keys.add(key2);
+          keys2.add(key2);
         if (!value) {
           group.valid = false;
           return;
@@ -212576,7 +212576,7 @@ var StaticModules = class {
             }
             const key2 = !ts2.isSpreadAssignment(property) ? nameOf(property.name) : void 0;
             const value = ts2.isShorthandPropertyAssignment(property) ? property.name : ts2.isPropertyAssignment(property) ? property.initializer : ts2.isMethodDeclaration(property) ? property : void 0;
-            if (!key2 || key2 === "__proto__" || keys.has(key2))
+            if (!key2 || key2 === "__proto__" || keys2.has(key2))
               group.valid = false;
             if (!value) {
               group.valid = false;
@@ -212584,13 +212584,13 @@ var StaticModules = class {
             }
             if (ts2.isStringLiteralLike(value) || ts2.isNumericLiteral(value) || [ts2.SyntaxKind.TrueKeyword, ts2.SyntaxKind.FalseKeyword, ts2.SyntaxKind.NullKeyword].includes(value.kind)) {
               if (key2)
-                keys.add(key2);
+                keys2.add(key2);
               continue;
             }
             const child = ts2.isIdentifier(value) ? this.objectConst(value) : void 0;
             if (child?.initializer && ts2.isObjectLiteralExpression(child.initializer)) {
               if (key2)
-                keys.add(key2);
+                keys2.add(key2);
               if (child.pos > literal.pos)
                 group.valid = false;
               const methods = this.objectMethods(child.initializer);
@@ -212872,20 +212872,20 @@ var StaticModules = class {
           link(consumer, group);
         }
     }
-    const invalid2 = [...this.objectExports.values()].filter((group) => !group.valid);
-    for (let i = 0; i < invalid2.length; i += 1) {
+    const invalid4 = [...this.objectExports.values()].filter((group) => !group.valid);
+    for (let i = 0; i < invalid4.length; i += 1) {
       if (!this.tick()) {
         workComplete = false;
         break;
       }
-      for (const group of dependents.get(invalid2[i]) ?? []) {
+      for (const group of dependents.get(invalid4[i]) ?? []) {
         if (!this.tick()) {
           workComplete = false;
           break;
         }
         if (group.valid) {
           group.valid = false;
-          invalid2.push(group);
+          invalid4.push(group);
         }
       }
     }
@@ -212922,7 +212922,7 @@ var StaticModules = class {
     return producer?.singletonProof?.exportClosed ? producer.constructorClass : void 0;
   }
   literalContainer(value) {
-    const keys = /* @__PURE__ */ new Set();
+    const keys2 = /* @__PURE__ */ new Set();
     if (ts2.isArrayLiteralExpression(value)) {
       for (const item of value.elements)
         if (!this.singletonTick() || !this.primitive(item))
@@ -212935,9 +212935,9 @@ var StaticModules = class {
       if (!this.singletonTick() || !ts2.isPropertyAssignment(item) || ts2.isComputedPropertyName(item.name))
         return false;
       const key2 = nameOf(item.name);
-      if (!key2 || keys.has(key2) || ["constructor", "prototype", "__proto__"].includes(key2) || !this.primitive(item.initializer))
+      if (!key2 || keys2.has(key2) || ["constructor", "prototype", "__proto__"].includes(key2) || !this.primitive(item.initializer))
         return false;
-      keys.add(key2);
+      keys2.add(key2);
     }
     return true;
   }
@@ -213024,17 +213024,17 @@ var StaticModules = class {
           if (!helper || helper === classNode)
             return { ok: false, soft };
           fields.set(left.name.text, "instance");
-          const keys = /* @__PURE__ */ new Set();
+          const keys2 = /* @__PURE__ */ new Set();
           for (const member2 of helper.members) {
             if (!this.singletonTick())
               return { ok: false, soft };
             if (ts2.isMethodDeclaration(member2)) {
               const key2 = nameOf(member2.name);
               if (key2 && !ts2.isComputedPropertyName(member2.name))
-                keys.add(key2);
+                keys2.add(key2);
             }
           }
-          instances.set(left.name.text, keys);
+          instances.set(left.name.text, keys2);
           if (selectedHelper === helper)
             selected += 1;
           else if (selectedHelper) {
@@ -213135,8 +213135,8 @@ var StaticModules = class {
           this.singletonReasons.set(group, /* @__PURE__ */ new Set(["receiver_capability"]));
           continue;
         }
-        const own2 = this.consumerCapability(group);
-        ok = own2.ok;
+        const own3 = this.consumerCapability(group);
+        ok = own3.ok;
         for (const helper of helpers.get(group) ?? []) {
           if (!this.singletonTick()) {
             ok = false;
@@ -213249,7 +213249,7 @@ var StaticModules = class {
         if (ts2.isNewExpression(value) && value.arguments?.length)
           group.valid = false;
         const exportClosed = group.valid;
-        const keys = /* @__PURE__ */ new Set();
+        const keys2 = /* @__PURE__ */ new Set();
         if (classNode.heritageClauses?.length || classNode.modifiers?.length)
           group.valid = false;
         for (const member of classNode.members) {
@@ -213262,11 +213262,11 @@ var StaticModules = class {
           if (ts2.isMethodDeclaration(member) && this.functionSet.has(member))
             this.externalEntries.add(member);
           const key2 = ts2.isMethodDeclaration(member) ? nameOf(member.name) : void 0;
-          if (!ts2.isMethodDeclaration(member) || !member.body || !key2 || ts2.isComputedPropertyName(member.name) || ["constructor", "prototype", "__proto__"].includes(key2) || keys.has(key2) || member.asteriskToken || member.modifiers?.some((m) => m.kind !== ts2.SyntaxKind.AsyncKeyword)) {
+          if (!ts2.isMethodDeclaration(member) || !member.body || !key2 || ts2.isComputedPropertyName(member.name) || ["constructor", "prototype", "__proto__"].includes(key2) || keys2.has(key2) || member.asteriskToken || member.modifiers?.some((m) => m.kind !== ts2.SyntaxKind.AsyncKeyword)) {
             group.valid = false;
             continue;
           }
-          keys.add(key2);
+          keys2.add(key2);
           group.methods.get("").set(key2, member);
           if (group.receiver)
             this.methodReceivers.set(member, group);
@@ -213516,10 +213516,10 @@ var StaticModules = class {
             return;
           if (ref === declaration.name)
             continue;
-          const access5 = ref.parent;
-          const call = ts2.isPropertyAccessExpression(access5) ? access5.parent : void 0;
-          const target = ts2.isPropertyAccessExpression(access5) ? methods.get(access5.name.text) : void 0;
-          if (ref.getSourceFile() !== file || !ts2.isPropertyAccessExpression(access5) || access5.expression !== ref || access5.questionDotToken || !call || !ts2.isCallExpression(call) || call.expression !== access5 || call.questionDotToken || !target || this.beforeInitialization(call, declaration)) {
+          const access6 = ref.parent;
+          const call = ts2.isPropertyAccessExpression(access6) ? access6.parent : void 0;
+          const target = ts2.isPropertyAccessExpression(access6) ? methods.get(access6.name.text) : void 0;
+          if (ref.getSourceFile() !== file || !ts2.isPropertyAccessExpression(access6) || access6.expression !== ref || access6.questionDotToken || !call || !ts2.isCallExpression(call) || call.expression !== access6 || call.questionDotToken || !target || this.beforeInitialization(call, declaration)) {
             valid = false;
             break;
           }
@@ -213641,7 +213641,7 @@ function fixedQueryDestination(parts) {
     const parsed = new URL2(prefix);
     if (!parsed.hostname || parsed.username || parsed.password || parsed.hash || parsed.search || !["http:", "https:"].includes(parsed.protocol))
       return false;
-    const canonicalPrefix = prefix.replace(/^(https?:\/\/[^/:?#]+):(80|443)(\/)/, (match, authority, port, slash) => authority.startsWith("https:") && port === "443" || authority.startsWith("http:") && port === "80" ? authority + slash : match);
+    const canonicalPrefix = prefix.replace(/^(https?:\/\/[^/:?#]+):(80|443)(\/)/, (match, authority2, port, slash) => authority2.startsWith("https:") && port === "443" || authority2.startsWith("http:") && port === "80" ? authority2 + slash : match);
     if (parsed.href !== canonicalPrefix || prefix.slice(0, -1).includes("?"))
       return false;
   } catch {
@@ -213696,11 +213696,11 @@ var NativeQueryModel = class {
       const symbol = modules.symbol(declaration.name);
       if (!symbol)
         continue;
-      const references = modules.references.get(symbol);
-      if (!references?.length)
+      const references2 = modules.references.get(symbol);
+      if (!references2?.length)
         continue;
       let declared = false;
-      const valid = references.every((reference) => {
+      const valid = references2.every((reference) => {
         if (!tick())
           return false;
         if (reference === declaration.name) {
@@ -213923,7 +213923,7 @@ function fixedInitialHttpUrl(parts) {
     const parsed = new URL3(value);
     if (!parsed.hostname || parsed.username || parsed.password || parsed.hash || !["http:", "https:"].includes(parsed.protocol))
       return false;
-    const canonical = value.replace(/^(https?:\/\/[^/:?#]+):(80|443)([/?]|$)/, (match, authority, port, tail) => authority.startsWith("https:") && port === "443" || authority.startsWith("http:") && port === "80" ? authority + tail : match);
+    const canonical = value.replace(/^(https?:\/\/[^/:?#]+):(80|443)([/?]|$)/, (match, authority2, port, tail) => authority2.startsWith("https:") && port === "443" || authority2.startsWith("http:") && port === "80" ? authority2 + tail : match);
     return parsed.href === canonical;
   } catch {
     return false;
@@ -213997,10 +213997,10 @@ var HttpRoleModel = class {
         this.pristine = false;
     }
     for (const symbol of this.bindings.keys()) {
-      const references = modules.references.get(symbol);
-      if (!references?.length || modules.mutated.has(symbol) || modules.mutatedMembers.has(symbol))
+      const references2 = modules.references.get(symbol);
+      if (!references2?.length || modules.mutated.has(symbol) || modules.mutatedMembers.has(symbol))
         this.pristine = false;
-      for (const reference of references ?? []) {
+      for (const reference of references2 ?? []) {
         if (!tick()) {
           this.pristine = false;
           break;
@@ -214046,16 +214046,16 @@ var HttpRoleModel = class {
     };
     if (node.properties.length > 16)
       return finish(false);
-    const keys = /* @__PURE__ */ new Set();
+    const keys2 = /* @__PURE__ */ new Set();
     let hasUrl = false;
     for (const property of node.properties) {
       if (!this.tick())
         return finish(false);
       if (ts5.isShorthandPropertyAssignment(property)) {
         const key3 = property.name.text;
-        if (property.objectAssignmentInitializer || !["url", "data"].includes(key3) || keys.has(key3))
+        if (property.objectAssignmentInitializer || !["url", "data"].includes(key3) || keys2.has(key3))
           return finish(false);
-        keys.add(key3);
+        keys2.add(key3);
         if (key3 === "url")
           hasUrl = true;
         continue;
@@ -214063,9 +214063,9 @@ var HttpRoleModel = class {
       if (!ts5.isPropertyAssignment(property) || ts5.isComputedPropertyName(property.name) || !(ts5.isIdentifier(property.name) || ts5.isStringLiteralLike(property.name)))
         return finish(false);
       const key2 = property.name.text;
-      if (keys.has(key2))
+      if (keys2.has(key2))
         return finish(false);
-      keys.add(key2);
+      keys2.add(key2);
       if (key2 === "url") {
         hasUrl = true;
         if (!this.sideEffectFree(property.initializer))
@@ -214101,10 +214101,10 @@ var HttpRoleModel = class {
     if (!ts5.isVariableDeclaration(declaration) || declaration.initializer !== parent || !ts5.isIdentifier(declaration.name) || !ts5.isVariableDeclarationList(declaration.parent) || !(declaration.parent.flags & ts5.NodeFlags.Const))
       return finish(false);
     const symbol = this.modules.symbol(declaration.name);
-    const references = symbol && this.modules.references.get(symbol);
-    if (!symbol || !references?.length || this.modules.mutated.has(symbol) || this.modules.mutatedMembers.has(symbol))
+    const references2 = symbol && this.modules.references.get(symbol);
+    if (!symbol || !references2?.length || this.modules.mutated.has(symbol) || this.modules.mutatedMembers.has(symbol))
       return finish(false);
-    for (const reference of references) {
+    for (const reference of references2) {
       if (!this.tick())
         return finish(false);
       if (reference === declaration.name)
@@ -216241,7 +216241,7 @@ function findSnapshotInputFlows(files, limits = FLOW_LIMITS, parseErrorCount = 0
     indexedAstNodes: session.modules.indexedAstNodes,
     symbolLookups: session.modules.symbolLookups,
     identifierReferences: session.modules.identifierReferences,
-    cjsReferences: [...session.modules.cjsReferences.values()].reduce((sum, references) => sum + references.length, 0),
+    cjsReferences: [...session.modules.cjsReferences.values()].reduce((sum, references2) => sum + references2.length, 0),
     nativeBoundaryNodes: session.modules.nativeBoundaryNodes.length,
     newExpressionsIndexed: session.modules.newExpressions.length,
     topLevelDeclared: files.length,
@@ -216609,10 +216609,10 @@ function* parseFileEvidence(files) {
     yield { location: { path, line: position.line + 1, column: position.character + 1 }, diagnosticCode: selected.code };
   }
 }
-function runBuiltinAst(snapshot2, hasOtherSecurityCheck2 = false, limits = FLOW_LIMITS, analysisBudget) {
+function runBuiltinAst(snapshot3, hasOtherSecurityCheck2 = false, limits = FLOW_LIMITS, analysisBudget) {
   const astFiles = [];
-  const skippedSensitive = snapshot2.files.filter((file) => file.sensitive && file.category === "code").length;
-  for (const file of snapshot2.files) {
+  const skippedSensitive = snapshot3.files.filter((file) => file.sensitive && file.category === "code").length;
+  for (const file of snapshot3.files) {
     if (file.category !== "code" || file.sensitive || !/\.(?:[cm]?[jt]sx?)$/i.test(file.path))
       continue;
     const sourceFile = ts8.createSourceFile(file.path, file.text, ts8.ScriptTarget.Latest, true, scriptKind(file.path));
@@ -216632,8 +216632,8 @@ function runBuiltinAst(snapshot2, hasOtherSecurityCheck2 = false, limits = FLOW_
     };
   }
   const parseErrorCount = astFiles.filter((file) => file.parseError).length;
-  const sensitiveJsTsExcluded = snapshot2.files.some((file) => file.sensitive && file.category === "code" && /\.(?:[cm]?[jt]sx?)$/i.test(file.path));
-  const roleProofScopeComplete = snapshot2.complete && parseErrorCount === 0 && !sensitiveJsTsExcluded;
+  const sensitiveJsTsExcluded = snapshot3.files.some((file) => file.sensitive && file.category === "code" && /\.(?:[cm]?[jt]sx?)$/i.test(file.path));
+  const roleProofScopeComplete = snapshot3.complete && parseErrorCount === 0 && !sensitiveJsTsExcluded;
   const analysis = findSnapshotInputFlows(astFiles.filter((file) => !file.parseError).map((file) => file.sourceFile), limits, parseErrorCount, roleProofScopeComplete, parseFileEvidence(astFiles));
   const flowUses = /* @__PURE__ */ new Map();
   for (const use of analysis.uses) {
@@ -217063,22 +217063,22 @@ async function collectSource(options) {
         ignoredFiles += 1;
         continue;
       }
-      let stat;
+      let stat2;
       try {
-        stat = await lstat(fullPath);
+        stat2 = await lstat(fullPath);
       } catch {
         issues.push(issue("read_error", path));
         continue;
       }
-      if (stat.isSymbolicLink()) {
+      if (stat2.isSymbolicLink()) {
         issues.push(issue("symlink", path));
         continue;
       }
-      if (!stat.isFile()) {
+      if (!stat2.isFile()) {
         issues.push(issue("special_file", path));
         continue;
       }
-      if (stat.nlink > 1) {
+      if (stat2.nlink > 1) {
         issues.push(issue("hardlink", path));
         continue;
       }
@@ -217092,11 +217092,11 @@ async function collectSource(options) {
         return;
       }
       selectedFiles += 1;
-      if (stat.size > limits.maxFileBytes || totalBytes + stat.size > limits.maxBytes) {
+      if (stat2.size > limits.maxFileBytes || totalBytes + stat2.size > limits.maxBytes) {
         issues.push(issue("size_limit", path));
         continue;
       }
-      const result2 = await readRegularFile(fullPath, stat, limits.maxFileBytes);
+      const result2 = await readRegularFile(fullPath, stat2, limits.maxFileBytes);
       if (result2.text === void 0) {
         const code = result2.issue?.code ?? "read_error";
         issues.push(issue(code, path));
@@ -217115,12 +217115,12 @@ async function collectSource(options) {
   const complete = rootError === void 0 && issues.every((entry) => !isFatalIssue(entry.code));
   return { root, files, issues, ignoredFiles, totalBytes, complete, ...rootError ? { rootError } : {} };
 }
-async function stageSnapshot(snapshot2) {
+async function stageSnapshot(snapshot3) {
   const parent = await mkdtemp(join(tmpdir(), "wakeio-security-ci-"));
   const dir = join(parent, "snapshot");
   await mkdir(dir, { recursive: true, mode: 448 });
   try {
-    for (const file of snapshot2.files) {
+    for (const file of snapshot3.files) {
       const destination = join(dir, ...file.path.split("/"));
       await mkdir(dirname(destination), { recursive: true, mode: 448 });
       await writeFile(destination, file.text, { encoding: "utf8", mode: 384, flag: "wx" });
@@ -217316,8 +217316,8 @@ function analyzeFrontend(file) {
 function frontendRelevant(analysis) {
   return analysis.useClient || analysis.publicSecretDeclarations.length > 0 || analysis.reactImport || analysis.envReferences.some((node) => /^NEXT_PUBLIC_[A-Z0-9_]+$/i.test(staticEnvName(node) ?? "")) || analysis.nextConfig && analysis.envConfigDeclarations.length > 0;
 }
-function frameworkHasApplicableInput(snapshot2) {
-  for (const file of snapshot2.files) {
+function frameworkHasApplicableInput(snapshot3) {
+  for (const file of snapshot3.files) {
     if (isMigration(file))
       return true;
     if (file.category === "code" && FRONTEND_EXTENSIONS.test(file.path) && frontendRelevant(analyzeFrontend(file)))
@@ -217336,9 +217336,9 @@ function envValue(value) {
   }
   return trimmed;
 }
-function collectStaticEnv(snapshot2) {
+function collectStaticEnv(snapshot3) {
   const signals = /* @__PURE__ */ new Map();
-  for (const file of snapshot2.files) {
+  for (const file of snapshot3.files) {
     if (file.category !== "secret" || !isDotEnvPath(file.path))
       continue;
     for (const rawLine of file.text.replace(/^\uFEFF/, "").split(/\r\n|\r|\n/)) {
@@ -217853,18 +217853,18 @@ function frontendFindings(analysis, available, envSignals) {
   }
   return findings;
 }
-function runFrameworkRules(snapshot2) {
-  if (snapshot2.rootError)
+function runFrameworkRules(snapshot3) {
+  if (snapshot3.rootError)
     return { id: "source.framework", status: "error", findings: [], notes: ["The source root could not be scanned by the framework rules."] };
-  const migrations = snapshot2.files.filter(isMigration);
-  const frontendAnalyses = snapshot2.files.filter((file) => file.category === "code" && FRONTEND_EXTENSIONS.test(file.path)).map(analyzeFrontend);
+  const migrations = snapshot3.files.filter(isMigration);
+  const frontendAnalyses = snapshot3.files.filter((file) => file.category === "code" && FRONTEND_EXTENSIONS.test(file.path)).map(analyzeFrontend);
   const frontend = frontendAnalyses.filter(frontendRelevant);
   if (migrations.length === 0 && frontend.length === 0) {
     return { id: "source.framework", status: "not_applicable", findings: [], notes: ["No recognized Supabase migration or Next/React source file was available for the bounded framework rules."], metrics: { filesAnalyzed: 0, migrationFiles: 0, frontendFiles: 0, findingCount: 0 } };
   }
   const migrationResults = migrations.map(migrationFindings);
   const available = new Map(frontendAnalyses.map((analysis) => [analysis.file.path, analysis]));
-  const envSignals = collectStaticEnv(snapshot2);
+  const envSignals = collectStaticEnv(snapshot3);
   const rawFindings = [
     ...migrationResults.flatMap((result2) => result2.findings),
     ...migrationStateFindings(migrations),
@@ -217891,7 +217891,7 @@ function runFrameworkRules(snapshot2) {
     }
   }
   const parseErrorCount = reachableParseErrors.size;
-  const incomplete = !snapshot2.complete || parseErrorCount > 0 || migrationResults.some((result2) => result2.incomplete);
+  const incomplete = !snapshot3.complete || parseErrorCount > 0 || migrationResults.some((result2) => result2.incomplete);
   return {
     id: "source.framework",
     status: incomplete ? "partial" : "completed",
@@ -217902,7 +217902,7 @@ function runFrameworkRules(snapshot2) {
       "Next environment references and relative imports are followed only when their names and paths are static; build-time replacement, package imports, non-literal or conditional dynamic imports, and generated bundles remain unresolved.",
       ...parseErrorCount > 0 ? [`${parseErrorCount} frontend file${parseErrorCount === 1 ? " had" : "s had"} syntax diagnostics; framework findings may be incomplete.`] : [],
       ...migrationResults.some((result2) => result2.incomplete) ? ["At least one migration had an unterminated SQL comment or literal; migration candidates may be incomplete."] : [],
-      ...!snapshot2.complete ? ["The collected source snapshot was incomplete; framework coverage may be incomplete."] : []
+      ...!snapshot3.complete ? ["The collected source snapshot was incomplete; framework coverage may be incomplete."] : []
     ],
     metrics: { filesAnalyzed: migrations.length + frontend.length, migrationFiles: migrations.length, frontendFiles: frontend.length, parseErrorCount, findingCount: findings.length }
   };
@@ -217970,7 +217970,7 @@ function severityFrom(value, fallback = "medium") {
 function referencesFrom(value) {
   if (!Array.isArray(value))
     return void 0;
-  const references = value.map((entry) => {
+  const references2 = value.map((entry) => {
     if (typeof entry === "string")
       return entry.trim();
     const object4 = objectValue(entry);
@@ -217978,7 +217978,7 @@ function referencesFrom(value) {
       throw new Error("scanner output has an invalid reference");
     return object4.url.trim();
   }).filter((entry) => /^https?:\/\/[^\s]{1,500}$/i.test(entry)).slice(0, 5);
-  return references.length > 0 ? references : void 0;
+  return references2.length > 0 ? references2 : void 0;
 }
 function pathFromScanner(value, stageDir, allowed) {
   if (typeof value !== "string" || value.length === 0)
@@ -218708,8 +218708,8 @@ async function findExecutable(command) {
     return void 0;
   for (const candidate of executableCandidates(command)) {
     try {
-      const stat = await lstat2(candidate);
-      if (!stat.isFile())
+      const stat2 = await lstat2(candidate);
+      if (!stat2.isFile())
         continue;
       await access2(candidate, constants2.X_OK);
       return candidate;
@@ -218922,8 +218922,8 @@ function validateMetrics(metrics, files, stageDir, allowed) {
   }
   return matched.size;
 }
-function pythonFiles(snapshot2) {
-  return snapshot2.files.filter((file) => file.category === "code" && /\.py$/i.test(file.path));
+function pythonFiles(snapshot3) {
+  return snapshot3.files.filter((file) => file.category === "code" && /\.py$/i.test(file.path));
 }
 function parseBanditOutput(text2, stageDir, files) {
   const top = parseJson2(text2);
@@ -219068,7 +219068,7 @@ var NOTE = "Experimental native candidate positions only; binding identity, expl
 var object2 = (value) => !!value && typeof value === "object" && !Array.isArray(value);
 var exactKeys2 = (value, allowed) => Object.keys(value).every((key2) => allowed.includes(key2));
 var digest = (bytes) => createHash("sha256").update(bytes).digest("hex");
-var nativeFiles = (snapshot2) => snapshot2.files.filter((file) => file.category === "code" && !file.sensitive && /\.(?:[cm]?[jt]sx?|py)$/i.test(file.path));
+var nativeFiles = (snapshot3) => snapshot3.files.filter((file) => file.category === "code" && !file.sensitive && /\.(?:[cm]?[jt]sx?|py)$/i.test(file.path));
 function nativeJson(text2) {
   if (Buffer.byteLength(text2) > MAX_JSON_BYTES)
     throw new Error("output budget");
@@ -219098,7 +219098,7 @@ function nativeJson(text2) {
     if (text2[cursor] === "{") {
       cursor++;
       space();
-      const keys = /* @__PURE__ */ new Set();
+      const keys2 = /* @__PURE__ */ new Set();
       if (text2[cursor] === "}") {
         cursor++;
         return;
@@ -219106,9 +219106,9 @@ function nativeJson(text2) {
       while (true) {
         space();
         const key2 = string();
-        if (keys.has(key2))
+        if (keys2.has(key2))
           throw new Error("duplicate");
-        keys.add(key2);
+        keys2.add(key2);
         space();
         if (text2[cursor++] !== ":")
           throw new Error("colon");
@@ -219235,7 +219235,7 @@ function parseNativeOutput(stdout, exitCode2, stage, inputFiles) {
   const findings = [], reasons = /* @__PURE__ */ new Set();
   const files = new Map(inputFiles.map((file) => [file.path, file]));
   const positionCache = /* @__PURE__ */ new Map();
-  let ignored = 0, invalid2 = 0, errors = 0, skipped = 0, scanned = 0;
+  let ignored = 0, invalid4 = 0, errors = 0, skipped = 0, scanned = 0;
   const metrics = () => ({
     profile: OPENGREP_PROFILE,
     filesDeclared: inputFiles.length,
@@ -219243,7 +219243,7 @@ function parseNativeOutput(stdout, exitCode2, stage, inputFiles) {
     nativeErrors: errors,
     skippedRules: skipped,
     ignoredFindings: ignored,
-    invalidFindings: invalid2,
+    invalidFindings: invalid4,
     engineExit: exitCode2 ?? "unknown",
     incompleteReasons: [...reasons].sort().join(","),
     rulePackSha256: OWN_RULES_SHA256
@@ -219344,7 +219344,7 @@ function parseNativeOutput(stdout, exitCode2, stage, inputFiles) {
         ...staticFlow ? { staticFlow } : {}
       });
     } catch {
-      invalid2++;
+      invalid4++;
       reasons.add("invalid_finding");
     }
   }
@@ -219435,15 +219435,15 @@ async function inventoryMatches(stage, files) {
   let count = 0;
   const walk = async (directory) => {
     for (const entry of await readdir2(directory, { withFileTypes: true })) {
-      const path = join4(directory, entry.name), stat = await lstat3(path);
-      if (stat.isSymbolicLink())
+      const path = join4(directory, entry.name), stat2 = await lstat3(path);
+      if (stat2.isSymbolicLink())
         throw new Error("stage link");
-      if (stat.isDirectory()) {
+      if (stat2.isDirectory()) {
         await walk(path);
         continue;
       }
       const local = relative4(stage, path).split(sep2).join("/"), file = expected.get(local);
-      if (!file || !stat.isFile() || ++count > files.length || stat.nlink !== 1 || await hashRegular(path, file.bytes) !== digest(file.text))
+      if (!file || !stat2.isFile() || ++count > files.length || stat2.nlink !== 1 || await hashRegular(path, file.bytes) !== digest(file.text))
         throw new Error("stage identity");
     }
   };
@@ -219471,8 +219471,8 @@ async function verifyNativePostRun(check, stage, files, pack, policy, executable
   } else
     check.metrics = { ...check.metrics, identityUnchanged: true, engineSha256: OPENGREP_SHA256 };
 }
-async function runNativePreview(snapshot2, options) {
-  const files = nativeFiles(snapshot2);
+async function runNativePreview(snapshot3, options) {
+  const files = nativeFiles(snapshot3);
   const failed = (reason, status = "error") => ({
     id: NATIVE_CHECK_ID,
     status,
@@ -219487,7 +219487,7 @@ async function runNativePreview(snapshot2, options) {
     return failed("invalid_executable_path");
   if (process.platform !== "darwin" || process.arch !== "arm64")
     return failed("unsupported_platform");
-  if (!snapshot2.complete && snapshot2.rootError)
+  if (!snapshot3.complete && snapshot3.rootError)
     return failed("snapshot_incomplete", "partial");
   if (files.length === 0)
     return { id: NATIVE_CHECK_ID, status: "not_applicable", findings: [], notes: ["No collected JS/TS/Python code file was available for the selected native preview."], metrics: { filesDeclared: 0, profile: OPENGREP_PROFILE } };
@@ -219548,7 +219548,7 @@ async function runNativePreview(snapshot2, options) {
       supervision: "native-offline",
       signal: options.signal
     });
-    check = nativeCheckFromProcess(result2, stage, files, snapshot2.complete);
+    check = nativeCheckFromProcess(result2, stage, files, snapshot3.complete);
     await verifyNativePostRun(check, stage, files, pack, policy, executable2);
   } catch {
     if (!check)
@@ -219870,8 +219870,8 @@ function sourceComparisonKey(checkId, finding2, files, preparedFiles, semanticCa
   }
   return createHash2("sha256").update(["source.v1", checkId, finding2.ruleId, path, semantic].join("\0"), "utf8").digest("hex");
 }
-function addSourceComparisonKeys(checks, snapshot2) {
-  const files = new Map(snapshot2.files.map((file) => [file.path, file]));
+function addSourceComparisonKeys(checks, snapshot3) {
+  const files = new Map(snapshot3.files.map((file) => [file.path, file]));
   const preparedFiles = /* @__PURE__ */ new Map();
   const semanticCache = /* @__PURE__ */ new Map();
   return checks.map((check) => ({
@@ -219895,37 +219895,37 @@ function requestedTools(options) {
     return [...DEFAULT_SOURCE_TOOLS];
   return [...new Set(options.tools.filter(isToolName))];
 }
-function checkStatusForSnapshot(snapshot2) {
-  if (snapshot2.rootError)
+function checkStatusForSnapshot(snapshot3) {
+  if (snapshot3.rootError)
     return "error";
-  return snapshot2.complete ? "completed" : "partial";
+  return snapshot3.complete ? "completed" : "partial";
 }
-function inventoryCheck(snapshot2, tools, nativeSelected = false) {
+function inventoryCheck(snapshot3, tools, nativeSelected = false) {
   const issueCounts = /* @__PURE__ */ new Map();
-  for (const entry of snapshot2.issues)
+  for (const entry of snapshot3.issues)
     issueCounts.set(entry.code, (issueCounts.get(entry.code) ?? 0) + 1);
   const issueSummary = [...issueCounts.entries()].map(([code, count]) => `${code}:${count}`).join(", ");
   const notes = [
-    `Collected ${snapshot2.files.length} allowlisted file${snapshot2.files.length === 1 ? "" : "s"} (${snapshot2.totalBytes} bytes).`,
-    ...snapshot2.ignoredFiles > 0 ? [`Ignored ${snapshot2.ignoredFiles} path${snapshot2.ignoredFiles === 1 ? "" : "s"} outside the static-analysis allowlist.`] : [],
+    `Collected ${snapshot3.files.length} allowlisted file${snapshot3.files.length === 1 ? "" : "s"} (${snapshot3.totalBytes} bytes).`,
+    ...snapshot3.ignoredFiles > 0 ? [`Ignored ${snapshot3.ignoredFiles} path${snapshot3.ignoredFiles === 1 ? "" : "s"} outside the static-analysis allowlist.`] : [],
     ...issueSummary ? [`Collection coverage issues: ${issueSummary}.`] : [],
     ...tools.length === 0 ? [nativeSelected ? "External default tools disabled (--tools none); explicit native preview remains selected." : "External scanner scope was narrowed to built-in checks (--tools none)."] : [`External scanner scope: ${tools.join(", ")}.`],
     ...nativeSelected ? ["Pinned BYO native preview was explicitly selected."] : [],
-    ...snapshot2.rootError ? [snapshot2.rootError] : []
+    ...snapshot3.rootError ? [snapshot3.rootError] : []
   ];
   return {
     id: "source.inventory",
-    status: checkStatusForSnapshot(snapshot2),
+    status: checkStatusForSnapshot(snapshot3),
     findings: [],
     notes,
     metrics: {
       requestedTools: tools.length ? tools.join(",") : "none",
       nativePreviewSelected: nativeSelected,
-      filesSelected: snapshot2.files.length,
-      bytesSelected: snapshot2.totalBytes,
-      ignoredFiles: snapshot2.ignoredFiles,
-      issueCount: snapshot2.issues.length,
-      complete: snapshot2.complete
+      filesSelected: snapshot3.files.length,
+      bytesSelected: snapshot3.totalBytes,
+      ignoredFiles: snapshot3.ignoredFiles,
+      issueCount: snapshot3.issues.length,
+      complete: snapshot3.complete
     }
   };
 }
@@ -220039,10 +220039,10 @@ function inspectRequirementsFile(text2) {
   }
   return { pinned: !unresolved && packageCount > 0, packageCount };
 }
-function requirementsInspection(snapshot2) {
+function requirementsInspection(snapshot3) {
   const pinned = [];
   const unresolved = [];
-  for (const file of snapshot2.files) {
+  for (const file of snapshot3.files) {
     if (file.category !== "dependency" || !/^requirements(?:-[^/]+)?\.txt$/i.test(fileBasename(file.path)))
       continue;
     if (inspectRequirementsFile(file.text).pinned)
@@ -220052,37 +220052,37 @@ function requirementsInspection(snapshot2) {
   }
   return { pinned, unresolved };
 }
-function osvLockfiles(snapshot2) {
-  const requirements = new Set(requirementsInspection(snapshot2).pinned);
-  return snapshot2.files.filter((file) => file.category === "dependency" && (OSV_LOCKFILE_NAMES.has(fileBasename(file.path)) || requirements.has(file.path))).map((file) => file.path);
+function osvLockfiles(snapshot3) {
+  const requirements = new Set(requirementsInspection(snapshot3).pinned);
+  return snapshot3.files.filter((file) => file.category === "dependency" && (OSV_LOCKFILE_NAMES.has(fileBasename(file.path)) || requirements.has(file.path))).map((file) => file.path);
 }
-function osvManifestDeclaresDependencies(snapshot2) {
-  return snapshot2.files.some((file) => file.category === "dependency" && OSV_MANIFEST_NAMES.has(fileBasename(file.path)) && dependencyManifestNeedsLockfile(file));
+function osvManifestDeclaresDependencies(snapshot3) {
+  return snapshot3.files.some((file) => file.category === "dependency" && OSV_MANIFEST_NAMES.has(fileBasename(file.path)) && dependencyManifestNeedsLockfile(file));
 }
-function osvHasApplicableInput(snapshot2) {
-  return osvLockfiles(snapshot2).length > 0 || osvManifestDeclaresDependencies(snapshot2);
+function osvHasApplicableInput(snapshot3) {
+  return osvLockfiles(snapshot3).length > 0 || osvManifestDeclaresDependencies(snapshot3);
 }
-function trivyHasApplicableInput(snapshot2) {
-  return snapshot2.files.some((file) => file.category === "config" && trivyInputCandidate(file.path, file.text));
+function trivyHasApplicableInput(snapshot3) {
+  return snapshot3.files.some((file) => file.category === "config" && trivyInputCandidate(file.path, file.text));
 }
-function hasOtherSecurityCheck(snapshot2, tools, nativeSelected = false) {
-  return nativeSelected && nativeFiles(snapshot2).length > 0 || tools.some((tool) => {
+function hasOtherSecurityCheck(snapshot3, tools, nativeSelected = false) {
+  return nativeSelected && nativeFiles(snapshot3).length > 0 || tools.some((tool) => {
     if (tool === "gitleaks")
-      return snapshot2.files.length > 0;
+      return snapshot3.files.length > 0;
     if (tool === "osv")
-      return osvHasApplicableInput(snapshot2);
+      return osvHasApplicableInput(snapshot3);
     if (tool === "trivy")
-      return trivyHasApplicableInput(snapshot2);
-    return pythonFiles(snapshot2).length > 0;
-  }) || frameworkHasApplicableInput(snapshot2);
+      return trivyHasApplicableInput(snapshot3);
+    return pythonFiles(snapshot3).length > 0;
+  }) || frameworkHasApplicableInput(snapshot3);
 }
-function pathForTool(snapshot2, tool) {
+function pathForTool(snapshot3, tool) {
   if (tool === "osv") {
-    return osvLockfiles(snapshot2);
+    return osvLockfiles(snapshot3);
   }
   if (tool === "trivy")
-    return snapshot2.files.filter((file) => file.category === "config" && trivyInputCandidate(file.path, file.text) && isTrivyConfigSafe(file.path, file.text)).map((file) => file.path);
-  return snapshot2.files.map((file) => file.path);
+    return snapshot3.files.filter((file) => file.category === "config" && trivyInputCandidate(file.path, file.text) && isTrivyConfigSafe(file.path, file.text)).map((file) => file.path);
+  return snapshot3.files.map((file) => file.path);
 }
 function isTrivyConfigSafe(path, text2) {
   const lower = path.toLowerCase();
@@ -220256,15 +220256,15 @@ async function runTrivy(context) {
     return errorCheck2("source.trivy", "Trivy returned an invalid or incomplete JSON report.");
   }
 }
-async function runTool(tool, snapshot2, stageDir, options, timeoutMs, blockedConfigCount = 0) {
-  if (tool === "trivy" && pathForTool(snapshot2, "trivy").length === 0) {
-    return runTrivy({ snapshot: snapshot2, stageDir, timeoutMs, toolPath: "", blockedConfigCount });
+async function runTool(tool, snapshot3, stageDir, options, timeoutMs, blockedConfigCount = 0) {
+  if (tool === "trivy" && pathForTool(snapshot3, "trivy").length === 0) {
+    return runTrivy({ snapshot: snapshot3, stageDir, timeoutMs, toolPath: "", blockedConfigCount });
   }
-  if (tool === "osv" && !osvHasApplicableInput(snapshot2)) {
-    return runOsv({ snapshot: snapshot2, stageDir, timeoutMs, toolPath: "" });
+  if (tool === "osv" && !osvHasApplicableInput(snapshot3)) {
+    return runOsv({ snapshot: snapshot3, stageDir, timeoutMs, toolPath: "" });
   }
-  if (tool === "bandit" && pythonFiles(snapshot2).length === 0) {
-    return runBandit({ snapshot: snapshot2, stageDir, timeoutMs, toolPath: "" });
+  if (tool === "bandit" && pythonFiles(snapshot3).length === 0) {
+    return runBandit({ snapshot: snapshot3, stageDir, timeoutMs, toolPath: "" });
   }
   if (options.signal?.aborted)
     return partialCheck(`source.${tool}`, "Source scanner was cancelled before execution.");
@@ -220273,12 +220273,12 @@ async function runTool(tool, snapshot2, stageDir, options, timeoutMs, blockedCon
   if (!executable2)
     return partialCheck(`source.${tool}`, `${tool} executable was not found; this scanner's coverage is unavailable.`);
   if (tool === "gitleaks")
-    return runGitleaks({ snapshot: snapshot2, stageDir, timeoutMs, toolPath: executable2, signal: options.signal });
+    return runGitleaks({ snapshot: snapshot3, stageDir, timeoutMs, toolPath: executable2, signal: options.signal });
   if (tool === "osv")
-    return runOsv({ snapshot: snapshot2, stageDir, timeoutMs, toolPath: executable2, signal: options.signal, ...options.osvOffline ? { osvOffline: true } : {} });
+    return runOsv({ snapshot: snapshot3, stageDir, timeoutMs, toolPath: executable2, signal: options.signal, ...options.osvOffline ? { osvOffline: true } : {} });
   if (tool === "bandit")
-    return runBandit({ snapshot: snapshot2, stageDir, timeoutMs, toolPath: executable2, signal: options.signal });
-  return runTrivy({ snapshot: snapshot2, stageDir, timeoutMs, toolPath: executable2, blockedConfigCount, signal: options.signal });
+    return runBandit({ snapshot: snapshot3, stageDir, timeoutMs, toolPath: executable2, signal: options.signal });
+  return runTrivy({ snapshot: snapshot3, stageDir, timeoutMs, toolPath: executable2, blockedConfigCount, signal: options.signal });
 }
 async function runSource(options) {
   let analysisBudget;
@@ -220296,27 +220296,27 @@ async function runSource(options) {
     return [partialCheck(options.nativePreview ? "source.opengrep.preview" : "source.cancelled", "Source scan was cancelled before collection; no child was started.")];
   const tools = requestedTools(options);
   const timeoutMs = normalizeTimeout(options.timeoutMs);
-  let snapshot2;
+  let snapshot3;
   try {
-    snapshot2 = await collectSource(options);
+    snapshot3 = await collectSource(options);
   } catch {
     return [errorCheck2("source.inventory", "The source snapshot could not be collected.")];
   }
   if (options.signal?.aborted)
-    return [inventoryCheck(snapshot2, tools, !!options.nativePreview), partialCheck("source.cancelled", "Source scan was cancelled after collection.")];
+    return [inventoryCheck(snapshot3, tools, !!options.nativePreview), partialCheck("source.cancelled", "Source scan was cancelled after collection.")];
   const checks = [
-    inventoryCheck(snapshot2, tools, !!options.nativePreview),
-    runBuiltinAst(snapshot2, hasOtherSecurityCheck(snapshot2, tools, !!options.nativePreview), analysisBudget.limits, analysisBudget),
-    runFrameworkRules(snapshot2)
+    inventoryCheck(snapshot3, tools, !!options.nativePreview),
+    runBuiltinAst(snapshot3, hasOtherSecurityCheck(snapshot3, tools, !!options.nativePreview), analysisBudget.limits, analysisBudget),
+    runFrameworkRules(snapshot3)
   ];
   if (options.nativePreview)
-    checks.push(await runNativePreview(snapshot2, options));
+    checks.push(await runNativePreview(snapshot3, options));
   if (options.signal?.aborted) {
     checks.push(partialCheck("source.cancelled", "Source scan was cancelled; later stages were not started."));
-    return addSourceComparisonKeys(checks, snapshot2);
+    return addSourceComparisonKeys(checks, snapshot3);
   }
-  if (tools.length === 0 || snapshot2.files.length === 0 || snapshot2.rootError) {
-    if (snapshot2.files.length === 0 && !snapshot2.rootError) {
+  if (tools.length === 0 || snapshot3.files.length === 0 || snapshot3.rootError) {
+    if (snapshot3.files.length === 0 && !snapshot3.rootError) {
       checks.push(...tools.map((tool) => {
         if (tool === "trivy")
           return notApplicableCheck("source.trivy", "No supported Dockerfile, Kubernetes manifest, or Terraform configuration was available for Trivy config scanning.", { configFiles: 0, blockedConfigFiles: 0 });
@@ -220330,26 +220330,26 @@ async function runSource(options) {
         checks.push(partialCheck("source.coverage", "No applicable security check could run for this source snapshot; coverage is incomplete."));
       }
     }
-    if (snapshot2.rootError)
+    if (snapshot3.rootError)
       checks.push(...tools.map((tool) => errorCheck2(`source.${tool}`, `The source root could not be scanned by ${tool}.`)));
-    return addSourceComparisonKeys(checks, snapshot2);
+    return addSourceComparisonKeys(checks, snapshot3);
   }
   let staged;
   try {
-    staged = await stageSnapshot(snapshot2);
+    staged = await stageSnapshot(snapshot3);
     await mkdir3(join5(dirname5(staged.dir), "home"), { recursive: true, mode: 448 });
   } catch {
     checks.push(...tools.map((tool) => errorCheck2(`source.${tool}`, `The bounded snapshot could not be staged for ${tool}.`)));
-    return addSourceComparisonKeys(checks, snapshot2);
+    return addSourceComparisonKeys(checks, snapshot3);
   }
   let trivyStaged;
   let trivySnapshot;
   let blockedConfigCount = 0;
   if (tools.includes("trivy") && !options.signal?.aborted) {
-    const trivyCandidates = snapshot2.files.filter((file) => file.category === "config" && trivyInputCandidate(file.path, file.text));
+    const trivyCandidates = snapshot3.files.filter((file) => file.category === "config" && trivyInputCandidate(file.path, file.text));
     const trivyFiles = trivyCandidates.filter((file) => isTrivyConfigSafe(file.path, file.text));
     blockedConfigCount = trivyCandidates.filter((file) => !isTrivyConfigSafe(file.path, file.text)).length;
-    trivySnapshot = { ...snapshot2, files: trivyFiles };
+    trivySnapshot = { ...snapshot3, files: trivyFiles };
     if (trivyFiles.length > 0) {
       try {
         trivyStaged = await stageSnapshot(trivySnapshot);
@@ -220362,8 +220362,8 @@ async function runSource(options) {
   let banditStaged;
   let banditSnapshot;
   if (tools.includes("bandit") && !options.signal?.aborted) {
-    const banditFiles = pythonFiles(snapshot2);
-    banditSnapshot = { ...snapshot2, files: banditFiles };
+    const banditFiles = pythonFiles(snapshot3);
+    banditSnapshot = { ...snapshot3, files: banditFiles };
     if (banditFiles.length > 0) {
       try {
         banditStaged = await stageSnapshot(banditSnapshot);
@@ -220396,7 +220396,7 @@ async function runSource(options) {
         }
       }
       try {
-        return await runTool(tool, snapshot2, staged.dir, options, timeoutMs);
+        return await runTool(tool, snapshot3, staged.dir, options, timeoutMs);
       } catch {
         return errorCheck2(`source.${tool}`, `${tool} scanning could not be completed.`);
       }
@@ -220421,7 +220421,7 @@ async function runSource(options) {
     } catch {
     }
   }
-  return addSourceComparisonKeys(checks, snapshot2);
+  return addSourceComparisonKeys(checks, snapshot3);
 }
 
 // node_modules/parse5/dist/common/unicode.js
@@ -228326,10 +228326,10 @@ function validateAuthorization(value) {
   }
 }
 function rawAuthorityHost(raw) {
-  const authority = raw.match(/^[a-z][a-z0-9+.-]*:\/\/([^/?#]*)/i)?.[1];
-  if (authority === void 0)
+  const authority2 = raw.match(/^[a-z][a-z0-9+.-]*:\/\/([^/?#]*)/i)?.[1];
+  if (authority2 === void 0)
     return void 0;
-  const withoutUserinfo = authority.includes("@") ? authority.slice(authority.lastIndexOf("@") + 1) : authority;
+  const withoutUserinfo = authority2.includes("@") ? authority2.slice(authority2.lastIndexOf("@") + 1) : authority2;
   if (withoutUserinfo.startsWith("[")) {
     const end = withoutUserinfo.indexOf("]");
     if (end < 0)
@@ -228928,18 +228928,18 @@ function lineStarts(text2) {
   return starts;
 }
 function locationForOffset(text2, offset, starts = lineStarts(text2)) {
-  const bounded = Math.max(0, Math.min(offset, text2.length));
+  const bounded3 = Math.max(0, Math.min(offset, text2.length));
   let low = 0;
   let high = starts.length - 1;
   while (low <= high) {
     const middle = Math.floor((low + high) / 2);
-    if (starts[middle] <= bounded)
+    if (starts[middle] <= bounded3)
       low = middle + 1;
     else
       high = middle - 1;
   }
   const lineStart = starts[Math.max(0, high)] ?? 0;
-  return { line: Math.max(1, high + 1), column: bounded - lineStart + 1 };
+  return { line: Math.max(1, high + 1), column: bounded3 - lineStart + 1 };
 }
 function safeLocation(url, line, column) {
   return {
@@ -229398,8 +229398,8 @@ function* scanSecretAssignments(text2) {
 var META_PRESCAN_BYTES = 1024;
 var MAX_CHARSET_LENGTH = 64;
 function charsetParameter(value) {
-  const parameters = value.split(";").slice(1);
-  const declarations = parameters.filter((part) => /^\s*charset(?:\s|=|$)/i.test(part));
+  const parameters2 = value.split(";").slice(1);
+  const declarations = parameters2.filter((part) => /^\s*charset(?:\s|=|$)/i.test(part));
   if (declarations.length === 0)
     return void 0;
   const match = /^\s*charset\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"']+))\s*$/i.exec(declarations[0]);
@@ -229526,18 +229526,18 @@ function lineStarts2(text2) {
   return starts;
 }
 function locationForOffset2(text2, offset, starts = lineStarts2(text2)) {
-  const bounded = Math.max(0, Math.min(offset, text2.length));
+  const bounded3 = Math.max(0, Math.min(offset, text2.length));
   let low = 0;
   let high = starts.length - 1;
   while (low <= high) {
     const middle = Math.floor((low + high) / 2);
-    if (starts[middle] <= bounded)
+    if (starts[middle] <= bounded3)
       low = middle + 1;
     else
       high = middle - 1;
   }
   const lineStart = starts[Math.max(0, high)] ?? 0;
-  return { line: Math.max(1, high + 1), column: bounded - lineStart + 1 };
+  return { line: Math.max(1, high + 1), column: bounded3 - lineStart + 1 };
 }
 function addFinding(state, input) {
   const location2 = input.location ?? {};
@@ -231268,7 +231268,7 @@ function sanitiseFinding(input) {
   const severity = SEVERITIES.includes(input?.severity) ? input.severity : "info";
   const confidence = CONFIDENCES.includes(input?.confidence) ? input.confidence : "low";
   const kind = KINDS.includes(input?.kind) ? input.kind : "candidate";
-  const references = Array.isArray(input?.references) ? input.references.map((reference) => safeHttpUrl(reference)).filter((reference) => reference !== void 0) : void 0;
+  const references2 = Array.isArray(input?.references) ? input.references.map((reference) => safeHttpUrl(reference)).filter((reference) => reference !== void 0) : void 0;
   const location2 = sanitiseLocation(input?.location);
   const staticFlow = sanitiseStaticFlow(input?.staticFlow);
   const comparisonKey = typeof input?.comparisonKey === "string" && /^[a-f0-9]{64}$/.test(input.comparisonKey) ? input.comparisonKey : void 0;
@@ -231283,7 +231283,7 @@ function sanitiseFinding(input) {
     remediation: safeText(input?.remediation, "Review the finding and verify the affected scope."),
     ...comparisonKey ? { comparisonKey } : {},
     ...staticFlow ? { staticFlow } : {},
-    ...references && references.length > 0 ? { references } : {}
+    ...references2 && references2.length > 0 ? { references: references2 } : {}
   };
 }
 function sanitiseStaticFlow(input) {
@@ -231509,42 +231509,42 @@ var severities = ["info", "low", "medium", "high", "critical"];
 var record2 = (x) => !!x && typeof x === "object" && !Array.isArray(x);
 var text = (x) => typeof x === "string";
 function parseScanReport(input) {
-  const invalid2 = () => {
+  const invalid4 = () => {
     throw new Error("Invalid scan report");
   };
   if (!record2(input))
-    return invalid2();
+    return invalid4();
   if (input.schemaVersion !== "1.0.0" || !text(input.toolVersion) || !input.toolVersion || !["source", "url", "both", "api", "combined"].includes(input.mode) || !text(input.startedAt) || !Number.isFinite(Date.parse(input.startedAt)) || !text(input.finishedAt) || !Number.isFinite(Date.parse(input.finishedAt)) || !Array.isArray(input.checks) || input.checks.length > 1e3)
-    return invalid2();
+    return invalid4();
   const checkIds = /* @__PURE__ */ new Set();
   let count = 0;
   for (const check of input.checks) {
     if (!record2(check) || !text(check.id) || !check.id || checkIds.has(check.id) || !["completed", "partial", "error", "skipped", "not_applicable"].includes(check.status) || !Array.isArray(check.findings) || !Array.isArray(check.notes) || !check.notes.every(text))
-      return invalid2();
+      return invalid4();
     if (check.analysisBudget !== void 0 && !sanitiseAnalysisBudget(check.analysisBudget))
-      return invalid2();
+      return invalid4();
     checkIds.add(check.id);
     count += check.findings.length;
     if (count > 5e4 || check.status === "not_applicable" && check.findings.length)
-      return invalid2();
+      return invalid4();
     for (const finding2 of check.findings) {
       if (!record2(finding2) || !text(finding2.ruleId) || !finding2.ruleId || !text(finding2.title) || !text(finding2.description) || !text(finding2.remediation) || !severities.includes(finding2.severity) || !["low", "medium", "high"].includes(finding2.confidence) || !["observation", "candidate", "advisory"].includes(finding2.kind) || !record2(finding2.location))
-        return invalid2();
+        return invalid4();
       if (finding2.comparisonKey !== void 0 && (!text(finding2.comparisonKey) || !/^[a-f0-9]{64}$/.test(finding2.comparisonKey)))
-        return invalid2();
+        return invalid4();
       for (const key2 of ["path", "url"])
         if (finding2.location[key2] !== void 0 && !text(finding2.location[key2]))
-          return invalid2();
+          return invalid4();
       for (const key2 of ["line", "column"])
         if (finding2.location[key2] !== void 0 && (!Number.isSafeInteger(finding2.location[key2]) || finding2.location[key2] < 1))
-          return invalid2();
+          return invalid4();
     }
   }
   if (input.scope !== void 0 && !validScope(input.scope))
-    return invalid2();
+    return invalid4();
   const safe = sanitiseReport(input);
   if (new Set(safe.checks.map((check) => check.id)).size !== safe.checks.length)
-    return invalid2();
+    return invalid4();
   return safe;
 }
 async function readScanReport(path) {
@@ -231778,7 +231778,7 @@ async function writeComparison(result2, outDir) {
     "",
     "## Limits",
     "",
-    ...result2.limitations.map((limit) => `- ${limit}`),
+    ...result2.limitations.map((limit2) => `- ${limit2}`),
     ""
   ];
   await writeArtifacts(outDir, [["comparison.json", JSON.stringify(result2, null, 2) + "\n"], ["comparison.md", lines.join("\n")]]);
@@ -231797,9 +231797,10 @@ var API_MAX_CASES = 20;
 var API_MAX_REQUESTS = Math.min(MAX_REQUESTS, 64);
 var API_MAX_TIMEOUT_MS = 12e4;
 var API_DEFAULT_TIMEOUT_MS = 3e4;
+var API_MAX_SINGLE_BODY_BYTES = MAX_SINGLE_BODY_BYTES;
 var API_MAX_TOTAL_BODY_BYTES = 10 * 1024 * 1024;
-function createApiRunControl(timeoutMs, signal) {
-  if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > API_MAX_TIMEOUT_MS) {
+function createApiRunControl(timeoutMs, signal, maxTimeoutMs = API_MAX_TIMEOUT_MS) {
+  if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > maxTimeoutMs) {
     throw new RangeError("invalid API time budget");
   }
   if (signal !== void 0 && !(signal instanceof AbortSignal))
@@ -232755,16 +232756,16 @@ async function sourceContentHash(root) {
       if (entry.isFile() && IGNORED_FILES.has(entryName))
         continue;
       const path = resolve7(directory, entry.name);
-      const stat = await lstat5(path);
-      if (stat.isSymbolicLink())
+      const stat2 = await lstat5(path);
+      if (stat2.isSymbolicLink())
         continue;
-      if (stat.isDirectory()) {
+      if (stat2.isDirectory()) {
         await walk(path);
         continue;
       }
-      if (!stat.isFile())
+      if (!stat2.isFile())
         continue;
-      if (stat.size > MAX_HASH_BYTES - bytes)
+      if (stat2.size > MAX_HASH_BYTES - bytes)
         throw new Error("source hash budget");
       const relativePath = relative5(target, path).split(sep4).join("/");
       hash.update(relativePath, "utf8");
@@ -232795,8 +232796,8 @@ async function sourceContentHash(root) {
 }
 async function hashEngine(path) {
   try {
-    const stat = await lstat5(path);
-    if (!stat.isFile() || stat.size > MAX_ENGINE_BYTES)
+    const stat2 = await lstat5(path);
+    if (!stat2.isFile() || stat2.size > MAX_ENGINE_BYTES)
       return void 0;
     const hash = createHash4("sha256");
     let bytes = 0;
@@ -232874,6 +232875,7 @@ async function buildScanScope(inputs) {
     pages: [...inputs.pages ?? []],
     maxPages: inputs.maxPages ?? null,
     apiPolicy: inputs.apiPolicy ?? null,
+    ...inputs.dast !== void 0 ? { dast: inputs.dast } : {},
     // Preserve non-native fingerprints; selection is an explicit model change.
     ...inputs.nativePreview ? { nativePreview: {
       profile: OPENGREP_PROFILE,
@@ -232896,7 +232898,7 @@ async function buildScanScope(inputs) {
 }
 
 // build/src/doctor.js
-import { lstat as lstat6, readdir as readdir4 } from "node:fs/promises";
+import { access as access4, constants as constants5, lstat as lstat6, readdir as readdir4, stat } from "node:fs/promises";
 import { join as join6, resolve as resolve8 } from "node:path";
 var DEFAULT_TOOLS = ["gitleaks", "osv", "trivy"];
 var TOOL_NAMES = /* @__PURE__ */ new Set(["gitleaks", "osv", "trivy", "bandit"]);
@@ -232962,6 +232964,7 @@ async function doctorMain(argv = process.argv.slice(2)) {
   if (options.tools.includes("trivy") && inventory.configFiles > 0) {
     runtimeNetwork.push("Trivy policy/DB traffic may be scanner-managed and is not verified by this Action");
   }
+  const dast = options.dast ? await inspectDast(options) : void 0;
   const result2 = {
     schemaVersion: "1.0.0",
     source,
@@ -232971,7 +232974,8 @@ async function doctorMain(argv = process.argv.slice(2)) {
     expectedTransfers,
     runtimeNetwork,
     databaseCaches: { osv: "unknown", trivy: "unknown" },
-    nextCommand: nextCommand(source, options.tools)
+    nextCommand: nextCommand(source, options.tools),
+    ...dast ? { activeDast: dast } : {}
   };
   if (options.json) {
     process.stdout.write(`${JSON.stringify(result2, null, 2)}
@@ -232981,13 +232985,15 @@ async function doctorMain(argv = process.argv.slice(2)) {
   }
   if (options.strict && (inventory.truncated || toolStatuses.some((tool) => tool.availability === "missing" && tool.applicability !== "not_applicable")))
     return 2;
+  if (options.strict && dast && (dast.nuclei.availability !== "available" || dast.nucleiTemplates.availability !== "available" || dast.schemathesisPython.availability !== "available"))
+    return 2;
   return 0;
 }
 function parseDoctorArgs(argv) {
   const args = [...argv];
   if (args[0] === "doctor")
     args.shift();
-  const options = { source: ".", tools: [...DEFAULT_TOOLS], json: false, strict: false, help: false };
+  const options = { source: ".", tools: [...DEFAULT_TOOLS], json: false, strict: false, help: false, dast: false };
   for (let index = 0; index < args.length; index += 1) {
     const argument = args[index];
     if (argument === "--help" || argument === "-h") {
@@ -233000,6 +233006,23 @@ function parseDoctorArgs(argv) {
     }
     if (argument === "--strict") {
       options.strict = true;
+      continue;
+    }
+    if (argument === "--dast") {
+      options.dast = true;
+      continue;
+    }
+    if (argument === "--nuclei" || argument === "--nuclei-templates" || argument === "--schemathesis-python") {
+      const value = args[index + 1];
+      if (!value || value.startsWith("--"))
+        throw new Error(`${argument} requires a value`);
+      index += 1;
+      if (argument === "--nuclei")
+        options.nuclei = value;
+      else if (argument === "--nuclei-templates")
+        options.nucleiTemplates = value;
+      else
+        options.schemathesisPython = value;
       continue;
     }
     if (argument === "--source" || argument === "--root" || argument === "--tools") {
@@ -233015,7 +233038,51 @@ function parseDoctorArgs(argv) {
     }
     throw new Error(`unknown doctor option: ${argument}`);
   }
+  if (!options.dast && (options.nuclei || options.nucleiTemplates || options.schemathesisPython))
+    throw new Error("--nuclei, --nuclei-templates and --schemathesis-python require --dast");
   return options;
+}
+async function inspectDast(options) {
+  const nuclei = await findExecutable2(options.nuclei ?? "nuclei");
+  const pythonPath = resolve8(options.schemathesisPython ?? process.env.WAKEIO_SCHEMATHESIS_PYTHON ?? join6(process.cwd(), ".venv-schemathesis/bin/python"));
+  const python = await stat(pythonPath).then(async (stats) => stats.isFile() && await access4(pythonPath, constants5.X_OK).then(() => true, () => false)).catch(() => false) ? pythonPath : void 0;
+  let templates = {
+    availability: "not_configured",
+    scopes: [],
+    checksumFile: false,
+    note: "Prepare templates once (for example `nuclei -ut -ud DIR`) and pass --nuclei-templates; scans never download templates."
+  };
+  if (options.nucleiTemplates) {
+    const root = resolve8(options.nucleiTemplates);
+    const scopes = [];
+    for (const [name, path] of [["misconfiguration", "http/misconfiguration"], ["exposures", "http/exposures"]]) {
+      const stats = await lstat6(join6(root, ...path.split("/"))).catch(() => void 0);
+      if (stats?.isDirectory() && !stats.isSymbolicLink())
+        scopes.push(name);
+    }
+    const checksum = await lstat6(join6(root, "templates-checksum.txt")).then((stats) => stats.isFile()).catch(() => false);
+    templates = {
+      availability: scopes.length > 0 ? "available" : "missing",
+      scopes,
+      checksumFile: checksum,
+      note: checksum ? "templates-checksum.txt digest is recorded as provenance at scan time." : "templates-checksum.txt is missing; template provenance will be unknown."
+    };
+  }
+  return {
+    nuclei: {
+      availability: nuclei ? "available" : "missing",
+      ...nuclei ? { path: nuclei } : {},
+      pinnedVersion: "3.11.1",
+      install: "node scripts/install-tools.mjs --tools nuclei (verifies the pinned upstream SHA-256)"
+    },
+    nucleiTemplates: templates,
+    schemathesisPython: {
+      availability: python ? "available" : "missing",
+      ...python ? { path: python } : {},
+      requirements: "Python 3.12 with workers/schemathesis/requirements.lock.txt (package versions are checked when a scan starts the worker)"
+    },
+    consent: "Active DAST also requires --active-consent at scan time; doctor never sends requests."
+  };
 }
 function parseTools(value) {
   if (value.trim().toLowerCase() === "none")
@@ -233029,6 +233096,7 @@ function parseTools(value) {
 function doctorUsage() {
   return [
     "Usage: wakeio-security-ci doctor [--source DIR] [--tools gitleaks,osv,trivy,bandit|none] [--json] [--strict]",
+    "                              [--dast [--nuclei PATH] [--nuclei-templates DIR] [--schemathesis-python PATH]]",
     "",
     "Read-only inventory: no target code, package scripts, scanner, or network request is executed.",
     ""
@@ -233135,6 +233203,7 @@ function shellQuote(value) {
   return `'${value.replace(/'/g, `'\\''`)}'`;
 }
 function renderDoctorText(result2) {
+  const dast = result2.activeDast;
   const lines = [
     "Wakeio doctor (read-only)",
     `Source: ${result2.source}`,
@@ -233145,6 +233214,12 @@ function renderDoctorText(result2) {
     `Runtime network expectations: ${result2.runtimeNetwork.length > 0 ? result2.runtimeNetwork.join("; ") : "none"}`,
     `OSV database cache: ${result2.databaseCaches.osv}; Trivy database cache: ${result2.databaseCaches.trivy}`,
     `Next command: ${result2.nextCommand}`,
+    ...dast ? [
+      `Active DAST nuclei ${dast.nuclei.pinnedVersion}: ${dast.nuclei.availability}${dast.nuclei.path ? ` at ${dast.nuclei.path}` : ` (install: ${dast.nuclei.install})`}`,
+      `Active DAST nuclei templates: ${dast.nucleiTemplates.availability}${dast.nucleiTemplates.scopes.length ? ` (${dast.nucleiTemplates.scopes.join(", ")})` : ""}; ${dast.nucleiTemplates.note}`,
+      `Active DAST Schemathesis Python: ${dast.schemathesisPython.availability}${dast.schemathesisPython.path ? ` at ${dast.schemathesisPython.path}` : ""}; ${dast.schemathesisPython.requirements}`,
+      dast.consent
+    ] : [],
     ""
   ];
   return lines.join("\n");
@@ -233347,14 +233422,14 @@ async function ensureParentDirectories(file) {
 
 // build/src/repair.js
 import { dirname as dirname7, join as join9, relative as relative7, resolve as resolve10, sep as sep5 } from "node:path";
-import { constants as constants6 } from "node:fs";
+import { constants as constants7 } from "node:fs";
 import { createHash as createHash6, randomUUID } from "node:crypto";
 import { lstat as lstat9, mkdir as mkdir6, mkdtemp as mkdtemp3, open as open5, realpath as realpath3, rm as rm3, writeFile as writeFile6 } from "node:fs/promises";
 import { tmpdir as tmpdir3 } from "node:os";
 
 // build/src/repair-provider.js
-import { constants as constants5 } from "node:fs";
-import { access as access4, lstat as lstat8, readFile, realpath as realpath2, writeFile as writeFile5 } from "node:fs/promises";
+import { constants as constants6 } from "node:fs";
+import { access as access5, lstat as lstat8, readFile, realpath as realpath2, writeFile as writeFile5 } from "node:fs/promises";
 import { createHash as createHash5 } from "node:crypto";
 import { isAbsolute as isAbsolute7, join as join8 } from "node:path";
 var schema = { type: "object", additionalProperties: false, required: ["version", "replacements"], properties: {
@@ -233377,7 +233452,7 @@ async function executable(command) {
       const path = await realpath2(candidate);
       if (!(await lstat8(path)).isFile())
         continue;
-      await access4(path, constants5.X_OK);
+      await access5(path, constants6.X_OK);
       return path;
     } catch {
     }
@@ -233516,12 +233591,12 @@ var digest2 = (data) => createHash6("sha256").update(data).digest("hex");
 var SHA = /^[a-f0-9]{64}$/;
 var inside = (root, path) => path === root || path.startsWith(root.endsWith(sep5) ? root : root + sep5);
 var object3 = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
-function exact(v, keys) {
-  if (!object3(v) || Object.keys(v).length !== keys.length || keys.some((k) => !Object.hasOwn(v, k)))
+function exact(v, keys2) {
+  if (!object3(v) || Object.keys(v).length !== keys2.length || keys2.some((k) => !Object.hasOwn(v, k)))
     throw new Error("invalid");
 }
 async function readBounded(path, cap = 128 * 1024) {
-  const handle = await open5(path, constants6.O_RDONLY | constants6.O_NOFOLLOW | constants6.O_NONBLOCK);
+  const handle = await open5(path, constants7.O_RDONLY | constants7.O_NOFOLLOW | constants7.O_NONBLOCK);
   try {
     const before = await handle.stat();
     if (!before.isFile() || before.size > cap)
@@ -233856,6 +233931,1246 @@ async function repairMain(args) {
   return code;
 }
 
+// build/src/schemathesis-live.js
+import { createHash as createHash7 } from "node:crypto";
+import { readFile as readFile2 } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
+
+// build/src/dast-egress.js
+import { randomBytes, timingSafeEqual } from "node:crypto";
+import { createServer, request as httpRequest2 } from "node:http";
+import { connect, isIP as isIP2 } from "node:net";
+var EGRESS_MAX_REQUEST_BODY_BYTES = 64 * 1024;
+var HOP_BY_HOP = /* @__PURE__ */ new Set([
+  "connection",
+  "keep-alive",
+  "proxy-authorization",
+  "proxy-authenticate",
+  "proxy-connection",
+  "te",
+  "trailer",
+  "transfer-encoding",
+  "upgrade",
+  "accept-encoding",
+  "host"
+]);
+async function resolveDastOrigin(raw, allowPrivate, signal) {
+  const origin = normalizeUrl(raw);
+  const parsed = new URL(origin.href);
+  if (parsed.pathname !== "/" || parsed.search)
+    throw new Error("dast_origin_required");
+  const addresses = await resolveAddresses(origin, signal, allowPrivate);
+  return { origin, address: addresses[0] };
+}
+function defaultPort(origin) {
+  return origin.port || (origin.protocol === "https:" ? "443" : "80");
+}
+function authority(origin) {
+  const host = isIP2(origin.hostname) === 6 ? `[${origin.hostname}]` : origin.hostname;
+  return `${host}:${defaultPort(origin)}`;
+}
+function sameOrigin(raw, origin) {
+  if (!raw || !/^http:\/\//i.test(raw))
+    return void 0;
+  try {
+    const normalized = normalizeUrl(raw);
+    return normalized.origin === origin.origin ? new URL(normalized.href) : void 0;
+  } catch {
+    return void 0;
+  }
+}
+function sameAddress2(left, right) {
+  if (!left)
+    return false;
+  const canonical = (value) => value.toLowerCase().replace(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/, "$1");
+  return canonical(left) === canonical(right);
+}
+function forwardHeaders(headers, host) {
+  const result2 = {};
+  for (const [name, value] of Object.entries(headers)) {
+    if (value === void 0 || HOP_BY_HOP.has(name.toLowerCase()))
+      continue;
+    result2[name] = value;
+  }
+  result2["accept-encoding"] = "identity";
+  result2.host = host;
+  result2.connection = "close";
+  return result2;
+}
+async function startEgressGate(policy) {
+  const token = randomBytes(18).toString("base64url");
+  const expected = Buffer.from(`Basic ${Buffer.from(`wakeio:${token}`).toString("base64")}`);
+  const counters = { forwarded: 0, tunnels: 0, blockedOrigin: 0, blockedMethod: 0, blockedBudget: 0, upstreamErrors: 0, rejectedEncoding: 0, responseBytes: 0 };
+  const sockets = /* @__PURE__ */ new Set();
+  const listeners = [];
+  let stopped;
+  const stop = (reason) => {
+    if (stopped)
+      return;
+    stopped = reason;
+    for (const listener of listeners)
+      listener(reason);
+  };
+  const authorized = (headers) => {
+    const value = Buffer.from(String(headers["proxy-authorization"] ?? ""));
+    return value.length === expected.length && timingSafeEqual(value, expected);
+  };
+  const remaining = () => Math.max(1, policy.deadlineAt - Date.now());
+  const countBytes = (bytes, single) => {
+    counters.responseBytes += bytes;
+    if (single > policy.maxSingleBodyBytes || counters.responseBytes > policy.maxTotalBytes) {
+      stop("body_limit");
+      return false;
+    }
+    return true;
+  };
+  const refuse = (response, status) => {
+    response.writeHead(status, { "content-length": "0", connection: "close", "x-wakeio-egress": "refused" });
+    response.end();
+  };
+  const onRequest = (request, response) => {
+    if (!authorized(request.headers)) {
+      response.writeHead(407, { "proxy-authenticate": "Basic", "content-length": "0", connection: "close" });
+      response.end();
+      return;
+    }
+    const target = policy.origin.protocol === "http:" ? sameOrigin(request.url, policy.origin) : void 0;
+    if (!target) {
+      counters.blockedOrigin += 1;
+      request.resume();
+      refuse(response, 502);
+      return;
+    }
+    if (!policy.methods.has(request.method ?? "")) {
+      counters.blockedMethod += 1;
+      request.resume();
+      refuse(response, 405);
+      return;
+    }
+    if (stopped || policy.signal.aborted || counters.forwarded >= policy.maxRequests) {
+      counters.blockedBudget += 1;
+      if (counters.forwarded >= policy.maxRequests)
+        stop("request_limit");
+      request.resume();
+      refuse(response, 503);
+      return;
+    }
+    counters.forwarded += 1;
+    let failed = false;
+    const fail2 = () => {
+      if (!failed) {
+        failed = true;
+        counters.upstreamErrors += 1;
+      }
+      response.destroy();
+    };
+    const upstream = httpRequest2({
+      host: policy.address.address,
+      port: defaultPort(policy.origin),
+      family: policy.address.family,
+      method: request.method,
+      path: `${target.pathname}${target.search}`,
+      headers: forwardHeaders(request.headers, new URL(policy.origin.href).host),
+      agent: false,
+      timeout: remaining()
+    }, (incoming) => {
+      if (!sameAddress2(incoming.socket?.remoteAddress, policy.address.address)) {
+        incoming.destroy();
+        counters.upstreamErrors += 1;
+        stop("peer_mismatch");
+        response.destroy();
+        return;
+      }
+      const encoding = String(incoming.headers["content-encoding"] ?? "identity").trim().toLowerCase();
+      if (encoding !== "identity" && encoding !== "") {
+        incoming.destroy();
+        counters.rejectedEncoding += 1;
+        refuse(response, 502);
+        return;
+      }
+      const declared = Number.parseInt(String(incoming.headers["content-length"] ?? ""), 10);
+      if (Number.isFinite(declared) && declared > policy.maxSingleBodyBytes) {
+        incoming.destroy();
+        stop("body_limit");
+        response.destroy();
+        return;
+      }
+      const headers = {};
+      for (const [name, value] of Object.entries(incoming.headers)) {
+        if (value !== void 0 && !HOP_BY_HOP.has(name.toLowerCase()) && name.toLowerCase() !== "content-length")
+          headers[name] = value;
+      }
+      const chunks = [];
+      let single = 0;
+      incoming.on("data", (chunk) => {
+        single += chunk.byteLength;
+        if (!countBytes(chunk.byteLength, single)) {
+          incoming.destroy();
+          response.destroy();
+          return;
+        }
+        chunks.push(chunk);
+      });
+      incoming.once("end", () => {
+        if (response.destroyed)
+          return;
+        const body = Buffer.concat(chunks);
+        response.writeHead(incoming.statusCode ?? 502, { ...headers, "content-length": String(body.byteLength), connection: "close" });
+        response.end(body);
+      });
+      incoming.on("error", fail2);
+    });
+    upstream.once("timeout", () => upstream.destroy(new Error("timeout")));
+    upstream.on("error", fail2);
+    request.on("error", () => upstream.destroy());
+    let sent = 0;
+    request.on("data", (chunk) => {
+      sent += chunk.byteLength;
+      if (sent > EGRESS_MAX_REQUEST_BODY_BYTES) {
+        upstream.destroy();
+        response.destroy();
+        return;
+      }
+      upstream.write(chunk);
+    });
+    request.once("end", () => upstream.end());
+  };
+  const server2 = createServer({ maxHeaderSize: 16 * 1024 }, onRequest);
+  server2.on("connection", (socket) => {
+    sockets.add(socket);
+    socket.once("close", () => sockets.delete(socket));
+  });
+  server2.on("connect", (request, client) => {
+    const reject = (status) => {
+      client.end(`HTTP/1.1 ${status}\r
+connection: close\r
+content-length: 0\r
+\r
+`);
+    };
+    if (!authorized(request.headers)) {
+      reject("407 Proxy Authentication Required");
+      return;
+    }
+    if (policy.origin.protocol !== "https:" || (request.url ?? "").toLowerCase() !== authority(policy.origin)) {
+      counters.blockedOrigin += 1;
+      reject("502 Bad Gateway");
+      return;
+    }
+    if (stopped || policy.signal.aborted) {
+      counters.blockedBudget += 1;
+      reject("503 Service Unavailable");
+      return;
+    }
+    counters.tunnels += 1;
+    const upstream = connect({ host: policy.address.address, port: Number(defaultPort(policy.origin)), family: policy.address.family, timeout: remaining() });
+    sockets.add(upstream);
+    upstream.once("close", () => sockets.delete(upstream));
+    upstream.once("connect", () => {
+      if (!sameAddress2(upstream.remoteAddress, policy.address.address)) {
+        counters.upstreamErrors += 1;
+        stop("peer_mismatch");
+        upstream.destroy();
+        client.destroy();
+        return;
+      }
+      client.write("HTTP/1.1 200 Connection Established\r\n\r\n");
+      upstream.on("data", (chunk) => {
+        if (!countBytes(chunk.byteLength, 0)) {
+          upstream.destroy();
+          client.destroy();
+          return;
+        }
+        client.write(chunk);
+      });
+      client.on("data", (chunk) => upstream.write(chunk));
+    });
+    let tunnelFailed = false;
+    upstream.once("timeout", () => upstream.destroy());
+    upstream.on("error", () => {
+      if (!tunnelFailed) {
+        tunnelFailed = true;
+        counters.upstreamErrors += 1;
+      }
+      client.destroy();
+    });
+    upstream.once("end", () => client.end());
+    client.on("error", () => upstream.destroy());
+    client.once("close", () => upstream.destroy());
+  });
+  const closeAll = () => {
+    for (const socket of sockets)
+      socket.destroy();
+  };
+  policy.signal.addEventListener("abort", closeAll, { once: true });
+  await new Promise((resolve12, reject) => {
+    server2.once("error", reject);
+    server2.listen(0, "127.0.0.1", () => resolve12());
+  });
+  const address = server2.address();
+  const port = typeof address === "object" && address ? address.port : 0;
+  return {
+    proxyUrl: `http://wakeio:${token}@127.0.0.1:${port}`,
+    port,
+    counters,
+    stopReason: () => stopped,
+    onStop(listener) {
+      listeners.push(listener);
+      if (stopped)
+        listener(stopped);
+    },
+    close() {
+      policy.signal.removeEventListener("abort", closeAll);
+      closeAll();
+      return new Promise((resolve12) => server2.close(() => resolve12()));
+    }
+  };
+}
+
+// build/src/openapi.js
+var OPENAPI_MAX_INPUT_BYTES = 1024 * 1024;
+var OPENAPI_MAX_INPUT_NODES = 2e4;
+var OPENAPI_MAX_DEPTH = 40;
+var OPENAPI_MAX_REFERENCES = 256;
+var OPENAPI_MAX_PATHS = 1e3;
+var OPENAPI_MAX_PARAMETERS = 32;
+var OpenApiPolicyError = class extends Error {
+  code;
+  constructor(code, message) {
+    super(message);
+    this.name = "OpenApiPolicyError";
+    this.code = code;
+  }
+};
+function invalid2(message = "OpenAPI policy input is invalid.") {
+  throw new OpenApiPolicyError("invalid_openapi_policy", message);
+}
+function unsupported(message = "The selected OpenAPI feature is unsupported.") {
+  throw new OpenApiPolicyError("unsupported_openapi", message);
+}
+function limit() {
+  throw new OpenApiPolicyError("openapi_limit", "OpenAPI compilation budget exceeded.");
+}
+function record3(value) {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+function own2(value, key2) {
+  return Object.prototype.hasOwnProperty.call(value, key2);
+}
+function keys(value, required, optional = []) {
+  if (required.some((key2) => !own2(value, key2)) || Object.keys(value).some((key2) => !required.includes(key2) && !optional.includes(key2)))
+    invalid2();
+}
+function snapshot2(input) {
+  let nodes = 0, bytes = 0;
+  const active = /* @__PURE__ */ new Set();
+  const count = (value) => {
+    bytes += Buffer.byteLength(value, "utf8");
+    if (bytes > OPENAPI_MAX_INPUT_BYTES)
+      limit();
+  };
+  const string = (value) => {
+    if (value.length > OPENAPI_MAX_INPUT_BYTES)
+      limit();
+    count(JSON.stringify(value));
+  };
+  const copy = (value, depth) => {
+    if (++nodes > OPENAPI_MAX_INPUT_NODES || depth > OPENAPI_MAX_DEPTH)
+      limit();
+    if (value === null || typeof value === "boolean") {
+      count(String(value));
+      return value;
+    }
+    if (typeof value === "string") {
+      string(value);
+      return value;
+    }
+    if (typeof value === "number") {
+      if (!Number.isFinite(value))
+        invalid2();
+      count(String(value));
+      return value;
+    }
+    if (typeof value !== "object" || active.has(value))
+      invalid2();
+    const array = Array.isArray(value);
+    const prototype = Object.getPrototypeOf(value);
+    if (array ? prototype !== Array.prototype : prototype !== Object.prototype && prototype !== null)
+      invalid2();
+    if (Object.getOwnPropertySymbols(value).length !== 0)
+      invalid2();
+    const descriptors = Object.getOwnPropertyDescriptors(value);
+    const names = Object.keys(descriptors);
+    if (names.length > OPENAPI_MAX_INPUT_NODES - nodes)
+      limit();
+    active.add(value);
+    count("{}");
+    if (array) {
+      if (value.length > OPENAPI_MAX_INPUT_NODES - nodes || names.length !== value.length + 1)
+        invalid2();
+      const result3 = [];
+      for (let i = 0; i < value.length; i++) {
+        const descriptor = descriptors[String(i)];
+        if (!descriptor || !descriptor.enumerable || !("value" in descriptor))
+          invalid2();
+        if (i > 0)
+          count(",");
+        result3.push(copy(descriptor.value, depth + 1));
+      }
+      active.delete(value);
+      return result3;
+    }
+    const result2 = /* @__PURE__ */ Object.create(null);
+    for (let i = 0; i < names.length; i++) {
+      const name = names[i];
+      const descriptor = descriptors[name];
+      if (!descriptor.enumerable || !("value" in descriptor))
+        invalid2();
+      if (i > 0)
+        count(",");
+      string(name);
+      count(":");
+      result2[name] = copy(descriptor.value, depth + 1);
+    }
+    active.delete(value);
+    return result2;
+  };
+  return copy(input, 0);
+}
+function references(document) {
+  let referenceCount = 0;
+  const targets = /* @__PURE__ */ new WeakMap();
+  const pointer = (ref) => {
+    if (typeof ref !== "string" || ref.length > 512 || !ref.startsWith("#/") || ref.includes("%"))
+      unsupported();
+    let current = document;
+    for (const encoded of ref.slice(2).split("/")) {
+      if (/~(?![01])/.test(encoded))
+        invalid2();
+      const part = encoded.replace(/~1/g, "/").replace(/~0/g, "~");
+      if (Array.isArray(current)) {
+        if (!/^(0|[1-9][0-9]*)$/.test(part) || !Number.isSafeInteger(Number(part)) || Number(part) >= current.length)
+          invalid2();
+        current = current[Number(part)];
+      } else {
+        if (!record3(current) || !own2(current, part))
+          invalid2();
+        current = current[part];
+      }
+    }
+    if (!record3(current))
+      invalid2();
+    return current;
+  };
+  const active = /* @__PURE__ */ new Set(), done = /* @__PURE__ */ new Set();
+  const visit = (value, depth) => {
+    if (value === null || typeof value !== "object")
+      return;
+    if (depth > OPENAPI_MAX_DEPTH)
+      limit();
+    if (active.has(value))
+      invalid2("Cyclic OpenAPI references are unsupported.");
+    if (done.has(value))
+      return;
+    active.add(value);
+    if (record3(value) && own2(value, "$ref")) {
+      if (++referenceCount > OPENAPI_MAX_REFERENCES)
+        limit();
+      if (Object.keys(value).length !== 1)
+        unsupported("OpenAPI reference siblings are unsupported.");
+      const target = pointer(value.$ref);
+      targets.set(value, target);
+      visit(target, depth + 1);
+    } else {
+      for (const child of Object.values(value))
+        visit(child, depth + 1);
+    }
+    active.delete(value);
+    done.add(value);
+  };
+  visit(document, 0);
+  return (value) => {
+    let depth = 0;
+    while (record3(value) && own2(value, "$ref")) {
+      if (++depth > OPENAPI_MAX_DEPTH)
+        limit();
+      value = targets.get(value);
+    }
+    if (!record3(value))
+      invalid2();
+    return value;
+  };
+}
+function pathParts(value) {
+  if (typeof value !== "string" || value.length > 2048 || !value.startsWith("/") || value.startsWith("//"))
+    invalid2();
+  const parts = value.slice(1).split("/");
+  for (let i = 0; i < parts.length; i++) {
+    const part = parts[i];
+    if (part === "" && i === parts.length - 1)
+      continue;
+    if (/^\{[A-Za-z][A-Za-z0-9_-]{0,63}\}$/.test(part))
+      continue;
+    if (!/^[A-Za-z0-9_.~-]+$/.test(part) || part === "." || part === "..")
+      unsupported("Only simple absolute OpenAPI path templates are supported.");
+  }
+  return parts;
+}
+function parameterName(value) {
+  if (typeof value !== "string" || value.length < 1 || value.length > 128 || /[\x00-\x20\x7f]/.test(value))
+    invalid2();
+  return value;
+}
+function parameters(path, operation, resolve12) {
+  const merged = /* @__PURE__ */ new Map();
+  for (const container of [path, operation]) {
+    if (!own2(container, "parameters"))
+      continue;
+    if (!Array.isArray(container.parameters) || container.parameters.length > OPENAPI_MAX_PARAMETERS)
+      invalid2();
+    const seen = /* @__PURE__ */ new Set();
+    for (const item of container.parameters) {
+      const parameter = resolve12(item);
+      const name = parameterName(parameter.name);
+      if (!["path", "query", "header", "cookie"].includes(parameter.in))
+        invalid2();
+      if (own2(parameter, "required") && typeof parameter.required !== "boolean")
+        invalid2();
+      const key2 = `${parameter.in}:${name}`;
+      if (seen.has(key2))
+        invalid2();
+      seen.add(key2);
+      merged.set(key2, parameter);
+    }
+  }
+  if (merged.size > OPENAPI_MAX_PARAMETERS)
+    limit();
+  return merged;
+}
+var OPENAPI_MAX_LIVE_OPERATIONS = 16;
+function selectOpenApiLiveOperations(documentInput, selections) {
+  const document = snapshot2(documentInput);
+  if (!record3(document) || typeof document.openapi !== "string" || !/^3\.(0|1)\.[0-9]+$/.test(document.openapi) || !record3(document.paths))
+    unsupported();
+  const resolve12 = references(document);
+  const documentPaths = document.paths;
+  const paths = Object.keys(documentPaths).filter((key2) => !key2.startsWith("x-"));
+  if (paths.length === 0 || paths.length > OPENAPI_MAX_PATHS)
+    limit();
+  for (const path of paths)
+    pathParts(path);
+  if (!Array.isArray(selections) || selections.length < 1 || selections.length > OPENAPI_MAX_LIVE_OPERATIONS)
+    invalid2();
+  const seen = /* @__PURE__ */ new Set();
+  const operations = selections.map((value) => {
+    if (!record3(value))
+      invalid2();
+    keys(value, ["method", "path"]);
+    if (value.method !== "GET" || typeof value.path !== "string" || !own2(documentPaths, value.path) || seen.has(value.path))
+      invalid2();
+    seen.add(value.path);
+    const pathItem = resolve12(documentPaths[value.path]);
+    if (!own2(pathItem, "get") || !record3(pathItem.get) || own2(pathItem.get, "$ref"))
+      unsupported();
+    if (own2(pathItem.get, "requestBody") || own2(pathItem.get, "callbacks"))
+      unsupported();
+    parameters(pathItem, pathItem.get, resolve12);
+    return { method: "GET", path: value.path };
+  });
+  return { document: JSON.parse(JSON.stringify(document)), operations };
+}
+
+// build/src/schemathesis.js
+import { spawn as spawn2 } from "node:child_process";
+var OUTPUT_CAP = 65536;
+function superviseWorker(executable2, args, input, signal, outputCap = OUTPUT_CAP) {
+  return new Promise((done, reject) => {
+    if (signal.aborted) {
+      reject(new Error("cancelled"));
+      return;
+    }
+    if (process.platform === "win32") {
+      reject(new Error("process_groups_unavailable"));
+      return;
+    }
+    const child = spawn2(executable2, [...args], {
+      detached: true,
+      shell: false,
+      env: { PATH: process.env.PATH ?? "" },
+      stdio: ["pipe", "pipe", "pipe"]
+    });
+    const chunks = [];
+    let size = 0, overflow = false, unavailable = false;
+    const terminate = () => {
+      if (child.pid === void 0)
+        return;
+      try {
+        process.kill(-child.pid, "SIGKILL");
+      } catch (error) {
+        if (error.code !== "ESRCH")
+          child.kill("SIGKILL");
+      }
+    };
+    signal.addEventListener("abort", terminate, { once: true });
+    if (signal.aborted)
+      terminate();
+    child.stdout.on("data", (chunk) => {
+      size += chunk.length;
+      if (size > outputCap) {
+        overflow = true;
+        terminate();
+      } else
+        chunks.push(chunk);
+    });
+    child.stderr.on("data", () => {
+    });
+    child.stdin.on("error", () => {
+    });
+    child.once("error", () => {
+      unavailable = true;
+      terminate();
+    });
+    child.once("exit", terminate);
+    child.once("close", (code) => {
+      signal.removeEventListener("abort", terminate);
+      if (unavailable) {
+        reject(new Error("worker_unavailable"));
+        return;
+      }
+      done({
+        exitCode: overflow ? -1 : code ?? -1,
+        stdout: overflow ? "" : Buffer.concat(chunks).toString("utf8")
+      });
+    });
+    child.stdin.end(input);
+  });
+}
+
+// build/src/schemathesis-live.js
+var LIVE_CHECK_ID = "api.schemathesis";
+var LIVE_OUTPUT_CAP = 256 * 1024;
+var DIGEST = /^[a-f0-9]{64}$/;
+var VERSION2 = /^\d{1,4}\.\d{1,4}\.\d{1,4}(?:[a-z]+\d{0,4})?$/;
+var KEYWORDS = /* @__PURE__ */ new Set([
+  "type",
+  "required",
+  "enum",
+  "const",
+  "format",
+  "pattern",
+  "minimum",
+  "maximum",
+  "exclusiveMinimum",
+  "exclusiveMaximum",
+  "minLength",
+  "maxLength",
+  "minItems",
+  "maxItems",
+  "uniqueItems",
+  "additionalProperties",
+  "properties",
+  "items",
+  "oneOf",
+  "anyOf",
+  "allOf",
+  "not",
+  "other"
+]);
+var SCOPE_NOTE2 = "Schemathesis live mode generates bounded GET inputs for the explicitly selected OpenAPI operations against one consented origin; it does not send writes, credentials, or follow redirects, and it does not establish whole-API coverage.";
+function record4(value) {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+function invalid3() {
+  throw new Error("invalid_worker_output");
+}
+function bounded(value, fallback, cap) {
+  const result2 = value ?? fallback;
+  if (!Number.isSafeInteger(result2) || result2 < 1 || result2 > cap)
+    throw new RangeError("invalid budget");
+  return result2;
+}
+function projectLiveResult(raw, labels, maxRequests) {
+  if (typeof raw !== "string" || Buffer.byteLength(raw) > LIVE_OUTPUT_CAP)
+    return invalid3();
+  const r = JSON.parse(raw);
+  if (!record4(r) || r.version !== 2)
+    return invalid3();
+  const reasons = ["complete", "request_limit", "body_limit", "timeout", "transport_error"];
+  if (typeof r.reason !== "string" || !reasons.includes(r.reason) || r.status !== (r.reason === "complete" ? "completed" : "partial"))
+    return invalid3();
+  for (const key2 of ["requestCount", "bytesInspected", "transportErrors"]) {
+    if (!Number.isSafeInteger(r[key2]) || Number(r[key2]) < 0)
+      return invalid3();
+  }
+  if (Number(r.requestCount) > maxRequests || r.status === "completed" && Number(r.requestCount) < 1)
+    return invalid3();
+  if (r.engineVersion !== "4.2.0" || typeof r.workerSha256 !== "string" || !DIGEST.test(r.workerSha256) || !record4(r.runtime))
+    return invalid3();
+  const runtime = {};
+  for (const key2 of ["python", "hypothesis", "jsonschema", "requests"]) {
+    const value = r.runtime[key2];
+    if (typeof value !== "string" || !VERSION2.test(value))
+      return invalid3();
+    runtime[key2] = value;
+  }
+  if (!Array.isArray(r.operations) || r.operations.length > labels.size)
+    return invalid3();
+  const operations = r.operations.map((value) => {
+    if (!record4(value) || typeof value.operation !== "string" || !labels.has(value.operation) || !Number.isSafeInteger(value.requests) || Number(value.requests) < 0)
+      return invalid3();
+    return { operation: value.operation, requests: Number(value.requests) };
+  });
+  if (operations.reduce((sum, item) => sum + item.requests, 0) !== Number(r.requestCount))
+    return invalid3();
+  if (!Array.isArray(r.records) || r.records.length > Number(r.requestCount))
+    return invalid3();
+  if (r.status === "completed" && r.records.length !== r.requestCount)
+    return invalid3();
+  const records = r.records.map((value, index) => {
+    if (!record4(value) || typeof value.operation !== "string" || !labels.has(value.operation) || value.ordinal !== index + 1 || !Number.isSafeInteger(value.status) || Number(value.status) < 100 || Number(value.status) > 599 || value.check !== "passed" && value.check !== "response_contract" || typeof value.inputFingerprint !== "string" || !DIGEST.test(value.inputFingerprint) || !Array.isArray(value.failures) || value.failures.length > 4 || value.check === "passed" !== (value.failures.length === 0))
+      return invalid3();
+    const failures = value.failures.map((failure) => {
+      if (!record4(failure))
+        return invalid3();
+      if (failure.rule === "not_a_server_error" && failure.kind === "server_error")
+        return { rule: failure.rule, kind: failure.kind };
+      if (failure.rule === "response_schema_conformance" && (failure.kind === "malformed_json" || failure.kind === "unclassified"))
+        return { rule: failure.rule, kind: failure.kind };
+      if (failure.rule === "response_schema_conformance" && failure.kind === "schema_violation" && typeof failure.keyword === "string" && KEYWORDS.has(failure.keyword)) {
+        return { rule: failure.rule, kind: failure.kind, keyword: failure.keyword };
+      }
+      return invalid3();
+    });
+    if (failures.some((failure) => failure.rule === "not_a_server_error") !== Number(value.status) >= 500)
+      return invalid3();
+    return { operation: value.operation, ordinal: index + 1, status: Number(value.status), check: value.check, inputFingerprint: value.inputFingerprint, failures };
+  });
+  return {
+    status: r.status,
+    reason: r.reason,
+    requestCount: Number(r.requestCount),
+    bytesInspected: Number(r.bytesInspected),
+    transportErrors: Number(r.transportErrors),
+    operations,
+    workerSha256: r.workerSha256,
+    engineVersion: "4.2.0",
+    runtime,
+    records
+  };
+}
+function findingsFor(result2, origin) {
+  const groups = /* @__PURE__ */ new Map();
+  for (const item of result2.records) {
+    for (const failure of item.failures) {
+      const key2 = `${item.operation}\0${failure.rule}\0${failure.kind}\0${failure.keyword ?? ""}`;
+      const group = groups.get(key2) ?? { operation: item.operation, failure, count: 0 };
+      group.count += 1;
+      groups.set(key2, group);
+    }
+  }
+  return [...groups.values()].map(({ operation, failure, count }) => {
+    const path = operation.slice("GET ".length);
+    const server2 = failure.rule === "not_a_server_error";
+    const detail = failure.kind === "schema_violation" ? ` (schema keyword: ${failure.keyword})` : failure.kind === "malformed_json" ? " (malformed JSON)" : "";
+    return {
+      ruleId: server2 ? "api.schemathesis.server_error" : "api.schemathesis.response_schema",
+      title: server2 ? "Generated request caused a server error" : "Response did not conform to the OpenAPI schema",
+      description: `${operation}: ${count} generated request(s) failed ${failure.rule}${detail}. Response bodies and generated values are not retained; only input fingerprints are recorded.`,
+      severity: server2 ? "medium" : "low",
+      confidence: "high",
+      kind: "observation",
+      location: { url: `${origin}${path.replace(/^\//, "")}` },
+      remediation: server2 ? "Handle invalid or unexpected inputs without a 5xx response, then rerun the same operation selection and seed." : "Align the response with the documented schema (or correct the schema), then rerun the same operation selection and seed.",
+      references: ["https://schemathesis.readthedocs.io/en/stable/"]
+    };
+  });
+}
+function errorCheck4(code, message, extra = {}) {
+  return [{ id: LIVE_CHECK_ID, status: "error", findings: [], notes: [SCOPE_NOTE2, message], metrics: { requestCount: 0, errorCode: code, ...extra } }];
+}
+async function runSchemathesisLive(options) {
+  if (!record4(options) || options.consent !== true)
+    return errorCheck4("consent_required", "Active API testing requires explicit consent; no requests were made.");
+  let maxRequests, timeoutMs, maxBodyBytes, maxTotalBytes, seed;
+  try {
+    maxRequests = bounded(options.maxRequests, 32, API_MAX_REQUESTS);
+    timeoutMs = bounded(options.timeoutMs, API_DEFAULT_TIMEOUT_MS * 2, API_MAX_TIMEOUT_MS);
+    maxBodyBytes = bounded(options.maxBodyBytes, API_MAX_SINGLE_BODY_BYTES, API_MAX_SINGLE_BODY_BYTES);
+    maxTotalBytes = bounded(options.maxTotalBytes, API_MAX_TOTAL_BODY_BYTES, API_MAX_TOTAL_BODY_BYTES);
+    seed = bounded(options.seed, 1, 2147483647);
+  } catch {
+    return errorCheck4("invalid_budget", "Schemathesis live budgets are invalid; no requests were made.");
+  }
+  let selection;
+  try {
+    selection = selectOpenApiLiveOperations(options.document, options.operations);
+  } catch (error) {
+    return errorCheck4(error instanceof OpenApiPolicyError ? error.code : "invalid_openapi", "The OpenAPI document or operation allowlist was rejected before any request.");
+  }
+  const schemaBytes = Buffer.from(JSON.stringify(selection.document));
+  const schemaSha256 = createHash7("sha256").update(schemaBytes).digest("hex");
+  const script = fileURLToPath(new URL("../../workers/schemathesis/worker.py", import.meta.url));
+  const expectedWorkerSha256 = createHash7("sha256").update(await readFile2(script)).digest("hex");
+  const control = createApiRunControl(timeoutMs, options.signal);
+  const engine = new AbortController();
+  const stopEngine = () => engine.abort();
+  control.signal.addEventListener("abort", stopEngine, { once: true });
+  let gate;
+  let target;
+  try {
+    let resolved;
+    try {
+      resolved = await resolveDastOrigin(options.baseUrl, options.allowPrivate === true, control.signal);
+    } catch (error) {
+      const code = error instanceof UrlNetworkError ? error.code : "dast_origin_required";
+      return errorCheck4(code, "The API origin was rejected by the URL-network policy (origin only; metadata/private rules apply); no requests were made.");
+    }
+    target = safeUrl(resolved.origin);
+    if (control.signal.aborted) {
+      return [{ id: LIVE_CHECK_ID, status: "partial", findings: [], notes: [SCOPE_NOTE2, "Cancelled before any request was sent."], metrics: { requestCount: 0, stopReason: options.signal?.aborted ? "cancelled" : "timeout" } }];
+    }
+    gate = await startEgressGate({
+      origin: resolved.origin,
+      address: resolved.address,
+      methods: /* @__PURE__ */ new Set(["GET", "HEAD"]),
+      maxRequests,
+      maxSingleBodyBytes: maxBodyBytes,
+      maxTotalBytes,
+      signal: control.signal,
+      deadlineAt: control.deadlineAt
+    });
+    gate.onStop(stopEngine);
+    const labels = new Set(selection.operations.map((item) => `GET ${item.path}`));
+    const job = {
+      version: 2,
+      mode: "live",
+      proxy: gate.proxyUrl,
+      baseUrl: resolved.origin.href,
+      schema: selection.document,
+      operations: selection.operations,
+      maxRequests,
+      timeoutMs,
+      maxBodyBytes,
+      maxTotalBytes,
+      seed
+    };
+    let result2;
+    let failure;
+    try {
+      const output = await superviseWorker(options.python ?? "python3", ["-I", script], JSON.stringify(job), engine.signal, LIVE_OUTPUT_CAP);
+      if (output.exitCode !== 0)
+        failure = "worker_failed";
+      else {
+        result2 = projectLiveResult(output.stdout, labels, maxRequests);
+        if (result2.workerSha256 !== expectedWorkerSha256) {
+          result2 = void 0;
+          failure = "worker_digest_mismatch";
+        }
+      }
+    } catch {
+      failure = "worker_unavailable";
+    }
+    const counters = { ...gate.counters };
+    const stop = gate.stopReason();
+    const interrupted = control.signal.aborted;
+    const metrics = {
+      requestCount: result2?.requestCount ?? counters.forwarded,
+      gateForwarded: counters.forwarded,
+      gateTunnels: counters.tunnels,
+      skippedByBudget: counters.blockedBudget,
+      blockedOrigin: counters.blockedOrigin,
+      blockedMethod: counters.blockedMethod,
+      upstreamErrors: counters.upstreamErrors,
+      rejectedEncoding: counters.rejectedEncoding,
+      responseBytes: counters.responseBytes,
+      maxRequests,
+      operationsSelected: selection.operations.length,
+      seed,
+      schemaSha256,
+      workerSha256: expectedWorkerSha256,
+      engine: "schemathesis",
+      engineVersion: "4.2.0"
+    };
+    if (!result2) {
+      if (!interrupted && !stop && (failure === "worker_unavailable" || failure === "worker_failed")) {
+        return [{ id: LIVE_CHECK_ID, status: "error", findings: [], notes: [SCOPE_NOTE2, "The Schemathesis engine was unavailable or failed; Python 3.12 with workers/schemathesis/requirements.lock.txt is required."], metrics: { ...metrics, errorCode: failure } }];
+      }
+      return [{ id: LIVE_CHECK_ID, status: "partial", findings: [], notes: [SCOPE_NOTE2, `Execution stopped before a trustworthy engine result (${stop ?? (options.signal?.aborted ? "cancelled" : interrupted ? "timeout" : failure)}). Counts are gate observations only.`], metrics: { ...metrics, stopReason: stop ?? (options.signal?.aborted ? "cancelled" : interrupted ? "timeout" : failure ?? "unknown") } }];
+    }
+    for (const operation of result2.operations)
+      metrics[`requests:${operation.operation}`] = operation.requests;
+    metrics.operationsExercised = result2.operations.filter((item) => item.requests > 0).length;
+    metrics.transportErrors = result2.transportErrors;
+    metrics.bytesInspected = result2.bytesInspected;
+    metrics.python = result2.runtime.python;
+    metrics.hypothesis = result2.runtime.hypothesis;
+    const incomplete = result2.status !== "completed" || stop !== void 0 || counters.upstreamErrors > 0 || counters.rejectedEncoding > 0 || counters.blockedOrigin > 0 || counters.blockedMethod > 0 || interrupted;
+    const reason = stop ?? (result2.reason !== "complete" ? result2.reason : counters.upstreamErrors > 0 ? "upstream_error" : counters.rejectedEncoding > 0 ? "rejected_encoding" : counters.blockedOrigin + counters.blockedMethod > 0 ? "egress_refused" : interrupted ? "timeout" : "complete");
+    metrics.stopReason = reason;
+    const notes = [
+      SCOPE_NOTE2,
+      `Target ${target}; ${result2.requestCount} generated request(s) across ${metrics.operationsExercised}/${selection.operations.length} selected operation(s); ${counters.blockedBudget} refused by the request budget.`,
+      "Reproduce with the same schema digest, operation selection and seed; Hypothesis generation may still vary across engine versions."
+    ];
+    if (incomplete)
+      notes.push(`Incomplete: ${reason}. Treat absent findings as unverified.`);
+    return [{ id: LIVE_CHECK_ID, status: incomplete ? "partial" : "completed", findings: findingsFor(result2, target), notes, metrics }];
+  } finally {
+    control.signal.removeEventListener("abort", stopEngine);
+    control.dispose();
+    await gate?.close();
+  }
+}
+
+// build/src/nuclei.js
+import { createHash as createHash8 } from "node:crypto";
+import { lstat as lstat10, mkdtemp as mkdtemp4, readdir as readdir5, readFile as readFile3, realpath as realpath4, rm as rm4, writeFile as writeFile7 } from "node:fs/promises";
+import { tmpdir as tmpdir4 } from "node:os";
+import { join as join10 } from "node:path";
+var NUCLEI_CHECK_ID = "url.nuclei";
+var NUCLEI_VERSION = "3.11.1";
+var NUCLEI_SCOPES = Object.freeze({ misconfiguration: "http/misconfiguration", exposures: "http/exposures" });
+var NUCLEI_DEFAULT_MAX_REQUESTS = 6e3;
+var NUCLEI_MAX_REQUESTS = 2e4;
+var NUCLEI_DEFAULT_RATE_LIMIT = 50;
+var NUCLEI_MAX_RATE_LIMIT = 150;
+var NUCLEI_MAX_SINGLE_BODY_BYTES = 2 * 1024 * 1024;
+var NUCLEI_MAX_TOTAL_BYTES = 64 * 1024 * 1024;
+var MAX_TEMPLATE_FILES = 1e4;
+var MAX_TEMPLATE_BYTES = 256 * 1024;
+var SCOPE_NOTE3 = "Nuclei runs only signed HTTP GET/HEAD templates from the selected local template scopes against one consented origin through the egress gate; raw/unsafe, non-GET, self-contained and other-protocol templates are excluded, and no interactsh, update check, redirect following or template download occurs.";
+var PROTOCOL_KEYS = /^(?:dns|file|network|tcp|headless|ssl|websocket|whois|code|javascript|workflows|flow):/m;
+var RAW_KEYS = /^\s*-?\s*(?:raw|unsafe|race|race_count|pipeline)\s*:/m;
+var METHOD = /^\s*-?\s*method\s*:\s*["']?([A-Za-z]+)/gm;
+var SIGNATURE = /^# digest: [0-9a-f]{32,}:[0-9a-f]{32}\s*$/m;
+function classifyTemplate(text2) {
+  if (!SIGNATURE.test(text2))
+    return "unsigned";
+  if (PROTOCOL_KEYS.test(text2) || !/^http:/m.test(text2))
+    return "protocol";
+  if (/^\s*self-contained\s*:\s*true/m.test(text2))
+    return "selfContained";
+  if (RAW_KEYS.test(text2))
+    return "rawOrUnsafe";
+  for (const match of text2.matchAll(METHOD)) {
+    if (!["GET", "HEAD"].includes(match[1].toUpperCase()))
+      return "method";
+  }
+  return "selected";
+}
+async function selectNucleiTemplates(templatesRoot, scopes) {
+  const result2 = { selected: [], excluded: { rawOrUnsafe: 0, method: 0, unsigned: 0, protocol: 0, selfContained: 0, unreadable: 0 }, truncated: false };
+  let visited = 0;
+  const walk = async (directory) => {
+    const entries = (await readdir5(directory, { withFileTypes: true })).sort((a, b) => a.name.localeCompare(b.name));
+    for (const entry of entries) {
+      if (visited >= MAX_TEMPLATE_FILES) {
+        result2.truncated = true;
+        return;
+      }
+      const path = join10(directory, entry.name);
+      if (entry.isSymbolicLink()) {
+        result2.excluded.unreadable += 1;
+        continue;
+      }
+      if (entry.isDirectory()) {
+        await walk(path);
+        continue;
+      }
+      if (!entry.isFile() || !/\.ya?ml$/i.test(entry.name))
+        continue;
+      visited += 1;
+      const stats = await lstat10(path);
+      if (!stats.isFile() || stats.size > MAX_TEMPLATE_BYTES) {
+        result2.excluded.unreadable += 1;
+        continue;
+      }
+      const verdict = classifyTemplate(await readFile3(path, "utf8"));
+      if (verdict === "selected")
+        result2.selected.push(path);
+      else
+        result2.excluded[verdict] += 1;
+    }
+  };
+  for (const scope of scopes) {
+    const directory = join10(templatesRoot, ...NUCLEI_SCOPES[scope].split("/"));
+    const stats = await lstat10(directory).catch(() => void 0);
+    if (!stats?.isDirectory() || stats.isSymbolicLink())
+      throw new Error("template_scope_missing");
+    await walk(directory);
+  }
+  return result2;
+}
+async function templateProvenance(root) {
+  const checksum = await readFile3(join10(root, "templates-checksum.txt")).catch(() => void 0);
+  let version = "unknown";
+  const home = process.env.HOME;
+  const candidates = [
+    join10(root, ".templates-config.json"),
+    ...home ? [
+      join10(home, "Library", "Application Support", "nuclei", ".templates-config.json"),
+      join10(process.env.XDG_CONFIG_HOME ?? join10(home, ".config"), "nuclei", ".templates-config.json")
+    ] : []
+  ];
+  for (const candidate of candidates) {
+    try {
+      const config = JSON.parse(await readFile3(candidate, "utf8"));
+      const directory = config["nuclei-templates-directory"];
+      if (candidate !== candidates[0] && (typeof directory !== "string" || await realpath4(directory).catch(() => "") !== root))
+        continue;
+      const value = config["nuclei-templates-version"];
+      if (typeof value === "string" && /^v?\d{1,4}\.\d{1,4}\.\d{1,4}$/.test(value)) {
+        version = value;
+        break;
+      }
+    } catch {
+    }
+  }
+  return { templatesChecksumSha256: checksum ? createHash8("sha256").update(checksum).digest("hex") : "unknown", templatesVersion: version };
+}
+var SEVERITIES2 = { info: "info", low: "low", medium: "medium", high: "high", critical: "critical" };
+var IDENTIFIER = /^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$/;
+function cleanText2(value, max) {
+  if (typeof value !== "string")
+    return void 0;
+  const text2 = value.replace(/[\u0000-\u001f\u007f]/g, " ").trim();
+  return text2 ? text2.slice(0, max) : void 0;
+}
+function parseNucleiOutput(stdout, stderr, origin) {
+  const findings = /* @__PURE__ */ new Map();
+  let dropped = 0, malformed = 0;
+  let stats;
+  for (const line of `${stdout}
+${stderr}`.split("\n")) {
+    if (!line.startsWith("{"))
+      continue;
+    let value;
+    try {
+      value = JSON.parse(line);
+    } catch {
+      malformed += 1;
+      continue;
+    }
+    if ("percent" in value && "requests" in value) {
+      const number = (key3) => Number.parseInt(String(value[key3] ?? ""), 10);
+      const parsed = { percent: number("percent"), requests: number("requests"), total: number("total"), errors: number("errors"), templates: number("templates"), matched: number("matched") };
+      if (Object.values(parsed).every((item) => Number.isSafeInteger(item) && item >= 0))
+        stats = parsed;
+      else
+        malformed += 1;
+      continue;
+    }
+    if (!("template-id" in value))
+      continue;
+    const templateId = value["template-id"];
+    const info = value.info && typeof value.info === "object" ? value.info : {};
+    const matcher = value["matcher-name"];
+    const matchedAt = value["matched-at"];
+    if (typeof templateId !== "string" || !IDENTIFIER.test(templateId) || matcher !== void 0 && (typeof matcher !== "string" || !IDENTIFIER.test(matcher)) || typeof matchedAt !== "string") {
+      malformed += 1;
+      continue;
+    }
+    let location2;
+    try {
+      const normalized = normalizeUrl(matchedAt);
+      if (normalized.origin !== origin) {
+        dropped += 1;
+        continue;
+      }
+      location2 = safeUrl(normalized);
+    } catch {
+      dropped += 1;
+      continue;
+    }
+    const severity = SEVERITIES2[String(info.severity ?? "").toLowerCase()] ?? "info";
+    const name = cleanText2(info.name, 160) ?? templateId;
+    const references2 = (Array.isArray(info.reference) ? info.reference : typeof info.reference === "string" ? [info.reference] : []).filter((item) => typeof item === "string" && /^https:\/\/[^\s]{1,300}$/.test(item)).slice(0, 3);
+    const key2 = `${templateId}\0${matcher ?? ""}\0${location2}`;
+    if (findings.has(key2))
+      continue;
+    findings.set(key2, {
+      // Matcher names distinguish results of one template at one location (e.g. each missing header).
+      ruleId: `nuclei.${templateId}${matcher ? `.${matcher}` : ""}`,
+      title: name,
+      description: `Nuclei template ${templateId}${matcher ? ` (matcher ${matcher})` : ""} matched the response. Template output, extracted values and raw request/response data are not retained.`,
+      severity,
+      confidence: "medium",
+      kind: "observation",
+      location: { url: location2 },
+      remediation: "Confirm the matched exposure or misconfiguration on the consented target, fix it, and rerun the same template scope and template digest.",
+      ...references2.length ? { references: references2 } : {}
+    });
+  }
+  return { findings: [...findings.values()], droppedOutOfOrigin: dropped, malformed, ...stats ? { stats } : {} };
+}
+function errorCheck5(code, message, metrics = {}) {
+  return [{ id: NUCLEI_CHECK_ID, status: "error", findings: [], notes: [SCOPE_NOTE3, message], metrics: { requestCount: 0, errorCode: code, ...metrics } }];
+}
+function bounded2(value, fallback, cap) {
+  const result2 = value ?? fallback;
+  if (!Number.isSafeInteger(result2) || result2 < 1 || result2 > cap)
+    throw new RangeError("invalid budget");
+  return result2;
+}
+async function runNuclei(options) {
+  if (!options || options.consent !== true)
+    return errorCheck5("consent_required", "Active Nuclei testing requires explicit consent; no requests were made.");
+  let maxRequests, rateLimit, timeoutMs;
+  try {
+    maxRequests = bounded2(options.maxRequests, NUCLEI_DEFAULT_MAX_REQUESTS, NUCLEI_MAX_REQUESTS);
+    rateLimit = bounded2(options.rateLimit, NUCLEI_DEFAULT_RATE_LIMIT, NUCLEI_MAX_RATE_LIMIT);
+    timeoutMs = bounded2(options.timeoutMs, 3e5, MAX_TOOL_TIMEOUT_MS);
+  } catch {
+    return errorCheck5("invalid_budget", "Nuclei budgets are invalid; no requests were made.");
+  }
+  const scopes = [...new Set(options.scopes)];
+  if (scopes.length === 0 || scopes.some((scope) => !(scope in NUCLEI_SCOPES)))
+    return errorCheck5("invalid_scope", "Nuclei template scope is invalid; no requests were made.");
+  const executable2 = await findExecutable(options.executable ?? "nuclei");
+  if (!executable2)
+    return errorCheck5("engine_missing", `Nuclei ${NUCLEI_VERSION} was not found; install it with scripts/install-tools.mjs --tools nuclei or pass --nuclei. No requests were made.`);
+  let templatesRoot;
+  try {
+    templatesRoot = await realpath4(options.templatesDir);
+    if (!(await lstat10(templatesRoot)).isDirectory())
+      throw new Error("not_directory");
+  } catch {
+    return errorCheck5("templates_missing", "The prepared nuclei-templates directory could not be read; templates are never downloaded during a scan. No requests were made.");
+  }
+  const work = await mkdtemp4(join10(tmpdir4(), "wakeio-nuclei-"));
+  const control = createApiRunControl(timeoutMs, options.signal, MAX_TOOL_TIMEOUT_MS);
+  const engine = new AbortController();
+  const stopEngine = () => engine.abort();
+  control.signal.addEventListener("abort", stopEngine, { once: true });
+  let gate;
+  try {
+    const version = await runProcess(executable2, ["-version", "-duc", "-nc"], { cwd: work, home: work, timeoutMs: 3e4, signal: engine.signal });
+    if (!`${version.stdout}
+${version.stderr}`.includes(`Nuclei Engine Version: v${NUCLEI_VERSION}`)) {
+      return errorCheck5("unsupported_engine_version", `This adapter is verified only with Nuclei ${NUCLEI_VERSION}; no requests were made.`);
+    }
+    let selection;
+    try {
+      selection = await selectNucleiTemplates(templatesRoot, scopes);
+    } catch {
+      return errorCheck5("template_scope_missing", "A selected template scope is missing from the prepared templates directory; no requests were made.");
+    }
+    if (selection.selected.length === 0)
+      return errorCheck5("no_templates", "No templates remained after the safety filter; no requests were made.");
+    const provenance = await templateProvenance(templatesRoot);
+    let resolved;
+    try {
+      resolved = await resolveDastOrigin(options.url, options.allowPrivate === true, control.signal);
+    } catch (error) {
+      return errorCheck5(error instanceof UrlNetworkError ? error.code : "dast_origin_required", "The target origin was rejected by the URL-network policy (origin only; metadata/private rules apply); no requests were made.");
+    }
+    gate = await startEgressGate({
+      origin: resolved.origin,
+      address: resolved.address,
+      methods: /* @__PURE__ */ new Set(["GET", "HEAD"]),
+      maxRequests,
+      maxSingleBodyBytes: NUCLEI_MAX_SINGLE_BODY_BYTES,
+      maxTotalBytes: NUCLEI_MAX_TOTAL_BYTES,
+      signal: control.signal,
+      deadlineAt: control.deadlineAt
+    });
+    gate.onStop(stopEngine);
+    const list = join10(work, "templates.txt");
+    await writeFile7(list, `${selection.selected.join("\n")}
+`, { mode: 384 });
+    const args = [
+      "-u",
+      resolved.origin.href,
+      "-t",
+      list,
+      "-ud",
+      templatesRoot,
+      "-pt",
+      "http",
+      "-dut",
+      "-ni",
+      "-duc",
+      "-dr",
+      "-nc",
+      "-jsonl",
+      "-or",
+      "-ot",
+      "-silent",
+      "-stats",
+      "-sj",
+      "-si",
+      "1",
+      "-retries",
+      "0",
+      "-timeout",
+      "10",
+      "-rl",
+      String(rateLimit),
+      "-c",
+      "10",
+      "-bs",
+      "1",
+      "-proxy",
+      gate.proxyUrl
+    ];
+    const started = Date.now();
+    const run = await runProcess(executable2, args, { cwd: work, home: work, timeoutMs, signal: engine.signal });
+    const parsed = parseNucleiOutput(run.stdout, run.stderr, resolved.origin.origin);
+    const counters = { ...gate.counters };
+    const stop = gate.stopReason();
+    const stats = parsed.stats;
+    const relativeScopes = scopes.map((scope) => NUCLEI_SCOPES[scope]).join(",");
+    const metrics = {
+      engine: "nuclei",
+      engineVersion: NUCLEI_VERSION,
+      scopes: relativeScopes,
+      templatesSelected: selection.selected.length,
+      templatesExcludedRawOrUnsafe: selection.excluded.rawOrUnsafe,
+      templatesExcludedMethod: selection.excluded.method,
+      templatesExcludedUnsigned: selection.excluded.unsigned,
+      templatesExcludedProtocol: selection.excluded.protocol,
+      templatesExcludedSelfContained: selection.excluded.selfContained,
+      templatesUnreadable: selection.excluded.unreadable,
+      templatesVersion: provenance.templatesVersion,
+      templatesChecksumSha256: provenance.templatesChecksumSha256,
+      requestCount: counters.forwarded,
+      gateTunnels: counters.tunnels,
+      skippedByBudget: counters.blockedBudget,
+      blockedOrigin: counters.blockedOrigin,
+      blockedMethod: counters.blockedMethod,
+      upstreamErrors: counters.upstreamErrors,
+      rejectedEncoding: counters.rejectedEncoding,
+      responseBytes: counters.responseBytes,
+      maxRequests,
+      rateLimit,
+      durationMs: Date.now() - started,
+      droppedOutOfOriginResults: parsed.droppedOutOfOrigin,
+      malformedEngineLines: parsed.malformed,
+      ...stats ? { enginePercent: stats.percent, enginePlannedRequests: stats.total, engineRequests: stats.requests, engineErrors: stats.errors, engineTemplatesLoaded: stats.templates } : {}
+    };
+    if (run.spawnError)
+      return errorCheck5("engine_spawn_failed", "Nuclei could not be started.", metrics);
+    const cancelled = options.signal?.aborted === true;
+    const reason = stop ?? (cancelled ? "cancelled" : run.timedOut || control.signal.aborted ? "timeout" : run.outputLimitExceeded ? "output_limit" : run.exitCode !== 0 ? "engine_exit" : !stats ? "stats_missing" : stats.percent < 100 ? "engine_incomplete" : stats.errors > 0 ? "engine_errors" : counters.upstreamErrors > 0 ? "upstream_error" : counters.rejectedEncoding > 0 ? "rejected_encoding" : selection.truncated ? "template_scan_truncated" : parsed.malformed > 0 ? "malformed_engine_output" : "complete");
+    metrics.stopReason = reason;
+    const notes = [
+      SCOPE_NOTE3,
+      `Target ${safeUrl(resolved.origin)}; ${counters.forwarded} request(s) forwarded, ${counters.blockedBudget} refused by the request budget, ${counters.blockedOrigin} refused for leaving the origin; ${selection.selected.length} template(s) selected from ${relativeScopes}.`,
+      `Templates ${provenance.templatesVersion} (templates-checksum.txt sha256 ${provenance.templatesChecksumSha256.slice(0, 16)}\u2026); Nuclei ${NUCLEI_VERSION}.`
+    ];
+    if (resolved.origin.protocol === "https:")
+      notes.push("HTTPS: the gate sees CONNECT tunnels only, so the request budget is not enforced on the wire for Nuclei; time and byte budgets still apply, and Nuclei does not verify TLS certificates.");
+    if (reason !== "complete")
+      notes.push(`Incomplete: ${reason}. Nuclei exit status alone does not establish completion; treat absent findings as unverified.`);
+    return [{ id: NUCLEI_CHECK_ID, status: reason === "complete" ? "completed" : "partial", findings: parsed.findings, notes, metrics }];
+  } finally {
+    control.signal.removeEventListener("abort", stopEngine);
+    control.dispose();
+    await gate?.close();
+    await rm4(work, { recursive: true, force: true }).catch(() => void 0);
+  }
+}
+
 // build/src/cli.js
 var SEVERITY_VALUES = /* @__PURE__ */ new Set(["critical", "high", "medium", "low", "info", "none"]);
 var TOOL_VALUES = /* @__PURE__ */ new Set(["gitleaks", "osv", "trivy", "bandit"]);
@@ -233870,6 +235185,8 @@ var USAGE = `Usage:
   wakeio-security-ci scan --url URL [options]
   wakeio-security-ci scan --source DIR --url URL [options]
   wakeio-security-ci scan --api-policy policy.json [options]
+  wakeio-security-ci scan --openapi openapi.json --api-base URL --operation PATH --active-consent [options]
+  wakeio-security-ci scan --url URL --engine nuclei --nuclei-templates DIR --active-consent [options]
   wakeio-security-ci compare --before report.json --after report.json --out DIR [--fail-on LEVEL]
   wakeio-security-ci doctor [--source DIR] [--tools ...] [--json] [--strict]
   wakeio-security-ci init [--source DIR] [--workflow FILE] [--out DIR] [--tools ...]
@@ -233895,6 +235212,21 @@ Options:
   --trivy PATH                 Trivy executable
   --bandit PATH                Bandit executable
   --opengrep-core ABS_PATH     Explicit pinned Darwin arm64 native preview (BYO)
+
+Active DAST (off by default; sends generated or template requests to the target):
+  --active-consent             Required: you own or are authorized to test the target
+  --openapi FILE               Local OpenAPI 3.0/3.1 JSON (same-document $ref only)
+  --api-base URL               Target origin for --openapi (servers are never used)
+  --operation PATH             Documented GET path to test (repeatable, 1..16)
+  --api-max-requests N         Schemathesis request budget, 1..64 (default 32)
+  --seed N                     Hypothesis seed (default 1)
+  --schemathesis-python PATH   Python with workers/schemathesis/requirements.lock.txt
+  --engine nuclei              Run pinned Nuclei 3.11.1 against the --url origin
+  --nuclei PATH                Nuclei executable (default: PATH lookup)
+  --nuclei-templates DIR       Prepared nuclei-templates directory (never downloaded)
+  --nuclei-scope LIST          misconfiguration,exposures (default: misconfiguration)
+  --nuclei-max-requests N      Gate request budget, 1..20000 (default 6000)
+  --nuclei-rate-limit N        Requests per second, 1..150 (default 50)
   --help                       Show this help
 `;
 function valueAfter(args, index, flag) {
@@ -233920,6 +235252,14 @@ function parsePositiveTimeout(value) {
     throw new CliUsageError(`--timeout-ms must be between 1 and ${MAX_TOOL_TIMEOUT_MS}`);
   return parsed;
 }
+function parseBoundedInteger(flag, value, max) {
+  if (!/^\d+$/.test(value))
+    throw new CliUsageError(`${flag} must be a positive integer`);
+  const parsed = Number(value);
+  if (!Number.isSafeInteger(parsed) || parsed < 1 || parsed > max)
+    throw new CliUsageError(`${flag} must be between 1 and ${max}`);
+  return parsed;
+}
 function parsePageLimit(value) {
   if (!/^\d+$/.test(value))
     throw new CliUsageError("--max-pages must be a positive integer");
@@ -233942,7 +235282,11 @@ function parseCliArgs(argv) {
     allowPrivate: false,
     timeoutMs: DEFAULT_TOOL_TIMEOUT_MS,
     osvOffline: false,
-    toolPaths: {}
+    toolPaths: {},
+    activeConsent: false,
+    operations: [],
+    engines: [],
+    nucleiScopes: []
   };
   const seen = /* @__PURE__ */ new Set();
   let help = false;
@@ -234028,6 +235372,52 @@ function parseCliArgs(argv) {
       if (!isAbsolute8(value) || value.includes("\0"))
         throw new CliUsageError("--opengrep-core requires an absolute executable path");
       options.nativePreview = { executable: value };
+    } else if ((value = valueFlag("--openapi")) !== void 0)
+      options.openapi = value;
+    else if ((value = valueFlag("--api-base")) !== void 0)
+      options.apiBase = value;
+    else if (arg === "--operation" || arg.startsWith("--operation=")) {
+      let operation;
+      if (arg === "--operation") {
+        const result2 = valueAfter(args, index, "--operation");
+        operation = result2[0];
+        index = result2[1];
+      } else
+        operation = arg.slice("--operation=".length);
+      if (!operation.startsWith("/") || operation.length > 2048)
+        throw new CliUsageError("--operation must be a documented absolute OpenAPI path");
+      if (options.operations.length >= 16)
+        throw new CliUsageError("--operation may be specified at most 16 times");
+      options.operations.push(operation);
+    } else if ((value = valueFlag("--api-max-requests")) !== void 0)
+      options.apiMaxRequests = parseBoundedInteger("--api-max-requests", value, API_MAX_REQUESTS);
+    else if ((value = valueFlag("--seed")) !== void 0)
+      options.seed = parseBoundedInteger("--seed", value, 2147483647);
+    else if ((value = valueFlag("--schemathesis-python")) !== void 0)
+      options.schemathesisPython = value;
+    else if ((value = valueFlag("--engine")) !== void 0) {
+      const engines = value.split(",").map((part) => part.trim()).filter(Boolean);
+      if (engines.length === 0 || engines.some((engine) => engine !== "nuclei") || new Set(engines).size !== engines.length)
+        throw new CliUsageError("--engine must be nuclei");
+      options.engines = engines;
+    } else if ((value = valueFlag("--nuclei")) !== void 0)
+      options.nucleiPath = value;
+    else if ((value = valueFlag("--nuclei-templates")) !== void 0)
+      options.nucleiTemplates = value;
+    else if ((value = valueFlag("--nuclei-scope")) !== void 0) {
+      const scopes = value.split(",").map((part) => part.trim()).filter(Boolean);
+      if (scopes.length === 0 || scopes.some((scope) => !(scope in NUCLEI_SCOPES)) || new Set(scopes).size !== scopes.length)
+        throw new CliUsageError("--nuclei-scope must be a comma-separated list of misconfiguration, exposures");
+      options.nucleiScopes = scopes;
+    } else if ((value = valueFlag("--nuclei-max-requests")) !== void 0)
+      options.nucleiMaxRequests = parseBoundedInteger("--nuclei-max-requests", value, NUCLEI_MAX_REQUESTS);
+    else if ((value = valueFlag("--nuclei-rate-limit")) !== void 0)
+      options.nucleiRateLimit = parseBoundedInteger("--nuclei-rate-limit", value, NUCLEI_MAX_RATE_LIMIT);
+    else if (arg === "--active-consent") {
+      if (seen.has(arg))
+        throw new CliUsageError(`${arg} may only be specified once`);
+      seen.add(arg);
+      options.activeConsent = true;
     } else if (arg === "--allow-private") {
       if (seen.has(arg))
         throw new CliUsageError(`${arg} may only be specified once`);
@@ -234044,14 +235434,31 @@ function parseCliArgs(argv) {
   }
   if (help)
     return { help: true };
-  if (!options.source && !options.url && !options.apiPolicy)
-    throw new CliUsageError("provide --source, --url, or --api-policy");
+  if (!options.source && !options.url && !options.apiPolicy && !options.openapi)
+    throw new CliUsageError("provide --source, --url, --api-policy, or --openapi");
   if (options.pages.length > 0 && !options.url)
     throw new CliUsageError("--page requires --url");
   if (options.maxPages !== void 0 && !options.url)
     throw new CliUsageError("--max-pages requires --url");
-  if (options.allowPrivate && !options.url && !options.apiPolicy)
+  if (options.allowPrivate && !options.url && !options.apiPolicy && !options.openapi)
     throw new CliUsageError("--allow-private requires URL or API mode");
+  const schemathesisOnly = options.apiBase !== void 0 || options.operations.length > 0 || options.apiMaxRequests !== void 0 || options.seed !== void 0 || options.schemathesisPython !== void 0;
+  if (schemathesisOnly && !options.openapi)
+    throw new CliUsageError("--api-base, --operation, --api-max-requests, --seed and --schemathesis-python require --openapi");
+  if (options.openapi && (!options.apiBase || options.operations.length === 0))
+    throw new CliUsageError("--openapi requires --api-base and at least one --operation");
+  const nucleiOnly = options.nucleiPath !== void 0 || options.nucleiTemplates !== void 0 || options.nucleiScopes.length > 0 || options.nucleiMaxRequests !== void 0 || options.nucleiRateLimit !== void 0;
+  if (nucleiOnly && !options.engines.includes("nuclei"))
+    throw new CliUsageError("--nuclei* options require --engine nuclei");
+  if (options.engines.includes("nuclei") && (!options.url || !options.nucleiTemplates))
+    throw new CliUsageError("--engine nuclei requires --url and --nuclei-templates");
+  const active = Boolean(options.openapi) || options.engines.length > 0;
+  if (active && !options.activeConsent)
+    throw new CliUsageError("active DAST (--openapi or --engine) requires --active-consent; only test targets you own or are authorized to test");
+  if (options.activeConsent && !active)
+    throw new CliUsageError("--active-consent requires --openapi or --engine");
+  if (options.engines.includes("nuclei") && options.nucleiScopes.length === 0)
+    options.nucleiScopes = ["misconfiguration"];
   if (options.osvOffline && !options.source)
     throw new CliUsageError("--osv-offline requires source mode");
   if (options.analysisProfile !== void 0 && !options.source)
@@ -234061,7 +235468,7 @@ function parseCliArgs(argv) {
   return options;
 }
 function modeFor(options) {
-  if (options.apiPolicy)
+  if (options.apiPolicy || options.openapi)
     return options.source || options.url ? "combined" : "api";
   if (options.source && options.url)
     return "both";
@@ -234122,7 +235529,11 @@ async function declaredScope(options, apiPolicy) {
     pages: options.pages,
     maxPages: options.maxPages,
     apiPolicy,
-    ruleset: RULESET_VERSION
+    ruleset: RULESET_VERSION,
+    ...options.openapi || options.engines.length > 0 ? { dast: {
+      ...options.openapi ? { schemathesis: { apiBase: options.apiBase, operations: [...options.operations], maxRequests: options.apiMaxRequests ?? 32, seed: options.seed ?? 1 } } : {},
+      ...options.engines.includes("nuclei") ? { nuclei: { scopes: [...options.nucleiScopes].sort(), maxRequests: options.nucleiMaxRequests ?? null, rateLimit: options.nucleiRateLimit ?? null } } : {}
+    } } : {}
   });
 }
 async function main(argv = process.argv.slice(2)) {
@@ -234206,6 +235617,43 @@ ${USAGE}`);
         checks.push(runtimeErrorCheck("api.runtime", "API authorization scanning could not be completed."));
       }
     }
+    if (parsed.engines.includes("nuclei") && parsed.url && !controller.signal.aborted) {
+      try {
+        checks.push(...await runNuclei({
+          url: `${new URL(parsed.url).origin}/`,
+          executable: parsed.nucleiPath,
+          templatesDir: parsed.nucleiTemplates,
+          scopes: parsed.nucleiScopes,
+          consent: parsed.activeConsent,
+          allowPrivate: parsed.allowPrivate,
+          timeoutMs: parsed.timeoutMs,
+          maxRequests: parsed.nucleiMaxRequests,
+          rateLimit: parsed.nucleiRateLimit,
+          signal: controller.signal
+        }));
+      } catch {
+        checks.push(runtimeErrorCheck("url.nuclei", "Nuclei scanning could not be completed."));
+      }
+    }
+    if (parsed.openapi && !controller.signal.aborted) {
+      try {
+        const document = await readJsonInput(parsed.openapi, 1024 * 1024);
+        checks.push(...await runSchemathesisLive({
+          document,
+          baseUrl: parsed.apiBase,
+          operations: parsed.operations.map((path) => ({ method: "GET", path })),
+          consent: parsed.activeConsent,
+          allowPrivate: parsed.allowPrivate,
+          python: parsed.schemathesisPython ?? process.env.WAKEIO_SCHEMATHESIS_PYTHON ?? "python3",
+          timeoutMs: Math.min(parsed.timeoutMs, API_MAX_TIMEOUT_MS),
+          maxRequests: parsed.apiMaxRequests,
+          seed: parsed.seed,
+          signal: controller.signal
+        }));
+      } catch {
+        checks.push(runtimeErrorCheck("api.schemathesis", "OpenAPI input must be a bounded local JSON file; Schemathesis live testing did not start."));
+      }
+    }
     const scope = await declaredScope(parsed, apiPolicy);
     const markCancelled = () => {
       if (controller.signal.aborted && !checks.some((check) => check.id === "scan.cancelled"))
@@ -234254,7 +235702,7 @@ function canonicalFile(path) {
     return resolve11(path);
   }
 }
-if (process.argv[1] && canonicalFile(process.argv[1]) === canonicalFile(fileURLToPath(import.meta.url))) {
+if (process.argv[1] && canonicalFile(process.argv[1]) === canonicalFile(fileURLToPath2(import.meta.url))) {
   main().then((code) => {
     process.exitCode = code;
   }).catch(() => {

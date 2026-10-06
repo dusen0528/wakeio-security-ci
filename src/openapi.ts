@@ -306,6 +306,43 @@ export function buildOpenApiPolicy(input: unknown): ApiPolicyV2 {
   return parsed.policy;
 }
 
+/** A bounded, self-contained OpenAPI document with an explicit GET allowlist for generated testing. */
+export interface OpenApiLiveSelection {
+  document: Record<string, unknown>;
+  operations: Array<{ method: "GET"; path: string }>;
+}
+
+export const OPENAPI_MAX_LIVE_OPERATIONS = 16;
+
+/**
+ * Validate a document for an engine that generates its own inputs. The same
+ * compile budgets and same-document `$ref` rule apply; remote/file/cyclic
+ * references and request bodies are rejected before any engine starts.
+ */
+export function selectOpenApiLiveOperations(documentInput: unknown, selections: unknown): OpenApiLiveSelection {
+  const document = snapshot(documentInput);
+  if (!record(document) || typeof document.openapi !== "string" || !/^3\.(0|1)\.[0-9]+$/.test(document.openapi) || !record(document.paths)) unsupported();
+  const resolve = references(document);
+  const documentPaths = document.paths as RecordValue;
+  const paths = Object.keys(documentPaths).filter((key) => !key.startsWith("x-"));
+  if (paths.length === 0 || paths.length > OPENAPI_MAX_PATHS) limit();
+  for (const path of paths) pathParts(path);
+  if (!Array.isArray(selections) || selections.length < 1 || selections.length > OPENAPI_MAX_LIVE_OPERATIONS) invalid();
+  const seen = new Set<string>();
+  const operations = selections.map((value: unknown) => {
+    if (!record(value)) invalid();
+    keys(value, ["method", "path"]);
+    if (value.method !== "GET" || typeof value.path !== "string" || !own(documentPaths, value.path) || seen.has(value.path)) invalid();
+    seen.add(value.path);
+    const pathItem = resolve(documentPaths[value.path]);
+    if (!own(pathItem, "get") || !record(pathItem.get) || own(pathItem.get, "$ref")) unsupported();
+    if (own(pathItem.get, "requestBody") || own(pathItem.get, "callbacks")) unsupported();
+    parameters(pathItem, pathItem.get, resolve);
+    return { method: "GET" as const, path: value.path };
+  });
+  return { document: JSON.parse(JSON.stringify(document)) as Record<string, unknown>, operations };
+}
+
 const SCOPE_NOTE = "OpenAPI adapter uses only explicit synthetic GET selections and caller assertions; it does not discover targets, generate payloads, validate response schemas, or establish whole-API coverage.";
 function errorCheck(code: string): CheckResult[] {
   return [{ id: "api.authorization", status: "error", findings: [], notes: [SCOPE_NOTE, "OpenAPI policy could not be validated; no requests were made."], metrics: { requestCount: 0, bytesInspected: 0, errorCode: code } }];

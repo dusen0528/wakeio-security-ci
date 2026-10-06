@@ -84,7 +84,11 @@ export function localArtifactStorage(directory: string): SharedArtifactStorage {
 }
 /** Trusted executable/arguments, never supplied by the job. POSIX process groups, no shell or inherited credentials. */
 export function localCodeWorker(executable: string, args: readonly string[]): CodeWorker {
-  return { execute(job, signal) {
+  return { execute(job, signal) { return superviseWorker(executable, args, JSON.stringify(job), signal); } };
+}
+/** Run a trusted worker in its own POSIX process group with a capped stdout and no stderr retention. */
+export function superviseWorker(executable: string, args: readonly string[], input: string, signal: AbortSignal,
+  outputCap = OUTPUT_CAP): Promise<{ exitCode: number; stdout: string }> {
     return new Promise((done, reject) => {
       if (signal.aborted) { reject(new Error("cancelled")); return; }
       if (process.platform === "win32") { reject(new Error("process_groups_unavailable")); return; }
@@ -107,7 +111,7 @@ export function localCodeWorker(executable: string, args: readonly string[]): Co
       if (signal.aborted) terminate();
       child.stdout.on("data", (chunk: Buffer) => {
         size += chunk.length;
-        if (size > OUTPUT_CAP) { overflow = true; terminate(); }
+        if (size > outputCap) { overflow = true; terminate(); }
         else chunks.push(chunk);
       });
       child.stderr.on("data", () => { /* raw diagnostics never retained */ });
@@ -121,9 +125,8 @@ export function localCodeWorker(executable: string, args: readonly string[]): Co
         done({ exitCode: overflow ? -1 : code ?? -1,
           stdout: overflow ? "" : Buffer.concat(chunks).toString("utf8") });
       });
-      child.stdin.end(JSON.stringify(job));
+      child.stdin.end(input);
     });
-  } };
 }
 export function pythonFixtureWorker(python = "python3"): CodeWorker {
   const script = fileURLToPath(new URL("../../workers/schemathesis/worker.py", import.meta.url));

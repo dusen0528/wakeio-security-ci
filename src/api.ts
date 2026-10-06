@@ -24,8 +24,8 @@ export const API_MAX_SINGLE_BODY_BYTES = MAX_SINGLE_BODY_BYTES;
 export const API_MAX_TOTAL_BODY_BYTES = 10 * 1024 * 1024;
 
 /** Shared deadline/cancellation contract for API runners and worker adapters. */
-export function createApiRunControl(timeoutMs: number, signal?: AbortSignal) {
-  if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > API_MAX_TIMEOUT_MS) {
+export function createApiRunControl(timeoutMs: number, signal?: AbortSignal, maxTimeoutMs: number = API_MAX_TIMEOUT_MS) {
+  if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > maxTimeoutMs) {
     throw new RangeError("invalid API time budget");
   }
   if (signal !== undefined && !(signal instanceof AbortSignal)) throw new TypeError("invalid API cancellation signal");

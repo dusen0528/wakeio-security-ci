@@ -101,9 +101,34 @@ export const TOOL_RELEASES = Object.freeze({
       }),
     }),
   }),
+  // Opt-in active DAST engine; never part of the default source-scan set.
+  nuclei: Object.freeze({
+    version: '3.11.1',
+    license: 'MIT',
+    baseUrl: 'https://github.com/projectdiscovery/nuclei/releases/download/v3.11.1/',
+    assets: Object.freeze({
+      'linux-x64': Object.freeze({
+        file: 'nuclei_3.11.1_linux_amd64.zip',
+        sha256: 'ea63d4ae232808cd7c6bc00d0142428e231fab59dae01042246097d195835ab6',
+      }),
+      'linux-arm64': Object.freeze({
+        file: 'nuclei_3.11.1_linux_arm64.zip',
+        sha256: '8044e3d9768ba0a744b2872c1a87e813006f013da97ca9f50f7661a4203bec07',
+      }),
+      'darwin-x64': Object.freeze({
+        file: 'nuclei_3.11.1_macOS_amd64.zip',
+        sha256: '75c47ce11e9dbd4288a1c895ed85e3c4df9f4acb8237d6d178da6dccd1628f2a',
+      }),
+      'darwin-arm64': Object.freeze({
+        file: 'nuclei_3.11.1_macOS_arm64.zip',
+        sha256: '7d7e291addd1fc29a9bf8d089afe878a9799b20229cbea2fb1693fc40fd4c5f0',
+      }),
+    }),
+  }),
 });
 
 const TOOL_NAMES = Object.freeze(Object.keys(TOOL_RELEASES));
+const DEFAULT_TOOL_NAMES = Object.freeze(['gitleaks', 'osv', 'trivy']);
 
 /**
  * Install selected tools and return absolute executable paths.
@@ -112,7 +137,7 @@ const TOOL_NAMES = Object.freeze(Object.keys(TOOL_RELEASES));
  * tested without making a network request.
  */
 export async function installTools({
-  tools = TOOL_NAMES,
+  tools = DEFAULT_TOOL_NAMES,
   destination = undefined,
   platform = process.platform,
   arch = process.arch,
@@ -141,7 +166,7 @@ export async function installTools({
  * Action to explain cache hits and misses without exposing scanner output.
  */
 export async function installToolsDetailed({
-  tools = TOOL_NAMES,
+  tools = DEFAULT_TOOL_NAMES,
   destination = undefined,
   platform = process.platform,
   arch = process.arch,
@@ -226,9 +251,15 @@ async function installOne(toolName, spec, asset, root, platformKey, cacheRoot, o
     await ensureDirectory(dirname(executable));
     await ensureRegularTarget(executable);
 
-    if (asset.file.endsWith('.tar.gz')) {
-      await validateTarEntries(archivePath);
-      await execFileAsync('tar', ['-xzf', archivePath, '-C', staging]);
+    if (asset.file.endsWith('.tar.gz') || asset.file.endsWith('.zip')) {
+      if (asset.file.endsWith('.zip')) {
+        await validateZipEntries(archivePath);
+        // Extract only the named executable; the archive's other entries are never written.
+        await execFileAsync('unzip', ['-q', '-o', archivePath, executableName, '-d', staging]);
+      } else {
+        await validateTarEntries(archivePath);
+        await execFileAsync('tar', ['-xzf', archivePath, '-C', staging]);
+      }
       const extracted = join(staging, executableName);
       const stats = await lstat(extracted).catch(() => undefined);
       if (!stats || !stats.isFile() || stats.isSymbolicLink()) {
@@ -342,7 +373,16 @@ async function download(url, timeoutMs = 60_000) {
 
 async function validateTarEntries(archivePath) {
   const { stdout } = await execFileAsync('tar', ['-tzf', archivePath]);
-  for (const rawEntry of stdout.split(/\r?\n/)) {
+  validateArchivePaths(stdout);
+}
+
+async function validateZipEntries(archivePath) {
+  const { stdout } = await execFileAsync('unzip', ['-Z1', archivePath], { maxBuffer: 1024 * 1024 });
+  validateArchivePaths(stdout);
+}
+
+export function validateArchivePaths(listing) {
+  for (const rawEntry of listing.split(/\r?\n/)) {
     const entry = rawEntry.trim();
     if (!entry) continue;
     const normal = entry.replace(/^\.\//, '');
@@ -368,7 +408,7 @@ function normaliseTools(value) {
     ? value
     : typeof value === 'string'
       ? value.split(',')
-      : TOOL_NAMES;
+      : DEFAULT_TOOL_NAMES;
   const result = [];
   for (const raw of list) {
     const name = String(raw).trim().toLowerCase();
@@ -425,7 +465,7 @@ function isMissing(error) {
 
 function parseArgs(argv) {
   const options = {
-    tools: TOOL_NAMES,
+    tools: DEFAULT_TOOL_NAMES,
     destination: undefined,
     cacheDirectory: undefined,
     offline: false,
@@ -480,7 +520,7 @@ function parseArgs(argv) {
 
 function usage() {
   return [
-    'Usage: node scripts/install-tools.mjs [--tools gitleaks,osv,trivy|none] [--dir DIR] [--cache-dir DIR] [--offline] [--json] [--metadata]',
+    'Usage: node scripts/install-tools.mjs [--tools gitleaks,osv,trivy,nuclei|none] [--dir DIR] [--cache-dir DIR] [--offline] [--json] [--metadata]',
     '',
     'Downloads only pinned upstream release assets and verifies their SHA-256 digests.',
     'A cache stores the original release archive and is re-verified against that pinned digest on every hit.',
