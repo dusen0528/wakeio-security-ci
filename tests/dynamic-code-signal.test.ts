@@ -27,7 +27,7 @@ function projections(c:ReturnType<typeof run>,source:string){
 }
 
 test('direct literal call/new operands are syntax observations, input pair keeps actual evidence in four projections',()=>{
-  assert.equal(RULESET_VERSION,'2026-10-06.2');
+  assert.equal(RULESET_VERSION,'2026-10-06.3');
   for(const name of ['eval','window.eval','Function','window.Function','new Function','new window.Function']){
     const risk=`function route(req){${name}(req.body.${marker})}`;
     const r=run(risk),f=dynamic(r)[0];assert.equal(r.status,'completed');assert.equal(dynamic(r).length,1);

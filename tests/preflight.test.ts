@@ -515,3 +515,38 @@ test("CLI rejects FIFO input without blocking or scanning", { skip: process.plat
     assertRedacted(result.stdout + result.stderr, [root, fifo]);
   } finally { await rm(root, { recursive: true, force: true }); }
 });
+
+test('API and OpenAPI wrappers ignore inherited option getters without invoking them', async () => {
+  const result = await child(`
+    import assert from 'node:assert/strict';
+    const { preflightApiPolicy, runApiPolicy, preflightOpenApiPolicy, runOpenApiPolicy } = await import(${JSON.stringify(SDK_URL)});
+    const policy = ${JSON.stringify(policy('http://127.0.0.1:9'))};
+    const input = ${JSON.stringify(openapi('http://127.0.0.1:9'))};
+    const env = ${JSON.stringify(ENV)};
+    let getterCalls = 0;
+    const values = { allowPrivate: true, env, timeoutMs: 1, signal: new AbortController().signal, policy, input };
+    for (const key of Object.keys(values)) {
+      const original = Object.getOwnPropertyDescriptor(Object.prototype, key);
+      Object.defineProperty(Object.prototype, key, { configurable: true, get() { getterCalls++; return values[key]; } });
+      try {
+        const apiOptions = key === 'policy' ? { env } : key === 'env' ? { policy } : { policy, env };
+        const openOptions = key === 'input' ? { env } : key === 'env' ? { input } : { input, env };
+        const plan = preflightApiPolicy(apiOptions);
+        const openPlan = preflightOpenApiPolicy(openOptions);
+        const [check] = await runApiPolicy(apiOptions);
+        const [openCheck] = await runOpenApiPolicy(openOptions);
+        assert.equal(plan.status, 'blocked', key);
+        assert.equal(openPlan.status, 'blocked', key);
+        assert.equal(check.status, 'error', key);
+        assert.equal(openCheck.status, 'error', key);
+        assert.equal(check.metrics.requestCount, 0, key);
+        assert.equal(openCheck.metrics.requestCount, 0, key);
+      } finally {
+        if (original) Object.defineProperty(Object.prototype, key, original);
+        else delete Object.prototype[key];
+      }
+    }
+    assert.equal(getterCalls, 0);
+  `);
+  assert.equal(result.code, 0, result.stderr);
+});

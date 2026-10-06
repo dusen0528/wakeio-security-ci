@@ -285,20 +285,22 @@ function errorCheck(code: string): CheckResult[] {
 }
 
 /** Validate the wrapper without evaluating getters. Compilation snapshots all input data. */
-function prepareOpenApiPolicy(options: OpenApiRunOptions): ApiPolicyV2 {
+function prepareOpenApiPolicy(options: OpenApiRunOptions): ApiRunOptions {
   if (!record(options)) invalid();
   const prototype = Object.getPrototypeOf(options);
   if ((prototype !== Object.prototype && prototype !== null) || Object.getOwnPropertySymbols(options).length !== 0) invalid();
   keys(options as unknown as RecordValue, ["input"], ["allowPrivate", "timeoutMs", "env", "signal"]);
-  if (Object.values(Object.getOwnPropertyDescriptors(options)).some((descriptor) => !("value" in descriptor) || !descriptor.enumerable)) invalid();
-  return buildOpenApiPolicy(options.input);
+  const descriptors = Object.getOwnPropertyDescriptors(options);
+  if (Object.values(descriptors).some((descriptor) => !("value" in descriptor) || !descriptor.enumerable)) invalid();
+  options = Object.create(null, descriptors) as OpenApiRunOptions;
+  return { policy: buildOpenApiPolicy(options.input), allowPrivate: options.allowPrivate,
+    timeoutMs: options.timeoutMs, env: options.env, signal: options.signal };
 }
 
 /** Offline plan from the exact compiler/executor validation path, without exposing input values. */
 export function preflightOpenApiPolicy(options: OpenApiRunOptions): ApiPreflightResult {
   try {
-    const policy = prepareOpenApiPolicy(options);
-    const result = preflightApiPolicy({ policy, allowPrivate: options.allowPrivate, timeoutMs: options.timeoutMs, env: options.env, signal: options.signal });
+    const result = preflightApiPolicy(prepareOpenApiPolicy(options));
     result.limitations.unshift(SCOPE_NOTE);
     return result;
   } catch (error) {
@@ -312,10 +314,10 @@ export function preflightOpenApiPolicy(options: OpenApiRunOptions): ApiPreflight
 
 /** Reuse the API runner's credential, network, request/body-budget and cancellation controls. */
 export async function runOpenApiPolicy(options: OpenApiRunOptions): Promise<CheckResult[]> {
-  let policy: ApiPolicyV2;
-  try { policy = prepareOpenApiPolicy(options); }
+  let prepared: ApiRunOptions;
+  try { prepared = prepareOpenApiPolicy(options); }
   catch (error) { return errorCheck(error instanceof OpenApiPolicyError ? error.code : "invalid_openapi_policy"); }
-  const checks = await runApiPolicy({ policy, allowPrivate: options.allowPrivate, timeoutMs: options.timeoutMs, env: options.env, signal: options.signal });
+  const checks = await runApiPolicy(prepared);
   for (const check of checks) check.notes.unshift(SCOPE_NOTE);
   return checks;
 }

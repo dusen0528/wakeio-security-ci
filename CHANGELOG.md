@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- Keep authenticated HTTP 401 probes incomplete even when point-in-time identity
+  controls pass or later requests recover; retain protected-canary findings.
+  Add fixed numeric identity/session failure diagnostics without response values.
+- Snapshot API/OpenAPI options from validated own data properties: inherited
+  getters cannot enable private networking, and caller mutation cannot rewrite
+  effective permissions or cancellation reporting during a run.
+- Advance ruleset to `2026-10-06.3` so comparison scopes distinguish the corrected
+  authentication adjudication; no request, transport or credential-refresh expansion.
+
 - Add zero-network API/OpenAPI `plan` CLI and SDK preflight with redacted
   indexed diagnostics, ordered GET/control steps and separate logical/transport
   request budgets. Configuration readiness is never a scan or security verdict.

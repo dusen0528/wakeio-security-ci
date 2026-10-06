@@ -109,6 +109,23 @@ node build/src/cli.js scan \
 
 `--fail-on none`은 발견 threshold만 낮출 뿐 incomplete 결과를 성공으로 바꾸지 않는다. expired, 429·5xx, timeout, malformed/non-JSON 응답은 계속 부분 검사다.
 
+### 요청 중 인증 실패와 identity 변화
+
+authenticated actor의 리소스 요청이 HTTP 401이면 앞뒤 identity control이 모두 200이어도 `partial`, exit 2다. 정책의 `statuses`에 401을 넣거나 `allowEmptyBody: true`로 빈 본문을 허용해도 같다. 이후 요청에서 인증이 회복되어도 앞선 불완전한 결과를 지우지 않는다. 401 본문에 보호 canary가 있으면 finding을 유지한다. anonymous actor의 정책에 맞는 401은 정상 대조군으로 유지한다.
+
+`api.authorization.metrics`는 응답값 대신 다음 고정 숫자 진단을 제공한다.
+
+- `authenticatedDeny401Count`: 인증된 actor의 deny 요청에서 받은 401 수
+- `identityStatusMismatches`: identity endpoint의 기대 HTTP 상태 불일치 수
+- `identityResponseFailures`: identity 응답의 non-JSON·malformed JSON 수
+- `identityPrincipalMismatches`: 기대 principal 불일치 수
+- `identityOrganizationMismatches`: principal 통과 뒤 확인한 organization 불일치 수
+- `identityRequestFailures`: transport·body/time budget·취소 등으로 응답을 검사하지 못한 identity control 수. 실제 전송 횟수가 아니며 `requestCount`와 구분한다
+
+이 계수는 처음 실패한 검사 단계만 분류한다. 모두 0이라고 세션 연속성이 입증되는 것은 아니다. 전후 identity 검사는 해당 시점의 표본이므로 중간에 사라졌다 회복된 세션·tenant 변화나 endpoint별 인증 동작을 보장하지 않는다. 특히 403만으로 권한 거부와 내부 인증 오류를 구별할 수 없다. 토큰 만료 시각을 추측하거나 자동 로그인·refresh·tenant header를 추가하지 않는다. endpoint와 credential 설정을 검토하고 새로 승인된 합성 자격증명으로 다시 실행해야 한다.
+
+API/OpenAPI SDK 옵션은 own data property만 사용한다. 상속된 옵션·getter는 실행 권한을 제공하지 않으며, own accessor는 실행 전에 거부한다. `allowPrivate`, `signal`, 시간 예산, 정책과 credential은 실행 시작 시 고정한다. 전달한 env/옵션을 중간에 바꿔 token refresh나 권한 변경을 수행할 수 없다. 받은 signal 자체의 정상 abort는 계속 적용된다. `plan`은 로컬 설정만 확인하므로 401을 포함한 정책이 `ready`여도 실제 401 실행 결과는 `partial`일 수 있다.
+
 ## 정책 작성
 
 [v2 JSON 예제](../examples/api-authorization-policy.json)를 복사해 `baseUrl`, actor별 환경변수, identity principal marker, resource marker, 보호 canary, deny 상태를 합성 값으로 바꾼다. principal marker는 actor마다 달라야 하며 organization marker는 공유할 수 있다. `identity.path`는 `/whoami`일 수도 있고 해당 actor가 소유한 fixture의 GET 경로일 수도 있다. `allow.resource`는 공개 리소스 식별이고 `allow.protected`는 owner에게만 돌아와야 하는 non-empty string canary다. 두 assertion에 같은 pointer나 값을 쓰지 않는다.

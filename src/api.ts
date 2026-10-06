@@ -195,7 +195,18 @@ interface CredentialSet {
   hasAuthenticatedActor: boolean;
 }
 
+/** Fixed counters only: no credentials, response values or caller identifiers. */
+interface SessionDiagnostics {
+  authenticatedDeny401Count: number;
+  identityStatusMismatches: number;
+  identityResponseFailures: number;
+  identityPrincipalMismatches: number;
+  identityOrganizationMismatches: number;
+  identityRequestFailures: number;
+}
+
 interface RequestContextState {
+  session: SessionDiagnostics;
   ownedCapture?: ApiStateCaptureSession;
   context: UrlNetworkContext;
   bytes: number;
@@ -582,6 +593,7 @@ const PREFLIGHT_LIMITATIONS = [
   'Indexes refer to the input arrays; target URLs, paths, caller identifiers, environment names and assertion values are omitted.',
   'Runtime must revalidate credentials, DNS answers, pinned connections, responses, principal identity and owner controls.',
   'The logical GET plan includes before/after controls; failed controls or cancellation may skip steps. Address retries share the HTTP attempt cap.',
+  'An authenticated probe returning HTTP 401 remains incomplete even if listed; before/after identity checks cannot establish uninterrupted session or tenant continuity.',
   'GET-only does not establish that an application route has no side effects. Use only explicitly authorized synthetic resources.',
   'No target discovery, write requests, fuzzing, response-schema validation or whole-service security coverage.',
 ];
@@ -600,7 +612,7 @@ function preparationError(code: string, location: string, message: string): neve
 }
 
 /** Shared with execution; no network, no retained secret-bearing public output. */
-function prepareApiRun(options: ApiRunOptions): { parsed: ParsedApiPolicy; credentials: CredentialSet; timeoutMs: number } {
+function prepareApiRun(options: ApiRunOptions): { parsed: ParsedApiPolicy; credentials: CredentialSet; timeoutMs: number; allowPrivate: boolean; signal?: AbortSignal } {
   if (!isRecord(options)) preparationError('invalid_options', 'options', 'Provide a plain API run options object.');
   const proto = Object.getPrototypeOf(options);
   const descriptors = Object.getOwnPropertyDescriptors(options);
@@ -609,6 +621,10 @@ function prepareApiRun(options: ApiRunOptions): { parsed: ParsedApiPolicy; crede
     || Object.values(descriptors).some(value => !('value' in value) || !value.enumerable)) {
     preparationError('invalid_options', 'options', 'Use only documented data properties; accessors and custom objects are unsupported.');
   }
+  // Read only this bounded own-data snapshot. Inherited getters must never
+  // enable private transport or supply credentials; later caller mutation must
+  // not change execution options or the report's account of those options.
+  options = Object.create(null, descriptors) as ApiRunOptions;
   if (options.signal !== undefined && (types.isProxy(options.signal) || !(options.signal instanceof AbortSignal))) preparationError('invalid_options', 'signal', 'signal must be an AbortSignal.');
   if (options.allowPrivate !== undefined && typeof options.allowPrivate !== 'boolean') preparationError('invalid_options', 'allowPrivate', 'allowPrivate must be boolean.');
   const timeoutMs = options.timeoutMs === undefined ? API_DEFAULT_TIMEOUT_MS : options.timeoutMs;
@@ -628,17 +644,17 @@ function prepareApiRun(options: ApiRunOptions): { parsed: ParsedApiPolicy; crede
   if (parsed.baseUrl.protocol === 'http:' && credentials.hasAuthenticatedActor && !(options.allowPrivate === true && isLoopbackHostname(parsed.baseUrl.hostname))) {
     preparationError('insecure_authenticated_transport', 'policy.baseUrl', 'Use HTTPS for authenticated targets; HTTP is limited to explicit private loopback fixtures.');
   }
-  return { parsed, credentials, timeoutMs };
+  return { parsed, credentials, timeoutMs, allowPrivate: options.allowPrivate === true, signal: options.signal };
 }
 
 /** Offline, redacted configuration and execution-plan preview. Ready is not a scan pass. */
 export function preflightApiPolicy(options: ApiRunOptions): ApiPreflightResult {
   try {
-    const { parsed, timeoutMs } = prepareApiRun(options);
+    const { parsed, timeoutMs, allowPrivate, signal } = prepareApiRun(options);
     const issues: ApiPreflightIssue[] = [];
     if (parsed.legacy) issues.push({ code: 'legacy_policy', location: 'policy.version', message: 'Migrate to version 2 with identity and protected-canary assertions; version 1 cannot establish a clean authorization result.' });
-    if (options.signal && Object.getOwnPropertyDescriptor(AbortSignal.prototype, 'aborted')!.get!.call(options.signal)) issues.push({ code: 'cancelled', location: 'signal', message: 'The supplied cancellation signal is already aborted.' });
-    try { validateStaticTarget(parsed.baseUrl, options.allowPrivate === true); }
+    if (signal && Object.getOwnPropertyDescriptor(AbortSignal.prototype, 'aborted')!.get!.call(signal)) issues.push({ code: 'cancelled', location: 'signal', message: 'The supplied cancellation signal is already aborted.' });
+    try { validateStaticTarget(parsed.baseUrl, allowPrivate); }
     catch { issues.push({ code: 'blocked_target', location: 'policy.baseUrl', message: 'The target violates static network policy; metadata and forbidden ranges stay blocked even with allowPrivate.' }); }
     const steps: ApiRequestPlanStep[] = [];
     const indexes = new Map(parsed.policy.actors.map((actor, index) => [actor.id, index]));
@@ -656,7 +672,7 @@ export function preflightApiPolicy(options: ApiRunOptions): ApiPreflightResult {
       networkRequests: 0, dnsLookups: 0, policyVersion: parsed.policy.version, issues,
       plan: { actorCount: parsed.policy.actors.length, caseCount: parsed.cases.length, logicalRequests: parsed.expectedRequests,
         maximumHttpAttempts: API_MAX_REQUESTS, timeoutMs, maximumResponseBytes: API_MAX_SINGLE_BODY_BYTES,
-        maximumTotalResponseBytes: API_MAX_TOTAL_BODY_BYTES, allowPrivate: options.allowPrivate === true, steps },
+        maximumTotalResponseBytes: API_MAX_TOTAL_BODY_BYTES, allowPrivate, steps },
       limitations: [...PREFLIGHT_LIMITATIONS] };
   } catch (error) {
     return error instanceof ApiPreparationError ? blockedApiPreflight(error.issue.code, error.issue.location, error.issue.message)
@@ -885,21 +901,25 @@ async function checkIdentity(
 ): Promise<{ valid: boolean; principal?: JsonScalar }> {
   const outcome = await requestApi(identity.requestUrl, authorization, state);
   if ("errorCode" in outcome) {
+    state.session.identityRequestFailures += 1;
     addNote(notes, identityFailureNote(actorId, `${phase} ${outcome.errorCode}`));
     return { valid: false };
   }
   const { resource } = outcome;
   if (resource.status !== identity.status) {
+    state.session.identityStatusMismatches += 1;
     addNote(notes, identityFailureNote(actorId, `${phase} HTTP ${resource.status}`));
     return { valid: false };
   }
   const parsed = readJson(resource);
   if (!parsed.valid) {
+    state.session.identityResponseFailures += 1;
     addNote(notes, identityFailureNote(actorId, `${phase} ${parsed.reason}`));
     return { valid: false };
   }
   const principal = atJsonPointer(parsed.value, identity.jsonPointer);
   if (!scalarMatches(principal, identity.equals)) {
+    state.session.identityPrincipalMismatches += 1;
     addNote(notes, identityFailureNote(actorId, `${phase} principal marker mismatch`));
     // Keep a non-empty scalar in memory for the duplicate-principal guard.
     // It is never copied into notes, findings, or report output.
@@ -908,6 +928,7 @@ async function checkIdentity(
   if (identity.organization) {
     const organization = atJsonPointer(parsed.value, identity.organization.jsonPointer);
     if (!scalarMatches(organization, identity.organization.equals)) {
+      state.session.identityOrganizationMismatches += 1;
       addNote(notes, identityFailureNote(actorId, `${phase} organization marker mismatch`));
       return { valid: false };
     }
@@ -1046,6 +1067,16 @@ async function checkDeny(
     addNote(notes, `API case ${entry.id}: actor ${deny.actor} returned the protected canary with HTTP ${status}; exposure is recorded.`);
   }
 
+  // Identity controls are point-in-time evidence, not proof that this request
+  // authenticated. A 401 is inconclusive for an authenticated actor even if
+  // whoami succeeds before and after (endpoint-local rejection or recovery).
+  // Preserve observed canary exposure, including in a 401 response.
+  if (status === 401 && actor?.authorizationEnv !== undefined) {
+    state.session.authenticatedDeny401Count += 1;
+    addNote(notes, `API case ${entry.id}: actor ${deny.actor} returned HTTP 401 on an authenticated probe; authentication was not established for this request, so denial is inconclusive. Check credential validity and endpoint authentication requirements before rerunning.`);
+    return true;
+  }
+
   if (!evidence.complete) {
     addNote(notes, `API case ${entry.id}: actor ${deny.actor} response exceeded the bounded canary evidence traversal; denial is inconclusive.`);
     return true;
@@ -1140,16 +1171,18 @@ export async function runApiPolicy(options: ApiRunOptions): Promise<CheckResult[
     return [errorCheck(error instanceof ApiPreparationError ? (['invalid_credentials', 'duplicate_credentials'].includes(error.issue.code) ? 'invalid_policy' : error.issue.code) : 'invalid_options',
       error instanceof ApiPreparationError ? `${error.issue.message} Validation failed; no requests were made.` : 'API options could not be validated; no requests were made.')];
   }
-  const { parsed, credentials, timeoutMs } = prepared;
+  const { parsed, credentials, timeoutMs, allowPrivate, signal } = prepared;
 
   const notes: string[] = [API_SCOPE_NOTE];
   const findings: Finding[] = [];
-  const controller = createApiRunControl(timeoutMs, options.signal);
+  const controller = createApiRunControl(timeoutMs, signal);
   const budget: UrlNetworkContext["budget"] = { count: 0, max: API_MAX_REQUESTS };
   const state: RequestContextState = {
-    ownedCapture: ownedApiCapture(options.signal),
+    session: { authenticatedDeny401Count: 0, identityStatusMismatches: 0, identityResponseFailures: 0,
+      identityPrincipalMismatches: 0, identityOrganizationMismatches: 0, identityRequestFailures: 0 },
+    ownedCapture: ownedApiCapture(signal),
     context: {
-      allowPrivate: options.allowPrivate === true,
+      allowPrivate,
       signal: controller.signal,
       budget,
       deadlineAt: controller.deadlineAt,
@@ -1224,7 +1257,7 @@ export async function runApiPolicy(options: ApiRunOptions): Promise<CheckResult[
     controller.dispose();
   }
   if (controller.signal.aborted || Date.now() >= state.context.deadlineAt) {
-    addNote(notes, options.signal?.aborted
+    addNote(notes, signal?.aborted
       ? "The API policy was cancelled; the authorization preview is incomplete."
       : "The API policy time budget elapsed; the authorization preview is incomplete.");
     incomplete = true;
@@ -1241,6 +1274,7 @@ export async function runApiPolicy(options: ApiRunOptions): Promise<CheckResult[
       identityActorCount: identityStates.size,
       identityControlsPassed,
       identityReuseCount,
+      ...state.session,
       legacyPolicy: parsed.legacy,
       controlsPassed,
       expectedRequestCount: parsed.expectedRequests,
@@ -1250,7 +1284,7 @@ export async function runApiPolicy(options: ApiRunOptions): Promise<CheckResult[
       jsonValueEvidenceCases: parsed.cases.filter((entry) => entry.allow.protected?.match === "json-values").length,
       bodyBudgetExhausted: state.bodyBudgetExhausted,
       bodyReadIncomplete: state.bodyReadIncomplete,
-      allowPrivate: options.allowPrivate === true,
+      allowPrivate,
     },
   }];
 }
