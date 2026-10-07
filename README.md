@@ -23,6 +23,7 @@ See the [execution contract](docs/preview-0.4-api.md#계획-대비-실행-ledger
 | Source code | Bounded JS/TS AST candidates where request input reaches SQL, HTML, process, outbound-request, or redirect sinks; dynamic evaluation; selected credential shapes; selected Next/React and Supabase migration candidates | Same-function and bounded local-flow analysis. No general cross-function, cross-file, type-aware, runtime, build, or live database proof |
 | Public URL | Explicit pages, same-origin static JavaScript modules, transport, security headers, CSP, cookies, CORS, mixed content, source-map/debug/version clues, DOM and secret-shaped candidates | Explicit bounded GET requests only. No browser execution, login, endpoint discovery, API fuzzing, payment flow, or automatic site crawl |
 | Read-only API policy | Identity checks and owner/other-account/anonymous cases for a declared resource identity and distinct protected-data canary | GET requests defined by the policy. No writes, automatic login, endpoint discovery, or general fuzzing |
+| Active DAST preview (opt-in) | Schemathesis-generated GET inputs for explicitly selected OpenAPI operations (5xx and response-schema violations); signed Nuclei HTTP GET/HEAD templates from `misconfiguration`/`exposures` | Requires `--active-consent`. One validated origin through a loopback egress gate; no writes, credentials, redirects, OAST, raw/unsafe templates, or crawling |
 | Before/after reports | Logical project identity, semantic source anchors, changed findings, unchanged findings, and `not_observed`/`unverified` states | A missing later finding is never treated as proof that a fix is complete |
 
 Source and URL scopes can be combined in one report. The API policy is opt-in and reads credentials from named environment variables; token and canary values are not written to reports. See the [API policy example](examples/api-authorization-policy.json) and [API guide](docs/preview-0.4-api.md).
@@ -223,6 +224,27 @@ node build/src/cli.js compare \
 ```
 
 Comparison refuses to present mismatched or incomplete scopes as a clean result. A finding that disappeared is `not_observed`, not an automatic fix certificate. See the [comparison guide](docs/preview-0.4-comparison.md).
+
+## Active DAST preview (opt-in)
+
+Active checks send generated or template requests to a target, so they never run implicitly. Every active run needs `--active-consent` (exit 2 before any DNS lookup or request without it). Only test targets you own or are authorized to test; private/loopback targets additionally need `--allow-private`, and metadata/link-local addresses stay blocked.
+
+```sh
+# Schemathesis: generated GET inputs for explicitly listed OpenAPI operations
+node build/src/cli.js scan --openapi openapi.json --api-base https://staging.example.test/ \
+  --operation '/items/{id}' --operation /search --active-consent --fail-on low
+
+# Nuclei 3.11.1: prepare once, then scan the --url origin with prepared templates
+node scripts/install-tools.mjs --tools nuclei          # verifies the pinned upstream SHA-256
+nuclei -ut -ud /path/to/nuclei-templates                # templates are never downloaded during a scan
+node build/src/cli.js scan --url https://staging.example.test/ --engine nuclei \
+  --nuclei /path/to/nuclei --nuclei-templates /path/to/nuclei-templates \
+  --nuclei-scope misconfiguration,exposures --active-consent --timeout-ms 300000
+```
+
+Both engines connect only to a per-run loopback egress gate. The gate validates the origin with the same URL-network policy as URL scans, pins the validated address, forwards only that origin and only GET/HEAD, forces identity encoding, and enforces request and per-response/total byte budgets on the wire. Requests that leave the origin (for example templates probing another port) are refused and counted, not sent. Nuclei runs only signed HTTP templates with `-ni -duc -dr`; raw/unsafe, non-GET, self-contained and other-protocol templates are excluded and counted. Nuclei can exit 0 after partial progress, so completion also requires 100% engine progress, zero engine errors, no budget stop and no upstream failure; anything else is `partial` (exit 2). A missing engine, Python runtime or template directory is an `error` (exit 2), never a clean pass.
+
+Reports record executed requests, requests refused by the budget, egress refusals, the seed and schema digest (Schemathesis), and template counts, exclusions and the `templates-checksum.txt` digest (Nuclei). Response bodies, generated values, extracted values, proxy credentials and template text are not retained. `wakeio-security-ci doctor --dast` reports engine readiness without running anything. Authentication, write operations, stateful workflows, browser-driven checks, own probes and crawling are not part of this preview.
 
 ## A small synthetic example
 

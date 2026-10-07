@@ -1,4 +1,4 @@
-import { lstat, readdir } from "node:fs/promises";
+import { access, constants, lstat, readdir, stat } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import type { Dirent } from "node:fs";
 import { findExecutable as findScannerExecutable } from "./source/process.js";
@@ -48,6 +48,18 @@ interface DoctorOptions {
   json: boolean;
   strict: boolean;
   help: boolean;
+  /** Also report readiness of the opt-in active DAST engines (metadata only). */
+  dast: boolean;
+  nuclei?: string;
+  nucleiTemplates?: string;
+  schemathesisPython?: string;
+}
+
+export interface DoctorDastStatus {
+  nuclei: { availability: "available" | "missing"; path?: string; pinnedVersion: string; install: string };
+  nucleiTemplates: { availability: "available" | "missing" | "not_configured"; scopes: string[]; checksumFile: boolean; note: string };
+  schemathesisPython: { availability: "available" | "missing"; path?: string; requirements: string };
+  consent: string;
 }
 
 export interface DoctorToolStatus {
@@ -104,6 +116,7 @@ export async function doctorMain(argv: readonly string[] = process.argv.slice(2)
   if (options.tools.includes("trivy") && inventory.configFiles > 0) {
     runtimeNetwork.push("Trivy policy/DB traffic may be scanner-managed and is not verified by this Action");
   }
+  const dast = options.dast ? await inspectDast(options) : undefined;
   const result = {
     schemaVersion: "1.0.0",
     source: source,
@@ -114,6 +127,7 @@ export async function doctorMain(argv: readonly string[] = process.argv.slice(2)
     runtimeNetwork,
     databaseCaches: { osv: "unknown", trivy: "unknown" },
     nextCommand: nextCommand(source, options.tools),
+    ...(dast ? { activeDast: dast } : {}),
   };
 
   if (options.json) {
@@ -123,13 +137,14 @@ export async function doctorMain(argv: readonly string[] = process.argv.slice(2)
   }
 
   if (options.strict && (inventory.truncated || toolStatuses.some((tool) => tool.availability === "missing" && tool.applicability !== "not_applicable"))) return 2;
+  if (options.strict && dast && (dast.nuclei.availability !== "available" || dast.nucleiTemplates.availability !== "available" || dast.schemathesisPython.availability !== "available")) return 2;
   return 0;
 }
 
 export function parseDoctorArgs(argv: readonly string[]): DoctorOptions {
   const args = [...argv];
   if (args[0] === "doctor") args.shift();
-  const options: DoctorOptions = { source: ".", tools: [...DEFAULT_TOOLS], json: false, strict: false, help: false };
+  const options: DoctorOptions = { source: ".", tools: [...DEFAULT_TOOLS], json: false, strict: false, help: false, dast: false };
   for (let index = 0; index < args.length; index += 1) {
     const argument = args[index];
     if (argument === "--help" || argument === "-h") {
@@ -144,6 +159,19 @@ export function parseDoctorArgs(argv: readonly string[]): DoctorOptions {
       options.strict = true;
       continue;
     }
+    if (argument === "--dast") {
+      options.dast = true;
+      continue;
+    }
+    if (argument === "--nuclei" || argument === "--nuclei-templates" || argument === "--schemathesis-python") {
+      const value = args[index + 1];
+      if (!value || value.startsWith("--")) throw new Error(`${argument} requires a value`);
+      index += 1;
+      if (argument === "--nuclei") options.nuclei = value;
+      else if (argument === "--nuclei-templates") options.nucleiTemplates = value;
+      else options.schemathesisPython = value;
+      continue;
+    }
     if (argument === "--source" || argument === "--root" || argument === "--tools") {
       const value = args[index + 1];
       if (!value || value.startsWith("--")) throw new Error(`${argument} requires a value`);
@@ -154,7 +182,37 @@ export function parseDoctorArgs(argv: readonly string[]): DoctorOptions {
     }
     throw new Error(`unknown doctor option: ${argument}`);
   }
+  if (!options.dast && (options.nuclei || options.nucleiTemplates || options.schemathesisPython)) throw new Error("--nuclei, --nuclei-templates and --schemathesis-python require --dast");
   return options;
+}
+
+/** Executable/directory metadata only: nothing is run and no template is parsed. */
+async function inspectDast(options: DoctorOptions): Promise<DoctorDastStatus> {
+  const nuclei = await findExecutable(options.nuclei ?? "nuclei");
+  // Virtualenv interpreters are symlinks by design, so follow the link for this check only.
+  const pythonPath = resolve(options.schemathesisPython ?? process.env.WAKEIO_SCHEMATHESIS_PYTHON ?? join(process.cwd(), ".venv-schemathesis/bin/python"));
+  const python = await stat(pythonPath).then(async (stats) => stats.isFile() && await access(pythonPath, constants.X_OK).then(() => true, () => false)).catch(() => false) ? pythonPath : undefined;
+  let templates: DoctorDastStatus["nucleiTemplates"] = { availability: "not_configured", scopes: [], checksumFile: false,
+    note: "Prepare templates once (for example `nuclei -ut -ud DIR`) and pass --nuclei-templates; scans never download templates." };
+  if (options.nucleiTemplates) {
+    const root = resolve(options.nucleiTemplates);
+    const scopes: string[] = [];
+    for (const [name, path] of [["misconfiguration", "http/misconfiguration"], ["exposures", "http/exposures"]] as const) {
+      const stats = await lstat(join(root, ...path.split("/"))).catch(() => undefined);
+      if (stats?.isDirectory() && !stats.isSymbolicLink()) scopes.push(name);
+    }
+    const checksum = await lstat(join(root, "templates-checksum.txt")).then((stats) => stats.isFile()).catch(() => false);
+    templates = { availability: scopes.length > 0 ? "available" : "missing", scopes, checksumFile: checksum,
+      note: checksum ? "templates-checksum.txt digest is recorded as provenance at scan time." : "templates-checksum.txt is missing; template provenance will be unknown." };
+  }
+  return {
+    nuclei: { availability: nuclei ? "available" : "missing", ...(nuclei ? { path: nuclei } : {}), pinnedVersion: "3.11.1",
+      install: "node scripts/install-tools.mjs --tools nuclei (verifies the pinned upstream SHA-256)" },
+    nucleiTemplates: templates,
+    schemathesisPython: { availability: python ? "available" : "missing", ...(python ? { path: python } : {}),
+      requirements: "Python 3.12 with workers/schemathesis/requirements.lock.txt (package versions are checked when a scan starts the worker)" },
+    consent: "Active DAST also requires --active-consent at scan time; doctor never sends requests.",
+  };
 }
 
 export function parseTools(value: string): string[] {
@@ -169,6 +227,7 @@ export function parseTools(value: string): string[] {
 export function doctorUsage(): string {
   return [
     "Usage: wakeio-security-ci doctor [--source DIR] [--tools gitleaks,osv,trivy,bandit|none] [--json] [--strict]",
+    "                              [--dast [--nuclei PATH] [--nuclei-templates DIR] [--schemathesis-python PATH]]",
     "",
     "Read-only inventory: no target code, package scripts, scanner, or network request is executed.",
     "",
@@ -258,7 +317,8 @@ function shellQuote(value: string): string {
   return `'${value.replace(/'/g, `'\\''`)}'`;
 }
 
-function renderDoctorText(result: { source: string; inventory: Inventory; tools: DoctorToolStatus[]; expectedTransfers: string[]; runtimeNetwork: string[]; databaseCaches: { osv: string; trivy: string }; nextCommand: string }): string {
+function renderDoctorText(result: { source: string; inventory: Inventory; tools: DoctorToolStatus[]; expectedTransfers: string[]; runtimeNetwork: string[]; databaseCaches: { osv: string; trivy: string }; nextCommand: string; activeDast?: DoctorDastStatus }): string {
+  const dast = result.activeDast;
   const lines = [
     "Wakeio doctor (read-only)",
     `Source: ${result.source}`,
@@ -269,6 +329,12 @@ function renderDoctorText(result: { source: string; inventory: Inventory; tools:
     `Runtime network expectations: ${result.runtimeNetwork.length > 0 ? result.runtimeNetwork.join("; ") : "none"}`,
     `OSV database cache: ${result.databaseCaches.osv}; Trivy database cache: ${result.databaseCaches.trivy}`,
     `Next command: ${result.nextCommand}`,
+    ...(dast ? [
+      `Active DAST nuclei ${dast.nuclei.pinnedVersion}: ${dast.nuclei.availability}${dast.nuclei.path ? ` at ${dast.nuclei.path}` : ` (install: ${dast.nuclei.install})`}`,
+      `Active DAST nuclei templates: ${dast.nucleiTemplates.availability}${dast.nucleiTemplates.scopes.length ? ` (${dast.nucleiTemplates.scopes.join(", ")})` : ""}; ${dast.nucleiTemplates.note}`,
+      `Active DAST Schemathesis Python: ${dast.schemathesisPython.availability}${dast.schemathesisPython.path ? ` at ${dast.schemathesisPython.path}` : ""}; ${dast.schemathesisPython.requirements}`,
+      dast.consent,
+    ] : []),
     "",
   ];
   return lines.join("\n");

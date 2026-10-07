@@ -54,6 +54,9 @@ try {
   receipt.dast = validateTestEvents(events,
     ['owned DAST corpus gates positive, safe and error controls with lifecycle and exact request counts'],
     join(root, 'build/tests/dast-corpus.test.js'));
+  receipt.live = validateTestEvents(events,
+    ['schemathesis live: risk/normal pair through the egress gate', 'schemathesis live: a target that fails mid-run is partial, never clean'],
+    join(root, 'build/tests/schemathesis-live.test.js'));
   receipt.testEventsSha256 = createHash('sha256').update(bytes).digest('hex');
   receipt.testFiles = files.map(file => ({ path: file, sha256: createHash('sha256').update(readFileSync(file)).digest('hex') }));
   receipt.sourceAfter = sourceSnapshot(root);

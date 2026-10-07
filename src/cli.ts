@@ -16,6 +16,9 @@ import { doctorMain } from "./doctor.js";
 import { initMain } from "./init.js";
 import { planMain } from "./plan.js";
 import { repairMain } from "./repair.js";
+import { API_MAX_REQUESTS, API_MAX_TIMEOUT_MS } from "./api.js";
+import { runSchemathesisLive } from "./schemathesis-live.js";
+import { NUCLEI_MAX_RATE_LIMIT, NUCLEI_MAX_REQUESTS, NUCLEI_SCOPES, runNuclei, type NucleiScope } from "./nuclei.js";
 
 const SEVERITY_VALUES = new Set(["critical", "high", "medium", "low", "info", "none"] as const);
 const TOOL_VALUES = new Set<ToolName>(["gitleaks", "osv", "trivy", "bandit"]);
@@ -36,6 +39,20 @@ export interface CliOptions {
   osvOffline: boolean;
   toolPaths: Partial<Record<ToolName, string>>;
   nativePreview?: { executable: string };
+  /** Active DAST is opt-in and requires `activeConsent`; see parseCliArgs. */
+  activeConsent: boolean;
+  openapi?: string;
+  apiBase?: string;
+  operations: string[];
+  apiMaxRequests?: number;
+  seed?: number;
+  schemathesisPython?: string;
+  engines: Array<"nuclei">;
+  nucleiPath?: string;
+  nucleiTemplates?: string;
+  nucleiScopes: NucleiScope[];
+  nucleiMaxRequests?: number;
+  nucleiRateLimit?: number;
 }
 
 export class CliUsageError extends Error {
@@ -51,6 +68,8 @@ export const USAGE = `Usage:
   wakeio-security-ci scan --source DIR --url URL [options]
   wakeio-security-ci scan --api-policy policy.json [options]
   wakeio-security-ci plan --api-policy FILE | --openapi-input FILE [--allow-private] [--timeout-ms N]
+  wakeio-security-ci scan --openapi openapi.json --api-base URL --operation PATH --active-consent [options]
+  wakeio-security-ci scan --url URL --engine nuclei --nuclei-templates DIR --active-consent [options]
   wakeio-security-ci compare --before report.json --after report.json --out DIR [--fail-on LEVEL]
   wakeio-security-ci doctor [--source DIR] [--tools ...] [--json] [--strict]
   wakeio-security-ci init [--source DIR] [--workflow FILE] [--out DIR] [--tools ...]
@@ -76,6 +95,21 @@ Options:
   --trivy PATH                 Trivy executable
   --bandit PATH                Bandit executable
   --opengrep-core ABS_PATH     Explicit pinned Darwin arm64 native preview (BYO)
+
+Active DAST (off by default; sends generated or template requests to the target):
+  --active-consent             Required: you own or are authorized to test the target
+  --openapi FILE               Local OpenAPI 3.0/3.1 JSON (same-document $ref only)
+  --api-base URL               Target origin for --openapi (servers are never used)
+  --operation PATH             Documented GET path to test (repeatable, 1..16)
+  --api-max-requests N         Schemathesis request budget, 1..64 (default 32)
+  --seed N                     Hypothesis seed (default 1)
+  --schemathesis-python PATH   Python with workers/schemathesis/requirements.lock.txt
+  --engine nuclei              Run pinned Nuclei 3.11.1 against the --url origin
+  --nuclei PATH                Nuclei executable (default: PATH lookup)
+  --nuclei-templates DIR       Prepared nuclei-templates directory (never downloaded)
+  --nuclei-scope LIST          misconfiguration,exposures (default: misconfiguration)
+  --nuclei-max-requests N      Gate request budget, 1..20000 (default 6000)
+  --nuclei-rate-limit N        Requests per second, 1..150 (default 50)
   --help                       Show this help
 `;
 
@@ -101,6 +135,13 @@ function parsePositiveTimeout(value: string): number {
   return parsed;
 }
 
+function parseBoundedInteger(flag: string, value: string, max: number): number {
+  if (!/^\d+$/.test(value)) throw new CliUsageError(`${flag} must be a positive integer`);
+  const parsed = Number(value);
+  if (!Number.isSafeInteger(parsed) || parsed < 1 || parsed > max) throw new CliUsageError(`${flag} must be between 1 and ${max}`);
+  return parsed;
+}
+
 function parsePageLimit(value: string): number {
   if (!/^\d+$/.test(value)) throw new CliUsageError("--max-pages must be a positive integer");
   const parsed = Number(value);
@@ -122,6 +163,10 @@ export function parseCliArgs(argv: readonly string[]): CliOptions | { help: true
     timeoutMs: DEFAULT_TOOL_TIMEOUT_MS,
     osvOffline: false,
     toolPaths: {},
+    activeConsent: false,
+    operations: [],
+    engines: [],
+    nucleiScopes: [],
   };
   const seen = new Set<string>();
   let help = false;
@@ -191,6 +236,41 @@ export function parseCliArgs(argv: readonly string[]): CliOptions | { help: true
       if (!isAbsolute(value) || value.includes('\0')) throw new CliUsageError('--opengrep-core requires an absolute executable path');
       options.nativePreview = { executable: value };
     }
+    else if ((value = valueFlag("--openapi")) !== undefined) options.openapi = value;
+    else if ((value = valueFlag("--api-base")) !== undefined) options.apiBase = value;
+    else if (arg === "--operation" || arg.startsWith("--operation=")) {
+      let operation: string;
+      if (arg === "--operation") {
+        const result = valueAfter(args, index, "--operation");
+        operation = result[0];
+        index = result[1];
+      } else operation = arg.slice("--operation=".length);
+      if (!operation.startsWith("/") || operation.length > 2048) throw new CliUsageError("--operation must be a documented absolute OpenAPI path");
+      if (options.operations.length >= 16) throw new CliUsageError("--operation may be specified at most 16 times");
+      options.operations.push(operation);
+    }
+    else if ((value = valueFlag("--api-max-requests")) !== undefined) options.apiMaxRequests = parseBoundedInteger("--api-max-requests", value, API_MAX_REQUESTS);
+    else if ((value = valueFlag("--seed")) !== undefined) options.seed = parseBoundedInteger("--seed", value, 2147483647);
+    else if ((value = valueFlag("--schemathesis-python")) !== undefined) options.schemathesisPython = value;
+    else if ((value = valueFlag("--engine")) !== undefined) {
+      const engines = value.split(",").map((part) => part.trim()).filter(Boolean);
+      if (engines.length === 0 || engines.some((engine) => engine !== "nuclei") || new Set(engines).size !== engines.length) throw new CliUsageError("--engine must be nuclei");
+      options.engines = engines as CliOptions["engines"];
+    }
+    else if ((value = valueFlag("--nuclei")) !== undefined) options.nucleiPath = value;
+    else if ((value = valueFlag("--nuclei-templates")) !== undefined) options.nucleiTemplates = value;
+    else if ((value = valueFlag("--nuclei-scope")) !== undefined) {
+      const scopes = value.split(",").map((part) => part.trim()).filter(Boolean);
+      if (scopes.length === 0 || scopes.some((scope) => !(scope in NUCLEI_SCOPES)) || new Set(scopes).size !== scopes.length) throw new CliUsageError("--nuclei-scope must be a comma-separated list of misconfiguration, exposures");
+      options.nucleiScopes = scopes as NucleiScope[];
+    }
+    else if ((value = valueFlag("--nuclei-max-requests")) !== undefined) options.nucleiMaxRequests = parseBoundedInteger("--nuclei-max-requests", value, NUCLEI_MAX_REQUESTS);
+    else if ((value = valueFlag("--nuclei-rate-limit")) !== undefined) options.nucleiRateLimit = parseBoundedInteger("--nuclei-rate-limit", value, NUCLEI_MAX_RATE_LIMIT);
+    else if (arg === "--active-consent") {
+      if (seen.has(arg)) throw new CliUsageError(`${arg} may only be specified once`);
+      seen.add(arg);
+      options.activeConsent = true;
+    }
     else if (arg === "--allow-private") {
       if (seen.has(arg)) throw new CliUsageError(`${arg} may only be specified once`);
       seen.add(arg);
@@ -204,10 +284,21 @@ export function parseCliArgs(argv: readonly string[]): CliOptions | { help: true
     }
   }
   if (help) return { help: true };
-  if (!options.source && !options.url && !options.apiPolicy) throw new CliUsageError("provide --source, --url, or --api-policy");
+  if (!options.source && !options.url && !options.apiPolicy && !options.openapi) throw new CliUsageError("provide --source, --url, --api-policy, or --openapi");
   if (options.pages.length > 0 && !options.url) throw new CliUsageError("--page requires --url");
   if (options.maxPages !== undefined && !options.url) throw new CliUsageError("--max-pages requires --url");
-  if (options.allowPrivate && !options.url && !options.apiPolicy) throw new CliUsageError("--allow-private requires URL or API mode");
+  if (options.allowPrivate && !options.url && !options.apiPolicy && !options.openapi) throw new CliUsageError("--allow-private requires URL or API mode");
+  const schemathesisOnly = options.apiBase !== undefined || options.operations.length > 0 || options.apiMaxRequests !== undefined || options.seed !== undefined || options.schemathesisPython !== undefined;
+  if (schemathesisOnly && !options.openapi) throw new CliUsageError("--api-base, --operation, --api-max-requests, --seed and --schemathesis-python require --openapi");
+  if (options.openapi && (!options.apiBase || options.operations.length === 0)) throw new CliUsageError("--openapi requires --api-base and at least one --operation");
+  const nucleiOnly = options.nucleiPath !== undefined || options.nucleiTemplates !== undefined || options.nucleiScopes.length > 0 || options.nucleiMaxRequests !== undefined || options.nucleiRateLimit !== undefined;
+  if (nucleiOnly && !options.engines.includes("nuclei")) throw new CliUsageError("--nuclei* options require --engine nuclei");
+  if (options.engines.includes("nuclei") && (!options.url || !options.nucleiTemplates)) throw new CliUsageError("--engine nuclei requires --url and --nuclei-templates");
+  const active = Boolean(options.openapi) || options.engines.length > 0;
+  // Consent is checked before any DNS lookup or request: active testing never starts implicitly.
+  if (active && !options.activeConsent) throw new CliUsageError("active DAST (--openapi or --engine) requires --active-consent; only test targets you own or are authorized to test");
+  if (options.activeConsent && !active) throw new CliUsageError("--active-consent requires --openapi or --engine");
+  if (options.engines.includes("nuclei") && options.nucleiScopes.length === 0) options.nucleiScopes = ["misconfiguration"];
   if (options.osvOffline && !options.source) throw new CliUsageError("--osv-offline requires source mode");
   if (options.analysisProfile !== undefined && !options.source) throw new CliUsageError('--analysis-profile requires source mode');
   if (options.nativePreview && !options.source) throw new CliUsageError('--opengrep-core requires source mode');
@@ -215,7 +306,7 @@ export function parseCliArgs(argv: readonly string[]): CliOptions | { help: true
 }
 
 function modeFor(options: CliOptions): Mode {
-  if (options.apiPolicy) return options.source || options.url ? 'combined' : 'api';
+  if (options.apiPolicy || options.openapi) return options.source || options.url ? 'combined' : 'api';
   if (options.source && options.url) return "both";
   return options.source ? "source" : "url";
 }
@@ -275,6 +366,10 @@ async function declaredScope(options: CliOptions, apiPolicy: ApiPolicy | undefin
     maxPages: options.maxPages,
     apiPolicy,
     ruleset: RULESET_VERSION,
+    ...(options.openapi || options.engines.length > 0 ? { dast: {
+      ...(options.openapi ? { schemathesis: { apiBase: options.apiBase, operations: [...options.operations], maxRequests: options.apiMaxRequests ?? 32, seed: options.seed ?? 1 } } : {}),
+      ...(options.engines.includes("nuclei") ? { nuclei: { scopes: [...options.nucleiScopes].sort(), maxRequests: options.nucleiMaxRequests ?? null, rateLimit: options.nucleiRateLimit ?? null } } : {}),
+    } } : {}),
   });
 }
 
@@ -351,6 +446,30 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
       checks.push(...await runApiPolicy({ policy: apiPolicy, allowPrivate: parsed.allowPrivate, timeoutMs: parsed.timeoutMs, signal: controller.signal }));
     } catch {
       checks.push(runtimeErrorCheck('api.runtime', 'API authorization scanning could not be completed.'));
+    }
+  }
+  if (parsed.engines.includes("nuclei") && parsed.url && !controller.signal.aborted) {
+    try {
+      checks.push(...await runNuclei({
+        url: `${new URL(parsed.url).origin}/`, executable: parsed.nucleiPath, templatesDir: parsed.nucleiTemplates!, scopes: parsed.nucleiScopes,
+        consent: parsed.activeConsent, allowPrivate: parsed.allowPrivate, timeoutMs: parsed.timeoutMs,
+        maxRequests: parsed.nucleiMaxRequests, rateLimit: parsed.nucleiRateLimit, signal: controller.signal,
+      }));
+    } catch {
+      checks.push(runtimeErrorCheck('url.nuclei', 'Nuclei scanning could not be completed.'));
+    }
+  }
+  if (parsed.openapi && !controller.signal.aborted) {
+    try {
+      const document = await readJsonInput(parsed.openapi, 1024 * 1024);
+      checks.push(...await runSchemathesisLive({
+        document, baseUrl: parsed.apiBase!, operations: parsed.operations.map((path) => ({ method: "GET" as const, path })),
+        consent: parsed.activeConsent, allowPrivate: parsed.allowPrivate,
+        python: parsed.schemathesisPython ?? process.env.WAKEIO_SCHEMATHESIS_PYTHON ?? "python3",
+        timeoutMs: Math.min(parsed.timeoutMs, API_MAX_TIMEOUT_MS), maxRequests: parsed.apiMaxRequests, seed: parsed.seed, signal: controller.signal,
+      }));
+    } catch {
+      checks.push(runtimeErrorCheck('api.schemathesis', 'OpenAPI input must be a bounded local JSON file; Schemathesis live testing did not start.'));
     }
   }
   const scope = await declaredScope(parsed, apiPolicy);

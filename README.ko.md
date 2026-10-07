@@ -22,6 +22,7 @@ API preview는 redacted index 기반 실행 ledger로 판정한 단계, 불확�
 | 소스 코드 | 요청 입력이 SQL·HTML·프로세스·외부 요청·리디렉션 sink로 흐르는 제한된 JS/TS AST 후보, 동적 코드 실행, 일부 자격증명 형태, 선택적인 Next/React·Supabase migration 후보 | 같은 함수와 제한된 로컬 흐름 중심. 일반적인 함수 간·파일 간·타입 기반·런타임·빌드·실제 DB 검증은 제공하지 않음 |
 | 공개 URL | 명시한 페이지와 같은 origin의 정적 JavaScript 모듈, 전송, 보안 헤더, CSP, 쿠키, CORS, 혼합 콘텐츠, source map/debug/version 단서, DOM·비밀값 형태 후보 | 명시된 제한적 GET만 실행. 브라우저 실행, 로그인, endpoint 탐색, API 퍼징, 결제 흐름, 전체 사이트 자동 순회는 하지 않음 |
 | 읽기 전용 API 정책 | 선언한 리소스 식별자와 별도의 보호 데이터 canary를 기준으로 identity, 소유자·다른 계정·비로그인 사용자의 접근 결과 | 정책에 정의한 GET 요청만 실행. 쓰기, 자동 로그인, endpoint 탐색, 일반 퍼징은 하지 않음 |
+| 능동 DAST 프리뷰(선택) | 명시한 OpenAPI operation에 Schemathesis가 생성한 GET 입력(5xx·응답 스키마 위반), `misconfiguration`/`exposures`의 서명된 Nuclei HTTP GET/HEAD 템플릿 | `--active-consent` 필수. 검증한 origin 하나에 loopback egress gate로만 접속. 쓰기·자격증명·리디렉션·OAST·raw/unsafe 템플릿·크롤링 없음 |
 | 전후 보고서 | 논리적 프로젝트 식별자, 의미 기반 source anchor, 새 문제·변경 문제·같은 문제, `not_observed`·`unverified` 상태 | 나중에 발견되지 않았다는 사실만으로 수정 완료라고 판단하지 않음 |
 
 소스와 URL 범위는 한 보고서에 함께 담을 수 있습니다. API 정책은 선택 사항이며 환경변수 이름으로 자격증명을 참조합니다. 토큰과 canary 값은 보고서에 기록하지 않습니다. [API 정책 예제](examples/api-authorization-policy.json)와 [API 안내](docs/preview-0.4-api.md)를 참고하세요.
@@ -218,6 +219,27 @@ node build/src/cli.js compare \
 ```
 
 범위가 다르거나 미완료인 검사를 깨끗한 결과로 보여 주지 않습니다. 이전 발견이 사라져도 `not_observed`이며 자동 수정 인증서가 아닙니다. [비교 안내](docs/preview-0.4-comparison.md)를 참고하세요.
+
+## 능동 DAST 프리뷰(선택)
+
+능동 검사는 대상에 생성 요청이나 템플릿 요청을 보내므로 저절로 실행되지 않습니다. 모든 능동 실행에는 `--active-consent`가 필요하며, 없으면 DNS 조회나 요청 전에 exit 2로 끝납니다. 소유했거나 검사 권한을 받은 대상만 검사하세요. 사설·loopback 대상은 `--allow-private`도 필요하고, 메타데이터·link-local 주소는 계속 차단됩니다.
+
+```sh
+# Schemathesis: 명시한 OpenAPI operation에 생성한 GET 입력
+node build/src/cli.js scan --openapi openapi.json --api-base https://staging.example.test/ \
+  --operation '/items/{id}' --operation /search --active-consent --fail-on low
+
+# Nuclei 3.11.1: 한 번 준비한 뒤 --url origin을 준비된 템플릿으로 검사
+node scripts/install-tools.mjs --tools nuclei          # 고정된 upstream SHA-256 검증
+nuclei -ut -ud /path/to/nuclei-templates                # 검사 중에는 템플릿을 내려받지 않음
+node build/src/cli.js scan --url https://staging.example.test/ --engine nuclei \
+  --nuclei /path/to/nuclei --nuclei-templates /path/to/nuclei-templates \
+  --nuclei-scope misconfiguration,exposures --active-consent --timeout-ms 300000
+```
+
+두 엔진은 실행마다 새로 여는 loopback egress gate에만 접속합니다. Gate는 URL 검사와 같은 URL-network 정책으로 origin을 검증하고, 검증한 주소에 고정하며, 그 origin의 GET/HEAD만 전달합니다. identity 인코딩을 강제하고 요청 수·응답당/전체 바이트 예산을 전송 구간에서 적용합니다. 다른 포트를 찌르는 템플릿처럼 origin을 벗어나는 요청은 보내지 않고 거부한 수를 기록합니다. Nuclei는 `-ni -duc -dr`로 서명된 HTTP 템플릿만 실행하며 raw/unsafe·non-GET·self-contained·다른 프로토콜 템플릿은 제외하고 수를 기록합니다. Nuclei는 일부만 진행해도 exit 0을 반환하므로 엔진 진행률 100%, 엔진 오류 0, 예산 중단·upstream 실패 없음까지 확인해야 완료입니다. 그 밖에는 `partial`(exit 2)입니다. 엔진·Python 런타임·템플릿 디렉터리가 없으면 `error`(exit 2)이며 통과로 처리하지 않습니다.
+
+보고서에는 실행한 요청 수, 예산 때문에 거부한 요청 수, egress 거부 수, seed와 스키마 digest(Schemathesis), 템플릿 수·제외 수·`templates-checksum.txt` digest(Nuclei)를 남깁니다. 응답 본문, 생성 값, 추출 값, proxy 자격증명, 템플릿 원문은 남기지 않습니다. `wakeio-security-ci doctor --dast`는 아무것도 실행하지 않고 엔진 준비 상태만 보여 줍니다. 인증, 쓰기 요청, 상태 기반 workflow, 브라우저 기반 검사, 자체 probe와 크롤링은 이 프리뷰 범위가 아닙니다.
 
 ## 작은 합성 예시
 
