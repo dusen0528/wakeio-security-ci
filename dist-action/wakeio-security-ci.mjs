@@ -235221,8 +235221,10 @@ content-length: 0\r
       reject("502 Bad Gateway");
       return;
     }
-    if (stopped || policy.signal.aborted) {
+    if (stopped || policy.signal.aborted || counters.tunnels >= policy.maxRequests) {
       counters.blockedBudget += 1;
+      if (counters.tunnels >= policy.maxRequests)
+        stop("request_limit");
       reject("503 Service Unavailable");
       return;
     }
@@ -235981,7 +235983,7 @@ ${version.stderr}`.includes(`Nuclei Engine Version: v${NUCLEI_VERSION}`)) {
       `Templates ${provenance.templatesVersion} (templates-checksum.txt sha256 ${provenance.templatesChecksumSha256.slice(0, 16)}\u2026); Nuclei ${NUCLEI_VERSION}.`
     ];
     if (resolved.origin.protocol === "https:")
-      notes.push("HTTPS: the gate sees CONNECT tunnels only, so the request budget is not enforced on the wire for Nuclei; time and byte budgets still apply, and Nuclei does not verify TLS certificates.");
+      notes.push(`HTTPS: the gate sees CONNECT tunnels only. It caps tunnels at the request budget (${counters.tunnels} opened), but requests reused inside a tunnel are not counted on the wire; time and byte budgets still apply, and Nuclei does not verify TLS certificates.`);
     if (reason !== "complete")
       notes.push(`Incomplete: ${reason}. Nuclei exit status alone does not establish completion; treat absent findings as unverified.`);
     return [{ id: NUCLEI_CHECK_ID, status: reason === "complete" ? "completed" : "partial", findings: parsed.findings, notes, metrics }];
