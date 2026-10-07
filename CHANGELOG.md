@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Evaluate the DAST Action consent, trigger and origin policy in a preflight
+  step before any engine setup. Python 3.12 and the Schemathesis virtualenv are
+  now prepared only when that policy allows an OpenAPI run; previously a fork
+  pull request or an unlisted origin with consent set still downloaded them.
+  The main step still records every refusal.
+
 - Add opt-in two-round verification for the existing owned synthetic API fixtures.
   Preserve every phase report and earlier observations; inconsistent repeats,
   interrupted controls and missing phases remain inconclusive. One shared

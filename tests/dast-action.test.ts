@@ -216,3 +216,45 @@ test("DAST Action runs pinned Nuclei through the bundled layout", {
     await rm(top, { recursive: true, force: true });
   }
 });
+
+test("DAST Action preflight skips engine setup for every refusal and records nothing itself", async () => {
+  const top = await mkdtemp(join(tmpdir(), "wakeio-dast-preflight-"));
+  try {
+    const action = await actionLayout(top);
+    const paths = await workspaceFor(top, sameRepoPr);
+    const forkEvent = join(top, "fork.json");
+    await writeFile(forkEvent, JSON.stringify({ pull_request: { head: { repo: { full_name: "evil/app" } }, base: { repo: { full_name: "acme/app" } } } }));
+    const origin = "https://staging.example.test";
+    const base: NodeJS.ProcessEnv = {
+      PATH: process.env.PATH, WAKEIO_MODE: "dast-preflight", WAKEIO_ACTION_PATH: action, GITHUB_WORKSPACE: paths.workspace,
+      GITHUB_OUTPUT: paths.output, GITHUB_STEP_SUMMARY: paths.summary, GITHUB_EVENT_NAME: "push",
+      WAKEIO_ACTIVE_CONSENT: "true", WAKEIO_ALLOWED_ORIGINS: origin, WAKEIO_OPENAPI: "openapi.json",
+      WAKEIO_API_BASE: `${origin}/`, WAKEIO_OPERATIONS: "/items/{id}", WAKEIO_OUT: "reports",
+    };
+    const cases: Array<[string, NodeJS.ProcessEnv, string]> = [
+      ["allowed openapi", {}, "true"],
+      ["allowed nuclei only", { WAKEIO_OPENAPI: "", WAKEIO_ENGINES: "nuclei", WAKEIO_URL: `${origin}/`, WAKEIO_NUCLEI_TEMPLATES: "t", WAKEIO_NUCLEI_TEMPLATES_SHA256: "a".repeat(64) }, "false"],
+      ["consent missing", { WAKEIO_ACTIVE_CONSENT: "" }, "false"],
+      ["api-base not allowlisted", { WAKEIO_ALLOWED_ORIGINS: "https://other.example.test" }, "false"],
+      ["pull_request_target", { GITHUB_EVENT_NAME: "pull_request_target", GITHUB_EVENT_PATH: paths.eventPath }, "false"],
+      ["fork pull request", { GITHUB_EVENT_NAME: "pull_request", GITHUB_EVENT_PATH: forkEvent }, "false"],
+      ["unreadable pull request event", { GITHUB_EVENT_NAME: "pull_request", GITHUB_EVENT_PATH: join(top, "missing.json") }, "false"],
+    ];
+    for (const [name, overrides, expected] of cases) {
+      await writeFile(paths.output, ""); await writeFile(paths.summary, "");
+      const result = await launch(join(action, "scripts/action-run.mjs"), { ...base, ...overrides }, paths.workspace);
+      assert.equal(result.code, 0, name);
+      assert.deepEqual(outputs(await readFile(paths.output, "utf8")), { "prepare-schemathesis": expected }, name);
+      assert.equal(await readFile(paths.summary, "utf8"), "", name);
+    }
+    assert.deepEqual(await readdir(paths.workspace), ["openapi.json"], "preflight writes no report or status artifact");
+
+    const workflow = await readFile(resolve(root, "dast/action.yml"), "utf8");
+    const steps = workflow.slice(workflow.indexOf("\n  steps:"));
+    assert.ok(steps.indexOf("id: dast-preflight") < steps.indexOf("actions/setup-python@"), "policy preflight runs before Python setup");
+    assert.equal((steps.match(/steps\.dast-preflight\.outputs\.prepare-schemathesis == 'true'/g) ?? []).length, 2, "both Python setup steps follow the preflight");
+    assert.doesNotMatch(steps, /inputs\.active-consent == 'true'/, "setup no longer runs on consent alone");
+  } finally {
+    await rm(top, { recursive: true, force: true });
+  }
+});

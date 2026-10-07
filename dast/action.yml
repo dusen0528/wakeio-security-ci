@@ -3,9 +3,10 @@ description: Opt-in active DAST with Schemathesis and pinned Nuclei against an e
 author: Wakeio Security CI contributors
 
 # Separate from the root Action so passive scans can never start active testing.
-# Refused before any download or request: missing consent, an origin outside
-# allowed-origins, pull_request_target, and pull requests or workflow_run events
-# from forks.
+# Refused before any engine download or request: missing consent, an origin
+# outside allowed-origins, pull_request_target, and pull requests or
+# workflow_run events from forks. Only the Node.js runtime that evaluates this
+# policy is set up first.
 
 inputs:
   active-consent:
@@ -138,14 +139,32 @@ runs:
       uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
       with:
         node-version: '22'
+    # Same consent, trigger and origin policy as the main step, evaluated before
+    # any engine setup so a refused run downloads nothing.
+    - name: Check active DAST policy before engine setup
+      id: dast-preflight
+      shell: bash
+      env:
+        WAKEIO_MODE: dast-preflight
+        WAKEIO_ACTION_PATH: ${{ github.action_path }}/..
+        WAKEIO_ACTIVE_CONSENT: ${{ inputs.active-consent }}
+        WAKEIO_ALLOWED_ORIGINS: ${{ inputs.allowed-origins }}
+        WAKEIO_URL: ${{ inputs.url }}
+        WAKEIO_ENGINES: ${{ inputs.engines }}
+        WAKEIO_NUCLEI_TEMPLATES: ${{ inputs.nuclei-templates }}
+        WAKEIO_NUCLEI_TEMPLATES_SHA256: ${{ inputs.nuclei-templates-sha256 }}
+        WAKEIO_OPENAPI: ${{ inputs.openapi }}
+        WAKEIO_API_BASE: ${{ inputs.api-base }}
+        WAKEIO_OPERATIONS: ${{ inputs.operations }}
+      run: node "$WAKEIO_ACTION_PATH/scripts/action-run.mjs"
     - name: Set up Python 3.12.13 for Schemathesis
-      if: ${{ inputs.openapi != '' && inputs.schemathesis-python == '' && inputs.active-consent == 'true' }}
+      if: ${{ steps.dast-preflight.outputs.prepare-schemathesis == 'true' && inputs.schemathesis-python == '' }}
       uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
       with:
         python-version: '3.12.13'
     - name: Prepare version-pinned Schemathesis environment
       id: schemathesis-env
-      if: ${{ inputs.openapi != '' && inputs.schemathesis-python == '' && inputs.active-consent == 'true' }}
+      if: ${{ steps.dast-preflight.outputs.prepare-schemathesis == 'true' && inputs.schemathesis-python == '' }}
       shell: bash
       env:
         WAKEIO_LOCK: ${{ github.action_path }}/../workers/schemathesis/requirements.lock.txt

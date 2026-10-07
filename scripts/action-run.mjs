@@ -23,6 +23,7 @@ const STABLE_SYSTEM_ALIASES = new Set(['/tmp', '/var']);
 async function main() {
   const env = process.env;
   if (value(env.WAKEIO_MODE) === 'dast') return dastMain(env);
+  if (value(env.WAKEIO_MODE) === 'dast-preflight') return dastPreflight(env);
   const actionPath = resolve(env.WAKEIO_ACTION_PATH || env.GITHUB_ACTION_PATH || process.cwd());
   const source = value(env.WAKEIO_SOURCE);
   const url = value(env.WAKEIO_URL);
@@ -235,6 +236,21 @@ async function dastMain(env) {
     // Set inside finally: a policy refusal returns early and must still exit 2.
     process.exitCode = state.exitCode;
   }
+}
+
+/**
+ * Runs before any engine setup step of dast/action.yml. It applies the same
+ * consent, trigger and origin policy and only reports whether the Schemathesis
+ * environment may be prepared. It never records a refusal itself: the main
+ * step repeats the policy and owns every status artifact, output and summary.
+ */
+async function dastPreflight(env) {
+  let plan;
+  try { plan = await dastPolicy(env); } catch { plan = { refusal: 'policy evaluation failed' }; }
+  const prepareSchemathesis = !plan.refusal && Boolean(plan.apiBase);
+  const outputFile = value(env.GITHUB_OUTPUT);
+  if (outputFile) await appendFile(outputFile, `prepare-schemathesis=${prepareSchemathesis}\n`, { encoding: 'utf8' });
+  if (plan.refusal) process.stderr.write('wakeio-security-ci DAST preflight refused; engine setup is skipped.\n');
 }
 
 /** Fixed refusal reasons only; never echoes inputs, URLs or event contents. */
