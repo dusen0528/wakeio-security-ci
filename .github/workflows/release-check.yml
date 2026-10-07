@@ -32,6 +32,10 @@ jobs:
         timeout-minutes: 5
         run: node scripts/bootstrap-schemathesis.mjs
 
+      - name: Prepare checksum-pinned Nuclei and official templates
+        timeout-minutes: 5
+        run: node scripts/bootstrap-nuclei.mjs
+
       - name: Install dependencies without lifecycle scripts
         timeout-minutes: 3
         run: npm ci --ignore-scripts --no-audit --fund=false
@@ -39,7 +43,7 @@ jobs:
       - name: Run CI verification contracts and required real-engine suite
         timeout-minutes: 7
         run: |
-          node --test scripts/ci-verification.test.mjs
+          node --test scripts/ci-verification.test.mjs scripts/bootstrap-nuclei.test.mjs
           npm run test:schemathesis
 
       - name: Gate owned loopback DAST task coverage
