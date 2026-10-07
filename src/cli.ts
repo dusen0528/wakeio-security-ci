@@ -41,6 +41,8 @@ export interface CliOptions {
   nativePreview?: { executable: string };
   /** Active DAST is opt-in and requires `activeConsent`; see parseCliArgs. */
   activeConsent: boolean;
+  /** When non-empty, every network target origin must be listed; empty means unrestricted. */
+  allowedOrigins: string[];
   openapi?: string;
   apiBase?: string;
   operations: string[];
@@ -96,6 +98,8 @@ Options:
   --trivy PATH                 Trivy executable
   --bandit PATH                Bandit executable
   --opengrep-core ABS_PATH     Explicit pinned Darwin arm64 native preview (BYO)
+  --allowed-origin ORIGIN      Only scan these origins (repeatable, 1..16): --url, --api-base and
+                               the API policy baseUrl must match before any DNS lookup or request
 
 Active DAST (off by default; sends generated or template requests to the target):
   --active-consent             Required: you own or are authorized to test the target
@@ -151,6 +155,19 @@ function parsePageLimit(value: string): number {
   return parsed;
 }
 
+/** An http(s) origin with no path, query, fragment or credentials; returns its canonical form. */
+function allowedOriginOf(raw: string): string | undefined {
+  let url: URL;
+  try { url = new URL(raw); } catch { return undefined; }
+  if ((url.protocol !== "http:" && url.protocol !== "https:") || url.username || url.password
+    || url.pathname !== "/" || url.search || url.hash || raw.includes("?") || raw.includes("#")) return undefined;
+  return url.origin;
+}
+
+function originAllowed(raw: string, allowed: readonly string[]): boolean {
+  try { return allowed.includes(new URL(raw).origin); } catch { return false; }
+}
+
 /** Parses the intentionally small, strict public CLI grammar. */
 export function parseCliArgs(argv: readonly string[]): CliOptions | { help: true } {
   const args = [...argv];
@@ -166,6 +183,7 @@ export function parseCliArgs(argv: readonly string[]): CliOptions | { help: true
     osvOffline: false,
     toolPaths: {},
     activeConsent: false,
+    allowedOrigins: [],
     operations: [],
     engines: [],
     nucleiScopes: [],
@@ -251,6 +269,18 @@ export function parseCliArgs(argv: readonly string[]): CliOptions | { help: true
       if (options.operations.length >= 16) throw new CliUsageError("--operation may be specified at most 16 times");
       options.operations.push(operation);
     }
+    else if (arg === "--allowed-origin" || arg.startsWith("--allowed-origin=")) {
+      let raw: string;
+      if (arg === "--allowed-origin") {
+        const result = valueAfter(args, index, "--allowed-origin");
+        raw = result[0];
+        index = result[1];
+      } else raw = arg.slice("--allowed-origin=".length);
+      const origin = allowedOriginOf(raw);
+      if (!origin) throw new CliUsageError("--allowed-origin must be an http(s) origin only, such as https://staging.example.test");
+      if (options.allowedOrigins.length >= 16) throw new CliUsageError("--allowed-origin may be specified at most 16 times");
+      if (!options.allowedOrigins.includes(origin)) options.allowedOrigins.push(origin);
+    }
     else if ((value = valueFlag("--api-max-requests")) !== undefined) options.apiMaxRequests = parseBoundedInteger("--api-max-requests", value, API_MAX_REQUESTS);
     else if ((value = valueFlag("--seed")) !== undefined) options.seed = parseBoundedInteger("--seed", value, 2147483647);
     else if ((value = valueFlag("--schemathesis-python")) !== undefined) options.schemathesisPython = value;
@@ -301,6 +331,12 @@ export function parseCliArgs(argv: readonly string[]): CliOptions | { help: true
   // Consent is checked before any DNS lookup or request: active testing never starts implicitly.
   if (active && !options.activeConsent) throw new CliUsageError("active DAST (--openapi or --engine) requires --active-consent; only test targets you own or are authorized to test");
   if (options.activeConsent && !active) throw new CliUsageError("--active-consent requires --openapi or --engine");
+  if (options.allowedOrigins.length > 0) {
+    if (!options.url && !options.apiPolicy && !options.openapi) throw new CliUsageError("--allowed-origin requires URL or API mode");
+    // Checked before any DNS lookup or request; the API policy baseUrl is checked once the file is read.
+    if (options.url && !originAllowed(options.url, options.allowedOrigins)) throw new CliUsageError("the --url origin is not in --allowed-origin");
+    if (options.apiBase && !originAllowed(options.apiBase, options.allowedOrigins)) throw new CliUsageError("the --api-base origin is not in --allowed-origin");
+  }
   if (options.engines.includes("nuclei") && options.nucleiScopes.length === 0) options.nucleiScopes = ["misconfiguration"];
   if (options.osvOffline && !options.source) throw new CliUsageError("--osv-offline requires source mode");
   if (options.analysisProfile !== undefined && !options.source) throw new CliUsageError('--analysis-profile requires source mode');
@@ -411,6 +447,9 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
       checks.push(runtimeErrorCheck('api.policy', 'API policy must be a valid bounded JSON file with the supported schema.'));
     }
   }
+  // The policy baseUrl is only known after reading the file; refuse it here, before any request.
+  const apiPolicyAllowed = apiPolicy !== undefined && (parsed.allowedOrigins.length === 0 || originAllowed(apiPolicy.baseUrl, parsed.allowedOrigins));
+  if (apiPolicy && !apiPolicyAllowed) checks.push(runtimeErrorCheck('api.authorization', 'The API policy baseUrl origin is not in --allowed-origin; no API requests were made.'));
   if (parsed.source) {
     const sourceOptions: SourceOptions = {
       root: parsed.source,
@@ -444,7 +483,7 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
       checks.push(runtimeErrorCheck("url.runtime", "URL scanning could not be completed."));
     }
   }
-  if (apiPolicy && !controller.signal.aborted) {
+  if (apiPolicy && apiPolicyAllowed && !controller.signal.aborted) {
     try {
       checks.push(...await runApiPolicy({ policy: apiPolicy, allowPrivate: parsed.allowPrivate, timeoutMs: parsed.timeoutMs, signal: controller.signal }));
     } catch {

@@ -236035,6 +236035,8 @@ Options:
   --trivy PATH                 Trivy executable
   --bandit PATH                Bandit executable
   --opengrep-core ABS_PATH     Explicit pinned Darwin arm64 native preview (BYO)
+  --allowed-origin ORIGIN      Only scan these origins (repeatable, 1..16): --url, --api-base and
+                               the API policy baseUrl must match before any DNS lookup or request
 
 Active DAST (off by default; sends generated or template requests to the target):
   --active-consent             Required: you own or are authorized to test the target
@@ -236092,6 +236094,24 @@ function parsePageLimit(value) {
     throw new CliUsageError("--max-pages must be between 1 and 8");
   return parsed;
 }
+function allowedOriginOf(raw) {
+  let url;
+  try {
+    url = new URL(raw);
+  } catch {
+    return void 0;
+  }
+  if (url.protocol !== "http:" && url.protocol !== "https:" || url.username || url.password || url.pathname !== "/" || url.search || url.hash || raw.includes("?") || raw.includes("#"))
+    return void 0;
+  return url.origin;
+}
+function originAllowed(raw, allowed) {
+  try {
+    return allowed.includes(new URL(raw).origin);
+  } catch {
+    return false;
+  }
+}
 function parseCliArgs(argv) {
   const args = [...argv];
   if (args.length === 0 || args[0] === "--help" || args[0] === "-h")
@@ -236108,6 +236128,7 @@ function parseCliArgs(argv) {
     osvOffline: false,
     toolPaths: {},
     activeConsent: false,
+    allowedOrigins: [],
     operations: [],
     engines: [],
     nucleiScopes: []
@@ -236213,6 +236234,21 @@ function parseCliArgs(argv) {
       if (options.operations.length >= 16)
         throw new CliUsageError("--operation may be specified at most 16 times");
       options.operations.push(operation);
+    } else if (arg === "--allowed-origin" || arg.startsWith("--allowed-origin=")) {
+      let raw;
+      if (arg === "--allowed-origin") {
+        const result2 = valueAfter(args, index, "--allowed-origin");
+        raw = result2[0];
+        index = result2[1];
+      } else
+        raw = arg.slice("--allowed-origin=".length);
+      const origin = allowedOriginOf(raw);
+      if (!origin)
+        throw new CliUsageError("--allowed-origin must be an http(s) origin only, such as https://staging.example.test");
+      if (options.allowedOrigins.length >= 16)
+        throw new CliUsageError("--allowed-origin may be specified at most 16 times");
+      if (!options.allowedOrigins.includes(origin))
+        options.allowedOrigins.push(origin);
     } else if ((value = valueFlag("--api-max-requests")) !== void 0)
       options.apiMaxRequests = parseBoundedInteger("--api-max-requests", value, API_MAX_REQUESTS);
     else if ((value = valueFlag("--seed")) !== void 0)
@@ -236283,6 +236319,14 @@ function parseCliArgs(argv) {
     throw new CliUsageError("active DAST (--openapi or --engine) requires --active-consent; only test targets you own or are authorized to test");
   if (options.activeConsent && !active)
     throw new CliUsageError("--active-consent requires --openapi or --engine");
+  if (options.allowedOrigins.length > 0) {
+    if (!options.url && !options.apiPolicy && !options.openapi)
+      throw new CliUsageError("--allowed-origin requires URL or API mode");
+    if (options.url && !originAllowed(options.url, options.allowedOrigins))
+      throw new CliUsageError("the --url origin is not in --allowed-origin");
+    if (options.apiBase && !originAllowed(options.apiBase, options.allowedOrigins))
+      throw new CliUsageError("the --api-base origin is not in --allowed-origin");
+  }
   if (options.engines.includes("nuclei") && options.nucleiScopes.length === 0)
     options.nucleiScopes = ["misconfiguration"];
   if (options.osvOffline && !options.source)
@@ -236405,6 +236449,9 @@ ${USAGE2}`);
         checks.push(runtimeErrorCheck("api.policy", "API policy must be a valid bounded JSON file with the supported schema."));
       }
     }
+    const apiPolicyAllowed = apiPolicy !== void 0 && (parsed.allowedOrigins.length === 0 || originAllowed(apiPolicy.baseUrl, parsed.allowedOrigins));
+    if (apiPolicy && !apiPolicyAllowed)
+      checks.push(runtimeErrorCheck("api.authorization", "The API policy baseUrl origin is not in --allowed-origin; no API requests were made."));
     if (parsed.source) {
       const sourceOptions = {
         root: parsed.source,
@@ -236438,7 +236485,7 @@ ${USAGE2}`);
         checks.push(runtimeErrorCheck("url.runtime", "URL scanning could not be completed."));
       }
     }
-    if (apiPolicy && !controller.signal.aborted) {
+    if (apiPolicy && apiPolicyAllowed && !controller.signal.aborted) {
       try {
         checks.push(...await runApiPolicy({ policy: apiPolicy, allowPrivate: parsed.allowPrivate, timeoutMs: parsed.timeoutMs, signal: controller.signal }));
       } catch {
