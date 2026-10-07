@@ -484,6 +484,8 @@ export function toMarkdown(report: ScanReport, failOn: FailOn = 'high'): string 
         const e = check.apiStateEvidence;
         lines.push(`  - Owned synthetic resource evidence (${e.phase}): execution=${e.execution}, effect=${e.effect}, normal=${e.normal}, verification=${e.verification}, cleanup=${e.cleanup}.`,
           `  - API requests=${e.counts.apiRequests ?? 'unknown'}; next evidence=${e.nextEvidence}. Finding verification is unchanged; this is not whole-app security proof.`);
+        if (e.controlOutcomes) lines.push(`  - Independent logical control outcomes (0–11): ${e.controlOutcomes.join(', ')}.`);
+        if (e.repetition) lines.push(`  - Owned repetition: requested rounds=2; completed phases=${e.repetition.completedPhases}/4; consistency=${e.repetition.consistency}. Bounded observations, not statistical or production verification.`);
       }
       if (check.analysisGaps) {
         const gaps = check.analysisGaps;

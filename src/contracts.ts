@@ -84,7 +84,7 @@ export interface ApiExecutionStep {
   ordinal: number;
   outcome: 'evaluated' | 'inconclusive' | 'not_attempted';
   reason: 'evaluated' | 'assertion_inconclusive' | 'transport_error' | 'network_policy'
-    | 'request_budget' | 'body_budget' | 'cancelled' | 'deadline' | 'prerequisite_failed' | 'not_reached';
+    | 'request_budget' | 'body_budget' | 'shared_request_budget' | 'shared_body_budget' | 'cancelled' | 'deadline' | 'prerequisite_failed' | 'not_reached';
   /** Zero-based offset into counted HTTP attempts; retries remain separately counted. */
   attemptStart: number;
   httpAttempts: number;
@@ -114,6 +114,7 @@ export interface CheckResult {
   apiStateEvidence?: ApiStateEvidence;
   apiExecution?: ApiExecutionLedger;
 }
+export type ApiStateControlOutcome = 'unknown' | 'identity_passed' | 'identity_failed' | 'normal_passed' | 'normal_failed' | 'effect_observed' | 'denial_observed';
 export interface ApiStateEvidence {
   version: 1;
   scope: 'owned-synthetic-resource-read-only';
@@ -133,6 +134,10 @@ export interface ApiStateEvidence {
     beforeReportSha256?: string; afterReportSha256?: string;
     runtimeVersion?: string;
   };
+  /** Fixed logical order of independent, redacted owned-fixture controls. */
+  controlOutcomes?: ApiStateControlOutcome[];
+  /** Optional opt-in repeated owned-fixture observation; not a reliability proof. */
+  repetition?: { rounds: 2; completedPhases: number; consistency: 'consistent' | 'inconsistent' | 'incomplete'; phaseReportSha256: string[] };
   nextEvidence: 'review_owned_fixture' | 'review_execution' | 'retry_delivery_only';
 }
 export interface SourceOptions {

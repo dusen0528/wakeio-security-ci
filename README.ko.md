@@ -14,6 +14,8 @@
 
 API preview는 redacted index 기반 실행 ledger로 판정한 단계, 불확실한 단계,
 실행하지 못한 단계를 구분한다. [실행 계약](docs/preview-0.4-api.md#계획-대비-실행-ledger)을 참고한다.
+[소유 API pilot](docs/api-state-oracle.md)은 명시적으로 두 번 검증을 선택할 수 있다.
+정상 기능 대조를 반복하고 결과가 다르면 불확실로 남긴다.
 
 ## 무엇을 검사하나요?
 

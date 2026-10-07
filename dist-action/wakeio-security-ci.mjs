@@ -230700,6 +230700,8 @@ var REASONS2 = [
   "network_policy",
   "request_budget",
   "body_budget",
+  "shared_request_budget",
+  "shared_body_budget",
   "cancelled",
   "deadline",
   "prerequisite_failed",
@@ -230755,7 +230757,7 @@ function sanitiseApiExecutionLedger(input) {
     for (const step2 of steps) {
       if (stopped && step2.httpAttempts > 0)
         fail3();
-      if (["body_budget", "cancelled", "deadline", "request_budget"].includes(step2.reason))
+      if (["body_budget", "shared_body_budget", "shared_request_budget", "cancelled", "deadline", "request_budget"].includes(step2.reason))
         stopped = true;
       const planned = plan.steps[step2.ordinal];
       if (planned.phase === "deny" && step2.outcome === "evaluated") {
@@ -230819,7 +230821,11 @@ var EVIDENCE_REASONS = /* @__PURE__ */ new Set([
   "state_unavailable",
   "fixture_unavailable",
   "normal_regression",
-  "effect_persists"
+  "effect_persists",
+  "request_budget",
+  "body_budget",
+  "repeat_incomplete",
+  "repeat_inconsistent"
 ]);
 function unknownApiStateEvidence(phase = "comparison") {
   return {
@@ -230843,7 +230849,7 @@ function sanitiseApiStateEvidence(input) {
       throw new Error("shape");
     if (Array.isArray(input))
       throw new Error("shape");
-    const value = input;
+    const value = snapshotJsonData(input);
     if (value.version !== 1 || value.scope !== "owned-synthetic-resource-read-only" || !["baseline", "candidate", "comparison"].includes(value.phase) || !["completed", "partial", "error"].includes(value.execution) || !["observed", "not_observed", "unknown"].includes(value.effect) || !["passed", "failed", "unknown"].includes(value.normal) || !["not_evaluated", "scoped_fix_effect_observed", "effect_persists", "normal_regression", "inconclusive"].includes(value.verification) || !["confirmed", "unknown", "not_run"].includes(value.cleanup) || !["review_owned_fixture", "review_execution", "retry_delivery_only"].includes(value.nextEvidence) || !Array.isArray(value.reasons) || value.reasons.length > 24 || value.reasons.some((reason) => !EVIDENCE_REASONS.has(reason)))
       throw new Error("enum");
     if (!value.counts || typeof value.counts !== "object" || Array.isArray(value.counts))
@@ -230888,7 +230894,22 @@ function sanitiseApiStateEvidence(input) {
         throw new Error("runtime");
       lineage.runtimeVersion = value.lineage.runtimeVersion;
     }
-    if (counts2.plannedRequests !== null && counts2.plannedRequests !== (value.phase === "comparison" ? 24 : 12))
+    let controlOutcomes;
+    if (value.controlOutcomes !== void 0) {
+      if (value.phase === "comparison" || !Array.isArray(value.controlOutcomes) || value.controlOutcomes.length !== 12 || value.controlOutcomes.some((outcome, index) => !["unknown", ...[0, 1, 10, 11].includes(index) ? ["identity_passed", "identity_failed"] : [2, 5, 6, 9].includes(index) ? ["normal_passed", "normal_failed"] : ["effect_observed", "denial_observed"]].includes(outcome)) || value.execution === "completed" && value.controlOutcomes.some((outcome) => outcome === "unknown" || outcome === "identity_failed") || value.execution === "completed" && (value.effect === "observed" !== value.controlOutcomes.includes("effect_observed") || value.normal === "failed" !== value.controlOutcomes.includes("normal_failed")) || value.effect === "not_observed" && value.controlOutcomes.includes("effect_observed") || value.normal === "passed" && value.controlOutcomes.includes("normal_failed"))
+        throw new Error("controls");
+      controlOutcomes = [...value.controlOutcomes];
+    }
+    let repetition;
+    if (value.repetition !== void 0) {
+      const r = value.repetition;
+      if (!r || typeof r !== "object" || Array.isArray(r) || Object.keys(r).length !== 4 || !["rounds", "completedPhases", "consistency", "phaseReportSha256"].every((key2) => Object.hasOwn(r, key2)) || value.phase !== "comparison" || r.rounds !== 2 || !Number.isSafeInteger(r.completedPhases) || r.completedPhases < 0 || r.completedPhases > 4 || !["consistent", "inconsistent", "incomplete"].includes(r.consistency) || !Array.isArray(r.phaseReportSha256) || r.phaseReportSha256.length > 4 || r.phaseReportSha256.length < r.completedPhases || r.phaseReportSha256.some((hash) => typeof hash !== "string" || !/^[a-f0-9]{64}$/.test(hash)) || counts2.plannedRequests !== 48 || r.phaseReportSha256.length > 0 && r.phaseReportSha256[0] !== lineage.beforeReportSha256 || r.phaseReportSha256.length > 1 && r.phaseReportSha256[1] !== lineage.afterReportSha256 || r.consistency === "consistent" && r.completedPhases !== 4 || r.consistency === "incomplete" && r.completedPhases === 4 || r.consistency === "inconsistent" && (r.completedPhases < 3 || !value.reasons.includes("repeat_inconsistent")) || r.consistency !== "consistent" && (value.execution === "completed" || value.verification !== "inconclusive"))
+        throw new Error("repetition");
+      repetition = { rounds: 2, completedPhases: r.completedPhases, consistency: r.consistency, phaseReportSha256: [...r.phaseReportSha256] };
+    }
+    if (value.reasons.includes("repeat_inconsistent") !== (repetition?.consistency === "inconsistent"))
+      throw new Error("consistency");
+    if (counts2.plannedRequests !== null && counts2.plannedRequests !== (value.phase === "comparison" ? repetition ? 48 : 24 : 12))
       throw new Error("planned");
     if (value.phase !== "comparison" && value.verification !== "not_evaluated" && value.verification !== "inconclusive")
       throw new Error("phase");
@@ -230918,6 +230939,8 @@ function sanitiseApiStateEvidence(input) {
       reasons: [...new Set(value.reasons)],
       counts: counts2,
       lineage,
+      ...controlOutcomes ? { controlOutcomes } : {},
+      ...repetition ? { repetition } : {},
       nextEvidence: value.nextEvidence
     };
   } catch {
@@ -231405,6 +231428,10 @@ function toMarkdown(report, failOn = "high") {
       if (check.apiStateEvidence) {
         const e = check.apiStateEvidence;
         lines.push(`  - Owned synthetic resource evidence (${e.phase}): execution=${e.execution}, effect=${e.effect}, normal=${e.normal}, verification=${e.verification}, cleanup=${e.cleanup}.`, `  - API requests=${e.counts.apiRequests ?? "unknown"}; next evidence=${e.nextEvidence}. Finding verification is unchanged; this is not whole-app security proof.`);
+        if (e.controlOutcomes)
+          lines.push(`  - Independent logical control outcomes (0\u201311): ${e.controlOutcomes.join(", ")}.`);
+        if (e.repetition)
+          lines.push(`  - Owned repetition: requested rounds=2; completed phases=${e.repetition.completedPhases}/4; consistency=${e.repetition.consistency}. Bounded observations, not statistical or production verification.`);
       }
       if (check.analysisGaps) {
         const gaps = check.analysisGaps;
@@ -232788,16 +232815,21 @@ function findingForExposure(entry, deny, status) {
   };
 }
 async function requestApi(url, authorization, state) {
-  if (state.stopRequests) {
+  if (state.stopRequests || state.ownedCapture?.budget?.bodyExhausted) {
+    state.bodyBudgetExhausted = true;
+    state.bodyReadIncomplete ||= state.ownedCapture?.budget?.bodyReadIncomplete ?? false;
     if (state.activeStep)
-      state.activeStep.reason = "body_budget";
+      state.activeStep.reason = state.ownedCapture?.budget ? "shared_body_budget" : "body_budget";
     return { errorCode: state.bodyReadIncomplete ? "body_limit" : "total_body_limit" };
   }
-  if (state.bytes >= API_MAX_TOTAL_BODY_BYTES) {
+  const bodyBytes = () => state.ownedCapture?.budget?.bytes ?? state.bytes;
+  if (bodyBytes() >= API_MAX_TOTAL_BODY_BYTES) {
     state.stopRequests = true;
     state.bodyBudgetExhausted = true;
+    if (state.ownedCapture?.budget)
+      state.ownedCapture.budget.bodyExhausted = true;
     if (state.activeStep)
-      state.activeStep.reason = "body_budget";
+      state.activeStep.reason = state.ownedCapture?.budget ? "shared_body_budget" : "body_budget";
     return { errorCode: "total_body_limit" };
   }
   const capture = state.ownedCapture;
@@ -232812,8 +232844,10 @@ async function requestApi(url, authorization, state) {
       authorization,
       rejectRedirects: true,
       acceptJson: true
-    }, url.origin, Math.min(MAX_SINGLE_BODY_BYTES, API_MAX_TOTAL_BODY_BYTES - state.bytes), Math.min(MAX_SINGLE_BODY_BYTES, API_MAX_TOTAL_BODY_BYTES - state.bytes));
+    }, url.origin, Math.min(MAX_SINGLE_BODY_BYTES, API_MAX_TOTAL_BODY_BYTES - bodyBytes()), Math.min(MAX_SINGLE_BODY_BYTES, API_MAX_TOTAL_BODY_BYTES - bodyBytes()));
     state.bytes += resource.body.byteLength;
+    if (state.ownedCapture?.budget)
+      state.ownedCapture.budget.bytes += resource.body.byteLength;
     if (state.activeStep)
       state.activeStep.httpStatus = resource.status;
     try {
@@ -232833,6 +232867,10 @@ async function requestApi(url, authorization, state) {
       state.stopRequests = true;
       state.bodyBudgetExhausted = true;
       state.bodyReadIncomplete = true;
+      if (state.ownedCapture?.budget) {
+        state.ownedCapture.budget.bodyExhausted = true;
+        state.ownedCapture.budget.bodyReadIncomplete = true;
+      }
     }
     return { errorCode };
   }
@@ -232843,9 +232881,9 @@ function requestFailureReason(code, state) {
   if (state.context.signal.aborted)
     return "cancelled";
   if (["body_limit", "total_body_limit"].includes(code))
-    return "body_budget";
+    return state.ownedCapture?.budget ? "shared_body_budget" : "body_budget";
   if (code === "request_limit")
-    return "request_budget";
+    return state.ownedCapture?.budget ? "shared_request_budget" : "request_budget";
   if (/blocked|private|metadata|redirect|scheme|port|address/.test(code))
     return "network_policy";
   return "transport_error";
@@ -232855,11 +232893,11 @@ async function recordStep(state, phase, actor, caseId, execute, evaluated) {
   const actorIndex = state.actorIndexes.get(actor), caseIndex = caseId === void 0 ? void 0 : state.caseIndexes.get(caseId);
   const planned = plan.steps.find((step3) => step3.phase === phase && step3.actorIndex === actorIndex && step3.caseIndex === caseIndex);
   const step2 = state.execution.steps[planned.ordinal];
-  step2.attemptStart = state.context.budget.count;
+  step2.attemptStart = state.context.budget.count - state.requestOffset;
   state.activeStep = step2;
   try {
     const result2 = await execute();
-    step2.httpAttempts = state.context.budget.count - step2.attemptStart;
+    step2.httpAttempts = state.context.budget.count - state.requestOffset - step2.attemptStart;
     step2.outcome = step2.httpAttempts === 0 ? "not_attempted" : evaluated(result2) ? "evaluated" : "inconclusive";
     if (step2.outcome === "evaluated")
       step2.reason = "evaluated";
@@ -233145,8 +233183,11 @@ async function runApiPolicy(options) {
   const notes = [API_SCOPE_NOTE];
   const findings = [];
   const controller = createApiRunControl(timeoutMs, signal);
-  const budget = { count: 0, max: API_MAX_REQUESTS };
+  const capture = ownedApiCapture(signal);
+  const budget = capture?.budget?.requests ?? { count: 0, max: API_MAX_REQUESTS };
+  const requestOffset = budget.count;
   const state = {
+    requestOffset,
     execution: createApiExecutionLedger(parsed.policy.version, requestPlan(parsed, timeoutMs, allowPrivate)),
     actorIndexes: new Map(parsed.policy.actors.map((actor, index) => [actor.id, index])),
     caseIndexes: new Map(parsed.cases.map((entry, index) => [entry.id, index])),
@@ -233158,7 +233199,7 @@ async function runApiPolicy(options) {
       identityOrganizationMismatches: 0,
       identityRequestFailures: 0
     },
-    ownedCapture: ownedApiCapture(signal),
+    ownedCapture: capture,
     context: {
       allowPrivate,
       signal: controller.signal,
@@ -233266,7 +233307,7 @@ async function runApiPolicy(options) {
       legacyPolicy: parsed.legacy,
       controlsPassed,
       expectedRequestCount: parsed.expectedRequests,
-      requestCount: budget.count,
+      requestCount: budget.count - requestOffset,
       bytesInspected: state.bytes,
       elapsedMs: Math.round(performance.now() - startedAt),
       jsonValueEvidenceCases: parsed.cases.filter((entry) => entry.allow.protected?.match === "json-values").length,

@@ -57,6 +57,17 @@ npm ci --ignore-scripts
 npm test
 ```
 
+The required-engine CI gate additionally needs Python 3.12.13 and explicitly prepared Nuclei/templates:
+
+```sh
+node scripts/bootstrap-schemathesis.mjs
+node scripts/bootstrap-nuclei.mjs
+node --test scripts/ci-verification.test.mjs scripts/bootstrap-nuclei.test.mjs
+npm run test:schemathesis
+```
+
+The Nuclei bootstrap downloads the existing checksum-pinned 3.11.1 binary and the checksum-pinned official v10.5.0 template archive (commit `f8b8b8dcd70d93826c3767e1829ef8243af9f03b`). It preserves both complete template scopes and the upstream MIT license in generated `artifacts/ci-tools/`, without vendoring them into this repository. The required suite uses the setup receipt or explicit `WAKEIO_NUCLEI` / `WAKEIO_NUCLEI_TEMPLATES` paths and rejects every skipped test. All real-engine targets are owned loopback fixtures. No scan performs installation or template updates.
+
 The release packaging check is local and does not publish anything:
 
 ```sh

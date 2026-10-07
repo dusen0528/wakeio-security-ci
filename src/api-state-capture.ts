@@ -1,11 +1,20 @@
 import type { NormalizedUrl, FetchedResource } from './url-network.js';
 
+/** Internal coordinator-owned budget. It is never accepted through the public API. */
+export interface OwnedApiBudget {
+  requests: { count: number; max: number };
+  bytes: number;
+  bodyExhausted: boolean;
+  bodyReadIncomplete: boolean;
+}
+
 /** Internal owned-pilot lane. No root SDK export or user supplied callbacks. */
 export interface ApiStateCaptureRecord {
   ordinal: number; path: string; actor: 'owner' | 'other' | 'anonymous' | 'unknown';
   status?: number; body?: Uint8Array; error?: boolean;
 }
 export interface ApiStateCaptureSession {
+  readonly budget?: OwnedApiBudget;
   start(url: NormalizedUrl, authorization: string | undefined): number | undefined;
   finish(ordinal: number | undefined, resource?: FetchedResource): void;
   seal(): { records: ApiStateCaptureRecord[]; incomplete: boolean };
@@ -16,11 +25,12 @@ export function ownedApiCapture(signal?: AbortSignal): ApiStateCaptureSession | 
   return signal ? sessions.get(signal) : undefined;
 }
 export function openOwnedApiCapture(signal: AbortSignal, origin: string,
-  credentials: ReadonlyMap<string, 'owner' | 'other'>): ApiStateCaptureSession {
+  credentials: ReadonlyMap<string, 'owner' | 'other'>, budget?: OwnedApiBudget): ApiStateCaptureSession {
   if (sessions.has(signal)) throw new Error('capture_session_conflict');
   const records: ApiStateCaptureRecord[] = [];
   let bytes = 0, sealed = false, incomplete = false;
   const session: ApiStateCaptureSession = {
+    ...(budget ? { budget } : {}),
     start(url, authorization) {
       if (sealed || records.length >= 32 || url.origin !== origin) { incomplete = true; return undefined; }
       const actor = authorization === undefined ? 'anonymous' : credentials.get(authorization) ?? 'unknown';
