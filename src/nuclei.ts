@@ -266,7 +266,7 @@ export async function runNuclei(options: NucleiOptions): Promise<CheckResult[]> 
     const notes = [SCOPE_NOTE,
       `Target ${safeUrl(resolved.origin)}; ${counters.forwarded} request(s) forwarded, ${counters.blockedBudget} refused by the request budget, ${counters.blockedOrigin} refused for leaving the origin; ${selection.selected.length} template(s) selected from ${relativeScopes}.`,
       `Templates ${provenance.templatesVersion} (templates-checksum.txt sha256 ${provenance.templatesChecksumSha256.slice(0, 16)}…); Nuclei ${NUCLEI_VERSION}.`];
-    if (resolved.origin.protocol === "https:") notes.push("HTTPS: the gate sees CONNECT tunnels only, so the request budget is not enforced on the wire for Nuclei; time and byte budgets still apply, and Nuclei does not verify TLS certificates.");
+    if (resolved.origin.protocol === "https:") notes.push(`HTTPS: the gate sees CONNECT tunnels only. It caps tunnels at the request budget (${counters.tunnels} opened), but requests reused inside a tunnel are not counted on the wire; time and byte budgets still apply, and Nuclei does not verify TLS certificates.`);
     if (reason !== "complete") notes.push(`Incomplete: ${reason}. Nuclei exit status alone does not establish completion; treat absent findings as unverified.`);
     return [{ id: NUCLEI_CHECK_ID, status: reason === "complete" ? "completed" : "partial", findings: parsed.findings, notes, metrics }];
   } finally {

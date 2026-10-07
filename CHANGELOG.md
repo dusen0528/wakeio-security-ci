@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- Cap HTTPS CONNECT tunnels through the active DAST egress gate at the request
+  budget. A tunnel past the budget is refused with 503 and stops the run as
+  `request_limit`, as plain-HTTP requests already did. Every tunnel carries at
+  least one request, so runs within budget are unaffected. Requests reused
+  inside one tunnel are still not visible to the gate; the Nuclei HTTPS note
+  now states that limit and the tunnel count.
+- Provision the checksum-pinned Nuclei engine in `release-check` before the
+  required-engine suite, matching `self-test`.
+
 - Add opt-in two-round verification for the existing owned synthetic API fixtures.
   Preserve every phase report and earlier observations; inconsistent repeats,
   interrupted controls and missing phases remain inconclusive. One shared

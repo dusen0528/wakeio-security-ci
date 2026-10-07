@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createServer, request, type IncomingMessage, type Server } from "node:http";
+import { createServer as createNetServer, type AddressInfo, type Socket } from "node:net";
 import { gzipSync } from "node:zlib";
 import { resolveDastOrigin, startEgressGate, type EgressPolicy } from "../src/dast-egress.js";
 
@@ -91,6 +92,50 @@ test("egress gate enforces request, single-body and total-body budgets on the wi
     await total.gate.close();
     assert.equal(fixture.seen.length, 5);
   } finally { fixture.server.close(); }
+});
+
+function connectVia(proxyUrl: string, authority: string): Promise<number> {
+  const proxy = new URL(proxyUrl);
+  return new Promise((resolve, reject) => {
+    const req = request({ host: proxy.hostname, port: proxy.port, method: "CONNECT", path: authority, agent: false,
+      headers: { "proxy-authorization": `Basic ${Buffer.from(`${proxy.username}:${proxy.password}`).toString("base64")}` } });
+    req.once("connect", (res, socket) => { socket.destroy(); resolve(res.statusCode ?? 0); });
+    req.once("error", reject);
+    req.end();
+  });
+}
+
+test("egress gate caps HTTPS CONNECT tunnels at the request budget and stops", async () => {
+  // The gate never terminates TLS, so a plain TCP listener stands in for the HTTPS peer.
+  const accepted: Socket[] = [];
+  const peer = createNetServer((socket) => { accepted.push(socket); socket.on("error", () => undefined); });
+  await new Promise<void>((resolve) => peer.listen(0, "127.0.0.1", resolve));
+  const port = (peer.address() as AddressInfo).port;
+  const controller = new AbortController();
+  const { origin, address } = await resolveDastOrigin(`https://127.0.0.1:${port}/`, true, controller.signal);
+  const gate = await startEgressGate({ origin, address, methods: new Set(["GET", "HEAD"]), maxRequests: 2,
+    maxSingleBodyBytes: 1024, maxTotalBytes: 4096, signal: controller.signal, deadlineAt: Date.now() + 10_000 });
+  const stops: string[] = [];
+  gate.onStop((reason) => stops.push(reason));
+  try {
+    const authority = `127.0.0.1:${port}`;
+    assert.equal(await connectVia(gate.proxyUrl, `127.0.0.1:${port + 1}`), 502);
+    assert.equal(await connectVia(gate.proxyUrl, authority), 200);
+    assert.equal(await connectVia(gate.proxyUrl, authority), 200);
+    assert.deepEqual(stops, [], "tunnels within the request budget are not refused");
+    assert.equal(await connectVia(gate.proxyUrl, authority), 503);
+    assert.equal(await connectVia(gate.proxyUrl, authority), 503);
+    assert.deepEqual(stops, ["request_limit"]);
+    assert.equal(gate.stopReason(), "request_limit");
+    assert.equal(gate.counters.tunnels, 2);
+    assert.equal(gate.counters.blockedBudget, 2);
+    assert.equal(gate.counters.blockedOrigin, 1);
+    assert.equal(gate.counters.forwarded, 0);
+  } finally {
+    await gate.close();
+    for (const socket of accepted) socket.destroy();
+    await new Promise<void>((resolve) => peer.close(() => resolve()));
+  }
 });
 
 test("egress gate counts upstream failures and refuses compressed responses", async () => {
