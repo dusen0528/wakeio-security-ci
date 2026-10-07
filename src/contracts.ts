@@ -22,6 +22,51 @@ export interface Finding {
   remediation: string;
   references?: string[];
   staticFlow?: StaticFlow;
+  /** Deterministic in-run control outcome; `kind` keeps its human-review meaning. */
+  controlVerification?: FindingControlVerification;
+  /** References into this check's `apiExecution` ledger; never response values. */
+  evidence?: FindingEvidence;
+  /** Inputs needed to re-execute only this finding's controls. */
+  replay?: FindingReplay;
+}
+export type FindingControlOutcome = 'passed' | 'failed' | 'not_applicable';
+/**
+ * `controls_passed` means every applicable control passed in this run: owner positive
+ * controls before and after the probe, the probe actor's identity before and
+ * after, and a completed probe that returned the configured protected canary.
+ * It is scoped to the policy case. It is scanner evidence, not the independent
+ * exploit or fix verification that agent-report `verification` is reserved for.
+ */
+export interface FindingControlVerification {
+  state: 'controls_passed' | 'inconclusive';
+  method: 'api-differential-canary';
+  controls: {
+    identityBefore: FindingControlOutcome;
+    ownerBefore: FindingControlOutcome;
+    probe: 'canary_exposed';
+    probeCompleted: boolean;
+    ownerAfter: FindingControlOutcome;
+    identityAfter: FindingControlOutcome;
+  };
+}
+export interface FindingEvidenceStep {
+  ordinal: number;
+  phase: ApiRequestPlanStep['phase'];
+  actor: string;
+  outcome: ApiExecutionStep['outcome'];
+  httpStatus: number | null;
+}
+export interface FindingEvidence {
+  basis: 'api-execution-ledger';
+  planSha256: string;
+  steps: FindingEvidenceStep[];
+}
+export interface FindingReplay {
+  kind: 'api-policy-case';
+  /** Digest of the policy document's JSON data; replay refuses a different policy. */
+  policySha256: string;
+  caseId: string;
+  actor: string;
 }
 /** Diagnostic metadata only; neither coverage completeness nor action authority. */
 export type AnalysisGapReason = 'module_export_unsupported' | 'module_missing' | 'module_ambiguous' | 'module_module_budget'
@@ -337,7 +382,9 @@ export interface AgentReport {
     description: string;
     severity: Severity;
     confidence: Finding['confidence'];
-    evidence: { kind: Finding['kind']; basis: 'scanner_report'; traceStatus: 'not_provided' | 'static_provided' | 'static_truncated'; staticFlow?: StaticFlow };
+    /** In-run control results stay scanner evidence; `verification` below is unchanged. */
+    evidence: { kind: Finding['kind']; basis: 'scanner_report'; traceStatus: 'not_provided' | 'static_provided' | 'static_truncated'; staticFlow?: StaticFlow;
+      controlVerification?: FindingControlVerification; apiExecution?: FindingEvidence; replay?: FindingReplay };
     location: Finding['location'];
     references?: string[];
     reachesFailOn: boolean;

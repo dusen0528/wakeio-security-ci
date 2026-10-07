@@ -12,9 +12,15 @@ import { GAP_REPORT_LIMIT, capAnalysisGaps, sanitiseAnalysisGaps } from './analy
 import type {
   AgentReport,
   AnalysisGapReasonSummary,
+  ApiExecutionLedger,
   CheckResult,
   FailOn,
   Finding,
+  FindingControlOutcome,
+  FindingEvidence,
+  FindingEvidenceStep,
+  FindingReplay,
+  FindingControlVerification,
   Mode,
   ScanProvenance,
   ScanReport,
@@ -278,6 +284,9 @@ function projectAgentReport(report: ScanReport, failOn: FailOn): AgentReport {
       evidence: { kind: finding.kind, basis: 'scanner_report' as const,
         traceStatus: finding.staticFlow ? finding.staticFlow.truncated ? 'static_truncated' as const : 'static_provided' as const : 'not_provided' as const,
         ...(finding.staticFlow ? { staticFlow: finding.staticFlow } : {}),
+        ...(finding.controlVerification ? { controlVerification: finding.controlVerification } : {}),
+        ...(finding.evidence ? { apiExecution: finding.evidence } : {}),
+        ...(finding.replay ? { replay: finding.replay } : {}),
       },
       location: finding.location,
       ...(finding.references ? { references: finding.references } : {}),
@@ -345,6 +354,9 @@ export function toSarif(report: ScanReport): SarifLog {
           confidence: finding.confidence,
           severity: finding.severity,
           remediation: safeText(finding.remediation, 'Review the finding and verify the affected scope.'),
+          ...(finding.controlVerification ? { controlVerification: finding.controlVerification } : {}),
+          ...(finding.evidence ? { evidence: finding.evidence } : {}),
+          ...(finding.replay ? { replay: finding.replay } : {}),
         },
       };
 
@@ -526,6 +538,12 @@ export function toMarkdown(report: ScanReport, failOn: FailOn = 'high'): string 
           lines.push(`    - ${item.role}: ${markdownInline(item.location.path)}:${item.location.line}:${item.location.column}`);
         }
       }
+      if (finding.controlVerification) {
+        lines.push(`  - In-run controls: ${finding.controlVerification.state} (${finding.controlVerification.method}; scoped to this policy case; not exploit or fix verification)`);
+      }
+      if (finding.replay) {
+        lines.push(`  - Replay: case ${markdownInline(finding.replay.caseId)}, actor ${markdownInline(finding.replay.actor)}, policy sha256 ${finding.replay.policySha256}`);
+      }
       lines.push(`  - Remediation: ${markdownInline(finding.remediation)}`);
       if (finding.references && finding.references.length > 0) {
         lines.push(
@@ -671,8 +689,9 @@ function sanitiseCheck(input: CheckResult): CheckResult {
   const apiStateEvidence = input?.apiStateEvidence === undefined ? undefined : sanitiseApiStateEvidence(input.apiStateEvidence);
   if (input?.id === 'api.owned-state-oracle' && apiStateEvidence?.execution !== undefined && apiStateEvidence.execution !== 'completed' && status === 'completed') status = 'partial';
   const analysisBudget = sanitiseAnalysisBudget(input?.analysisBudget);
+  const proofLedger = input?.id === 'api.authorization' ? apiExecution : undefined;
   const findings = Array.isArray(input?.findings)
-    ? input.findings.map(sanitiseFinding)
+    ? input.findings.map((finding) => sanitiseFinding(finding, proofLedger))
     : [];
   const notes = Array.isArray(input?.notes)
     ? input.notes.map((note) => safeText(note)).filter(Boolean)
@@ -792,7 +811,80 @@ export async function writeArtifacts(outDir: string, artifacts: ReadonlyArray<re
   for (const [name, contents] of artifacts) await atomicWrite(resolve(targetDir, name), contents);
 }
 
-function sanitiseFinding(input: Finding): Finding {
+const HEX_SHA256 = /^[a-f0-9]{64}$/;
+const POLICY_IDENTIFIER = /^[A-Za-z][A-Za-z0-9_-]{0,63}$/;
+const CONTROL_OUTCOMES: readonly FindingControlOutcome[] = ['passed', 'failed', 'not_applicable'];
+const EVIDENCE_PHASES: readonly FindingEvidenceStep['phase'][] = ['identity-before', 'owner-before', 'deny', 'owner-after', 'identity-after'];
+
+function plainRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value) && !utilTypes.isProxy(value);
+}
+
+function sanitiseFindingReplay(input: unknown): FindingReplay | undefined {
+  if (!plainRecord(input) || input.kind !== 'api-policy-case') return undefined;
+  const { policySha256, caseId, actor } = input;
+  if (typeof policySha256 !== 'string' || !HEX_SHA256.test(policySha256)
+    || typeof caseId !== 'string' || !POLICY_IDENTIFIER.test(caseId)
+    || typeof actor !== 'string' || !POLICY_IDENTIFIER.test(actor)) return undefined;
+  return { kind: 'api-policy-case', policySha256, caseId, actor };
+}
+
+/** Evidence must restate this check's own ledger; anything else is dropped. */
+function sanitiseFindingEvidence(input: unknown, ledger: ApiExecutionLedger): FindingEvidence | undefined {
+  const plan = ledger.plan;
+  if (!plainRecord(input) || input.basis !== 'api-execution-ledger' || ledger.status === 'invalid' || !plan
+    || typeof input.planSha256 !== 'string' || input.planSha256 !== ledger.planSha256) return undefined;
+  const steps = input.steps;
+  if (!Array.isArray(steps) || steps.length === 0 || steps.length > EVIDENCE_PHASES.length) return undefined;
+  const result: FindingEvidenceStep[] = [];
+  for (const step of steps) {
+    if (!plainRecord(step)) return undefined;
+    const { ordinal, phase, actor, outcome, httpStatus } = step;
+    const recorded = typeof ordinal === 'number' ? ledger.steps.find((entry) => entry.ordinal === ordinal) : undefined;
+    const planned = typeof ordinal === 'number' ? plan.steps.find((entry) => entry.ordinal === ordinal) : undefined;
+    if (!recorded || !planned || planned.phase !== phase || recorded.outcome !== outcome || recorded.httpStatus !== httpStatus
+      || typeof actor !== 'string' || !POLICY_IDENTIFIER.test(actor)
+      || (result.length > 0 && result[result.length - 1].ordinal >= recorded.ordinal)
+      || result.some((entry) => entry.phase === planned.phase)) return undefined;
+    result.push({ ordinal: recorded.ordinal, phase: planned.phase, actor, outcome: recorded.outcome, httpStatus: recorded.httpStatus });
+  }
+  return { basis: 'api-execution-ledger', planSha256: input.planSha256, steps: result };
+}
+
+function verificationSupported(controls: FindingControlVerification['controls'], evidence: FindingEvidence | undefined, replay: FindingReplay | undefined): boolean {
+  if (!evidence || !replay || !controls.probeCompleted || controls.ownerBefore !== 'passed' || controls.ownerAfter !== 'passed') return false;
+  const evaluated = (phase: FindingEvidenceStep['phase']) => evidence.steps.find((step) => step.phase === phase && step.outcome === 'evaluated');
+  const probe = evaluated('deny');
+  if (!probe || !evaluated('owner-before') || !evaluated('owner-after') || probe.actor !== replay.actor) return false;
+  return ([['identityBefore', 'identity-before'], ['identityAfter', 'identity-after']] as const).every(([control, phase]) => {
+    if (controls[control] === 'not_applicable') return probe.actor === 'anonymous' && !evidence.steps.some((step) => step.phase === phase);
+    return controls[control] === 'passed' && evaluated(phase)?.actor === probe.actor;
+  });
+}
+
+/** A controls_passed claim without matching ledger evidence and replay inputs is demoted. */
+function sanitiseFindingControlVerification(input: unknown, evidence: FindingEvidence | undefined, replay: FindingReplay | undefined): FindingControlVerification | undefined {
+  if (!plainRecord(input) || input.method !== 'api-differential-canary' || (input.state !== 'controls_passed' && input.state !== 'inconclusive')) return undefined;
+  const raw = input.controls;
+  if (!plainRecord(raw) || raw.probe !== 'canary_exposed' || typeof raw.probeCompleted !== 'boolean') return undefined;
+  const outcome = (value: unknown) => CONTROL_OUTCOMES.find((entry) => entry === value);
+  const identityBefore = outcome(raw.identityBefore), ownerBefore = outcome(raw.ownerBefore);
+  const ownerAfter = outcome(raw.ownerAfter), identityAfter = outcome(raw.identityAfter);
+  if (!identityBefore || !ownerBefore || !ownerAfter || !identityAfter) return undefined;
+  const controls: FindingControlVerification['controls'] = { identityBefore, ownerBefore, probe: 'canary_exposed', probeCompleted: raw.probeCompleted, ownerAfter, identityAfter };
+  const state = input.state === 'controls_passed' && verificationSupported(controls, evidence, replay) ? 'controls_passed' : 'inconclusive';
+  return { state, method: 'api-differential-canary', controls };
+}
+
+function sanitiseFindingProof(input: Finding, ledger: ApiExecutionLedger | undefined): Pick<Finding, 'controlVerification' | 'evidence' | 'replay'> {
+  if (!ledger || !plainRecord(input)) return {};
+  const replay = sanitiseFindingReplay(input.replay);
+  const evidence = sanitiseFindingEvidence(input.evidence, ledger);
+  const controlVerification = sanitiseFindingControlVerification(input.controlVerification, evidence, replay);
+  return { ...(controlVerification ? { controlVerification } : {}), ...(evidence ? { evidence } : {}), ...(replay ? { replay } : {}) };
+}
+
+function sanitiseFinding(input: Finding, proofLedger?: ApiExecutionLedger): Finding {
   const severity = SEVERITIES.includes(input?.severity) ? input.severity : 'info';
   const confidence = CONFIDENCES.includes(input?.confidence)
     ? input.confidence
@@ -824,6 +916,7 @@ function sanitiseFinding(input: Finding): Finding {
     ...(comparisonKey ? { comparisonKey } : {}),
     ...(staticFlow ? { staticFlow } : {}),
     ...(references && references.length > 0 ? { references } : {}),
+    ...sanitiseFindingProof(input, proofLedger),
   };
 }
 

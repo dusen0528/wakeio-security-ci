@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { apiRequestPlanDigest, createApiExecutionLedger, finishApiExecutionLedger } from "./api-execution.js";
 import type { ApiExecutionLedger, ApiExecutionStep, ApiRequestPlan, ApiRequestPlanStep } from "./contracts.js";
 export type { ApiRequestPlan, ApiRequestPlanStep } from "./contracts.js";
@@ -5,7 +6,7 @@ import { ApiPolicyError } from "./api-policy-error.js";
 import { types } from "node:util";
 import { snapshotJsonData } from "./json-snapshot.js";
 import { ownedApiCapture, type ApiStateCaptureSession } from './api-state-capture.js';
-import type { CheckResult, Finding } from "./contracts.js";
+import type { CheckResult, Finding, FindingControlOutcome, FindingEvidence, FindingControlVerification } from "./contracts.js";
 import {
   MAX_REQUESTS,
   MAX_SINGLE_BODY_BYTES,
@@ -560,6 +561,19 @@ export function parseApiPolicy(input: unknown): ParsedApiPolicy {
   return { policy, baseUrl, cases: parsedCases, identities, expectedRequests, legacy: version === API_POLICY_LEGACY_VERSION };
 }
 
+function parsedPolicyDigest(parsed: ParsedApiPolicy): string {
+  return createHash("sha256").update(JSON.stringify({ version: 1, policy: parsed.policy })).digest("hex");
+}
+
+/**
+ * Digest of the parsed policy data. The parser rebuilds every object in a fixed
+ * key order, so formatting and key order in the source file do not change it.
+ * Environment variable names are included; credential values never are.
+ */
+export function apiPolicyDigest(policy: unknown): string {
+  return parsedPolicyDigest(parseApiPolicy(policy));
+}
+
 /** Alias for callers that prefer a validation-named API. Throws on invalid input. */
 export function validateApiPolicy(input: unknown): ParsedApiPolicy {
   return parseApiPolicy(input);
@@ -859,12 +873,14 @@ function requestFailureReason(code: string, state: RequestContextState): ApiExec
   return 'transport_error';
 }
 
+function plannedOrdinal(state: RequestContextState, phase: ApiRequestPlanStep['phase'], actor: string, caseId: string | undefined): number | undefined {
+  const actorIndex = state.actorIndexes.get(actor), caseIndex = caseId === undefined ? undefined : state.caseIndexes.get(caseId);
+  return state.execution.plan!.steps.find(step => step.phase === phase && step.actorIndex === actorIndex && step.caseIndex === caseIndex)?.ordinal;
+}
+
 async function recordStep<T>(state: RequestContextState, phase: ApiRequestPlanStep['phase'], actor: string,
   caseId: string | undefined, execute: () => Promise<T>, evaluated: (result: T) => boolean): Promise<T> {
-  const plan = state.execution.plan!;
-  const actorIndex = state.actorIndexes.get(actor), caseIndex = caseId === undefined ? undefined : state.caseIndexes.get(caseId);
-  const planned = plan.steps.find(step => step.phase === phase && step.actorIndex === actorIndex && step.caseIndex === caseIndex)!;
-  const step = state.execution.steps[planned.ordinal];
+  const step = state.execution.steps[plannedOrdinal(state, phase, actor, caseId)!];
   step.attemptStart = state.context.budget.count - state.requestOffset;
   state.activeStep = step;
   try {
@@ -1182,6 +1198,66 @@ async function checkDeny(
   return false;
 }
 
+interface ExposureRecord {
+  finding: Finding;
+  caseId: string;
+  actor: string;
+  owner: string;
+}
+
+function identityControlOutcome(actor: ApiActor | undefined, identity: ActorIdentityState | undefined, phase: "before" | "after"): FindingControlOutcome {
+  if (actor?.authorizationEnv === undefined) return actor?.id === "anonymous" ? "not_applicable" : "failed";
+  if (!identity || identity.identityReuse || !identity.beforeValid || identity.beforePrincipal === undefined) return "failed";
+  if (phase === "before") return "passed";
+  return identity.afterValid && identity.afterPrincipal !== undefined
+    && principalKey(identity.afterPrincipal) === principalKey(identity.beforePrincipal) ? "passed" : "failed";
+}
+
+/**
+ * Exposure findings are recorded at the probe, before the owner-after and
+ * identity-after controls run. Decide verification only once the ledger is
+ * final, and reference ledger ordinals instead of copying response data.
+ */
+function attachExposureVerification(exposures: ExposureRecord[], parsed: ParsedApiPolicy, state: RequestContextState,
+  apiExecution: ApiExecutionLedger, identityStates: Map<string, ActorIdentityState>): void {
+  if (!exposures.length) return;
+  const policySha256 = parsedPolicyDigest(parsed);
+  const actors = new Map(parsed.policy.actors.map((actor) => [actor.id, actor]));
+  const ledgerStep = (ordinal: number | undefined) => ordinal === undefined ? undefined : apiExecution.steps.find((step) => step.ordinal === ordinal);
+  const ledgerControl = (ordinal: number | undefined): FindingControlOutcome => ledgerStep(ordinal)?.outcome === "evaluated" ? "passed" : "failed";
+  for (const { finding, caseId, actor, owner } of exposures) {
+    const ordinals = {
+      identityBefore: plannedOrdinal(state, "identity-before", actor, undefined),
+      ownerBefore: plannedOrdinal(state, "owner-before", owner, caseId),
+      probe: plannedOrdinal(state, "deny", actor, caseId),
+      ownerAfter: plannedOrdinal(state, "owner-after", owner, caseId),
+      identityAfter: plannedOrdinal(state, "identity-after", actor, undefined),
+    };
+    const controls: FindingControlVerification["controls"] = {
+      identityBefore: identityControlOutcome(actors.get(actor), identityStates.get(actor), "before"),
+      ownerBefore: ledgerControl(ordinals.ownerBefore),
+      probe: "canary_exposed",
+      probeCompleted: ledgerStep(ordinals.probe)?.outcome === "evaluated",
+      ownerAfter: ledgerControl(ordinals.ownerAfter),
+      identityAfter: identityControlOutcome(actors.get(actor), identityStates.get(actor), "after"),
+    };
+    const plan = apiExecution.plan;
+    const evidence: FindingEvidence | undefined = apiExecution.status !== "invalid" && apiExecution.planSha256 && plan
+      ? { basis: "api-execution-ledger", planSha256: apiExecution.planSha256,
+        steps: Object.values(ordinals).flatMap((ordinal) => {
+          const step = ledgerStep(ordinal), planned = plan.steps.find((entry) => entry.ordinal === ordinal);
+          return step && planned ? [{ ordinal: step.ordinal, phase: planned.phase, actor: parsed.policy.actors[planned.actorIndex].id,
+            outcome: step.outcome, httpStatus: step.httpStatus }] : [];
+        }) }
+      : undefined;
+    const verified = !parsed.legacy && evidence !== undefined && controls.probeCompleted
+      && [controls.identityBefore, controls.ownerBefore, controls.ownerAfter, controls.identityAfter].every((outcome) => outcome !== "failed");
+    finding.controlVerification = { state: verified ? "controls_passed" : "inconclusive", method: "api-differential-canary", controls };
+    if (evidence) finding.evidence = evidence;
+    finding.replay = { kind: "api-policy-case", policySha256, caseId, actor };
+  }
+}
+
 function errorCheck(code: string, note: string, metrics: Record<string, number | string | boolean> = {}): CheckResult {
   return {
     id: "api.authorization",
@@ -1249,6 +1325,7 @@ export async function runApiPolicy(options: ApiRunOptions): Promise<CheckResult[
     addNote(notes, "API policy version 1 is accepted for migration, but it has no actor identity controls or protected-data assertion; authorization results are unverified and remain partial. Migrate to version 2.");
   }
   const actors = new Map(parsed.policy.actors.map((actor) => [actor.id, actor]));
+  const exposures: ExposureRecord[] = [];
   try {
     if (!parsed.legacy) {
       if (await runIdentityControls(parsed, credentials, "before", identityStates, state, notes)) incomplete = true;
@@ -1276,8 +1353,10 @@ export async function runApiPolicy(options: ApiRunOptions): Promise<CheckResult[
         const actor = actors.get(deny.actor);
         const authorization = actor?.authorizationEnv === undefined ? undefined : credentials.values.get(deny.actor);
         const identityVerified = actorIdentityVerified(deny.actor, actor, identityStates);
+        const found = findings.length;
         if (await recordStep(state, "deny", deny.actor, entry.id,
           () => checkDeny(entry, deny, actor, authorization, identityVerified, parsed.legacy, state, notes, findings), result => !result)) incomplete = true;
+        for (const finding of findings.slice(found)) exposures.push({ finding, caseId: entry.id, actor: deny.actor, owner: entry.allow.actor });
         if (controller.signal.aborted) incomplete = true;
       }
       const after = await recordStep(state, "owner-after", entry.allow.actor, entry.id,
@@ -1309,6 +1388,7 @@ export async function runApiPolicy(options: ApiRunOptions): Promise<CheckResult[
   }
   const apiExecution = finishApiExecutionLedger(state.execution, incomplete);
   if (apiExecution.status === 'invalid') addNote(notes, 'API execution metadata was inconsistent; the run remains incomplete.');
+  attachExposureVerification(exposures, parsed, state, apiExecution, identityStates);
   const status: CheckResult["status"] = incomplete || apiExecution.status !== 'complete' ? "partial" : "completed";
   return [{
     id: "api.authorization",

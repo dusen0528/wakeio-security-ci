@@ -6,7 +6,8 @@ import { isAbsolute, resolve } from "node:path";
 import type { Mode, ScanScope, SourceOptions, ToolName, UrlOptions } from "./contracts.js";
 import { runSource } from "./source.js";
 import { runUrl } from "./url.js";
-import { createReport, exitCode, writeReports, RULESET_VERSION } from "./report.js";
+import { createReport, exitCode, writeArtifacts, writeReports, RULESET_VERSION } from "./report.js";
+import { replayApiFinding, replayExitCode } from "./replay.js";
 import { compareReports, comparisonExitCode, readScanReport, writeComparison } from "./compare.js";
 import { runApiPolicy, parseApiPolicy, type ApiPolicy } from "./api.js";
 import { readJsonInput } from "./json-input.js";
@@ -72,6 +73,7 @@ export const USAGE = `Usage:
   wakeio-security-ci scan --openapi openapi.json --api-base URL --operation PATH --active-consent [options]
   wakeio-security-ci scan --url URL --engine nuclei --nuclei-templates DIR --active-consent [options]
   wakeio-security-ci compare --before report.json --after report.json --out DIR [--fail-on LEVEL]
+  wakeio-security-ci replay --report report.json --api-policy FILE --finding ID --out DIR [--allow-private] [--timeout-ms N]
   wakeio-security-ci doctor [--source DIR] [--tools ...] [--json] [--strict]
   wakeio-security-ci init [--source DIR] [--workflow FILE] [--out DIR] [--tools ...]
   wakeio-security-ci repair --source DIR --policy FILE --out NEW_DIR --proposal FILE
@@ -350,6 +352,72 @@ async function runComparison(argv: readonly string[]): Promise<number> {
   }
 }
 
+export function parseReplayArgs(argv: readonly string[]): { report: string; apiPolicy: string; findingId: string; outDir: string; allowPrivate: boolean; timeoutMs?: number } {
+  const values = new Map<string, string>();
+  let allowPrivate = false;
+  for (let index = 1; index < argv.length; index += 1) {
+    const flag = argv[index];
+    if (flag === '--allow-private' && !allowPrivate) { allowPrivate = true; continue; }
+    const value = argv[index + 1];
+    if (!['--report', '--api-policy', '--finding', '--out', '--timeout-ms'].includes(flag) || values.has(flag) || !value || value.startsWith('--')) {
+      throw new CliUsageError('replay requires unique --report, --api-policy, --finding, --out and optional --allow-private, --timeout-ms values');
+    }
+    values.set(flag, value);
+    index += 1;
+  }
+  const findingId = values.get('--finding');
+  if (!values.get('--report') || !values.get('--api-policy') || !findingId || !values.get('--out')) throw new CliUsageError('replay requires --report, --api-policy, --finding and --out');
+  if (!/^[a-f0-9]{64}$/.test(findingId)) throw new CliUsageError('--finding must be a report finding id (64 lowercase hex characters)');
+  const timeout = values.get('--timeout-ms');
+  let timeoutMs: number | undefined;
+  if (timeout !== undefined) {
+    timeoutMs = /^\d+$/.test(timeout) ? Number(timeout) : NaN;
+    if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > API_MAX_TIMEOUT_MS) throw new CliUsageError(`--timeout-ms must be between 1 and ${API_MAX_TIMEOUT_MS} for replay`);
+  }
+  return { report: values.get('--report')!, apiPolicy: values.get('--api-policy')!, findingId, outDir: values.get('--out')!, allowPrivate, ...(timeoutMs === undefined ? {} : { timeoutMs }) };
+}
+
+async function runReplay(argv: readonly string[]): Promise<number> {
+  let options: ReturnType<typeof parseReplayArgs>;
+  try { options = parseReplayArgs(argv); }
+  catch (error) {
+    process.stderr.write(`Error: ${error instanceof CliUsageError ? error.message : 'invalid command line'}\n\n${USAGE}`);
+    return 2;
+  }
+  const controller = new AbortController();
+  const cancel = (): void => controller.abort();
+  process.on('SIGINT', cancel); process.on('SIGTERM', cancel);
+  try {
+    let report: unknown, policy: unknown;
+    try { [report, policy] = await Promise.all([readJsonInput(options.report), readJsonInput(options.apiPolicy, 1024 * 1024)]); }
+    catch {
+      process.stderr.write('Error: replay report and policy must be bounded JSON files.\n');
+      return 2;
+    }
+    const startedAt = new Date().toISOString();
+    const result = await replayApiFinding({ report, policy, findingId: options.findingId, allowPrivate: options.allowPrivate,
+      signal: controller.signal, ...(options.timeoutMs === undefined ? {} : { timeoutMs: options.timeoutMs }) });
+    const { check, ...summary } = result;
+    try {
+      if (check) await writeReports(createReport([check], 'api', startedAt), options.outDir);
+      await writeArtifacts(options.outDir, [['replay.json', `${JSON.stringify(summary, null, 2)}\n`]]);
+    } catch {
+      process.stderr.write('Error: replay files could not be written.\n');
+      return 2;
+    }
+    process.stdout.write([
+      `Wakeio replay: ${result.outcome}${result.reason ? ` (${result.reason})` : ''}`,
+      ...(result.replay ? [`Case ${result.replay.caseId}, actor ${result.replay.actor}`] : []),
+      ...(result.outcome === 'not_reproduced' ? ['Not reproduced in this run is scoped evidence, not proof of a fix.'] : []),
+      `Details: ${JSON.stringify(resolve(options.outDir))} (replay.json${check ? ', report.json, report.sarif, report.md, agent-report.json' : ''})`,
+      '',
+    ].join('\n'));
+    return replayExitCode(result);
+  } finally {
+    process.removeListener('SIGINT', cancel); process.removeListener('SIGTERM', cancel);
+  }
+}
+
 async function declaredScope(options: CliOptions, apiPolicy: ApiPolicy | undefined): Promise<ScanScope> {
   return buildScanScope({
     mode: modeFor(options),
@@ -380,6 +448,7 @@ async function declaredScope(options: CliOptions, apiPolicy: ApiPolicy | undefin
 export async function main(argv: readonly string[] = process.argv.slice(2)): Promise<number> {
   if (argv[0] === 'plan') return planMain(argv);
   if (argv[0] === 'compare') return runComparison(argv);
+  if (argv[0] === 'replay') return runReplay(argv);
   if (argv[0] === 'doctor') return doctorMain(argv);
   if (argv[0] === 'init') return initMain(argv);
   if (argv[0] === 'repair') return repairMain(argv);

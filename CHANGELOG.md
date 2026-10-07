@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+- Attach in-run control evidence to API authorization exposure findings:
+  `controlVerification` (`controls_passed` only when identity before/after,
+  owner before/after and a completed probe all pass, otherwise `inconclusive`),
+  `evidence` that references the check's own `apiExecution` ledger steps, and
+  `replay` inputs (policy digest, case, actor). The report sanitiser drops
+  evidence that does not match the ledger and demotes unsupported claims.
+  Additive optional fields: report schema stays `1.0.0`, finding IDs, SARIF
+  fingerprints, `kind` and the agent report's exploit/fix `verification` are
+  unchanged. No added requests during scans.
+- Add `replay` CLI and `replayApiFinding` SDK: re-execute only one finding's
+  case, owner and probe actor when the policy digest matches. Outcomes are
+  `reproduced` (1), `not_reproduced` (0), `inconclusive` or `refused` (2).
+  The owned DAST corpus now also gates passed controls on every completed exposure.
+
 - Add opt-in two-round verification for the existing owned synthetic API fixtures.
   Preserve every phase report and earlier observations; inconsistent repeats,
   interrupted controls and missing phases remain inconclusive. One shared
