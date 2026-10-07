@@ -11,7 +11,7 @@ permissions:
 jobs:
   package-and-local-action:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       # Keep the action checkout and the scanned checkout in separate paths.
       # This is also the shape used by a consumer that vendors a reviewed
@@ -38,12 +38,16 @@ jobs:
         timeout-minutes: 5
         working-directory: wakeio-security-ci
         run: node scripts/bootstrap-schemathesis.mjs
+      - name: Prepare checksum-pinned Nuclei and official templates
+        timeout-minutes: 5
+        working-directory: wakeio-security-ci
+        run: node scripts/bootstrap-nuclei.mjs
       - name: Install and run required-engine package tests
         timeout-minutes: 7
         working-directory: wakeio-security-ci
         run: |
           npm ci --ignore-scripts --no-audit --fund=false
-          node --test scripts/ci-verification.test.mjs
+          node --test scripts/ci-verification.test.mjs scripts/bootstrap-nuclei.test.mjs
           npm run test:schemathesis
       - name: Gate owned loopback DAST task coverage
         timeout-minutes: 2

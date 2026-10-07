@@ -4,6 +4,7 @@ import { join, resolve } from 'node:path';
 import { mkdir, mkdtemp, readFile, chmod, writeFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
+import { NUCLEI_SETUP_FILE, requiredNucleiEnvironment } from './bootstrap-nuclei.mjs';
 import { runBounded, sourceSnapshot, currentTestFiles, cleanGeneratedBuild, validateTestEvents } from './ci-process.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
@@ -29,6 +30,10 @@ async function stage(name, command, args, timeoutMs, env) {
 }
 try {
   if (process.platform === 'win32') throw Error('POSIX_required');
+  const setup = process.env.WAKEIO_NUCLEI && process.env.WAKEIO_NUCLEI_TEMPLATES ? undefined
+    : JSON.parse(await readFile(NUCLEI_SETUP_FILE, 'utf8').catch(error => { if (error.code === 'ENOENT') return 'null'; throw error; }));
+  const engineEnvironment = requiredNucleiEnvironment(process.env, setup);
+  receipt.nucleiRuntime = { executable: engineEnvironment.WAKEIO_NUCLEI, templates: engineEnvironment.WAKEIO_NUCLEI_TEMPLATES };
   receipt.sourceBefore = sourceSnapshot(root);
   const files = currentTestFiles(root);
   const lock = await readFile(join(root, 'workers/schemathesis/requirements.lock.txt'));
@@ -45,7 +50,7 @@ try {
   const eventsPath = join(directory, 'tests.ndjson');
   await stage('tests', process.execPath, ['--test', '--test-reporter=spec', '--test-reporter-destination=stdout',
     '--test-reporter=' + join(root, 'scripts/ci-test-reporter.mjs'), '--test-reporter-destination=' + eventsPath, ...files],
-    180000, { ...process.env, WAKEIO_SCHEMATHESIS_PYTHON: python });
+    180000, { ...engineEnvironment, WAKEIO_SCHEMATHESIS_PYTHON: python });
   const bytes = await readFile(eventsPath);
   await chmod(eventsPath, 0o600);
   if (bytes.length > 8 * 1024 * 1024) throw Error('test_receipt_limit');
@@ -57,6 +62,14 @@ try {
   receipt.live = validateTestEvents(events,
     ['schemathesis live: risk/normal pair through the egress gate', 'schemathesis live: a target that fails mid-run is partial, never clean'],
     join(root, 'build/tests/schemathesis-live.test.js'));
+  receipt.nuclei = validateTestEvents(events,
+    ['real nuclei: risk/normal pair, wire coverage and egress refusal counts',
+      'real nuclei: request budget and a failing target are partial even though nuclei exits 0'],
+    join(root, 'build/tests/nuclei.test.js'));
+  receipt.dastAction = validateTestEvents(events,
+    ['DAST Action runs Schemathesis from the bundled layout for a same-repository pull request',
+      'DAST Action runs pinned Nuclei through the bundled layout'],
+    join(root, 'build/tests/dast-action.test.js'));
   receipt.testEventsSha256 = createHash('sha256').update(bytes).digest('hex');
   receipt.testFiles = files.map(file => ({ path: file, sha256: createHash('sha256').update(readFileSync(file)).digest('hex') }));
   receipt.sourceAfter = sourceSnapshot(root);

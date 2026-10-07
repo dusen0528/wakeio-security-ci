@@ -26,6 +26,10 @@ inputs:
     description: Workspace-relative or absolute prepared nuclei-templates directory (for example a pinned actions/checkout)
     required: false
     default: ''
+  nuclei-path:
+    description: Optional preinstalled trusted Nuclei 3.11.1 executable; otherwise the pinned archive is downloaded and verified
+    required: false
+    default: ''
   nuclei-templates-sha256:
     description: Expected SHA-256 of templates-checksum.txt in nuclei-templates; a mismatch stops before scanning
     required: false
@@ -161,6 +165,7 @@ runs:
         WAKEIO_URL: ${{ inputs.url }}
         WAKEIO_ENGINES: ${{ inputs.engines }}
         WAKEIO_NUCLEI_TEMPLATES: ${{ inputs.nuclei-templates }}
+        WAKEIO_NUCLEI_PATH: ${{ inputs.nuclei-path }}
         WAKEIO_NUCLEI_TEMPLATES_SHA256: ${{ inputs.nuclei-templates-sha256 }}
         WAKEIO_NUCLEI_SCOPE: ${{ inputs.nuclei-scope }}
         WAKEIO_NUCLEI_MAX_REQUESTS: ${{ inputs.nuclei-max-requests }}

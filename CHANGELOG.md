@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Add opt-in two-round verification for the existing owned synthetic API fixtures.
+  Preserve every phase report and earlier observations; inconsistent repeats,
+  interrupted controls and missing phases remain inconclusive. One shared
+  request/body budget and deadline cover all phases. Delivery retry reuses the
+  retained redacted reports without replaying requests. This is bounded fixture
+  evidence, not statistical reliability or production remediation verification.
+
 - Extend the existing indexed API GET preflight plan with a versioned execution
   ledger: evaluated, inconclusive and never-attempted steps, shared HTTP retry
   accounting, fixed reasons and redacted plan identity. No added requests.

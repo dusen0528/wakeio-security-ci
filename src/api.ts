@@ -210,6 +210,7 @@ interface SessionDiagnostics {
 
 interface RequestContextState {
   execution: ApiExecutionLedger;
+  requestOffset: number;
   activeStep?: ApiExecutionStep;
   actorIndexes: Map<string, number>;
   caseIndexes: Map<string, number>;
@@ -802,11 +803,13 @@ async function requestApi(
   authorization: string | undefined,
   state: RequestContextState,
 ): Promise<RequestOutcome> {
-  if (state.stopRequests) { if (state.activeStep) state.activeStep.reason = "body_budget"; return { errorCode: state.bodyReadIncomplete ? "body_limit" : "total_body_limit" }; }
-  if (state.bytes >= API_MAX_TOTAL_BODY_BYTES) {
+  if (state.stopRequests || state.ownedCapture?.budget?.bodyExhausted) { state.bodyBudgetExhausted = true; state.bodyReadIncomplete ||= state.ownedCapture?.budget?.bodyReadIncomplete ?? false; if (state.activeStep) state.activeStep.reason = state.ownedCapture?.budget ? "shared_body_budget" : "body_budget"; return { errorCode: state.bodyReadIncomplete ? "body_limit" : "total_body_limit" }; }
+  const bodyBytes = () => state.ownedCapture?.budget?.bytes ?? state.bytes;
+  if (bodyBytes() >= API_MAX_TOTAL_BODY_BYTES) {
     state.stopRequests = true;
     state.bodyBudgetExhausted = true;
-    if (state.activeStep) state.activeStep.reason = "body_budget";
+    if (state.ownedCapture?.budget) state.ownedCapture.budget.bodyExhausted = true;
+    if (state.activeStep) state.activeStep.reason = state.ownedCapture?.budget ? "shared_body_budget" : "body_budget";
     return { errorCode: "total_body_limit" };
   }
   const capture = state.ownedCapture;
@@ -822,10 +825,11 @@ async function requestApi(
         acceptJson: true,
       },
       url.origin,
-      Math.min(MAX_SINGLE_BODY_BYTES, API_MAX_TOTAL_BODY_BYTES - state.bytes),
-      Math.min(MAX_SINGLE_BODY_BYTES, API_MAX_TOTAL_BODY_BYTES - state.bytes),
+      Math.min(MAX_SINGLE_BODY_BYTES, API_MAX_TOTAL_BODY_BYTES - bodyBytes()),
+      Math.min(MAX_SINGLE_BODY_BYTES, API_MAX_TOTAL_BODY_BYTES - bodyBytes()),
     );
     state.bytes += resource.body.byteLength;
+    if (state.ownedCapture?.budget) state.ownedCapture.budget.bytes += resource.body.byteLength;
     if (state.activeStep) state.activeStep.httpStatus = resource.status;
     try { capture?.finish(capturedOrdinal, resource); } catch { /* Oracle handles missing capture. */ }
     return { resource };
@@ -840,6 +844,7 @@ async function requestApi(
       state.stopRequests = true;
       state.bodyBudgetExhausted = true;
       state.bodyReadIncomplete = true;
+      if (state.ownedCapture?.budget) { state.ownedCapture.budget.bodyExhausted = true; state.ownedCapture.budget.bodyReadIncomplete = true; }
     }
     return { errorCode };
   }
@@ -848,8 +853,8 @@ async function requestApi(
 function requestFailureReason(code: string, state: RequestContextState): ApiExecutionStep['reason'] {
   if (Date.now() >= state.context.deadlineAt) return 'deadline';
   if (state.context.signal.aborted) return 'cancelled';
-  if (['body_limit', 'total_body_limit'].includes(code)) return 'body_budget';
-  if (code === 'request_limit') return 'request_budget';
+  if (['body_limit', 'total_body_limit'].includes(code)) return state.ownedCapture?.budget ? 'shared_body_budget' : 'body_budget';
+  if (code === 'request_limit') return state.ownedCapture?.budget ? 'shared_request_budget' : 'request_budget';
   if (/blocked|private|metadata|redirect|scheme|port|address/.test(code)) return 'network_policy';
   return 'transport_error';
 }
@@ -860,11 +865,11 @@ async function recordStep<T>(state: RequestContextState, phase: ApiRequestPlanSt
   const actorIndex = state.actorIndexes.get(actor), caseIndex = caseId === undefined ? undefined : state.caseIndexes.get(caseId);
   const planned = plan.steps.find(step => step.phase === phase && step.actorIndex === actorIndex && step.caseIndex === caseIndex)!;
   const step = state.execution.steps[planned.ordinal];
-  step.attemptStart = state.context.budget.count;
+  step.attemptStart = state.context.budget.count - state.requestOffset;
   state.activeStep = step;
   try {
     const result = await execute();
-    step.httpAttempts = state.context.budget.count - step.attemptStart;
+    step.httpAttempts = state.context.budget.count - state.requestOffset - step.attemptStart;
     step.outcome = step.httpAttempts === 0 ? 'not_attempted' : evaluated(result) ? 'evaluated' : 'inconclusive';
     if (step.outcome === 'evaluated') step.reason = 'evaluated';
     else if (step.reason === 'not_reached') step.reason = 'assertion_inconclusive';
@@ -1204,14 +1209,17 @@ export async function runApiPolicy(options: ApiRunOptions): Promise<CheckResult[
   const notes: string[] = [API_SCOPE_NOTE];
   const findings: Finding[] = [];
   const controller = createApiRunControl(timeoutMs, signal);
-  const budget: UrlNetworkContext["budget"] = { count: 0, max: API_MAX_REQUESTS };
+  const capture = ownedApiCapture(signal);
+  const budget: UrlNetworkContext["budget"] = capture?.budget?.requests ?? { count: 0, max: API_MAX_REQUESTS };
+  const requestOffset = budget.count;
   const state: RequestContextState = {
+    requestOffset,
     execution: createApiExecutionLedger(parsed.policy.version, requestPlan(parsed, timeoutMs, allowPrivate)),
     actorIndexes: new Map(parsed.policy.actors.map((actor, index) => [actor.id, index])),
     caseIndexes: new Map(parsed.cases.map((entry, index) => [entry.id, index])),
     session: { authenticatedDeny401Count: 0, identityStatusMismatches: 0, identityResponseFailures: 0,
       identityPrincipalMismatches: 0, identityOrganizationMismatches: 0, identityRequestFailures: 0 },
-    ownedCapture: ownedApiCapture(signal),
+    ownedCapture: capture,
     context: {
       allowPrivate,
       signal: controller.signal,
@@ -1318,7 +1326,7 @@ export async function runApiPolicy(options: ApiRunOptions): Promise<CheckResult[
       legacyPolicy: parsed.legacy,
       controlsPassed,
       expectedRequestCount: parsed.expectedRequests,
-      requestCount: budget.count,
+      requestCount: budget.count - requestOffset,
       bytesInspected: state.bytes,
       elapsedMs: Math.round(performance.now() - startedAt),
       jsonValueEvidenceCases: parsed.cases.filter((entry) => entry.allow.protected?.match === "json-values").length,

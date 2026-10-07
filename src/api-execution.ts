@@ -90,7 +90,7 @@ function planData(value: any, version: 1 | 2): ApiRequestPlan {
     maximumTotalResponseBytes: value.maximumTotalResponseBytes, allowPrivate: value.allowPrivate, steps };
 }
 const REASONS = ['evaluated', 'assertion_inconclusive', 'transport_error', 'network_policy', 'request_budget',
-  'body_budget', 'cancelled', 'deadline', 'prerequisite_failed', 'not_reached'];
+  'body_budget', 'shared_request_budget', 'shared_body_budget', 'cancelled', 'deadline', 'prerequisite_failed', 'not_reached'];
 /** Offline structural/accounting verifier. No network, truth, signature or exploit verification. */
 export function sanitiseApiExecutionLedger(input: unknown): ApiExecutionLedger {
   try {
@@ -130,7 +130,7 @@ export function sanitiseApiExecutionLedger(input: unknown): ApiExecutionLedger {
     let stopped = false;
     for (const step of steps) {
       if (stopped && step.httpAttempts > 0) fail();
-      if (['body_budget', 'cancelled', 'deadline', 'request_budget'].includes(step.reason)) stopped = true;
+      if (['body_budget', 'shared_body_budget', 'shared_request_budget', 'cancelled', 'deadline', 'request_budget'].includes(step.reason)) stopped = true;
       const planned = plan.steps[step.ordinal];
       if (planned.phase === 'deny' && step.outcome === 'evaluated') {
         const identity = plan.steps.find(p => p.phase === 'identity-before' && p.actorIndex === planned.actorIndex);

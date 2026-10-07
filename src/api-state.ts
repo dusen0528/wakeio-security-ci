@@ -5,8 +5,8 @@ import { createServer, type IncomingMessage, type ServerResponse } from 'node:ht
 import { dirname, join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
-import { createApiRunControl, runApiPolicy, API_DEFAULT_TIMEOUT_MS } from './api.js';
-import { openOwnedApiCapture } from './api-state-capture.js';
+import { createApiRunControl, runApiPolicy, API_DEFAULT_TIMEOUT_MS, API_MAX_REQUESTS, API_MAX_TOTAL_BODY_BYTES } from './api.js';
+import { openOwnedApiCapture, type OwnedApiBudget } from './api-state-capture.js';
 import { observeOwnedPhase, parseOwnedState, resourceDigest, stateDigest, unknownApiStateEvidence,
   type OwnedActor, type OwnedArrival, type OwnedRead, type OwnedState } from './api-state-observer.js';
 import { createReport, evaluateGate, sanitiseReport, toAgentReport, toMarkdown, toSarif, writeArtifacts } from './report.js';
@@ -14,19 +14,21 @@ import type { ApiStateEvidence, CheckResult, ScanReport, ScanGate } from './cont
 import type { SharedArtifactStorage } from './schemathesis.js';
 
 export type ApiStateCandidate = 'fixed' | 'ineffective' | 'all-deny' | 'normal-regression';
-export interface ApiStatePilotOptions { candidate: ApiStateCandidate; timeoutMs?: number; signal?: AbortSignal }
+export interface ApiStatePilotOptions { candidate: ApiStateCandidate; timeoutMs?: number; signal?: AbortSignal; verificationRounds?: 1 | 2 }
 export interface ApiStatePhaseResult { report: ScanReport; scanGate: ScanGate; evidence: ApiStateEvidence }
 export interface ApiStatePilotResult {
   version: 1; scope: 'owned-synthetic-resource-read-only'; runId: string;
+  verificationRounds: 1 | 2;
   before: ApiStatePhaseResult | null; after: ApiStatePhaseResult | null;
+  beforeRepeat?: ApiStatePhaseResult | null; afterRepeat?: ApiStatePhaseResult | null;
   verification: ScanReport; verificationGate: ScanGate;
-  execution: { phaseInvocations: number; apiRequests: number; acceptedRequests: number; cleanup: 'confirmed' | 'unknown' | 'not_run' };
+  execution: { phaseInvocations: number; apiRequests: number; acceptedRequests: number; bytesInspected: number; cleanup: 'confirmed' | 'unknown' | 'not_run' };
 }
 export interface ApiStateDeliveryOptions { outDir?: string; storage?: SharedArtifactStorage }
 export interface ApiStateDeliveryReceipt {
   version: 1; runId: string; deliveryAttemptId: string; outputRelativePath: string; status: 'delivered' | 'unknown'; reason: 'complete' | 'delivery_failed' | 'delivery_timeout';
   verificationExitCode: 0 | 1 | 2; finalExitCode: 0 | 1 | 2; artifactSha256: string;
-  reportDigests: { before?: string; after?: string; verification: string };
+  reportDigests: { before?: string; after?: string; beforeRepeat?: string; afterRepeat?: string; verification: string };
   apiReexecuted: false;
 }
 const ROOT = new URL('../../workers/api-state/', import.meta.url);
@@ -91,7 +93,7 @@ function phaseFailure(reason: string): CheckResult {
 }
 async function phase(name: 'baseline' | 'candidate', source: Awaited<ReturnType<typeof fixtureInputs>>['sources'][number],
   input: Awaited<ReturnType<typeof fixtureInputs>>, stateBytes: Buffer, state: OwnedState,
-  env: NodeJS.ProcessEnv, control: ReturnType<typeof createApiRunControl>): Promise<ApiStatePhaseResult> {
+  env: NodeJS.ProcessEnv, control: ReturnType<typeof createApiRunControl>, budget: OwnedApiBudget): Promise<ApiStatePhaseResult> {
   const started = new Date(), phaseControl = new AbortController();
   const abort = () => phaseControl.abort();
   control.signal.addEventListener('abort', abort, { once: true });
@@ -153,7 +155,7 @@ async function phase(name: 'baseline' | 'candidate', source: Awaited<ReturnType<
     const address = server.address();
     if (!address || typeof address === 'string') throw new Error('fixture_unavailable');
     const origin = `http://127.0.0.1:${address.port}`;
-    capture = openOwnedApiCapture(phaseControl.signal, origin, actors);
+    capture = openOwnedApiCapture(phaseControl.signal, origin, actors, budget);
     if (phaseControl.signal.aborted || Date.now() >= control.deadlineAt) throw new Error('cancelled');
     const remaining = Math.max(1, control.deadlineAt - Date.now());
     const resolvedPolicy = policy(state, origin);
@@ -198,7 +200,7 @@ async function phase(name: 'baseline' | 'candidate', source: Awaited<ReturnType<
   if (apiEffect !== (observation.effect === 'observed')) reasons.add('observer_mismatch');
   const evidence: ApiStateEvidence = { version: 1, scope: 'owned-synthetic-resource-read-only', phase: name,
     execution: reasons.size ? 'partial' : 'completed', effect: observation.effect, normal: observation.normal,
-    verification: 'not_evaluated', cleanup, reasons: [...reasons],
+    controlOutcomes: observation.controlOutcomes, verification: 'not_evaluated', cleanup, reasons: [...reasons],
     counts: { plannedRequests: 12, apiRequests, acceptedRequests: arrivals.length, capturedResponses: observation.capturedResponses },
     lineage: { runId: state.runId, handlerSha256: source.sha256, baselineHandlerSha256: input.sources[0].sha256,
       patchSha256: input.patchSha256, observerSha256: input.observerSha256, manifestSha256: input.manifestSha256,
@@ -216,59 +218,93 @@ function oracleFinding(reason: 'effect_persists' | 'normal_regression') {
 }
 /** Executes only fixed author-owned resource fixtures. No target, worker or observer injection. */
 export async function runOwnedApiStatePilot(options: ApiStatePilotOptions): Promise<ApiStatePilotResult> {
-  if (!options || typeof options !== 'object' || Object.keys(options).some(key => !['candidate', 'timeoutMs', 'signal'].includes(key))
-    || !CANDIDATES.includes(options.candidate)) throw new TypeError('invalid_owned_pilot_options');
-  const control = createApiRunControl(options.timeoutMs ?? API_DEFAULT_TIMEOUT_MS, options.signal);
+  if (!options || typeof options !== 'object' || Object.keys(options).some(key => !['candidate', 'timeoutMs', 'signal', 'verificationRounds'].includes(key))
+    || !CANDIDATES.includes(options.candidate) || (options.verificationRounds !== undefined && ![1, 2].includes(options.verificationRounds))) throw new TypeError('invalid_owned_pilot_options');
+  // Snapshot permissions before any await. Repetition never accepts an external target.
+  const { candidate, timeoutMs, signal } = options;
+  const verificationRounds = options.verificationRounds ?? 1;
+  const control = createApiRunControl(timeoutMs ?? API_DEFAULT_TIMEOUT_MS, signal);
+  const budget: OwnedApiBudget = { requests: { count: 0, max: API_MAX_REQUESTS }, bytes: 0, bodyExhausted: false, bodyReadIncomplete: false };
   const started = new Date(), runId = randomUUID();
-  let before: ApiStatePhaseResult | null = null, after: ApiStatePhaseResult | null = null, input: Awaited<ReturnType<typeof fixtureInputs>> | undefined;
+  let before: ApiStatePhaseResult | null = null, after: ApiStatePhaseResult | null = null;
+  let beforeRepeat: ApiStatePhaseResult | null = null, afterRepeat: ApiStatePhaseResult | null = null;
+  let input: Awaited<ReturnType<typeof fixtureInputs>> | undefined, stateBytes: Buffer | undefined;
   const reasons = new Set<string>();
+  const runnable = () => !control.signal.aborted && Date.now() < control.deadlineAt
+    && budget.requests.count < API_MAX_REQUESTS && !budget.bodyExhausted;
+  const baselineValid = (p: ApiStatePhaseResult) => p.evidence.execution === 'completed'
+    && p.evidence.effect === 'observed' && p.evidence.normal === 'passed';
   try {
     if (control.signal.aborted) throw new Error('cancelled');
-    input = await fixtureInputs(options.candidate);
+    input = await fixtureInputs(candidate);
     const state: OwnedState = { version: 1, runId, resources: (['owner', 'other'] as const).map(owner => ({
       id: `resource-${owner}`, owner, canary: `owned-canary-${randomBytes(16).toString('hex')}`,
       title: `Title for ${owner}`, contents: `Stored normal contents for ${owner}` })) };
-    const stateBytes = Buffer.from(serialise(state));
+    stateBytes = Buffer.from(serialise(state));
     const env = { OWNED_OWNER_AUTH: `Bearer ${randomBytes(24).toString('hex')}`, OWNED_OTHER_AUTH: `Bearer ${randomBytes(24).toString('hex')}` };
-    before = await phase('baseline', input.sources[0], input, stateBytes, state, env, control);
-    if (before.evidence.execution !== 'completed' || before.evidence.effect !== 'observed' || before.evidence.normal !== 'passed') reasons.add('baseline_unconfirmed');
-    if (!reasons.size && !control.signal.aborted && Date.now() < control.deadlineAt) {
-      after = await phase('candidate', input.sources[1], input, stateBytes, state, env, control);
+    before = await phase('baseline', input.sources[0], input, stateBytes, state, env, control, budget);
+    if (!baselineValid(before)) reasons.add('baseline_unconfirmed');
+    if (!reasons.size && runnable()) after = await phase('candidate', input.sources[1], input, stateBytes, state, env, control, budget);
+    if (verificationRounds === 2 && after?.evidence.execution === 'completed' && runnable()) {
+      beforeRepeat = await phase('baseline', input.sources[0], input, stateBytes, state, env, control, budget);
+      if (!baselineValid(beforeRepeat)) reasons.add('baseline_unconfirmed');
+      if (!reasons.size && runnable()) afterRepeat = await phase('candidate', input.sources[1], input, stateBytes, state, env, control, budget);
     }
-    stateBytes.fill(0);
   } catch (error) {
     reasons.add(error instanceof Error && error.message === 'cancelled' ? 'cancelled' : error instanceof Error && error.message === 'source_mismatch' ? 'source_mismatch' : 'fixture_unavailable');
-  } finally { control.dispose(); }
-  if (options.signal?.aborted) reasons.add('cancelled');
+  } finally { stateBytes?.fill(0); control.dispose(); }
+  const phases = verificationRounds === 2 ? [before, after, beforeRepeat, afterRepeat] : [before, after];
+  if (signal?.aborted) reasons.add('cancelled');
   else if (Date.now() >= control.deadlineAt) reasons.add('timeout');
-  if (!before || !after || before.evidence.execution !== 'completed' || after.evidence.execution !== 'completed') {
-    for (const e of [before?.evidence, after?.evidence]) for (const reason of e?.reasons ?? []) reasons.add(reason);
-    if (!reasons.size) reasons.add('baseline_unconfirmed');
-  }
-  const effect = after?.evidence.effect ?? 'unknown', normal = after?.evidence.normal ?? 'unknown';
+  if (budget.requests.count >= API_MAX_REQUESTS && phases.some(p => !p || p.evidence.execution !== 'completed')) reasons.add('request_budget');
+  if (budget.bodyExhausted) reasons.add('body_budget');
+  for (const p of phases) for (const reason of p?.evidence.reasons ?? []) reasons.add(reason);
+  if (phases.some(p => !p || p.evidence.execution !== 'completed') && !reasons.size) reasons.add('repeat_incomplete');
+  const differs = (a: ApiStatePhaseResult | null, b: ApiStatePhaseResult | null) => !!a && !!b
+    && a.evidence.execution === 'completed' && b.evidence.execution === 'completed'
+    && (a.evidence.effect !== b.evidence.effect || a.evidence.normal !== b.evidence.normal
+      || JSON.stringify(a.evidence.controlOutcomes) !== JSON.stringify(b.evidence.controlOutcomes));
+  const inconsistent = verificationRounds === 2 && (differs(before, beforeRepeat) || differs(after, afterRepeat));
+  if (inconsistent) reasons.add('repeat_inconsistent');
+  const candidates = verificationRounds === 2 ? [after, afterRepeat] : [after];
+  // A later clean response, error or skipped repeat cannot erase an observed leak or regression.
+  const effect = candidates.some(p => p?.evidence.effect === 'observed') ? 'observed'
+    : candidates.every(p => p?.evidence.effect === 'not_observed') ? 'not_observed' : 'unknown';
+  const normal = candidates.some(p => p?.evidence.normal === 'failed') ? 'failed'
+    : candidates.every(p => p?.evidence.normal === 'passed') ? 'passed' : 'unknown';
   const verdict: ApiStateEvidence['verification'] = reasons.size ? 'inconclusive' : normal === 'failed' ? 'normal_regression' : effect === 'observed' ? 'effect_persists'
     : effect === 'not_observed' && normal === 'passed' ? 'scoped_fix_effect_observed' : 'inconclusive';
   if (verdict === 'inconclusive' && !reasons.size) reasons.add('observer_mismatch');
-  const apiRequests = (before?.evidence.counts.apiRequests ?? 0) + (after?.evidence.counts.apiRequests ?? 0);
-  const acceptedRequests = (before?.evidence.counts.acceptedRequests ?? 0) + (after?.evidence.counts.acceptedRequests ?? 0);
+  const apiRequests = phases.reduce((n, p) => n + (p?.evidence.counts.apiRequests ?? 0), 0);
+  const acceptedRequests = phases.reduce((n, p) => n + (p?.evidence.counts.acceptedRequests ?? 0), 0);
+  if (apiRequests !== budget.requests.count) reasons.add('dispatch_mismatch');
   const beforeDigest = before ? hash(serialise(before.report)) : undefined, afterDigest = after ? hash(serialise(after.report)) : undefined;
+  const repetition: ApiStateEvidence['repetition'] = verificationRounds === 2 ? { rounds: 2,
+    completedPhases: phases.filter(p => p?.evidence.execution === 'completed').length,
+    consistency: inconsistent ? 'inconsistent' : phases.every(p => p?.evidence.execution === 'completed') ? 'consistent' : 'incomplete',
+    phaseReportSha256: phases.filter((p): p is ApiStatePhaseResult => !!p).map(p => hash(serialise(p.report))) } : undefined;
   const evidence: ApiStateEvidence = { ...unknownApiStateEvidence(), phase: 'comparison', execution: reasons.size ? 'partial' : 'completed',
-    effect, normal, verification: verdict, cleanup: [before, after].some(p => p?.evidence.cleanup === 'unknown') ? 'unknown'
-      : [before, after].some(p => p?.evidence.cleanup === 'confirmed') ? 'confirmed' : 'not_run',
-    reasons: [...reasons], counts: { plannedRequests: 24, apiRequests, acceptedRequests,
-      capturedResponses: (before?.evidence.counts.capturedResponses ?? 0) + (after?.evidence.counts.capturedResponses ?? 0) },
+    effect, normal, verification: reasons.size ? 'inconclusive' : verdict, cleanup: phases.some(p => p?.evidence.cleanup === 'unknown') ? 'unknown'
+      : phases.some(p => p?.evidence.cleanup === 'confirmed') ? 'confirmed' : 'not_run',
+    reasons: [...reasons], counts: { plannedRequests: 24 * verificationRounds, apiRequests, acceptedRequests,
+      capturedResponses: phases.reduce((n, p) => n + (p?.evidence.counts.capturedResponses ?? 0), 0) },
     lineage: { ...(after?.evidence.lineage ?? before?.evidence.lineage ?? { runId }),
       ...(beforeDigest ? { beforeReportSha256: beforeDigest } : {}), ...(afterDigest ? { afterReportSha256: afterDigest } : {}) },
-    nextEvidence: reasons.size ? 'review_execution' : 'review_owned_fixture' };
-  const verification = createReport([{ id: 'api.owned-state-oracle', status: reasons.size ? 'partial' : 'completed',
-    findings: verdict === 'effect_persists' || verdict === 'normal_regression' ? [oracleFinding(verdict)] : [],
-    notes: ['Fixture-scoped comparison only. Before and after API findings/gates are retained in separate phase documents.',
+    ...(repetition ? { repetition } : {}), nextEvidence: reasons.size ? 'review_execution' : 'review_owned_fixture' };
+  const observedFailures = verificationRounds === 2
+    ? [...(effect === 'observed' ? [oracleFinding('effect_persists')] : []), ...(normal === 'failed' ? [oracleFinding('normal_regression')] : [])]
+    : verdict === 'effect_persists' || verdict === 'normal_regression' ? [oracleFinding(verdict)] : [];
+  const verification = createReport([{ id: 'api.owned-state-oracle', status: reasons.size ? 'partial' : 'completed', findings: observedFailures,
+    notes: ['Fixture-scoped comparison only. Every phase retains its original API findings/gate in a separate document.',
+      'Repeated observations are bounded controls, not statistical reliability, production verification or proof that a fix is permanent.',
       'Finding verification flags are unchanged. Independent review is required to interpret this owned fixture evidence.'], apiStateEvidence: evidence }], 'api', started);
-  const result: ApiStatePilotResult = deepFreeze({ version: 1, scope: 'owned-synthetic-resource-read-only', runId, before, after, verification,
-    verificationGate: evaluateGate(verification), execution: { phaseInvocations: Number(!!before) + Number(!!after), apiRequests, acceptedRequests, cleanup: evidence.cleanup } });
+  const result: ApiStatePilotResult = deepFreeze({ version: 1, scope: 'owned-synthetic-resource-read-only', runId, verificationRounds,
+    before, after, ...(verificationRounds === 2 ? { beforeRepeat, afterRepeat } : {}), verification,
+    verificationGate: evaluateGate(verification), execution: { phaseInvocations: phases.filter(Boolean).length, apiRequests, acceptedRequests,
+      bytesInspected: budget.bytes, cleanup: evidence.cleanup } });
   const artifacts: Array<[string, Array<[string, string]>]> = [];
   const digests: ApiStateDeliveryReceipt['reportDigests'] = { verification: hash(serialise(verification)) };
-  for (const [name, report] of [['before', before?.report], ['after', after?.report], ['verification', verification]] as const) {
+  for (const [name, report] of [['before', before?.report], ['after', after?.report], ['beforeRepeat', beforeRepeat?.report], ['afterRepeat', afterRepeat?.report], ['verification', verification]] as const) {
     if (!report) continue;
     const safe = sanitiseReport(report), json = serialise(safe);
     digests[name] = hash(json);

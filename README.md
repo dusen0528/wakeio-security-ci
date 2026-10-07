@@ -15,6 +15,8 @@ An experimental, separate [`repair` CLI](docs/repair-preview.md) can verify a re
 The API preview now records a redacted, indexed execution ledger so CI can
 separate evaluated probes from inconclusive and never-attempted steps.
 See the [execution contract](docs/preview-0.4-api.md#계획-대비-실행-ledger).
+The [owned API pilot](docs/api-state-oracle.md) also offers explicit two-round
+normal-behavior controls; inconsistent repeats remain inconclusive.
 
 ## What it checks
 
@@ -284,10 +286,13 @@ To reproduce the local checks:
 
 ```sh
 node scripts/bootstrap-schemathesis.mjs
-node --test scripts/ci-verification.test.mjs
+node scripts/bootstrap-nuclei.mjs
+node --test scripts/ci-verification.test.mjs scripts/bootstrap-nuclei.test.mjs
 npm run test:schemathesis
 npm run benchmark -- --strict
 ```
+
+The explicit Nuclei bootstrap verifies the pinned 3.11.1 binary and the SHA-256 of the official v10.5.0 template source archive at commit `f8b8b8dcd70d93826c3767e1829ef8243af9f03b`. It retains the complete upstream scopes and MIT license outside tracked source, writes a local setup receipt under `artifacts/ci/`, and exports engine paths in GitHub Actions. `test:schemathesis` reads that receipt locally (or explicit `WAKEIO_NUCLEI` and `WAKEIO_NUCLEI_TEMPLATES` paths), requires both real engines, and fails on any skip. It only scans owned loopback fixtures; setup downloads are separate from scans.
 
 The implemented [checklist](docs/checklist.md), [0.4 guide](docs/preview-0.4.md), and [verification record](docs/verification-0.4.md) describe the exact scope. Complete penetration testing, exploit generation, browser/runtime proof, broad API fuzzing, live database or cloud inspection, image CVE scanning, and a whole-service safety verdict are outside this project’s contract.
 

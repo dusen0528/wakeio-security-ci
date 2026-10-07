@@ -186,7 +186,12 @@ async function dastMain(env) {
       const templates = resolve(workspace, value(env.WAKEIO_NUCLEI_TEMPLATES));
       const digest = createHash('sha256').update(await readFile(join(templates, 'templates-checksum.txt'))).digest('hex');
       if (digest !== value(env.WAKEIO_NUCLEI_TEMPLATES_SHA256).toLowerCase()) throw new Error('nuclei templates digest mismatch');
-      const installed = await installTools(actionPath, toolsRoot, 'nuclei', env);
+      // A preinstalled trusted executable (like bandit-path) skips the pinned
+      // download; the adapter still refuses any version other than 3.11.1.
+      const preinstalled = value(env.WAKEIO_NUCLEI_PATH);
+      const installed = preinstalled
+        ? { paths: { nuclei: resolve(workspace, preinstalled) }, metadata: {} }
+        : await installTools(actionPath, toolsRoot, 'nuclei', env);
       state.cacheMetadata = installed.metadata ?? {};
       if (typeof installed.paths?.nuclei !== 'string' || !installed.paths.nuclei) throw new Error('pinned nuclei installation returned no executable');
       args.push('--url', plan.nuclei, '--engine', 'nuclei', '--nuclei', installed.paths.nuclei, '--nuclei-templates', templates);

@@ -181,40 +181,36 @@ test("DAST Action stops on a template digest mismatch before downloading Nuclei 
   }
 });
 
-const archive = process.env.WAKEIO_NUCLEI_ARCHIVE;
+const realEngine = process.env.WAKEIO_NUCLEI;
 const realTemplates = process.env.WAKEIO_NUCLEI_TEMPLATES;
-test("DAST Action runs pinned Nuclei from a verified cached archive", {
-  skip: archive && realTemplates ? false : "set WAKEIO_NUCLEI_ARCHIVE (verified nuclei_3.11.1 zip for this platform) and WAKEIO_NUCLEI_TEMPLATES",
+const requireReal = process.env.WAKEIO_REQUIRE_NUCLEI === "1";
+test("DAST Action runs pinned Nuclei through the bundled layout", {
+  skip: (realEngine && realTemplates) || requireReal ? false : "set WAKEIO_NUCLEI and WAKEIO_NUCLEI_TEMPLATES (npm run test:schemathesis provisions them)",
 }, async () => {
-  const installer = await import(new URL(`file://${resolve(root, "scripts/install-tools.mjs")}`).href);
-  const key = installer.platformAssetKey(process.platform, process.arch);
-  const asset = installer.TOOL_RELEASES.nuclei.assets[key];
+  assert.ok(realEngine && realTemplates, "WAKEIO_NUCLEI and WAKEIO_NUCLEI_TEMPLATES are required");
   const top = await mkdtemp(join(tmpdir(), "wakeio-dast-action-"));
   const target = await fixture("nuclei-target.mjs", "risk");
   try {
     const action = await actionLayout(top);
     const paths = await workspaceFor(top);
-    const cache = join(top, "cache");
-    await mkdir(cache);
-    await copyFile(archive!, join(cache, `nuclei-3.11.1-${key}-${asset.sha256}-${asset.file}`));
-    const digest = createHash("sha256").update(await readFile(join(realTemplates!, "templates-checksum.txt"))).digest("hex");
+    const digest = createHash("sha256").update(await readFile(join(realTemplates, "templates-checksum.txt"))).digest("hex");
     const env: NodeJS.ProcessEnv = {
       PATH: process.env.PATH, WAKEIO_MODE: "dast", WAKEIO_ACTION_PATH: action, GITHUB_WORKSPACE: paths.workspace,
       GITHUB_OUTPUT: paths.output, GITHUB_STEP_SUMMARY: paths.summary, GITHUB_EVENT_NAME: "workflow_dispatch",
       WAKEIO_ACTIVE_CONSENT: "true", WAKEIO_ALLOWED_ORIGINS: target.origin, WAKEIO_ENGINES: "nuclei", WAKEIO_URL: `${target.origin}/`,
-      WAKEIO_NUCLEI_TEMPLATES: realTemplates, WAKEIO_NUCLEI_TEMPLATES_SHA256: digest, WAKEIO_NUCLEI_RATE_LIMIT: "150",
-      WAKEIO_TOOL_CACHE: cache, WAKEIO_ALLOW_PRIVATE: "true", WAKEIO_FAIL_ON: "info", WAKEIO_OUT: "reports", WAKEIO_NUCLEI_TIMEOUT_MS: "300000",
+      WAKEIO_NUCLEI_PATH: realEngine, WAKEIO_NUCLEI_TEMPLATES: realTemplates, WAKEIO_NUCLEI_TEMPLATES_SHA256: digest,
+      WAKEIO_NUCLEI_RATE_LIMIT: "150", WAKEIO_ALLOW_PRIVATE: "true", WAKEIO_FAIL_ON: "info", WAKEIO_OUT: "reports",
+      WAKEIO_NUCLEI_TIMEOUT_MS: "300000",
     };
     const result = await launch(join(action, "scripts/action-run.mjs"), env, paths.workspace);
     const report = JSON.parse(await readFile(join(paths.workspace, "reports/report.json"), "utf8"));
-    assert.equal(result.code, 1, result.stderr.slice(0, 1500) + JSON.stringify(report.checks.map((item: { id: string; status: string; notes: string[]; metrics?: unknown }) => [item.id, item.status, item.metrics, item.notes.slice(-1)])));
+    assert.equal(result.code, 1, JSON.stringify(report.checks.map((item: { id: string; status: string; metrics?: unknown }) => [item.id, item.status, item.metrics])));
     const check = report.checks.find((item: { id: string }) => item.id === "url.nuclei");
     assert.equal(check.status, "completed");
     assert.ok(check.findings.length >= 10);
     assert.equal(report.checks.find((item: { id: string }) => item.id === "url.scan").status, "completed", "the Nuclei budget does not leak into the passive URL check");
     assert.ok(await target.requests() >= check.metrics.requestCount, "every gate-forwarded request reached the target; the passive URL scan adds its own bounded GETs");
-    const status = JSON.parse(await readFile(join(paths.workspace, "reports/action-status.json"), "utf8"));
-    assert.deepEqual(status.nativeArchiveCache, { nuclei: "hit" });
+    assert.equal(outputs(await readFile(paths.output, "utf8"))["setup-status"], "success");
   } finally {
     await target.stop();
     await rm(top, { recursive: true, force: true });
