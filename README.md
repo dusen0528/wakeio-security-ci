@@ -229,7 +229,7 @@ Comparison refuses to present mismatched or incomplete scopes as a clean result.
 
 ## Active DAST preview (opt-in)
 
-Active checks send generated or template requests to a target, so they never run implicitly. Every active run needs `--active-consent` (exit 2 before any DNS lookup or request without it). Only test targets you own or are authorized to test; private/loopback targets additionally need `--allow-private`, and metadata/link-local addresses stay blocked.
+Active checks send generated or template requests to a target, so they never run implicitly. Every active run needs `--active-consent` (exit 2 before any DNS lookup or request without it). Only test targets you own or are authorized to test; private/loopback targets additionally need `--allow-private`, and metadata/link-local addresses stay blocked. Add `--allowed-origin ORIGIN` (repeatable) to pin a scan to known origins: `--url`, `--api-base` and an API policy `baseUrl` outside the list are refused before any DNS lookup or request.
 
 ```sh
 # Schemathesis: generated GET inputs for explicitly listed OpenAPI operations

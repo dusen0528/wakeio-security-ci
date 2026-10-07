@@ -224,7 +224,7 @@ node build/src/cli.js compare \
 
 ## 능동 DAST 프리뷰(선택)
 
-능동 검사는 대상에 생성 요청이나 템플릿 요청을 보내므로 저절로 실행되지 않습니다. 모든 능동 실행에는 `--active-consent`가 필요하며, 없으면 DNS 조회나 요청 전에 exit 2로 끝납니다. 소유했거나 검사 권한을 받은 대상만 검사하세요. 사설·loopback 대상은 `--allow-private`도 필요하고, 메타데이터·link-local 주소는 계속 차단됩니다.
+능동 검사는 대상에 생성 요청이나 템플릿 요청을 보내므로 저절로 실행되지 않습니다. 모든 능동 실행에는 `--active-consent`가 필요하며, 없으면 DNS 조회나 요청 전에 exit 2로 끝납니다. 소유했거나 검사 권한을 받은 대상만 검사하세요. 사설·loopback 대상은 `--allow-private`도 필요하고, 메타데이터·link-local 주소는 계속 차단됩니다. `--allowed-origin ORIGIN`(반복 가능)을 지정하면 목록에 없는 `--url`, `--api-base`, API 정책 `baseUrl`은 DNS 조회나 요청 전에 거부됩니다.
 
 ```sh
 # Schemathesis: 명시한 OpenAPI operation에 생성한 GET 입력
