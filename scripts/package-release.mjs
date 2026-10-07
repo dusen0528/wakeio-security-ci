@@ -44,6 +44,7 @@ const SOURCE_ALLOWLIST = [
   'THIRD_PARTY_NOTICES.md',
   'CONTRIBUTING.md',
   'action.yml',
+  'dast',
   'benchmarks',
   'docs',
   'dist-action',

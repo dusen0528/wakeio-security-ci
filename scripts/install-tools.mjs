@@ -26,6 +26,7 @@ import {
 import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFile } from 'node:child_process';
+import { realpathSync } from 'node:fs';
 import { promisify } from 'node:util';
 import { tmpdir } from 'node:os';
 
@@ -544,8 +545,13 @@ async function main() {
   }
 }
 
-const entrypoint = process.argv[1] && resolve(process.argv[1]);
-if (entrypoint === fileURLToPath(import.meta.url)) {
+// Compare real paths: macOS exposes temporary directories as both /var and
+// /private/var, and a silent non-run would look like an empty tool set.
+function canonicalPath(path) {
+  try { return realpathSync(path); } catch { return resolve(path); }
+}
+const entrypoint = process.argv[1] && canonicalPath(process.argv[1]);
+if (entrypoint === canonicalPath(fileURLToPath(import.meta.url))) {
   main().catch((error) => {
     process.stderr.write(`wakeio-security-ci tool installation failed: ${error.message}\n`);
     process.exitCode = 2;

@@ -53,6 +53,7 @@ export interface CliOptions {
   nucleiScopes: NucleiScope[];
   nucleiMaxRequests?: number;
   nucleiRateLimit?: number;
+  nucleiTimeoutMs?: number;
 }
 
 export class CliUsageError extends Error {
@@ -110,6 +111,7 @@ Active DAST (off by default; sends generated or template requests to the target)
   --nuclei-scope LIST          misconfiguration,exposures (default: misconfiguration)
   --nuclei-max-requests N      Gate request budget, 1..20000 (default 6000)
   --nuclei-rate-limit N        Requests per second, 1..150 (default 50)
+  --nuclei-timeout-ms N        Nuclei time budget, 1..600000 (default 300000; --timeout-ms is unchanged)
   --help                       Show this help
 `;
 
@@ -266,6 +268,7 @@ export function parseCliArgs(argv: readonly string[]): CliOptions | { help: true
     }
     else if ((value = valueFlag("--nuclei-max-requests")) !== undefined) options.nucleiMaxRequests = parseBoundedInteger("--nuclei-max-requests", value, NUCLEI_MAX_REQUESTS);
     else if ((value = valueFlag("--nuclei-rate-limit")) !== undefined) options.nucleiRateLimit = parseBoundedInteger("--nuclei-rate-limit", value, NUCLEI_MAX_RATE_LIMIT);
+    else if ((value = valueFlag("--nuclei-timeout-ms")) !== undefined) options.nucleiTimeoutMs = parseBoundedInteger("--nuclei-timeout-ms", value, MAX_TOOL_TIMEOUT_MS);
     else if (arg === "--active-consent") {
       if (seen.has(arg)) throw new CliUsageError(`${arg} may only be specified once`);
       seen.add(arg);
@@ -291,7 +294,7 @@ export function parseCliArgs(argv: readonly string[]): CliOptions | { help: true
   const schemathesisOnly = options.apiBase !== undefined || options.operations.length > 0 || options.apiMaxRequests !== undefined || options.seed !== undefined || options.schemathesisPython !== undefined;
   if (schemathesisOnly && !options.openapi) throw new CliUsageError("--api-base, --operation, --api-max-requests, --seed and --schemathesis-python require --openapi");
   if (options.openapi && (!options.apiBase || options.operations.length === 0)) throw new CliUsageError("--openapi requires --api-base and at least one --operation");
-  const nucleiOnly = options.nucleiPath !== undefined || options.nucleiTemplates !== undefined || options.nucleiScopes.length > 0 || options.nucleiMaxRequests !== undefined || options.nucleiRateLimit !== undefined;
+  const nucleiOnly = options.nucleiPath !== undefined || options.nucleiTemplates !== undefined || options.nucleiScopes.length > 0 || options.nucleiMaxRequests !== undefined || options.nucleiRateLimit !== undefined || options.nucleiTimeoutMs !== undefined;
   if (nucleiOnly && !options.engines.includes("nuclei")) throw new CliUsageError("--nuclei* options require --engine nuclei");
   if (options.engines.includes("nuclei") && (!options.url || !options.nucleiTemplates)) throw new CliUsageError("--engine nuclei requires --url and --nuclei-templates");
   const active = Boolean(options.openapi) || options.engines.length > 0;
@@ -452,7 +455,7 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
     try {
       checks.push(...await runNuclei({
         url: `${new URL(parsed.url).origin}/`, executable: parsed.nucleiPath, templatesDir: parsed.nucleiTemplates!, scopes: parsed.nucleiScopes,
-        consent: parsed.activeConsent, allowPrivate: parsed.allowPrivate, timeoutMs: parsed.timeoutMs,
+        consent: parsed.activeConsent, allowPrivate: parsed.allowPrivate, timeoutMs: parsed.nucleiTimeoutMs,
         maxRequests: parsed.nucleiMaxRequests, rateLimit: parsed.nucleiRateLimit, signal: controller.signal,
       }));
     } catch {

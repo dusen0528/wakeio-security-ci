@@ -7,7 +7,7 @@ import { createServer } from "node:http";
 
 const variant = process.argv[2];
 if (variant !== "risk" && variant !== "normal") {
-  process.stderr.write("usage: openapi-live-target.mjs risk|normal\n");
+  process.stderr.write("usage: openapi-live-target.mjs risk|normal [port]\n");
   process.exit(2);
 }
 const log = process.env.WAKEIO_FIXTURE_LOG;
@@ -32,5 +32,5 @@ const server = createServer((request, response) => {
   }
   return json(response, 404, { error: "not found" });
 });
-server.listen(0, "127.0.0.1", () => process.stdout.write(`${server.address().port}\n`));
+server.listen(Number(process.argv[3] ?? 0), "127.0.0.1", () => process.stdout.write(`${server.address().port}\n`));
 for (const signal of ["SIGINT", "SIGTERM"]) process.on(signal, () => server.close(() => process.exit(0)));

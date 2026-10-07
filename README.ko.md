@@ -234,10 +234,12 @@ node scripts/install-tools.mjs --tools nuclei          # 고정된 upstream SHA-
 nuclei -ut -ud /path/to/nuclei-templates                # 검사 중에는 템플릿을 내려받지 않음
 node build/src/cli.js scan --url https://staging.example.test/ --engine nuclei \
   --nuclei /path/to/nuclei --nuclei-templates /path/to/nuclei-templates \
-  --nuclei-scope misconfiguration,exposures --active-consent --timeout-ms 300000
+  --nuclei-scope misconfiguration,exposures --active-consent --nuclei-timeout-ms 300000
 ```
 
 두 엔진은 실행마다 새로 여는 loopback egress gate에만 접속합니다. Gate는 URL 검사와 같은 URL-network 정책으로 origin을 검증하고, 검증한 주소에 고정하며, 그 origin의 GET/HEAD만 전달합니다. identity 인코딩을 강제하고 요청 수·응답당/전체 바이트 예산을 전송 구간에서 적용합니다. 다른 포트를 찌르는 템플릿처럼 origin을 벗어나는 요청은 보내지 않고 거부한 수를 기록합니다. Nuclei는 `-ni -duc -dr`로 서명된 HTTP 템플릿만 실행하며 raw/unsafe·non-GET·self-contained·다른 프로토콜 템플릿은 제외하고 수를 기록합니다. Nuclei는 일부만 진행해도 exit 0을 반환하므로 엔진 진행률 100%, 엔진 오류 0, 예산 중단·upstream 실패 없음까지 확인해야 완료입니다. 그 밖에는 `partial`(exit 2)입니다. 엔진·Python 런타임·템플릿 디렉터리가 없으면 `error`(exit 2)이며 통과로 처리하지 않습니다.
+
+GitHub Actions에서는 별도의 `dast` Action을 씁니다. 수동 검사 workflow가 능동 검사를 시작할 일이 없게 분리했습니다. `active-consent: 'true'`와 모든 대상 origin을 담은 `allowed-origins`가 필요하고, `pull_request_target`·fork PR·fork `workflow_run`은 다운로드나 요청 전에 거부합니다. Nuclei는 고정 아카이브로 설치하고, nuclei-templates는 기대한 `templates-checksum.txt` digest와 일치해야 합니다. [`examples/github-dast.yml`](examples/github-dast.yml)은 job 안에서 앱을 띄우고 push·PR·매일 스케줄로 검사한 뒤 SARIF를 올리고 보고서를 남깁니다.
 
 보고서에는 실행한 요청 수, 예산 때문에 거부한 요청 수, egress 거부 수, seed와 스키마 digest(Schemathesis), 템플릿 수·제외 수·`templates-checksum.txt` digest(Nuclei)를 남깁니다. 응답 본문, 생성 값, 추출 값, proxy 자격증명, 템플릿 원문은 남기지 않습니다. `wakeio-security-ci doctor --dast`는 아무것도 실행하지 않고 엔진 준비 상태만 보여 줍니다. 인증, 쓰기 요청, 상태 기반 workflow, 브라우저 기반 검사, 자체 probe와 크롤링은 이 프리뷰 범위가 아닙니다.
 

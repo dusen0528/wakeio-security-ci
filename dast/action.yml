@@ -1,0 +1,181 @@
+name: Wakeio Security CI (active DAST)
+description: Opt-in active DAST with Schemathesis and pinned Nuclei against an explicitly consented, allowlisted origin
+author: Wakeio Security CI contributors
+
+# Separate from the root Action so passive scans can never start active testing.
+# Refused before any download or request: missing consent, an origin outside
+# allowed-origins, pull_request_target, and pull requests or workflow_run events
+# from forks.
+
+inputs:
+  active-consent:
+    description: Must be exactly "true". Confirms you own or are authorized to test every allowed origin
+    required: true
+  allowed-origins:
+    description: Newline or comma-separated origins (scheme://host[:port]) the scan may target, e.g. a repository variable
+    required: true
+  url:
+    description: Target URL for Nuclei; the scan uses its origin root
+    required: false
+    default: ''
+  engines:
+    description: Template engine to run; "nuclei" or empty
+    required: false
+    default: ''
+  nuclei-templates:
+    description: Workspace-relative or absolute prepared nuclei-templates directory (for example a pinned actions/checkout)
+    required: false
+    default: ''
+  nuclei-templates-sha256:
+    description: Expected SHA-256 of templates-checksum.txt in nuclei-templates; a mismatch stops before scanning
+    required: false
+    default: ''
+  nuclei-scope:
+    description: misconfiguration,exposures (default misconfiguration)
+    required: false
+    default: ''
+  nuclei-max-requests:
+    description: Egress gate request budget for Nuclei, 1..20000
+    required: false
+    default: ''
+  nuclei-rate-limit:
+    description: Nuclei requests per second, 1..150
+    required: false
+    default: ''
+  openapi:
+    description: Workspace-relative OpenAPI 3.0/3.1 JSON for Schemathesis live mode
+    required: false
+    default: ''
+  api-base:
+    description: Target origin for openapi (OpenAPI servers are never used)
+    required: false
+    default: ''
+  operations:
+    description: Newline or comma-separated documented GET paths to test
+    required: false
+    default: ''
+  api-max-requests:
+    description: Schemathesis request budget, 1..64
+    required: false
+    default: ''
+  seed:
+    description: Hypothesis seed for reproducible generation
+    required: false
+    default: ''
+  schemathesis-python:
+    description: Optional prepared Python with workers/schemathesis/requirements.lock.txt; otherwise Python 3.12.13 and a private venv are prepared
+    required: false
+    default: ''
+  out:
+    description: Directory for report.json, report.sarif, report.md, agent-report.json, and Action status
+    required: false
+    default: wakeio-dast-reports
+  fail-on:
+    description: Severity threshold for findings (none disables finding failure only; incomplete scans still fail)
+    required: false
+    default: high
+  allow-private:
+    description: Allow loopback/private targets such as a service container on 127.0.0.1 (metadata stays blocked)
+    required: false
+    default: 'false'
+  nuclei-timeout-ms:
+    description: Nuclei time budget in milliseconds, 1..600000 (default 300000)
+    required: false
+    default: ''
+  timeout-ms:
+    description: Timeout for the passive URL check and Schemathesis (capped at 120000)
+    required: false
+    default: '30000'
+  project-id:
+    description: Stable project identifier (defaults to github.repository)
+    required: false
+    default: ''
+  tool-cache:
+    description: Optional persistent directory for verified engine archives
+    required: false
+    default: ''
+
+outputs:
+  report-dir:
+    description: Absolute report directory used by the scanner
+    value: ${{ steps.wakeio-dast.outputs.report-dir }}
+  report-json:
+    description: Absolute JSON report path
+    value: ${{ steps.wakeio-dast.outputs.report-json }}
+  report-sarif:
+    description: Absolute SARIF report path
+    value: ${{ steps.wakeio-dast.outputs.report-sarif }}
+  report-markdown:
+    description: Absolute Markdown report path
+    value: ${{ steps.wakeio-dast.outputs.report-markdown }}
+  report-agent:
+    description: Absolute agent report path when its digest matches this run's report.json
+    value: ${{ steps.wakeio-dast.outputs.report-agent }}
+  exit-code:
+    description: 0 completed, 1 findings at the threshold, 2 refused, incomplete or failed
+    value: ${{ steps.wakeio-dast.outputs.exit-code }}
+  finding-count:
+    description: Number of findings in report.json
+    value: ${{ steps.wakeio-dast.outputs.finding-count }}
+  incomplete-count:
+    description: Number of partial, error or skipped checks
+    value: ${{ steps.wakeio-dast.outputs.incomplete-count }}
+  setup-status:
+    description: refused, success or failure
+    value: ${{ steps.wakeio-dast.outputs.setup-status }}
+  scan-status:
+    description: success, findings, incomplete, failure or not-run
+    value: ${{ steps.wakeio-dast.outputs.scan-status }}
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Node.js 22
+      uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+      with:
+        node-version: '22'
+    - name: Set up Python 3.12.13 for Schemathesis
+      if: ${{ inputs.openapi != '' && inputs.schemathesis-python == '' && inputs.active-consent == 'true' }}
+      uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+      with:
+        python-version: '3.12.13'
+    - name: Prepare version-pinned Schemathesis environment
+      id: schemathesis-env
+      if: ${{ inputs.openapi != '' && inputs.schemathesis-python == '' && inputs.active-consent == 'true' }}
+      shell: bash
+      env:
+        WAKEIO_LOCK: ${{ github.action_path }}/../workers/schemathesis/requirements.lock.txt
+      run: |
+        venv="$RUNNER_TEMP/wakeio-schemathesis-venv"
+        python -m venv "$venv"
+        "$venv/bin/python" -I -m pip install --disable-pip-version-check --only-binary=:all: --timeout 20 --retries 1 -r "$WAKEIO_LOCK"
+        echo "python=$venv/bin/python" >> "$GITHUB_OUTPUT"
+    - name: Run Wakeio active DAST
+      id: wakeio-dast
+      shell: bash
+      env:
+        WAKEIO_MODE: dast
+        WAKEIO_ACTION_PATH: ${{ github.action_path }}/..
+        WAKEIO_ACTIVE_CONSENT: ${{ inputs.active-consent }}
+        WAKEIO_ALLOWED_ORIGINS: ${{ inputs.allowed-origins }}
+        WAKEIO_URL: ${{ inputs.url }}
+        WAKEIO_ENGINES: ${{ inputs.engines }}
+        WAKEIO_NUCLEI_TEMPLATES: ${{ inputs.nuclei-templates }}
+        WAKEIO_NUCLEI_TEMPLATES_SHA256: ${{ inputs.nuclei-templates-sha256 }}
+        WAKEIO_NUCLEI_SCOPE: ${{ inputs.nuclei-scope }}
+        WAKEIO_NUCLEI_MAX_REQUESTS: ${{ inputs.nuclei-max-requests }}
+        WAKEIO_NUCLEI_RATE_LIMIT: ${{ inputs.nuclei-rate-limit }}
+        WAKEIO_NUCLEI_TIMEOUT_MS: ${{ inputs.nuclei-timeout-ms }}
+        WAKEIO_OPENAPI: ${{ inputs.openapi }}
+        WAKEIO_API_BASE: ${{ inputs.api-base }}
+        WAKEIO_OPERATIONS: ${{ inputs.operations }}
+        WAKEIO_API_MAX_REQUESTS: ${{ inputs.api-max-requests }}
+        WAKEIO_SEED: ${{ inputs.seed }}
+        WAKEIO_SCHEMATHESIS_PYTHON: ${{ inputs.schemathesis-python || steps.schemathesis-env.outputs.python }}
+        WAKEIO_OUT: ${{ inputs.out }}
+        WAKEIO_FAIL_ON: ${{ inputs.fail-on }}
+        WAKEIO_ALLOW_PRIVATE: ${{ inputs.allow-private }}
+        WAKEIO_TIMEOUT_MS: ${{ inputs.timeout-ms }}
+        WAKEIO_PROJECT_ID: ${{ inputs.project-id }}
+        WAKEIO_TOOL_CACHE: ${{ inputs.tool-cache }}
+      run: node "$WAKEIO_ACTION_PATH/scripts/action-run.mjs"

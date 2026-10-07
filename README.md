@@ -239,10 +239,27 @@ node scripts/install-tools.mjs --tools nuclei          # verifies the pinned ups
 nuclei -ut -ud /path/to/nuclei-templates                # templates are never downloaded during a scan
 node build/src/cli.js scan --url https://staging.example.test/ --engine nuclei \
   --nuclei /path/to/nuclei --nuclei-templates /path/to/nuclei-templates \
-  --nuclei-scope misconfiguration,exposures --active-consent --timeout-ms 300000
+  --nuclei-scope misconfiguration,exposures --active-consent --nuclei-timeout-ms 300000
 ```
 
 Both engines connect only to a per-run loopback egress gate. The gate validates the origin with the same URL-network policy as URL scans, pins the validated address, forwards only that origin and only GET/HEAD, forces identity encoding, and enforces request and per-response/total byte budgets on the wire. Requests that leave the origin (for example templates probing another port) are refused and counted, not sent. Nuclei runs only signed HTTP templates with `-ni -duc -dr`; raw/unsafe, non-GET, self-contained and other-protocol templates are excluded and counted. Nuclei can exit 0 after partial progress, so completion also requires 100% engine progress, zero engine errors, no budget stop and no upstream failure; anything else is `partial` (exit 2). A missing engine, Python runtime or template directory is an `error` (exit 2), never a clean pass.
+
+In GitHub Actions, use the separate `dast` Action so passive workflows can never start active testing. It requires `active-consent: 'true'` and an `allowed-origins` list that contains every target origin, and it refuses `pull_request_target`, fork pull requests and fork `workflow_run` events before any download or request. Nuclei is installed from the pinned archive and nuclei-templates must match an expected `templates-checksum.txt` digest. [`examples/github-dast.yml`](examples/github-dast.yml) starts the application inside the job, scans it on push, pull request and a daily schedule, uploads SARIF and keeps the reports:
+
+```yaml
+- uses: dusen0528/wakeio-security-ci/dast@REVIEWED_COMMIT_SHA
+  with:
+    active-consent: 'true'
+    allowed-origins: ${{ vars.WAKEIO_DAST_ALLOWED_ORIGINS }}
+    allow-private: 'true'
+    url: http://127.0.0.1:3000/
+    engines: nuclei
+    nuclei-templates: .wakeio/nuclei-templates
+    nuclei-templates-sha256: a221c053f1bb5562f5c790c76184bc91da2af3819080776a8c87e9c6787cb473
+    openapi: openapi.json
+    api-base: http://127.0.0.1:3000/
+    operations: /items/{id}
+```
 
 Reports record executed requests, requests refused by the budget, egress refusals, the seed and schema digest (Schemathesis), and template counts, exclusions and the `templates-checksum.txt` digest (Nuclei). Response bodies, generated values, extracted values, proxy credentials and template text are not retained. `wakeio-security-ci doctor --dast` reports engine readiness without running anything. Authentication, write operations, stateful workflows, browser-driven checks, own probes and crawling are not part of this preview.
 

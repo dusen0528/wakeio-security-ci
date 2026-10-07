@@ -69,3 +69,95 @@ jobs:
           name: wakeio-security-ci-reports
           path: wakeio-security-ci/wakeio-security-reports
           if-no-files-found: error
+
+  active-dast-action:
+    # Fork pull requests are refused by the Action itself; skip them here instead of failing.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out action source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          path: wakeio-security-ci
+          persist-credentials: false
+      - name: Check out pinned nuclei-templates (v10.5.0)
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: projectdiscovery/nuclei-templates
+          ref: f8b8b8dcd70d93826c3767e1829ef8243af9f03b
+          path: nuclei-templates
+          persist-credentials: false
+      - name: Set up Node.js 22 for owned fixtures
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - name: Start owned loopback risk fixtures
+        working-directory: wakeio-security-ci
+        run: |
+          nohup node tests/fixtures/openapi-live-target.mjs risk 18081 > "$RUNNER_TEMP/openapi-fixture.log" 2>&1 &
+          nohup node tests/fixtures/nuclei-target.mjs risk 18082 > "$RUNNER_TEMP/nuclei-fixture.log" 2>&1 &
+          for attempt in $(seq 1 30); do
+            curl --silent --output /dev/null http://127.0.0.1:18081/items/1 && curl --silent --output /dev/null http://127.0.0.1:18082/ && exit 0
+            sleep 1
+          done
+          exit 1
+      - name: Consent is required before any setup or request
+        id: refused
+        continue-on-error: true
+        uses: ./wakeio-security-ci/dast
+        with:
+          active-consent: 'false'
+          allowed-origins: http://127.0.0.1:18081
+          openapi: wakeio-security-ci/tests/fixtures/openapi-live.json
+          api-base: http://127.0.0.1:18081/
+          operations: /items/{id}
+          allow-private: 'true'
+          out: dast-refused-reports
+      - name: Run active DAST against the risk fixtures
+        id: dast
+        continue-on-error: true
+        uses: ./wakeio-security-ci/dast
+        with:
+          active-consent: 'true'
+          allowed-origins: |
+            http://127.0.0.1:18081
+            http://127.0.0.1:18082
+          allow-private: 'true'
+          url: http://127.0.0.1:18082/
+          engines: nuclei
+          nuclei-templates: nuclei-templates
+          nuclei-templates-sha256: a221c053f1bb5562f5c790c76184bc91da2af3819080776a8c87e9c6787cb473
+          nuclei-rate-limit: '150'
+          openapi: wakeio-security-ci/tests/fixtures/openapi-live.json
+          api-base: http://127.0.0.1:18081/
+          operations: |
+            /items/{id}
+            /search
+          seed: '7'
+          fail-on: low
+          out: dast-reports
+      - name: Assert refusal, completion and detection
+        env:
+          REFUSED_SETUP: ${{ steps.refused.outputs.setup-status }}
+          REFUSED_EXIT: ${{ steps.refused.outputs.exit-code }}
+          DAST_SETUP: ${{ steps.dast.outputs.setup-status }}
+          DAST_EXIT: ${{ steps.dast.outputs.exit-code }}
+          DAST_FINDINGS: ${{ steps.dast.outputs.finding-count }}
+          DAST_INCOMPLETE: ${{ steps.dast.outputs.incomplete-count }}
+        run: |
+          test "$REFUSED_SETUP" = refused && test "$REFUSED_EXIT" = 2
+          test "$DAST_SETUP" = success && test "$DAST_EXIT" = 1 && test "$DAST_INCOMPLETE" = 0
+          test "$DAST_FINDINGS" -ge 12
+          node -e '
+            const r = JSON.parse(require("fs").readFileSync("dast-reports/report.json", "utf8"));
+            const status = Object.fromEntries(r.checks.map((c) => [c.id, c.status]));
+            for (const id of ["url.scan", "url.nuclei", "api.schemathesis"]) if (status[id] !== "completed") throw new Error(id + " " + status[id]);
+          '
+      - name: Save active DAST reports
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: wakeio-active-dast-self-test
+          path: dast-reports
+          if-no-files-found: error

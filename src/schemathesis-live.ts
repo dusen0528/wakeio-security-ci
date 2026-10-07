@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { readFile } from "node:fs/promises";
+import { lstat, readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { API_DEFAULT_TIMEOUT_MS, API_MAX_REQUESTS, API_MAX_SINGLE_BODY_BYTES, API_MAX_TIMEOUT_MS,
   API_MAX_TOTAL_BODY_BYTES, createApiRunControl } from "./api.js";
@@ -143,6 +143,16 @@ function errorCheck(code: string, message: string, extra: Record<string, number 
   return [{ id: LIVE_CHECK_ID, status: "error", findings: [], notes: [SCOPE_NOTE, message], metrics: { requestCount: 0, errorCode: code, ...extra } }];
 }
 
+/** The worker ships beside both the tsc build (build/src) and the Action bundle (dist-action). */
+async function workerScript(): Promise<string | undefined> {
+  for (const relative of ["../../workers/schemathesis/worker.py", "../workers/schemathesis/worker.py"]) {
+    const path = fileURLToPath(new URL(relative, import.meta.url));
+    const stats = await lstat(path).catch(() => undefined);
+    if (stats?.isFile() && !stats.isSymbolicLink()) return path;
+  }
+  return undefined;
+}
+
 export async function runSchemathesisLive(options: SchemathesisLiveOptions): Promise<CheckResult[]> {
   if (!record(options) || options.consent !== true) return errorCheck("consent_required", "Active API testing requires explicit consent; no requests were made.");
   let maxRequests: number, timeoutMs: number, maxBodyBytes: number, maxTotalBytes: number, seed: number;
@@ -163,7 +173,8 @@ export async function runSchemathesisLive(options: SchemathesisLiveOptions): Pro
   }
   const schemaBytes = Buffer.from(JSON.stringify(selection.document));
   const schemaSha256 = createHash("sha256").update(schemaBytes).digest("hex");
-  const script = fileURLToPath(new URL("../../workers/schemathesis/worker.py", import.meta.url));
+  const script = await workerScript();
+  if (!script) return errorCheck("worker_missing", "The bundled Schemathesis worker could not be found; no requests were made.");
   const expectedWorkerSha256 = createHash("sha256").update(await readFile(script)).digest("hex");
   const control = createApiRunControl(timeoutMs, options.signal);
   const engine = new AbortController();

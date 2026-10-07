@@ -22,6 +22,7 @@ const STABLE_SYSTEM_ALIASES = new Set(['/tmp', '/var']);
 
 async function main() {
   const env = process.env;
+  if (value(env.WAKEIO_MODE) === 'dast') return dastMain(env);
   const actionPath = resolve(env.WAKEIO_ACTION_PATH || env.GITHUB_ACTION_PATH || process.cwd());
   const source = value(env.WAKEIO_SOURCE);
   const url = value(env.WAKEIO_URL);
@@ -151,6 +152,132 @@ async function main() {
     await rm(toolsRoot, { recursive: true, force: true }).catch(() => undefined);
   }
   process.exitCode = state.exitCode;
+}
+
+/**
+ * Active DAST entrypoint (dast/action.yml). Every refusal happens before any
+ * tool download, DNS lookup or request, and is still recorded as a bounded
+ * status artifact, Action outputs and job summary.
+ */
+async function dastMain(env) {
+  const actionPath = resolve(env.WAKEIO_ACTION_PATH || env.GITHUB_ACTION_PATH || process.cwd());
+  const workspace = resolve(env.GITHUB_WORKSPACE || process.cwd());
+  const out = value(env.WAKEIO_OUT) || 'wakeio-dast-reports';
+  const reportDirectory = resolve(workspace, out);
+  let previousReport;
+  try { previousReport = await reportFingerprint(reportDirectory); } catch { previousReport = undefined; }
+  const toolsRoot = await mkdtemp(join(tmpdir(), 'wakeio-security-ci-dast-'));
+  const state = { exitCode: 2, setupStatus: 'not-run', scanStatus: 'not-run', selectedTools: [], cacheMetadata: {}, failurePhase: undefined };
+  let reportSummary;
+  let plan;
+  try {
+    plan = await dastPolicy(env);
+    if (plan.refusal) {
+      state.setupStatus = 'refused';
+      state.failurePhase = 'policy';
+      process.stderr.write(`wakeio-security-ci DAST refused: ${plan.refusal}\n`);
+      return;
+    }
+    state.setupStatus = 'running';
+    const cliEntry = await findCliEntry(actionPath);
+    const args = [cliEntry, 'scan', '--active-consent', '--tools', 'none', '--out', out, '--fail-on', value(env.WAKEIO_FAIL_ON) || 'high'];
+    if (plan.nuclei) {
+      // Verify the pinned template set before downloading the engine.
+      const templates = resolve(workspace, value(env.WAKEIO_NUCLEI_TEMPLATES));
+      const digest = createHash('sha256').update(await readFile(join(templates, 'templates-checksum.txt'))).digest('hex');
+      if (digest !== value(env.WAKEIO_NUCLEI_TEMPLATES_SHA256).toLowerCase()) throw new Error('nuclei templates digest mismatch');
+      const installed = await installTools(actionPath, toolsRoot, 'nuclei', env);
+      state.cacheMetadata = installed.metadata ?? {};
+      if (typeof installed.paths?.nuclei !== 'string' || !installed.paths.nuclei) throw new Error('pinned nuclei installation returned no executable');
+      args.push('--url', plan.nuclei, '--engine', 'nuclei', '--nuclei', installed.paths.nuclei, '--nuclei-templates', templates);
+      addValueOption(args, '--nuclei-scope', env.WAKEIO_NUCLEI_SCOPE);
+      addValueOption(args, '--nuclei-max-requests', env.WAKEIO_NUCLEI_MAX_REQUESTS);
+      addValueOption(args, '--nuclei-rate-limit', env.WAKEIO_NUCLEI_RATE_LIMIT);
+      addValueOption(args, '--nuclei-timeout-ms', env.WAKEIO_NUCLEI_TIMEOUT_MS);
+    }
+    if (plan.apiBase) {
+      args.push('--openapi', value(env.WAKEIO_OPENAPI), '--api-base', plan.apiBase);
+      addRepeatedOption(args, '--operation', env.WAKEIO_OPERATIONS);
+      addValueOption(args, '--api-max-requests', env.WAKEIO_API_MAX_REQUESTS);
+      addValueOption(args, '--seed', env.WAKEIO_SEED);
+      addValueOption(args, '--schemathesis-python', env.WAKEIO_SCHEMATHESIS_PYTHON);
+    }
+    addValueOption(args, '--timeout-ms', env.WAKEIO_TIMEOUT_MS);
+    if (asBoolean(env.WAKEIO_ALLOW_PRIVATE)) args.push('--allow-private');
+    const projectId = value(env.WAKEIO_PROJECT_ID) || value(env.GITHUB_REPOSITORY);
+    if (projectId) args.push('--project-id', projectId);
+    state.setupStatus = 'success';
+    state.scanStatus = 'running';
+    const result = await runCommand(process.execPath, args, { cwd: workspace, env, inherit: true, acceptedStatuses: [0, 1, 2] });
+    state.exitCode = result.status;
+    state.scanStatus = scanStatusFor(result.status);
+  } catch (error) {
+    state.exitCode = 2;
+    if (state.setupStatus !== 'success') { state.setupStatus = 'failure'; state.failurePhase = 'setup'; }
+    else { state.scanStatus = 'failure'; state.failurePhase = 'scan'; }
+    process.stderr.write(`wakeio-security-ci DAST ${state.failurePhase} failed; no raw scanner output was retained.\n`);
+    void error;
+  } finally {
+    try { reportSummary = await readReportSummary(reportDirectory, previousReport); } catch { reportSummary = undefined; }
+    if (state.setupStatus === 'success' && state.scanStatus !== 'not-run' && !reportSummary) { state.exitCode = 2; state.scanStatus = 'failure'; }
+    try { await writeStatusArtifact(reportDirectory, state, reportSummary); }
+    catch { process.stderr.write('wakeio-security-ci could not write its bounded status artifact.\n'); if (state.exitCode === 0) state.exitCode = 2; }
+    try { await writeActionOutputs(env, reportDirectory, state, reportSummary); }
+    catch { process.stderr.write('wakeio-security-ci could not write GitHub Action outputs.\n'); if (state.exitCode === 0) state.exitCode = 2; }
+    try { await writeStepSummary(env, reportDirectory, state, reportSummary, plan); }
+    catch { process.stderr.write('wakeio-security-ci could not write the GitHub job summary.\n'); }
+    await rm(toolsRoot, { recursive: true, force: true }).catch(() => undefined);
+    // Set inside finally: a policy refusal returns early and must still exit 2.
+    process.exitCode = state.exitCode;
+  }
+}
+
+/** Fixed refusal reasons only; never echoes inputs, URLs or event contents. */
+async function dastPolicy(env) {
+  const refuse = (refusal) => ({ refusal });
+  if (value(env.WAKEIO_ACTIVE_CONSENT) !== 'true') return refuse('active-consent must be exactly "true" for an owned or authorized target');
+  const event = value(env.GITHUB_EVENT_NAME);
+  if (event === 'pull_request_target') return refuse('pull_request_target is not allowed for active DAST');
+  if (event.startsWith('pull_request') || event === 'workflow_run') {
+    let payload;
+    try { payload = JSON.parse(await readFile(value(env.GITHUB_EVENT_PATH), 'utf8')); } catch { return refuse('the event payload could not be read to rule out a fork'); }
+    const head = event === 'workflow_run' ? payload?.workflow_run?.head_repository?.full_name : payload?.pull_request?.head?.repo?.full_name;
+    const base = event === 'workflow_run' ? payload?.workflow_run?.repository?.full_name : payload?.pull_request?.base?.repo?.full_name;
+    if (typeof head !== 'string' || typeof base !== 'string' || head !== base) return refuse('changes from a fork cannot run active DAST');
+  }
+  const allowed = new Set();
+  for (const raw of value(env.WAKEIO_ALLOWED_ORIGINS).split(/[,\r\n]+/).map((item) => item.trim()).filter(Boolean)) {
+    const origin = originOf(raw);
+    if (!origin) return refuse('allowed-origins must list origins only, such as https://staging.example.test');
+    allowed.add(origin);
+  }
+  if (allowed.size === 0) return refuse('allowed-origins is required');
+  const engines = value(env.WAKEIO_ENGINES).split(',').map((item) => item.trim()).filter(Boolean);
+  if (engines.some((engine) => engine !== 'nuclei') || new Set(engines).size !== engines.length) return refuse('engines must be nuclei or empty');
+  const plan = {};
+  if (engines.includes('nuclei')) {
+    const target = originOf(value(env.WAKEIO_URL), true);
+    if (!target) return refuse('engines: nuclei requires an http(s) url');
+    if (!value(env.WAKEIO_NUCLEI_TEMPLATES) || !/^[a-f0-9]{64}$/i.test(value(env.WAKEIO_NUCLEI_TEMPLATES_SHA256))) return refuse('engines: nuclei requires nuclei-templates and nuclei-templates-sha256');
+    if (!allowed.has(target)) return refuse('the url origin is not in allowed-origins');
+    plan.nuclei = `${target}/`;
+  }
+  if (value(env.WAKEIO_OPENAPI)) {
+    const target = originOf(value(env.WAKEIO_API_BASE));
+    if (!target || !value(env.WAKEIO_OPERATIONS)) return refuse('openapi requires an origin api-base and at least one operation');
+    if (!allowed.has(target)) return refuse('the api-base origin is not in allowed-origins');
+    plan.apiBase = `${target}/`;
+  }
+  if (!plan.nuclei && !plan.apiBase) return refuse('select engines: nuclei and/or openapi');
+  return plan;
+}
+
+function originOf(raw, allowPath = false) {
+  let parsed;
+  try { parsed = new URL(raw); } catch { return undefined; }
+  if (!['http:', 'https:'].includes(parsed.protocol) || parsed.username || parsed.password || parsed.search || parsed.hash) return undefined;
+  if (!allowPath && parsed.pathname !== '/') return undefined;
+  return parsed.origin;
 }
 
 async function findCliEntry(actionPath) {
@@ -340,15 +467,16 @@ async function writeActionOutputs(env, reportDirectory, state, reportSummary) {
   await appendFile(outputFile, lines, { encoding: 'utf8' });
 }
 
-async function writeStepSummary(env, reportDirectory, state, reportSummary) {
+async function writeStepSummary(env, reportDirectory, state, reportSummary, dastPlan) {
   const summaryFile = value(env.GITHUB_STEP_SUMMARY);
   if (!summaryFile) return;
   const checks = reportSummary?.checks?.map((check) => `${check.id}: ${check.status}`).join(', ') || 'report unavailable';
   const cache = cacheStatus(state.cacheMetadata);
   const cacheText = typeof cache === 'string' ? cache : Object.entries(cache).map(([name, status]) => `${name} ${status}`).join(', ');
   const lines = [
-    '## Wakeio Security CI',
+    dastPlan ? '## Wakeio Security CI (active DAST)' : '## Wakeio Security CI',
     '',
+    ...(dastPlan ? [`- Active targets: ${escapeMarkdown([dastPlan.nuclei && `nuclei ${dastPlan.nuclei}`, dastPlan.apiBase && `schemathesis ${dastPlan.apiBase}`].filter(Boolean).join(', ') || 'none (refused before setup)')}`] : []),
     `- Setup: **${state.setupStatus}**`,
     `- Scan: **${state.scanStatus}** (exit code ${state.exitCode})`,
     `- Findings: **${reportSummary?.findingCount ?? 0}**`,
@@ -363,7 +491,8 @@ async function writeStepSummary(env, reportDirectory, state, reportSummary) {
     '',
   ];
   await appendFile(summaryFile, lines.join('\n'), { encoding: 'utf8' });
-  if (state.setupStatus === 'failure') emitAnnotation('error', 'Wakeio setup failed; reports may be unavailable.');
+  if (state.setupStatus === 'refused') emitAnnotation('error', 'Wakeio active DAST was refused by its consent, origin or trigger policy; no request was sent.');
+  else if (state.setupStatus === 'failure') emitAnnotation('error', 'Wakeio setup failed; reports may be unavailable.');
   else if (state.scanStatus === 'incomplete') emitAnnotation('warning', 'Wakeio scan incomplete; review report statuses before relying on coverage.');
 }
 

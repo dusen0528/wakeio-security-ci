@@ -234956,7 +234956,7 @@ async function repairMain(args) {
 
 // build/src/schemathesis-live.js
 import { createHash as createHash8 } from "node:crypto";
-import { readFile as readFile2 } from "node:fs/promises";
+import { lstat as lstat10, readFile as readFile2 } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 
 // build/src/dast-egress.js
@@ -235458,6 +235458,15 @@ function findingsFor(result2, origin) {
 function errorCheck4(code, message, extra = {}) {
   return [{ id: LIVE_CHECK_ID, status: "error", findings: [], notes: [SCOPE_NOTE3, message], metrics: { requestCount: 0, errorCode: code, ...extra } }];
 }
+async function workerScript() {
+  for (const relative8 of ["../../workers/schemathesis/worker.py", "../workers/schemathesis/worker.py"]) {
+    const path = fileURLToPath(new URL(relative8, import.meta.url));
+    const stats = await lstat10(path).catch(() => void 0);
+    if (stats?.isFile() && !stats.isSymbolicLink())
+      return path;
+  }
+  return void 0;
+}
 async function runSchemathesisLive(options) {
   if (!record4(options) || options.consent !== true)
     return errorCheck4("consent_required", "Active API testing requires explicit consent; no requests were made.");
@@ -235479,7 +235488,9 @@ async function runSchemathesisLive(options) {
   }
   const schemaBytes = Buffer.from(JSON.stringify(selection.document));
   const schemaSha256 = createHash8("sha256").update(schemaBytes).digest("hex");
-  const script = fileURLToPath(new URL("../../workers/schemathesis/worker.py", import.meta.url));
+  const script = await workerScript();
+  if (!script)
+    return errorCheck4("worker_missing", "The bundled Schemathesis worker could not be found; no requests were made.");
   const expectedWorkerSha256 = createHash8("sha256").update(await readFile2(script)).digest("hex");
   const control = createApiRunControl(timeoutMs, options.signal);
   const engine = new AbortController();
@@ -235594,7 +235605,7 @@ async function runSchemathesisLive(options) {
 
 // build/src/nuclei.js
 import { createHash as createHash9 } from "node:crypto";
-import { lstat as lstat10, mkdtemp as mkdtemp4, readdir as readdir5, readFile as readFile3, realpath as realpath4, rm as rm4, writeFile as writeFile7 } from "node:fs/promises";
+import { lstat as lstat11, mkdtemp as mkdtemp4, readdir as readdir5, readFile as readFile3, realpath as realpath4, rm as rm4, writeFile as writeFile7 } from "node:fs/promises";
 import { tmpdir as tmpdir4 } from "node:os";
 import { join as join10 } from "node:path";
 var NUCLEI_CHECK_ID = "url.nuclei";
@@ -235650,7 +235661,7 @@ async function selectNucleiTemplates(templatesRoot, scopes) {
       if (!entry.isFile() || !/\.ya?ml$/i.test(entry.name))
         continue;
       visited += 1;
-      const stats = await lstat10(path);
+      const stats = await lstat11(path);
       if (!stats.isFile() || stats.size > MAX_TEMPLATE_BYTES) {
         result2.excluded.unreadable += 1;
         continue;
@@ -235664,7 +235675,7 @@ async function selectNucleiTemplates(templatesRoot, scopes) {
   };
   for (const scope of scopes) {
     const directory = join10(templatesRoot, ...NUCLEI_SCOPES[scope].split("/"));
-    const stats = await lstat10(directory).catch(() => void 0);
+    const stats = await lstat11(directory).catch(() => void 0);
     if (!stats?.isDirectory() || stats.isSymbolicLink())
       throw new Error("template_scope_missing");
     await walk(directory);
@@ -235802,7 +235813,7 @@ async function runNuclei(options) {
   let templatesRoot;
   try {
     templatesRoot = await realpath4(options.templatesDir);
-    if (!(await lstat10(templatesRoot)).isDirectory())
+    if (!(await lstat11(templatesRoot)).isDirectory())
       throw new Error("not_directory");
   } catch {
     return errorCheck5("templates_missing", "The prepared nuclei-templates directory could not be read; templates are never downloaded during a scan. No requests were made.");
@@ -235998,6 +236009,7 @@ Active DAST (off by default; sends generated or template requests to the target)
   --nuclei-scope LIST          misconfiguration,exposures (default: misconfiguration)
   --nuclei-max-requests N      Gate request budget, 1..20000 (default 6000)
   --nuclei-rate-limit N        Requests per second, 1..150 (default 50)
+  --nuclei-timeout-ms N        Nuclei time budget, 1..600000 (default 300000; --timeout-ms is unchanged)
   --help                       Show this help
 `;
 function valueAfter(args, index, flag) {
@@ -236184,6 +236196,8 @@ function parseCliArgs(argv) {
       options.nucleiMaxRequests = parseBoundedInteger("--nuclei-max-requests", value, NUCLEI_MAX_REQUESTS);
     else if ((value = valueFlag("--nuclei-rate-limit")) !== void 0)
       options.nucleiRateLimit = parseBoundedInteger("--nuclei-rate-limit", value, NUCLEI_MAX_RATE_LIMIT);
+    else if ((value = valueFlag("--nuclei-timeout-ms")) !== void 0)
+      options.nucleiTimeoutMs = parseBoundedInteger("--nuclei-timeout-ms", value, MAX_TOOL_TIMEOUT_MS);
     else if (arg === "--active-consent") {
       if (seen.has(arg))
         throw new CliUsageError(`${arg} may only be specified once`);
@@ -236218,7 +236232,7 @@ function parseCliArgs(argv) {
     throw new CliUsageError("--api-base, --operation, --api-max-requests, --seed and --schemathesis-python require --openapi");
   if (options.openapi && (!options.apiBase || options.operations.length === 0))
     throw new CliUsageError("--openapi requires --api-base and at least one --operation");
-  const nucleiOnly = options.nucleiPath !== void 0 || options.nucleiTemplates !== void 0 || options.nucleiScopes.length > 0 || options.nucleiMaxRequests !== void 0 || options.nucleiRateLimit !== void 0;
+  const nucleiOnly = options.nucleiPath !== void 0 || options.nucleiTemplates !== void 0 || options.nucleiScopes.length > 0 || options.nucleiMaxRequests !== void 0 || options.nucleiRateLimit !== void 0 || options.nucleiTimeoutMs !== void 0;
   if (nucleiOnly && !options.engines.includes("nuclei"))
     throw new CliUsageError("--nuclei* options require --engine nuclei");
   if (options.engines.includes("nuclei") && (!options.url || !options.nucleiTemplates))
@@ -236399,7 +236413,7 @@ ${USAGE2}`);
           scopes: parsed.nucleiScopes,
           consent: parsed.activeConsent,
           allowPrivate: parsed.allowPrivate,
-          timeoutMs: parsed.timeoutMs,
+          timeoutMs: parsed.nucleiTimeoutMs,
           maxRequests: parsed.nucleiMaxRequests,
           rateLimit: parsed.nucleiRateLimit,
           signal: controller.signal
