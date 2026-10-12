@@ -1,12 +1,16 @@
 import * as ts from "typescript";
 import type { StaticFlow, AnalysisGap } from "../contracts.js";
 import { AnalysisGapRecorder } from "../analysis-gaps.js";
-import { FLOW_LIMITS, StaticModules, type FlowLimits, type SingletonReceiver } from "./modules.js";
+import { FLOW_LIMITS, StaticModules, type FlowLimits, type SingletonReceiver, type CallResolution } from "./modules.js";
 import { NativeQueryModel, boundedFragments, fixedQueryDestination, type UrlFragment } from "./url-destination.js";
 import { ForkRoleModel, type ForkRoleUse } from './fork-role.js';
 import { SqlRoleModel, type SqlRoleUse } from './sql-role.js';
 import { HttpRoleModel, fixedInitialHttpUrl, legacyAxiosRequest, type HttpRoleUse } from './http-role.js';
 import { ExpressRoleModel } from './express-role.js';
+import { NoSqlRoleModel, type NoSqlRoleUse } from './nosql-role.js';
+import { analyzeClosureShape, analyzeConstructedShape, type ClosureShape, type ConstructorShape, type ShapeResult } from './closure-shape.js';
+import { MongoRoleModel, type MongoDbRole, type MongoCollectionRole } from './mongo-role.js';
+import type { CollectedFile } from './types.js';
 
 /** A source-to-sink use found by the bounded, same-function analysis. */
 export interface InputFlowUse {
@@ -19,6 +23,7 @@ export interface InputFlowUse {
   htmlResponseMime?: "default" | "html" | "unknown";
   httpRole?: HttpRoleUse;
   sqlRole?: SqlRoleUse;
+  nosqlRole?: NoSqlRoleUse;
   forkRole?: ForkRoleUse;
   /** Scan-local monotonic actual-analysis proof; never general callable safety. */
   localForkCall?: { complete: boolean };
@@ -66,6 +71,15 @@ interface FlowValue {
   root?: RootKind;
   inputRelated?: boolean;
   properties?: ReadonlyMap<string, FlowValue>;
+  /** NoSQL-only monotonic literal/alias content; never general taint safety. */
+  nosqlObject?: { node: ts.ObjectLiteralExpression; value: FlowValue; modified: boolean; closed: boolean };
+  nosqlUnknown?: FlowValue;
+  callable?: { target: ts.ArrowFunction; captures: ReadonlyMap<ts.Symbol, FlowValue>; lexicalThis?: FlowValue; identity: number };
+  opaqueClosure?: FlowValue;
+  constructed?: { valid: boolean; shape: ConstructorShape; slots: Map<string, FlowValue> };
+  nosqlWhere?: { node: ts.Node; value: FlowValue };
+  mongoDb?: MongoDbRole;
+  mongoCollection?: MongoCollectionRole;
   trace?: StaticFlow["steps"];
   traceTruncated?: boolean;
   urlFragments?: readonly UrlFragment[];
@@ -117,7 +131,7 @@ function traced(value: FlowValue, node: ts.Node, role: StaticFlow["steps"][numbe
   const steps = [...previous, next];
   const truncated = value.traceTruncated || steps.length > FLOW_LIMITS.traceSteps;
   // Keep the real endpoint while exposing omission. Never invent missing hops.
-  return { ...value, trace: steps.length > FLOW_LIMITS.traceSteps
+  return { ...value, ...(value.nosqlWhere ? { nosqlWhere: { ...value.nosqlWhere, value: traced(value.nosqlWhere.value, node, role) } } : {}), trace: steps.length > FLOW_LIMITS.traceSteps
     ? [...steps.slice(0, FLOW_LIMITS.traceSteps - 1), next] : steps, traceTruncated: Boolean(truncated) };
 }
 
@@ -287,6 +301,12 @@ function joinValues(left: FlowValue, right: FlowValue): FlowValue {
     : undefined;
   const withProperties = (value: FlowValue): FlowValue => {
     const result = inheritTrace(value, [left, right]);
+    const changed = [left.nosqlUnknown, right.nosqlUnknown,
+      ...(left.nosqlObject?.modified ? [left.nosqlObject.value] : []), ...(right.nosqlObject?.modified ? [right.nosqlObject.value] : [])].filter((item): item is FlowValue => !!item);
+    const nosqlUnknown = changed.length ? combineValues(changed) : undefined;
+    const a = left.nosqlWhere, b = right.nosqlWhere;
+    const nosqlWhere = a && b ? a.node === b.node ? { node: a.node, value: joinValues(a.value, b.value) }
+      : !isInputRelated(a.value) && isInputRelated(b.value) || a.value.kind !== 'tainted' && b.value.kind === 'tainted' ? b : a : a ?? b;
     const urlFragments = left.urlFragments && right.urlFragments && JSON.stringify(left.urlFragments) === JSON.stringify(right.urlFragments) ? left.urlFragments : undefined;
     // node is construction AST provenance, not a network URL origin. Never
     // certify a union of URL alternatives after exact fragments were lost.
@@ -306,7 +326,12 @@ function joinValues(left: FlowValue, right: FlowValue): FlowValue {
     const leftCharacters = fixedSqlCharacters(left), rightCharacters = fixedSqlCharacters(right);
     const sqlFixedText = leftCharacters !== undefined && rightCharacters !== undefined
       ? { maxCharacters: Math.max(leftCharacters, rightCharacters) } : undefined;
-    return { ...result, expressResponse: joinResponse(left.expressResponse, right.expressResponse), expressObjectBody: left.expressObjectBody === true && right.expressObjectBody === true, ...(properties ? { properties } : {}), sqlFixedText, sqlArray, sqlConfig, sqlScalarUnavailable:left.sqlScalarUnavailable || right.sqlScalarUnavailable, sqlCallback:left.sqlCallback || right.sqlCallback, sqlDataUnavailable:left.sqlDataUnavailable || right.sqlDataUnavailable, httpTargetUnavailable:httpUnavailable([left,right]), urlFragments, nativeQuery: left.nativeQuery === true && right.nativeQuery === true, queryContent: sharedQueryContent, httpConfig };
+    // Different observed capabilities cannot certify dispatch. Retain an invalid
+    // witness so consuming an unsupported union cannot silently become clean.
+    const db = left.mongoDb ?? right.mongoDb, collection = left.mongoCollection ?? right.mongoCollection;
+    const mongoDb = left.mongoDb === right.mongoDb ? left.mongoDb : db ? { ...db, valid: false } : undefined;
+    const mongoCollection = left.mongoCollection === right.mongoCollection ? left.mongoCollection : collection ? { ...collection, valid: false } : undefined;
+    return { ...result, expressResponse: joinResponse(left.expressResponse, right.expressResponse), nosqlObject: left.nosqlObject === right.nosqlObject ? left.nosqlObject : undefined, nosqlUnknown, nosqlWhere, mongoDb, mongoCollection, expressObjectBody: left.expressObjectBody === true && right.expressObjectBody === true, ...(properties ? { properties } : {}), sqlFixedText, sqlArray, sqlConfig, sqlScalarUnavailable:left.sqlScalarUnavailable || right.sqlScalarUnavailable, sqlCallback:left.sqlCallback || right.sqlCallback, sqlDataUnavailable:left.sqlDataUnavailable || right.sqlDataUnavailable, httpTargetUnavailable:httpUnavailable([left,right]), urlFragments, nativeQuery: left.nativeQuery === true && right.nativeQuery === true, queryContent: sharedQueryContent, httpConfig };
   };
   if (left.kind === right.kind && (left.kind !== "root" || left.root === right.root)) {
     if (left.kind === "root") return withProperties(left);
@@ -361,10 +386,12 @@ function functionBody(functionLike: ts.FunctionLikeDeclaration): ts.Block | ts.E
 
 class FlowEnv {
   private readonly scopes: Map<string, FlowValue>[];
+  private readonly symbols: Map<ts.Symbol, string>[];
   terminated = false;
 
-  constructor(scopes?: Map<string, FlowValue>[]) {
+  constructor(scopes?: Map<string, FlowValue>[], symbols?: Map<ts.Symbol, string>[]) {
     this.scopes = scopes ?? [new Map<string, FlowValue>()];
+    this.symbols = symbols ?? [new Map()];
   }
 
   clone(): FlowEnv {
@@ -376,22 +403,32 @@ class FlowEnv {
       if (!state) { state = { ...value.expressResponse }; states.set(value.expressResponse, state); }
       return { ...value, expressResponse: state };
     };
-    const env = new FlowEnv(this.scopes.map((scope) => new Map([...scope].map(([key, value]) => [key, clone(value)]))));
+    const env = new FlowEnv(this.scopes.map((scope) => new Map([...scope].map(([key, value]) => [key, clone(value)]))), this.symbols.map(scope => new Map(scope)));
     env.terminated = this.terminated;
     return env;
   }
 
   push(): void {
     this.scopes.push(new Map<string, FlowValue>());
+    this.symbols.push(new Map());
   }
 
   pop(): void {
-    if (this.scopes.length > 1) this.scopes.pop();
+    if (this.scopes.length > 1) { this.scopes.pop(); this.symbols.pop(); }
   }
 
-  declare(name: string, value: FlowValue, blockScoped: boolean): void {
+  declare(name: string, value: FlowValue, blockScoped: boolean, symbol?: ts.Symbol): void {
     const index = blockScoped ? this.scopes.length - 1 : 0;
     this.scopes[index].set(name, value);
+    if (symbol) this.symbols[index].set(symbol, name);
+  }
+
+  captured(symbol: ts.Symbol): FlowValue | undefined {
+    for (let index = this.symbols.length - 1; index >= 0; index--) {
+      const name = this.symbols[index].get(symbol);
+      if (name !== undefined) return this.scopes[index].get(name);
+    }
+    return undefined;
   }
 
   assign(name: string, value: FlowValue): void {
@@ -420,12 +457,19 @@ class FlowEnv {
         properties.set(property, update(properties.get(property) ?? UNKNOWN, index + 1));
       }
       const combined = combineValues([base, value]);
+      if (base.nosqlObject) {
+        base.nosqlObject.value = combineValues([base.nosqlObject.value, value]);
+        base.nosqlObject.modified = true;
+      }
       // These documented data fields do not replace the response API shape.
       // Unknown API writes (including send/status/prototype) invalidate it.
       const benignResponseWrite = index === 1 && ['locals', 'statusCode', 'statusMessage'].includes(property);
       if (base.expressResponse && !benignResponseWrite) base.expressResponse.valid = false;
       const expressResponse = benignResponseWrite ? base.expressResponse : undefined;
-      return { ...combined, expressResponse, expressObjectBody: base.expressObjectBody, properties };
+      if (base.constructed) base.constructed.valid = false;
+      if (base.mongoDb) base.mongoDb.valid = false;
+      if (base.mongoCollection) base.mongoCollection.valid = false;
+      return { ...combined, expressResponse, expressObjectBody: base.expressObjectBody, properties, nosqlObject: base.nosqlObject, constructed: base.constructed, mongoDb: base.mongoDb, mongoCollection: base.mongoCollection };
     };
     this.assign(path[0], update(this.resolve(path[0]), 1));
   }
@@ -504,7 +548,7 @@ export function observedGapLocation(node: ts.Node, files: ReadonlyMap<string, ts
 interface FunctionSummary { returned: FlowValue; }
 // Mutable content must not be reused through a cached return or skipped side effect.
 function hasMutableQuery(value: FlowValue, seen = new Set<FlowValue>(), depth = 0): boolean {
-  if (value.expressResponse || value.queryContent || seen.has(value) || depth > 16 || seen.size > 128) return true;
+  if (value.expressResponse || value.queryContent || value.nosqlObject || value.nosqlUnknown || value.callable || value.constructed || value.mongoDb || value.mongoCollection || seen.has(value) || depth > 16 || seen.size > 128) return true;
   seen.add(value);
   return [...value.properties?.values() ?? []].some((item) => hasMutableQuery(item, seen, depth + 1));
 }
@@ -528,11 +572,16 @@ class FlowSession {
   readonly queryModel: NativeQueryModel;
   readonly httpModel: HttpRoleModel;
   readonly sqlModel: SqlRoleModel;
+  readonly nosqlModel: NoSqlRoleModel;
+  readonly mongoModel: MongoRoleModel;
   readonly forkModel: ForkRoleModel;
   readonly expressModel: ExpressRoleModel;
   readonly active = new Set<string>();
   readonly cache = new Map<string, FunctionSummary>();
   readonly localForkCalls = new WeakMap<ts.CallExpression, { complete: boolean }>();
+  private readonly closureShapes = new WeakMap<ts.ArrowFunction, ShapeResult<ClosureShape>>();
+  private readonly constructorShapes = new WeakMap<ts.FunctionLikeDeclaration, ShapeResult<ConstructorShape>>();
+  private capabilityIdentity = 0;
   indexWork = 0;
   flowWork = 0;
   readonly maxIndexWork: number;
@@ -548,7 +597,7 @@ class FlowSession {
   resolvedCalls = 0;
   unsupportedCalls = 0;
 
-  constructor(files: readonly ts.SourceFile[], readonly limits: FlowLimits, parseErrorCount = 0, readonly roleProofScopeComplete = true, parseFiles?: Iterable<ParseFileEvidence>) {
+  constructor(files: readonly ts.SourceFile[], readonly limits: FlowLimits, parseErrorCount = 0, readonly roleProofScopeComplete = true, parseFiles?: Iterable<ParseFileEvidence>, metadata: readonly CollectedFile[] = []) {
     if (parseFiles === undefined) this.diagnostics.record('parse_error', 'parse', undefined, parseErrorCount);
     else {
       let observed = 0;
@@ -568,13 +617,15 @@ class FlowSession {
     this.queryModel = new NativeQueryModel(this.modules, () => this.tick(), this.indexComplete);
     this.httpModel = new HttpRoleModel(this.modules, () => this.tick(), roleProofScopeComplete, this.indexComplete);
     this.sqlModel = new SqlRoleModel(this.modules, () => this.tick(), roleProofScopeComplete, this.indexComplete);
+    this.nosqlModel = new NoSqlRoleModel(this.modules, () => this.tick(), roleProofScopeComplete);
+    this.mongoModel = new MongoRoleModel(this.modules, metadata, () => this.tick(), (reason, node) => this.gap(reason, node), roleProofScopeComplete, this.indexComplete);
     this.forkModel = new ForkRoleModel(this.modules, () => this.tick(), roleProofScopeComplete, this.indexComplete);
     this.expressModel = new ExpressRoleModel(this.modules, () => this.tick(), this.indexComplete);
     this.modules.finishIndex(this.indexComplete);
     this.phase = 'flow';
   }
 
-  private incomplete(reason: string, call?: ts.CallExpression): void {
+  private incomplete(reason: string, call?: ts.Node): void {
     this.reasons.add(reason); this.incompleteEvents += 1;
     if (this.phase === 'index') this.indexComplete = false;
     this.diagnostics.record(reason, this.phase, call ? observedGapLocation(call, this.modules.files) : undefined);
@@ -594,12 +645,100 @@ class FlowSession {
 
   private canStartFlow(): boolean { return this.flowWork < this.maxFlowWork && this.nodeVisits < this.limits.nodeVisits; }
 
-  invoke(call: ts.CallExpression, args: FlowValue[], receiver?: SingletonReceiver, declaredContext = false): FlowValue | undefined {
+  gap(reason: string, call?: ts.Node): void { this.incomplete(reason, call); }
+
+  closure(target: ts.ArrowFunction, env: FlowEnv, lexicalThis?: FlowValue): FlowValue['callable'] | undefined {
+    if (!this.modules.indexComplete) return undefined;
+    let result = this.closureShapes.get(target);
+    if (!result) { result = analyzeClosureShape(target, this.modules, () => this.tick()); this.closureShapes.set(target, result); }
+    if (result.kind !== 'supported' || result.shape.lexicalThis && !lexicalThis) return undefined;
+    const captures = new Map<ts.Symbol, FlowValue>();
+    for (const symbol of result.shape.captures) {
+      if (!this.tick()) return undefined;
+      const captured = env.captured(symbol);
+      if (symbol.declarations?.some(declaration => ts.isVariableDeclaration(declaration) && declaration.initializer
+        && declaration.getSourceFile() === target.getSourceFile() && declaration.initializer.pos <= target.pos && declaration.initializer.end >= target.end)) return undefined;
+      if (!captured && sourceRootForName(symbol.name)) this.incomplete('module_export_unsupported');
+      captures.set(symbol, captured ?? UNKNOWN);
+    }
+    return { target, captures, lexicalThis: result.shape.lexicalThis ? lexicalThis : undefined, identity: ++this.capabilityIdentity };
+  }
+
+  opaqueCaptures(target: ts.ArrowFunction, env: FlowEnv): FlowValue {
+    if (!this.modules.indexComplete) return UNKNOWN;
+    const values: FlowValue[] = [];
+    const visit = (node: ts.Node): void => {
+      if (!this.tick()) return;
+      if (ts.isIdentifier(node)) {
+        const symbol = this.modules.symbol(node);
+        if (symbol && !symbol.declarations?.some(declaration => declaration.getSourceFile() === target.getSourceFile() && declaration.pos >= target.pos && declaration.end <= target.end)) {
+          const value = env.captured(symbol); if (value) values.push(value);
+        }
+      }
+      node.forEachChild(visit);
+    };
+    visit(target);
+    const value = combineValues(values);
+    return isInputRelated(value) ? { ...value, kind: 'unknown', inputRelated: true, traceTruncated: true } : UNKNOWN;
+  }
+
+  declaredOwnedRoot(target: ts.ArrowFunction): void {
+    if (!this.modules.indexComplete) return; // The existing index gap already denies complete coverage.
+    const assignment = target.parent;
+    if (!ts.isBinaryExpression(assignment) || assignment.right !== target || !ts.isPropertyAccessExpression(assignment.left)
+      || assignment.left.expression.kind !== ts.SyntaxKind.ThisKeyword) return;
+    let shape = this.closureShapes.get(target);
+    if (!shape) { shape = analyzeClosureShape(target, this.modules, () => this.tick()); this.closureShapes.set(target, shape); }
+    if (shape.kind !== 'supported' || shape.shape.captures.length || shape.shape.lexicalThis) this.incomplete('module_export_unsupported');
+  }
+
+  construct(node: ts.NewExpression, args: FlowValue[], env: FlowEnv): FlowValue | undefined {
+    const target = this.modules.resolveConstruct(node);
+    if (!target) return undefined;
+    let result = this.constructorShapes.get(target);
+    if (!result) { result = analyzeConstructedShape(target, this.modules, () => this.tick()); this.constructorShapes.set(target, result); }
+    if (result.kind !== 'supported') { this.incomplete('module_export_unsupported'); return undefined; }
+    if (target.parameters.slice(args.length).some(parameter => ts.isIdentifier(parameter.name) && !!sourceRootForName(parameter.name.text))) this.incomplete('module_export_unsupported');
+    const identity = `new:${target.getSourceFile().fileName}:${target.pos}`;
+    if (this.active.has(identity) || this.active.size >= this.limits.callDepth || this.summaryWork >= this.limits.summaryWork) {
+      this.incomplete(this.active.has(identity) ? 'summary_cycle' : this.active.size >= this.limits.callDepth ? 'depth_limit' : 'summary_limit'); return undefined;
+    }
+    this.active.add(identity); this.summaryWork += 1; this.functionContextsStarted += 1;
+    const before = this.incompleteEvents;
+    const analyzer = new DataflowAnalyzer(target.getSourceFile(), this);
+    const captures = new Map<ts.Symbol, FlowValue>();
+    // A constructor's module globals are not caller-local variables. Only
+    // same-file lexical captures can be read from the actual allocation frame.
+    for (const arrow of result.shape.ownArrows.values()) for (const symbol of arrow.captures) {
+      if (!this.tick()) break;
+      if (symbol.declarations?.some(declaration => declaration.pos >= target.pos && declaration.end <= target.end)) continue;
+      captures.set(symbol, target.getSourceFile() === node.getSourceFile() ? env.captured(symbol) ?? UNKNOWN : UNKNOWN);
+    }
+    const returned = analyzer.analyzeConstructor(result.shape, args.map(value => traced(value, node, 'call')), captures);
+    this.uses.push(...analyzer.output()); this.active.delete(identity);
+    if (before === this.incompleteEvents) this.functionContextsCompleted += 1; else this.functionContextsPartial += 1;
+    return returned;
+  }
+
+  callback(value: FlowValue['callable']): void {
+    if (!value || !this.modules.indexComplete) return;
+    const identity = `callback:${value.target.getSourceFile().fileName}:${value.target.pos}:${value.identity}`;
+    if (this.active.size >= this.limits.callDepth || this.summaryWork >= this.limits.summaryWork) { this.incomplete(this.active.size >= this.limits.callDepth ? 'depth_limit' : 'summary_limit'); return; }
+    this.active.add(identity); this.summaryWork += 1; this.functionContextsStarted += 1;
+    const before = this.incompleteEvents;
+    const analyzer = new DataflowAnalyzer(value.target.getSourceFile(), this);
+    analyzer.analyzeFunction(value.target, undefined, undefined, false, value);
+    this.uses.push(...analyzer.output()); this.active.delete(identity);
+    if (before === this.incompleteEvents) this.functionContextsCompleted += 1; else this.functionContextsPartial += 1;
+  }
+
+  invoke(call: ts.CallExpression, args: FlowValue[], receiver?: SingletonReceiver, declaredContext = false, capability?: FlowValue['callable']): FlowValue | undefined {
     const localFork = ts.isIdentifier(call.expression) && call.expression.text === 'fork';
     let proof = localFork ? this.localForkCalls.get(call) : undefined;
     if (localFork && !proof) { proof = { complete: true }; this.localForkCalls.set(call, proof); }
     const observed = (complete: boolean): void => { if (proof) proof.complete &&= complete && this.roleProofScopeComplete && this.modules.indexComplete; };
-    const resolution = this.modules.resolveCall(call,true,receiver);
+    const initial: CallResolution = capability && this.modules.indexComplete ? { kind: 'resolved' as const, target: capability.target } : this.modules.resolveCall(call,true,receiver);
+    const resolution = initial.kind === 'resolved' || initial.kind === 'declared' ? initial : this.modules.resolveCjsFunctionCall(call) ?? initial;
     if (resolution.kind !== "resolved" && resolution.kind !== "declared") {
       observed(false);
       if (["missing", "ambiguous", "module_budget", "export_unsupported"].includes(resolution.kind)) this.incomplete(`module_${resolution.kind}`, call);
@@ -612,14 +751,14 @@ class FlowSession {
     else this.resolvedCalls += 1;
     const target = resolution.target;
     const seeded = args.map((value) => traced(declared ? this.declaredValue(value) : value, call, "call"));
-    const identity = this.invocationIdentity(target,resolution.receiver,declared);
-    const cacheable = !declared && !seeded.some((value) => hasMutableQuery(value));
+    const identity = this.invocationIdentity(target,resolution.receiver,declared) + (capability ? `:${capability.identity}` : '');
+    const cacheable = !declared && !capability && !seeded.some((value) => hasMutableQuery(value));
     const key = cacheable ? `${identity}:${JSON.stringify(seeded.map((value) => contextValue(value)))}` : undefined;
     const cached = key ? this.cache.get(key) : undefined;
     if (cached) { observed(true); return resolution.receiver ? this.receiverReturned(cached.returned) : this.sqlReturned(target, cached.returned); }
     if (this.active.has(identity)) {
       observed(false);
-      if (seeded.some(isInputRelated)) this.incomplete("summary_cycle");
+      if (seeded.some(isInputRelated) || [...capability?.captures.values() ?? []].some(isInputRelated)) this.incomplete("summary_cycle");
       else this.unsupportedCalls += 1;
       return undefined;
     }
@@ -630,7 +769,8 @@ class FlowSession {
     const analyzer = new DataflowAnalyzer(target.getSourceFile(), this);
     const before = this.incompleteEvents;
     this.functionContextsStarted += 1;
-    const returned = analyzer.analyzeFunction(target, seeded,resolution.receiver,declared);
+    const frame = capability ? { ...capability, captures: new Map([...capability.captures].map(([symbol, value]) => [symbol, traced(value, call, 'call')])) } : undefined;
+    const returned = analyzer.analyzeFunction(target, seeded,resolution.receiver,declared,frame);
     observed(this.incompleteEvents === before);
     if (this.incompleteEvents === before) this.functionContextsCompleted += 1;
     else this.functionContextsPartial += 1;
@@ -643,7 +783,7 @@ class FlowSession {
       // Returned input carries real formal/body/return steps; actuals are fallback only.
       return isInputRelated(value) ? {...value,traceTruncated: !!value.traceTruncated || seeded.some(v=>isInputRelated(v)&&!!v.traceTruncated)} : value;
     }
-    return resolution.receiver ? this.receiverReturned(returned) : this.sqlReturned(target, returned);
+    return resolution.receiver || capability ? this.receiverReturned(returned) : this.sqlReturned(target, returned);
   }
 
   private invocationIdentity(target: ts.FunctionLikeDeclaration, receiver?: SingletonReceiver, declared=false): string {
@@ -700,6 +840,28 @@ class DataflowAnalyzer {
   // Only evaluation-shaped operands, scoped to this analyzer and exact environment.
   // A following initializer/return read must not replay operands against later argument writes.
   private readonly evaluationActuals = new WeakMap<ts.Node, { env: FlowEnv; values: FlowValue[] }>();
+  private readonly objectActuals = new WeakMap<ts.ObjectLiteralExpression, { env: FlowEnv; values: Map<ts.Node, FlowValue>; keys: Map<ts.Node, FlowValue> }>();
+  private readonly constructedActuals = new WeakMap<ts.NewExpression, { env: FlowEnv; value: FlowValue }>();
+  private readonly callableActuals = new WeakMap<ts.CallExpression, { env: FlowEnv; value?: FlowValue }>();
+  private readonly conditionalActuals = new WeakMap<ts.ConditionalExpression, { env: FlowEnv; value: FlowValue }>();
+  private constructedReceiver?: FlowValue;
+  private constructorGuards?: ReadonlySet<ts.IfStatement>;
+
+  /** Lookup selected callable values without replaying arbitrary callee expressions. */
+  private capabilityValue(expression: ts.Expression, env: FlowEnv): FlowValue {
+    if (!this.session?.modules.indexComplete) return UNKNOWN;
+    if (ts.isIdentifier(expression)) return env.has(expression.text) ? env.resolve(expression.text) : UNKNOWN;
+    if (expression.kind === ts.SyntaxKind.ThisKeyword) return this.constructedReceiver ?? UNKNOWN;
+    if (ts.isPropertyAccessExpression(expression)) {
+      const receiver = this.capabilityValue(expression.expression, env);
+      if (receiver.constructed) return receiver.constructed.valid ? receiver.constructed.slots.get(expression.name.text) ?? UNKNOWN
+        : receiver.constructed.slots.has(expression.name.text) ? { ...UNKNOWN, opaqueClosure: UNKNOWN } : UNKNOWN;
+      return receiver.properties?.get(expression.name.text) ?? UNKNOWN;
+    }
+    if (ts.isCallExpression(expression)) return this.callableActuals.get(expression)?.env === env ? this.callableActuals.get(expression)!.value ?? UNKNOWN : UNKNOWN;
+    if (ts.isParenthesizedExpression(expression) || ts.isAsExpression(expression) || ts.isNonNullExpression(expression)) return this.capabilityValue(expression.expression, env);
+    return UNKNOWN;
+  }
   private receiver?: SingletonReceiver;
   private declared = false;
 
@@ -720,12 +882,17 @@ class DataflowAnalyzer {
     return this.uses;
   }
 
-  analyzeFunction(functionLike: ts.FunctionLikeDeclaration, actuals?: readonly FlowValue[], receiver?: SingletonReceiver, declared=false): FlowValue {
+  analyzeFunction(functionLike: ts.FunctionLikeDeclaration, actuals?: readonly FlowValue[], receiver?: SingletonReceiver, declared=false, capability?: FlowValue['callable']): FlowValue {
     this.receiver=receiver; this.declared=declared;
     const env = new FlowEnv();
+    if (!actuals && !capability && ts.isArrowFunction(functionLike)) this.session?.declaredOwnedRoot(functionLike);
+    this.constructedReceiver = capability?.lexicalThis;
+    for (const [symbol, value] of capability?.captures ?? []) env.declare(symbol.name, value, true, symbol);
     const expressEntry = this.session?.expressModel.entry(functionLike);
+    const mongoEntry = actuals ? undefined : this.session?.mongoModel.entry(functionLike);
     for (const [index, parameter] of functionLike.parameters.entries()) {
       if (actuals) this.declareBinding(parameter.name, traced(actuals[index] ?? UNKNOWN, parameter, "parameter"), env, true);
+      else if (mongoEntry && index === 1) this.declareBinding(parameter.name, { ...UNKNOWN, mongoDb: mongoEntry }, env, true);
       else if (expressEntry) this.declareBinding(parameter.name,
         index === expressEntry.request ? rootValue('request')
           : index === expressEntry.response ? { ...UNKNOWN, expressResponse: { identity: {}, mime: 'default', valid: true } }
@@ -746,6 +913,16 @@ class DataflowAnalyzer {
     }
     const values = [...this.returns, ...(!env.terminated ? [UNKNOWN] : [])];
     return values.length ? values.reduce(joinValues) : UNKNOWN;
+  }
+
+  analyzeConstructor(shape: ConstructorShape, args: readonly FlowValue[], captures: ReadonlyMap<ts.Symbol, FlowValue>): FlowValue {
+    const env = new FlowEnv();
+    for (const [symbol, value] of captures) env.declare(symbol.name, value, true, symbol);
+    for (const [index, parameter] of shape.target.parameters.entries()) this.declareBinding(parameter.name, traced(args[index] ?? UNKNOWN, parameter, 'parameter'), env, true);
+    this.constructedReceiver = { ...UNKNOWN, constructed: { valid: true, shape, slots: new Map() } };
+    this.constructorGuards = new Set(shape.guards);
+    this.analyzeStatement(shape.target.body!, env);
+    return this.constructedReceiver;
   }
 
   private declareParameter(parameter: ts.ParameterDeclaration, env: FlowEnv): void {
@@ -778,7 +955,7 @@ class DataflowAnalyzer {
   private declareBinding(name: ts.BindingName, value: FlowValue, env: FlowEnv, blockScoped: boolean): void {
     if (ts.isIdentifier(name)) {
       if (value.sqlArray && ts.isParameter(name.parent) && this.session?.sqlModel.arrayParameter(name) !== true) value = { ...value, sqlArray:{ ...value.sqlArray, closed:false } };
-      env.declare(name.text, value, blockScoped);
+      env.declare(name.text, value, blockScoped, this.session?.modules.symbol(name));
       return;
     }
     if (ts.isObjectBindingPattern(name)) {
@@ -850,7 +1027,7 @@ class DataflowAnalyzer {
       if (ts.isVariableStatement(statement)) {
         const blockScoped = (statement.declarationList.flags & ts.NodeFlags.BlockScoped) !== 0;
         for (const declaration of statement.declarationList.declarations) this.declareBinding(declaration.name, UNKNOWN, env, blockScoped);
-      } else if (ts.isFunctionDeclaration(statement) && statement.name) env.declare(statement.name.text, UNKNOWN, true);
+      } else if (ts.isFunctionDeclaration(statement) && statement.name) env.declare(statement.name.text, UNKNOWN, true, this.session?.modules.symbol(statement.name));
     }
     for (const statement of statements) {
       if (env.terminated) break;
@@ -876,6 +1053,7 @@ class DataflowAnalyzer {
       return;
     }
     if (ts.isIfStatement(statement)) {
+      if (this.constructorGuards?.has(statement)) return;
       this.analyzeExpression(statement.expression, env);
       const whenTrue = env.clone();
       this.analyzeStatement(statement.thenStatement, whenTrue);
@@ -1026,7 +1204,7 @@ class DataflowAnalyzer {
       if (declaration.initializer) this.analyzeExpression(declaration.initializer, env);
       const value = declaration.initializer ? this.evalExpression(declaration.initializer, env) : UNKNOWN;
       if (ts.isIdentifier(declaration.name)) {
-        env.declare(declaration.name.text, value, blockScoped);
+        this.declareBinding(declaration.name, value, env, blockScoped);
       } else {
         this.declareBinding(declaration.name, value, env, blockScoped);
       }
@@ -1040,6 +1218,12 @@ class DataflowAnalyzer {
       this.analyzeExpression(expression.right, env);
       this.analyzeAssignmentTarget(expression.left, env);
       const right = this.evalExpression(expression.right, env);
+      if (this.constructedReceiver?.constructed && ts.isPropertyAccessExpression(expression.left)
+        && expression.left.expression.kind === ts.SyntaxKind.ThisKeyword && expression.operatorToken.kind === ts.SyntaxKind.EqualsToken
+        && this.constructedReceiver.constructed.shape.ownArrows.has(expression.left.name.text)) {
+        this.constructedReceiver.constructed.slots.set(expression.left.name.text, right);
+        return;
+      }
       if (isSimpleAssignment(expression.operatorToken.kind)) {
         this.recordAssignment(expression, right);
         if (ts.isIdentifier(expression.left) || isAssignmentPattern(expression.left) || isBindingPattern(expression.left)) {
@@ -1059,18 +1243,23 @@ class DataflowAnalyzer {
     if (ts.isCallExpression(expression)) {
       this.analyzeExpression(expression.expression, env);
       const callee = expression.expression;
+      const selectedCallable = this.capabilityValue(callee, env);
       const response = ts.isPropertyAccessExpression(callee) ? this.evalExpression(callee.expression, env) : undefined;
       // Body interpretation happens when send/json runs, after argument evaluation.
       const responseState = response?.expressResponse;
+      this.session?.mongoModel.observe(expression);
+      const mongoCollection = this.session?.mongoModel.collection(expression, response?.mongoDb);
       // Preserve operand order in this syntax-shaped lane: later writes cannot replace earlier actual evidence.
-      const args = evaluationShapedCallee(callee) ? expression.arguments.map(argument => {
+      const orderedActuals = evaluationShapedCallee(callee) || this.session?.nosqlModel.bound(expression) === true || !!selectedCallable.callable || !!selectedCallable.opaqueClosure
+        || this.session?.mongoModel.selector(expression, response?.mongoCollection) === true || this.session?.modules.localCallable(expression) === true || this.session?.modules.resolveCjsFunctionCall(expression)?.kind === 'resolved';
+      const args = orderedActuals ? expression.arguments.map(argument => {
         this.analyzeExpression(argument, env);
         return this.evalExpression(argument, env);
       }) : (() => {
         for (const argument of expression.arguments) this.analyzeExpression(argument, env);
         return expression.arguments.map(argument => this.evalExpression(argument, env));
       })();
-      if (evaluationShapedCallee(callee)) this.evaluationActuals.set(expression, { env, values: args });
+      if (orderedActuals) this.evaluationActuals.set(expression, { env, values: args });
       if (ts.isPropertyAccessExpression(callee) && ts.isIdentifier(callee.expression) && ['append', 'set'].includes(callee.name.text)) {
         const receiver = env.resolve(callee.expression.text);
         if (receiver.queryContent) {
@@ -1087,11 +1276,37 @@ class DataflowAnalyzer {
         this.updateResponseMime(callee.name.text, expression.arguments, responseState);
         if (responseState.contained && responseState.mime !== "html") responseState.mime = "unknown";
       }
-      const invoked = this.session?.invoke(expression, args,this.receiver,this.declared);
+      const callable = selectedCallable.callable;
+      if (selectedCallable.opaqueClosure) this.session?.gap('module_export_unsupported', expression);
+      const applied = mongoCollection ? { ...UNKNOWN, mongoCollection } : selectedCallable.opaqueClosure ? traced({ ...selectedCallable.opaqueClosure, traceTruncated: true }, expression, 'call')
+        : this.session?.invoke(expression, args,this.receiver,this.declared,callable);
+      const invoked = applied?.kind === 'unknown' && !applied.inputRelated && !applied.constructed && !applied.callable && !applied.mongoCollection && !applied.mongoDb && args.some(isInputRelated)
+        ? { ...traced(inheritTrace(UNKNOWN_INPUT, args), expression, 'call'), traceTruncated: true, httpTargetUnavailable: httpUnavailable([applied, ...args]) } : applied;
+      if (invoked || selectedCallable.opaqueClosure) this.callableActuals.set(expression, { env, value: invoked });
       if (invoked === undefined) {
         // An opaque consumer may change headers; never reuse a stale non-HTML
         // exclusion after the response capability escapes to that consumer.
         for (const value of args) if (value.expressResponse) value.expressResponse.mime = "unknown";
+        if (!this.session?.nosqlModel.bound(expression) && !this.session?.mongoModel.selector(expression, response?.mongoCollection)) {
+          const seen = new Set<FlowValue>();
+          const invalidate = (value: FlowValue, depth = 0): void => {
+            if (seen.has(value) || depth > 8 || !this.session?.tick()) return;
+            seen.add(value);
+            if (value.nosqlObject) {
+              value.nosqlObject.value = combineValues([value.nosqlObject.value, ...args]);
+              value.nosqlObject.modified = true;
+            }
+            if (value.constructed) value.constructed.valid = false;
+            if (value.mongoDb) value.mongoDb.valid = false;
+            if (value.mongoCollection) value.mongoCollection.valid = false;
+            for (const child of value.properties?.values() ?? []) invalidate(child, depth + 1);
+          };
+          for (const value of args) invalidate(value);
+        }
+        for (const value of args) {
+          if (value.callable) this.session?.callback(value.callable);
+          else if (value.opaqueClosure) this.session?.gap('module_export_unsupported', expression);
+        }
         if (responseState?.valid && ts.isPropertyAccessExpression(callee)
           && !["send", "json", "status", "type", "contentType", "set", "header", "setHeader", "append", "removeHeader"].includes(callee.name.text)) responseState.mime = "unknown";
       }
@@ -1109,9 +1324,10 @@ class DataflowAnalyzer {
       const htmlResponseMime = htmlResponse && responseState?.mime !== "non_html" ? responseState?.mime : undefined;
       const httpRole = this.httpRole(expression, args[0]);
       const sqlRole = this.sqlRole(expression, args);
+      const nosqlRole = this.nosqlRole(expression, args[0], response?.mongoCollection);
       const forkRole = this.session?.forkModel.role(expression);
-      if (argumentFlows.length > 0 || httpRole || sqlRole || forkRole) this.uses.push({ node: expression, kind: "call", argumentFlows,
-        localCall: this.session?.modules.localCallable(expression), ...(htmlResponse ? { htmlResponse, htmlResponseMime } : {}), ...(httpRole ? { httpRole } : {}), ...(sqlRole ? { sqlRole } : {}), ...(forkRole ? { forkRole } : {}), localForkCall: this.session?.localForkCalls.get(expression) });
+      if (argumentFlows.length > 0 || httpRole || sqlRole || nosqlRole || forkRole) this.uses.push({ node: expression, kind: "call", argumentFlows,
+        localCall: this.session?.modules.localCallable(expression), ...(htmlResponse ? { htmlResponse, htmlResponseMime } : {}), ...(httpRole ? { httpRole } : {}), ...(sqlRole ? { sqlRole } : {}), ...(nosqlRole ? { nosqlRole } : {}), ...(forkRole ? { forkRole } : {}), localForkCall: this.session?.localForkCalls.get(expression) });
       return;
     }
     if (ts.isNewExpression(expression)) {
@@ -1132,10 +1348,18 @@ class DataflowAnalyzer {
       } else {
         const htmlResponse = this.isHtmlResponse(expression);
         let responseBody: FlowValue | undefined;
+        const values: FlowValue[] = [];
         for (const [index, argument] of (expression.arguments ?? []).entries()) {
           this.analyzeExpression(argument, env);
+          values.push(this.evalExpression(argument, env));
           // Capture actual body before later options can reassign its binding.
           if (htmlResponse && index === 0) responseBody = this.evalExpression(argument, env);
+        }
+        const value = this.session?.construct(expression, values, env);
+        if (value) this.constructedActuals.set(expression, { env, value });
+        else for (const actual of values) {
+          if (actual.mongoDb) actual.mongoDb.valid = false;
+          if (actual.mongoCollection) actual.mongoCollection.valid = false;
         }
         if (responseBody && isInputRelated(responseBody)) this.uses.push({ node: expression, kind: "call", htmlResponse: "web",
           argumentFlows: [{ index: 0, certainty: !this.declared && responseBody.kind === "tainted" ? "tainted" : "unknown", staticFlow: evidence(responseBody, expression) }] });
@@ -1158,8 +1382,11 @@ class DataflowAnalyzer {
       this.analyzeExpression(expression.condition, env);
       const whenTrue = env.clone();
       this.analyzeExpression(expression.whenTrue, whenTrue);
+      const trueValue = this.evalExpression(expression.whenTrue, whenTrue);
       const whenFalse = env.clone();
       this.analyzeExpression(expression.whenFalse, whenFalse);
+      const falseValue = this.evalExpression(expression.whenFalse, whenFalse);
+      this.conditionalActuals.set(expression, { env, value: joinValues(trueValue, falseValue) });
       env.merge([whenTrue, whenFalse]);
       return;
     }
@@ -1187,11 +1414,24 @@ class DataflowAnalyzer {
       return;
     }
     if (ts.isObjectLiteralExpression(expression)) {
+      const values = new Map<ts.Node, FlowValue>(), keys = new Map<ts.Node, FlowValue>();
       for (const property of expression.properties) {
-        if (ts.isPropertyAssignment(property)) this.analyzeExpression(property.initializer, env);
-        else if (ts.isShorthandPropertyAssignment(property) && property.objectAssignmentInitializer) this.analyzeExpression(property.objectAssignmentInitializer, env);
-        else if (ts.isSpreadAssignment(property)) this.analyzeExpression(property.expression, env);
+        if (ts.isPropertyAssignment(property)) {
+          if (ts.isComputedPropertyName(property.name)) {
+            this.analyzeExpression(property.name.expression, env);
+            keys.set(property, this.evalExpression(property.name.expression, env));
+          }
+          this.analyzeExpression(property.initializer, env);
+          values.set(property, this.evalExpression(property.initializer, env));
+        } else if (ts.isShorthandPropertyAssignment(property)) {
+          if (property.objectAssignmentInitializer) this.analyzeExpression(property.objectAssignmentInitializer, env);
+          values.set(property, env.resolve(property.name.text));
+        } else if (ts.isSpreadAssignment(property)) {
+          this.analyzeExpression(property.expression, env);
+          values.set(property, this.evalExpression(property.expression, env));
+        }
       }
+      this.objectActuals.set(expression, { env, values, keys });
       return;
     }
     if (ts.isArrayLiteralExpression(expression)) {
@@ -1316,6 +1556,58 @@ class DataflowAnalyzer {
     return { bound:true,inputRelated,outcome:'unknown_role',certainty:'unknown',...(flow ? {staticFlow:{...flow,truncated:true}} : {}) };
   }
 
+  private nosqlRole(call: ts.CallExpression, selector?: FlowValue, mongo?: MongoCollectionRole): NoSqlRoleUse | undefined {
+    const model = this.session?.nosqlModel;
+    const mongoBound = this.session?.mongoModel.selector(call, mongo) === true;
+    if ((!model?.bound(call) && !mongoBound) || !selector) return undefined;
+    let modified = false;
+    const current = (value: FlowValue, depth = 0): FlowValue => {
+      if (!this.session?.tick()) return value;
+      if (depth > 8) { this.session.gap('alias_limit', call); return value; }
+      const object = value.nosqlObject;
+      if (object?.modified || value.nosqlUnknown) modified = true;
+      const values = [value, ...(value.nosqlUnknown ? [value.nosqlUnknown] : []), ...(object?.modified ? [object.value] : []), ...[...value.properties?.values() ?? []].map(child => current(child, depth + 1))];
+      return { ...value, ...combineValues(values), properties: value.properties, nosqlObject: object };
+    };
+    const observed = current(selector);
+    const inputRelated = isInputRelated(observed);
+    const api = mongoBound ? 'mongodb2' as const : 'marsdb' as const;
+    if (mongoBound && (!mongo!.valid || !mongo!.db.valid)) this.session?.gap('module_export_unsupported', call);
+    if (!inputRelated) return { inputRelated: false, outcome: 'string_selector', api };
+    const candidate = (value: FlowValue, outcome: NoSqlRoleUse['outcome']): NoSqlRoleUse => ({ inputRelated: true, outcome, api,
+      certainty: !this.declared && value.kind === 'tainted' && outcome !== 'unknown_role' ? 'tainted' : 'unknown',
+      staticFlow: evidence(value, call) });
+    if (this.declared || !(mongoBound ? mongo!.valid && mongo!.db.valid : model!.qualified(call)) || modified) {
+      if (mongoBound) this.session?.gap('module_export_unsupported', call);
+      if (selector.nosqlWhere && isInputRelated(selector.nosqlWhere.value)) return { ...candidate(selector.nosqlWhere.value, 'unknown_role'), operatorNode: selector.nosqlWhere.node };
+      return candidate(observed, 'unknown_role');
+    }
+    if (selector.nosqlWhere && isInputRelated(selector.nosqlWhere.value)) return { ...candidate(selector.nosqlWhere.value, 'where_input'), operatorNode: selector.nosqlWhere.node };
+    const inspect = (value: FlowValue, expression: ts.Expression | undefined, depth: number): NoSqlRoleUse | undefined => {
+      if (!this.session?.tick() || depth > 8) return candidate(value, 'unknown_role');
+      if (!isInputRelated(value)) return undefined;
+      const object = value.nosqlObject;
+      if (!object || !object.closed || object.modified || !value.properties) {
+        if (expression && model?.stringAt(expression, call)) return undefined;
+        return candidate(value, object ? 'unknown_role' : 'selector_input');
+      }
+      let selected: NoSqlRoleUse | undefined;
+      for (const property of object.node.properties) {
+        if (!(ts.isPropertyAssignment(property) || ts.isShorthandPropertyAssignment(property))) return candidate(value, 'unknown_role');
+        const key = propertyName(property.name); if (!key) return candidate(value, 'unknown_role');
+        const field = current(value.properties.get(key) ?? UNKNOWN);
+        if (!isInputRelated(field)) continue;
+        const result = key === '$where' ? candidate(field, 'where_input')
+          : key.startsWith('$') ? candidate(field, 'unknown_role')
+            : inspect(field, ts.isPropertyAssignment(property) ? property.initializer : property.name, depth + 1);
+        if (result?.outcome === 'where_input') return result;
+        if (result) selected ??= result;
+      }
+      return selected;
+    };
+    return inspect(selector, call.arguments[0], 0) ?? { inputRelated: true, outcome: 'string_selector', api };
+  }
+
   /** Literal same-response MIME state only; no header values are retained in reports. */
   private updateResponseMime(method: string, args: readonly ts.Expression[], state: ExpressResponseState): void {
     const literal = (value: ts.Expression | undefined): string | undefined => value && ts.isStringLiteralLike(value) ? value.text.trim().toLowerCase() : undefined;
@@ -1398,14 +1690,19 @@ class DataflowAnalyzer {
       if (!env.has(expression.text) && this.session?.modules.symbol(expression)) return UNKNOWN;
       const current = currentQuery(env.resolve(expression.text));
       const value = current.properties && this.session?.sqlModel.dataIdentifierUnavailable(expression) ? {...current,sqlDataUnavailable:true} : current;
-      return value.kind === "root" && !value.trace?.length ? traced(value, expression, "source") : value;
+      return value.kind === "root" && !value.trace?.some(item => item.role === "source") ? traced(value, expression, "source") : value;
     }
     if (ts.isStringLiteral(expression) || ts.isNoSubstitutionTemplateLiteral(expression)) return literalValue(expression.text);
     if (ts.isNumericLiteral(expression) || ts.isBigIntLiteral(expression) || ts.isRegularExpressionLiteral(expression)) return SAFE;
     if (expression.kind === ts.SyntaxKind.TrueKeyword || expression.kind === ts.SyntaxKind.FalseKeyword || expression.kind === ts.SyntaxKind.NullKeyword || expression.kind === ts.SyntaxKind.UndefinedKeyword) return SAFE;
     if (ts.isParenthesizedExpression(expression) || ts.isAsExpression(expression) || ts.isTypeAssertionExpression(expression) || ts.isNonNullExpression(expression) || ts.isAwaitExpression(expression)) return this.evalExpression(expression.expression, env);
     if (ts.isYieldExpression(expression)) return expression.expression ? this.evalExpression(expression.expression, env) : UNKNOWN;
-    if (ts.isPropertyAccessExpression(expression)) return currentQuery(projectValue(this.evalExpression(expression.expression, env), expression.name.text));
+    if (expression.kind === ts.SyntaxKind.ThisKeyword) return this.constructedReceiver ?? UNKNOWN;
+    if (ts.isPropertyAccessExpression(expression)) {
+      const receiver = this.evalExpression(expression.expression, env);
+      if (receiver.constructed) return receiver.constructed.valid ? receiver.constructed.slots.get(expression.name.text) ?? UNKNOWN : UNKNOWN;
+      return currentQuery(projectValue(receiver, expression.name.text));
+    }
     if (ts.isElementAccessExpression(expression)) {
       const key = propertyName(expression.argumentExpression);
       const base = this.evalExpression(expression.expression, env);
@@ -1434,9 +1731,12 @@ class DataflowAnalyzer {
       return { ...combined, expressObjectBody: true, properties, ...(this.session?.sqlModel ? { sqlArray:{ node:expression,closed:this.session.sqlModel.closedArray(expression) && !combined.sqlDataUnavailable,count:expression.elements.length } } : {}) };
     }
     if (ts.isObjectLiteralExpression(expression)) {
+      const observed = this.objectActuals.get(expression);
+      const actuals = observed?.env === env ? observed : undefined;
       const properties = new Map<string, FlowValue>();
       const values: FlowValue[] = [];
       let target: FlowValue | undefined; let sqlText:FlowValue|undefined; let sqlValues:FlowValue|undefined;
+      let nosqlWhere: FlowValue['nosqlWhere'];
       const dataUnavailable=expression.properties.some(p=>!(ts.isPropertyAssignment(p) || ts.isShorthandPropertyAssignment(p))
         || ts.isComputedPropertyName(p.name) || ['toPostgres','toString','__proto__'].includes(propertyName(p.name) ?? ''));
       const sqlSnapshot=(value:FlowValue):FlowValue=>({kind:value.kind,root:value.root,inputRelated:value.inputRelated,trace:value.trace?.map(s=>({role:s.role,location:{...s.location}})),traceTruncated:value.traceTruncated,httpTargetUnavailable:currentQuery(value).httpTargetUnavailable,urlFragments:value.urlFragments?.map(p=>({...p})),sqlScalarUnavailable:value.sqlScalarUnavailable,sqlFixedText:value.sqlFixedText ? {...value.sqlFixedText} : undefined,sqlCallback:value.sqlCallback,sqlDataUnavailable:value.sqlDataUnavailable,sqlArray:value.sqlArray ? {...value.sqlArray} : undefined});
@@ -1450,16 +1750,18 @@ class DataflowAnalyzer {
       for (const property of expression.properties) {
         if (ts.isPropertyAssignment(property)) {
           const key = propertyName(property.name);
-          const value = this.evalExpression(property.initializer, env);
+          const value = actuals?.values.get(property) ?? this.evalExpression(property.initializer, env);
+          if (ts.isComputedPropertyName(property.name)) values.push(actuals?.keys.get(property) ?? this.evalExpression(property.name.expression, env));
           if (key === 'url') captureTarget(value);
           if (key === 'text') sqlText=sqlSnapshot(value);
           if (key === 'values') sqlValues=sqlSnapshot(value);
+          if (key === '$where') nosqlWhere = { node: property, value: traced(value, property, 'intermediate') };
           values.push(value);
           if (key !== undefined) properties.set(key, withoutUrlProof(value));
         } else if (ts.isShorthandPropertyAssignment(property)) {
           // Preserve the existing general shorthand/request-shaped fallback.
           // Only the new HTTP target snapshot needs an actual source position.
-          const value = env.resolve(property.name.text);
+          const value = actuals?.values.get(property) ?? env.resolve(property.name.text);
           if (property.name.text === 'url') captureTarget(value.kind === 'root' && !value.trace?.length
             ? traced(value, property.name, 'source') : value);
           if (property.name.text==='text') sqlText=sqlSnapshot(value.kind==='root' && !value.trace?.length ? traced(value,property.name,'source') : value);
@@ -1467,15 +1769,21 @@ class DataflowAnalyzer {
           values.push(value);
           properties.set(property.name.text, withoutUrlProof(value));
         } else if (ts.isSpreadAssignment(property)) {
-          const value = this.evalExpression(property.expression, env);
+          const value = actuals?.values.get(property) ?? this.evalExpression(property.expression, env);
           values.push(value);
+          if (value.nosqlObject?.modified) values.push(value.nosqlObject.value);
           for (const [key, propertyValue] of value.properties ?? []) properties.set(key, withoutUrlProof(propertyValue));
+          if (!value.properties || value.properties.has('$where')) nosqlWhere = value.nosqlWhere;
         }
       }
       for (const value of values) containResponse(value);
       const combined = combineValues(values);
       const closed = this.session?.httpModel.closedShape(expression) === true;
-      return { ...combined, expressObjectBody: true, properties, sqlDataUnavailable:combined.sqlDataUnavailable || dataUnavailable, ...(sqlText ? {sqlConfig:{node:expression,closed:this.session?.sqlModel.closedConfig(expression)===true,text:sqlText,values:sqlValues}} : {}), ...(target ? { httpConfig: { node: expression, closed,
+      return { ...combined, expressObjectBody: true, properties, nosqlWhere,
+        nosqlObject: { node: expression, value: combined, modified: false, closed: expression.properties.every(property =>
+          (ts.isPropertyAssignment(property) || ts.isShorthandPropertyAssignment(property)) && !ts.isComputedPropertyName(property.name)
+          && !['__proto__'].includes(propertyName(property.name) ?? '')) },
+        sqlDataUnavailable:combined.sqlDataUnavailable || dataUnavailable, ...(sqlText ? {sqlConfig:{node:expression,closed:this.session?.sqlModel.closedConfig(expression)===true,text:sqlText,values:sqlValues}} : {}), ...(target ? { httpConfig: { node: expression, closed,
         fixedInitialUrl: target.kind === 'safe' && !target.httpTargetUnavailable && fixedInitialHttpUrl(target.urlFragments),
         encodedQueryInitialUrl: !target.httpTargetUnavailable && fixedQueryDestination(target.urlFragments), target } } : {}) };
     }
@@ -1483,7 +1791,10 @@ class DataflowAnalyzer {
       return concatValues([literalValue(expression.head.text), ...expression.templateSpans.flatMap((span) => [this.evalExpression(span.expression, env), literalValue(span.literal.text)])]);
     }
     if (ts.isNoSubstitutionTemplateLiteral(expression)) return SAFE;
-    if (ts.isConditionalExpression(expression)) return joinValues(this.evalExpression(expression.whenTrue, env), this.evalExpression(expression.whenFalse, env));
+    if (ts.isConditionalExpression(expression)) {
+      const observed = this.conditionalActuals.get(expression);
+      return observed?.env === env ? observed.value : joinValues(this.evalExpression(expression.whenTrue, env), this.evalExpression(expression.whenFalse, env));
+    }
     if (ts.isBinaryExpression(expression)) {
       if (isAssignmentOperator(expression.operatorToken.kind)) {
         if (isSimpleAssignment(expression.operatorToken.kind)) return this.evalExpression(expression.right, env);
@@ -1498,12 +1809,14 @@ class DataflowAnalyzer {
       return UNKNOWN;
     }
     if (ts.isCallExpression(expression)) {
+      const applied = this.callableActuals.get(expression);
+      if (applied?.env === env) return applied.value ?? UNKNOWN;
       const observed = this.evaluationActuals.get(expression);
       const args = observed?.env === env ? observed.values : expression.arguments.map((argument) => this.evalExpression(argument, env));
-      const returned = this.session?.invoke(expression, args,this.receiver,this.declared);
+      const returned = this.session?.invoke(expression, args,this.receiver,this.declared,this.capabilityValue(expression.expression, env).callable);
       if (returned) {
         // Unmodelled captures/opaque returns cannot erase a prior input candidate.
-        if (returned.kind === "unknown" && !returned.inputRelated && args.some(isInputRelated)) {
+        if (returned.kind === "unknown" && !returned.inputRelated && !returned.constructed && !returned.callable && !returned.mongoCollection && !returned.mongoDb && args.some(isInputRelated)) {
           return { ...traced(inheritTrace(UNKNOWN_INPUT, args), expression, "call"), traceTruncated: true, httpTargetUnavailable:httpUnavailable([returned,...args]) };
         }
         return returned.sqlArray && this.session?.sqlModel.returnedArrayUse(expression)!==true
@@ -1536,6 +1849,8 @@ class DataflowAnalyzer {
       return withHttpUnavailable(UNKNOWN, receiver ? [receiver,...args] : args);
     }
     if (ts.isNewExpression(expression)) {
+      const constructed = this.constructedActuals.get(expression);
+      if (constructed?.env === env) return constructed.value;
       const observed = this.evaluationActuals.get(expression);
       const values = observed?.env === env ? observed.values : (expression.arguments ?? []).map((argument) => this.evalExpression(argument, env));
       if (ts.isIdentifier(expression.expression) && expression.expression.text === 'URLSearchParams' && this.session && !this.session.modules.symbol(expression.expression)) {
@@ -1550,7 +1865,12 @@ class DataflowAnalyzer {
     }
     if (ts.isPrefixUnaryExpression(expression) || ts.isPostfixUnaryExpression(expression)) return UNKNOWN;
     if (ts.isSpreadElement(expression)) return this.evalExpression(expression.expression, env);
-    if (ts.isArrowFunction(expression) || ts.isFunctionExpression(expression)) return {...SAFE,sqlCallback:true};
+    if (ts.isArrowFunction(expression)) {
+      if (!this.session?.modules.indexComplete) return { ...SAFE, sqlCallback: true };
+      const callable = this.session?.closure(expression, env, this.constructedReceiver);
+      return { ...SAFE, sqlCallback: true, callable, ...(!callable && this.session ? { opaqueClosure: this.session.opaqueCaptures(expression, env) } : {}) };
+    }
+    if (ts.isFunctionExpression(expression)) return {...SAFE,sqlCallback:true};
     if (ts.isClassExpression(expression)) return SAFE;
     return UNKNOWN;
   }
@@ -1565,10 +1885,10 @@ export function findInputFlows(sourceFile: ts.SourceFile): InputFlowUse[] {
   return new DataflowAnalyzer(sourceFile).run();
 }
 
-export function findSnapshotInputFlows(files: readonly ts.SourceFile[], limits: FlowLimits = FLOW_LIMITS, parseErrorCount = 0, roleProofScopeComplete = true, parseFiles?: Iterable<ParseFileEvidence>): {
+export function findSnapshotInputFlows(files: readonly ts.SourceFile[], limits: FlowLimits = FLOW_LIMITS, parseErrorCount = 0, roleProofScopeComplete = true, parseFiles?: Iterable<ParseFileEvidence>, metadata: readonly CollectedFile[] = []): {
   uses: InputFlowUse[]; reasons: string[]; metrics: Record<string, number | string | boolean>; analysisGaps?: import('../contracts.js').AnalysisGaps;
 } {
-  const session = new FlowSession(files, limits, parseErrorCount, roleProofScopeComplete, parseFiles);
+  const session = new FlowSession(files, limits, parseErrorCount, roleProofScopeComplete, parseFiles, metadata);
   session.run(files);
   return { uses: session.uses, reasons: [...session.reasons].sort(), analysisGaps: session.diagnostics.result(), metrics: {
     flowModel: "bounded-static-local-relative-v1", budgetModel: "shared-index-separate-flow-v1", entrySeedModel: "request_shaped_uncalled_exported_or_callback_escaped_function",
