@@ -235425,11 +235425,11 @@ function optionsSnapshot(raw) {
 function result2(status, reason, metrics = {}) {
   return [{ id: DAST_CHECK_ID, status, findings: [], notes: [NOTE2, reason], metrics: { requestCount: 0, ...metrics } }];
 }
-function stopReason(error, signal, deadlineAt) {
+function stopReason(error, abortCause, deadlineAt) {
+  if (abortCause)
+    return abortCause;
   if (Date.now() >= deadlineAt)
     return "deadline";
-  if (signal.aborted)
-    return "cancelled";
   const code = error instanceof UrlNetworkError ? error.code : "transport_error";
   if (code === "request_limit")
     return "request_budget";
@@ -235505,6 +235505,14 @@ async function runDast(rawOptions) {
   if (!Number.isSafeInteger(maxRequests) || maxRequests < 1 || maxRequests > DAST_MAX_REQUESTS || !Number.isSafeInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > DAST_MAX_TIMEOUT_MS || options.signal !== void 0 && (types4.isProxy(options.signal) || !(options.signal instanceof AbortSignal)))
     return result2("error", "DAST budget or cancellation signal is invalid; no requests were made.", { errorCode: "invalid_budget" });
   const control = createApiRunControl(timeoutMs, options.signal, DAST_MAX_TIMEOUT_MS);
+  let abortCause;
+  const captureAbortCause = () => {
+    abortCause ??= options.signal?.aborted ? "cancelled" : "deadline";
+  };
+  if (control.signal.aborted)
+    captureAbortCause();
+  else
+    control.signal.addEventListener("abort", captureAbortCause, { once: true });
   const budget = { count: 0, max: maxRequests };
   const context = {
     allowPrivate: options.allowPrivate === true,
@@ -235570,7 +235578,7 @@ async function runDast(rawOptions) {
           oracleMatch: matches(value, parsed.policy)
         });
       } catch (error) {
-        firstFailure = error instanceof Error && error.message === "response_invalid" ? "response_invalid" : stopReason(error, control.signal, control.deadlineAt);
+        firstFailure = error instanceof Error && error.message === "response_invalid" ? "response_invalid" : stopReason(error, abortCause, control.deadlineAt);
         steps.push({
           ordinal,
           round,
@@ -235640,6 +235648,7 @@ async function runDast(rawOptions) {
     };
     return [check];
   } finally {
+    control.signal.removeEventListener("abort", captureAbortCause);
     control.dispose();
   }
 }

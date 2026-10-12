@@ -143,6 +143,42 @@ test("deadline and in-flight cancellation preserve an incomplete ledger", async 
   } finally { await cancelling.close(); }
 });
 
+test("deadline abort keeps its cause when the wall clock has not reached the deadline", async (t) => {
+  const target = await fixture("slow");
+  const now = Date.now();
+  const clock = t.mock.method(Date, "now", () => now);
+  try {
+    const [check] = await runDast({ policy: policy(target), consent: true, allowPrivate: true, timeoutMs: 20 });
+    assert.equal(check?.status, "partial");
+    assert.deepEqual(check?.findings, []);
+    assert.equal(check?.dastExecution?.stopReason, "deadline");
+    assert.equal(check?.dastExecution?.steps[0]?.reason, "deadline");
+    assert.ok(Number(check?.metrics?.requestCount) <= 1);
+    assert.ok(check?.dastExecution?.steps.slice(1).every(step => step.outcome === "not_attempted"));
+  } finally { clock.mock.restore(); await target.close(); }
+});
+
+test("caller cancellation keeps its cause when the wall clock passes the deadline before handling", async (t) => {
+  const target = await fixture("slow");
+  let now = Date.now();
+  const clock = t.mock.method(Date, "now", () => now);
+  const controller = new AbortController();
+  try {
+    const pending = runDast({ policy: policy(target), consent: true, allowPrivate: true, timeoutMs: 30_000, signal: controller.signal });
+    await target.firstRequest;
+    controller.abort();
+    now += 60_000;
+    const [check] = await pending;
+    assert.equal(check?.status, "partial");
+    assert.deepEqual(check?.findings, []);
+    assert.equal(check?.dastExecution?.stopReason, "cancelled");
+    assert.equal(check?.dastExecution?.steps[0]?.reason, "cancelled");
+    assert.equal(check?.metrics?.requestCount, 1);
+    assert.equal(target.requests.length, 1);
+    assert.ok(check?.dastExecution?.steps.slice(1).every(step => step.outcome === "not_attempted"));
+  } finally { clock.mock.restore(); await target.close(); }
+});
+
 test("ledger sanitizer rejects forged completion, accidental values and accessor objects", async () => {
   const target = await fixture("vulnerable");
   try {
