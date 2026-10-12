@@ -1,3 +1,5 @@
+import { COLLECTION_MAX_FILES, COLLECTION_MAX_BYTES, parseCollectionLimit, resolveCollectionBudget } from './source/collection-budget.js';
+import { resolveAnalysisBudget } from './source/analysis-budget.js';
 import { access, constants, lstat, readdir, stat } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import type { Dirent } from "node:fs";
@@ -43,6 +45,9 @@ interface Inventory {
 }
 
 interface DoctorOptions {
+  sourceMaxFiles?: number;
+  sourceMaxBytes?: number;
+  analysisProfile?: 'default' | 'extended';
   source: string;
   tools: string[];
   json: boolean;
@@ -122,11 +127,13 @@ export async function doctorMain(argv: readonly string[] = process.argv.slice(2)
     source: source,
     execution: { targetCode: "none", network: "none", packageManager: "none" },
     inventory,
+    inventoryBasis: 'metadata_estimate_not_collector_coverage' as const,
+    collectionBudget: resolveCollectionBudget({ maxFiles: options.sourceMaxFiles, maxBytes: options.sourceMaxBytes }),
     tools: toolStatuses,
     expectedTransfers,
     runtimeNetwork,
     databaseCaches: { osv: "unknown", trivy: "unknown" },
-    nextCommand: nextCommand(source, options.tools),
+    nextCommand: nextCommand(source, options.tools, options),
     ...(dast ? { activeDast: dast } : {}),
   };
 
@@ -145,8 +152,27 @@ export function parseDoctorArgs(argv: readonly string[]): DoctorOptions {
   const args = [...argv];
   if (args[0] === "doctor") args.shift();
   const options: DoctorOptions = { source: ".", tools: [...DEFAULT_TOOLS], json: false, strict: false, help: false, dast: false };
+  const selected = new Set<string>();
   for (let index = 0; index < args.length; index += 1) {
     const argument = args[index];
+    const selector = argument.split('=')[0];
+    if (['--source-max-files', '--source-max-bytes', '--analysis-profile'].includes(selector)) {
+      if (selected.has(selector)) throw new Error(`${selector} may only be specified once`);
+      selected.add(selector);
+      const inline = argument.indexOf('=');
+      const raw = inline >= 0 ? argument.slice(inline + 1) : args[++index];
+      if (raw === undefined || raw === '') throw new Error(`${selector} requires a value`);
+      if (selector === '--analysis-profile') options.analysisProfile = resolveAnalysisBudget(raw).requestedProfile;
+      else {
+        const maximum = selector === '--source-max-files' ? COLLECTION_MAX_FILES : COLLECTION_MAX_BYTES;
+        let value: number;
+        try { value = parseCollectionLimit(raw, maximum); }
+        catch { throw new Error(`${selector} must be an integer from 1 to ${maximum} without signs, spaces or leading zeros`); }
+        if (selector === '--source-max-files') options.sourceMaxFiles = value;
+        else options.sourceMaxBytes = value;
+      }
+      continue;
+    }
     if (argument === "--help" || argument === "-h") {
       options.help = true;
       continue;
@@ -227,6 +253,7 @@ export function parseTools(value: string): string[] {
 export function doctorUsage(): string {
   return [
     "Usage: wakeio-security-ci doctor [--source DIR] [--tools gitleaks,osv,trivy,bandit|none] [--json] [--strict]",
+    "                              [--source-max-files N] [--source-max-bytes N] [--analysis-profile default|extended]",
     "                              [--dast [--nuclei PATH] [--nuclei-templates DIR] [--schemathesis-python PATH]]",
     "",
     "Read-only inventory: no target code, package scripts, scanner, or network request is executed.",
@@ -309,20 +336,23 @@ async function findExecutable(command: string): Promise<string | undefined> {
   return findScannerExecutable(command);
 }
 
-function nextCommand(source: string, tools: string[]): string {
-  return `npx --no-install wakeio-security-ci scan --source ${shellQuote(source)} --tools ${shellQuote(tools.length > 0 ? tools.join(",") : "none")} --out wakeio-security-reports`;
+function nextCommand(source: string, tools: string[], options: DoctorOptions): string {
+  const choices = `${options.sourceMaxFiles === undefined ? "" : ` --source-max-files ${options.sourceMaxFiles}`}${options.sourceMaxBytes === undefined ? "" : ` --source-max-bytes ${options.sourceMaxBytes}`}${options.analysisProfile === undefined ? "" : ` --analysis-profile ${options.analysisProfile}`}`;
+  return `npx --no-install wakeio-security-ci scan --source ${shellQuote(source)} --tools ${shellQuote(tools.length > 0 ? tools.join(",") : "none")} --out wakeio-security-reports${choices}`;
 }
 
 function shellQuote(value: string): string {
   return `'${value.replace(/'/g, `'\\''`)}'`;
 }
 
-function renderDoctorText(result: { source: string; inventory: Inventory; tools: DoctorToolStatus[]; expectedTransfers: string[]; runtimeNetwork: string[]; databaseCaches: { osv: string; trivy: string }; nextCommand: string; activeDast?: DoctorDastStatus }): string {
+function renderDoctorText(result: { source: string; inventory: Inventory; collectionBudget: ReturnType<typeof resolveCollectionBudget>; tools: DoctorToolStatus[]; expectedTransfers: string[]; runtimeNetwork: string[]; databaseCaches: { osv: string; trivy: string }; nextCommand: string; activeDast?: DoctorDastStatus }): string {
   const dast = result.activeDast;
   const lines = [
     "Wakeio doctor (read-only)",
     `Source: ${result.source}`,
-    `Inventory: ${result.inventory.files} files, ${result.inventory.bytes} bytes; Python ${result.inventory.pythonFiles}; dependency manifests ${result.inventory.dependencyManifests}; config files ${result.inventory.configFiles}${result.inventory.truncated ? "; truncated" : ""}`,
+    `Inventory estimate (metadata; not collector coverage): ${result.inventory.files} files, ${result.inventory.bytes} bytes; Python ${result.inventory.pythonFiles}; dependency manifests ${result.inventory.dependencyManifests}; config files ${result.inventory.configFiles}${result.inventory.truncated ? "; truncated" : ""}`,
+    `Selected collection limits: ${result.collectionBudget.limits.maxFiles} files; ${result.collectionBudget.limits.maxBytes} total bytes; ${result.collectionBudget.limits.maxFileBytes} bytes per file; ${result.collectionBudget.limits.maxEntries} directory entries.`,
+    "Metadata totals include files outside the collector allowlist and do not predict analysis completion.",
     "Target execution: none; network: none; package manager: none",
     ...result.tools.map((tool) => `Tool ${tool.name}: ${tool.availability} (${tool.applicability})${tool.path ? ` at ${tool.path}` : ""}`),
     `Expected transfers: ${result.expectedTransfers.length > 0 ? result.expectedTransfers.join("; ") : "none"}`,

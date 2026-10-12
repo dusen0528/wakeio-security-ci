@@ -31,6 +31,14 @@ inputs:
     description: Versioned AST workload preset, default or extended (extended requires source)
     required: false
     default: default
+  source-max-files:
+    description: Optional selected-file cap, integer 1..10000 (source only; default 1000)
+    required: false
+    default: ''
+  source-max-bytes:
+    description: Optional total collected-byte cap, integer 1..134217728 (source only; default 26214400; per-file cap unchanged)
+    required: false
+    default: ''
   fail-on:
     description: Severity threshold for findings (none disables finding failure only)
     required: false
@@ -104,12 +112,23 @@ runs:
       env:
         WAKEIO_SOURCE: ${{ inputs.source }}
         WAKEIO_ANALYSIS_PROFILE: ${{ inputs.analysis-profile }}
+        WAKEIO_SOURCE_MAX_FILES: ${{ inputs.source-max-files }}
+        WAKEIO_SOURCE_MAX_BYTES: ${{ inputs.source-max-bytes }}
       run: |
         case "$WAKEIO_ANALYSIS_PROFILE" in
           default) ;;
           extended) [[ "$WAKEIO_SOURCE" =~ [^[:space:]] ]] || { echo 'extended analysis-profile requires source' >&2; exit 2; } ;;
           *) echo 'analysis-profile must be default or extended' >&2; exit 2 ;;
         esac
+        validate_limit() {
+          local name="$1" value="$2" maximum="$3"
+          [[ -z "$value" ]] && return 0
+          [[ "$WAKEIO_SOURCE" =~ [^[:space:]] ]] || { echo "$name requires source" >&2; exit 2; }
+          [[ "$value" =~ ^[1-9][0-9]*$ && ${#value} -le ${#maximum} ]] || { echo "$name must be an integer from 1 to $maximum" >&2; exit 2; }
+          [[ "$value" -le "$maximum" ]] || { echo "$name must be an integer from 1 to $maximum" >&2; exit 2; }
+        }
+        validate_limit source-max-files "$WAKEIO_SOURCE_MAX_FILES" 10000
+        validate_limit source-max-bytes "$WAKEIO_SOURCE_MAX_BYTES" 134217728
     - name: Set up Node.js 22
       uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
       with:
@@ -121,6 +140,8 @@ runs:
         WAKEIO_ACTION_PATH: ${{ github.action_path }}
         WAKEIO_SOURCE: ${{ inputs.source }}
         WAKEIO_ANALYSIS_PROFILE: ${{ inputs.analysis-profile }}
+        WAKEIO_SOURCE_MAX_FILES: ${{ inputs.source-max-files }}
+        WAKEIO_SOURCE_MAX_BYTES: ${{ inputs.source-max-bytes }}
         WAKEIO_URL: ${{ inputs.url }}
         WAKEIO_PAGES: ${{ inputs.pages }}
         WAKEIO_API_POLICY: ${{ inputs.api-policy }}

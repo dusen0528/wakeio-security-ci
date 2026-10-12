@@ -1,4 +1,5 @@
 import { resolveAnalysisBudget } from './source/analysis-budget.js';
+import { collectionEvidence } from './source/collection-budget.js';
 import { createHash } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
@@ -393,12 +394,16 @@ function inventoryCheck(snapshot: SourceSnapshot, tools: ToolName[], nativeSelec
     `Collected ${snapshot.files.length} allowlisted file${snapshot.files.length === 1 ? "" : "s"} (${snapshot.totalBytes} bytes).`,
     ...(snapshot.ignoredFiles > 0 ? [`Ignored ${snapshot.ignoredFiles} path${snapshot.ignoredFiles === 1 ? "" : "s"} outside the static-analysis allowlist.`] : []),
     ...(issueSummary ? [`Collection coverage issues: ${issueSummary}.`] : []),
+    ...(issueCounts.has('file_limit') ? ['file_limit may reflect selected files, traversal entries or the fixed directory-depth bound (64); increasing maxFiles may not resolve it.'] : []),
+    ...(issueCounts.has('size_limit') ? ['size_limit may reflect total bytes, the fixed per-file bound or file-size validation during collection.'] : []),
     ...(tools.length === 0 ? [nativeSelected ? 'External default tools disabled (--tools none); explicit native preview remains selected.' : "External scanner scope was narrowed to built-in checks (--tools none)."] : [`External scanner scope: ${tools.join(", ")}.`]),
     ...(nativeSelected ? ['Pinned BYO native preview was explicitly selected.'] : []),
     ...(snapshot.rootError ? [snapshot.rootError] : []),
   ];
   return {
     id: "source.inventory",
+    ...(snapshot.collectionBudget ? { collectionBudget: snapshot.collectionBudget } : {}),
+    collectionEvidence: collectionEvidence(snapshot.issues),
     status: checkStatusForSnapshot(snapshot),
     findings: [],
     notes,

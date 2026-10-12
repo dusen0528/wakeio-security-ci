@@ -1,4 +1,5 @@
 import { resolveAnalysisBudget } from './source/analysis-budget.js';
+import { resolveCollectionBudget } from './source/collection-budget.js';
 import { createHash } from 'node:crypto';
 import { createReadStream } from 'node:fs';
 import { lstat, readdir } from 'node:fs/promises';
@@ -31,6 +32,8 @@ const IGNORED_FILES = new Set([
 export interface ScopeInputs {
   mode: Mode;
   source?: string;
+  sourceMaxFiles?: number;
+  sourceMaxBytes?: number;
   analysisProfile?: import('./contracts.js').AnalysisProfile;
   url?: string;
   projectId?: string;
@@ -175,6 +178,7 @@ async function engineProvenance(inputs: ScopeInputs): Promise<ScanScope['provena
 export async function buildScanScope(inputs: ScopeInputs): Promise<ScanScope> {
   const projectId = validateProjectId(inputs.projectId);
   const analysisBudget = inputs.source ? resolveAnalysisBudget(inputs.analysisProfile) : undefined;
+  const collectionBudget = inputs.source ? resolveCollectionBudget({ maxFiles: inputs.sourceMaxFiles, maxBytes: inputs.sourceMaxBytes }) : undefined;
   const stable = {
     mode: inputs.mode,
     projectId: projectId ?? null,
@@ -182,6 +186,7 @@ export async function buildScanScope(inputs: ScopeInputs): Promise<ScanScope> {
     // it, retain the old conservative path identity for local comparisons.
     sourceRoot: projectId ? null : inputs.source ? resolve(inputs.source) : null,
     ...(analysisBudget ? { analysisBudget } : {}),
+    ...(collectionBudget ? { collectionBudget } : {}),
     url: inputs.url ?? null,
     tools: [...(inputs.tools ?? [])].sort(),
     allowPrivate: inputs.allowPrivate === true,
@@ -201,6 +206,7 @@ export async function buildScanScope(inputs: ScopeInputs): Promise<ScanScope> {
     fingerprint,
     ruleset: inputs.ruleset,
     ...(analysisBudget ? { analysisBudget } : {}),
+    ...(collectionBudget ? { collectionBudget } : {}),
     ...(projectId ? { projectId } : {}),
     ...(provenance ? { provenance } : {}),
   };

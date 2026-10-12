@@ -1,8 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createReport, toAgentReport } from '../src/report.js';
-import { projectAdviceContext } from '../src/agent-advice-context.js';
+import { ADVICE_PROJECTION_POLICY_VERSION, projectAdviceContext } from '../src/agent-advice-context.js';
 import { createApiExecutionLedger, finishApiExecutionLedger, invalidApiExecutionLedger } from '../src/api-execution.js';
+import { resolveCollectionBudget, collectionEvidence, COLLECTION_ISSUE_CODES } from '../src/source/collection-budget.js';
 import type { AgentReport, ApiRequestPlan, CheckResult } from '../src/contracts.js';
 
 const NOW = '2026-10-13T00:00:00.000Z';
@@ -115,4 +116,53 @@ test('priority and size caps retain linked checks and count every omitted row', 
   assert.equal(capped.omittedChecks, large.checks.length - capped.checks.length);
   assert.equal(capped.omittedFindings, large.findings.length - capped.findings.length);
   assert.ok(Buffer.byteLength(JSON.stringify(capped)) <= 32 * 1024);
+});
+
+
+test('collection cards keep validated bounds and aggregate reasons only, while legacy and malformed metadata remain unknown', () => {
+  const agent = report([{ id: 'source.inventory', status: 'partial', findings: [], notes: ['private-note-sentinel'] }], 'source');
+  const budget = resolveCollectionBudget({ maxFiles: 1002, maxBytes: 134217728 });
+  const evidence = collectionEvidence([{ code: 'file_limit' }, { code: 'size_limit' }]);
+  agent.checks[0].collectionBudget = budget; agent.checks[0].collectionEvidence = evidence;
+  agent.checks[0].metrics = { root: '/private/root-sentinel' };
+  const { input, referenceRoutes } = projectAdviceContext(agent, false);
+  assert.equal(input.projectionVersion, ADVICE_PROJECTION_POLICY_VERSION);
+  assert.deepEqual(input.checks[0].collectionBudget, budget);
+  assert.deepEqual(input.checks[0].collectionEvidence, evidence);
+  assert.equal(referenceRoutes.get('check:0'), 'review_static_flow_or_budget');
+  for (const secret of ['private-note-sentinel', 'root-sentinel', '"path":', '"url":']) assert.equal(JSON.stringify(input).includes(secret), false);
+  const legacy = structuredClone(agent); delete legacy.checks[0].collectionBudget; delete legacy.checks[0].collectionEvidence;
+  const unknown = projectAdviceContext(legacy, false);
+  assert.equal(unknown.input.checks[0].collectionBudget, undefined);
+  assert.equal(unknown.input.checks[0].collectionEvidence, undefined);
+  assert.equal(unknown.referenceRoutes.get('check:0'), 'review_check_diagnostics');
+  const malformed = structuredClone(agent);
+  Object.assign(malformed.checks[0].collectionBudget!, { privatePath: '/private/never-upload' });
+  Object.assign(malformed.checks[0].collectionEvidence!.issues[0], { path: '/private/never-upload' });
+  const rejected = projectAdviceContext(malformed, false);
+  assert.equal(rejected.input.checks[0].collectionBudget, undefined);
+  assert.equal(rejected.input.checks[0].collectionEvidence, undefined);
+  assert.equal(JSON.stringify(rejected.input).includes('never-upload'), false);
+  assert.equal(rejected.referenceRoutes.get('check:0'), 'review_check_diagnostics');
+  agent.checks[0].checkId = 'source.other';
+  assert.equal(projectAdviceContext(agent, false).input.checks[0].collectionBudget, undefined);
+  assert.equal(projectAdviceContext(agent, false).input.checks[0].collectionEvidence, undefined);
+});
+
+test('collection evidence remains bounded by existing card and byte caps with accurate omission accounting', () => {
+  const checks: CheckResult[] = Array.from({ length: 40 }, () => ({ id: 'source.inventory', status: 'partial', findings: [], notes: [] }));
+  const agent = report(checks, 'source');
+  for (const check of agent.checks) {
+    check.collectionBudget = resolveCollectionBudget({ maxFiles: 10000, maxBytes: 134217728 });
+    check.collectionEvidence = collectionEvidence(COLLECTION_ISSUE_CODES.map(code => ({ code })));
+  }
+  const { input, referenceRoutes } = projectAdviceContext(agent, false);
+  assert.ok(input.checks.length <= 24);
+  assert.equal(input.omittedChecks, 40 - input.checks.length);
+  assert.equal(input.omittedFindings, 0);
+  assert.ok(Buffer.byteLength(JSON.stringify(input)) <= 32 * 1024);
+  for (const check of input.checks) {
+    assert.deepEqual(check.collectionEvidence, agent.checks[check.checkIndex].collectionEvidence);
+    assert.equal(referenceRoutes.get(check.referenceId), 'review_static_flow_or_budget');
+  }
 });
