@@ -9,6 +9,7 @@ import { ADVICE_PROJECTION_POLICY_VERSION, projectAdviceContext } from '../src/a
 import { resolveCollectionBudget, collectionEvidence } from '../src/source/collection-budget.js';
 import { runProcess } from '../src/source/process.js';
 import { runDast, type DastPolicy } from '../src/dast.js';
+import type { StaticCandidateContext } from '../src/contracts.js';
 
 const testFinding = {
   ruleId: 'fixture:sql', title: 'Potential SQL injection', description: 'Synthetic owned fixture only.',
@@ -319,7 +320,7 @@ test('rejects tool events, unknown finding references/routes, malformed output, 
 });
 
 
-test('fake CLI receives collection bounds and reasons with the existing nonexecuting review route under policy 3', async () => {
+test('fake CLI preserves collection bounds and reasons with the existing nonexecuting review route under policy 4', async () => {
   const top = await mkdtemp(join(tmpdir(), 'wakeio-collection-advice-'));
   const previousKey = process.env.CODEX_API_KEY;
   try {
@@ -334,16 +335,49 @@ test('fake CLI receives collection bounds and reasons with the existing nonexecu
     const fake = await fakeCodex(top, 'capture'), out = join(top, 'advice');
     assert.equal(await adviseMain(args(reports, out, fake, 'api-key')), 0);
     const projection = JSON.parse(await readFile(join(top, 'captured-projection.json'), 'utf8'));
-    assert.equal(projection.projectionVersion, 3);
+    assert.equal(projection.projectionVersion, 4);
     assert.deepEqual(projection.checks[0].collectionBudget, budget);
     assert.deepEqual(projection.checks[0].collectionEvidence, evidence);
     assert.equal(projection.checks[0].recheckRoute, 'review_static_flow_or_budget');
     assert.equal(JSON.stringify(projection).includes('private-collection-note'), false);
     const produced = await receipt(out);
-    assert.equal(produced.policyVersion, 3);
+    assert.equal(produced.policyVersion, 4);
     assert.equal(produced.advice.recommendations[0].referenceId, 'check:0');
     assert.equal(produced.advice.recommendations[0].recheckRoute, 'review_static_flow_or_budget');
     assert.equal(produced.verified, false);
+    assert.deepEqual(await readFile(join(reports, 'report.json')), original);
+  } finally {
+    if (previousKey === undefined) delete process.env.CODEX_API_KEY; else process.env.CODEX_API_KEY = previousKey;
+    await rm(top, { recursive: true, force: true });
+  }
+});
+
+test('fake CLI policy4 receives conditional context enum metadata without source positions or new replay authority', async () => {
+  const top = await mkdtemp(join(tmpdir(), 'wakeio-conditional-advice-'));
+  const previousKey = process.env.CODEX_API_KEY;
+  try {
+    process.env.CODEX_API_KEY = 'test-only-key';
+    const context: StaticCandidateContext = { revision: 'static-context-v1', authority: 'conditional', truncated: false,
+      items: [{ kind: 'unresolved_cjs_dispatch', location: { path: 'private-dispatch-context.js', line: 12345, column: 54321 },
+        target: { path: 'private-dispatch-target.js', line: 98765, column: 56789 } }] };
+    const reports = join(top, 'reports');
+    await writeReports(createReport([{ id: 'source.builtin-ast', status: 'partial', findings: [{ ...testFinding, staticContext: context }], notes: [] }],
+      'source', '2026-10-13T00:00:00.000Z'), reports);
+    const original = await readFile(join(reports, 'report.json'));
+    const fake = await fakeCodex(top, 'capture'), out = join(top, 'advice');
+    assert.equal(await adviseMain(args(reports, out, fake, 'api-key')), 0);
+    const projection = JSON.parse(await readFile(join(top, 'captured-projection.json'), 'utf8'));
+    assert.equal(projection.projectionVersion, 4);
+    assert.deepEqual(projection.findings[0].staticContext, { authority: 'conditional', kinds: ['unresolved_cjs_dispatch'], itemCount: 1, truncated: false });
+    assert.equal(projection.findings[0].recheckRoute, 'review_static_flow_or_budget');
+    assert.equal(projection.findings[0].replayAvailable, false);
+    assert.equal(projection.scanGate.exitCode, 2);
+    for (const secret of ['private-dispatch-', '12345', '54321', '98765', '56789', '"path":', '"location":', '"target":']) assert.equal(JSON.stringify(projection).includes(secret), false, secret);
+    assert.ok(Buffer.byteLength(JSON.stringify(projection)) <= 32 * 1024);
+    const produced = await receipt(out);
+    assert.equal(produced.policyVersion, 4);
+    assert.equal(produced.verified, false);
+    assert.equal(produced.advice.recommendations[0].recheckRoute, 'review_static_flow_or_budget');
     assert.deepEqual(await readFile(join(reports, 'report.json')), original);
   } finally {
     if (previousKey === undefined) delete process.env.CODEX_API_KEY; else process.env.CODEX_API_KEY = previousKey;

@@ -1,5 +1,6 @@
 import * as ts from "typescript";
-import type { StaticFlow, AnalysisGap } from "../contracts.js";
+import type { StaticFlow, StaticCandidateContext, AnalysisGap } from "../contracts.js";
+import { mergeStaticContexts } from '../static-context.js';
 import { AnalysisGapRecorder } from "../analysis-gaps.js";
 import { FLOW_LIMITS, StaticModules, type FlowLimits, type SingletonReceiver, type CallResolution } from "./modules.js";
 import { NativeQueryModel, boundedFragments, fixedQueryDestination, type UrlFragment } from "./url-destination.js";
@@ -14,6 +15,7 @@ import type { CollectedFile } from './types.js';
 
 /** A source-to-sink use found by the bounded, same-function analysis. */
 export interface InputFlowUse {
+  staticContext?: StaticCandidateContext;
   node: ts.Node;
   kind: "assignment" | "call" | "jsx";
   argumentFlows?: Array<{ index: number; certainty: "tainted" | "unknown"; staticFlow?: StaticFlow; fixedDestination?: boolean }>;
@@ -64,6 +66,9 @@ function containResponse(value: FlowValue): void {
 }
 
 interface FlowValue {
+  staticContext?: StaticCandidateContext;
+  /** Unknown return alternatives only; never seeded into a hypothesized body. */
+  boundaryInput?: FlowValue;
   kind: "safe" | "unknown" | "tainted" | "root";
   expressResponse?: ExpressResponseState;
   /** Object/array literal type for Express default JSON serialization only. */
@@ -74,9 +79,9 @@ interface FlowValue {
   /** NoSQL-only monotonic literal/alias content; never general taint safety. */
   nosqlObject?: { node: ts.ObjectLiteralExpression; value: FlowValue; modified: boolean; closed: boolean };
   nosqlUnknown?: FlowValue;
-  callable?: { target: ts.ArrowFunction; captures: ReadonlyMap<ts.Symbol, FlowValue>; lexicalThis?: FlowValue; identity: number };
+  callable?: { target: ts.ArrowFunction; captures: ReadonlyMap<ts.Symbol, FlowValue>; lexicalThis?: FlowValue; identity: number; valid?: boolean; staticContext?: StaticCandidateContext; boundaryInput?: FlowValue };
   opaqueClosure?: FlowValue;
-  constructed?: { valid: boolean; shape: ConstructorShape; slots: Map<string, FlowValue> };
+  constructed?: { valid: boolean; shape: ConstructorShape; slots: Map<string, FlowValue>; staticContext?: StaticCandidateContext };
   nosqlWhere?: { node: ts.Node; value: FlowValue };
   mongoDb?: MongoDbRole;
   mongoCollection?: MongoCollectionRole;
@@ -138,13 +143,34 @@ function traced(value: FlowValue, node: ts.Node, role: StaticFlow["steps"][numbe
 function inheritTrace(value: FlowValue, values: readonly FlowValue[]): FlowValue {
   const evidence = values.find((candidate) => candidate.kind === "tainted" && candidate.trace?.length)
     ?? values.find((candidate) => isInputRelated(candidate) && candidate.trace?.length);
-  return evidence ? { ...value, trace: evidence.trace, traceTruncated: evidence.traceTruncated } : value;
+  const staticContext = contexts(value.staticContext, ...values.map(item => item.staticContext));
+  return { ...value, ...(evidence ? { trace: evidence.trace, traceTruncated: evidence.traceTruncated } : {}), ...(staticContext ? { staticContext } : {}) };
+}
+
+function contexts(...values: Array<StaticCandidateContext | undefined>): StaticCandidateContext | undefined {
+  return values.reduce<StaticCandidateContext | undefined>((left, right) => mergeStaticContexts(left, right), undefined);
+}
+function conditionalContext(kind: StaticCandidateContext['items'][number]['kind'], node: ts.Node, target?: ts.Node): StaticCandidateContext {
+  return { revision: 'static-context-v1', authority: 'conditional', truncated: false,
+    items: [{ kind, location: step(node, 'call').location, ...(target ? { target: step(target, 'call').location } : {}) }] };
+}
+function withContext(value: FlowValue, context?: StaticCandidateContext): FlowValue {
+  const staticContext = contexts(value.staticContext, context);
+  return staticContext ? { ...value, staticContext } : value;
+}
+function consumedInput(value: FlowValue): FlowValue {
+  return value.boundaryInput ? inheritTrace(combineValues([value, value.boundaryInput]), [value, value.boundaryInput]) : value;
+}
+function invalidateMongo(role: MongoDbRole | MongoCollectionRole | undefined, reason: 'opaque' | 'write'): void {
+  if (!role) return;
+  role.valid = false;
+  if (!role.invalidReason || role.invalidReason === 'opaque' || reason === 'write') role.invalidReason = reason;
 }
 
 function evidence(value: FlowValue, node: ts.Node): StaticFlow | undefined {
   if (!value.trace?.some((item) => item.role === "source")) return undefined;
   const output = traced(value, node, "sink");
-  return output.trace?.length ? { kind: "static_flow", steps: output.trace, truncated: output.traceTruncated ?? false } : undefined;
+  return output.trace?.length ? { kind: "static_flow", steps: output.trace, truncated: !!value.staticContext || (output.traceTruncated ?? false) } : undefined;
 }
 
 function evaluationShapedCallee(callee: ts.Expression, constructor = false): boolean {
@@ -329,8 +355,8 @@ function joinValues(left: FlowValue, right: FlowValue): FlowValue {
     // Different observed capabilities cannot certify dispatch. Retain an invalid
     // witness so consuming an unsupported union cannot silently become clean.
     const db = left.mongoDb ?? right.mongoDb, collection = left.mongoCollection ?? right.mongoCollection;
-    const mongoDb = left.mongoDb === right.mongoDb ? left.mongoDb : db ? { ...db, valid: false } : undefined;
-    const mongoCollection = left.mongoCollection === right.mongoCollection ? left.mongoCollection : collection ? { ...collection, valid: false } : undefined;
+    const mongoDb = left.mongoDb === right.mongoDb ? left.mongoDb : db ? { ...db, valid: false, invalidReason: 'ambiguous' as const } : undefined;
+    const mongoCollection = left.mongoCollection === right.mongoCollection ? left.mongoCollection : collection ? { ...collection, valid: false, invalidReason: 'ambiguous' as const } : undefined;
     return { ...result, expressResponse: joinResponse(left.expressResponse, right.expressResponse), nosqlObject: left.nosqlObject === right.nosqlObject ? left.nosqlObject : undefined, nosqlUnknown, nosqlWhere, mongoDb, mongoCollection, expressObjectBody: left.expressObjectBody === true && right.expressObjectBody === true, ...(properties ? { properties } : {}), sqlFixedText, sqlArray, sqlConfig, sqlScalarUnavailable:left.sqlScalarUnavailable || right.sqlScalarUnavailable, sqlCallback:left.sqlCallback || right.sqlCallback, sqlDataUnavailable:left.sqlDataUnavailable || right.sqlDataUnavailable, httpTargetUnavailable:httpUnavailable([left,right]), urlFragments, nativeQuery: left.nativeQuery === true && right.nativeQuery === true, queryContent: sharedQueryContent, httpConfig };
   };
   if (left.kind === right.kind && (left.kind !== "root" || left.root === right.root)) {
@@ -467,8 +493,8 @@ class FlowEnv {
       if (base.expressResponse && !benignResponseWrite) base.expressResponse.valid = false;
       const expressResponse = benignResponseWrite ? base.expressResponse : undefined;
       if (base.constructed) base.constructed.valid = false;
-      if (base.mongoDb) base.mongoDb.valid = false;
-      if (base.mongoCollection) base.mongoCollection.valid = false;
+      invalidateMongo(base.mongoDb, 'write');
+      invalidateMongo(base.mongoCollection, 'write');
       return { ...combined, expressResponse, expressObjectBody: base.expressObjectBody, properties, nosqlObject: base.nosqlObject, constructed: base.constructed, mongoDb: base.mongoDb, mongoCollection: base.mongoCollection };
     };
     this.assign(path[0], update(this.resolve(path[0]), 1));
@@ -548,7 +574,7 @@ export function observedGapLocation(node: ts.Node, files: ReadonlyMap<string, ts
 interface FunctionSummary { returned: FlowValue; }
 // Mutable content must not be reused through a cached return or skipped side effect.
 function hasMutableQuery(value: FlowValue, seen = new Set<FlowValue>(), depth = 0): boolean {
-  if (value.expressResponse || value.queryContent || value.nosqlObject || value.nosqlUnknown || value.callable || value.constructed || value.mongoDb || value.mongoCollection || seen.has(value) || depth > 16 || seen.size > 128) return true;
+  if (value.staticContext || value.boundaryInput || value.expressResponse || value.queryContent || value.nosqlObject || value.nosqlUnknown || value.callable || value.constructed || value.mongoDb || value.mongoCollection || seen.has(value) || depth > 16 || seen.size > 128) return true;
   seen.add(value);
   return [...value.properties?.values() ?? []].some((item) => hasMutableQuery(item, seen, depth + 1));
 }
@@ -647,7 +673,7 @@ class FlowSession {
 
   gap(reason: string, call?: ts.Node): void { this.incomplete(reason, call); }
 
-  closure(target: ts.ArrowFunction, env: FlowEnv, lexicalThis?: FlowValue): FlowValue['callable'] | undefined {
+  closure(target: ts.ArrowFunction, env: FlowEnv, lexicalThis?: FlowValue, staticContext?: StaticCandidateContext): FlowValue['callable'] | undefined {
     if (!this.modules.indexComplete) return undefined;
     let result = this.closureShapes.get(target);
     if (!result) { result = analyzeClosureShape(target, this.modules, () => this.tick()); this.closureShapes.set(target, result); }
@@ -661,7 +687,7 @@ class FlowSession {
       if (!captured && sourceRootForName(symbol.name)) this.incomplete('module_export_unsupported');
       captures.set(symbol, captured ?? UNKNOWN);
     }
-    return { target, captures, lexicalThis: result.shape.lexicalThis ? lexicalThis : undefined, identity: ++this.capabilityIdentity };
+    return { target, captures, lexicalThis: result.shape.lexicalThis ? lexicalThis : undefined, identity: ++this.capabilityIdentity, staticContext };
   }
 
   opaqueCaptures(target: ts.ArrowFunction, env: FlowEnv): FlowValue {
@@ -692,9 +718,15 @@ class FlowSession {
     if (shape.kind !== 'supported' || shape.shape.captures.length || shape.shape.lexicalThis) this.incomplete('module_export_unsupported');
   }
 
-  construct(node: ts.NewExpression, args: FlowValue[], env: FlowEnv): FlowValue | undefined {
-    const target = this.modules.resolveConstruct(node);
+  construct(node: ts.NewExpression, args: FlowValue[], env: FlowEnv, inheritedContext?: StaticCandidateContext): FlowValue | undefined {
+    const resolved = this.modules.resolveConstruct(node);
+    const target = resolved ?? this.modules.discoverCjsBody(node);
     if (!target) return undefined;
+    const inherited = contexts(inheritedContext, ...args.map(value => value.staticContext));
+    const staticContext = !resolved || inherited ? contexts(inherited, conditionalContext('constructor_continuation', node, target)) : undefined;
+    const snapshots = new Map<FlowValue, FlowValue>();
+    const actualFrame = args.map(value => staticContext ? this.conditionalValue(value, staticContext, 0, snapshots) : value);
+    if (staticContext) { this.gap('module_export_unsupported', node); this.invalidateActuals(args, staticContext); }
     let result = this.constructorShapes.get(target);
     if (!result) { result = analyzeConstructedShape(target, this.modules, () => this.tick()); this.constructorShapes.set(target, result); }
     if (result.kind !== 'supported') { this.incomplete('module_export_unsupported'); return undefined; }
@@ -714,31 +746,38 @@ class FlowSession {
       if (symbol.declarations?.some(declaration => declaration.pos >= target.pos && declaration.end <= target.end)) continue;
       captures.set(symbol, target.getSourceFile() === node.getSourceFile() ? env.captured(symbol) ?? UNKNOWN : UNKNOWN);
     }
-    const returned = analyzer.analyzeConstructor(result.shape, args.map(value => traced(value, node, 'call')), captures);
+    const returned = analyzer.analyzeConstructor(result.shape, actualFrame.map(value => traced(value, node, 'call')), captures, staticContext);
     this.uses.push(...analyzer.output()); this.active.delete(identity);
     if (before === this.incompleteEvents) this.functionContextsCompleted += 1; else this.functionContextsPartial += 1;
-    return returned;
+    return staticContext ? { ...returned, boundaryInput: this.returnInput(args) } : returned;
   }
 
-  callback(value: FlowValue['callable']): void {
+  callback(value: FlowValue['callable'], registration?: ts.CallExpression): void {
     if (!value || !this.modules.indexComplete) return;
     const identity = `callback:${value.target.getSourceFile().fileName}:${value.target.pos}:${value.identity}`;
     if (this.active.size >= this.limits.callDepth || this.summaryWork >= this.limits.summaryWork) { this.incomplete(this.active.size >= this.limits.callDepth ? 'depth_limit' : 'summary_limit'); return; }
     this.active.add(identity); this.summaryWork += 1; this.functionContextsStarted += 1;
     const before = this.incompleteEvents;
     const analyzer = new DataflowAnalyzer(value.target.getSourceFile(), this);
-    analyzer.analyzeFunction(value.target, undefined, undefined, false, value);
+    const staticContext = value.staticContext && registration ? contexts(value.staticContext, conditionalContext('declared_callback_entry', registration, value.target)) : value.staticContext;
+    if (staticContext) this.gap('module_export_unsupported', registration);
+    analyzer.analyzeFunction(value.target, undefined, undefined, !!staticContext, { ...value, staticContext });
     this.uses.push(...analyzer.output()); this.active.delete(identity);
     if (before === this.incompleteEvents) this.functionContextsCompleted += 1; else this.functionContextsPartial += 1;
   }
 
-  invoke(call: ts.CallExpression, args: FlowValue[], receiver?: SingletonReceiver, declaredContext = false, capability?: FlowValue['callable']): FlowValue | undefined {
+  invoke(call: ts.CallExpression, args: FlowValue[], receiver?: SingletonReceiver, declaredContext = false, capability?: FlowValue['callable'], inheritedContext?: StaticCandidateContext): FlowValue | undefined {
     const localFork = ts.isIdentifier(call.expression) && call.expression.text === 'fork';
     let proof = localFork ? this.localForkCalls.get(call) : undefined;
     if (localFork && !proof) { proof = { complete: true }; this.localForkCalls.set(call, proof); }
     const observed = (complete: boolean): void => { if (proof) proof.complete &&= complete && this.roleProofScopeComplete && this.modules.indexComplete; };
     const initial: CallResolution = capability && this.modules.indexComplete ? { kind: 'resolved' as const, target: capability.target } : this.modules.resolveCall(call,true,receiver);
-    const resolution = initial.kind === 'resolved' || initial.kind === 'declared' ? initial : this.modules.resolveCjsFunctionCall(call) ?? initial;
+    let resolution = initial.kind === 'resolved' || initial.kind === 'declared' ? initial : this.modules.resolveCjsFunctionCall(call) ?? initial;
+    let staticContext = contexts(inheritedContext, capability?.staticContext, ...args.map(value => value.staticContext));
+    if (resolution.kind !== 'resolved' && resolution.kind !== 'declared') {
+      const target = this.modules.discoverCjsBody(call);
+      if (target) { resolution = { kind: 'declared', target }; staticContext = contexts(staticContext, conditionalContext('unresolved_cjs_dispatch', call, target)); }
+    }
     if (resolution.kind !== "resolved" && resolution.kind !== "declared") {
       observed(false);
       if (["missing", "ambiguous", "module_budget", "export_unsupported"].includes(resolution.kind)) this.incomplete(`module_${resolution.kind}`, call);
@@ -746,11 +785,14 @@ class FlowSession {
       if (resolution.kind === "export_unsupported") this.unsupportedCalls += 1;
       return undefined;
     }
-    const declared = declaredContext || resolution.kind === 'declared';
+    const declared = declaredContext || resolution.kind === 'declared' || !!staticContext;
+    const snapshots = new Map<FlowValue, FlowValue>();
+    const actualFrame = args.map(value => staticContext ? this.conditionalValue(value, staticContext, 0, snapshots) : declared ? this.declaredValue(value) : value);
+    if (staticContext) { this.gap('module_export_unsupported', call); this.invalidateActuals(args, staticContext); }
     if (resolution.kind === 'declared') { this.unsupportedCalls += 1; this.incomplete('module_export_unsupported',call); observed(false); }
     else this.resolvedCalls += 1;
     const target = resolution.target;
-    const seeded = args.map((value) => traced(declared ? this.declaredValue(value) : value, call, "call"));
+    const seeded = actualFrame.map(value => traced(value, call, 'call'));
     const identity = this.invocationIdentity(target,resolution.receiver,declared) + (capability ? `:${capability.identity}` : '');
     const cacheable = !declared && !capability && !seeded.some((value) => hasMutableQuery(value));
     const key = cacheable ? `${identity}:${JSON.stringify(seeded.map((value) => contextValue(value)))}` : undefined;
@@ -769,8 +811,8 @@ class FlowSession {
     const analyzer = new DataflowAnalyzer(target.getSourceFile(), this);
     const before = this.incompleteEvents;
     this.functionContextsStarted += 1;
-    const frame = capability ? { ...capability, captures: new Map([...capability.captures].map(([symbol, value]) => [symbol, traced(value, call, 'call')])) } : undefined;
-    const returned = analyzer.analyzeFunction(target, seeded,resolution.receiver,declared,frame);
+    const frame = capability ? { ...capability, staticContext, captures: new Map([...capability.captures].map(([symbol, value]) => [symbol, traced(staticContext ? this.conditionalValue(value, staticContext) : value, call, 'call')])) } : undefined;
+    const returned = analyzer.analyzeFunction(target, seeded,resolution.receiver,declared,frame,staticContext);
     observed(this.incompleteEvents === before);
     if (this.incompleteEvents === before) this.functionContextsCompleted += 1;
     else this.functionContextsPartial += 1;
@@ -778,12 +820,79 @@ class FlowSession {
     this.uses.push(...analyzer.output());
     if (key && this.incompleteEvents === before && !hasMutableQuery(returned)) this.cache.set(key, { returned });
     if (declared) {
+      if (staticContext) {
+        const projected = this.conditionalValue(returned, staticContext);
+        const fallback = this.returnInput([...seeded, ...(capability?.boundaryInput ? [capability.boundaryInput] : [])]);
+        if (projected.callable || projected.constructed || projected.mongoDb || projected.mongoCollection) {
+          const boundaryInput = this.returnInput([...(projected.boundaryInput ? [projected.boundaryInput] : []), ...(fallback ? [fallback] : [])]);
+          return { ...projected, boundaryInput, ...(projected.callable ? { callable: { ...projected.callable, boundaryInput } } : {}) };
+        }
+        return isInputRelated(projected) ? projected : fallback ? withContext(fallback, staticContext) : projected;
+      }
       const inputReturn = isInputRelated(currentQuery(returned));
       const value = this.declaredValue(inputReturn ? returned : combineValues(seeded));
       // Returned input carries real formal/body/return steps; actuals are fallback only.
       return isInputRelated(value) ? {...value,traceTruncated: !!value.traceTruncated || seeded.some(v=>isInputRelated(v)&&!!v.traceTruncated)} : value;
     }
     return resolution.receiver || capability ? this.receiverReturned(returned) : this.sqlReturned(target, returned);
+  }
+
+  private returnInput(values: readonly FlowValue[]): FlowValue | undefined {
+    const inputs = values.map(consumedInput).filter(isInputRelated);
+    return inputs.length ? combineValues(inputs) : undefined;
+  }
+
+  /** Unknown call effects are applied even when a possible body is inspected. */
+  invalidateActuals(values: readonly FlowValue[], staticContext?: StaticCandidateContext): void {
+    const seen = new Set<FlowValue>();
+    const visit = (value: FlowValue, depth: number): void => {
+      if (!this.tick() || seen.has(value)) return;
+      if (depth > this.limits.callDepth) { this.gap('alias_limit'); return; }
+      seen.add(value);
+      invalidateMongo(value.mongoDb, 'opaque'); invalidateMongo(value.mongoCollection, 'opaque');
+      if (value.constructed) { value.constructed.valid = false; value.constructed.staticContext = contexts(value.constructed.staticContext, staticContext); for (const slot of value.constructed.slots.values()) visit(slot, depth + 1); }
+      if (value.callable) { value.callable.valid = false; value.callable.staticContext = contexts(value.callable.staticContext, staticContext); for (const captured of value.callable.captures.values()) visit(captured, depth + 1); if (value.callable.lexicalThis) visit(value.callable.lexicalThis, depth + 1); }
+      // Preserve a previously recognized response shape, but no MIME exclusion.
+      // Concrete member writes already invalidate the shared response separately.
+      if (value.expressResponse) value.expressResponse.mime = 'unknown';
+      if (value.nosqlObject) { value.nosqlObject.modified = true; value.nosqlObject.value = combineValues([value.nosqlObject.value, ...values.map(consumedInput)]); }
+      for (const child of value.properties?.values() ?? []) visit(child, depth + 1);
+    };
+    for (const value of values) visit(value, 0);
+  }
+
+  /** Origin is retained; safety is discarded. Conditional authority is orthogonal to taint certainty. */
+  conditionalValue(value: FlowValue, staticContext: StaticCandidateContext, depth = 0, seen = new Map<FlowValue, FlowValue>()): FlowValue {
+    if (!this.tick() || depth > this.limits.callDepth) { this.gap('alias_limit'); return withContext(isInputRelated(value) ? inheritTrace(UNKNOWN_INPUT, [value]) : UNKNOWN, staticContext); }
+    const known = seen.get(value); if (known) return known;
+    const current = currentQuery(value);
+    const result: FlowValue = withContext({ kind: isInputRelated(current) ? current.kind : 'unknown', root: current.root,
+      inputRelated: current.inputRelated, trace: current.trace, traceTruncated: current.traceTruncated,
+      sqlScalarUnavailable: true, httpTargetUnavailable: true, sqlDataUnavailable: true }, staticContext);
+    seen.set(value, result);
+    if (result.staticContext?.truncated) this.gap('module_export_unsupported');
+    const project = (child: FlowValue) => this.conditionalValue(child, staticContext, depth + 1, seen);
+    if (value.properties) result.properties = new Map([...value.properties].map(([name, child]) => [name, project(child)]));
+    if (value.nosqlWhere) result.nosqlWhere = { node: value.nosqlWhere.node, value: project(value.nosqlWhere.value) };
+    if (value.nosqlUnknown) result.nosqlUnknown = project(value.nosqlUnknown);
+    if (value.mongoDb && value.mongoDb.conditionalOrigin !== false && !['write', 'ambiguous'].includes(value.mongoDb.invalidReason ?? '')) {
+      result.mongoDb = value.mongoDb;
+      result.staticContext = contexts(result.staticContext, conditionalContext('unqualified_mongo_origin', value.mongoDb.origin));
+    } else if (value.mongoDb) this.gap('module_export_unsupported');
+    if (value.mongoCollection && value.mongoCollection.db.conditionalOrigin !== false && !['write', 'ambiguous'].includes(value.mongoCollection.invalidReason ?? '')
+      && !['write', 'ambiguous'].includes(value.mongoCollection.db.invalidReason ?? '')) {
+      result.mongoCollection = value.mongoCollection;
+      result.staticContext = contexts(result.staticContext, conditionalContext('unqualified_mongo_origin', value.mongoCollection.origin));
+    } else if (value.mongoCollection) this.gap('module_export_unsupported');
+    if (value.constructed?.valid) {
+      result.constructed = { ...value.constructed, staticContext: contexts(value.constructed.staticContext, staticContext), slots: new Map() };
+      for (const [name, slot] of value.constructed.slots) result.constructed.slots.set(name, project(slot));
+    }
+    if (value.callable && value.callable.valid !== false) result.callable = { ...value.callable, staticContext: contexts(value.callable.staticContext, staticContext),
+      captures: new Map([...value.callable.captures].map(([symbol, child]) => [symbol, project(child)])), lexicalThis: value.callable.lexicalThis ? project(value.callable.lexicalThis) : undefined };
+    if (value.opaqueClosure) result.opaqueClosure = project(value.opaqueClosure);
+    if (value.boundaryInput) result.boundaryInput = project(value.boundaryInput);
+    return result;
   }
 
   private invocationIdentity(target: ts.FunctionLikeDeclaration, receiver?: SingletonReceiver, declared=false): string {
@@ -850,12 +959,23 @@ class DataflowAnalyzer {
   /** Lookup selected callable values without replaying arbitrary callee expressions. */
   private capabilityValue(expression: ts.Expression, env: FlowEnv): FlowValue {
     if (!this.session?.modules.indexComplete) return UNKNOWN;
-    if (ts.isIdentifier(expression)) return env.has(expression.text) ? env.resolve(expression.text) : UNKNOWN;
+    if (ts.isIdentifier(expression)) {
+      const value = env.has(expression.text) ? env.resolve(expression.text) : UNKNOWN;
+      return value.callable?.valid === false ? { ...UNKNOWN, staticContext: value.staticContext,
+        opaqueClosure: { ...combineValues([...value.callable.captures.values(), ...(value.boundaryInput ? [value.boundaryInput] : [])]), traceTruncated: true } } : value;
+    }
     if (expression.kind === ts.SyntaxKind.ThisKeyword) return this.constructedReceiver ?? UNKNOWN;
     if (ts.isPropertyAccessExpression(expression)) {
       const receiver = this.capabilityValue(expression.expression, env);
-      if (receiver.constructed) return receiver.constructed.valid ? receiver.constructed.slots.get(expression.name.text) ?? UNKNOWN
-        : receiver.constructed.slots.has(expression.name.text) ? { ...UNKNOWN, opaqueClosure: UNKNOWN } : UNKNOWN;
+      if (receiver.constructed) {
+        if (!receiver.constructed.valid) return receiver.constructed.slots.has(expression.name.text)
+          ? { ...UNKNOWN, staticContext: contexts(receiver.staticContext, receiver.constructed.staticContext), opaqueClosure: receiver.boundaryInput ?? UNKNOWN } : UNKNOWN;
+        const selected = receiver.constructed.slots.get(expression.name.text) ?? UNKNOWN;
+        const staticContext = contexts(receiver.staticContext, receiver.constructed.staticContext, selected.staticContext);
+        const boundaryInput = receiver.boundaryInput ?? selected.boundaryInput;
+        return { ...withContext(selected, staticContext), boundaryInput,
+          ...(selected.callable ? { callable: { ...selected.callable, staticContext: contexts(selected.callable.staticContext, staticContext), boundaryInput } } : {}) };
+      }
       return receiver.properties?.get(expression.name.text) ?? UNKNOWN;
     }
     if (ts.isCallExpression(expression)) return this.callableActuals.get(expression)?.env === env ? this.callableActuals.get(expression)!.value ?? UNKNOWN : UNKNOWN;
@@ -864,10 +984,23 @@ class DataflowAnalyzer {
   }
   private receiver?: SingletonReceiver;
   private declared = false;
+  private staticContext?: StaticCandidateContext;
 
   constructor(private readonly sourceFile: ts.SourceFile, private readonly session?: FlowSession) {}
 
-  output(): InputFlowUse[] { return this.uses; }
+  output(): InputFlowUse[] {
+    return this.uses.map(use => {
+      const staticContext = contexts(this.staticContext, use.staticContext);
+      if (!staticContext) return use;
+      if (staticContext.truncated) this.session?.gap('module_export_unsupported', use.node);
+      const conditionalFlow = (flow: StaticFlow | undefined) => flow ? { ...flow, truncated: true } : undefined;
+      return { ...use, staticContext,
+        argumentFlows: use.argumentFlows?.map(flow => ({ ...flow, certainty: 'unknown' as const, fixedDestination: false, staticFlow: conditionalFlow(flow.staticFlow) })),
+        ...(use.nosqlRole ? { nosqlRole: { ...use.nosqlRole, certainty: 'unknown' as const, staticFlow: conditionalFlow(use.nosqlRole.staticFlow) } } : {}),
+        ...(use.sqlRole ? { sqlRole: { ...use.sqlRole, certainty: 'unknown' as const, staticFlow: conditionalFlow(use.sqlRole.staticFlow) } } : {}),
+        ...(use.httpRole ? { httpRole: { ...use.httpRole, certainty: 'unknown' as const, staticFlow: conditionalFlow(use.httpRole.staticFlow) } } : {}) };
+    });
+  }
   analyzeTopLevel(): void { this.analyzeStatements(this.sourceFile.statements, new FlowEnv()); }
 
   run(): InputFlowUse[] {
@@ -882,8 +1015,10 @@ class DataflowAnalyzer {
     return this.uses;
   }
 
-  analyzeFunction(functionLike: ts.FunctionLikeDeclaration, actuals?: readonly FlowValue[], receiver?: SingletonReceiver, declared=false, capability?: FlowValue['callable']): FlowValue {
-    this.receiver=receiver; this.declared=declared;
+  analyzeFunction(functionLike: ts.FunctionLikeDeclaration, actuals?: readonly FlowValue[], receiver?: SingletonReceiver, declared=false, capability?: FlowValue['callable'], inheritedContext?: StaticCandidateContext): FlowValue {
+    this.staticContext = contexts(inheritedContext, capability?.staticContext);
+    if (this.staticContext?.truncated) this.session?.gap('module_export_unsupported', functionLike);
+    this.receiver=receiver; this.declared=declared || !!this.staticContext;
     const env = new FlowEnv();
     if (!actuals && !capability && ts.isArrowFunction(functionLike)) this.session?.declaredOwnedRoot(functionLike);
     this.constructedReceiver = capability?.lexicalThis;
@@ -915,12 +1050,13 @@ class DataflowAnalyzer {
     return values.length ? values.reduce(joinValues) : UNKNOWN;
   }
 
-  analyzeConstructor(shape: ConstructorShape, args: readonly FlowValue[], captures: ReadonlyMap<ts.Symbol, FlowValue>): FlowValue {
+  analyzeConstructor(shape: ConstructorShape, args: readonly FlowValue[], captures: ReadonlyMap<ts.Symbol, FlowValue>, staticContext?: StaticCandidateContext): FlowValue {
+    this.staticContext = staticContext; this.declared = !!staticContext;
     const env = new FlowEnv();
     for (const [symbol, value] of captures) env.declare(symbol.name, value, true, symbol);
     for (const [index, parameter] of shape.target.parameters.entries()) this.declareBinding(parameter.name, traced(args[index] ?? UNKNOWN, parameter, 'parameter'), env, true);
-    this.constructedReceiver = { ...UNKNOWN, constructed: { valid: true, shape, slots: new Map() } };
-    this.constructorGuards = new Set(shape.guards);
+    this.constructedReceiver = { ...UNKNOWN, staticContext, constructed: { valid: true, shape, slots: new Map(), staticContext } };
+    this.constructorGuards = staticContext ? undefined : new Set(shape.guards);
     this.analyzeStatement(shape.target.body!, env);
     return this.constructedReceiver;
   }
@@ -928,7 +1064,7 @@ class DataflowAnalyzer {
   private declareParameter(parameter: ts.ParameterDeclaration, env: FlowEnv): void {
     if (ts.isIdentifier(parameter.name)) {
       const root = sourceRootForName(parameter.name.text);
-      this.declareBinding(parameter.name, root ? rootValue(root) : UNKNOWN, env, true);
+      this.declareBinding(parameter.name, withContext(root ? rootValue(root) : UNKNOWN, this.staticContext), env, true);
       return;
     }
     // Next route handlers commonly destructure the second context parameter
@@ -1251,7 +1387,8 @@ class DataflowAnalyzer {
       const mongoCollection = this.session?.mongoModel.collection(expression, response?.mongoDb);
       // Preserve operand order in this syntax-shaped lane: later writes cannot replace earlier actual evidence.
       const orderedActuals = evaluationShapedCallee(callee) || this.session?.nosqlModel.bound(expression) === true || !!selectedCallable.callable || !!selectedCallable.opaqueClosure
-        || this.session?.mongoModel.selector(expression, response?.mongoCollection) === true || this.session?.modules.localCallable(expression) === true || this.session?.modules.resolveCjsFunctionCall(expression)?.kind === 'resolved';
+        || this.session?.mongoModel.selector(expression, response?.mongoCollection) === true || this.session?.modules.localCallable(expression) === true || this.session?.modules.resolveCjsFunctionCall(expression)?.kind === 'resolved'
+        || !!this.session?.modules.discoverCjsBody(expression);
       const args = orderedActuals ? expression.arguments.map(argument => {
         this.analyzeExpression(argument, env);
         return this.evalExpression(argument, env);
@@ -1279,7 +1416,7 @@ class DataflowAnalyzer {
       const callable = selectedCallable.callable;
       if (selectedCallable.opaqueClosure) this.session?.gap('module_export_unsupported', expression);
       const applied = mongoCollection ? { ...UNKNOWN, mongoCollection } : selectedCallable.opaqueClosure ? traced({ ...selectedCallable.opaqueClosure, traceTruncated: true }, expression, 'call')
-        : this.session?.invoke(expression, args,this.receiver,this.declared,callable);
+        : this.session?.invoke(expression, args,this.receiver,this.declared,callable,this.staticContext);
       const invoked = applied?.kind === 'unknown' && !applied.inputRelated && !applied.constructed && !applied.callable && !applied.mongoCollection && !applied.mongoDb && args.some(isInputRelated)
         ? { ...traced(inheritTrace(UNKNOWN_INPUT, args), expression, 'call'), traceTruncated: true, httpTargetUnavailable: httpUnavailable([applied, ...args]) } : applied;
       if (invoked || selectedCallable.opaqueClosure) this.callableActuals.set(expression, { env, value: invoked });
@@ -1297,14 +1434,14 @@ class DataflowAnalyzer {
               value.nosqlObject.modified = true;
             }
             if (value.constructed) value.constructed.valid = false;
-            if (value.mongoDb) value.mongoDb.valid = false;
-            if (value.mongoCollection) value.mongoCollection.valid = false;
+            invalidateMongo(value.mongoDb, 'opaque');
+            invalidateMongo(value.mongoCollection, 'opaque');
             for (const child of value.properties?.values() ?? []) invalidate(child, depth + 1);
           };
           for (const value of args) invalidate(value);
         }
         for (const value of args) {
-          if (value.callable) this.session?.callback(value.callable);
+          if (value.callable) this.session?.callback(value.callable, expression);
           else if (value.opaqueClosure) this.session?.gap('module_export_unsupported', expression);
         }
         if (responseState?.valid && ts.isPropertyAccessExpression(callee)
@@ -1312,7 +1449,7 @@ class DataflowAnalyzer {
       }
       const argumentFlows: NonNullable<InputFlowUse["argumentFlows"]> = [];
       for (let index = 0; index < expression.arguments.length; index += 1) {
-        const value = args[index];
+        const value = consumedInput(args[index]);
         if (isInputRelated(value)) argumentFlows.push({ index, certainty: !this.declared && value.kind === "tainted" ? "tainted" : "unknown", staticFlow: evidence(value, expression), fixedDestination: !this.declared && fixedQueryDestination(value.urlFragments) });
       }
       const responseMethod = ts.isPropertyAccessExpression(callee) ? callee.name.text : undefined;
@@ -1324,9 +1461,10 @@ class DataflowAnalyzer {
       const htmlResponseMime = htmlResponse && responseState?.mime !== "non_html" ? responseState?.mime : undefined;
       const httpRole = this.httpRole(expression, args[0]);
       const sqlRole = this.sqlRole(expression, args);
-      const nosqlRole = this.nosqlRole(expression, args[0], response?.mongoCollection);
+      const nosqlRole = this.nosqlRole(expression, args[0] ? consumedInput(args[0]) : undefined, response?.mongoCollection);
       const forkRole = this.session?.forkModel.role(expression);
       if (argumentFlows.length > 0 || httpRole || sqlRole || nosqlRole || forkRole) this.uses.push({ node: expression, kind: "call", argumentFlows,
+        staticContext: contexts(this.staticContext, selectedCallable.staticContext, response?.staticContext, ...args.map(value => value.staticContext)),
         localCall: this.session?.modules.localCallable(expression), ...(htmlResponse ? { htmlResponse, htmlResponseMime } : {}), ...(httpRole ? { httpRole } : {}), ...(sqlRole ? { sqlRole } : {}), ...(nosqlRole ? { nosqlRole } : {}), ...(forkRole ? { forkRole } : {}), localForkCall: this.session?.localForkCalls.get(expression) });
       return;
     }
@@ -1355,11 +1493,11 @@ class DataflowAnalyzer {
           // Capture actual body before later options can reassign its binding.
           if (htmlResponse && index === 0) responseBody = this.evalExpression(argument, env);
         }
-        const value = this.session?.construct(expression, values, env);
+        const value = this.session?.construct(expression, values, env, this.staticContext);
         if (value) this.constructedActuals.set(expression, { env, value });
         else for (const actual of values) {
-          if (actual.mongoDb) actual.mongoDb.valid = false;
-          if (actual.mongoCollection) actual.mongoCollection.valid = false;
+          invalidateMongo(actual.mongoDb, 'opaque');
+          invalidateMongo(actual.mongoCollection, 'opaque');
         }
         if (responseBody && isInputRelated(responseBody)) this.uses.push({ node: expression, kind: "call", htmlResponse: "web",
           argumentFlows: [{ index: 0, certainty: !this.declared && responseBody.kind === "tainted" ? "tainted" : "unknown", staticFlow: evidence(responseBody, expression) }] });
@@ -1560,6 +1698,10 @@ class DataflowAnalyzer {
     const model = this.session?.nosqlModel;
     const mongoBound = this.session?.mongoModel.selector(call, mongo) === true;
     if ((!model?.bound(call) && !mongoBound) || !selector) return undefined;
+    if ((this.staticContext || selector.staticContext) && mongoBound
+      && (mongo!.db.conditionalOrigin === false || ['write', 'ambiguous'].includes(mongo!.invalidReason ?? '') || ['write', 'ambiguous'].includes(mongo!.db.invalidReason ?? ''))) {
+      this.session?.gap('module_export_unsupported', call); return undefined;
+    }
     let modified = false;
     const current = (value: FlowValue, depth = 0): FlowValue => {
       if (!this.session?.tick()) return value;
@@ -1577,7 +1719,7 @@ class DataflowAnalyzer {
     const candidate = (value: FlowValue, outcome: NoSqlRoleUse['outcome']): NoSqlRoleUse => ({ inputRelated: true, outcome, api,
       certainty: !this.declared && value.kind === 'tainted' && outcome !== 'unknown_role' ? 'tainted' : 'unknown',
       staticFlow: evidence(value, call) });
-    if (this.declared || !(mongoBound ? mongo!.valid && mongo!.db.valid : model!.qualified(call)) || modified) {
+    if (this.declared || selector.staticContext || !(mongoBound ? mongo!.valid && mongo!.db.valid : model!.qualified(call)) || modified) {
       if (mongoBound) this.session?.gap('module_export_unsupported', call);
       if (selector.nosqlWhere && isInputRelated(selector.nosqlWhere.value)) return { ...candidate(selector.nosqlWhere.value, 'unknown_role'), operatorNode: selector.nosqlWhere.node };
       return candidate(observed, 'unknown_role');
@@ -1813,7 +1955,7 @@ class DataflowAnalyzer {
       if (applied?.env === env) return applied.value ?? UNKNOWN;
       const observed = this.evaluationActuals.get(expression);
       const args = observed?.env === env ? observed.values : expression.arguments.map((argument) => this.evalExpression(argument, env));
-      const returned = this.session?.invoke(expression, args,this.receiver,this.declared,this.capabilityValue(expression.expression, env).callable);
+      const returned = this.session?.invoke(expression, args,this.receiver,this.declared,this.capabilityValue(expression.expression, env).callable,this.staticContext);
       if (returned) {
         // Unmodelled captures/opaque returns cannot erase a prior input candidate.
         if (returned.kind === "unknown" && !returned.inputRelated && !returned.constructed && !returned.callable && !returned.mongoCollection && !returned.mongoDb && args.some(isInputRelated)) {
@@ -1867,8 +2009,8 @@ class DataflowAnalyzer {
     if (ts.isSpreadElement(expression)) return this.evalExpression(expression.expression, env);
     if (ts.isArrowFunction(expression)) {
       if (!this.session?.modules.indexComplete) return { ...SAFE, sqlCallback: true };
-      const callable = this.session?.closure(expression, env, this.constructedReceiver);
-      return { ...SAFE, sqlCallback: true, callable, ...(!callable && this.session ? { opaqueClosure: this.session.opaqueCaptures(expression, env) } : {}) };
+      const callable = this.session?.closure(expression, env, this.constructedReceiver, this.staticContext);
+      return { ...SAFE, staticContext: this.staticContext, sqlCallback: true, callable, ...(!callable && this.session ? { opaqueClosure: this.session.opaqueCaptures(expression, env) } : {}) };
     }
     if (ts.isFunctionExpression(expression)) return {...SAFE,sqlCallback:true};
     if (ts.isClassExpression(expression)) return SAFE;
@@ -1890,6 +2032,14 @@ export function findSnapshotInputFlows(files: readonly ts.SourceFile[], limits: 
 } {
   const session = new FlowSession(files, limits, parseErrorCount, roleProofScopeComplete, parseFiles, metadata);
   session.run(files);
+  const sourceContexts = new Map<ts.Node, StaticCandidateContext>();
+  for (const use of session.uses) {
+    if (!use.staticContext) continue;
+    if (!session.tick()) break;
+    const merged = contexts(sourceContexts.get(use.node), use.staticContext)!;
+    sourceContexts.set(use.node, merged);
+    if (merged.truncated) session.gap('module_export_unsupported', use.node);
+  }
   return { uses: session.uses, reasons: [...session.reasons].sort(), analysisGaps: session.diagnostics.result(), metrics: {
     flowModel: "bounded-static-local-relative-v1", budgetModel: "shared-index-separate-flow-v1", entrySeedModel: "request_shaped_uncalled_exported_or_callback_escaped_function",
     expressEntryModel: 'lexical-express-registration-v1',

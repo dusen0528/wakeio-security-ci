@@ -67,7 +67,8 @@ or scope-limitation review. It contains no source text, commands or installation
 authority. Sanitised location syntax is not authentication of source truth.
 Every projection treats incoming report data as untrusted. Original report JSON,
 SARIF results/rules/code flows, scan gate, scope, coverage and finding verification
-are unchanged; the source ruleset remains `.7`.
+retain their evidence boundaries. Conditional-body semantics use source ruleset
+`2026-10-13.1`, so source CLI scope identity differs from older rulesets.
 
 ## API execution navigation
 
@@ -141,6 +142,24 @@ handle documented roles without treating any static position as runtime proof.
 no trace is available. JSON, SARIF, Markdown and the agent projection share this
 sanitised evidence. See [the bounded source flow contract](source-flow.md).
 No runtime trace, PoC, executable remediation recipe, or command is invented.
+An optional `evidence.staticContext` copies the finding's bounded conditional
+body/entry hypotheses (`static-context-v1`, at most eight items), separately
+from `staticFlow.steps`. Its fixed kinds describe unresolved CommonJS dispatch,
+constructor continuation, declared callback entry or an unqualified Mongo
+origin. Each item has a safe relative observed position and may identify an
+observed target position; neither position proves execution. Conditional
+findings remain low-confidence candidates, and an available legacy trace is
+`static_truncated` even if all contributing trace positions were retained.
+`staticContext.truncated` separately records omitted context evidence. Legacy
+absence stays unknown and does not certify closed dispatch.
+
+JSON, local agent JSON, Markdown and SARIF retain this metadata. Raw comparison
+input with malformed present context is rejected. The report sanitizer may
+omit unusable context data, but retains a low candidate and partial check;
+re-sanitizing it cannot restore completion. The first-read summary therefore
+retains the incomplete execution status and any supplied typed gaps. Context
+appearance, removal or change prevents a comparable disappearance/fix claim.
+See [conditional source context](source-conditional-context.md).
 `verification.state` is `not_run`, `vulnerabilityConfirmed` is false, and
 `remediation.state` is `not_verified`. Static findings disappearing in a later
 scan do not establish a verified repair. Independent before/after security and
