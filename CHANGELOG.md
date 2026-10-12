@@ -28,6 +28,11 @@
   now prepared only when that policy allows an OpenAPI run; previously a fork
   pull request or an unlisted origin with consent set still downloaded them.
   The main step still records every refusal.
+- Add `--allowed-origin ORIGIN` (repeatable, up to 16) to the CLI, matching the
+  DAST Action `allowed-origins` input. When set, `--url` and `--api-base` outside
+  the list are usage errors before any DNS lookup or request, and an API policy
+  whose `baseUrl` is outside it records an `api.authorization` error without
+  sending a request. Without the option, behaviour is unchanged.
 
 - Add opt-in two-round verification for the existing owned synthetic API fixtures.
   Preserve every phase report and earlier observations; inconsistent repeats,
