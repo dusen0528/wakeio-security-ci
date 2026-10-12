@@ -6,7 +6,7 @@
 
 Wakeio Security CI 是一个免费的开源 CLI 和 GitHub Action。它让开发者用同一套结果格式检查自己的代码、公开 URL 和只读 API 测试。使用时不需要 Wakeio 账号、订阅、托管 Wakeio 服务或 AI token。
 
-当前版本是 **0.4.0-dev.1 开发预览版**。目标仓库是 [`dusen0528/wakeio-security-ci`](https://github.com/dusen0528/wakeio-security-ci) 的 `main` 分支。项目还没有发布到 npm，因此请不要假设可以从 registry 使用 `npx` 或安装 npm 包。请先使用经过审查的 Git checkout。
+GitHub 源码版本为 **0.5.0**，npm 已发布的最新版本为 **0.4.0**。要使用 0.5.0 的新功能，请从 [`dusen0528/wakeio-security-ci`](https://github.com/dusen0528/wakeio-security-ci) 获取经过审查的 Git checkout，并运行 `npm run build`。npm 0.5.0 尚未发布。功能和发布状态的详细说明请参阅[英文版](README.md)或[韩文版](README.ko.md)。
 
 ## 可以检查什么
 
