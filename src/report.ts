@@ -3,6 +3,7 @@ import { types as utilTypes } from "node:util";
 import { sanitiseApiExecutionLedger, invalidApiExecutionLedger } from "./api-execution.js";
 import { redactSecrets, safeRelativePath, safeHttpUrl } from './report-path.js';
 import { sanitiseAnalysisBudget } from './source/analysis-budget.js';
+import { sanitiseCollectionBudget, sanitiseCollectionEvidence } from './source/collection-budget.js';
 import { sanitiseApiStateEvidence } from './api-state-observer.js';
 import { projectReportSummary } from './report-summary.js';
 import { createHash } from 'node:crypto';
@@ -16,6 +17,8 @@ import type {
   ApiExecutionLedger,
   ApiRequestPlanStep,
   CheckResult,
+  CollectionBudget,
+  CollectionEvidence,
   FailOn,
   Finding,
   FindingControlOutcome,
@@ -269,6 +272,8 @@ function projectAgentReport(report: ScanReport, failOn: FailOn): AgentReport {
       notes: check.notes,
       ...(check.metrics ? { metrics: check.metrics } : {}),
       ...(check.analysisBudget ? { analysisBudget: check.analysisBudget } : {}),
+      ...(check.collectionBudget ? { collectionBudget: check.collectionBudget } : {}),
+      ...(check.collectionEvidence ? { collectionEvidence: check.collectionEvidence } : {}),
       ...(check.analysisGaps ? { analysisGaps: check.analysisGaps } : {}),
       ...(check.apiStateEvidence ? { apiStateEvidence: check.apiStateEvidence } : {}),
       ...(check.apiExecution ? { apiExecution: check.apiExecution } : {}),
@@ -423,6 +428,8 @@ export function toSarif(report: ScanReport): SarifLog {
           category: `wakeio-security-ci/${safeReport.mode}`,
           schemaVersion: safeReport.schemaVersion,
           ...(safeReport.scope?.analysisBudget ? { analysisBudget: safeReport.scope.analysisBudget } : {}),
+          ...(safeReport.scope?.collectionBudget ? { collectionBudget: safeReport.scope.collectionBudget } : {}),
+          ...(safeReport.checks.some(check => check.collectionBudget || check.collectionEvidence) ? { collectionInventories: safeReport.checks.flatMap((check, checkIndex) => check.collectionBudget || check.collectionEvidence ? [{ checkIndex, checkId: check.id, ...(check.collectionBudget ? { collectionBudget: check.collectionBudget } : {}), ...(check.collectionEvidence ? { collectionEvidence: check.collectionEvidence } : {}) }] : []) } : {}),
           ...(safeReport.checks.some(check => check.analysisBudget) ? { analysisBudgets: safeReport.checks.flatMap((check, checkIndex) => check.analysisBudget ? [{ checkIndex, checkId: check.id, analysisBudget: check.analysisBudget }] : []) } : {}),
           ...(safeReport.checks.some(check => check.apiExecution) ? {
             apiExecution: safeReport.checks.flatMap((check, checkIndex) => check.apiExecution
@@ -466,6 +473,7 @@ export function toMarkdown(report: ScanReport, failOn: FailOn = 'high'): string 
       ...(safeReport.scope.projectId ? [`- Project ID: ${markdownInline(safeReport.scope.projectId)}`] : []),
     );
     if (safeReport.scope.analysisBudget) lines.push(`- AST analysis budget: ${budgetText(safeReport.scope.analysisBudget)}`);
+    if (safeReport.scope.collectionBudget) lines.push(`- Collection budget: ${collectionBudgetText(safeReport.scope.collectionBudget)}`);
     if (safeReport.scope.provenance) {
       const provenance = safeReport.scope.provenance;
       if (provenance.sourceContentHash) lines.push('- Source content hash: recorded as provenance; it does not define comparison scope.');
@@ -485,6 +493,8 @@ export function toMarkdown(report: ScanReport, failOn: FailOn = 'high'): string 
     for (const check of safeReport.checks) {
       lines.push(`- **${markdownInline(check.id)}**: ${markdownInline(check.status)}`);
       if (check.analysisBudget) lines.push(`  - AST analysis budget: ${budgetText(check.analysisBudget)}`);
+      if (check.collectionBudget) lines.push(`  - Collection budget: ${collectionBudgetText(check.collectionBudget)}`);
+      if (check.collectionEvidence) lines.push(...markdownCollectionEvidence(check.collectionEvidence));
       for (const note of check.notes) {
         lines.push(`  - Note: ${markdownInline(note)}`);
       }
@@ -580,7 +590,8 @@ function markdownSummary(summary: ReportSummary): string[] {
   ];
   for (const check of summary.incompleteChecks) {
     lines.push(`- Incomplete check [${check.checkIndex}] ${markdownInline(check.checkId)}: ${check.status}.`);
-    if (!check.analysisGaps) lines.push('  - Cause: unknown; only the check status is available.');
+    if (check.collectionEvidence) lines.push(...markdownCollectionEvidence(check.collectionEvidence));
+    else if (!check.analysisGaps) lines.push('  - Cause: unknown; only the check status is available.');
     else {
       const gaps = check.analysisGaps;
       lines.push(`  - Recorded gap accounting: ${gaps.accounting}; observed=${gaps.eventsObserved ?? 'unknown'}, dropped=${gaps.eventsDropped ?? 'unknown'}, truncated=${gaps.truncated}.`);
@@ -597,10 +608,13 @@ function markdownSummary(summary: ReportSummary): string[] {
   }
   if (summary.omittedIncompleteChecks) lines.push(`- ${summary.omittedIncompleteChecks} incomplete checks omitted from this summary; see Checks.`);
   if (summary.scope.analysisProfile) lines.push(`- AST workload selection: ${summary.scope.analysisProfile} (${summary.scope.analysisBudgetRevision}).`);
+  if (summary.scope.collectionBudget) lines.push(`- Collection workload selection: ${collectionBudgetText(summary.scope.collectionBudget)}`);
+  if (summary.scope.collectionBudgetConsistency) lines.push(`- Collection budget identity against declared scope: ${summary.scope.collectionBudgetConsistency}. This identity does not change the scan execution gate.`);
+  if (summary.scope.collectionEvidence?.issues.some(issue => issue.code === 'unsupported_file')) lines.push('- Source file exclusions: unsupported_file was observed; completed checks do not establish whole-project coverage.');
   lines.push(`- Declared scope: ${summary.scope.mode}; tool selection=${summary.scope.toolSelection}; whole-project coverage=${summary.scope.wholeProjectCoverage}.`,
     ...(summary.scope.ruleset ? [`- Declared ruleset: ${markdownInline(summary.scope.ruleset)}; fingerprint=${summary.scope.fingerprint}.`] : []));
   const next = summary.nextRead;
-  lines.push(`- Next read: ${next.kind}${next.checkIndex !== undefined ? `; check [${next.checkIndex}] ${markdownInline(next.checkId!)}` : ''}${next.location ? `; ${markdownInline(next.location.path)}:${next.location.line}:${next.location.column}` : ''}.`,
+  lines.push(`- Next read: ${next.kind}${next.collectionReason ? `; collection reason=${next.collectionReason}` : ''}${next.checkIndex !== undefined ? `; check [${next.checkIndex}] ${markdownInline(next.checkId!)}` : ''}${next.location ? `; ${markdownInline(next.location.path)}:${next.location.line}:${next.location.column}` : ''}.`,
     '- This is a review enum, not authority to run commands, install dependencies or upload source.',
     '- Scan gate is separate from delivery/final process exit. This summary does not confirm a vulnerability, verified fix or whole-project safety.');
   return lines;
@@ -612,6 +626,19 @@ function markdownGapReasons(summary: AnalysisGapReasonSummary | undefined): stri
   return ['', 'Recorded reason observations (weighted events, not unique sites or coverage). Dropped observations lack retained location items.', '',
     '| Reason | Observed | Dropped |', '| --- | ---: | ---: |',
     ...summary.rows.map(row => `| ${markdownInline(row.reason)} | ${row.eventsObserved} | ${row.eventsDropped} |`), ''];
+}
+
+function collectionBudgetText(budget: CollectionBudget): string {
+  const limits = budget.limits;
+  return `${budget.revision}; max files=${limits.maxFiles}, total bytes=${limits.maxBytes}, per-file bytes=${limits.maxFileBytes}, directory entries=${limits.maxEntries}. Declared selection limits, not coverage proof.`;
+}
+
+function markdownCollectionEvidence(evidence: CollectionEvidence): string[] {
+  return [`  - Collection diagnostics: ${evidence.issueCount} recorded issues; ${evidence.issues.map(issue => `${issue.code}=${issue.count}`).join(', ') || 'none'}.`,
+    ...(evidence.issueCount === 0 ? ['  - No typed collection issue was recorded.'] : []),
+    ...(evidence.issues.some(issue => issue.code === 'file_limit') ? ['  - file_limit can mean a file count, traversal or directory-depth limit; review the collection diagnostics and selected budget.'] : []),
+    ...(evidence.issues.some(issue => issue.code === 'size_limit') ? ['  - size_limit can mean a total, per-file or read-size limit; review the collection diagnostics and selected budget.'] : []),
+    ...(evidence.issues.some(issue => issue.code === 'unsupported_file') ? ['  - unsupported_file records excluded file types; completion does not attest whole-project coverage.'] : [])];
 }
 
 interface SarifLog {
@@ -702,6 +729,14 @@ function sanitiseCheck(input: CheckResult): CheckResult {
   const apiStateEvidence = input?.apiStateEvidence === undefined ? undefined : sanitiseApiStateEvidence(input.apiStateEvidence);
   if (input?.id === 'api.owned-state-oracle' && apiStateEvidence?.execution !== undefined && apiStateEvidence.execution !== 'completed' && status === 'completed') status = 'partial';
   const analysisBudget = sanitiseAnalysisBudget(input?.analysisBudget);
+  const budgetField = ownDataField(input, 'collectionBudget');
+  const evidenceField = ownDataField(input, 'collectionEvidence');
+  const inventory = input?.id === 'source.inventory';
+  const collectionBudget = inventory && budgetField.valid ? sanitiseCollectionBudget(budgetField.value) : undefined;
+  const collectionEvidence = inventory && evidenceField.valid ? sanitiseCollectionEvidence(evidenceField.value) : undefined;
+  if ((budgetField.present || evidenceField.present) && (!collectionBudget || !collectionEvidence) && status !== 'error') status = 'partial';
+  if (collectionEvidence?.issues.some(issue => issue.code === 'root_error')) status = 'error';
+  else if (collectionEvidence?.issues.some(issue => issue.code !== 'unsupported_file') && (status === 'completed' || status === 'not_applicable')) status = 'partial';
   const proofLedger = input?.id === 'api.authorization' ? apiExecution : undefined;
   const findings = Array.isArray(input?.findings)
     ? input.findings.map((finding) => sanitiseFinding(finding, proofLedger))
@@ -735,6 +770,8 @@ function sanitiseCheck(input: CheckResult): CheckResult {
     notes,
     ...(Object.keys(metrics).length > 0 ? { metrics } : {}),
     ...(analysisBudget ? { analysisBudget } : {}),
+    ...(collectionBudget ? { collectionBudget } : {}),
+    ...(collectionEvidence ? { collectionEvidence } : {}),
     ...(analysisGaps ? { analysisGaps } : {}),
     ...(apiStateEvidence ? { apiStateEvidence } : {}),
     ...(apiExecution ? { apiExecution } : {}),
@@ -749,15 +786,27 @@ function safeScope(scope: ScanReport['scope']): { scope?: ScanReport['scope'] } 
     : undefined;
   const provenance = sanitiseProvenance(scope.provenance);
   const analysisBudget = sanitiseAnalysisBudget(scope.analysisBudget);
+  const budgetField = ownDataField(scope, 'collectionBudget');
+  const collectionBudget = budgetField.valid ? sanitiseCollectionBudget(budgetField.value) : undefined;
+  // A malformed new identity must not survive as an apparently legacy fingerprint.
+  if (budgetField.present && !collectionBudget) return {};
   return {
     scope: {
       fingerprint: scope.fingerprint,
       ...(analysisBudget ? { analysisBudget } : {}),
+      ...(collectionBudget ? { collectionBudget } : {}),
       ruleset: scope.ruleset,
       ...(projectId ? { projectId } : {}),
       ...(provenance ? { provenance } : {}),
     },
   };
+}
+
+/** Read new typed metadata without executing accessors supplied by SDK callers. */
+function ownDataField(input: unknown, key: string): { present: boolean; valid: boolean; value?: unknown } {
+  if (!input || typeof input !== 'object' || utilTypes.isProxy(input)) return { present: false, valid: false };
+  const descriptor = Object.getOwnPropertyDescriptor(input, key);
+  return descriptor ? { present: true, valid: 'value' in descriptor, ...('value' in descriptor ? { value: descriptor.value } : {}) } : { present: false, valid: false };
 }
 
 function sanitiseProvenance(provenance: ScanProvenance | undefined): ScanProvenance | undefined {

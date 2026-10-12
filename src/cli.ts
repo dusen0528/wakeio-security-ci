@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { COLLECTION_MAX_FILES, COLLECTION_MAX_BYTES, parseCollectionLimit } from './source/collection-budget.js';
 import { resolveAnalysisBudget } from './source/analysis-budget.js';
 import { realpathSync } from "node:fs";
 import { mkdir, readFile, rm } from "node:fs/promises";
@@ -32,6 +33,8 @@ const TOOL_VALUES = new Set<ToolName>(["gitleaks", "osv", "trivy", "bandit"]);
 export interface CliOptions {
   analysisProfile?: SourceOptions['analysisProfile'];
   source?: string;
+  sourceMaxFiles?: number;
+  sourceMaxBytes?: number;
   url?: string;
   projectId?: string;
   pages: string[];
@@ -96,6 +99,8 @@ Options:
   --tools gitleaks,osv,trivy   External source scanners (default: all three)
   --tools bandit               Optional Python SAST (install Bandit separately)
   --tools none                 Run built-in source checks only
+  --source-max-files N         Collected-file cap 1..10000 (source only; default: 1000)
+  --source-max-bytes N         Total-byte cap 1..134217728 (source only; default: 26214400)
   --analysis-profile PROFILE   default|extended AST workload (source only; default: default)
   --fail-on LEVEL              critical|high|medium|low|info|none (default: high)
   --api-policy FILE            Explicit read-only API authorization policy JSON
@@ -160,6 +165,11 @@ function parseBoundedInteger(flag: string, value: string, max: number): number {
   const parsed = Number(value);
   if (!Number.isSafeInteger(parsed) || parsed < 1 || parsed > max) throw new CliUsageError(`${flag} must be between 1 and ${max}`);
   return parsed;
+}
+
+function parseSourceLimit(flag: string, value: string, maximum: number): number {
+  try { return parseCollectionLimit(value, maximum); }
+  catch { throw new CliUsageError(`${flag} must be an integer from 1 to ${maximum} without signs, spaces or leading zeros`); }
 }
 
 function parsePageLimit(value: string): number {
@@ -229,6 +239,8 @@ export function parseCliArgs(argv: readonly string[]): CliOptions | { help: true
     };
     let value: string | undefined;
     if ((value = valueFlag("--source")) !== undefined) options.source = value;
+    else if ((value = valueFlag("--source-max-files")) !== undefined) options.sourceMaxFiles = parseSourceLimit("--source-max-files", value, COLLECTION_MAX_FILES);
+    else if ((value = valueFlag("--source-max-bytes")) !== undefined) options.sourceMaxBytes = parseSourceLimit("--source-max-bytes", value, COLLECTION_MAX_BYTES);
     else if ((value = valueFlag("--url")) !== undefined) options.url = value;
     else if ((value = valueFlag("--project-id")) !== undefined) {
       const projectId = validateProjectId(value);
@@ -356,6 +368,7 @@ export function parseCliArgs(argv: readonly string[]): CliOptions | { help: true
   }
   if (options.engines.includes("nuclei") && options.nucleiScopes.length === 0) options.nucleiScopes = ["misconfiguration"];
   if (options.osvOffline && !options.source) throw new CliUsageError("--osv-offline requires source mode");
+  if ((options.sourceMaxFiles !== undefined || options.sourceMaxBytes !== undefined) && !options.source) throw new CliUsageError('--source-max-files and --source-max-bytes require source mode');
   if (options.analysisProfile !== undefined && !options.source) throw new CliUsageError('--analysis-profile requires source mode');
   if (options.nativePreview && !options.source) throw new CliUsageError('--opengrep-core requires source mode');
   return options;
@@ -544,6 +557,8 @@ async function declaredScope(options: CliOptions, apiPolicy: ApiPolicy | undefin
   return buildScanScope({
     mode: modeFor(options),
     source: options.source,
+    sourceMaxFiles: options.sourceMaxFiles,
+    sourceMaxBytes: options.sourceMaxBytes,
     analysisProfile: options.analysisProfile,
     url: options.url,
     projectId: options.projectId,
@@ -622,6 +637,8 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
   if (parsed.source) {
     const sourceOptions: SourceOptions = {
       root: parsed.source,
+      maxFiles: parsed.sourceMaxFiles,
+      maxBytes: parsed.sourceMaxBytes,
       analysisProfile: parsed.analysisProfile,
       tools: parsed.tools,
       toolPaths: parsed.toolPaths,

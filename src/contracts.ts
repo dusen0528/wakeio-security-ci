@@ -149,8 +149,23 @@ export interface ApiExecutionLedger {
   counts: { planned: number | null; evaluated: number | null; inconclusive: number | null; notAttempted: number | null; httpAttempts: number | null };
   reasons: Array<'invalid_ledger' | 'legacy_policy' | 'run_incomplete' | 'incomplete_steps'>;
 }
+/** Normalized effective collection limits; not proof that the whole repository was read. */
+export interface CollectionBudget {
+  revision: 'collection-v1';
+  limits: { maxFiles: number; maxBytes: number; maxFileBytes: number; maxEntries: number };
+}
+export type CollectionIssueCode = 'root_error' | 'read_error' | 'symlink' | 'hardlink' | 'special_file'
+  | 'size_limit' | 'file_limit' | 'unsupported_file' | 'path_error' | 'changed_file';
+/** Aggregate observed issue codes, with no paths/content. Shared bound codes retain their ambiguity. */
+export interface CollectionEvidence {
+  revision: 'collection-v1';
+  issueCount: number;
+  issues: Array<{ code: CollectionIssueCode; count: number }>;
+}
 export interface CheckResult {
   analysisBudget?: AstAnalysisBudget;
+  collectionBudget?: CollectionBudget;
+  collectionEvidence?: CollectionEvidence;
   id: string;
   status: 'completed' | 'partial' | 'error' | 'not_applicable' | 'skipped';
   findings: Finding[];
@@ -233,6 +248,7 @@ export interface ScanProvenance {
 
 export interface ScanScope {
   analysisBudget?: AstAnalysisBudget;
+  collectionBudget?: CollectionBudget;
   fingerprint: string;
   ruleset: string;
   /** Logical repository/project identity; allows different checkout paths to compare. */
@@ -294,7 +310,9 @@ export interface ReportSummary {
     checkIndex: number;
     checkId: string;
     status: 'partial' | 'error' | 'skipped';
-    diagnosticBasis: 'typed_analysis_gaps' | 'check_status_only';
+    diagnosticBasis: 'typed_analysis_gaps' | 'typed_collection_evidence' | 'check_status_only';
+    collectionBudget?: CollectionBudget;
+    collectionEvidence?: CollectionEvidence;
     analysisGaps?: {
       accounting: AnalysisGaps['accounting'];
       eventsObserved: number | null;
@@ -308,6 +326,9 @@ export interface ReportSummary {
   }>;
   omittedIncompleteChecks: number;
   scope: {
+    collectionBudget?: CollectionBudget;
+    collectionEvidence?: CollectionEvidence;
+    collectionBudgetConsistency?: 'consistent' | 'inconsistent' | 'unknown';
     analysisProfile?: AnalysisProfile;
     analysisBudgetRevision?: AstAnalysisBudget['revision'];
     mode: Mode;
@@ -317,7 +338,9 @@ export interface ReportSummary {
     wholeProjectCoverage: 'not_established';
   };
   nextRead: {
-    kind: AnalysisGap['nextReview'] | 'review_finding_evidence' | 'review_scope_limitations';
+    kind: AnalysisGap['nextReview'] | 'review_finding_evidence' | 'review_scope_limitations'
+      | 'review_collection_budget' | 'review_source_root' | 'review_collection_diagnostics' | 'review_source_file_policy';
+    collectionReason?: CollectionIssueCode;
     checkIndex?: number;
     checkId?: string;
     location?: AnalysisGap['location'];
@@ -372,6 +395,8 @@ export interface AgentReport {
     notes: string[];
     metrics?: CheckResult['metrics'];
     analysisBudget?: AstAnalysisBudget;
+    collectionBudget?: CollectionBudget;
+    collectionEvidence?: CollectionEvidence;
     analysisGaps?: AnalysisGaps;
     apiStateEvidence?: ApiStateEvidence;
     apiExecution?: ApiExecutionLedger;

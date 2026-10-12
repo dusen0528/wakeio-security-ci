@@ -1,4 +1,6 @@
 import { sanitiseAnalysisBudget, sameAnalysisBudget } from './source/analysis-budget.js';
+import { sanitiseCollectionBudget, sanitiseCollectionEvidence, sameCollectionBudget } from './source/collection-budget.js';
+import { types as utilTypes } from 'node:util';
 import type { Finding, ScanProvenance, ScanReport, Severity } from './contracts.js';
 import { exitCode, sanitiseReport, writeArtifacts } from './report.js';
 import { readJsonInput } from './json-input.js';
@@ -39,6 +41,15 @@ export function parseScanReport(input: unknown): ScanReport {
       || !['completed', 'partial', 'error', 'skipped', 'not_applicable'].includes(check.status)
       || !Array.isArray(check.findings) || !Array.isArray(check.notes) || !check.notes.every(text)) return invalid();
     if (check.analysisBudget !== undefined && !sanitiseAnalysisBudget(check.analysisBudget)) return invalid();
+    const collectionBudget = collectionField(check, 'collectionBudget');
+    const collectionEvidence = collectionField(check, 'collectionEvidence');
+    if (!collectionBudget.valid || !collectionEvidence.valid
+      || (collectionBudget.present && !sanitiseCollectionBudget(collectionBudget.value))
+      || (collectionEvidence.present && !sanitiseCollectionEvidence(collectionEvidence.value))
+      || ((collectionBudget.present || collectionEvidence.present) && check.id !== 'source.inventory')) return invalid();
+    const evidence = collectionEvidence.present ? sanitiseCollectionEvidence(collectionEvidence.value) : undefined;
+    if (evidence?.issues.some(issue => issue.code === 'root_error') && check.status !== 'error'
+      || evidence?.issues.some(issue => issue.code !== 'unsupported_file') && ['completed', 'not_applicable'].includes(check.status)) return invalid();
     checkIds.add(check.id);
     count += check.findings.length;
     if (count > 50_000 || (check.status === 'not_applicable' && check.findings.length)) return invalid();
@@ -137,6 +148,7 @@ export function compareReports(beforeInput: ScanReport, afterInput: ScanReport):
   }
   if ((before.checks.some(c => c.id === 'source.builtin-ast' && c.status !== 'not_applicable') || after.checks.some(c => c.id === 'source.builtin-ast' && c.status !== 'not_applicable'))
     && !sameAnalysisBudget(before.scope?.analysisBudget, after.scope?.analysisBudget)) reasons.push('AST analysis budget changed or is unknown.');
+  compareCollection(before, after, reasons);
   for (const check of before.checks) {
     const previous = check.apiExecution;
     const next = after.checks.find(candidate => candidate.id === check.id)?.apiExecution;
@@ -182,6 +194,7 @@ export function compareReports(beforeInput: ScanReport, afterInput: ScanReport):
     'Not observed means that finding is absent from the later report. Code deletion, line movement, changed data, or detector limitations may explain it; it is not proof of a security fix.',
     'Semantic comparison keys can survive line movement. Findings without a key retain location-based IDs, so moving them appears as new plus not observed. Duplicate semantic keys are left unverified instead of being matched arbitrarily.',
     'Source content hashes are provenance evidence and do not establish scope identity. Unknown scanner databases or rule bundles make the comparison unverified.',
+    'Source inventory comparisons require known matching effective collection budgets and recorded exclusion reasons independently of the supplied scope fingerprint. Changed or unknown collection selection remains unverified.',
     'Comparisons do not suppress findings in the scan reports and do not certify the whole service.',
   ] };
 }
@@ -192,6 +205,8 @@ function validScope(scope: unknown): boolean {
   if (scope.projectId !== undefined
     && (typeof scope.projectId !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$/.test(scope.projectId))) return false;
   if (scope.analysisBudget !== undefined && !sanitiseAnalysisBudget(scope.analysisBudget)) return false;
+  const budget = collectionField(scope, 'collectionBudget');
+  if (!budget.valid || budget.present && !sanitiseCollectionBudget(budget.value)) return false;
   const provenance = scope.provenance;
   if (provenance === undefined) return true;
   if (!record(provenance)) return false;
@@ -216,6 +231,27 @@ function validScope(scope: unknown): boolean {
     }
   }
   return true;
+}
+
+function collectionField(input: object, key: string): { present: boolean; valid: boolean; value?: unknown } {
+  if (utilTypes.isProxy(input)) return { present: true, valid: false };
+  const descriptor = Object.getOwnPropertyDescriptor(input, key);
+  return descriptor ? { present: true, valid: 'value' in descriptor, ...('value' in descriptor ? { value: descriptor.value } : {}) } : { present: false, valid: true };
+}
+
+function compareCollection(before: ScanReport, after: ScanReport, reasons: string[]): void {
+  const previous = before.checks.find(check => check.id === 'source.inventory');
+  const next = after.checks.find(check => check.id === 'source.inventory');
+  if (!previous && !next && !before.scope?.collectionBudget && !after.scope?.collectionBudget) return;
+  for (const [report, inventory, label] of [[before, previous, 'Before'], [after, next, 'After']] as const) {
+    if (!inventory || inventory.status === 'not_applicable'
+      || !sameCollectionBudget(report.scope?.collectionBudget, inventory.collectionBudget)
+      || !inventory.collectionEvidence) reasons.push(`${label} source collection identity or diagnostics are missing or inconsistent.`);
+  }
+  if (!sameCollectionBudget(previous?.collectionBudget, next?.collectionBudget)
+    || !sameCollectionBudget(before.scope?.collectionBudget, after.scope?.collectionBudget)) reasons.push('Effective source collection budget changed or is unknown.');
+  if (!previous?.collectionEvidence || !next?.collectionEvidence
+    || JSON.stringify(previous.collectionEvidence) !== JSON.stringify(next.collectionEvidence)) reasons.push('Recorded source collection exclusions changed or are unknown.');
 }
 
 function safeMetadataKey(value: string): boolean {

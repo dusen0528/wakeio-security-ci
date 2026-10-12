@@ -17,7 +17,7 @@ node build/src/cli.js scan \
 
 대상 파일은 데이터로 읽는다. 이 명령은 대상 앱의 설치·build·test·서버·DB를 실행하지 않으며 LLM이나 외부 scanner도 호출하지 않는다. `--tools none`을 생략하면 외부 도구 기본값이 적용되므로 내장 검사만 할 때는 반드시 지정한다.
 
-`extended`는 AST 분석 작업량을 늘리는 프로필이다. CLI의 파일 수집 한도까지 바꾸지는 않는다. 현재 기본 수집 한도는 파일 1,000개·총 25 MiB이며, 큰 프로젝트는 수집 또는 분석 한도로 `partial`이 될 수 있다. 아래 고정 OSS 비교는 별도 harness가 SDK 수집 한도 10,000개·128 MiB를 명시한 결과이므로 이 CLI 명령과 같은 설정으로 간주하지 않는다. [분석 budget과 미완료 계약](source-flow.md)을 참고한다.
+`extended`는 AST 분석 작업량을 늘리는 프로필이다. 파일 수집 한도는 별도 `--source-max-files`·`--source-max-bytes`로 선택하며, [소스 수집 한도 안내](source-collection.md)에 CLI·Action 설정을 설명했다. 현재 기본 수집 한도는 파일 1,000개·총 25 MiB이며, 큰 프로젝트는 수집 또는 분석 한도로 `partial`이 될 수 있다. 아래 고정 OSS 비교는 별도 harness가 SDK 수집 한도 10,000개·128 MiB를 명시한 결과이므로 이 CLI 명령과 같은 설정으로 간주하지 않는다. [분석 budget과 미완료 계약](source-flow.md)을 참고한다.
 
 ```mermaid
 flowchart LR

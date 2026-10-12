@@ -1,3 +1,5 @@
+import { COLLECTION_MAX_FILES, COLLECTION_MAX_BYTES, parseCollectionLimit } from './source/collection-budget.js';
+import { resolveAnalysisBudget } from './source/analysis-budget.js';
 import { access, constants, lstat, mkdir, writeFile } from "node:fs/promises";
 import { isAbsolute, join, relative, resolve } from "node:path";
 import { inspectTree, parseTools } from "./doctor.js";
@@ -8,6 +10,9 @@ const UPLOAD_ARTIFACT_SHA = "ea165f8d65b6e75b540449e92b4886f43607fa02";
 const STABLE_SYSTEM_ALIASES = new Set(["/tmp", "/var"]);
 
 interface InitOptions {
+  sourceMaxFiles?: number;
+  sourceMaxBytes?: number;
+  analysisProfile?: 'default' | 'extended';
   source: string;
   workflow: string;
   out: string;
@@ -62,7 +67,7 @@ export async function initMain(argv: readonly string[] = process.argv.slice(2)):
   }
   try {
     await ensureParentDirectories(workflow);
-    await writeFile(workflow, renderWorkflow({ out: options.out, tools: options.tools, pythonFiles: inventory.pythonFiles }), { encoding: "utf8", mode: 0o644, flag: "wx" });
+    await writeFile(workflow, renderWorkflow({ ...options, pythonFiles: inventory.pythonFiles }), { encoding: "utf8", mode: 0o644, flag: "wx" });
   } catch {
     process.stderr.write("Error: init could not create the workflow without overwriting another file.\n");
     return 2;
@@ -76,8 +81,27 @@ export function parseInitArgs(argv: readonly string[]): InitOptions {
   const args = [...argv];
   if (args[0] === "init") args.shift();
   const options: InitOptions = { source: ".", workflow: join(".github", "workflows", "wakeio-security-ci.yml"), out: "wakeio-security-reports", tools: ["none"], help: false };
+  const selected = new Set<string>();
   for (let index = 0; index < args.length; index += 1) {
     const argument = args[index];
+    const selector = argument.split('=')[0];
+    if (['--source-max-files', '--source-max-bytes', '--analysis-profile'].includes(selector)) {
+      if (selected.has(selector)) throw new Error(`${selector} may only be specified once`);
+      selected.add(selector);
+      const inline = argument.indexOf('=');
+      const raw = inline >= 0 ? argument.slice(inline + 1) : args[++index];
+      if (raw === undefined || raw === '') throw new Error(`${selector} requires a value`);
+      if (selector === '--analysis-profile') options.analysisProfile = resolveAnalysisBudget(raw).requestedProfile;
+      else {
+        const maximum = selector === '--source-max-files' ? COLLECTION_MAX_FILES : COLLECTION_MAX_BYTES;
+        let value: number;
+        try { value = parseCollectionLimit(raw, maximum); }
+        catch { throw new Error(`${selector} must be an integer from 1 to ${maximum} without signs, spaces or leading zeros`); }
+        if (selector === '--source-max-files') options.sourceMaxFiles = value;
+        else options.sourceMaxBytes = value;
+      }
+      continue;
+    }
     if (argument === "--help" || argument === "-h") {
       options.help = true;
       continue;
@@ -103,13 +127,19 @@ export function initUsage(): string {
   return [
     "Usage: wakeio-security-ci init [--source DIR] [--workflow .github/workflows/wakeio-security-ci.yml] [--out DIR] [--tools none]",
     "",
+    "       [--source-max-files N] [--source-max-bytes N] [--analysis-profile default|extended]",
+    "",
     "Create a local CI workflow only when its destination does not exist; no file is overwritten.",
     "The template runs the installed CLI with npx --no-install and uses pinned helper-action commits.",
     "",
   ].join("\n");
 }
 
-export function renderWorkflow(options: { out: string; tools: string[]; pythonFiles: number }): string {
+export function renderWorkflow(options: { out: string; tools: string[]; pythonFiles: number; sourceMaxFiles?: number; sourceMaxBytes?: number; analysisProfile?: 'default' | 'extended' }): string {
+  // Validate again because renderWorkflow is also exported for programmatic use.
+  const files = options.sourceMaxFiles === undefined ? '' : ` --source-max-files ${parseCollectionLimit(String(options.sourceMaxFiles), COLLECTION_MAX_FILES)}`;
+  const bytes = options.sourceMaxBytes === undefined ? '' : ` --source-max-bytes ${parseCollectionLimit(String(options.sourceMaxBytes), COLLECTION_MAX_BYTES)}`;
+  const profile = options.analysisProfile === undefined ? '' : ` --analysis-profile ${resolveAnalysisBudget(options.analysisProfile).requestedProfile}`;
   const toolValue = options.tools.length > 0 ? options.tools.join(",") : "none";
   const pythonNote = options.pythonFiles > 0
     ? `      # Static inventory detected ${options.pythonFiles} Python file${options.pythonFiles === 1 ? "" : "s"}; add a separately prepared Bandit executable before enabling --tools bandit.\n`
@@ -142,7 +172,7 @@ jobs:
         run: npm ci --ignore-scripts --no-audit --fund=false
       - name: Run installed Wakeio CLI
 ${pythonNote}        run: >-
-          npx --no-install wakeio-security-ci scan --source . --project-id "$GITHUB_REPOSITORY" --tools ${toolValue} --out ${shellQuote(options.out)}
+          npx --no-install wakeio-security-ci scan --source . --project-id "$GITHUB_REPOSITORY" --tools ${toolValue}${files}${bytes}${profile} --out ${shellQuote(options.out)}
       - name: Upload reports
         if: always()
         uses: actions/upload-artifact@${UPLOAD_ARTIFACT_SHA}

@@ -1,4 +1,4 @@
-import type { CheckResult, ToolName } from "../contracts.js";
+import type { CheckResult, CollectionBudget, CollectionIssueCode, ToolName } from "../contracts.js";
 
 /**
  * A file that has passed the source collector's path, size, and file-type
@@ -14,21 +14,13 @@ export interface CollectedFile {
 }
 
 export interface CollectionIssue {
-  code:
-    | "root_error"
-    | "read_error"
-    | "symlink"
-    | "hardlink"
-    | "special_file"
-    | "size_limit"
-    | "file_limit"
-    | "unsupported_file"
-    | "path_error"
-    | "changed_file";
+  code: CollectionIssueCode;
   path: string;
 }
 
 export interface SourceSnapshot {
+  /** Always supplied by collectSource; optional for synthetic/legacy snapshots. */
+  collectionBudget?: CollectionBudget;
   root: string;
   files: CollectedFile[];
   issues: CollectionIssue[];

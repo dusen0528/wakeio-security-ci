@@ -56,9 +56,9 @@ test('invalid SDK selection rejects before collection; CLI missing/duplicate/sou
 });
 test('source and mixed scope budget identity is mandatory for comparison; malformed rejects before sanitization',async()=>{
  await withSource({'a.js':'function route(req){fetch(req.query.value)}'},async root=>{
-  const check=ast(await runSource({root,tools:[]}));
+  const checks=await runSource({root,tools:[]});const check=ast(checks);const inventory=checks.find(c=>c.id==='source.inventory')!;
   for(const mode of ['source','both','combined'] as const){
-   const scope=await buildScanScope({mode,source:root,tools:[],ruleset:RULESET_VERSION});const before=createReport([check],mode,new Date(),scope);const after=createReport([{...check,findings:[]}],mode,new Date(),scope);
+   const scope=await buildScanScope({mode,source:root,tools:[],ruleset:RULESET_VERSION});const before=createReport([check,inventory],mode,new Date(),scope);const after=createReport([{...check,findings:[]},inventory],mode,new Date(),scope);
    assert.equal(compareReports(before,after).comparable,true);
    const legacy=structuredClone(after);delete legacy.scope!.analysisBudget;delete legacy.checks[0].analysisBudget;assert.equal(comparisonExitCode(compareReports(before,legacy),'none'),2);
    const forged=structuredClone(after);forged.scope!.analysisBudget=resolveAnalysisBudget('extended');forged.checks[0].analysisBudget=resolveAnalysisBudget('extended');assert.equal(forged.scope!.fingerprint,scope.fingerprint);assert.equal(compareReports(before,forged).comparable,false);

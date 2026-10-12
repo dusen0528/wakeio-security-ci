@@ -37,6 +37,19 @@ async function main() {
     process.exitCode = 2;
     return;
   }
+  const collectionArgs = [];
+  for (const [name, raw, maximum] of [
+    ['source-max-files', env.WAKEIO_SOURCE_MAX_FILES, 10_000],
+    ['source-max-bytes', env.WAKEIO_SOURCE_MAX_BYTES, 128 * 1024 * 1024],
+  ]) {
+    if (raw === undefined || raw === '') continue;
+    if (!sourceMode || !/^[1-9][0-9]*$/.test(raw) || !Number.isSafeInteger(Number(raw)) || Number(raw) > maximum) {
+      process.stderr.write(`wakeio-security-ci: ${name} requires source and an integer from 1 to ${maximum}.\n`);
+      process.exitCode = 2;
+      return;
+    }
+    collectionArgs.push(`--${name}`, raw);
+  }
   const tools = sourceMode ? requestedTools : 'none';
   const workspace = resolve(env.GITHUB_WORKSPACE || process.cwd());
   const reportDirectory = resolve(workspace, out);
@@ -71,7 +84,7 @@ async function main() {
     state.setupStatus = 'success';
 
     const args = [cliEntry, 'scan'];
-    if (source) args.push('--source', source, '--analysis-profile', analysisProfile);
+    if (source) args.push('--source', source, '--analysis-profile', analysisProfile, ...collectionArgs);
     if (url) args.push('--url', url);
     if (apiPolicy) args.push('--api-policy', apiPolicy);
     args.push('--out', out, '--tools', tools, '--fail-on', value(env.WAKEIO_FAIL_ON) || 'high');

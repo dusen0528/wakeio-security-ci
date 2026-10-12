@@ -3160,11 +3160,11 @@ var require_typescript = __commonJS({
         }
         return result3;
       }
-      function clone(object7) {
+      function clone(object8) {
         const result3 = {};
-        for (const id in object7) {
-          if (hasOwnProperty.call(object7, id)) {
-            result3[id] = object7[id];
+        for (const id in object8) {
+          if (hasOwnProperty.call(object8, id)) {
+            result3[id] = object8[id];
           }
         }
         return result3;
@@ -5412,16 +5412,16 @@ ${lanes.join("\n")}
             };
           }
         }
-        function dumpTypes(types7) {
+        function dumpTypes(types8) {
           var _a2, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m, _n, _o, _p, _q, _r, _s;
           mark("beginDumpTypes");
           const typesPath = legend[legend.length - 1].typesPath;
           const typesFd = fs.openSync(typesPath, "w");
           const recursionIdentityMap = /* @__PURE__ */ new Map();
           fs.writeSync(typesFd, "[");
-          const numTypes = types7.length;
+          const numTypes = types8.length;
           for (let i = 0; i < numTypes; i++) {
-            const type = types7[i];
+            const type = types8[i];
             const objectFlags = type.objectFlags;
             const symbol = type.aliasSymbol ?? type.symbol;
             let display;
@@ -25360,8 +25360,8 @@ ${lanes.join("\n")}
           }
           return parenthesizeOperandOfTypeOperator(type);
         }
-        function parenthesizeElementTypesOfTupleType(types7) {
-          return factory2.createNodeArray(sameMap(types7, parenthesizeElementTypeOfTupleType));
+        function parenthesizeElementTypesOfTupleType(types8) {
+          return factory2.createNodeArray(sameMap(types8, parenthesizeElementTypeOfTupleType));
         }
         function parenthesizeElementTypeOfTupleType(type) {
           if (hasJSDocPostfixQuestion(type)) return factory2.createParenthesizedType(type);
@@ -27439,26 +27439,26 @@ ${lanes.join("\n")}
         function updateRestTypeNode(node, type) {
           return node.type !== type ? update(createRestTypeNode(type), node) : node;
         }
-        function createUnionOrIntersectionTypeNode(kind, types7, parenthesize) {
+        function createUnionOrIntersectionTypeNode(kind, types8, parenthesize) {
           const node = createBaseNode(kind);
-          node.types = factory2.createNodeArray(parenthesize(types7));
+          node.types = factory2.createNodeArray(parenthesize(types8));
           node.transformFlags = 1;
           return node;
         }
-        function updateUnionOrIntersectionTypeNode(node, types7, parenthesize) {
-          return node.types !== types7 ? update(createUnionOrIntersectionTypeNode(node.kind, types7, parenthesize), node) : node;
+        function updateUnionOrIntersectionTypeNode(node, types8, parenthesize) {
+          return node.types !== types8 ? update(createUnionOrIntersectionTypeNode(node.kind, types8, parenthesize), node) : node;
         }
-        function createUnionTypeNode(types7) {
-          return createUnionOrIntersectionTypeNode(193, types7, parenthesizerRules().parenthesizeConstituentTypesOfUnionType);
+        function createUnionTypeNode(types8) {
+          return createUnionOrIntersectionTypeNode(193, types8, parenthesizerRules().parenthesizeConstituentTypesOfUnionType);
         }
-        function updateUnionTypeNode(node, types7) {
-          return updateUnionOrIntersectionTypeNode(node, types7, parenthesizerRules().parenthesizeConstituentTypesOfUnionType);
+        function updateUnionTypeNode(node, types8) {
+          return updateUnionOrIntersectionTypeNode(node, types8, parenthesizerRules().parenthesizeConstituentTypesOfUnionType);
         }
-        function createIntersectionTypeNode(types7) {
-          return createUnionOrIntersectionTypeNode(194, types7, parenthesizerRules().parenthesizeConstituentTypesOfIntersectionType);
+        function createIntersectionTypeNode(types8) {
+          return createUnionOrIntersectionTypeNode(194, types8, parenthesizerRules().parenthesizeConstituentTypesOfIntersectionType);
         }
-        function updateIntersectionTypeNode(node, types7) {
-          return updateUnionOrIntersectionTypeNode(node, types7, parenthesizerRules().parenthesizeConstituentTypesOfIntersectionType);
+        function updateIntersectionTypeNode(node, types8) {
+          return updateUnionOrIntersectionTypeNode(node, types8, parenthesizerRules().parenthesizeConstituentTypesOfIntersectionType);
         }
         function createConditionalTypeNode(checkType, extendsType, trueType, falseType) {
           const node = createBaseNode(
@@ -29636,13 +29636,13 @@ ${lanes.join("\n")}
         function updateDefaultClause(node, statements2) {
           return node.statements !== statements2 ? update(createDefaultClause(statements2), node) : node;
         }
-        function createHeritageClause(token, types7) {
+        function createHeritageClause(token, types8) {
           const node = createBaseNode(
             299
             /* HeritageClause */
           );
           node.token = token;
-          node.types = createNodeArray(types7);
+          node.types = createNodeArray(types8);
           node.transformFlags |= propagateChildrenFlags(node.types);
           switch (token) {
             case 96:
@@ -29656,8 +29656,8 @@ ${lanes.join("\n")}
           }
           return node;
         }
-        function updateHeritageClause(node, types7) {
-          return node.types !== types7 ? update(createHeritageClause(node.token, types7), node) : node;
+        function updateHeritageClause(node, types8) {
+          return node.types !== types8 ? update(createHeritageClause(node.token, types8), node) : node;
         }
         function createCatchClause(variableDeclaration, block) {
           const node = createBaseNode(
@@ -30124,11 +30124,11 @@ ${lanes.join("\n")}
         function createIsNotTypeCheck(value, tag) {
           return tag === "null" ? factory2.createStrictInequality(value, createNull()) : tag === "undefined" ? factory2.createStrictInequality(value, createVoidZero()) : factory2.createStrictInequality(createTypeOfExpression(value), createStringLiteral(tag));
         }
-        function createMethodCall(object7, methodName, argumentsList) {
-          if (isCallChain(object7)) {
+        function createMethodCall(object8, methodName, argumentsList) {
+          if (isCallChain(object8)) {
             return createCallChain(
               createPropertyAccessChain(
-                object7,
+                object8,
                 /*questionDotToken*/
                 void 0,
                 methodName
@@ -30141,7 +30141,7 @@ ${lanes.join("\n")}
             );
           }
           return createCallExpression(
-            createPropertyAccessExpression(object7, methodName),
+            createPropertyAccessExpression(object8, methodName),
             /*typeArguments*/
             void 0,
             argumentsList
@@ -38187,11 +38187,11 @@ ${lanes.join("\n")}
           const hasLeadingOperator = parseOptional(operator);
           let type = hasLeadingOperator && parseFunctionOrConstructorTypeToError(isUnionType) || parseConstituentType();
           if (token() === operator || hasLeadingOperator) {
-            const types7 = [type];
+            const types8 = [type];
             while (parseOptional(operator)) {
-              types7.push(parseFunctionOrConstructorTypeToError(isUnionType) || parseConstituentType());
+              types8.push(parseFunctionOrConstructorTypeToError(isUnionType) || parseConstituentType());
             }
-            type = finishNode(createTypeNode(createNodeArray(types7, pos)), pos);
+            type = finishNode(createTypeNode(createNodeArray(types8, pos)), pos);
           }
           return type;
         }
@@ -41338,8 +41338,8 @@ ${lanes.join("\n")}
             /* ImplementsKeyword */
           );
           nextToken();
-          const types7 = parseDelimitedList(7, parseExpressionWithTypeArguments);
-          return finishNode(factory2.createHeritageClause(tok, types7), pos);
+          const types8 = parseDelimitedList(7, parseExpressionWithTypeArguments);
+          return finishNode(factory2.createHeritageClause(tok, types8), pos);
         }
         function parseExpressionWithTypeArguments() {
           const pos = getNodePos();
@@ -43553,13 +43553,13 @@ ${lanes.join("\n")}
               const typeReferenceDirectives = context.typeReferenceDirectives;
               const libReferenceDirectives = context.libReferenceDirectives;
               forEach(toArray(entryOrList), (arg) => {
-                const { types: types7, lib, path: path2, ["resolution-mode"]: res, preserve: _preserve } = arg.arguments;
+                const { types: types8, lib, path: path2, ["resolution-mode"]: res, preserve: _preserve } = arg.arguments;
                 const preserve = _preserve === "true" ? true : void 0;
                 if (arg.arguments["no-default-lib"] === "true") {
                   context.hasNoDefaultLib = true;
-                } else if (types7) {
-                  const parsed = parseResolutionMode(res, types7.pos, types7.end, reportDiagnostic);
-                  typeReferenceDirectives.push({ pos: types7.pos, end: types7.end, fileName: types7.value, ...parsed ? { resolutionMode: parsed } : {}, ...preserve ? { preserve } : {} });
+                } else if (types8) {
+                  const parsed = parseResolutionMode(res, types8.pos, types8.end, reportDiagnostic);
+                  typeReferenceDirectives.push({ pos: types8.pos, end: types8.end, fileName: types8.value, ...parsed ? { resolutionMode: parsed } : {}, ...preserve ? { preserve } : {} });
                 } else if (lib) {
                   libReferenceDirectives.push({ pos: lib.pos, end: lib.end, fileName: lib.value, ...preserve ? { preserve } : {} });
                 } else if (path2) {
@@ -60080,12 +60080,12 @@ ${lanes.join("\n")}
               type = type.origin;
             }
             if (type.flags & (1048576 | 2097152)) {
-              const types7 = type.flags & 1048576 ? formatUnionTypes(type.types, expandingEnum) : type.types;
-              if (length(types7) === 1) {
-                return typeToTypeNodeHelper(types7[0], context);
+              const types8 = type.flags & 1048576 ? formatUnionTypes(type.types, expandingEnum) : type.types;
+              if (length(types8) === 1) {
+                return typeToTypeNodeHelper(types8[0], context);
               }
               const typeNodes = mapToTypeNodes(
-                types7,
+                types8,
                 context,
                 /*isBareList*/
                 true
@@ -60111,12 +60111,12 @@ ${lanes.join("\n")}
             }
             if (type.flags & 134217728) {
               const texts = type.texts;
-              const types7 = type.types;
+              const types8 = type.types;
               const templateHead = factory.createTemplateHead(texts[0]);
               const templateSpans = factory.createNodeArray(
-                map(types7, (t, i) => factory.createTemplateLiteralTypeSpan(
+                map(types8, (t, i) => factory.createTemplateLiteralTypeSpan(
                   typeToTypeNodeHelper(t, context),
-                  (i < types7.length - 1 ? factory.createTemplateMiddle : factory.createTemplateTail)(texts[i + 1])
+                  (i < types8.length - 1 ? factory.createTemplateMiddle : factory.createTemplateTail)(texts[i + 1])
                 ))
               );
               context.approximateLength += 2;
@@ -60483,14 +60483,14 @@ ${lanes.join("\n")}
               }
               const abstractSignatures = filter(resolved.constructSignatures, (signature) => !!(signature.flags & 4));
               if (some(abstractSignatures)) {
-                const types7 = map(abstractSignatures, getOrCreateTypeFromSignature);
+                const types8 = map(abstractSignatures, getOrCreateTypeFromSignature);
                 const typeElementCount = resolved.callSignatures.length + (resolved.constructSignatures.length - abstractSignatures.length) + resolved.indexInfos.length + // exclude `prototype` when writing a class expression as a type literal, as per
                 // the logic in `createTypeNodesFromResolvedType`.
                 (context.flags & 2048 ? countWhere(resolved.properties, (p) => !(p.flags & 4194304)) : length(resolved.properties));
                 if (typeElementCount) {
-                  types7.push(getResolvedTypeWithoutAbstractConstructSignatures(resolved));
+                  types8.push(getResolvedTypeWithoutAbstractConstructSignatures(resolved));
                 }
-                return typeToTypeNodeHelper(getIntersectionType(types7), context);
+                return typeToTypeNodeHelper(getIntersectionType(types8), context);
               }
               const restoreFlags = saveRestoreFlags(context);
               context.flags |= 4194304;
@@ -61021,8 +61021,8 @@ ${lanes.join("\n")}
             }
             return node;
           }
-          function mapToTypeNodes(types7, context, isBareList) {
-            if (some(types7)) {
+          function mapToTypeNodes(types8, context, isBareList) {
+            if (some(types8)) {
               if (checkTruncationLength(context)) {
                 context.out.truncated = true;
                 if (!isBareList) {
@@ -61036,18 +61036,18 @@ ${lanes.join("\n")}
                       void 0
                     )
                   ];
-                } else if (types7.length > 2) {
+                } else if (types8.length > 2) {
                   return [
-                    typeToTypeNodeHelper(types7[0], context),
+                    typeToTypeNodeHelper(types8[0], context),
                     context.flags & 1 ? addSyntheticLeadingComment(factory.createKeywordTypeNode(
                       133
                       /* AnyKeyword */
-                    ), 3, `... ${types7.length - 2} more elided ...`) : factory.createTypeReferenceNode(
-                      `... ${types7.length - 2} more ...`,
+                    ), 3, `... ${types8.length - 2} more elided ...`) : factory.createTypeReferenceNode(
+                      `... ${types8.length - 2} more ...`,
                       /*typeArguments*/
                       void 0
                     ),
-                    typeToTypeNodeHelper(types7[types7.length - 1], context)
+                    typeToTypeNodeHelper(types8[types8.length - 1], context)
                   ];
                 }
               }
@@ -61055,21 +61055,21 @@ ${lanes.join("\n")}
               const seenNames = mayHaveNameCollisions ? createMultiMap() : void 0;
               const result3 = [];
               let i = 0;
-              for (const type of types7) {
+              for (const type of types8) {
                 i++;
-                if (checkTruncationLength(context) && i + 2 < types7.length - 1) {
+                if (checkTruncationLength(context) && i + 2 < types8.length - 1) {
                   context.out.truncated = true;
                   result3.push(
                     context.flags & 1 ? addSyntheticLeadingComment(factory.createKeywordTypeNode(
                       133
                       /* AnyKeyword */
-                    ), 3, `... ${types7.length - i} more elided ...`) : factory.createTypeReferenceNode(
-                      `... ${types7.length - i} more ...`,
+                    ), 3, `... ${types8.length - i} more elided ...`) : factory.createTypeReferenceNode(
+                      `... ${types8.length - i} more ...`,
                       /*typeArguments*/
                       void 0
                     )
                   );
-                  const typeNode2 = typeToTypeNodeHelper(types7[types7.length - 1], context);
+                  const typeNode2 = typeToTypeNodeHelper(types8[types8.length - 1], context);
                   if (typeNode2) {
                     result3.push(typeNode2);
                   }
@@ -64397,18 +64397,18 @@ ${lanes.join("\n")}
             return writer2;
           }
         }
-        function formatUnionTypes(types7, expandingEnum) {
+        function formatUnionTypes(types8, expandingEnum) {
           const result3 = [];
           let flags = 0;
-          for (let i = 0; i < types7.length; i++) {
-            const t = types7[i];
+          for (let i = 0; i < types8.length; i++) {
+            const t = types8[i];
             flags |= t.flags;
             if (!(t.flags & 98304)) {
               if (t.flags & 512 || !expandingEnum && t.flags | 1056) {
                 const baseType = t.flags & 512 ? booleanType : getBaseTypeOfEnumLikeType(t);
                 if (baseType.flags & 1048576) {
                   const count = baseType.types.length;
-                  if (i + count <= types7.length && getRegularTypeOfLiteralType(types7[i + count - 1]) === getRegularTypeOfLiteralType(baseType.types[count - 1])) {
+                  if (i + count <= types8.length && getRegularTypeOfLiteralType(types8[i + count - 1]) === getRegularTypeOfLiteralType(baseType.types[count - 1])) {
                     result3.push(baseType);
                     i += count - 1;
                     continue;
@@ -64420,7 +64420,7 @@ ${lanes.join("\n")}
           }
           if (flags & 65536) result3.push(nullType);
           if (flags & 32768) result3.push(undefinedType);
-          return result3 || types7;
+          return result3 || types8;
         }
         function visibilityToString(flags) {
           if (flags === 2) {
@@ -65218,7 +65218,7 @@ ${lanes.join("\n")}
             type = getFlowTypeInConstructor(symbol, getDeclaringConstructor(symbol));
           }
           if (!type) {
-            let types7;
+            let types8;
             if (symbol.declarations) {
               let jsdocType;
               for (const declaration of symbol.declarations) {
@@ -65238,16 +65238,16 @@ ${lanes.join("\n")}
                   jsdocType = getAnnotatedTypeForAssignmentDeclaration(jsdocType, expression, symbol, declaration);
                 }
                 if (!jsdocType) {
-                  (types7 || (types7 = [])).push(isBinaryExpression8(expression) || isCallExpression14(expression) ? getInitializerTypeFromAssignmentDeclaration(symbol, resolvedSymbol, expression, kind) : neverType);
+                  (types8 || (types8 = [])).push(isBinaryExpression8(expression) || isCallExpression14(expression) ? getInitializerTypeFromAssignmentDeclaration(symbol, resolvedSymbol, expression, kind) : neverType);
                 }
               }
               type = jsdocType;
             }
             if (!type) {
-              if (!length(types7)) {
+              if (!length(types8)) {
                 return errorType;
               }
-              let constructorTypes = definedInConstructor && symbol.declarations ? getConstructorDefinedThisAssignmentTypes(types7, symbol.declarations) : void 0;
+              let constructorTypes = definedInConstructor && symbol.declarations ? getConstructorDefinedThisAssignmentTypes(types8, symbol.declarations) : void 0;
               if (definedInMethod) {
                 const propType = getTypeOfPropertyInBaseClass(symbol);
                 if (propType) {
@@ -65255,7 +65255,7 @@ ${lanes.join("\n")}
                   definedInConstructor = true;
                 }
               }
-              const sourceTypes = some(constructorTypes, (t) => !!(t.flags & ~98304)) ? constructorTypes : types7;
+              const sourceTypes = some(constructorTypes, (t) => !!(t.flags & ~98304)) ? constructorTypes : types8;
               type = getUnionType(sourceTypes);
             }
           }
@@ -65435,9 +65435,9 @@ ${lanes.join("\n")}
           );
           return thisContainer.kind === 177 || thisContainer.kind === 263 || thisContainer.kind === 219 && !isPrototypePropertyAssignment(thisContainer.parent);
         }
-        function getConstructorDefinedThisAssignmentTypes(types7, declarations) {
-          Debug.assert(types7.length === declarations.length);
-          return types7.filter((_, i) => {
+        function getConstructorDefinedThisAssignmentTypes(types8, declarations) {
+          Debug.assert(types8.length === declarations.length);
+          return types8.filter((_, i) => {
             const declaration = declarations[i];
             const expression = isBinaryExpression8(declaration) ? declaration : isBinaryExpression8(declaration.parent) ? declaration.parent : void 0;
             return expression && isDeclarationInConstructor(expression);
@@ -66888,8 +66888,8 @@ ${lanes.join("\n")}
             const typeArguments = getTypeArguments(type);
             return length(target.typeParameters) === length(typeArguments) ? createTypeReference(target, concatenate(typeArguments, [thisArgument || target.thisType])) : type;
           } else if (type.flags & 2097152) {
-            const types7 = sameMap(type.types, (t) => getTypeWithThisArgument(t, thisArgument, needApparentType));
-            return types7 !== type.types ? getIntersectionType(types7) : type;
+            const types8 = sameMap(type.types, (t) => getTypeWithThisArgument(t, thisArgument, needApparentType));
+            return types8 !== type.types ? getIntersectionType(types8) : type;
           }
           return needApparentType ? getApparentType(type) : type;
         }
@@ -67330,14 +67330,14 @@ ${lanes.join("\n")}
           }
           return result3;
         }
-        function getUnionIndexInfos(types7) {
-          const sourceInfos = getIndexInfosOfType(types7[0]);
+        function getUnionIndexInfos(types8) {
+          const sourceInfos = getIndexInfosOfType(types8[0]);
           if (sourceInfos) {
             const result3 = [];
             for (const info of sourceInfos) {
               const indexType = info.keyType;
-              if (every(types7, (t) => !!getIndexInfoOfType(t, indexType))) {
-                result3.push(createIndexInfo(indexType, getUnionType(map(types7, (t) => getIndexTypeOfType(t, indexType))), some(types7, (t) => getIndexInfoOfType(t, indexType).isReadonly)));
+              if (every(types8, (t) => !!getIndexInfoOfType(t, indexType))) {
+                result3.push(createIndexInfo(indexType, getUnionType(map(types8, (t) => getIndexTypeOfType(t, indexType))), some(types8, (t) => getIndexInfoOfType(t, indexType).isReadonly)));
               }
             }
             return result3;
@@ -67361,13 +67361,13 @@ ${lanes.join("\n")}
         function intersectTypes(type1, type2) {
           return !type1 ? type2 : !type2 ? type1 : getIntersectionType([type1, type2]);
         }
-        function findMixins(types7) {
-          const constructorTypeCount = countWhere(types7, (t) => getSignaturesOfType(
+        function findMixins(types8) {
+          const constructorTypeCount = countWhere(types8, (t) => getSignaturesOfType(
             t,
             1
             /* Construct */
           ).length > 0);
-          const mixinFlags = map(types7, isMixinConstructorType);
+          const mixinFlags = map(types8, isMixinConstructorType);
           if (constructorTypeCount > 0 && constructorTypeCount === countWhere(mixinFlags, (b) => b)) {
             const firstMixinIndex = mixinFlags.indexOf(
               /*searchElement*/
@@ -67377,14 +67377,14 @@ ${lanes.join("\n")}
           }
           return mixinFlags;
         }
-        function includeMixinType(type, types7, mixinFlags, index) {
+        function includeMixinType(type, types8, mixinFlags, index) {
           const mixedTypes = [];
-          for (let i = 0; i < types7.length; i++) {
+          for (let i = 0; i < types8.length; i++) {
             if (i === index) {
               mixedTypes.push(type);
             } else if (mixinFlags[i]) {
               mixedTypes.push(getReturnTypeOfSignature(getSignaturesOfType(
-                types7[i],
+                types8[i],
                 1
                 /* Construct */
               )[0]));
@@ -67396,10 +67396,10 @@ ${lanes.join("\n")}
           let callSignatures;
           let constructSignatures;
           let indexInfos;
-          const types7 = type.types;
-          const mixinFlags = findMixins(types7);
+          const types8 = type.types;
+          const mixinFlags = findMixins(types8);
           const mixinCount = countWhere(mixinFlags, (b) => b);
-          for (let i = 0; i < types7.length; i++) {
+          for (let i = 0; i < types8.length; i++) {
             const t = type.types[i];
             if (!mixinFlags[i]) {
               let signatures = getSignaturesOfType(
@@ -67410,7 +67410,7 @@ ${lanes.join("\n")}
               if (signatures.length && mixinCount > 0) {
                 signatures = map(signatures, (s) => {
                   const clone2 = cloneSignature(s);
-                  clone2.resolvedReturnType = includeMixinType(getReturnTypeOfSignature(s), types7, mixinFlags, i);
+                  clone2.resolvedReturnType = includeMixinType(getReturnTypeOfSignature(s), types8, mixinFlags, i);
                   return clone2;
                 });
               }
@@ -67651,8 +67651,8 @@ ${lanes.join("\n")}
             );
           }
           if (type.flags & 2097152) {
-            const types7 = type.types;
-            if (types7.length === 2 && !!(types7[0].flags & (4 | 8 | 64)) && types7[1] === emptyTypeLiteralType) {
+            const types8 = type.types;
+            if (types8.length === 2 && !!(types8[0].flags & (4 | 8 | 64)) && types8[1] === emptyTypeLiteralType) {
               return type;
             }
             return getIntersectionType(sameMap(type.types, getLowerBoundOfKeyType));
@@ -67942,13 +67942,13 @@ ${lanes.join("\n")}
             return !!expected && isLiteralType(expected) && !isTypeAssignableTo(getTypeOfNode(property), expected);
           });
         }
-        function getAllPossiblePropertiesOfTypes(types7) {
-          const unionType = getUnionType(types7);
+        function getAllPossiblePropertiesOfTypes(types8) {
+          const unionType = getUnionType(types8);
           if (!(unionType.flags & 1048576)) {
             return getAugmentedPropertiesOfType(unionType);
           }
           const props = createSymbolTable();
-          for (const memberType of types7) {
+          for (const memberType of types8) {
             for (const { escapedName } of getAugmentedPropertiesOfType(memberType)) {
               if (!props.has(escapedName)) {
                 const prop = createUnionOrIntersectionProperty(unionType, escapedName);
@@ -68045,10 +68045,10 @@ ${lanes.join("\n")}
         function getConstraintOfConditionalType(type) {
           return hasNonCircularBaseConstraint(type) ? getConstraintFromConditionalType(type) : void 0;
         }
-        function getEffectiveConstraintOfIntersection(types7, targetIsUnion) {
+        function getEffectiveConstraintOfIntersection(types8, targetIsUnion) {
           let constraints;
           let hasDisjointDomainType = false;
-          for (const t of types7) {
+          for (const t of types8) {
             if (t.flags & 465829888) {
               let constraint = getConstraintOfType(t);
               while (constraint && constraint.flags & (262144 | 4194304 | 16777216)) {
@@ -68066,7 +68066,7 @@ ${lanes.join("\n")}
           }
           if (constraints && (targetIsUnion || hasDisjointDomainType)) {
             if (hasDisjointDomainType) {
-              for (const t of types7) {
+              for (const t of types8) {
                 if (t.flags & 469892092 || isEmptyAnonymousObjectType(t)) {
                   constraints = append(constraints, t);
                 }
@@ -68149,10 +68149,10 @@ ${lanes.join("\n")}
               return t.isThisType || !constraint ? constraint : getBaseConstraint(constraint);
             }
             if (t.flags & 3145728) {
-              const types7 = t.types;
+              const types8 = t.types;
               const baseTypes = [];
               let different = false;
-              for (const type2 of types7) {
+              for (const type2 of types8) {
                 const baseType = getBaseConstraint(type2);
                 if (baseType) {
                   if (baseType !== type2) {
@@ -68166,15 +68166,15 @@ ${lanes.join("\n")}
               if (!different) {
                 return t;
               }
-              return t.flags & 1048576 && baseTypes.length === types7.length ? getUnionType(baseTypes) : t.flags & 2097152 && baseTypes.length ? getIntersectionType(baseTypes) : void 0;
+              return t.flags & 1048576 && baseTypes.length === types8.length ? getUnionType(baseTypes) : t.flags & 2097152 && baseTypes.length ? getIntersectionType(baseTypes) : void 0;
             }
             if (t.flags & 4194304) {
               return stringNumberSymbolType;
             }
             if (t.flags & 134217728) {
-              const types7 = t.types;
-              const constraints = mapDefined(types7, getBaseConstraint);
-              return constraints.length === types7.length ? getTemplateLiteralType(t.texts, constraints) : stringType;
+              const types8 = t.types;
+              const constraints = mapDefined(types8, getBaseConstraint);
+              return constraints.length === types8.length ? getTemplateLiteralType(t.texts, constraints) : stringType;
             }
             if (t.flags & 268435456) {
               const constraint = getBaseConstraint(t.type);
@@ -69020,8 +69020,8 @@ ${lanes.join("\n")}
             type
           ) : createTypePredicate(node.assertsModifier ? 3 : 1, parameterName2.escapedText, findIndex(signature.parameters, (p) => p.escapedName === parameterName2.escapedText), type);
         }
-        function getUnionOrIntersectionType(types7, kind, unionReduction) {
-          return kind !== 2097152 ? getUnionType(types7, unionReduction) : getIntersectionType(types7);
+        function getUnionOrIntersectionType(types8, kind, unionReduction) {
+          return kind !== 2097152 ? getUnionType(types8, unionReduction) : getIntersectionType(types8);
         }
         function getReturnTypeOfSignature(signature) {
           if (!signature.resolvedReturnType) {
@@ -69369,15 +69369,15 @@ ${lanes.join("\n")}
           const host2 = isJSDocTemplateTag(tp.parent) ? getEffectiveContainerForJSDocTemplateTag(tp.parent) : tp.parent;
           return host2 && getSymbolOfNode(host2);
         }
-        function getTypeListId(types7) {
+        function getTypeListId(types8) {
           let result3 = "";
-          if (types7) {
-            const length2 = types7.length;
+          if (types8) {
+            const length2 = types8.length;
             let i = 0;
             while (i < length2) {
-              const startId = types7[i].id;
+              const startId = types8[i].id;
               let count = 1;
-              while (i + count < length2 && types7[i + count].id === startId + count) {
+              while (i + count < length2 && types8[i + count].id === startId + count) {
                 count++;
               }
               if (result3.length) {
@@ -69395,9 +69395,9 @@ ${lanes.join("\n")}
         function getAliasId(aliasSymbol, aliasTypeArguments) {
           return aliasSymbol ? `@${getSymbolId(aliasSymbol)}` + (aliasTypeArguments ? `:${getTypeListId(aliasTypeArguments)}` : "") : "";
         }
-        function getPropagatingFlagsOfTypes(types7, excludeKinds) {
+        function getPropagatingFlagsOfTypes(types8, excludeKinds) {
           let result3 = 0;
-          for (const type of types7) {
+          for (const type of types8) {
             if (excludeKinds === void 0 || !(type.flags & excludeKinds)) {
               result3 |= getObjectFlags(type);
             }
@@ -69934,16 +69934,16 @@ ${lanes.join("\n")}
           return symbol || reportErrors2 ? getTypeOfGlobalSymbol(symbol, arity) : void 0;
         }
         function getGlobalBuiltinTypes(typeNames, arity) {
-          let types7;
+          let types8;
           for (const typeName of typeNames) {
-            types7 = append(types7, getGlobalType(
+            types8 = append(types8, getGlobalType(
               typeName,
               arity,
               /*reportErrors*/
               false
             ));
           }
-          return types7 ?? emptyArray;
+          return types8 ?? emptyArray;
         }
         function getGlobalTypedPropertyDescriptorType() {
           return deferredGlobalTypedPropertyDescriptorType || (deferredGlobalTypedPropertyDescriptorType = getGlobalType(
@@ -70613,13 +70613,13 @@ ${lanes.join("\n")}
         function getTypeId(type) {
           return type.id;
         }
-        function containsType(types7, type) {
-          return binarySearch(types7, type, getTypeId, compareValues) >= 0;
+        function containsType(types8, type) {
+          return binarySearch(types8, type, getTypeId, compareValues) >= 0;
         }
-        function insertType(types7, type) {
-          const index = binarySearch(types7, type, getTypeId, compareValues);
+        function insertType(types8, type) {
+          const index = binarySearch(types8, type, getTypeId, compareValues);
           if (index < 0) {
-            types7.splice(~index, 0, type);
+            types8.splice(~index, 0, type);
             return true;
           }
           return false;
@@ -70644,9 +70644,9 @@ ${lanes.join("\n")}
           }
           return includes;
         }
-        function addTypesToUnion(typeSet, includes, types7) {
+        function addTypesToUnion(typeSet, includes, types8) {
           let lastType;
-          for (const type of types7) {
+          for (const type of types8) {
             if (type !== lastType) {
               includes = type.flags & 1048576 ? addTypesToUnion(typeSet, includes | (isNamedUnionType(type) ? 1048576 : 0), type.types) : addTypeToUnion(typeSet, includes, type);
               lastType = type;
@@ -70654,38 +70654,38 @@ ${lanes.join("\n")}
           }
           return includes;
         }
-        function removeSubtypes(types7, hasObjectTypes) {
+        function removeSubtypes(types8, hasObjectTypes) {
           var _a2;
-          if (types7.length < 2) {
-            return types7;
+          if (types8.length < 2) {
+            return types8;
           }
-          const id = getTypeListId(types7);
+          const id = getTypeListId(types8);
           const match = subtypeReductionCache.get(id);
           if (match) {
             return match;
           }
-          const hasEmptyObject = hasObjectTypes && some(types7, (t) => !!(t.flags & 524288) && !isGenericMappedType(t) && isEmptyResolvedType(resolveStructuredTypeMembers(t)));
-          const len = types7.length;
+          const hasEmptyObject = hasObjectTypes && some(types8, (t) => !!(t.flags & 524288) && !isGenericMappedType(t) && isEmptyResolvedType(resolveStructuredTypeMembers(t)));
+          const len = types8.length;
           let i = len;
           let count = 0;
           while (i > 0) {
             i--;
-            const source = types7[i];
+            const source = types8[i];
             if (hasEmptyObject || source.flags & 469499904) {
               if (source.flags & 262144 && getBaseConstraintOrType(source).flags & 1048576) {
-                if (isTypeRelatedTo(source, getUnionType(map(types7, (t) => t === source ? neverType : t)), strictSubtypeRelation)) {
-                  orderedRemoveItemAt(types7, i);
+                if (isTypeRelatedTo(source, getUnionType(map(types8, (t) => t === source ? neverType : t)), strictSubtypeRelation)) {
+                  orderedRemoveItemAt(types8, i);
                 }
                 continue;
               }
               const keyProperty = source.flags & (524288 | 2097152 | 58982400) ? find(getPropertiesOfType(source), (p) => isUnitType(getTypeOfSymbol(p))) : void 0;
               const keyPropertyType = keyProperty && getRegularTypeOfLiteralType(getTypeOfSymbol(keyProperty));
-              for (const target of types7) {
+              for (const target of types8) {
                 if (source !== target) {
                   if (count === 1e5) {
                     const estimatedCount = count / (len - i) * len;
                     if (estimatedCount > 1e6) {
-                      (_a2 = tracing) == null ? void 0 : _a2.instant(tracing.Phase.CheckTypes, "removeSubtypes_DepthLimit", { typeIds: types7.map((t) => t.id) });
+                      (_a2 = tracing) == null ? void 0 : _a2.instant(tracing.Phase.CheckTypes, "removeSubtypes_DepthLimit", { typeIds: types8.map((t) => t.id) });
                       error2(currentNode, Diagnostics.Expression_produces_a_union_type_that_is_too_complex_to_represent);
                       return void 0;
                     }
@@ -70698,37 +70698,37 @@ ${lanes.join("\n")}
                     }
                   }
                   if (isTypeRelatedTo(source, target, strictSubtypeRelation) && (!(getObjectFlags(getTargetType(source)) & 1) || !(getObjectFlags(getTargetType(target)) & 1) || isTypeDerivedFrom(source, target))) {
-                    orderedRemoveItemAt(types7, i);
+                    orderedRemoveItemAt(types8, i);
                     break;
                   }
                 }
               }
             }
           }
-          subtypeReductionCache.set(id, types7);
-          return types7;
+          subtypeReductionCache.set(id, types8);
+          return types8;
         }
-        function removeRedundantLiteralTypes(types7, includes, reduceVoidUndefined) {
-          let i = types7.length;
+        function removeRedundantLiteralTypes(types8, includes, reduceVoidUndefined) {
+          let i = types8.length;
           while (i > 0) {
             i--;
-            const t = types7[i];
+            const t = types8[i];
             const flags = t.flags;
-            const remove = flags & (128 | 134217728 | 268435456) && includes & 4 || flags & 256 && includes & 8 || flags & 2048 && includes & 64 || flags & 8192 && includes & 4096 || reduceVoidUndefined && flags & 32768 && includes & 16384 || isFreshLiteralType(t) && containsType(types7, t.regularType);
+            const remove = flags & (128 | 134217728 | 268435456) && includes & 4 || flags & 256 && includes & 8 || flags & 2048 && includes & 64 || flags & 8192 && includes & 4096 || reduceVoidUndefined && flags & 32768 && includes & 16384 || isFreshLiteralType(t) && containsType(types8, t.regularType);
             if (remove) {
-              orderedRemoveItemAt(types7, i);
+              orderedRemoveItemAt(types8, i);
             }
           }
         }
-        function removeStringLiteralsMatchedByTemplateLiterals(types7) {
-          const templates = filter(types7, isPatternLiteralType);
+        function removeStringLiteralsMatchedByTemplateLiterals(types8) {
+          const templates = filter(types8, isPatternLiteralType);
           if (templates.length) {
-            let i = types7.length;
+            let i = types8.length;
             while (i > 0) {
               i--;
-              const t = types7[i];
+              const t = types8[i];
               if (t.flags & 128 && some(templates, (template) => isTypeMatchedByTemplateLiteralOrStringMapping(t, template))) {
-                orderedRemoveItemAt(types7, i);
+                orderedRemoveItemAt(types8, i);
               }
             }
           }
@@ -70736,9 +70736,9 @@ ${lanes.join("\n")}
         function isTypeMatchedByTemplateLiteralOrStringMapping(type, template) {
           return template.flags & 134217728 ? isTypeMatchedByTemplateLiteralType(type, template) : isMemberOfStringMapping(type, template);
         }
-        function removeConstrainedTypeVariables(types7) {
+        function removeConstrainedTypeVariables(types8) {
           const typeVariables = [];
-          for (const type of types7) {
+          for (const type of types8) {
             if (type.flags & 2097152 && getObjectFlags(type) & 67108864) {
               const index = type.types[0].flags & 8650752 ? 0 : 1;
               pushIfUnique(typeVariables, type.types[index]);
@@ -70746,7 +70746,7 @@ ${lanes.join("\n")}
           }
           for (const typeVariable of typeVariables) {
             const primitives = [];
-            for (const type of types7) {
+            for (const type of types8) {
               if (type.flags & 2097152 && getObjectFlags(type) & 67108864) {
                 const index = type.types[0].flags & 8650752 ? 0 : 1;
                 if (type.types[index] === typeVariable) {
@@ -70756,26 +70756,26 @@ ${lanes.join("\n")}
             }
             const constraint = getBaseConstraintOfType(typeVariable);
             if (everyType(constraint, (t) => containsType(primitives, t))) {
-              let i = types7.length;
+              let i = types8.length;
               while (i > 0) {
                 i--;
-                const type = types7[i];
+                const type = types8[i];
                 if (type.flags & 2097152 && getObjectFlags(type) & 67108864) {
                   const index = type.types[0].flags & 8650752 ? 0 : 1;
                   if (type.types[index] === typeVariable && containsType(primitives, type.types[1 - index])) {
-                    orderedRemoveItemAt(types7, i);
+                    orderedRemoveItemAt(types8, i);
                   }
                 }
               }
-              insertType(types7, typeVariable);
+              insertType(types8, typeVariable);
             }
           }
         }
         function isNamedUnionType(type) {
           return !!(type.flags & 1048576 && (type.aliasSymbol || type.origin));
         }
-        function addNamedUnions(namedUnions, types7) {
-          for (const t of types7) {
+        function addNamedUnions(namedUnions, types8) {
+          for (const t of types8) {
             if (t.flags & 1048576) {
               const origin = t.origin;
               if (t.aliasSymbol || origin && !(origin.flags & 1048576)) {
@@ -70786,26 +70786,26 @@ ${lanes.join("\n")}
             }
           }
         }
-        function createOriginUnionOrIntersectionType(flags, types7) {
+        function createOriginUnionOrIntersectionType(flags, types8) {
           const result3 = createOriginType(flags);
-          result3.types = types7;
+          result3.types = types8;
           return result3;
         }
-        function getUnionType(types7, unionReduction = 1, aliasSymbol, aliasTypeArguments, origin) {
-          if (types7.length === 0) {
+        function getUnionType(types8, unionReduction = 1, aliasSymbol, aliasTypeArguments, origin) {
+          if (types8.length === 0) {
             return neverType;
           }
-          if (types7.length === 1) {
-            return types7[0];
+          if (types8.length === 1) {
+            return types8[0];
           }
-          if (types7.length === 2 && !origin && (types7[0].flags & 1048576 || types7[1].flags & 1048576)) {
+          if (types8.length === 2 && !origin && (types8[0].flags & 1048576 || types8[1].flags & 1048576)) {
             const infix = unionReduction === 0 ? "N" : unionReduction === 2 ? "S" : "L";
-            const index = types7[0].id < types7[1].id ? 0 : 1;
-            const id = types7[index].id + infix + types7[1 - index].id + getAliasId(aliasSymbol, aliasTypeArguments);
+            const index = types8[0].id < types8[1].id ? 0 : 1;
+            const id = types8[index].id + infix + types8[1 - index].id + getAliasId(aliasSymbol, aliasTypeArguments);
             let type = unionOfUnionTypes.get(id);
             if (!type) {
               type = getUnionTypeWorker(
-                types7,
+                types8,
                 unionReduction,
                 aliasSymbol,
                 aliasTypeArguments,
@@ -70816,11 +70816,11 @@ ${lanes.join("\n")}
             }
             return type;
           }
-          return getUnionTypeWorker(types7, unionReduction, aliasSymbol, aliasTypeArguments, origin);
+          return getUnionTypeWorker(types8, unionReduction, aliasSymbol, aliasTypeArguments, origin);
         }
-        function getUnionTypeWorker(types7, unionReduction, aliasSymbol, aliasTypeArguments, origin) {
+        function getUnionTypeWorker(types8, unionReduction, aliasSymbol, aliasTypeArguments, origin) {
           let typeSet = [];
-          const includes = addTypesToUnion(typeSet, 0, types7);
+          const includes = addTypesToUnion(typeSet, 0, types8);
           if (unionReduction !== 0) {
             if (includes & 3) {
               return includes & 1 ? includes & 8388608 ? wildcardType : includes & 1073741824 ? errorType : anyType : unknownType;
@@ -70851,7 +70851,7 @@ ${lanes.join("\n")}
           }
           if (!origin && includes & 1048576) {
             const namedUnions = [];
-            addNamedUnions(namedUnions, types7);
+            addNamedUnions(namedUnions, types8);
             const reducedTypes = [];
             for (const t of typeSet) {
               if (!some(namedUnions, (union) => containsType(union.types, t))) {
@@ -70874,7 +70874,7 @@ ${lanes.join("\n")}
         }
         function getUnionOrIntersectionTypePredicate(signatures, kind) {
           let last2;
-          const types7 = [];
+          const types8 = [];
           for (const sig of signatures) {
             const pred = getTypePredicateOfSignature(sig);
             if (pred) {
@@ -70882,7 +70882,7 @@ ${lanes.join("\n")}
                 return void 0;
               }
               last2 = pred;
-              types7.push(pred.type);
+              types8.push(pred.type);
             } else {
               const returnType = kind !== 2097152 ? getReturnTypeOfSignature(sig) : void 0;
               if (returnType !== falseType && returnType !== regularFalseType) {
@@ -70893,20 +70893,20 @@ ${lanes.join("\n")}
           if (!last2) {
             return void 0;
           }
-          const compositeType = getUnionOrIntersectionType(types7, kind);
+          const compositeType = getUnionOrIntersectionType(types8, kind);
           return createTypePredicate(last2.kind, last2.parameterName, last2.parameterIndex, compositeType);
         }
         function typePredicateKindsMatch(a, b) {
           return a.kind === b.kind && a.parameterIndex === b.parameterIndex;
         }
-        function getUnionTypeFromSortedList(types7, precomputedObjectFlags, aliasSymbol, aliasTypeArguments, origin) {
-          if (types7.length === 0) {
+        function getUnionTypeFromSortedList(types8, precomputedObjectFlags, aliasSymbol, aliasTypeArguments, origin) {
+          if (types8.length === 0) {
             return neverType;
           }
-          if (types7.length === 1) {
-            return types7[0];
+          if (types8.length === 1) {
+            return types8[0];
           }
-          const typeKey = !origin ? getTypeListId(types7) : origin.flags & 1048576 ? `|${getTypeListId(origin.types)}` : origin.flags & 2097152 ? `&${getTypeListId(origin.types)}` : `#${origin.type.id}|${getTypeListId(types7)}`;
+          const typeKey = !origin ? getTypeListId(types8) : origin.flags & 1048576 ? `|${getTypeListId(origin.types)}` : origin.flags & 2097152 ? `&${getTypeListId(origin.types)}` : `#${origin.type.id}|${getTypeListId(types8)}`;
           const id = typeKey + getAliasId(aliasSymbol, aliasTypeArguments);
           let type = unionTypes.get(id);
           if (!type) {
@@ -70915,16 +70915,16 @@ ${lanes.join("\n")}
               /* Union */
             );
             type.objectFlags = precomputedObjectFlags | getPropagatingFlagsOfTypes(
-              types7,
+              types8,
               /*excludeKinds*/
               98304
               /* Nullable */
             );
-            type.types = types7;
+            type.types = types8;
             type.origin = origin;
             type.aliasSymbol = aliasSymbol;
             type.aliasTypeArguments = aliasTypeArguments;
-            if (types7.length === 2 && types7[0].flags & 512 && types7[1].flags & 512) {
+            if (types8.length === 2 && types8[0].flags & 512 && types8[1].flags & 512) {
               type.flags |= 16;
               type.intrinsicName = "boolean";
             }
@@ -70970,20 +70970,20 @@ ${lanes.join("\n")}
           }
           return includes;
         }
-        function addTypesToIntersection(typeSet, includes, types7) {
-          for (const type of types7) {
+        function addTypesToIntersection(typeSet, includes, types8) {
+          for (const type of types8) {
             includes = addTypeToIntersection(typeSet, includes, getRegularTypeOfLiteralType(type));
           }
           return includes;
         }
-        function removeRedundantSupertypes(types7, includes) {
-          let i = types7.length;
+        function removeRedundantSupertypes(types8, includes) {
+          let i = types8.length;
           while (i > 0) {
             i--;
-            const t = types7[i];
+            const t = types8[i];
             const remove = t.flags & 4 && includes & (128 | 134217728 | 268435456) || t.flags & 8 && includes & 256 || t.flags & 64 && includes & 2048 || t.flags & 4096 && includes & 8192 || t.flags & 16384 && includes & 32768 || isEmptyAnonymousObjectType(t) && includes & 470302716;
             if (remove) {
-              orderedRemoveItemAt(types7, i);
+              orderedRemoveItemAt(types8, i);
             }
           }
         }
@@ -71004,16 +71004,16 @@ ${lanes.join("\n")}
           }
           return true;
         }
-        function extractRedundantTemplateLiterals(types7) {
-          let i = types7.length;
-          const literals = filter(types7, (t) => !!(t.flags & 128));
+        function extractRedundantTemplateLiterals(types8) {
+          let i = types8.length;
+          const literals = filter(types8, (t) => !!(t.flags & 128));
           while (i > 0) {
             i--;
-            const t = types7[i];
+            const t = types8[i];
             if (!(t.flags & (134217728 | 268435456))) continue;
             for (const t2 of literals) {
               if (isTypeSubtypeOf(t2, t)) {
-                orderedRemoveItemAt(types7, i);
+                orderedRemoveItemAt(types8, i);
                 break;
               } else if (isPatternLiteralType(t)) {
                 return true;
@@ -71022,23 +71022,23 @@ ${lanes.join("\n")}
           }
           return false;
         }
-        function removeFromEach(types7, flag) {
-          for (let i = 0; i < types7.length; i++) {
-            types7[i] = filterType(types7[i], (t) => !(t.flags & flag));
+        function removeFromEach(types8, flag) {
+          for (let i = 0; i < types8.length; i++) {
+            types8[i] = filterType(types8[i], (t) => !(t.flags & flag));
           }
         }
-        function intersectUnionsOfPrimitiveTypes(types7) {
+        function intersectUnionsOfPrimitiveTypes(types8) {
           let unionTypes2;
-          const index = findIndex(types7, (t) => !!(getObjectFlags(t) & 32768));
+          const index = findIndex(types8, (t) => !!(getObjectFlags(t) & 32768));
           if (index < 0) {
             return false;
           }
           let i = index + 1;
-          while (i < types7.length) {
-            const t = types7[i];
+          while (i < types8.length) {
+            const t = types8[i];
             if (getObjectFlags(t) & 32768) {
-              (unionTypes2 || (unionTypes2 = [types7[index]])).push(t);
-              orderedRemoveItemAt(types7, i);
+              (unionTypes2 || (unionTypes2 = [types8[index]])).push(t);
+              orderedRemoveItemAt(types8, i);
             } else {
               i++;
             }
@@ -71064,32 +71064,32 @@ ${lanes.join("\n")}
               }
             }
           }
-          types7[index] = getUnionTypeFromSortedList(
+          types8[index] = getUnionTypeFromSortedList(
             result3,
             32768
             /* PrimitiveUnion */
           );
           return true;
         }
-        function createIntersectionType(types7, objectFlags, aliasSymbol, aliasTypeArguments) {
+        function createIntersectionType(types8, objectFlags, aliasSymbol, aliasTypeArguments) {
           const result3 = createType(
             2097152
             /* Intersection */
           );
           result3.objectFlags = objectFlags | getPropagatingFlagsOfTypes(
-            types7,
+            types8,
             /*excludeKinds*/
             98304
             /* Nullable */
           );
-          result3.types = types7;
+          result3.types = types8;
           result3.aliasSymbol = aliasSymbol;
           result3.aliasTypeArguments = aliasTypeArguments;
           return result3;
         }
-        function getIntersectionType(types7, flags = 0, aliasSymbol, aliasTypeArguments) {
+        function getIntersectionType(types8, flags = 0, aliasSymbol, aliasTypeArguments) {
           const typeMembershipMap = /* @__PURE__ */ new Map();
-          const includes = addTypesToIntersection(typeMembershipMap, 0, types7);
+          const includes = addTypesToIntersection(typeMembershipMap, 0, types8);
           const typeSet = arrayFrom(typeMembershipMap.values());
           let objectFlags = 0;
           if (includes & 131072) {
@@ -71159,7 +71159,7 @@ ${lanes.join("\n")}
                   /* Null */
                 );
                 result3 = getUnionType([getIntersectionType(typeSet, flags), nullType], 1, aliasSymbol, aliasTypeArguments);
-              } else if (typeSet.length >= 3 && types7.length > 2) {
+              } else if (typeSet.length >= 3 && types8.length > 2) {
                 const middle = Math.floor(typeSet.length / 2);
                 result3 = getIntersectionType([getIntersectionType(typeSet.slice(0, middle), flags), getIntersectionType(typeSet.slice(middle), flags)], flags, aliasSymbol, aliasTypeArguments);
               } else {
@@ -71177,28 +71177,28 @@ ${lanes.join("\n")}
           }
           return result3;
         }
-        function getCrossProductUnionSize(types7) {
-          return reduceLeft(types7, (n, t) => t.flags & 1048576 ? n * t.types.length : t.flags & 131072 ? 0 : n, 1);
+        function getCrossProductUnionSize(types8) {
+          return reduceLeft(types8, (n, t) => t.flags & 1048576 ? n * t.types.length : t.flags & 131072 ? 0 : n, 1);
         }
-        function checkCrossProductUnion(types7) {
+        function checkCrossProductUnion(types8) {
           var _a2;
-          const size = getCrossProductUnionSize(types7);
+          const size = getCrossProductUnionSize(types8);
           if (size >= 1e5) {
-            (_a2 = tracing) == null ? void 0 : _a2.instant(tracing.Phase.CheckTypes, "checkCrossProductUnion_DepthLimit", { typeIds: types7.map((t) => t.id), size });
+            (_a2 = tracing) == null ? void 0 : _a2.instant(tracing.Phase.CheckTypes, "checkCrossProductUnion_DepthLimit", { typeIds: types8.map((t) => t.id), size });
             error2(currentNode, Diagnostics.Expression_produces_a_union_type_that_is_too_complex_to_represent);
             return false;
           }
           return true;
         }
-        function getCrossProductIntersections(types7, flags) {
-          const count = getCrossProductUnionSize(types7);
+        function getCrossProductIntersections(types8, flags) {
+          const count = getCrossProductUnionSize(types8);
           const intersections = [];
           for (let i = 0; i < count; i++) {
-            const constituents = types7.slice();
+            const constituents = types8.slice();
             let n = i;
-            for (let j = types7.length - 1; j >= 0; j--) {
-              if (types7[j].flags & 1048576) {
-                const sourceTypes = types7[j].types;
+            for (let j = types8.length - 1; j >= 0; j--) {
+              if (types8[j].flags & 1048576) {
+                const sourceTypes = types8[j].types;
                 const length2 = sourceTypes.length;
                 constituents[j] = sourceTypes[n % length2];
                 n = Math.floor(n / length2);
@@ -71212,18 +71212,18 @@ ${lanes.join("\n")}
         function getConstituentCount(type) {
           return !(type.flags & 3145728) || type.aliasSymbol ? 1 : type.flags & 1048576 && type.origin ? getConstituentCount(type.origin) : getConstituentCountOfTypes(type.types);
         }
-        function getConstituentCountOfTypes(types7) {
-          return reduceLeft(types7, (n, t) => n + getConstituentCount(t), 0);
+        function getConstituentCountOfTypes(types8) {
+          return reduceLeft(types8, (n, t) => n + getConstituentCount(t), 0);
         }
         function getTypeFromIntersectionTypeNode(node) {
           const links = getNodeLinks(node);
           if (!links.resolvedType) {
             const aliasSymbol = getAliasSymbolForTypeNode(node);
-            const types7 = map(node.types, getTypeFromTypeNode);
-            const emptyIndex = types7.length === 2 ? types7.indexOf(emptyTypeLiteralType) : -1;
-            const t = emptyIndex >= 0 ? types7[1 - emptyIndex] : unknownType;
+            const types8 = map(node.types, getTypeFromTypeNode);
+            const emptyIndex = types8.length === 2 ? types8.indexOf(emptyTypeLiteralType) : -1;
+            const t = emptyIndex >= 0 ? types8[1 - emptyIndex] : unknownType;
             const noSupertypeReduction = !!(t.flags & (4 | 8 | 64) || t.flags & 134217728 && isPatternLiteralType(t));
-            links.resolvedType = getIntersectionType(types7, noSupertypeReduction ? 1 : 0, aliasSymbol, getTypeArgumentsForAliasSymbol(aliasSymbol));
+            links.resolvedType = getIntersectionType(types8, noSupertypeReduction ? 1 : 0, aliasSymbol, getTypeArgumentsForAliasSymbol(aliasSymbol));
           }
           return links.resolvedType;
         }
@@ -71393,18 +71393,18 @@ ${lanes.join("\n")}
           }
           return links.resolvedType;
         }
-        function getTemplateLiteralType(texts, types7) {
-          const unionIndex = findIndex(types7, (t) => !!(t.flags & (131072 | 1048576)));
+        function getTemplateLiteralType(texts, types8) {
+          const unionIndex = findIndex(types8, (t) => !!(t.flags & (131072 | 1048576)));
           if (unionIndex >= 0) {
-            return checkCrossProductUnion(types7) ? mapType(types7[unionIndex], (t) => getTemplateLiteralType(texts, replaceElement(types7, unionIndex, t))) : errorType;
+            return checkCrossProductUnion(types8) ? mapType(types8[unionIndex], (t) => getTemplateLiteralType(texts, replaceElement(types8, unionIndex, t))) : errorType;
           }
-          if (contains(types7, wildcardType)) {
+          if (contains(types8, wildcardType)) {
             return wildcardType;
           }
           const newTypes = [];
           const newTexts = [];
           let text2 = texts[0];
-          if (!addSpans(texts, types7)) {
+          if (!addSpans(texts, types8)) {
             return stringType;
           }
           if (newTypes.length === 0) {
@@ -71449,13 +71449,13 @@ ${lanes.join("\n")}
         function getTemplateStringForType(type) {
           return type.flags & 128 ? type.value : type.flags & 256 ? "" + type.value : type.flags & 2048 ? pseudoBigIntToString(type.value) : type.flags & (512 | 98304) ? type.intrinsicName : void 0;
         }
-        function createTemplateLiteralType(texts, types7) {
+        function createTemplateLiteralType(texts, types8) {
           const type = createType(
             134217728
             /* TemplateLiteral */
           );
           type.texts = texts;
-          type.types = types7;
+          type.types = types8;
           return type;
         }
         function getStringMappingType(symbol, type) {
@@ -71480,18 +71480,18 @@ ${lanes.join("\n")}
           }
           return str;
         }
-        function applyTemplateStringMapping(symbol, texts, types7) {
+        function applyTemplateStringMapping(symbol, texts, types8) {
           switch (intrinsicTypeKinds.get(symbol.escapedName)) {
             case 0:
-              return [texts.map((t) => t.toUpperCase()), types7.map((t) => getStringMappingType(symbol, t))];
+              return [texts.map((t) => t.toUpperCase()), types8.map((t) => getStringMappingType(symbol, t))];
             case 1:
-              return [texts.map((t) => t.toLowerCase()), types7.map((t) => getStringMappingType(symbol, t))];
+              return [texts.map((t) => t.toLowerCase()), types8.map((t) => getStringMappingType(symbol, t))];
             case 2:
-              return [texts[0] === "" ? texts : [texts[0].charAt(0).toUpperCase() + texts[0].slice(1), ...texts.slice(1)], texts[0] === "" ? [getStringMappingType(symbol, types7[0]), ...types7.slice(1)] : types7];
+              return [texts[0] === "" ? texts : [texts[0].charAt(0).toUpperCase() + texts[0].slice(1), ...texts.slice(1)], texts[0] === "" ? [getStringMappingType(symbol, types8[0]), ...types8.slice(1)] : types8];
             case 3:
-              return [texts[0] === "" ? texts : [texts[0].charAt(0).toLowerCase() + texts[0].slice(1), ...texts.slice(1)], texts[0] === "" ? [getStringMappingType(symbol, types7[0]), ...types7.slice(1)] : types7];
+              return [texts[0] === "" ? texts : [texts[0].charAt(0).toLowerCase() + texts[0].slice(1), ...texts.slice(1)], texts[0] === "" ? [getStringMappingType(symbol, types8[0]), ...types8.slice(1)] : types8];
           }
-          return [texts, types7];
+          return [texts, types8];
         }
         function getStringMappingTypeForGenericType(symbol, type) {
           const id = `${getSymbolId(symbol)},${getTypeId(type)}`;
@@ -71649,10 +71649,10 @@ ${lanes.join("\n")}
                   diagnostics.add(createDiagnosticForNode(accessExpression, Diagnostics.Property_0_does_not_exist_on_type_1, indexType.value, typeToString(objectType)));
                   return undefinedType;
                 } else if (indexType.flags & (8 | 4)) {
-                  const types7 = map(objectType.properties, (property) => {
+                  const types8 = map(objectType.properties, (property) => {
                     return getTypeOfSymbol(property);
                   });
-                  return getUnionType(append(types7, undefinedType));
+                  return getUnionType(append(types8, undefinedType));
                 }
               }
               if (objectType.symbol === globalThisSymbol && propName !== void 0 && globalThisSymbol.exports.has(propName) && globalThisSymbol.exports.get(propName).flags & 418) {
@@ -71810,14 +71810,14 @@ ${lanes.join("\n")}
         }
         function distributeIndexOverObjectType(objectType, indexType, writing) {
           if (objectType.flags & 1048576 || objectType.flags & 2097152 && !shouldDeferIndexType(objectType)) {
-            const types7 = map(objectType.types, (t) => getSimplifiedType(getIndexedAccessType(t, indexType), writing));
-            return objectType.flags & 2097152 || writing ? getIntersectionType(types7) : getUnionType(types7);
+            const types8 = map(objectType.types, (t) => getSimplifiedType(getIndexedAccessType(t, indexType), writing));
+            return objectType.flags & 2097152 || writing ? getIntersectionType(types8) : getUnionType(types8);
           }
         }
         function distributeObjectOverIndexType(objectType, indexType, writing) {
           if (indexType.flags & 1048576) {
-            const types7 = map(indexType.types, (t) => getSimplifiedType(getIndexedAccessType(objectType, t), writing));
-            return writing ? getIntersectionType(types7) : getUnionType(types7);
+            const types8 = map(indexType.types, (t) => getSimplifiedType(getIndexedAccessType(objectType, t), writing));
+            return writing ? getIntersectionType(types8) : getUnionType(types8);
           }
         }
         function getSimplifiedIndexedAccessType(type, writing) {
@@ -72366,10 +72366,10 @@ ${lanes.join("\n")}
               return right;
             }
             if (left.flags & 2097152) {
-              const types7 = left.types;
-              const lastLeft = types7[types7.length - 1];
+              const types8 = left.types;
+              const lastLeft = types8[types8.length - 1];
               if (isNonGenericObjectType(lastLeft) && isNonGenericObjectType(right)) {
-                return getIntersectionType(concatenate(types7.slice(0, types7.length - 1), [getSpreadType(lastLeft, right, symbol, objectFlags, readonly)]));
+                return getIntersectionType(concatenate(types8.slice(0, types8.length - 1), [getSpreadType(lastLeft, right, symbol, objectFlags, readonly)]));
               }
             }
             return getIntersectionType([left, right]);
@@ -72692,8 +72692,8 @@ ${lanes.join("\n")}
           }
           return items;
         }
-        function instantiateTypes(types7, mapper) {
-          return instantiateList(types7, mapper, instantiateType);
+        function instantiateTypes(types8, mapper) {
+          return instantiateList(types8, mapper, instantiateType);
         }
         function instantiateSignatures(signatures, mapper) {
           return instantiateList(signatures, mapper, instantiateSignature);
@@ -73129,9 +73129,9 @@ ${lanes.join("\n")}
           }
           if (flags & 3145728) {
             const origin = type.flags & 1048576 ? type.origin : void 0;
-            const types7 = origin && origin.flags & 3145728 ? origin.types : type.types;
-            const newTypes = instantiateTypes(types7, mapper);
-            if (newTypes === types7 && aliasSymbol === type.aliasSymbol) {
+            const types8 = origin && origin.flags & 3145728 ? origin.types : type.types;
+            const newTypes = instantiateTypes(types8, mapper);
+            if (newTypes === types8 && aliasSymbol === type.aliasSymbol) {
               return type;
             }
             const newAliasSymbol = aliasSymbol || type.aliasSymbol;
@@ -74074,8 +74074,8 @@ ${lanes.join("\n")}
         function isUnknownLikeUnionType(type) {
           if (strictNullChecks && type.flags & 1048576) {
             if (!(type.objectFlags & 33554432)) {
-              const types7 = type.types;
-              type.objectFlags |= 33554432 | (types7.length >= 3 && types7[0].flags & 32768 && types7[1].flags & 65536 && some(types7, isEmptyAnonymousObjectType) ? 67108864 : 0);
+              const types8 = type.types;
+              type.objectFlags |= 33554432 | (types8.length >= 3 && types8[0].flags & 32768 && types8[1].flags & 65536 && some(types8, isEmptyAnonymousObjectType) ? 67108864 : 0);
             }
             return !!(type.objectFlags & 67108864);
           }
@@ -74629,8 +74629,8 @@ ${lanes.join("\n")}
               return -1;
             }
             if (source2.flags & 470302716 && target2.flags & 1048576) {
-              const types7 = target2.types;
-              const candidate = types7.length === 2 && types7[0].flags & 98304 ? types7[1] : types7.length === 3 && types7[0].flags & 98304 && types7[1].flags & 98304 ? types7[2] : void 0;
+              const types8 = target2.types;
+              const candidate = types8.length === 2 && types8[0].flags & 98304 ? types8[1] : types8.length === 3 && types8[0].flags & 98304 && types8[1].flags & 98304 ? types8[2] : void 0;
               if (candidate && !(candidate.flags & 98304)) {
                 target2 = getNormalizedType(
                   candidate,
@@ -74783,7 +74783,7 @@ ${lanes.join("\n")}
               }
             }
           }
-          function getTypeOfPropertyInTypes(types7, name) {
+          function getTypeOfPropertyInTypes(types8, name) {
             const appendPropType = (propTypes, type) => {
               var _a22;
               type = getApparentType(type);
@@ -74792,7 +74792,7 @@ ${lanes.join("\n")}
               return append(propTypes, propType);
             };
             return getUnionType(reduceLeft(
-              types7,
+              types8,
               appendPropType,
               /*initial*/
               void 0
@@ -76830,16 +76830,16 @@ ${lanes.join("\n")}
           return findMatchingDiscriminantType(source, target, isRelatedTo) || findMatchingTypeReferenceOrTypeAliasReference(source, target) || findBestTypeForObjectLiteral(source, target) || findBestTypeForInvokable(source, target) || findMostOverlappyType(source, target);
         }
         function discriminateTypeByDiscriminableItems(target, discriminators, related) {
-          const types7 = target.types;
-          const include = types7.map(
+          const types8 = target.types;
+          const include = types8.map(
             (t) => t.flags & 402784252 ? 0 : -1
             /* True */
           );
           for (const [getDiscriminatingType, propertyName2] of discriminators) {
             let matched = false;
-            for (let i = 0; i < types7.length; i++) {
+            for (let i = 0; i < types8.length; i++) {
               if (include[i]) {
-                const targetType = getTypeOfPropertyOrIndexSignatureOfType(types7[i], propertyName2);
+                const targetType = getTypeOfPropertyOrIndexSignatureOfType(types8[i], propertyName2);
                 if (targetType) {
                   if (someType(getDiscriminatingType(), (t) => !!related(t, targetType))) {
                     matched = true;
@@ -76849,7 +76849,7 @@ ${lanes.join("\n")}
                 }
               }
             }
-            for (let i = 0; i < types7.length; i++) {
+            for (let i = 0; i < types8.length; i++) {
               if (include[i] === 3) {
                 include[i] = matched ? 0 : -1;
               }
@@ -76860,7 +76860,7 @@ ${lanes.join("\n")}
             0
             /* False */
           ) ? getUnionType(
-            types7.filter((_, i) => include[i]),
+            types8.filter((_, i) => include[i]),
             0
             /* None */
           ) : target;
@@ -77220,9 +77220,9 @@ ${lanes.join("\n")}
         function compareTypePredicatesIdentical(source, target, compareTypes) {
           return !(source && target && typePredicateKindsMatch(source, target)) ? 0 : source.type === target.type ? -1 : source.type && target.type ? compareTypes(source.type, target.type) : 0;
         }
-        function literalTypesWithSameBaseType(types7) {
+        function literalTypesWithSameBaseType(types8) {
           let commonBaseType;
-          for (const t of types7) {
+          for (const t of types8) {
             if (!(t.flags & 131072)) {
               const baseType = getBaseTypeOfLiteralType(t);
               commonBaseType ?? (commonBaseType = baseType);
@@ -77233,27 +77233,27 @@ ${lanes.join("\n")}
           }
           return true;
         }
-        function getCombinedTypeFlags(types7) {
-          return reduceLeft(types7, (flags, t) => flags | (t.flags & 1048576 ? getCombinedTypeFlags(t.types) : t.flags), 0);
+        function getCombinedTypeFlags(types8) {
+          return reduceLeft(types8, (flags, t) => flags | (t.flags & 1048576 ? getCombinedTypeFlags(t.types) : t.flags), 0);
         }
-        function getCommonSupertype(types7) {
-          if (types7.length === 1) {
-            return types7[0];
+        function getCommonSupertype(types8) {
+          if (types8.length === 1) {
+            return types8[0];
           }
-          const primaryTypes = strictNullChecks ? sameMap(types7, (t) => filterType(t, (u) => !(u.flags & 98304))) : types7;
+          const primaryTypes = strictNullChecks ? sameMap(types8, (t) => filterType(t, (u) => !(u.flags & 98304))) : types8;
           const superTypeOrUnion = literalTypesWithSameBaseType(primaryTypes) ? getUnionType(primaryTypes) : getSingleCommonSupertype(primaryTypes);
-          return primaryTypes === types7 ? superTypeOrUnion : getNullableType(
+          return primaryTypes === types8 ? superTypeOrUnion : getNullableType(
             superTypeOrUnion,
-            getCombinedTypeFlags(types7) & 98304
+            getCombinedTypeFlags(types8) & 98304
             /* Nullable */
           );
         }
-        function getSingleCommonSupertype(types7) {
-          const candidate = reduceLeft(types7, (s, t) => isTypeStrictSubtypeOf(s, t) ? t : s);
-          return every(types7, (t) => t === candidate || isTypeStrictSubtypeOf(t, candidate)) ? candidate : reduceLeft(types7, (s, t) => isTypeSubtypeOf(s, t) ? t : s);
+        function getSingleCommonSupertype(types8) {
+          const candidate = reduceLeft(types8, (s, t) => isTypeStrictSubtypeOf(s, t) ? t : s);
+          return every(types8, (t) => t === candidate || isTypeStrictSubtypeOf(t, candidate)) ? candidate : reduceLeft(types8, (s, t) => isTypeSubtypeOf(s, t) ? t : s);
         }
-        function getCommonSubtype(types7) {
-          return reduceLeft(types7, (s, t) => isTypeSubtypeOf(t, s) ? t : s);
+        function getCommonSubtype(types8) {
+          return reduceLeft(types8, (s, t) => isTypeSubtypeOf(t, s) ? t : s);
         }
         function isArrayType(type) {
           return !!(getObjectFlags(type) & 4) && (type.target === globalArrayType || type.target === globalReadonlyArrayType);
@@ -78558,9 +78558,9 @@ ${lanes.join("\n")}
             }
             return void 0;
           }
-          function getSingleTypeVariableFromIntersectionTypes(types7) {
+          function getSingleTypeVariableFromIntersectionTypes(types8) {
             let typeVariable;
-            for (const type of types7) {
+            for (const type of types8) {
               const t = type.flags & 2097152 && find(type.types, (t2) => !!getInferenceInfoForType(t2));
               if (!t || typeVariable && t !== typeVariable) {
                 return void 0;
@@ -78691,11 +78691,11 @@ ${lanes.join("\n")}
           }
           function inferToTemplateLiteralType(source, target) {
             const matches2 = inferTypesFromTemplateLiteralType(source, target);
-            const types7 = target.types;
+            const types8 = target.types;
             if (matches2 || every(target.texts, (s) => s.length === 0)) {
-              for (let i = 0; i < types7.length; i++) {
+              for (let i = 0; i < types8.length; i++) {
                 const source2 = matches2 ? matches2[i] : neverType;
-                const target2 = types7[i];
+                const target2 = types8[i];
                 if (source2.flags & 128 && target2.flags & 8650752) {
                   const inferenceContext = getInferenceInfoForType(target2);
                   const constraint = inferenceContext ? getBaseConstraintOfType(inferenceContext.typeParameter) : void 0;
@@ -79270,10 +79270,10 @@ ${lanes.join("\n")}
           }
           return result3;
         }
-        function mapTypesByKeyProperty(types7, name) {
+        function mapTypesByKeyProperty(types8, name) {
           const map2 = /* @__PURE__ */ new Map();
           let count = 0;
-          for (const type of types7) {
+          for (const type of types8) {
             if (type.flags & (524288 | 2097152 | 58982400)) {
               const discriminant = getTypeOfPropertyOfType(type, name);
               if (discriminant) {
@@ -79295,16 +79295,16 @@ ${lanes.join("\n")}
               }
             }
           }
-          return count >= 10 && count * 2 >= types7.length ? map2 : void 0;
+          return count >= 10 && count * 2 >= types8.length ? map2 : void 0;
         }
         function getKeyPropertyName(unionType) {
-          const types7 = unionType.types;
-          if (types7.length < 10 || getObjectFlags(unionType) & 32768 || countWhere(types7, (t) => !!(t.flags & (524288 | 58982400))) < 10) {
+          const types8 = unionType.types;
+          if (types8.length < 10 || getObjectFlags(unionType) & 32768 || countWhere(types8, (t) => !!(t.flags & (524288 | 58982400))) < 10) {
             return void 0;
           }
           if (unionType.keyPropertyName === void 0) {
-            const keyPropertyName = forEach(types7, (t) => t.flags & (524288 | 58982400) ? forEach(getPropertiesOfType(t), (p) => isUnitType(getTypeOfSymbol(p)) ? p.escapedName : void 0) : void 0);
-            const mapByKeyProperty = keyPropertyName && mapTypesByKeyProperty(types7, keyPropertyName);
+            const keyPropertyName = forEach(types8, (t) => t.flags & (524288 | 58982400) ? forEach(getPropertiesOfType(t), (p) => isUnitType(getTypeOfSymbol(p)) ? p.escapedName : void 0) : void 0);
+            const mapByKeyProperty = keyPropertyName && mapTypesByKeyProperty(types8, keyPropertyName);
             unionType.keyPropertyName = mapByKeyProperty ? keyPropertyName : "";
             unionType.constituentMap = mapByKeyProperty;
           }
@@ -79661,8 +79661,8 @@ ${lanes.join("\n")}
           }
           return witnesses;
         }
-        function eachTypeContainedIn(source, types7) {
-          return source.flags & 1048576 ? !forEach(source.types, (t) => !contains(types7, t)) : contains(types7, source);
+        function eachTypeContainedIn(source, types8) {
+          return source.flags & 1048576 ? !forEach(source.types, (t) => !contains(types8, t)) : contains(types8, source);
         }
         function isTypeSubsetOf(source, target) {
           return !!(source === target || source.flags & 131072 || target.flags & 1048576 && isTypeSubsetOfUnion(source, target));
@@ -79695,9 +79695,9 @@ ${lanes.join("\n")}
         }
         function filterType(type, f) {
           if (type.flags & 1048576) {
-            const types7 = type.types;
-            const filtered = filter(types7, f);
-            if (filtered === types7) {
+            const types8 = type.types;
+            const filtered = filter(types8, f);
+            if (filtered === types8) {
               return type;
             }
             const origin = type.origin;
@@ -79705,7 +79705,7 @@ ${lanes.join("\n")}
             if (origin && origin.flags & 1048576) {
               const originTypes = origin.types;
               const originFiltered = filter(originTypes, (t) => !!(t.flags & 1048576) || f(t));
-              if (originTypes.length - originFiltered.length === types7.length - filtered.length) {
+              if (originTypes.length - originFiltered.length === types8.length - filtered.length) {
                 if (originFiltered.length === 1) {
                   return originFiltered[0];
                 }
@@ -79738,10 +79738,10 @@ ${lanes.join("\n")}
             return mapper(type);
           }
           const origin = type.origin;
-          const types7 = origin && origin.flags & 1048576 ? origin.types : type.types;
+          const types8 = origin && origin.flags & 1048576 ? origin.types : type.types;
           let mappedTypes;
           let changed = false;
-          for (const t of types7) {
+          for (const t of types8) {
             const mapped = t.flags & 1048576 ? mapType(t, mapper, noReductions) : mapper(t);
             changed || (changed = t !== mapped);
             if (mapped) {
@@ -79840,9 +79840,9 @@ ${lanes.join("\n")}
         function getElementTypeOfEvolvingArrayType(type) {
           return getObjectFlags(type) & 256 ? type.elementType : neverType;
         }
-        function isEvolvingArrayTypeList(types7) {
+        function isEvolvingArrayTypeList(types8) {
           let hasEvolvingArrayType = false;
-          for (const t of types7) {
+          for (const t of types8) {
             if (!(t.flags & 131072)) {
               if (!(getObjectFlags(t) & 256)) {
                 return false;
@@ -80525,11 +80525,11 @@ ${lanes.join("\n")}
             cache.set(key22, result3);
             return result3;
           }
-          function getUnionOrEvolvingArrayType(types7, subtypeReduction) {
-            if (isEvolvingArrayTypeList(types7)) {
-              return getEvolvingArrayType(getUnionType(map(types7, getElementTypeOfEvolvingArrayType)));
+          function getUnionOrEvolvingArrayType(types8, subtypeReduction) {
+            if (isEvolvingArrayTypeList(types8)) {
+              return getEvolvingArrayType(getUnionType(map(types8, getElementTypeOfEvolvingArrayType)));
             }
-            const result3 = recombineUnknownType(getUnionType(sameMap(types7, finalizeEvolvingArrayType), subtypeReduction));
+            const result3 = recombineUnknownType(getUnionType(sameMap(types8, finalizeEvolvingArrayType), subtypeReduction));
             if (result3 !== declaredType && result3.flags & declaredType.flags & 1048576 && arrayIsEqualTo(result3.types, declaredType.types)) {
               return declaredType;
             }
@@ -83095,7 +83095,7 @@ ${lanes.join("\n")}
             type,
             (t) => {
               if (t.flags & 2097152) {
-                let types7;
+                let types8;
                 let indexInfoCandidates;
                 let ignoreIndexInfos = false;
                 for (const constituentType of t.types) {
@@ -83104,7 +83104,7 @@ ${lanes.join("\n")}
                   }
                   if (isGenericMappedType(constituentType) && getMappedTypeNameTypeKind(constituentType) !== 2) {
                     const substitutedType = getIndexedMappedTypeSubstitutedTypeOfContextualType(constituentType, name, nameType);
-                    types7 = appendContextualPropertyTypeConstituent(types7, substitutedType);
+                    types8 = appendContextualPropertyTypeConstituent(types8, substitutedType);
                     continue;
                   }
                   const propertyType = getTypeOfConcretePropertyOfContextualType(constituentType, name);
@@ -83116,21 +83116,21 @@ ${lanes.join("\n")}
                   }
                   ignoreIndexInfos = true;
                   indexInfoCandidates = void 0;
-                  types7 = appendContextualPropertyTypeConstituent(types7, propertyType);
+                  types8 = appendContextualPropertyTypeConstituent(types8, propertyType);
                 }
                 if (indexInfoCandidates) {
                   for (const candidate of indexInfoCandidates) {
                     const indexInfoType = getTypeFromIndexInfosOfContextualType(candidate, name, nameType);
-                    types7 = appendContextualPropertyTypeConstituent(types7, indexInfoType);
+                    types8 = appendContextualPropertyTypeConstituent(types8, indexInfoType);
                   }
                 }
-                if (!types7) {
+                if (!types8) {
                   return;
                 }
-                if (types7.length === 1) {
-                  return types7[0];
+                if (types8.length === 1) {
+                  return types8[0];
                 }
-                return getIntersectionType(types7);
+                return getIntersectionType(types8);
               }
               if (!(t.flags & 524288)) {
                 return;
@@ -83141,8 +83141,8 @@ ${lanes.join("\n")}
             true
           );
         }
-        function appendContextualPropertyTypeConstituent(types7, type) {
-          return type ? append(types7, type.flags & 1 ? unknownType : type) : types7;
+        function appendContextualPropertyTypeConstituent(types8, type) {
+          return type ? append(types8, type.flags & 1 ? unknownType : type) : types8;
         }
         function getIndexedMappedTypeSubstitutedTypeOfContextualType(type, name, nameType) {
           const propertyNameType = nameType || getStringLiteralType(unescapeLeadingUnderscores(name));
@@ -83866,8 +83866,8 @@ ${lanes.join("\n")}
             return getContextualCallSignature(type, node);
           }
           let signatureList;
-          const types7 = type.types;
-          for (const current of types7) {
+          const types8 = type.types;
+          for (const current of types8) {
             const signature = getContextualCallSignature(current, node);
             if (signature) {
               if (!signatureList) {
@@ -86206,7 +86206,7 @@ ${lanes.join("\n")}
               return createArrayType(checkIteratedTypeOrElementType(33, spreadType, undefinedType, arg.kind === 231 ? arg.expression : arg), inConstContext);
             }
           }
-          const types7 = [];
+          const types8 = [];
           const flags = [];
           const names = [];
           for (let i = index; i < argCount; i++) {
@@ -86214,13 +86214,13 @@ ${lanes.join("\n")}
             if (isSpreadArgument(arg)) {
               const spreadType = arg.kind === 238 ? arg.type : checkExpression(arg.expression);
               if (isArrayLikeType(spreadType)) {
-                types7.push(spreadType);
+                types8.push(spreadType);
                 flags.push(
                   8
                   /* Variadic */
                 );
               } else {
-                types7.push(checkIteratedTypeOrElementType(33, spreadType, undefinedType, arg.kind === 231 ? arg.expression : arg));
+                types8.push(checkIteratedTypeOrElementType(33, spreadType, undefinedType, arg.kind === 231 ? arg.expression : arg));
                 flags.push(
                   4
                   /* Rest */
@@ -86239,7 +86239,7 @@ ${lanes.join("\n")}
                 402784252 | 4194304 | 134217728 | 268435456
                 /* StringMapping */
               );
-              types7.push(hasPrimitiveContextualType ? getRegularTypeOfLiteralType(argType) : getWidenedLiteralType(argType));
+              types8.push(hasPrimitiveContextualType ? getRegularTypeOfLiteralType(argType) : getWidenedLiteralType(argType));
               flags.push(
                 1
                 /* Required */
@@ -86251,7 +86251,7 @@ ${lanes.join("\n")}
               names.push(void 0);
             }
           }
-          return createTupleType(types7, flags, inConstContext && !someType(restType, isMutableArrayLikeType), names);
+          return createTupleType(types8, flags, inConstContext && !someType(restType, isMutableArrayLikeType), names);
         }
         function checkTypeArguments(signature, typeArgumentNodes, reportErrors2, headMessage) {
           const isJavascript = isInJSFile(signature.declaration);
@@ -87153,9 +87153,9 @@ ${lanes.join("\n")}
           const numParams = signature.parameters.length;
           return signatureHasRestParameter(signature) ? numParams - 1 : numParams;
         }
-        function createCombinedSymbolFromTypes(sources, types7) {
+        function createCombinedSymbolFromTypes(sources, types8) {
           return createCombinedSymbolForOverloadFailure(sources, getUnionType(
-            types7,
+            types8,
             2
             /* Subtype */
           ));
@@ -87401,8 +87401,8 @@ ${lanes.join("\n")}
           }
           const firstBase = baseTypes[0];
           if (firstBase.flags & 2097152) {
-            const types7 = firstBase.types;
-            const mixinFlags = findMixins(types7);
+            const types8 = firstBase.types;
+            const mixinFlags = findMixins(types8);
             let i = 0;
             for (const intersectionMember of firstBase.types) {
               if (!mixinFlags[i]) {
@@ -87463,9 +87463,9 @@ ${lanes.join("\n")}
           const awaitedType = getAwaitedType(apparentType);
           const maybeMissingAwait = awaitedType && getSignaturesOfType(awaitedType, kind).length > 0;
           if (apparentType.flags & 1048576) {
-            const types7 = apparentType.types;
+            const types8 = apparentType.types;
             let hasSignatures2 = false;
-            for (const constituent of types7) {
+            for (const constituent of types8) {
               const signatures = getSignaturesOfType(constituent, kind);
               if (signatures.length !== 0) {
                 hasSignatures2 = true;
@@ -88642,18 +88642,18 @@ ${lanes.join("\n")}
           if (restType && pos >= parameterCount - 1) {
             return pos === parameterCount - 1 ? restType : createArrayType(getIndexedAccessType(restType, numberType));
           }
-          const types7 = [];
+          const types8 = [];
           const flags = [];
           const names = [];
           for (let i = pos; i < parameterCount; i++) {
             if (!restType || i < parameterCount - 1) {
-              types7.push(getTypeAtPosition(source, i));
+              types8.push(getTypeAtPosition(source, i));
               flags.push(
                 i < minArgumentCount ? 1 : 2
                 /* Optional */
               );
             } else {
-              types7.push(restType);
+              types8.push(restType);
               flags.push(
                 8
                 /* Variadic */
@@ -88661,7 +88661,7 @@ ${lanes.join("\n")}
             }
             names.push(getNameableDeclarationAtPosition(source, i));
           }
-          return createTupleType(types7, flags, readonly, names);
+          return createTupleType(types8, flags, readonly, names);
         }
         function getRestOrAnyTypeAtPosition(source, pos) {
           const restType = getRestTypeAtPosition(source, pos);
@@ -89198,11 +89198,11 @@ ${lanes.join("\n")}
             ) : void 0;
             nextType = some(nextTypes) ? getIntersectionType(nextTypes) : void 0;
           } else {
-            const types7 = checkAndAggregateReturnExpressionTypes(func, checkMode);
-            if (!types7) {
+            const types8 = checkAndAggregateReturnExpressionTypes(func, checkMode);
+            if (!types8) {
               return functionFlags & 2 ? createPromiseReturnType(func, neverType) : neverType;
             }
-            if (types7.length === 0) {
+            if (types8.length === 0) {
               const contextualReturnType = getContextualReturnType(
                 func,
                 /*contextFlags*/
@@ -89215,7 +89215,7 @@ ${lanes.join("\n")}
               );
             }
             returnType = getUnionType(
-              types7,
+              types8,
               2
               /* Subtype */
             );
@@ -89992,8 +89992,8 @@ ${lanes.join("\n")}
             return true;
           }
           if (type.flags & 3145728) {
-            const types7 = type.types;
-            for (const t of types7) {
+            const types8 = type.types;
+            for (const t of types8) {
               if (maybeTypeOfKind(t, kind)) {
                 return true;
               }
@@ -91169,7 +91169,7 @@ ${lanes.join("\n")}
         }
         function checkTemplateExpression(node) {
           const texts = [node.head.text];
-          const types7 = [];
+          const types8 = [];
           for (const span of node.templateSpans) {
             const type = checkExpression(span.expression);
             if (maybeTypeOfKindConsideringBaseConstraint(
@@ -91180,7 +91180,7 @@ ${lanes.join("\n")}
               error2(span.expression, Diagnostics.Implicit_conversion_of_a_symbol_to_a_string_will_fail_at_runtime_Consider_wrapping_this_expression_in_String);
             }
             texts.push(span.literal.text);
-            types7.push(isTypeAssignableTo(type, templateConstraintType) ? type : stringType);
+            types8.push(isTypeAssignableTo(type, templateConstraintType) ? type : stringType);
           }
           const evaluated = node.parent.kind !== 216 && evaluate(node).value;
           if (evaluated) {
@@ -91191,7 +91191,7 @@ ${lanes.join("\n")}
             /*contextFlags*/
             void 0
           ) || unknownType, isTemplateLiteralContextualType)) {
-            return getTemplateLiteralType(texts, types7);
+            return getTemplateLiteralType(texts, types8);
           }
           return stringType;
         }
@@ -91368,8 +91368,8 @@ ${lanes.join("\n")}
         function isLiteralOfContextualType(candidateType, contextualType) {
           if (contextualType) {
             if (contextualType.flags & 3145728) {
-              const types7 = contextualType.types;
-              return some(types7, (t) => isLiteralOfContextualType(candidateType, t));
+              const types8 = contextualType.types;
+              return some(types8, (t) => isLiteralOfContextualType(candidateType, t));
             }
             if (contextualType.flags & 58982400) {
               const constraint = getBaseConstraintOfType(contextualType) || unknownType;
@@ -93488,9 +93488,9 @@ ${lanes.join("\n")}
             }
           }
         }
-        function getEntityNameForDecoratorMetadataFromTypeList(types7) {
+        function getEntityNameForDecoratorMetadataFromTypeList(types8) {
           let commonEntityName;
-          for (let typeNode of types7) {
+          for (let typeNode of types8) {
             while (typeNode.kind === 197 || typeNode.kind === 203) {
               typeNode = typeNode.type;
             }
@@ -100665,15 +100665,15 @@ ${lanes.join("\n")}
           return false;
         }
         function checkGrammarHeritageClause(node) {
-          const types7 = node.types;
-          if (checkGrammarForDisallowedTrailingComma(types7)) {
+          const types8 = node.types;
+          if (checkGrammarForDisallowedTrailingComma(types8)) {
             return true;
           }
-          if (types7 && types7.length === 0) {
+          if (types8 && types8.length === 0) {
             const listType = tokenToString(node.token);
-            return grammarErrorAtPos(node, types7.pos, 0, Diagnostics._0_list_cannot_be_empty, listType);
+            return grammarErrorAtPos(node, types8.pos, 0, Diagnostics._0_list_cannot_be_empty, listType);
           }
-          return some(types7, checkGrammarExpressionWithTypeArguments);
+          return some(types8, checkGrammarExpressionWithTypeArguments);
         }
         function checkGrammarExpressionWithTypeArguments(node) {
           if (isExpressionWithTypeArguments(node) && isImportKeyword(node.expression) && node.typeArguments) {
@@ -109951,9 +109951,9 @@ ${lanes.join("\n")}
               return Debug.failBadSyntaxKind(node);
           }
         }
-        function serializeUnionOrIntersectionConstituents(types7, isIntersection) {
+        function serializeUnionOrIntersectionConstituents(types8, isIntersection) {
           let serializedType;
-          for (let typeNode of types7) {
+          for (let typeNode of types8) {
             typeNode = skipTypeParentheses(typeNode);
             if (typeNode.kind === 146) {
               if (isIntersection) return factory2.createVoidZero();
@@ -133012,7 +133012,7 @@ ${lanes.join("\n")}
         function emitTripleSlashDirectivesIfNeeded(node) {
           if (node.isDeclarationFile) emitTripleSlashDirectives(node.hasNoDefaultLib, node.referencedFiles, node.typeReferenceDirectives, node.libReferenceDirectives);
         }
-        function emitTripleSlashDirectives(hasNoDefaultLib, files, types7, libs2) {
+        function emitTripleSlashDirectives(hasNoDefaultLib, files, types8, libs2) {
           if (hasNoDefaultLib) {
             writeComment(`/// <reference no-default-lib="true"/>`);
             writeLine();
@@ -133040,7 +133040,7 @@ ${lanes.join("\n")}
             }
           }
           writeDirectives("path", files);
-          writeDirectives("types", types7);
+          writeDirectives("types", types8);
           writeDirectives("lib", libs2);
         }
         function emitSourceFileWorker(node) {
@@ -150160,8 +150160,8 @@ ${lanes.join("\n")}
         if (!type.isIntersection()) {
           return false;
         }
-        const { types: types7, checker } = type;
-        return types7.length === 2 && (areIntersectedTypesAvoidingStringReduction(checker, types7[0], types7[1]) || areIntersectedTypesAvoidingStringReduction(checker, types7[1], types7[0]));
+        const { types: types8, checker } = type;
+        return types8.length === 2 && (areIntersectedTypesAvoidingStringReduction(checker, types8[0], types8[1]) || areIntersectedTypesAvoidingStringReduction(checker, types8[1], types8[0]));
       }
       function isInsideTemplateLiteral(node, position, sourceFile) {
         return isTemplateLiteralKind(node.kind) && (node.getStart(sourceFile) < position && position < node.end) || !!node.isUnterminated && position === node.end;
@@ -164247,11 +164247,11 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         return void 0;
       }
       function getSymbolAtLocationForQuickInfo(node, checker) {
-        const object7 = getContainingObjectLiteralElement(node);
-        if (object7) {
-          const contextualType = checker.getContextualType(object7.parent);
+        const object8 = getContainingObjectLiteralElement(node);
+        if (object8) {
+          const contextualType = checker.getContextualType(object8.parent);
           const properties = contextualType && getPropertySymbolsFromContextualType(
-            object7,
+            object8,
             checker,
             contextualType,
             /*unionSymbolOk*/
@@ -167252,7 +167252,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         return innerCbBody;
       }
       function getArgBindingName(funcNode, transformer) {
-        const types7 = [];
+        const types8 = [];
         let name;
         if (isFunctionLikeDeclaration(funcNode)) {
           if (funcNode.parameters.length > 0) {
@@ -167280,10 +167280,10 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           const originalNode = getOriginalNode2(identifier2);
           const symbol = getSymbol2(originalNode);
           if (!symbol) {
-            return createSynthIdentifier(identifier2, types7);
+            return createSynthIdentifier(identifier2, types8);
           }
           const mapEntry = transformer.synthNamesMap.get(getSymbolId(symbol).toString());
-          return mapEntry || createSynthIdentifier(identifier2, types7);
+          return mapEntry || createSynthIdentifier(identifier2, types8);
         }
         function getSymbol2(node) {
           var _a2;
@@ -167302,11 +167302,11 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         }
         return every(bindingName.elements, isEmptyBindingName);
       }
-      function createSynthIdentifier(identifier2, types7 = []) {
-        return { kind: 0, identifier: identifier2, types: types7, hasBeenDeclared: false, hasBeenReferenced: false };
+      function createSynthIdentifier(identifier2, types8 = []) {
+        return { kind: 0, identifier: identifier2, types: types8, hasBeenDeclared: false, hasBeenReferenced: false };
       }
-      function createSynthBindingPattern(bindingPattern, elements = emptyArray, types7 = []) {
-        return { kind: 1, bindingPattern, elements, types: types7 };
+      function createSynthBindingPattern(bindingPattern, elements = emptyArray, types8 = []) {
+        return { kind: 1, bindingPattern, elements, types: types8 };
       }
       function referenceSynthIdentifier(synthId) {
         synthId.hasBeenReferenced = true;
@@ -167564,8 +167564,8 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         }
         return false;
       }
-      function tryChangeModuleExportsObject(object7, useSitesToUnqualify) {
-        const statements2 = mapAllOrFail(object7.properties, (prop) => {
+      function tryChangeModuleExportsObject(object8, useSitesToUnqualify) {
+        const statements2 = mapAllOrFail(object8.properties, (prop) => {
           switch (prop.kind) {
             case 178:
             case 179:
@@ -173888,7 +173888,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
               /*multiLine*/
               true
             ),
-            (types7) => factory.createTupleTypeNode(types7.map(factory.createRestTypeNode))
+            (types8) => factory.createTupleTypeNode(types8.map(factory.createRestTypeNode))
           );
         }
         function typeFromObjectSpreadAssignment(node, name = "temp") {
@@ -174714,26 +174714,26 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           }
           const calls = [...usage.constructs || [], ...usage.calls || []];
           return declaration.parameters.map((parameter, parameterIndex) => {
-            const types7 = [];
+            const types8 = [];
             const isRest = isRestParameter(parameter);
             let isOptional = false;
             for (const call of calls) {
               if (call.argumentTypes.length <= parameterIndex) {
                 isOptional = isInJSFile(declaration);
-                types7.push(checker.getUndefinedType());
+                types8.push(checker.getUndefinedType());
               } else if (isRest) {
                 for (let i = parameterIndex; i < call.argumentTypes.length; i++) {
-                  types7.push(checker.getBaseTypeOfLiteralType(call.argumentTypes[i]));
+                  types8.push(checker.getBaseTypeOfLiteralType(call.argumentTypes[i]));
                 }
               } else {
-                types7.push(checker.getBaseTypeOfLiteralType(call.argumentTypes[parameterIndex]));
+                types8.push(checker.getBaseTypeOfLiteralType(call.argumentTypes[parameterIndex]));
               }
             }
             if (isIdentifier13(parameter.name)) {
               const inferred = inferTypesFromReferencesSingle(getReferences(parameter.name, program, cancellationToken));
-              types7.push(...isRest ? mapDefined(inferred, checker.getElementTypeOfArrayType) : inferred);
+              types8.push(...isRest ? mapDefined(inferred, checker.getElementTypeOfArrayType) : inferred);
             }
-            const type = combineTypes(types7);
+            const type = combineTypes(types8);
             return {
               type: isRest ? checker.createArrayType(type) : type,
               isOptional: isOptional && !isRest,
@@ -175071,10 +175071,10 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
               numberIndexReadonly = numberIndexReadonly || numberIndexInfo.isReadonly;
             }
           }
-          const members = mapEntries(props, (name, types7) => {
-            const isOptional = types7.length < anons.length ? 16777216 : 0;
+          const members = mapEntries(props, (name, types8) => {
+            const isOptional = types8.length < anons.length ? 16777216 : 0;
             const s = checker.createSymbol(4 | isOptional, name);
-            s.links.type = checker.getUnionType(types7);
+            s.links.type = checker.getUnionType(types8);
             return [name, s];
           });
           const indexInfos = [];
@@ -175090,40 +175090,40 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         }
         function inferTypes(usage) {
           var _a2, _b, _c;
-          const types7 = [];
+          const types8 = [];
           if (usage.isNumber) {
-            types7.push(checker.getNumberType());
+            types8.push(checker.getNumberType());
           }
           if (usage.isString) {
-            types7.push(checker.getStringType());
+            types8.push(checker.getStringType());
           }
           if (usage.isNumberOrString) {
-            types7.push(checker.getUnionType([checker.getStringType(), checker.getNumberType()]));
+            types8.push(checker.getUnionType([checker.getStringType(), checker.getNumberType()]));
           }
           if (usage.numberIndex) {
-            types7.push(checker.createArrayType(combineFromUsage(usage.numberIndex)));
+            types8.push(checker.createArrayType(combineFromUsage(usage.numberIndex)));
           }
           if (((_a2 = usage.properties) == null ? void 0 : _a2.size) || ((_b = usage.constructs) == null ? void 0 : _b.length) || usage.stringIndex) {
-            types7.push(inferStructuralType(usage));
+            types8.push(inferStructuralType(usage));
           }
           const candidateTypes = (usage.candidateTypes || []).map((t) => checker.getBaseTypeOfLiteralType(t));
           const callsType = ((_c = usage.calls) == null ? void 0 : _c.length) ? inferStructuralType(usage) : void 0;
           if (callsType && candidateTypes) {
-            types7.push(checker.getUnionType(
+            types8.push(checker.getUnionType(
               [callsType, ...candidateTypes],
               2
               /* Subtype */
             ));
           } else {
             if (callsType) {
-              types7.push(callsType);
+              types8.push(callsType);
             }
             if (length(candidateTypes)) {
-              types7.push(...candidateTypes);
+              types8.push(...candidateTypes);
             }
           }
-          types7.push(...inferNamedTypesFromProperties(usage));
-          return types7;
+          types8.push(...inferNamedTypesFromProperties(usage));
+          return types8;
         }
         function inferStructuralType(usage) {
           const members = /* @__PURE__ */ new Map();
@@ -175153,9 +175153,9 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         }
         function inferNamedTypesFromProperties(usage) {
           if (!usage.properties || !usage.properties.size) return [];
-          const types7 = builtins.filter((t) => allPropertiesAreAssignableToUsage(t, usage));
-          if (0 < types7.length && types7.length < 3) {
-            return types7.map((t) => inferInstantiationFromUsage(t, usage));
+          const types8 = builtins.filter((t) => allPropertiesAreAssignableToUsage(t, usage));
+          if (0 < types8.length && types8.length < 3) {
+            return types8.map((t) => inferInstantiationFromUsage(t, usage));
           }
           return [];
         }
@@ -175185,13 +175185,13 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           const generic = type.target;
           const singleTypeParameter = singleOrUndefined(generic.typeParameters);
           if (!singleTypeParameter) return type;
-          const types7 = [];
+          const types8 = [];
           usage.properties.forEach((propUsage, name) => {
             const genericPropertyType = checker.getTypeOfPropertyOfType(generic, name);
             Debug.assert(!!genericPropertyType, "generic should have all the properties of its reference.");
-            types7.push(...inferTypeParameters(genericPropertyType, combineFromUsage(propUsage), singleTypeParameter));
+            types8.push(...inferTypeParameters(genericPropertyType, combineFromUsage(propUsage), singleTypeParameter));
           });
-          return builtinConstructors[type.symbol.escapedName](combineTypes(types7));
+          return builtinConstructors[type.symbol.escapedName](combineTypes(types8));
         }
         function inferTypeParameters(genericType, usageType, typeParameter) {
           if (genericType === typeParameter) {
@@ -175201,15 +175201,15 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           } else if (getObjectFlags(genericType) & 4 && getObjectFlags(usageType) & 4) {
             const genericArgs = checker.getTypeArguments(genericType);
             const usageArgs = checker.getTypeArguments(usageType);
-            const types7 = [];
+            const types8 = [];
             if (genericArgs && usageArgs) {
               for (let i = 0; i < genericArgs.length; i++) {
                 if (usageArgs[i]) {
-                  types7.push(...inferTypeParameters(genericArgs[i], usageArgs[i], typeParameter));
+                  types8.push(...inferTypeParameters(genericArgs[i], usageArgs[i], typeParameter));
                 }
               }
             }
-            return types7;
+            return types8;
           }
           const genericSigs = checker.getSignaturesOfType(
             genericType,
@@ -175228,7 +175228,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         }
         function inferFromSignatures(genericSig, usageSig, typeParameter) {
           var _a2;
-          const types7 = [];
+          const types8 = [];
           for (let i = 0; i < genericSig.parameters.length; i++) {
             const genericParam = genericSig.parameters[i];
             const usageParam = usageSig.parameters[i];
@@ -175242,12 +175242,12 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
               genericParamType = elementType;
             }
             const targetType = ((_a2 = tryCast(usageParam, isTransientSymbol)) == null ? void 0 : _a2.links.type) || (usageParam.valueDeclaration ? checker.getTypeOfSymbolAtLocation(usageParam, usageParam.valueDeclaration) : checker.getAnyType());
-            types7.push(...inferTypeParameters(genericParamType, targetType, typeParameter));
+            types8.push(...inferTypeParameters(genericParamType, targetType, typeParameter));
           }
           const genericReturn = checker.getReturnTypeOfSignature(genericSig);
           const usageReturn = checker.getReturnTypeOfSignature(usageSig);
-          types7.push(...inferTypeParameters(genericReturn, usageReturn, typeParameter));
-          return types7;
+          types8.push(...inferTypeParameters(genericReturn, usageReturn, typeParameter));
+          return types8;
         }
         function getFunctionFromCalls(calls) {
           return checker.createAnonymousType(
@@ -175935,7 +175935,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         }
         return type.flags & 262144 ? (_a2 = type.getSymbol()) == null ? void 0 : _a2.getName() : void 0;
       }
-      function createDummyParameters(argCount, names, types7, minArgumentCount, inJs) {
+      function createDummyParameters(argCount, names, types8, minArgumentCount, inJs) {
         const parameters2 = [];
         const parameterNameCounts = /* @__PURE__ */ new Map();
         for (let i = 0; i < argCount; i++) {
@@ -175955,7 +175955,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
               /* QuestionToken */
             ) : void 0,
             /*type*/
-            inJs ? void 0 : (types7 == null ? void 0 : types7[i]) || factory.createKeywordTypeNode(
+            inJs ? void 0 : (types8 == null ? void 0 : types8[i]) || factory.createKeywordTypeNode(
               159
               /* UnknownKeyword */
             ),
@@ -176365,8 +176365,8 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           const typeChecker = program.getTypeChecker();
           const type = typeChecker.getTypeFromTypeNode(typeNode);
           if (!typeChecker.isTypeAssignableTo(typeChecker.getUndefinedType(), type)) {
-            const types7 = isUnionTypeNode(typeNode) ? typeNode.types : [typeNode];
-            return factory.createUnionTypeNode([...types7, factory.createKeywordTypeNode(
+            const types8 = isUnionTypeNode(typeNode) ? typeNode.types : [typeNode];
+            return factory.createUnionTypeNode([...types8, factory.createKeywordTypeNode(
               157
               /* UndefinedKeyword */
             )]);
@@ -176546,8 +176546,8 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           157
           /* UndefinedKeyword */
         );
-        const types7 = isUnionTypeNode(info.type) ? info.type.types.concat(undefinedTypeNode) : [info.type, undefinedTypeNode];
-        const unionTypeNode = factory.createUnionTypeNode(types7);
+        const types8 = isUnionTypeNode(info.type) ? info.type.types.concat(undefinedTypeNode) : [info.type, undefinedTypeNode];
+        const unionTypeNode = factory.createUnionTypeNode(types8);
         if (info.isJs) {
           changeTracker.addJSDocTags(sourceFile, info.prop, [factory.createJSDocTypeTag(
             /*tagName*/
@@ -181763,11 +181763,11 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           }
         }
         function fromContextualType(contextFlags = 4) {
-          const types7 = getStringLiteralTypes(getContextualTypeFromParent(node, typeChecker, contextFlags));
-          if (!types7.length) {
+          const types8 = getStringLiteralTypes(getContextualTypeFromParent(node, typeChecker, contextFlags));
+          if (!types8.length) {
             return;
           }
-          return { kind: 2, types: types7, isNewIdentifier: false };
+          return { kind: 2, types: types8, isNewIdentifier: false };
         }
       }
       function walkUpParentheses(node) {
@@ -181788,7 +181788,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         const uniques = /* @__PURE__ */ new Set();
         const editingArgument = isJsxOpeningLikeElement(call) ? Debug.checkDefined(findAncestor(arg.parent, isJsxAttribute3)) : arg;
         const candidates = checker.getCandidateSignaturesForStringLiteralCompletions(call, editingArgument);
-        const types7 = flatMap(candidates, (candidate) => {
+        const types8 = flatMap(candidates, (candidate) => {
           if (!signatureHasRestParameter(candidate) && argumentInfo.argumentCount > candidate.parameters.length) return;
           let type = candidate.getTypeParameterAtPosition(argumentInfo.argumentIndex);
           if (isJsxOpeningLikeElement(call)) {
@@ -181800,7 +181800,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           isNewIdentifier = isNewIdentifier || !!(type.flags & 4);
           return getStringLiteralTypes(type, uniques);
         });
-        return length(types7) ? { kind: 2, types: types7, isNewIdentifier } : void 0;
+        return length(types8) ? { kind: 2, types: types8, isNewIdentifier } : void 0;
       }
       function stringLiteralCompletionsFromProperties(type) {
         return type && {
@@ -210777,6 +210777,100 @@ Additional information: BADCLIENT: Bad error code, ${badCode} not found in range
   }
 });
 
+// build/src/source/collection-budget.js
+import { types } from "node:util";
+var COLLECTION_DEFAULT_MAX_FILES = 1e3;
+var COLLECTION_DEFAULT_MAX_BYTES = 25 * 1024 * 1024;
+var COLLECTION_MAX_FILES = 1e4;
+var COLLECTION_MAX_BYTES = 128 * 1024 * 1024;
+var COLLECTION_MAX_FILE_BYTES = 2 * 1024 * 1024;
+var COLLECTION_MAX_DIRECTORY_DEPTH = 64;
+var entriesFor = (files) => Math.min(Math.max(files * 8, 1e3), 1e5);
+function positiveBound(value, fallback, maximum) {
+  return value === void 0 || !Number.isSafeInteger(value) || value <= 0 ? fallback : Math.min(value, maximum);
+}
+function resolveCollectionBudget(options = {}) {
+  const maxFiles = positiveBound(options.maxFiles, COLLECTION_DEFAULT_MAX_FILES, COLLECTION_MAX_FILES);
+  const maxBytes = positiveBound(options.maxBytes, COLLECTION_DEFAULT_MAX_BYTES, COLLECTION_MAX_BYTES);
+  return Object.freeze({ revision: "collection-v1", limits: Object.freeze({
+    maxFiles,
+    maxBytes,
+    maxFileBytes: COLLECTION_MAX_FILE_BYTES,
+    maxEntries: entriesFor(maxFiles)
+  }) });
+}
+function parseCollectionLimit(raw, maximum) {
+  if (typeof raw !== "string" || !/^[1-9][0-9]*$/.test(raw) || !Number.isSafeInteger(maximum) || maximum <= 0)
+    throw new Error("Collection limit must be a canonical positive integer within its maximum.");
+  const value = Number(raw);
+  if (!Number.isSafeInteger(value) || value > maximum)
+    throw new Error("Collection limit must be a canonical positive integer within its maximum.");
+  return value;
+}
+var object = (value) => !!value && typeof value === "object" && !types.isProxy(value) && !Array.isArray(value);
+var exactKeys = (value, keys3) => {
+  const descriptors = Object.getOwnPropertyDescriptors(value);
+  return Reflect.ownKeys(descriptors).length === keys3.length && keys3.every((key2) => descriptors[key2]?.enumerable === true && Object.hasOwn(descriptors[key2], "value"));
+};
+var COLLECTION_ISSUE_CODES = Object.freeze([
+  "changed_file",
+  "file_limit",
+  "hardlink",
+  "path_error",
+  "read_error",
+  "root_error",
+  "size_limit",
+  "special_file",
+  "symlink",
+  "unsupported_file"
+]);
+function sanitiseCollectionBudget(input) {
+  if (!object(input) || !exactKeys(input, ["revision", "limits"]) || input.revision !== "collection-v1" || !object(input.limits) || !exactKeys(input.limits, ["maxFiles", "maxBytes", "maxFileBytes", "maxEntries"]))
+    return void 0;
+  const { maxFiles, maxBytes } = input.limits;
+  if (!Number.isSafeInteger(maxFiles) || Number(maxFiles) <= 0 || Number(maxFiles) > COLLECTION_MAX_FILES || !Number.isSafeInteger(maxBytes) || Number(maxBytes) <= 0 || Number(maxBytes) > COLLECTION_MAX_BYTES)
+    return void 0;
+  const budget = resolveCollectionBudget({ maxFiles: Number(maxFiles), maxBytes: Number(maxBytes) });
+  const limits = input.limits;
+  return Object.entries(budget.limits).every(([key2, value]) => limits[key2] === value) ? budget : void 0;
+}
+function sameCollectionBudget(a, b) {
+  return !!a && !!b && JSON.stringify(a) === JSON.stringify(b);
+}
+function collectionEvidence(issues) {
+  const counts2 = /* @__PURE__ */ new Map();
+  for (const issue2 of issues)
+    counts2.set(issue2.code, (counts2.get(issue2.code) ?? 0) + 1);
+  return {
+    revision: "collection-v1",
+    issueCount: issues.length,
+    issues: COLLECTION_ISSUE_CODES.filter((code) => counts2.has(code)).map((code) => ({ code, count: counts2.get(code) }))
+  };
+}
+function sanitiseCollectionEvidence(input) {
+  if (!object(input) || !exactKeys(input, ["revision", "issueCount", "issues"]) || input.revision !== "collection-v1" || !Number.isSafeInteger(input.issueCount) || Number(input.issueCount) < 0 || !Array.isArray(input.issues) || types.isProxy(input.issues) || input.issues.length > COLLECTION_ISSUE_CODES.length)
+    return void 0;
+  const rows = Object.getOwnPropertyDescriptors(input.issues);
+  if (Reflect.ownKeys(rows).length !== input.issues.length + 1 || !Object.hasOwn(rows.length, "value") || Array.from({ length: input.issues.length }, (_, index) => rows[String(index)]).some((row) => !row || !Object.hasOwn(row, "value")))
+    return void 0;
+  let count = 0, previous = -1;
+  const issues = [];
+  for (let rowIndex = 0; rowIndex < input.issues.length; rowIndex++) {
+    const item = rows[String(rowIndex)].value;
+    if (!object(item) || !exactKeys(item, ["code", "count"]))
+      return void 0;
+    const index = COLLECTION_ISSUE_CODES.indexOf(item.code);
+    if (index <= previous || !Number.isSafeInteger(item.count) || Number(item.count) <= 0)
+      return void 0;
+    count += Number(item.count);
+    if (!Number.isSafeInteger(count))
+      return void 0;
+    previous = index;
+    issues.push({ code: COLLECTION_ISSUE_CODES[index], count: Number(item.count) });
+  }
+  return count === input.issueCount ? { revision: "collection-v1", issueCount: count, issues } : void 0;
+}
+
 // build/src/source/analysis-budget.js
 var DEFAULT = Object.freeze({ indexWork: 3e5, flowWork: 2e5, nodeVisits: 5e5, functions: 2e3, summaryWork: 5e3, moduleEdges: 2e3, callDepth: 8, aliasSteps: 64, traceSteps: 24 });
 var EXTENDED = Object.freeze({ indexWork: 12e5, flowWork: 8e5, nodeVisits: 2e6, functions: 8e3, summaryWork: 2e4, moduleEdges: 8e3, callDepth: 8, aliasSteps: 64, traceSteps: 24 });
@@ -210785,14 +210879,14 @@ function resolveAnalysisBudget(profile = "default") {
     throw new Error("Analysis profile must be default or extended.");
   return Object.freeze({ revision: "ast-work-v1", requestedProfile: profile, effectiveProfile: profile, limits: profile === "default" ? DEFAULT : EXTENDED });
 }
-var object = (x) => !!x && typeof x === "object" && !Array.isArray(x);
-var exactKeys = (x, keys3) => Object.keys(x).length === keys3.length && keys3.every((k) => Object.hasOwn(x, k));
+var object2 = (x) => !!x && typeof x === "object" && !Array.isArray(x);
+var exactKeys2 = (x, keys3) => Object.keys(x).length === keys3.length && keys3.every((k) => Object.hasOwn(x, k));
 function sanitiseAnalysisBudget(input) {
-  if (!object(input) || !exactKeys(input, ["revision", "requestedProfile", "effectiveProfile", "limits"]) || input.revision !== "ast-work-v1" || !["default", "extended"].includes(input.requestedProfile) || input.effectiveProfile !== input.requestedProfile || !object(input.limits))
+  if (!object2(input) || !exactKeys2(input, ["revision", "requestedProfile", "effectiveProfile", "limits"]) || input.revision !== "ast-work-v1" || !["default", "extended"].includes(input.requestedProfile) || input.effectiveProfile !== input.requestedProfile || !object2(input.limits))
     return void 0;
   const expected = resolveAnalysisBudget(input.requestedProfile);
   const limits = input.limits;
-  if (!exactKeys(input.limits, Object.keys(expected.limits)) || !Object.entries(expected.limits).every(([k, v]) => Number.isSafeInteger(limits[k]) && limits[k] === v))
+  if (!exactKeys2(input.limits, Object.keys(expected.limits)) || !Object.entries(expected.limits).every(([k, v]) => Number.isSafeInteger(limits[k]) && limits[k] === v))
     return void 0;
   return resolveAnalysisBudget(expected.requestedProfile);
 }
@@ -217263,11 +217357,11 @@ var DataflowAnalyzer = class {
         this.session.gap("alias_limit", call);
         return value;
       }
-      const object7 = value.nosqlObject;
-      if (object7?.modified || value.nosqlUnknown)
+      const object8 = value.nosqlObject;
+      if (object8?.modified || value.nosqlUnknown)
         modified = true;
-      const values = [value, ...value.nosqlUnknown ? [value.nosqlUnknown] : [], ...object7?.modified ? [object7.value] : [], ...[...value.properties?.values() ?? []].map((child) => current(child, depth + 1))];
-      return { ...value, ...combineValues(values), properties: value.properties, nosqlObject: object7 };
+      const values = [value, ...value.nosqlUnknown ? [value.nosqlUnknown] : [], ...object8?.modified ? [object8.value] : [], ...[...value.properties?.values() ?? []].map((child) => current(child, depth + 1))];
+      return { ...value, ...combineValues(values), properties: value.properties, nosqlObject: object8 };
     };
     const observed = current(selector);
     const inputRelated = isInputRelated(observed);
@@ -217297,14 +217391,14 @@ var DataflowAnalyzer = class {
         return candidate(value, "unknown_role");
       if (!isInputRelated(value))
         return void 0;
-      const object7 = value.nosqlObject;
-      if (!object7 || !object7.closed || object7.modified || !value.properties) {
+      const object8 = value.nosqlObject;
+      if (!object8 || !object8.closed || object8.modified || !value.properties) {
         if (expression && model?.stringAt(expression, call))
           return void 0;
-        return candidate(value, object7 ? "unknown_role" : "selector_input");
+        return candidate(value, object8 ? "unknown_role" : "selector_input");
       }
       let selected;
-      for (const property of object7.node.properties) {
+      for (const property of object8.node.properties) {
         if (!(ts10.isPropertyAssignment(property) || ts10.isShorthandPropertyAssignment(property)))
           return candidate(value, "unknown_role");
         const key2 = propertyName(property.name);
@@ -218194,11 +218288,6 @@ import { constants } from "node:fs";
 import { access, lstat, mkdir, mkdtemp, open, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
-var DEFAULT_MAX_FILES = 1e3;
-var DEFAULT_MAX_BYTES = 25 * 1024 * 1024;
-var DEFAULT_MAX_FILE_BYTES = 2 * 1024 * 1024;
-var MAX_MAX_FILES = 1e4;
-var MAX_MAX_BYTES = 128 * 1024 * 1024;
 var MAX_MAX_FILE_BYTES = 8 * 1024 * 1024;
 var IGNORED_DIRECTORIES = /* @__PURE__ */ new Set([
   ".git",
@@ -218332,20 +218421,6 @@ var SECRET_BASENAMES = /* @__PURE__ */ new Set([
   ".yarnrc.yml"
 ]);
 var SENSITIVE_SUFFIXES = /(?:\.pem|\.key|\.p12|\.pfx|\.jks|\.keystore|\.der)$/i;
-function positiveBound(value, fallback, maximum) {
-  if (value === void 0)
-    return fallback;
-  if (!Number.isSafeInteger(value) || value <= 0)
-    return fallback;
-  return Math.min(value, maximum);
-}
-function limitsFromOptions(options) {
-  return {
-    maxFiles: positiveBound(options.maxFiles, DEFAULT_MAX_FILES, MAX_MAX_FILES),
-    maxBytes: positiveBound(options.maxBytes, DEFAULT_MAX_BYTES, MAX_MAX_BYTES),
-    maxFileBytes: DEFAULT_MAX_FILE_BYTES
-  };
-}
 function issue(code, path2) {
   return { code, path: path2 || "." };
 }
@@ -218436,14 +218511,15 @@ function outputPathRelative(root, outDir) {
 }
 async function collectSource(options) {
   const root = resolve(options.root);
-  const limits = limitsFromOptions(options);
+  const collectionBudget = resolveCollectionBudget(options);
+  const limits = collectionBudget.limits;
   const issues = [];
   const files = [];
   let ignoredFiles = 0;
   let totalBytes = 0;
   let selectedFiles = 0;
   let inspectedEntries = 0;
-  const maxEntries = Math.min(Math.max(limits.maxFiles * 8, 1e3), 1e5);
+  const maxEntries = limits.maxEntries;
   let rootError;
   const outputRelative = outputPathRelative(root, options.outDir);
   let rootStat;
@@ -218452,20 +218528,20 @@ async function collectSource(options) {
   } catch {
     issues.push(issue("root_error", "."));
     rootError = "source root cannot be read";
-    return { root, files, issues, ignoredFiles, totalBytes, complete: false, rootError };
+    return { root, files, issues, ignoredFiles, totalBytes, complete: false, rootError, collectionBudget };
   }
   if (rootStat.isSymbolicLink()) {
     issues.push(issue("root_error", "."));
     rootError = "source root must not be a symlink";
-    return { root, files, issues, ignoredFiles, totalBytes, complete: false, rootError };
+    return { root, files, issues, ignoredFiles, totalBytes, complete: false, rootError, collectionBudget };
   }
   if (!rootStat.isDirectory()) {
     issues.push(issue("root_error", "."));
     rootError = "source root must be a directory";
-    return { root, files, issues, ignoredFiles, totalBytes, complete: false, rootError };
+    return { root, files, issues, ignoredFiles, totalBytes, complete: false, rootError, collectionBudget };
   }
   const visit = async (directory, depth) => {
-    if (depth > 64) {
+    if (depth > COLLECTION_MAX_DIRECTORY_DEPTH) {
       issues.push(issue("file_limit", safeRelativePath2(root, directory) ?? "."));
       return;
     }
@@ -218574,7 +218650,7 @@ async function collectSource(options) {
   };
   await visit(root, 0);
   const complete = rootError === void 0 && issues.every((entry) => !isFatalIssue(entry.code));
-  return { root, files, issues, ignoredFiles, totalBytes, complete, ...rootError ? { rootError } : {} };
+  return { root, files, issues, ignoredFiles, totalBytes, complete, collectionBudget, ...rootError ? { rootError } : {} };
 }
 async function stageSnapshot(snapshot2) {
   const parent = await mkdtemp(join(tmpdir(), "wakeio-security-ci-"));
@@ -219371,8 +219447,8 @@ function runFrameworkRules(snapshot2) {
 
 // build/src/source/parsers.js
 import { isAbsolute as isAbsolute2, relative as relative2, resolve as resolve2 } from "node:path";
-function own(object7, key2) {
-  return Object.prototype.hasOwnProperty.call(object7, key2) ? object7[key2] : void 0;
+function own(object8, key2) {
+  return Object.prototype.hasOwnProperty.call(object8, key2) ? object8[key2] : void 0;
 }
 function objectValue(value) {
   return value !== null && typeof value === "object" && !Array.isArray(value) ? value : void 0;
@@ -219434,10 +219510,10 @@ function referencesFrom(value) {
   const references2 = value.map((entry) => {
     if (typeof entry === "string")
       return entry.trim();
-    const object7 = objectValue(entry);
-    if (!object7 || typeof object7.url !== "string" || object7.url.length === 0)
+    const object8 = objectValue(entry);
+    if (!object8 || typeof object8.url !== "string" || object8.url.length === 0)
       throw new Error("scanner output has an invalid reference");
-    return object7.url.trim();
+    return object8.url.trim();
   }).filter((entry) => /^https?:\/\/[^\s]{1,500}$/i.test(entry)).slice(0, 5);
   return references2.length > 0 ? references2 : void 0;
 }
@@ -219487,10 +219563,10 @@ function requiredArray(value, key2, tool) {
   return child;
 }
 function requiredObject(value, field, tool) {
-  const object7 = objectValue(value);
-  if (!object7)
+  const object8 = objectValue(value);
+  if (!object8)
     throw new Error(`${tool} output has an invalid ${field} record`);
-  return object7;
+  return object8;
 }
 function requiredPositiveInt(value, key2, tool) {
   const child = own(value, key2);
@@ -219513,15 +219589,15 @@ function parseGitleaksOutput(text2, stageDir, files) {
   const findings = [];
   let unknownLocations = 0;
   for (const entry of entries) {
-    const object7 = requiredObject(entry, "finding", "Gitleaks");
-    const ruleId = cleanRuleId(requiredString(object7, "RuleID", "Gitleaks"), "gitleaks.secret");
-    const filePath = requiredString(object7, "File", "Gitleaks");
+    const object8 = requiredObject(entry, "finding", "Gitleaks");
+    const ruleId = cleanRuleId(requiredString(object8, "RuleID", "Gitleaks"), "gitleaks.secret");
+    const filePath = requiredString(object8, "File", "Gitleaks");
     const path2 = pathFromScanner(filePath, stageDir, allowed);
     if (!path2)
       unknownLocations += 1;
-    const line = requiredPositiveInt(object7, "StartLine", "Gitleaks");
-    const column = requiredPositiveInt(object7, "StartColumn", "Gitleaks");
-    const title = cleanText(requiredString(object7, "Description", "Gitleaks"), `Secret detected by Gitleaks (${ruleId})`);
+    const line = requiredPositiveInt(object8, "StartLine", "Gitleaks");
+    const column = requiredPositiveInt(object8, "StartColumn", "Gitleaks");
+    const title = cleanText(requiredString(object8, "Description", "Gitleaks"), `Secret detected by Gitleaks (${ruleId})`);
     const severity = /private[-_ ]?key|password|token|secret|credential|aws|github|slack/i.test(`${ruleId} ${title}`) ? "high" : "medium";
     findings.push(makeFinding({
       ruleId,
@@ -220342,10 +220418,10 @@ function objectValue2(value) {
   return value !== null && typeof value === "object" && !Array.isArray(value) ? value : void 0;
 }
 function requiredObject2(value, field) {
-  const object7 = objectValue2(value);
-  if (!object7)
+  const object8 = objectValue2(value);
+  if (!object8)
     throw new Error(`Bandit output has an invalid ${field} record`);
-  return object7;
+  return object8;
 }
 function requiredArray2(value, key2) {
   const child = value[key2];
@@ -220681,8 +220757,8 @@ var NATIVE_CHECK_ID = "source.opengrep.preview";
 var NATIVE_DENY_POLICY = "(version 1)\n(allow default)\n(deny network*)\n";
 var MAX_JSON_BYTES = 8 * 1024 * 1024;
 var NOTE = "Experimental native candidate positions only; binding identity, exploitability and complete dataflow edges are not verified.";
-var object2 = (value) => !!value && typeof value === "object" && !Array.isArray(value);
-var exactKeys2 = (value, allowed) => Object.keys(value).every((key2) => allowed.includes(key2));
+var object3 = (value) => !!value && typeof value === "object" && !Array.isArray(value);
+var exactKeys3 = (value, allowed) => Object.keys(value).every((key2) => allowed.includes(key2));
 var digest = (bytes) => createHash("sha256").update(bytes).digest("hex");
 var nativeFiles = (snapshot2) => snapshot2.files.filter((file) => file.category === "code" && !file.sensitive && /\.(?:[cm]?[jt]sx?|py)$/i.test(file.path));
 function nativeJson(text2) {
@@ -220781,7 +220857,7 @@ function fileFor(path2, stage, files) {
   return files.get(local);
 }
 function point(raw, file, cache) {
-  if (!object2(raw) || !exactKeys2(raw, ["line", "col", "offset"]) || !["line", "col", "offset"].every((key2) => Number.isSafeInteger(raw[key2])) || raw.line < 1 || raw.col < 1 || raw.offset < 0)
+  if (!object3(raw) || !exactKeys3(raw, ["line", "col", "offset"]) || !["line", "col", "offset"].every((key2) => Number.isSafeInteger(raw[key2])) || raw.line < 1 || raw.col < 1 || raw.offset < 0)
     throw new Error("position");
   let prepared = cache.get(file.path);
   if (!prepared) {
@@ -220806,7 +220882,7 @@ function point(raw, file, cache) {
   return normal;
 }
 function range(raw, stage, files, cache) {
-  if (!object2(raw) || !exactKeys2(raw, ["path", "start", "end"]))
+  if (!object3(raw) || !exactKeys3(raw, ["path", "start", "end"]))
     throw new Error("location");
   const file = fileFor(raw.path, stage, files);
   if (!file)
@@ -220817,7 +220893,7 @@ function range(raw, stage, files, cache) {
   return { file, start, end };
 }
 function nativeTrace(raw, sink, stage, files, cache) {
-  if (!object2(raw) || !exactKeys2(raw, ["taint_source", "taint_sink", "intermediate_vars"]) || !Array.isArray(raw.intermediate_vars))
+  if (!object3(raw) || !exactKeys3(raw, ["taint_source", "taint_sink", "intermediate_vars"]) || !Array.isArray(raw.intermediate_vars))
     throw new Error("trace schema");
   const steps = [];
   const add2 = (role, loc, content) => {
@@ -220838,7 +220914,7 @@ function nativeTrace(raw, sink, stage, files, cache) {
   if (raw.intermediate_vars.length > 1e4)
     throw new Error("trace budget");
   for (const item of raw.intermediate_vars) {
-    if (!object2(item) || !exactKeys2(item, ["location", "content"]))
+    if (!object3(item) || !exactKeys3(item, ["location", "content"]))
       throw new Error("intermediate");
     add2("intermediate", item.location, item.content);
   }
@@ -220870,7 +220946,7 @@ function parseNativeOutput(stdout, exitCode2, stage, inputFiles) {
   } catch {
     return { id: NATIVE_CHECK_ID, status: "error", findings, notes: ["Native preview returned invalid bounded JSON."], metrics: { ...metrics(), incompleteReasons: "invalid_json" } };
   }
-  if (!object2(parsed) || parsed.version !== OPENGREP_VERSION || !Array.isArray(parsed.results)) {
+  if (!object3(parsed) || parsed.version !== OPENGREP_VERSION || !Array.isArray(parsed.results)) {
     return { id: NATIVE_CHECK_ID, status: "error", findings, notes: ["Native preview protocol or version did not match the selected profile."], metrics: { ...metrics(), incompleteReasons: "invalid_protocol" } };
   }
   if (!Array.isArray(parsed.errors)) {
@@ -220885,7 +220961,7 @@ function parseNativeOutput(stdout, exitCode2, stage, inputFiles) {
     reasons.add("invalid_protocol");
     parsed.interfile_languages_used = [];
   }
-  if (!object2(parsed.paths)) {
+  if (!object3(parsed.paths)) {
     reasons.add("invalid_protocol");
     parsed.paths = {};
   }
@@ -220894,9 +220970,9 @@ function parseNativeOutput(stdout, exitCode2, stage, inputFiles) {
     reasons.add("invalid_protocol");
     paths.scanned = [];
   }
-  if (!exactKeys2(parsed, ["version", "results", "errors", "paths", "skipped_rules", "interfile_languages_used"]))
+  if (!exactKeys3(parsed, ["version", "results", "errors", "paths", "skipped_rules", "interfile_languages_used"]))
     reasons.add("unknown_schema");
-  if (!exactKeys2(paths, ["scanned", "skipped"]))
+  if (!exactKeys3(paths, ["scanned", "skipped"]))
     reasons.add("unknown_paths");
   errors = parsed.errors.length;
   skipped = parsed.skipped_rules.length;
@@ -220923,11 +220999,11 @@ function parseNativeOutput(stdout, exitCode2, stage, inputFiles) {
     reasons.add("finding_limit");
   for (const raw of parsed.results.slice(0, 1e4)) {
     try {
-      if (!object2(raw) || typeof raw.check_id !== "string" || !OWN_RULE_IDS.includes(raw.check_id) || !object2(raw.extra))
+      if (!object3(raw) || typeof raw.check_id !== "string" || !OWN_RULE_IDS.includes(raw.check_id) || !object3(raw.extra))
         throw new Error("finding");
       const loc = range({ path: raw.path, start: raw.start, end: raw.end }, stage, files, positionCache);
       const extra = raw.extra;
-      if (!exactKeys2(raw, ["check_id", "path", "start", "end", "extra"]) || !exactKeys2(extra, ["metavars", "message", "metadata", "severity", "fingerprint", "lines", "is_ignored", "validation_state", "dataflow_trace", "engine_kind"]))
+      if (!exactKeys3(raw, ["check_id", "path", "start", "end", "extra"]) || !exactKeys3(extra, ["metavars", "message", "metadata", "severity", "fingerprint", "lines", "is_ignored", "validation_state", "dataflow_trace", "engine_kind"]))
         reasons.add("unknown_finding_schema");
       const isPython = raw.check_id.includes(".python.");
       if (isPython !== /\.py$/i.test(loc.file.path))
@@ -220936,7 +221012,7 @@ function parseNativeOutput(stdout, exitCode2, stage, inputFiles) {
         ignored++;
         reasons.add("ignored_finding");
       }
-      if (extra.severity !== "ERROR" || extra.validation_state !== "NO_VALIDATOR" || extra.engine_kind !== "OSS" || !object2(extra.metadata))
+      if (extra.severity !== "ERROR" || extra.validation_state !== "NO_VALIDATOR" || extra.engine_kind !== "OSS" || !object3(extra.metadata))
         reasons.add("finding_state");
       let staticFlow;
       if (extra.dataflow_trace !== void 0 && extra.dataflow_trace !== null) {
@@ -221525,12 +221601,16 @@ function inventoryCheck(snapshot2, tools, nativeSelected = false) {
     `Collected ${snapshot2.files.length} allowlisted file${snapshot2.files.length === 1 ? "" : "s"} (${snapshot2.totalBytes} bytes).`,
     ...snapshot2.ignoredFiles > 0 ? [`Ignored ${snapshot2.ignoredFiles} path${snapshot2.ignoredFiles === 1 ? "" : "s"} outside the static-analysis allowlist.`] : [],
     ...issueSummary ? [`Collection coverage issues: ${issueSummary}.`] : [],
+    ...issueCounts.has("file_limit") ? ["file_limit may reflect selected files, traversal entries or the fixed directory-depth bound (64); increasing maxFiles may not resolve it."] : [],
+    ...issueCounts.has("size_limit") ? ["size_limit may reflect total bytes, the fixed per-file bound or file-size validation during collection."] : [],
     ...tools.length === 0 ? [nativeSelected ? "External default tools disabled (--tools none); explicit native preview remains selected." : "External scanner scope was narrowed to built-in checks (--tools none)."] : [`External scanner scope: ${tools.join(", ")}.`],
     ...nativeSelected ? ["Pinned BYO native preview was explicitly selected."] : [],
     ...snapshot2.rootError ? [snapshot2.rootError] : []
   ];
   return {
     id: "source.inventory",
+    ...snapshot2.collectionBudget ? { collectionBudget: snapshot2.collectionBudget } : {},
+    collectionEvidence: collectionEvidence(snapshot2.issues),
     status: checkStatusForSnapshot(snapshot2),
     findings: [],
     notes,
@@ -221593,8 +221673,8 @@ function trivyInputCandidate(path2, text2) {
     const parsed = JSON.parse(text2);
     if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed))
       return false;
-    const object7 = parsed;
-    return typeof object7.apiVersion === "string" && typeof object7.kind === "string";
+    const object8 = parsed;
+    return typeof object8.apiVersion === "string" && typeof object8.kind === "string";
   } catch {
     return false;
   }
@@ -221607,12 +221687,12 @@ function packageManifestHasExplicitlyEmptyDependencies(text2) {
     const parsed = JSON.parse(text2);
     if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed))
       return false;
-    const object7 = parsed;
+    const object8 = parsed;
     const fields = ["dependencies", "devDependencies", "peerDependencies", "optionalDependencies", "bundledDependencies", "bundleDependencies"];
-    if (!fields.some((key2) => Object.prototype.hasOwnProperty.call(object7, key2)))
+    if (!fields.some((key2) => Object.prototype.hasOwnProperty.call(object8, key2)))
       return false;
     for (const key2 of ["dependencies", "devDependencies", "peerDependencies", "optionalDependencies", "bundledDependencies", "bundleDependencies", "require", "require-dev"]) {
-      const value = object7[key2];
+      const value = object8[key2];
       if (Array.isArray(value) && value.length > 0)
         return false;
       if (value !== void 0 && (value === null || typeof value !== "object" || Object.keys(value).length > 0))
@@ -231100,7 +231180,7 @@ function decodeUrlText(body, contentType, kind) {
 var DEFAULT_TIMEOUT_MS = 3e4;
 var DEFAULT_MAX_PAGES = 1;
 var DEFAULT_MAX_SCRIPTS = 20;
-var DEFAULT_MAX_BYTES2 = 10 * 1024 * 1024;
+var DEFAULT_MAX_BYTES = 10 * 1024 * 1024;
 var MAX_TIMEOUT_MS = 12e4;
 var MAX_PAGES = 8;
 var MAX_SCRIPTS = 50;
@@ -231761,7 +231841,7 @@ function optionsError(options) {
     return "invalid_page_budget";
   const pages = pageBudgetFor(options);
   const scripts = options.maxScripts ?? DEFAULT_MAX_SCRIPTS;
-  const bytes = options.maxBytes ?? DEFAULT_MAX_BYTES2;
+  const bytes = options.maxBytes ?? DEFAULT_MAX_BYTES;
   if (!Number.isSafeInteger(timeout) || timeout < 1 || timeout > MAX_TIMEOUT_MS)
     return "invalid_timeout_budget";
   if (!Number.isSafeInteger(pages) || pages < 1 || pages > MAX_PAGES)
@@ -231988,7 +232068,7 @@ async function runUrl(options) {
   const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   const maxPages = pageBudgetFor(options);
   const maxScripts = options.maxScripts ?? DEFAULT_MAX_SCRIPTS;
-  const maxBytes = options.maxBytes ?? DEFAULT_MAX_BYTES2;
+  const maxBytes = options.maxBytes ?? DEFAULT_MAX_BYTES;
   const controller = new AbortController();
   const cancel = () => controller.abort();
   options.signal?.addEventListener("abort", cancel, { once: true });
@@ -232073,7 +232153,7 @@ async function runUrl(options) {
 }
 
 // build/src/json-snapshot.js
-import { types } from "node:util";
+import { types as types2 } from "node:util";
 var JSON_MAX_INPUT_BYTES = 1024 * 1024;
 var JSON_MAX_INPUT_NODES = 2e4;
 var JSON_MAX_DEPTH = 40;
@@ -232110,7 +232190,7 @@ function snapshotJsonData(input, invalid4 = fail2, limit2 = fail2) {
       count(String(value));
       return value;
     }
-    if (typeof value !== "object" || types.isProxy(value) || active.has(value))
+    if (typeof value !== "object" || types2.isProxy(value) || active.has(value))
       invalid4();
     const array = Array.isArray(value);
     const prototype = Object.getPrototypeOf(value);
@@ -232329,7 +232409,7 @@ function invalidApiExecutionLedger() {
 function fail3() {
   throw Error("invalid_api_execution");
 }
-function object3(value, keys3) {
+function object4(value, keys3) {
   if (!value || typeof value !== "object" || Array.isArray(value) || Object.keys(value).length !== keys3.length || keys3.some((key2) => !Object.hasOwn(value, key2)))
     fail3();
 }
@@ -232337,7 +232417,7 @@ function integer(value, min, max) {
   return typeof value === "number" && Number.isSafeInteger(value) && value >= min && value <= max;
 }
 function planData(value, version) {
-  object3(value, [
+  object4(value, [
     "actorCount",
     "caseCount",
     "logicalRequests",
@@ -232352,7 +232432,7 @@ function planData(value, version) {
     fail3();
   const steps = value.steps.map((step2, index2) => {
     const identity = step2?.phase === "identity-before" || step2?.phase === "identity-after";
-    object3(step2, ["ordinal", "method", "phase", "actorIndex", ...identity ? [] : ["caseIndex"]]);
+    object4(step2, ["ordinal", "method", "phase", "actorIndex", ...identity ? [] : ["caseIndex"]]);
     if (step2.ordinal !== index2 || step2.method !== "GET" || !integer(step2.actorIndex, 0, value.actorCount - 1) || !["identity-before", "owner-before", "deny", "owner-after", "identity-after"].includes(step2.phase) || !identity && !integer(step2.caseIndex, 0, value.caseCount - 1))
       fail3();
     return {
@@ -232426,7 +232506,7 @@ var REASONS3 = [
 function sanitiseApiExecutionLedger(input) {
   try {
     const value = snapshotJsonData(input);
-    object3(value, ["version", "basis", "status", "policyVersion", "planSha256", "plan", "steps", "counts", "reasons"]);
+    object4(value, ["version", "basis", "status", "policyVersion", "planSha256", "plan", "steps", "counts", "reasons"]);
     if (value.version !== 1 || value.basis !== "declared-api-execution" || ![1, 2].includes(value.policyVersion) || !["complete", "partial"].includes(value.status))
       fail3();
     const plan = planData(value.plan, value.policyVersion);
@@ -232435,7 +232515,7 @@ function sanitiseApiExecutionLedger(input) {
       fail3();
     let offset = 0;
     const steps = value.steps.map((step2, index) => {
-      object3(step2, ["ordinal", "outcome", "reason", "attemptStart", "httpAttempts", "httpStatus"]);
+      object4(step2, ["ordinal", "outcome", "reason", "attemptStart", "httpAttempts", "httpStatus"]);
       if (step2.ordinal !== index || !["evaluated", "inconclusive", "not_attempted"].includes(step2.outcome) || !REASONS3.includes(step2.reason) || step2.attemptStart !== offset || !integer(step2.httpAttempts, 0, 64 - offset) || step2.httpStatus !== null && !integer(step2.httpStatus, 100, 599))
         fail3();
       if (step2.outcome === "evaluated" ? step2.reason !== "evaluated" || step2.httpAttempts < 1 || step2.httpStatus === null : step2.reason === "evaluated")
@@ -232492,7 +232572,7 @@ function sanitiseApiExecutionLedger(input) {
         fail3();
     }
     const expectedCounts = counts(steps);
-    object3(value.counts, Object.keys(expectedCounts));
+    object4(value.counts, Object.keys(expectedCounts));
     if (Object.entries(expectedCounts).some(([key2, count]) => value.counts[key2] !== count))
       fail3();
     if (!Array.isArray(value.reasons) || value.reasons.length > 3 || new Set(value.reasons).size !== value.reasons.length || value.reasons.some((r) => !["legacy_policy", "run_incomplete", "incomplete_steps"].includes(r)))
@@ -232708,7 +232788,9 @@ function projectReportSummary(report, gate) {
         checkIndex,
         checkId: check.id,
         status: check.status,
-        diagnosticBasis: gaps ? "typed_analysis_gaps" : "check_status_only",
+        diagnosticBasis: check.collectionEvidence ? "typed_collection_evidence" : gaps ? "typed_analysis_gaps" : "check_status_only",
+        ...check.collectionBudget ? { collectionBudget: structuredClone(check.collectionBudget) } : {},
+        ...check.collectionEvidence ? { collectionEvidence: structuredClone(check.collectionEvidence) } : {},
         ...gaps ? { analysisGaps: {
           accounting: gaps.accounting,
           eventsObserved: gaps.eventsObserved,
@@ -232728,12 +232810,19 @@ function projectReportSummary(report, gate) {
   const gap = firstGap?.reason === "parse_error" && !firstGap.location ? first.analysisGaps.representativeItems.find((item) => item.reason === "parse_error" && item.location) ?? firstGap : firstGap;
   const summary = first?.analysisGaps?.reasonSummary;
   const reason = summary?.accounting === "exact" ? summary.rows.find((row) => row.eventsObserved > 0)?.reason : void 0;
+  const inventories = report.checks.filter((check) => check.id === "source.inventory");
+  const inventory = inventories.length === 1 ? inventories[0] : void 0;
+  const collectionBudget = inventory?.collectionBudget ?? report.scope?.collectionBudget;
+  const collectionBudgetConsistency = inventory?.collectionBudget && report.scope?.collectionBudget ? sameCollectionBudget(inventory.collectionBudget, report.scope.collectionBudget) ? "consistent" : "inconsistent" : "unknown";
+  const collectionReason = first?.collectionEvidence?.issues.find((issue2) => issue2.code === "root_error")?.code ?? first?.collectionEvidence?.issues.find((issue2) => issue2.code !== "unsupported_file")?.code;
+  const exclusion = inventory?.collectionEvidence?.issues.find((issue2) => issue2.code === "unsupported_file");
   const nextRead = first ? {
-    kind: gap?.nextReview ?? (reason ? nextGapReview(reason) : "review_check_diagnostics"),
+    kind: collectionReason ? collectionReview(collectionReason) : gap?.nextReview ?? (reason ? nextGapReview(reason) : "review_check_diagnostics"),
     checkIndex: first.checkIndex,
     checkId: first.checkId,
+    ...collectionReason ? { collectionReason } : {},
     ...gap?.location ? { location: { ...gap.location } } : {}
-  } : { kind: gate.outcome === "incomplete" ? "review_check_diagnostics" : findings > 0 ? "review_finding_evidence" : "review_scope_limitations" };
+  } : exclusion ? { kind: "review_source_file_policy", collectionReason: exclusion.code, checkIndex: report.checks.indexOf(inventory), checkId: inventory.id } : { kind: gate.outcome === "incomplete" ? "review_check_diagnostics" : findings > 0 ? "review_finding_evidence" : "review_scope_limitations" };
   return {
     version: 1,
     basis: "sanitised_report",
@@ -232757,11 +232846,23 @@ function projectReportSummary(report, gate) {
     scope: {
       mode: report.mode,
       ...report.scope ? { fingerprint: report.scope.fingerprint, ruleset: report.scope.ruleset, ...report.scope.analysisBudget ? { analysisProfile: report.scope.analysisBudget.effectiveProfile, analysisBudgetRevision: report.scope.analysisBudget.revision } : {} } : {},
+      ...collectionBudget ? { collectionBudget: structuredClone(collectionBudget) } : {},
+      ...inventory || report.scope?.collectionBudget ? { collectionBudgetConsistency } : {},
+      ...inventory?.collectionEvidence ? { collectionEvidence: structuredClone(inventory.collectionEvidence) } : {},
       toolSelection: selectedTools(report),
       wholeProjectCoverage: "not_established"
     },
     nextRead
   };
+}
+function collectionReview(reason) {
+  if (reason === "root_error")
+    return "review_source_root";
+  if (reason === "file_limit" || reason === "size_limit")
+    return "review_collection_budget";
+  if (reason === "read_error" || reason === "changed_file")
+    return "review_collection_diagnostics";
+  return "review_source_file_policy";
 }
 function copyGap(gap) {
   return { ...gap, ...gap.location ? { location: { ...gap.location } } : {} };
@@ -232951,6 +233052,8 @@ function projectAgentReport(report, failOn) {
       notes: check.notes,
       ...check.metrics ? { metrics: check.metrics } : {},
       ...check.analysisBudget ? { analysisBudget: check.analysisBudget } : {},
+      ...check.collectionBudget ? { collectionBudget: check.collectionBudget } : {},
+      ...check.collectionEvidence ? { collectionEvidence: check.collectionEvidence } : {},
       ...check.analysisGaps ? { analysisGaps: check.analysisGaps } : {},
       ...check.apiStateEvidence ? { apiStateEvidence: check.apiStateEvidence } : {},
       ...check.apiExecution ? { apiExecution: check.apiExecution } : {},
@@ -233087,6 +233190,8 @@ function toSarif(report) {
           category: `wakeio-security-ci/${safeReport.mode}`,
           schemaVersion: safeReport.schemaVersion,
           ...safeReport.scope?.analysisBudget ? { analysisBudget: safeReport.scope.analysisBudget } : {},
+          ...safeReport.scope?.collectionBudget ? { collectionBudget: safeReport.scope.collectionBudget } : {},
+          ...safeReport.checks.some((check) => check.collectionBudget || check.collectionEvidence) ? { collectionInventories: safeReport.checks.flatMap((check, checkIndex) => check.collectionBudget || check.collectionEvidence ? [{ checkIndex, checkId: check.id, ...check.collectionBudget ? { collectionBudget: check.collectionBudget } : {}, ...check.collectionEvidence ? { collectionEvidence: check.collectionEvidence } : {} }] : []) } : {},
           ...safeReport.checks.some((check) => check.analysisBudget) ? { analysisBudgets: safeReport.checks.flatMap((check, checkIndex) => check.analysisBudget ? [{ checkIndex, checkId: check.id, analysisBudget: check.analysisBudget }] : []) } : {},
           ...safeReport.checks.some((check) => check.apiExecution) ? {
             apiExecution: safeReport.checks.flatMap((check, checkIndex) => check.apiExecution ? [{ checkIndex, checkId: check.id, apiExecution: check.apiExecution }] : [])
@@ -233121,6 +233226,8 @@ function toMarkdown(report, failOn = "high") {
     lines.push(`- Scope fingerprint: ${markdownInline(safeReport.scope.fingerprint)}`, `- Ruleset: ${markdownInline(safeReport.scope.ruleset)}`, ...safeReport.scope.projectId ? [`- Project ID: ${markdownInline(safeReport.scope.projectId)}`] : []);
     if (safeReport.scope.analysisBudget)
       lines.push(`- AST analysis budget: ${budgetText(safeReport.scope.analysisBudget)}`);
+    if (safeReport.scope.collectionBudget)
+      lines.push(`- Collection budget: ${collectionBudgetText(safeReport.scope.collectionBudget)}`);
     if (safeReport.scope.provenance) {
       const provenance = safeReport.scope.provenance;
       if (provenance.sourceContentHash)
@@ -233141,6 +233248,10 @@ function toMarkdown(report, failOn = "high") {
       lines.push(`- **${markdownInline(check.id)}**: ${markdownInline(check.status)}`);
       if (check.analysisBudget)
         lines.push(`  - AST analysis budget: ${budgetText(check.analysisBudget)}`);
+      if (check.collectionBudget)
+        lines.push(`  - Collection budget: ${collectionBudgetText(check.collectionBudget)}`);
+      if (check.collectionEvidence)
+        lines.push(...markdownCollectionEvidence(check.collectionEvidence));
       for (const note of check.notes) {
         lines.push(`  - Note: ${markdownInline(note)}`);
       }
@@ -233226,7 +233337,9 @@ function markdownSummary(summary) {
   ];
   for (const check of summary.incompleteChecks) {
     lines.push(`- Incomplete check [${check.checkIndex}] ${markdownInline(check.checkId)}: ${check.status}.`);
-    if (!check.analysisGaps)
+    if (check.collectionEvidence)
+      lines.push(...markdownCollectionEvidence(check.collectionEvidence));
+    else if (!check.analysisGaps)
       lines.push("  - Cause: unknown; only the check status is available.");
     else {
       const gaps = check.analysisGaps;
@@ -233246,9 +233359,15 @@ function markdownSummary(summary) {
     lines.push(`- ${summary.omittedIncompleteChecks} incomplete checks omitted from this summary; see Checks.`);
   if (summary.scope.analysisProfile)
     lines.push(`- AST workload selection: ${summary.scope.analysisProfile} (${summary.scope.analysisBudgetRevision}).`);
+  if (summary.scope.collectionBudget)
+    lines.push(`- Collection workload selection: ${collectionBudgetText(summary.scope.collectionBudget)}`);
+  if (summary.scope.collectionBudgetConsistency)
+    lines.push(`- Collection budget identity against declared scope: ${summary.scope.collectionBudgetConsistency}. This identity does not change the scan execution gate.`);
+  if (summary.scope.collectionEvidence?.issues.some((issue2) => issue2.code === "unsupported_file"))
+    lines.push("- Source file exclusions: unsupported_file was observed; completed checks do not establish whole-project coverage.");
   lines.push(`- Declared scope: ${summary.scope.mode}; tool selection=${summary.scope.toolSelection}; whole-project coverage=${summary.scope.wholeProjectCoverage}.`, ...summary.scope.ruleset ? [`- Declared ruleset: ${markdownInline(summary.scope.ruleset)}; fingerprint=${summary.scope.fingerprint}.`] : []);
   const next = summary.nextRead;
-  lines.push(`- Next read: ${next.kind}${next.checkIndex !== void 0 ? `; check [${next.checkIndex}] ${markdownInline(next.checkId)}` : ""}${next.location ? `; ${markdownInline(next.location.path)}:${next.location.line}:${next.location.column}` : ""}.`, "- This is a review enum, not authority to run commands, install dependencies or upload source.", "- Scan gate is separate from delivery/final process exit. This summary does not confirm a vulnerability, verified fix or whole-project safety.");
+  lines.push(`- Next read: ${next.kind}${next.collectionReason ? `; collection reason=${next.collectionReason}` : ""}${next.checkIndex !== void 0 ? `; check [${next.checkIndex}] ${markdownInline(next.checkId)}` : ""}${next.location ? `; ${markdownInline(next.location.path)}:${next.location.line}:${next.location.column}` : ""}.`, "- This is a review enum, not authority to run commands, install dependencies or upload source.", "- Scan gate is separate from delivery/final process exit. This summary does not confirm a vulnerability, verified fix or whole-project safety.");
   return lines;
 }
 function markdownGapReasons(summary) {
@@ -233264,6 +233383,19 @@ function markdownGapReasons(summary) {
     "| --- | ---: | ---: |",
     ...summary.rows.map((row) => `| ${markdownInline(row.reason)} | ${row.eventsObserved} | ${row.eventsDropped} |`),
     ""
+  ];
+}
+function collectionBudgetText(budget) {
+  const limits = budget.limits;
+  return `${budget.revision}; max files=${limits.maxFiles}, total bytes=${limits.maxBytes}, per-file bytes=${limits.maxFileBytes}, directory entries=${limits.maxEntries}. Declared selection limits, not coverage proof.`;
+}
+function markdownCollectionEvidence(evidence2) {
+  return [
+    `  - Collection diagnostics: ${evidence2.issueCount} recorded issues; ${evidence2.issues.map((issue2) => `${issue2.code}=${issue2.count}`).join(", ") || "none"}.`,
+    ...evidence2.issueCount === 0 ? ["  - No typed collection issue was recorded."] : [],
+    ...evidence2.issues.some((issue2) => issue2.code === "file_limit") ? ["  - file_limit can mean a file count, traversal or directory-depth limit; review the collection diagnostics and selected budget."] : [],
+    ...evidence2.issues.some((issue2) => issue2.code === "size_limit") ? ["  - size_limit can mean a total, per-file or read-size limit; review the collection diagnostics and selected budget."] : [],
+    ...evidence2.issues.some((issue2) => issue2.code === "unsupported_file") ? ["  - unsupported_file records excluded file types; completion does not attest whole-project coverage."] : []
   ];
 }
 function sanitiseReport(report) {
@@ -233308,6 +233440,17 @@ function sanitiseCheck(input) {
   if (input?.id === "api.owned-state-oracle" && apiStateEvidence?.execution !== void 0 && apiStateEvidence.execution !== "completed" && status === "completed")
     status = "partial";
   const analysisBudget = sanitiseAnalysisBudget(input?.analysisBudget);
+  const budgetField = ownDataField(input, "collectionBudget");
+  const evidenceField = ownDataField(input, "collectionEvidence");
+  const inventory = input?.id === "source.inventory";
+  const collectionBudget = inventory && budgetField.valid ? sanitiseCollectionBudget(budgetField.value) : void 0;
+  const collectionEvidence2 = inventory && evidenceField.valid ? sanitiseCollectionEvidence(evidenceField.value) : void 0;
+  if ((budgetField.present || evidenceField.present) && (!collectionBudget || !collectionEvidence2) && status !== "error")
+    status = "partial";
+  if (collectionEvidence2?.issues.some((issue2) => issue2.code === "root_error"))
+    status = "error";
+  else if (collectionEvidence2?.issues.some((issue2) => issue2.code !== "unsupported_file") && (status === "completed" || status === "not_applicable"))
+    status = "partial";
   const proofLedger = input?.id === "api.authorization" ? apiExecution : void 0;
   const findings = Array.isArray(input?.findings) ? input.findings.map((finding2) => sanitiseFinding(finding2, proofLedger)).filter(() => input.id !== "url.sql-boolean" || dastExecution?.status === "complete" && dastExecution.outcome === "observed").map((finding2) => input.id === "url.sql-boolean" ? { ...finding2, kind: "candidate" } : finding2) : [];
   const notes = Array.isArray(input?.notes) ? input.notes.map((note) => safeText(note)).filter(Boolean) : [];
@@ -233327,6 +233470,8 @@ function sanitiseCheck(input) {
     notes,
     ...Object.keys(metrics).length > 0 ? { metrics } : {},
     ...analysisBudget ? { analysisBudget } : {},
+    ...collectionBudget ? { collectionBudget } : {},
+    ...collectionEvidence2 ? { collectionEvidence: collectionEvidence2 } : {},
     ...analysisGaps ? { analysisGaps } : {},
     ...apiStateEvidence ? { apiStateEvidence } : {},
     ...apiExecution ? { apiExecution } : {},
@@ -233339,15 +233484,26 @@ function safeScope(scope) {
   const projectId = scope.projectId && /^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$/.test(scope.projectId) ? scope.projectId : void 0;
   const provenance = sanitiseProvenance(scope.provenance);
   const analysisBudget = sanitiseAnalysisBudget(scope.analysisBudget);
+  const budgetField = ownDataField(scope, "collectionBudget");
+  const collectionBudget = budgetField.valid ? sanitiseCollectionBudget(budgetField.value) : void 0;
+  if (budgetField.present && !collectionBudget)
+    return {};
   return {
     scope: {
       fingerprint: scope.fingerprint,
       ...analysisBudget ? { analysisBudget } : {},
+      ...collectionBudget ? { collectionBudget } : {},
       ruleset: scope.ruleset,
       ...projectId ? { projectId } : {},
       ...provenance ? { provenance } : {}
     }
   };
+}
+function ownDataField(input, key2) {
+  if (!input || typeof input !== "object" || utilTypes.isProxy(input))
+    return { present: false, valid: false };
+  const descriptor = Object.getOwnPropertyDescriptor(input, key2);
+  return descriptor ? { present: true, valid: "value" in descriptor, ..."value" in descriptor ? { value: descriptor.value } : {} } : { present: false, valid: false };
 }
 function sanitiseProvenance(provenance) {
   if (!provenance || typeof provenance !== "object")
@@ -233723,7 +233879,7 @@ var ApiPolicyError = class extends Error {
 };
 
 // build/src/api.js
-import { types as types2 } from "node:util";
+import { types as types3 } from "node:util";
 
 // build/src/api-state-capture.js
 var sessions = /* @__PURE__ */ new WeakMap();
@@ -233783,12 +233939,12 @@ function policyLocation(location2, read) {
   }
 }
 function isRecord(value) {
-  return typeof value === "object" && value !== null && !types2.isProxy(value) && !Array.isArray(value);
+  return typeof value === "object" && value !== null && !types3.isProxy(value) && !Array.isArray(value);
 }
 function hasOwn(value, key2) {
   return Object.prototype.hasOwnProperty.call(value, key2);
 }
-function exactKeys3(value, required, optional, label) {
+function exactKeys4(value, required, optional, label) {
   const allowed = /* @__PURE__ */ new Set([...required, ...optional]);
   for (const key2 of Object.keys(value)) {
     if (!allowed.has(key2))
@@ -233851,7 +234007,7 @@ function integerStatus(value, label, allowSuccess) {
 function parseScalarExpectation(value, label) {
   if (!isRecord(value))
     invalid(`${label} must be an object`);
-  exactKeys3(value, ["jsonPointer", "equals"], [], label);
+  exactKeys4(value, ["jsonPointer", "equals"], [], label);
   return {
     jsonPointer: safeJsonPointer(value.jsonPointer),
     equals: scalar(value.equals, `${label} equals`)
@@ -233860,7 +234016,7 @@ function parseScalarExpectation(value, label) {
 function parseIdentity(value) {
   if (!isRecord(value))
     invalid("identity must be an object");
-  exactKeys3(value, ["path", "status", "jsonPointer", "equals"], ["organization"], "identity");
+  exactKeys4(value, ["path", "status", "jsonPointer", "equals"], ["organization"], "identity");
   const principal = scalar(value.equals, "identity equals");
   if (typeof principal !== "string" || principal.trim().length === 0)
     invalid("identity equals must be a non-empty string principal marker");
@@ -233877,7 +234033,7 @@ function parseIdentity(value) {
 function parseActor(value, version) {
   if (!isRecord(value))
     invalid("actor must be an object");
-  exactKeys3(value, ["id"], version === 2 ? ["authorizationEnv", "identity"] : ["authorizationEnv"], "actor");
+  exactKeys4(value, ["id"], version === 2 ? ["authorizationEnv", "identity"] : ["authorizationEnv"], "actor");
   const id = safeIdentifier(value.id, "actor id");
   const actor = { id };
   if (hasOwn(value, "authorizationEnv"))
@@ -233904,14 +234060,14 @@ function parseAllow(value, version) {
   const actor = safeIdentifier(value.actor, "allow actor");
   const status = integerStatus(value.status, "allow status", true);
   if (version === 1) {
-    exactKeys3(value, ["actor", "status", "jsonPointer", "equals"], [], "allow");
+    exactKeys4(value, ["actor", "status", "jsonPointer", "equals"], [], "allow");
     return { actor, status, jsonPointer: safeJsonPointer(value.jsonPointer), equals: scalar(value.equals, "allow equals") };
   }
-  exactKeys3(value, ["actor", "status", "resource", "protected"], [], "allow");
+  exactKeys4(value, ["actor", "status", "resource", "protected"], [], "allow");
   const resource = parseScalarExpectation(value.resource, "allow resource");
   if (!isRecord(value.protected))
     invalid("allow protected must be an object");
-  exactKeys3(value.protected, ["jsonPointer", "equals"], ["match"], "allow protected");
+  exactKeys4(value.protected, ["jsonPointer", "equals"], ["match"], "allow protected");
   if (hasOwn(value.protected, "match") && value.protected.match !== "pointer" && value.protected.match !== "json-values")
     invalid("allow protected match is unsupported");
   const protectedMarker = {
@@ -233929,7 +234085,7 @@ function parseAllow(value, version) {
 function parseDeny(value, version) {
   if (!isRecord(value))
     invalid("deny entry must be an object");
-  exactKeys3(value, ["actor", "statuses"], version === 2 ? ["allowEmptyBody"] : [], "deny entry");
+  exactKeys4(value, ["actor", "statuses"], version === 2 ? ["allowEmptyBody"] : [], "deny entry");
   const actor = safeIdentifier(value.actor, "deny actor");
   if (!Array.isArray(value.statuses) || value.statuses.length === 0 || value.statuses.length > MAX_STATUS_VALUES) {
     invalid("deny statuses must be a bounded non-empty array");
@@ -233944,7 +234100,7 @@ function parseDeny(value, version) {
 function parseCase(value, version) {
   if (!isRecord(value))
     invalid("case must be an object");
-  exactKeys3(value, ["id", "path", "allow", "deny"], [], "case");
+  exactKeys4(value, ["id", "path", "allow", "deny"], [], "case");
   const id = safeIdentifier(value.id, "case id");
   const path2 = safePolicyPath(value.path);
   const allow = policyLocation("allow", () => parseAllow(value.allow, version));
@@ -233978,7 +234134,7 @@ function parseApiPolicy(input) {
   }
   if (!isRecord(input))
     invalid("policy must be a JSON object");
-  exactKeys3(input, ["version", "baseUrl", "actors", "cases"], [], "policy");
+  exactKeys4(input, ["version", "baseUrl", "actors", "cases"], [], "policy");
   const version = input.version === API_POLICY_VERSION || input.version === API_POLICY_LEGACY_VERSION ? input.version : void 0;
   if (version === void 0)
     invalid("policy version is unsupported");
@@ -234136,7 +234292,7 @@ function prepareApiRun(options) {
     preparationError("invalid_options", "options", "Use only documented data properties; accessors and custom objects are unsupported.");
   }
   options = Object.create(null, descriptors);
-  if (options.signal !== void 0 && (types2.isProxy(options.signal) || !(options.signal instanceof AbortSignal)))
+  if (options.signal !== void 0 && (types3.isProxy(options.signal) || !(options.signal instanceof AbortSignal)))
     preparationError("invalid_options", "signal", "signal must be an AbortSignal.");
   if (options.allowPrivate !== void 0 && typeof options.allowPrivate !== "boolean")
     preparationError("invalid_options", "allowPrivate", "allowPrivate must be boolean.");
@@ -234150,7 +234306,7 @@ function prepareApiRun(options) {
     preparationError("invalid_policy", error instanceof ApiPolicyError ? error.location : "policy", error instanceof ApiPolicyError ? error.message : "Provide a valid bounded API policy JSON object.");
   }
   const env = options.env === void 0 ? process.env : options.env;
-  if (!env || typeof env !== "object" || types2.isProxy(env) || Array.isArray(env))
+  if (!env || typeof env !== "object" || types3.isProxy(env) || Array.isArray(env))
     preparationError("invalid_environment", "env", "Provide an environment object with data properties.");
   const principals = /* @__PURE__ */ new Set();
   parsed.policy.actors.forEach((actor, actorIndex) => {
@@ -234908,6 +235064,9 @@ async function runApiPolicy(options) {
   }];
 }
 
+// build/src/compare.js
+import { types as utilTypes2 } from "node:util";
+
 // build/src/json-input.js
 import { constants as constants4 } from "node:fs";
 import { open as open4 } from "node:fs/promises";
@@ -234953,6 +235112,13 @@ function parseScanReport(input) {
     if (!record4(check) || !text(check.id) || !check.id || checkIds.has(check.id) || !["completed", "partial", "error", "skipped", "not_applicable"].includes(check.status) || !Array.isArray(check.findings) || !Array.isArray(check.notes) || !check.notes.every(text))
       return invalid4();
     if (check.analysisBudget !== void 0 && !sanitiseAnalysisBudget(check.analysisBudget))
+      return invalid4();
+    const collectionBudget = collectionField(check, "collectionBudget");
+    const collectionEvidence2 = collectionField(check, "collectionEvidence");
+    if (!collectionBudget.valid || !collectionEvidence2.valid || collectionBudget.present && !sanitiseCollectionBudget(collectionBudget.value) || collectionEvidence2.present && !sanitiseCollectionEvidence(collectionEvidence2.value) || (collectionBudget.present || collectionEvidence2.present) && check.id !== "source.inventory")
+      return invalid4();
+    const evidence2 = collectionEvidence2.present ? sanitiseCollectionEvidence(collectionEvidence2.value) : void 0;
+    if (evidence2?.issues.some((issue2) => issue2.code === "root_error") && check.status !== "error" || evidence2?.issues.some((issue2) => issue2.code !== "unsupported_file") && ["completed", "not_applicable"].includes(check.status))
       return invalid4();
     checkIds.add(check.id);
     count += check.findings.length;
@@ -235045,6 +235211,7 @@ function compareReports(beforeInput, afterInput) {
   }
   if ((before.checks.some((c) => c.id === "source.builtin-ast" && c.status !== "not_applicable") || after.checks.some((c) => c.id === "source.builtin-ast" && c.status !== "not_applicable")) && !sameAnalysisBudget(before.scope?.analysisBudget, after.scope?.analysisBudget))
     reasons.push("AST analysis budget changed or is unknown.");
+  compareCollection(before, after, reasons);
   for (const check of before.checks) {
     const previous = check.apiExecution;
     const next = after.checks.find((candidate) => candidate.id === check.id)?.apiExecution;
@@ -235095,6 +235262,7 @@ function compareReports(beforeInput, afterInput) {
     "Not observed means that finding is absent from the later report. Code deletion, line movement, changed data, or detector limitations may explain it; it is not proof of a security fix.",
     "Semantic comparison keys can survive line movement. Findings without a key retain location-based IDs, so moving them appears as new plus not observed. Duplicate semantic keys are left unverified instead of being matched arbitrarily.",
     "Source content hashes are provenance evidence and do not establish scope identity. Unknown scanner databases or rule bundles make the comparison unverified.",
+    "Source inventory comparisons require known matching effective collection budgets and recorded exclusion reasons independently of the supplied scope fingerprint. Changed or unknown collection selection remains unverified.",
     "Comparisons do not suppress findings in the scan reports and do not certify the whole service."
   ] };
 }
@@ -235104,6 +235272,9 @@ function validScope(scope) {
   if (scope.projectId !== void 0 && (typeof scope.projectId !== "string" || !/^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$/.test(scope.projectId)))
     return false;
   if (scope.analysisBudget !== void 0 && !sanitiseAnalysisBudget(scope.analysisBudget))
+    return false;
+  const budget = collectionField(scope, "collectionBudget");
+  if (!budget.valid || budget.present && !sanitiseCollectionBudget(budget.value))
     return false;
   const provenance = scope.provenance;
   if (provenance === void 0)
@@ -235137,6 +235308,26 @@ function validScope(scope) {
     }
   }
   return true;
+}
+function collectionField(input, key2) {
+  if (utilTypes2.isProxy(input))
+    return { present: true, valid: false };
+  const descriptor = Object.getOwnPropertyDescriptor(input, key2);
+  return descriptor ? { present: true, valid: "value" in descriptor, ..."value" in descriptor ? { value: descriptor.value } : {} } : { present: false, valid: true };
+}
+function compareCollection(before, after, reasons) {
+  const previous = before.checks.find((check) => check.id === "source.inventory");
+  const next = after.checks.find((check) => check.id === "source.inventory");
+  if (!previous && !next && !before.scope?.collectionBudget && !after.scope?.collectionBudget)
+    return;
+  for (const [report, inventory, label] of [[before, previous, "Before"], [after, next, "After"]]) {
+    if (!inventory || inventory.status === "not_applicable" || !sameCollectionBudget(report.scope?.collectionBudget, inventory.collectionBudget) || !inventory.collectionEvidence)
+      reasons.push(`${label} source collection identity or diagnostics are missing or inconsistent.`);
+  }
+  if (!sameCollectionBudget(previous?.collectionBudget, next?.collectionBudget) || !sameCollectionBudget(before.scope?.collectionBudget, after.scope?.collectionBudget))
+    reasons.push("Effective source collection budget changed or is unknown.");
+  if (!previous?.collectionEvidence || !next?.collectionEvidence || JSON.stringify(previous.collectionEvidence) !== JSON.stringify(next.collectionEvidence))
+    reasons.push("Recorded source collection exclusions changed or are unknown.");
 }
 function safeMetadataKey2(value) {
   return /^[A-Za-z0-9._:-]{1,80}$/.test(value) && value !== "__proto__" && value !== "constructor" && value !== "prototype";
@@ -235234,7 +235425,7 @@ async function writeComparison(result3, outDir) {
 }
 
 // build/src/replay.js
-import { types as types3 } from "node:util";
+import { types as types4 } from "node:util";
 function refused(findingId, reason, replay) {
   return { version: 1, kind: "api-finding-replay", outcome: "refused", findingId, reason, ...replay ? { replay } : {} };
 }
@@ -235251,7 +235442,7 @@ function reducedPolicy(policy, replay) {
   };
 }
 async function replayApiFinding(options) {
-  if (!options || typeof options !== "object" || types3.isProxy(options))
+  if (!options || typeof options !== "object" || types4.isProxy(options))
     return refused("", "invalid_options");
   const descriptors = Object.getOwnPropertyDescriptors(options);
   const proto = Object.getPrototypeOf(options);
@@ -235302,11 +235493,11 @@ function replayExitCode(result3) {
 
 // build/src/dast-replay.js
 import { createHash as createHash7 } from "node:crypto";
-import { types as types5 } from "node:util";
+import { types as types6 } from "node:util";
 
 // build/src/dast.js
 import { createHash as createHash6 } from "node:crypto";
-import { types as types4 } from "node:util";
+import { types as types5 } from "node:util";
 var DAST_CHECK_ID = "url.sql-boolean";
 var DAST_PROFILE_REVISION = "sql-boolean-numeric-v1";
 var DAST_DEFAULT_MAX_REQUESTS = 8;
@@ -235405,7 +235596,7 @@ function parseDastPolicy(raw) {
   return { policy, policySha256 };
 }
 function optionsSnapshot(raw) {
-  if (!raw || typeof raw !== "object" || types4.isProxy(raw) || ![Object.prototype, null].includes(Object.getPrototypeOf(raw)))
+  if (!raw || typeof raw !== "object" || types5.isProxy(raw) || ![Object.prototype, null].includes(Object.getPrototypeOf(raw)))
     throw new TypeError("invalid_dast_options");
   const descriptors = Object.getOwnPropertyDescriptors(raw);
   const allowed = /* @__PURE__ */ new Set(["policy", "consent", "allowPrivate", "timeoutMs", "maxRequests", "signal"]);
@@ -235502,7 +235693,7 @@ async function runDast(rawOptions) {
   }
   const maxRequests = options.maxRequests ?? DAST_DEFAULT_MAX_REQUESTS;
   const timeoutMs = options.timeoutMs ?? DAST_DEFAULT_TIMEOUT_MS;
-  if (!Number.isSafeInteger(maxRequests) || maxRequests < 1 || maxRequests > DAST_MAX_REQUESTS || !Number.isSafeInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > DAST_MAX_TIMEOUT_MS || options.signal !== void 0 && (types4.isProxy(options.signal) || !(options.signal instanceof AbortSignal)))
+  if (!Number.isSafeInteger(maxRequests) || maxRequests < 1 || maxRequests > DAST_MAX_REQUESTS || !Number.isSafeInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > DAST_MAX_TIMEOUT_MS || options.signal !== void 0 && (types5.isProxy(options.signal) || !(options.signal instanceof AbortSignal)))
     return result2("error", "DAST budget or cancellation signal is invalid; no requests were made.", { errorCode: "invalid_budget" });
   const control = createApiRunControl(timeoutMs, options.signal, DAST_MAX_TIMEOUT_MS);
   let abortCause;
@@ -235658,12 +235849,12 @@ var ID = /^[0-9a-f]{64}$/;
 var RULE = "dast.sql-boolean-differential";
 var TITLE = "SQL boolean response differential observed";
 var digest2 = (value) => createHash7("sha256").update(JSON.stringify(value)).digest("hex");
-var object4 = (value) => value !== null && typeof value === "object" && !Array.isArray(value);
+var object5 = (value) => value !== null && typeof value === "object" && !Array.isArray(value);
 function refused2(findingId, reason, metadata = {}) {
   return { version: 1, kind: "native-dast-finding-replay", outcome: "refused", findingId, reason, ...metadata };
 }
 function snapshotOptions(raw) {
-  if (!raw || typeof raw !== "object" || types5.isProxy(raw))
+  if (!raw || typeof raw !== "object" || types6.isProxy(raw))
     return void 0;
   const prototype = Object.getPrototypeOf(raw);
   if (prototype !== Object.prototype && prototype !== null || Object.getOwnPropertySymbols(raw).length)
@@ -235673,7 +235864,7 @@ function snapshotOptions(raw) {
   if (Object.entries(descriptors).some(([key2, descriptor]) => !permitted.has(key2) || !descriptor.enumerable || !("value" in descriptor)))
     return void 0;
   const value = (key2) => descriptors[key2]?.value;
-  if (typeof value("findingId") !== "string" || !ID.test(value("findingId")) || typeof value("consent") !== "boolean" || value("allowPrivate") !== void 0 && typeof value("allowPrivate") !== "boolean" || value("signal") !== void 0 && (types5.isProxy(value("signal")) || !(value("signal") instanceof AbortSignal)))
+  if (typeof value("findingId") !== "string" || !ID.test(value("findingId")) || typeof value("consent") !== "boolean" || value("allowPrivate") !== void 0 && typeof value("allowPrivate") !== "boolean" || value("signal") !== void 0 && (types6.isProxy(value("signal")) || !(value("signal") instanceof AbortSignal)))
     return void 0;
   return {
     report: value("report"),
@@ -235718,12 +235909,12 @@ async function replayDastFinding(rawOptions) {
     policySha256,
     profileRevision: DAST_PROFILE_REVISION
   };
-  const rawChecks = object4(rawReport) && Array.isArray(rawReport.checks) ? rawReport.checks : [];
-  const rawNative = rawChecks.filter((item) => object4(item) && item.id === DAST_CHECK_ID);
-  if (rawNative.length !== 1 || !object4(rawNative[0]) || !Array.isArray(rawNative[0].findings)) {
+  const rawChecks = object5(rawReport) && Array.isArray(rawReport.checks) ? rawReport.checks : [];
+  const rawNative = rawChecks.filter((item) => object5(item) && item.id === DAST_CHECK_ID);
+  if (rawNative.length !== 1 || !object5(rawNative[0]) || !Array.isArray(rawNative[0].findings)) {
     return refused2(findingId, "not_replayable", metadata);
   }
-  const rawSelected = rawNative[0].findings.filter((item) => object4(item) && item.id === findingId);
+  const rawSelected = rawNative[0].findings.filter((item) => object5(item) && item.id === findingId);
   if (rawSelected.length === 0)
     return refused2(findingId, "finding_not_found", metadata);
   if (rawSelected.length !== 1 || rawNative[0].findings.length !== 1)
@@ -235964,6 +236155,7 @@ async function engineProvenance(inputs) {
 async function buildScanScope(inputs) {
   const projectId = validateProjectId(inputs.projectId);
   const analysisBudget = inputs.source ? resolveAnalysisBudget(inputs.analysisProfile) : void 0;
+  const collectionBudget = inputs.source ? resolveCollectionBudget({ maxFiles: inputs.sourceMaxFiles, maxBytes: inputs.sourceMaxBytes }) : void 0;
   const stable = {
     mode: inputs.mode,
     projectId: projectId ?? null,
@@ -235971,6 +236163,7 @@ async function buildScanScope(inputs) {
     // it, retain the old conservative path identity for local comparisons.
     sourceRoot: projectId ? null : inputs.source ? resolve7(inputs.source) : null,
     ...analysisBudget ? { analysisBudget } : {},
+    ...collectionBudget ? { collectionBudget } : {},
     url: inputs.url ?? null,
     tools: [...inputs.tools ?? []].sort(),
     allowPrivate: inputs.allowPrivate === true,
@@ -235996,6 +236189,7 @@ async function buildScanScope(inputs) {
     fingerprint: fingerprint2,
     ruleset: inputs.ruleset,
     ...analysisBudget ? { analysisBudget } : {},
+    ...collectionBudget ? { collectionBudget } : {},
     ...projectId ? { projectId } : {},
     ...provenance ? { provenance } : {}
   };
@@ -236074,11 +236268,13 @@ async function doctorMain(argv = process.argv.slice(2)) {
     source,
     execution: { targetCode: "none", network: "none", packageManager: "none" },
     inventory,
+    inventoryBasis: "metadata_estimate_not_collector_coverage",
+    collectionBudget: resolveCollectionBudget({ maxFiles: options.sourceMaxFiles, maxBytes: options.sourceMaxBytes }),
     tools: toolStatuses,
     expectedTransfers,
     runtimeNetwork,
     databaseCaches: { osv: "unknown", trivy: "unknown" },
-    nextCommand: nextCommand(source, options.tools),
+    nextCommand: nextCommand(source, options.tools, options),
     ...dast ? { activeDast: dast } : {}
   };
   if (options.json) {
@@ -236098,8 +236294,35 @@ function parseDoctorArgs(argv) {
   if (args[0] === "doctor")
     args.shift();
   const options = { source: ".", tools: [...DEFAULT_TOOLS], json: false, strict: false, help: false, dast: false };
+  const selected = /* @__PURE__ */ new Set();
   for (let index = 0; index < args.length; index += 1) {
     const argument = args[index];
+    const selector = argument.split("=")[0];
+    if (["--source-max-files", "--source-max-bytes", "--analysis-profile"].includes(selector)) {
+      if (selected.has(selector))
+        throw new Error(`${selector} may only be specified once`);
+      selected.add(selector);
+      const inline = argument.indexOf("=");
+      const raw = inline >= 0 ? argument.slice(inline + 1) : args[++index];
+      if (raw === void 0 || raw === "")
+        throw new Error(`${selector} requires a value`);
+      if (selector === "--analysis-profile")
+        options.analysisProfile = resolveAnalysisBudget(raw).requestedProfile;
+      else {
+        const maximum = selector === "--source-max-files" ? COLLECTION_MAX_FILES : COLLECTION_MAX_BYTES;
+        let value;
+        try {
+          value = parseCollectionLimit(raw, maximum);
+        } catch {
+          throw new Error(`${selector} must be an integer from 1 to ${maximum} without signs, spaces or leading zeros`);
+        }
+        if (selector === "--source-max-files")
+          options.sourceMaxFiles = value;
+        else
+          options.sourceMaxBytes = value;
+      }
+      continue;
+    }
     if (argument === "--help" || argument === "-h") {
       options.help = true;
       continue;
@@ -236200,6 +236423,7 @@ function parseTools(value) {
 function doctorUsage() {
   return [
     "Usage: wakeio-security-ci doctor [--source DIR] [--tools gitleaks,osv,trivy,bandit|none] [--json] [--strict]",
+    "                              [--source-max-files N] [--source-max-bytes N] [--analysis-profile default|extended]",
     "                              [--dast [--nuclei PATH] [--nuclei-templates DIR] [--schemathesis-python PATH]]",
     "",
     "Read-only inventory: no target code, package scripts, scanner, or network request is executed.",
@@ -236300,8 +236524,9 @@ async function inspectTools(selected, inventory) {
 async function findExecutable2(command) {
   return findExecutable(command);
 }
-function nextCommand(source, tools) {
-  return `npx --no-install wakeio-security-ci scan --source ${shellQuote(source)} --tools ${shellQuote(tools.length > 0 ? tools.join(",") : "none")} --out wakeio-security-reports`;
+function nextCommand(source, tools, options) {
+  const choices = `${options.sourceMaxFiles === void 0 ? "" : ` --source-max-files ${options.sourceMaxFiles}`}${options.sourceMaxBytes === void 0 ? "" : ` --source-max-bytes ${options.sourceMaxBytes}`}${options.analysisProfile === void 0 ? "" : ` --analysis-profile ${options.analysisProfile}`}`;
+  return `npx --no-install wakeio-security-ci scan --source ${shellQuote(source)} --tools ${shellQuote(tools.length > 0 ? tools.join(",") : "none")} --out wakeio-security-reports${choices}`;
 }
 function shellQuote(value) {
   return `'${value.replace(/'/g, `'\\''`)}'`;
@@ -236311,7 +236536,9 @@ function renderDoctorText(result3) {
   const lines = [
     "Wakeio doctor (read-only)",
     `Source: ${result3.source}`,
-    `Inventory: ${result3.inventory.files} files, ${result3.inventory.bytes} bytes; Python ${result3.inventory.pythonFiles}; dependency manifests ${result3.inventory.dependencyManifests}; config files ${result3.inventory.configFiles}${result3.inventory.truncated ? "; truncated" : ""}`,
+    `Inventory estimate (metadata; not collector coverage): ${result3.inventory.files} files, ${result3.inventory.bytes} bytes; Python ${result3.inventory.pythonFiles}; dependency manifests ${result3.inventory.dependencyManifests}; config files ${result3.inventory.configFiles}${result3.inventory.truncated ? "; truncated" : ""}`,
+    `Selected collection limits: ${result3.collectionBudget.limits.maxFiles} files; ${result3.collectionBudget.limits.maxBytes} total bytes; ${result3.collectionBudget.limits.maxFileBytes} bytes per file; ${result3.collectionBudget.limits.maxEntries} directory entries.`,
+    "Metadata totals include files outside the collector allowlist and do not predict analysis completion.",
     "Target execution: none; network: none; package manager: none",
     ...result3.tools.map((tool) => `Tool ${tool.name}: ${tool.availability} (${tool.applicability})${tool.path ? ` at ${tool.path}` : ""}`),
     `Expected transfers: ${result3.expectedTransfers.length > 0 ? result3.expectedTransfers.join("; ") : "none"}`,
@@ -236384,7 +236611,7 @@ async function initMain(argv = process.argv.slice(2)) {
   }
   try {
     await ensureParentDirectories(workflow);
-    await writeFile4(workflow, renderWorkflow({ out: options.out, tools: options.tools, pythonFiles: inventory.pythonFiles }), { encoding: "utf8", mode: 420, flag: "wx" });
+    await writeFile4(workflow, renderWorkflow({ ...options, pythonFiles: inventory.pythonFiles }), { encoding: "utf8", mode: 420, flag: "wx" });
   } catch {
     process.stderr.write("Error: init could not create the workflow without overwriting another file.\n");
     return 2;
@@ -236400,8 +236627,35 @@ function parseInitArgs(argv) {
   if (args[0] === "init")
     args.shift();
   const options = { source: ".", workflow: join7(".github", "workflows", "wakeio-security-ci.yml"), out: "wakeio-security-reports", tools: ["none"], help: false };
+  const selected = /* @__PURE__ */ new Set();
   for (let index = 0; index < args.length; index += 1) {
     const argument = args[index];
+    const selector = argument.split("=")[0];
+    if (["--source-max-files", "--source-max-bytes", "--analysis-profile"].includes(selector)) {
+      if (selected.has(selector))
+        throw new Error(`${selector} may only be specified once`);
+      selected.add(selector);
+      const inline = argument.indexOf("=");
+      const raw = inline >= 0 ? argument.slice(inline + 1) : args[++index];
+      if (raw === void 0 || raw === "")
+        throw new Error(`${selector} requires a value`);
+      if (selector === "--analysis-profile")
+        options.analysisProfile = resolveAnalysisBudget(raw).requestedProfile;
+      else {
+        const maximum = selector === "--source-max-files" ? COLLECTION_MAX_FILES : COLLECTION_MAX_BYTES;
+        let value;
+        try {
+          value = parseCollectionLimit(raw, maximum);
+        } catch {
+          throw new Error(`${selector} must be an integer from 1 to ${maximum} without signs, spaces or leading zeros`);
+        }
+        if (selector === "--source-max-files")
+          options.sourceMaxFiles = value;
+        else
+          options.sourceMaxBytes = value;
+      }
+      continue;
+    }
     if (argument === "--help" || argument === "-h") {
       options.help = true;
       continue;
@@ -236433,12 +236687,17 @@ function initUsage() {
   return [
     "Usage: wakeio-security-ci init [--source DIR] [--workflow .github/workflows/wakeio-security-ci.yml] [--out DIR] [--tools none]",
     "",
+    "       [--source-max-files N] [--source-max-bytes N] [--analysis-profile default|extended]",
+    "",
     "Create a local CI workflow only when its destination does not exist; no file is overwritten.",
     "The template runs the installed CLI with npx --no-install and uses pinned helper-action commits.",
     ""
   ].join("\n");
 }
 function renderWorkflow(options) {
+  const files = options.sourceMaxFiles === void 0 ? "" : ` --source-max-files ${parseCollectionLimit(String(options.sourceMaxFiles), COLLECTION_MAX_FILES)}`;
+  const bytes = options.sourceMaxBytes === void 0 ? "" : ` --source-max-bytes ${parseCollectionLimit(String(options.sourceMaxBytes), COLLECTION_MAX_BYTES)}`;
+  const profile = options.analysisProfile === void 0 ? "" : ` --analysis-profile ${resolveAnalysisBudget(options.analysisProfile).requestedProfile}`;
   const toolValue = options.tools.length > 0 ? options.tools.join(",") : "none";
   const pythonNote = options.pythonFiles > 0 ? `      # Static inventory detected ${options.pythonFiles} Python file${options.pythonFiles === 1 ? "" : "s"}; add a separately prepared Bandit executable before enabling --tools bandit.
 ` : "      # No Python files were detected by the bounded static inventory; Bandit is not applicable.\n";
@@ -236470,7 +236729,7 @@ jobs:
         run: npm ci --ignore-scripts --no-audit --fund=false
       - name: Run installed Wakeio CLI
 ${pythonNote}        run: >-
-          npx --no-install wakeio-security-ci scan --source . --project-id "$GITHUB_REPOSITORY" --tools ${toolValue} --out ${shellQuote2(options.out)}
+          npx --no-install wakeio-security-ci scan --source . --project-id "$GITHUB_REPOSITORY" --tools ${toolValue}${files}${bytes}${profile} --out ${shellQuote2(options.out)}
       - name: Upload reports
         if: always()
         uses: actions/upload-artifact@${UPLOAD_ARTIFACT_SHA}
@@ -236525,7 +236784,7 @@ async function ensureParentDirectories(file) {
 }
 
 // build/src/openapi.js
-import { types as types6 } from "node:util";
+import { types as types7 } from "node:util";
 var OPENAPI_MAX_DEPTH = JSON_MAX_DEPTH;
 var OPENAPI_MAX_REFERENCES = 256;
 var OPENAPI_MAX_PATHS = 1e3;
@@ -236558,7 +236817,7 @@ function limit() {
   throw new OpenApiPolicyError("openapi_limit", "OpenAPI compilation budget exceeded.");
 }
 function record6(value) {
-  return value !== null && typeof value === "object" && !types6.isProxy(value) && !Array.isArray(value);
+  return value !== null && typeof value === "object" && !types7.isProxy(value) && !Array.isArray(value);
 }
 function own2(value, key2) {
   return Object.prototype.hasOwnProperty.call(value, key2);
@@ -237143,9 +237402,9 @@ async function providerProposal(agent, command, directory, deadline, files, inst
 var digest3 = (data) => createHash10("sha256").update(data).digest("hex");
 var SHA = /^[a-f0-9]{64}$/;
 var inside2 = (root, path2) => path2 === root || path2.startsWith(root.endsWith(sep5) ? root : root + sep5);
-var object5 = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
+var object6 = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
 function exact(v, keys3) {
-  if (!object5(v) || Object.keys(v).length !== keys3.length || keys3.some((k) => !Object.hasOwn(v, k)))
+  if (!object6(v) || Object.keys(v).length !== keys3.length || keys3.some((k) => !Object.hasOwn(v, k)))
     throw new Error("invalid");
 }
 async function readBounded(path2, cap = 128 * 1024) {
@@ -237713,6 +237972,7 @@ async function codexAdvice(command, authMode, directory, deadline, prompt, schem
 }
 
 // build/src/agent-advice-context.js
+var ADVICE_PROJECTION_POLICY_VERSION = 3;
 var MAX_CHECKS = 24;
 var MAX_FINDINGS2 = 24;
 var MAX_BYTES2 = 32 * 1024;
@@ -237735,6 +237995,8 @@ function nativeExecutionEligible(check, nativeCheckCount) {
   return nativeCheckCount === 1 && check.checkId === NATIVE_CHECK && check.status === "completed" && !!execution && execution.status === "complete" && !!sanitizeDastExecution(execution) && check.metrics?.requestCount === execution.counts.httpAttempts && execution.counts.evaluated === 8 && execution.counts.httpAttempts >= 8;
 }
 function checkRoute(check, mode, nativeCheckCount) {
+  if (check.checkId === "source.inventory" && (sanitiseCollectionBudget(check.collectionBudget) || sanitiseCollectionEvidence(check.collectionEvidence)))
+    return "review_static_flow_or_budget";
   if (check.status !== "completed")
     return check.analysisGaps || check.analysisBudget ? "review_static_flow_or_budget" : "review_check_diagnostics";
   if (nativeExecutionEligible(check, nativeCheckCount))
@@ -237747,11 +238009,15 @@ function checkCard(check, mode, nativeCheckCount) {
   const dast = check.checkId === "url.sql-boolean" ? check.dastExecution : void 0;
   const api = check.checkId === "api.authorization" ? check.apiExecution : void 0;
   const gaps = check.analysisGaps;
+  const collectionBudget = check.checkId === "source.inventory" ? sanitiseCollectionBudget(check.collectionBudget) : void 0;
+  const collectionEvidence2 = check.checkId === "source.inventory" ? sanitiseCollectionEvidence(check.collectionEvidence) : void 0;
   return {
     referenceId: `check:${check.checkIndex}`,
     checkIndex: check.checkIndex,
     checkId: boundedText(check.checkId, 100),
     status: check.status,
+    ...collectionBudget ? { collectionBudget } : {},
+    ...collectionEvidence2 ? { collectionEvidence: collectionEvidence2 } : {},
     findingRows: check.findingIds.length,
     recheckRoute: checkRoute(check, mode, nativeCheckCount),
     engine: dast ? "native_sql_boolean" : api ? "api_authorization" : mode === "source" || check.checkId.startsWith("source.") ? "source_check" : "other",
@@ -237889,7 +238155,7 @@ function projectAdviceContext(agent, nativeReplayReportEligible) {
   const selectedChecks = checks.map((check) => checkCard(check, agent.mode, nativeCheckCount));
   const sourceMode = agent.mode === "source" || agent.mode === "both" || agent.mode === "combined";
   const input = {
-    projectionVersion: 2,
+    projectionVersion: ADVICE_PROJECTION_POLICY_VERSION,
     schemaVersion: agent.schemaVersion,
     mode: agent.mode,
     scanGate: {
@@ -237955,8 +238221,8 @@ No source files, target execution, report changes, patching, or vulnerability/fi
 Output: private agent-advice.json. Exit 0 advice produced; 2 incomplete/error.
 `;
 var digest4 = (data) => createHash12("sha256").update(data).digest("hex");
-var object6 = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
-var exact2 = (v, keys3) => object6(v) && Object.keys(v).length === keys3.length && keys3.every((key2) => Object.hasOwn(v, key2));
+var object7 = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
+var exact2 = (v, keys3) => object7(v) && Object.keys(v).length === keys3.length && keys3.every((key2) => Object.hasOwn(v, key2));
 function parse3(args) {
   const values = /* @__PURE__ */ new Map();
   let upload = false;
@@ -238025,7 +238291,7 @@ async function reportPair(path2) {
   }
   const agent = json(agentBytes);
   const report = json(reportBytes);
-  if (!object6(agent) || agent.schemaVersion !== "1.0.0" || !object6(agent.reportArtifact) || agent.reportArtifact.name !== "report.json" || agent.reportArtifact.algorithm !== "sha256" || agent.reportArtifact.digest !== digest4(reportBytes) || !object6(agent.scanGate) || !["high", "critical", "medium", "low", "info", "none"].includes(String(agent.scanGate.failOn)) || !object6(report))
+  if (!object7(agent) || agent.schemaVersion !== "1.0.0" || !object7(agent.reportArtifact) || agent.reportArtifact.name !== "report.json" || agent.reportArtifact.algorithm !== "sha256" || agent.reportArtifact.digest !== digest4(reportBytes) || !object7(agent.scanGate) || !["high", "critical", "medium", "low", "info", "none"].includes(String(agent.scanGate.failOn)) || !object7(report))
     throw new Error("invalid_report");
   let projected;
   try {
@@ -238037,11 +238303,11 @@ async function reportPair(path2) {
     throw new Error("invalid_report");
   let nativeReplayReportEligible = false;
   const rawChecks = Array.isArray(report.checks) ? report.checks : [];
-  const rawNative = rawChecks.filter((check) => object6(check) && check.id === "url.sql-boolean");
+  const rawNative = rawChecks.filter((check) => object7(check) && check.id === "url.sql-boolean");
   const projectedNative = projected.checks.filter((check) => check.checkId === "url.sql-boolean");
   const projectedNativeFindings = projectedNative.length === 1 ? projected.findings.filter((finding2) => finding2.checkIndex === projectedNative[0].checkIndex) : [];
-  const rawFindings = rawNative.length === 1 && object6(rawNative[0]) && Array.isArray(rawNative[0].findings) ? rawNative[0].findings : [];
-  if (rawNative.length === 1 && projectedNative.length === 1 && rawFindings.length === 1 && projectedNativeFindings.length === 1 && object6(rawFindings[0]) && rawFindings[0].id === projectedNativeFindings[0].findingId) {
+  const rawFindings = rawNative.length === 1 && object7(rawNative[0]) && Array.isArray(rawNative[0].findings) ? rawNative[0].findings : [];
+  if (rawNative.length === 1 && projectedNative.length === 1 && rawFindings.length === 1 && projectedNativeFindings.length === 1 && object7(rawFindings[0]) && rawFindings[0].id === projectedNativeFindings[0].findingId) {
     try {
       snapshotJsonData(report);
       parseScanReport(report);
@@ -238143,7 +238409,7 @@ ${HELP2}`);
     reason: "invalid_report",
     authMode: options.auth,
     provider: "codex",
-    policyVersion: 2
+    policyVersion: ADVICE_PROJECTION_POLICY_VERSION
   };
   let code = 2;
   try {
@@ -239273,6 +239539,8 @@ Options:
   --tools gitleaks,osv,trivy   External source scanners (default: all three)
   --tools bandit               Optional Python SAST (install Bandit separately)
   --tools none                 Run built-in source checks only
+  --source-max-files N         Collected-file cap 1..10000 (source only; default: 1000)
+  --source-max-bytes N         Total-byte cap 1..134217728 (source only; default: 26214400)
   --analysis-profile PROFILE   default|extended AST workload (source only; default: default)
   --fail-on LEVEL              critical|high|medium|low|info|none (default: high)
   --api-policy FILE            Explicit read-only API authorization policy JSON
@@ -239339,6 +239607,13 @@ function parseBoundedInteger(flag, value, max) {
   if (!Number.isSafeInteger(parsed) || parsed < 1 || parsed > max)
     throw new CliUsageError(`${flag} must be between 1 and ${max}`);
   return parsed;
+}
+function parseSourceLimit(flag, value, maximum) {
+  try {
+    return parseCollectionLimit(value, maximum);
+  } catch {
+    throw new CliUsageError(`${flag} must be an integer from 1 to ${maximum} without signs, spaces or leading zeros`);
+  }
 }
 function parsePageLimit(value) {
   if (!/^\d+$/.test(value))
@@ -239418,6 +239693,10 @@ function parseCliArgs(argv) {
     let value;
     if ((value = valueFlag("--source")) !== void 0)
       options.source = value;
+    else if ((value = valueFlag("--source-max-files")) !== void 0)
+      options.sourceMaxFiles = parseSourceLimit("--source-max-files", value, COLLECTION_MAX_FILES);
+    else if ((value = valueFlag("--source-max-bytes")) !== void 0)
+      options.sourceMaxBytes = parseSourceLimit("--source-max-bytes", value, COLLECTION_MAX_BYTES);
     else if ((value = valueFlag("--url")) !== void 0)
       options.url = value;
     else if ((value = valueFlag("--project-id")) !== void 0) {
@@ -239591,6 +239870,8 @@ function parseCliArgs(argv) {
     options.nucleiScopes = ["misconfiguration"];
   if (options.osvOffline && !options.source)
     throw new CliUsageError("--osv-offline requires source mode");
+  if ((options.sourceMaxFiles !== void 0 || options.sourceMaxBytes !== void 0) && !options.source)
+    throw new CliUsageError("--source-max-files and --source-max-bytes require source mode");
   if (options.analysisProfile !== void 0 && !options.source)
     throw new CliUsageError("--analysis-profile requires source mode");
   if (options.nativePreview && !options.source)
@@ -239841,6 +240122,8 @@ async function declaredScope(options, apiPolicy, dastPolicySha256) {
   return buildScanScope({
     mode: modeFor(options),
     source: options.source,
+    sourceMaxFiles: options.sourceMaxFiles,
+    sourceMaxBytes: options.sourceMaxBytes,
     analysisProfile: options.analysisProfile,
     url: options.url,
     projectId: options.projectId,
@@ -239930,6 +240213,8 @@ ${USAGE2}`);
     if (parsed.source) {
       const sourceOptions = {
         root: parsed.source,
+        maxFiles: parsed.sourceMaxFiles,
+        maxBytes: parsed.sourceMaxBytes,
         analysisProfile: parsed.analysisProfile,
         tools: parsed.tools,
         toolPaths: parsed.toolPaths,
