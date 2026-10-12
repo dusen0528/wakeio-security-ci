@@ -4,7 +4,7 @@ import { createReport, toAgentReport } from '../src/report.js';
 import { ADVICE_PROJECTION_POLICY_VERSION, projectAdviceContext } from '../src/agent-advice-context.js';
 import { createApiExecutionLedger, finishApiExecutionLedger, invalidApiExecutionLedger } from '../src/api-execution.js';
 import { resolveCollectionBudget, collectionEvidence, COLLECTION_ISSUE_CODES } from '../src/source/collection-budget.js';
-import type { AgentReport, ApiRequestPlan, CheckResult } from '../src/contracts.js';
+import type { AgentReport, ApiRequestPlan, CheckResult, StaticCandidateContext } from '../src/contracts.js';
 
 const NOW = '2026-10-13T00:00:00.000Z';
 const finding = { ruleId: 'fixture:authorization', title: 'Authorization candidate', description: 'private-description-sentinel',
@@ -165,4 +165,38 @@ test('collection evidence remains bounded by existing card and byte caps with ac
     assert.deepEqual(check.collectionEvidence, agent.checks[check.checkIndex].collectionEvidence);
     assert.equal(referenceRoutes.get(check.referenceId), 'review_static_flow_or_budget');
   }
+});
+
+test('policy4 conditional context cards expose enum kinds and counts without any context positions or new action route', () => {
+  const context: StaticCandidateContext = { revision: 'static-context-v1', authority: 'conditional', truncated: true,
+    items: [
+      { kind: 'unresolved_cjs_dispatch', location: { path: 'private-context-call.ts', line: 12345, column: 54321 }, target: { path: 'private-context-body.ts', line: 98765, column: 56789 } },
+      { kind: 'constructor_continuation', location: { path: 'private-context-constructor.ts', line: 10101, column: 20202 } },
+    ] };
+  const agent = report([{ id: 'source.builtin-ast', status: 'partial', findings: [{ ...finding, staticContext: context }], notes: [] }], 'source');
+  const { input, referenceRoutes } = projectAdviceContext(agent, false);
+  assert.equal(input.projectionVersion, 4);
+  assert.deepEqual(input.findings[0].staticContext, { authority: 'conditional', kinds: ['constructor_continuation', 'unresolved_cjs_dispatch'], itemCount: 2, truncated: true });
+  assert.equal(input.findings[0].replayAvailable, false);
+  assert.equal(referenceRoutes.get(input.findings[0].referenceId), 'review_static_flow_or_budget');
+  const json = JSON.stringify(input);
+  for (const secret of ['private-context-', '12345', '54321', '98765', '56789', '10101', '20202', '"location":', '"target":', '"path":', '"command":']) assert.equal(json.includes(secret), false, secret);
+  let reads = 0;
+  Object.defineProperty(agent.findings[0].evidence, 'staticContext', { enumerable: true, get: () => { reads++; throw new Error('must not execute'); } });
+  assert.equal(projectAdviceContext(agent, false).input.findings[0].staticContext, undefined);
+  assert.equal(reads, 0);
+});
+
+test('conditional context cards stay within the existing byte cap and preserve omission accounting', () => {
+  const context: StaticCandidateContext = { revision: 'static-context-v1', authority: 'conditional', truncated: false,
+    items: [{ kind: 'unqualified_mongo_origin', location: { path: 'private-origin.ts', line: 1, column: 1 } }] };
+  const checks: CheckResult[] = Array.from({ length: 40 }, (_, index) => ({ id: `source.context-${index}`, status: 'partial', notes: [],
+    findings: Array.from({ length: 2 }, () => ({ ...finding, staticContext: context })) }));
+  const agent = report(checks, 'source');
+  const { input } = projectAdviceContext(agent, false);
+  assert.ok(Buffer.byteLength(JSON.stringify(input)) <= 32 * 1024);
+  assert.equal(input.omittedChecks, agent.checks.length - input.checks.length);
+  assert.equal(input.omittedFindings, agent.findings.length - input.findings.length);
+  assert.ok(input.findings.every(row => input.checks.some(check => check.checkIndex === row.checkIndex)));
+  assert.equal(JSON.stringify(input).includes('private-origin.ts'), false);
 });

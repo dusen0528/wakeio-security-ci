@@ -3,8 +3,9 @@ import { posix } from 'node:path';
 import type { CollectedFile } from './types.js';
 import type { StaticModules } from './modules.js';
 
-export interface MongoDbRole { valid: boolean; readonly origin: ts.ParameterDeclaration; }
-export interface MongoCollectionRole { valid: boolean; readonly db: MongoDbRole; readonly origin: ts.CallExpression; }
+export type MongoInvalidReason = 'opaque' | 'write' | 'ambiguous' | 'unsupported';
+export interface MongoDbRole { valid: boolean; invalidReason?: MongoInvalidReason; readonly conditionalOrigin?: boolean; readonly origin: ts.ParameterDeclaration; }
+export interface MongoCollectionRole { valid: boolean; invalidReason?: MongoInvalidReason; readonly db: MongoDbRole; readonly origin: ts.CallExpression; }
 const SELECTORS = new Set(['find', 'findOne', 'update', 'updateOne', 'updateMany', 'remove', 'deleteOne', 'deleteMany', 'count']);
 function record(value: unknown): value is Record<string, unknown> { return !!value && typeof value === 'object' && !Array.isArray(value); }
 const legacyRange = (value: unknown): boolean => typeof value === 'string' && /^(?:\^|~)?2\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)$/.test(value);
@@ -25,6 +26,7 @@ export class MongoRoleModel {
   private readonly entries = new WeakMap<ts.FunctionLikeDeclaration, { legacy: boolean; qualified: boolean } | null>();
   private readonly clients = new Map<ts.Symbol, boolean>();
   private sharedPristine?: boolean;
+  private originPristine?: boolean;
   constructor(private readonly modules: StaticModules, files: readonly CollectedFile[], private readonly tick: () => boolean,
     private readonly gap: (reason: string, node?: ts.Node) => void, private readonly scopeComplete: boolean, indexAvailable: boolean) {
     if (!indexAvailable) return;
@@ -109,7 +111,7 @@ export class MongoRoleModel {
     if (!symbol || this.modules.mutated.has(symbol) || this.modules.mutatedMembers.has(symbol)) return false;
     for (const reference of this.modules.references.get(symbol) ?? []) {
       if (!this.tick()) return false;
-      if (ts.isVariableDeclaration(reference.parent) && reference.parent.name === reference || ts.isImportSpecifier(reference.parent) || ts.isNamespaceImport(reference.parent)) continue;
+      if (ts.isVariableDeclaration(reference.parent) && reference.parent.name === reference || ts.isBindingElement(reference.parent) && reference.parent.name === reference || ts.isImportSpecifier(reference.parent) || ts.isNamespaceImport(reference.parent)) continue;
       let member = reference.parent;
       if (namespace) {
         if (!ts.isPropertyAccessExpression(member) || member.expression !== reference || member.name.text !== 'MongoClient') return false;
@@ -162,6 +164,55 @@ export class MongoRoleModel {
     this.sharedPristine = true; return true;
   }
 
+  /** Scan every known native consumer even when an earlier unknown loader vetoed strict proof. */
+  private nativeOriginUnchanged(): boolean {
+    if (this.originPristine !== undefined) return this.originPristine;
+    this.originPristine = false;
+    let unchanged = true;
+    if (['mongodb', 'module', 'node:module'].some(name => this.modules.hasUnsupportedModuleLoad(name))) unchanged = false;
+    for (const load of this.modules.importDeclarations) {
+      if (!this.tick()) return false;
+      if (ts.isStringLiteralLike(load.moduleSpecifier) && ['module', 'node:module'].includes(load.moduleSpecifier.text)) unchanged = false;
+      if (!ts.isStringLiteralLike(load.moduleSpecifier) || load.moduleSpecifier.text !== 'mongodb' || load.importClause?.isTypeOnly) continue;
+      const clause = load.importClause;
+      if (!clause || clause.name || !clause.namedBindings) { unchanged = false; continue; }
+      if (ts.isNamespaceImport(clause.namedBindings)) unchanged &&= this.bindingClosed(clause.namedBindings.name, true);
+      else for (const item of clause.namedBindings.elements) {
+        if (!this.tick()) return false;
+        if (!item.isTypeOnly && ((item.propertyName ?? item.name).text !== 'MongoClient' || !this.bindingClosed(item.name, false))) unchanged = false;
+      }
+    }
+    for (const ref of this.modules.requireReferences) {
+      if (!this.tick()) return false;
+      const load = ref.parent;
+      if (this.modules.cjsGlobal(ref)) {
+        if (ts.isCallExpression(load) && load.expression === ref && load.arguments.some(argument => ts.isStringLiteralLike(argument) && ['module', 'node:module'].includes(argument.text))) unchanged = false;
+        else if (!(ts.isCallExpression(load) && load.expression === ref) && !(ts.isTypeOfExpression(load))
+          && !(ts.isPropertyAccessExpression(load) && load.name.text === 'resolve' && ts.isCallExpression(load.parent) && load.parent.expression === load)) unchanged = false;
+      }
+      if (!this.modules.cjsGlobal(ref) || !ts.isCallExpression(load) || load.expression !== ref || load.arguments.length !== 1
+        || !ts.isStringLiteralLike(load.arguments[0]) || load.arguments[0].text !== 'mongodb') continue;
+      let selected: ts.Node = load; let namespace = true;
+      if (ts.isPropertyAccessExpression(load.parent) && load.parent.expression === load) {
+        if (load.parent.name.text !== 'MongoClient') { unchanged = false; continue; }
+        selected = load.parent; namespace = false;
+      }
+      const declaration = selected.parent;
+      if (!ts.isVariableDeclaration(declaration) || declaration.initializer !== selected || !(declaration.parent.flags & ts.NodeFlags.Const)) { unchanged = false; continue; }
+      if (ts.isIdentifier(declaration.name)) {
+        if (!this.bindingClosed(declaration.name, namespace)) unchanged = false;
+      } else if (namespace && ts.isObjectBindingPattern(declaration.name)) {
+        for (const item of declaration.name.elements) {
+          if (!this.tick()) return false;
+          if (item.dotDotDotToken || item.initializer || !ts.isIdentifier(item.name)
+            || (item.propertyName && !ts.isIdentifier(item.propertyName))
+            || (item.propertyName ?? item.name).getText() !== 'MongoClient' || !this.bindingClosed(item.name, false)) unchanged = false;
+        }
+      } else unchanged = false;
+    }
+    this.originPristine = unchanged; return unchanged;
+  }
+
   entry(fn: ts.FunctionLikeDeclaration): MongoDbRole | undefined {
     let entry = this.entries.get(fn);
     if (entry === undefined) {
@@ -178,7 +229,12 @@ export class MongoRoleModel {
     }
     if (!entry) return undefined;
     if (!entry.legacy || !entry.qualified) this.gap('module_export_unsupported', fn.parent);
-    return entry.legacy ? { valid: entry.qualified, origin: fn.parameters[1] } : undefined;
+    if (!entry.legacy) return undefined;
+    const call = fn.parent;
+    const supportedOptions = ts.isCallExpression(call) && (call.arguments.length === 2
+      || ts.isObjectLiteralExpression(call.arguments[1]) && call.arguments[1].properties.length === 0);
+    const conditionalOrigin = supportedOptions && this.nativeOriginUnchanged();
+    return { valid: entry.qualified, conditionalOrigin, origin: fn.parameters[1], ...(!entry.qualified ? { invalidReason: conditionalOrigin ? 'opaque' as const : 'unsupported' as const } : {}) };
   }
 
   observe(call: ts.CallExpression): void {
@@ -195,7 +251,7 @@ export class MongoRoleModel {
     if (!db || !ts.isPropertyAccessExpression(call.expression) || call.expression.name.text !== 'collection') return undefined;
     const supported = call.arguments.length === 1 && ts.isStringLiteralLike(call.arguments[0]);
     if (!supported || !db.valid) this.gap('module_export_unsupported', call);
-    return { valid: db.valid && supported, db, origin: call };
+    return { valid: db.valid && supported, db, origin: call, ...(!db.valid || !supported ? { invalidReason: db.invalidReason ?? 'unsupported' as const } : {}) };
   }
 
   selector(call: ts.CallExpression, role?: MongoCollectionRole): boolean {

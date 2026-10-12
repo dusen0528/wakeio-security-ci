@@ -60,6 +60,8 @@ node build/src/cli.js scan \
 
 `doctor`는 읽기 전용으로 대상 디렉터리의 파일 수와 적용 가능성을 확인하며 대상 코드·패키지 매니저·scanner·네트워크 요청을 실행하지 않습니다. `--tools none`은 내장 검사만 선택해 외부 엔진을 준비하지 않습니다. 검사 대상 파일은 데이터로 읽으며 대상 프로젝트의 install script·hook·build·test는 실행하지 않습니다.
 
+조건부 호출 가정과 실제 입력 전달의 구분은 [조건부 소스 경로 안내](docs/source-conditional-context.md)를 참고하세요.
+
 큰 clone의 수집 한도 선택과 CLI·Action 설정 전달은 [소스 수집 한도 안내](docs/source-collection.md)를 참고하세요.
 
 MarsDB selector 검사와 문자열 guard의 한계, 보고서·에이전트 활용은 [NoSQL 소스 검사 안내](docs/source-nosql.md)를 참고하세요.

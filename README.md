@@ -348,6 +348,8 @@ Add rules with vulnerable/fixed synthetic fixtures, evidence and limits, and a c
 
 ### AST workload selection
 
+The current source preview documents [conditional source-path evidence](docs/source-conditional-context.md) separately from proven dispatch or runtime execution.
+
 The current source/Action preview also accepts explicit `--source-max-files` and `--source-max-bytes` collection bounds, with matching Action inputs and unchanged defaults. This is separate from AST workload and does not imply a new npm release. See the [collection workflow guide](docs/source-collection.md).
 
 Source scans support SDK `analysisProfile: 'default' | 'extended'`, CLI `--analysis-profile default|extended`, and Action input `analysis-profile`. Omission keeps the current default; extended requires source and selects four times the six workload caps while depth/alias/trace limits stay unchanged. Invalid Action selections are rejected before setup/install. No automatic retry or numeric override is provided. The `ast-work-v1` identity is recorded in reports and comparison scope; legacy missing identity is unverified. Completion, equivalent precision and RAM/time use are not guaranteed. See [source-flow budget contract](docs/source-flow.md#explicit-ast-workload-selection).
