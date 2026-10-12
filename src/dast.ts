@@ -110,9 +110,9 @@ function optionsSnapshot(raw: DastOptions): DastOptions {
 function result(status: CheckResult["status"], reason: string, metrics: Record<string, number | string | boolean> = {}): CheckResult[] {
   return [{ id: DAST_CHECK_ID, status, findings: [], notes: [NOTE, reason], metrics: { requestCount: 0, ...metrics } }];
 }
-function stopReason(error: unknown, signal: AbortSignal, deadlineAt: number): DastStepReason {
+function stopReason(error: unknown, abortCause: "deadline" | "cancelled" | undefined, deadlineAt: number): DastStepReason {
+  if (abortCause) return abortCause;
   if (Date.now() >= deadlineAt) return "deadline";
-  if (signal.aborted) return "cancelled";
   const code = error instanceof UrlNetworkError ? error.code : "transport_error";
   if (code === "request_limit") return "request_budget";
   if (/body|decompress|encoding/.test(code)) return "body_budget";
@@ -162,6 +162,12 @@ export async function runDast(rawOptions: DastOptions): Promise<CheckResult[]> {
     || (options.signal !== undefined && (types.isProxy(options.signal) || !(options.signal instanceof AbortSignal))))
     return result("error", "DAST budget or cancellation signal is invalid; no requests were made.", { errorCode: "invalid_budget" });
   const control = createApiRunControl(timeoutMs, options.signal, DAST_MAX_TIMEOUT_MS);
+  // The shared signal merges caller cancellation and the timer. Capture the cause
+  // at its first abort: wall-clock checks in a later catch can mislabel either.
+  let abortCause: "deadline" | "cancelled" | undefined;
+  const captureAbortCause = () => { abortCause ??= options.signal?.aborted ? "cancelled" : "deadline"; };
+  if (control.signal.aborted) captureAbortCause();
+  else control.signal.addEventListener("abort", captureAbortCause, { once: true });
   const budget = { count: 0, max: maxRequests };
   const context: UrlNetworkContext = { allowPrivate: options.allowPrivate === true, signal: control.signal, budget,
     deadlineAt: control.deadlineAt, rejectRedirects: true, acceptJson: true };
@@ -200,7 +206,7 @@ export async function runDast(rawOptions: DastOptions): Promise<CheckResult[]> {
           httpAttempts: budget.count - attemptStart, httpStatus, oracleMatch: matches(value, parsed.policy) });
       } catch (error) {
         firstFailure = error instanceof Error && error.message === "response_invalid" ? "response_invalid"
-          : stopReason(error, control.signal, control.deadlineAt);
+          : stopReason(error, abortCause, control.deadlineAt);
         steps.push({ ordinal, round, phase, outcome: "inconclusive", reason: firstFailure, attemptStart,
           httpAttempts: budget.count - attemptStart, httpStatus, oracleMatch: "unavailable" });
       }
@@ -238,5 +244,5 @@ export async function runDast(rawOptions: DastOptions): Promise<CheckResult[]> {
         profileRevision: DAST_PROFILE_REVISION, policySha256: parsed.policySha256, outcome, stopReason: stop },
       dastExecution: execution };
     return [check];
-  } finally { control.dispose(); }
+  } finally { control.signal.removeEventListener("abort", captureAbortCause); control.dispose(); }
 }
