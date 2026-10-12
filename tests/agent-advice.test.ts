@@ -5,7 +5,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createReport, toAgentReport, writeReports } from '../src/report.js';
 import { adviseMain } from '../src/agent-advice.js';
-import { projectAdviceContext } from '../src/agent-advice-context.js';
+import { ADVICE_PROJECTION_POLICY_VERSION, projectAdviceContext } from '../src/agent-advice-context.js';
+import { resolveCollectionBudget, collectionEvidence } from '../src/source/collection-budget.js';
 import { runProcess } from '../src/source/process.js';
 import { runDast, type DastPolicy } from '../src/dast.js';
 
@@ -48,7 +49,7 @@ process.stdin.on('end', () => {
     fs.writeFileSync(${JSON.stringify(join(top, 'descendant.pid'))}, String(child.pid));
     child.unref();
   }
-  const job = JSON.parse(input); const finding = job.report.findings[0];
+  const job = JSON.parse(input); const finding = job.report.findings[0] ?? job.report.checks[0];
   if (mode === 'capture') fs.writeFileSync(${JSON.stringify(join(top, 'captured-projection.json'))}, JSON.stringify(job.report));
   const answer = { version: 1, overview: auth + ' synthetic advice only', recommendations: job.report.scanGate.outcome === 'pass' && job.report.counts.findings === 0 ? [] : [{ referenceId: mode === 'unknown-id' ? 'invented-id' : finding?.referenceId ?? 'scope', recheckRoute: mode === 'wrong-route' ? 'review_scope' : finding?.recheckRoute ?? 'review_scope', priority: 1, reason: 'Review the candidate.', nextStep: 'Inspect the bounded evidence.', recheck: 'Run an independent control.' }] };
   fs.writeFileSync(args[args.indexOf('--output-last-message') + 1], mode === 'malformed' ? '{' : JSON.stringify(answer));
@@ -90,7 +91,7 @@ test('fake CLI receives the owned native SQLite evidence and a clean bound contr
         const out = join(top, `advice-${mode}`);
         assert.equal(await adviseMain(args(reports, out, fake, 'api-key')), 0);
         const projection = JSON.parse(await readFile(join(top, 'captured-projection.json'), 'utf8'));
-        assert.equal(projection.projectionVersion, 2);
+        assert.equal(projection.projectionVersion, ADVICE_PROJECTION_POLICY_VERSION);
         assert.equal(projection.checks[0].engine, 'native_sql_boolean');
         assert.equal(projection.checks[0].nativeDast.outcome, expected);
         assert.equal(projection.checks[0].nativeDast.steps.length, 8);
@@ -98,7 +99,7 @@ test('fake CLI receives the owned native SQLite evidence and a clean bound contr
         assert.equal(Object.hasOwn(projection.scope, 'sourceToolSelection'), false);
         assert.equal(JSON.stringify(projection).includes(owned.url), false);
         const produced = await receipt(out);
-        assert.equal(produced.policyVersion, 2);
+        assert.equal(produced.policyVersion, ADVICE_PROJECTION_POLICY_VERSION);
         assert.equal(produced.advice.recommendations.length, mode === 'bound' ? 0 : 1);
         if (mode === 'vulnerable') {
           assert.equal(projection.findings[0].recheckRoute, 'replay_native_finding_same_policy');
@@ -311,6 +312,39 @@ test('rejects tool events, unknown finding references/routes, malformed output, 
       assert.ok(['agent_tools_not_allowed', 'agent_protocol_invalid', 'agent_budget_exhausted', 'agent_output_limit'].includes(report.reason), behavior);
       if (behavior === 'slow-help') assert.equal(report.reason, 'agent_budget_exhausted');
     }
+  } finally {
+    if (previousKey === undefined) delete process.env.CODEX_API_KEY; else process.env.CODEX_API_KEY = previousKey;
+    await rm(top, { recursive: true, force: true });
+  }
+});
+
+
+test('fake CLI receives collection bounds and reasons with the existing nonexecuting review route under policy 3', async () => {
+  const top = await mkdtemp(join(tmpdir(), 'wakeio-collection-advice-'));
+  const previousKey = process.env.CODEX_API_KEY;
+  try {
+    process.env.CODEX_API_KEY = 'test-only-key';
+    const budget = resolveCollectionBudget({ maxFiles: 1002 });
+    const evidence = collectionEvidence([{ code: 'file_limit' }]);
+    const reports = join(top, 'reports');
+    await writeReports(createReport([{ id: 'source.inventory', status: 'partial', findings: [],
+      notes: ['private-collection-note'], collectionBudget: budget, collectionEvidence: evidence }],
+    'source', '2026-10-13T00:00:00.000Z', { fingerprint: 'a'.repeat(64), ruleset: 'fixture', collectionBudget: budget }), reports);
+    const original = await readFile(join(reports, 'report.json'));
+    const fake = await fakeCodex(top, 'capture'), out = join(top, 'advice');
+    assert.equal(await adviseMain(args(reports, out, fake, 'api-key')), 0);
+    const projection = JSON.parse(await readFile(join(top, 'captured-projection.json'), 'utf8'));
+    assert.equal(projection.projectionVersion, 3);
+    assert.deepEqual(projection.checks[0].collectionBudget, budget);
+    assert.deepEqual(projection.checks[0].collectionEvidence, evidence);
+    assert.equal(projection.checks[0].recheckRoute, 'review_static_flow_or_budget');
+    assert.equal(JSON.stringify(projection).includes('private-collection-note'), false);
+    const produced = await receipt(out);
+    assert.equal(produced.policyVersion, 3);
+    assert.equal(produced.advice.recommendations[0].referenceId, 'check:0');
+    assert.equal(produced.advice.recommendations[0].recheckRoute, 'review_static_flow_or_budget');
+    assert.equal(produced.verified, false);
+    assert.deepEqual(await readFile(join(reports, 'report.json')), original);
   } finally {
     if (previousKey === undefined) delete process.env.CODEX_API_KEY; else process.env.CODEX_API_KEY = previousKey;
     await rm(top, { recursive: true, force: true });

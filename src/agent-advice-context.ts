@@ -1,9 +1,12 @@
+import { sanitiseCollectionBudget, sanitiseCollectionEvidence } from './source/collection-budget.js';
 import type { AgentReport } from './contracts.js';
 import { redactSecrets, safeHttpUrl } from './report-path.js';
 import { sanitizeDastExecution } from './dast-execution.js';
 
 export type RecheckRoute = 'repeat_native_same_policy' | 'replay_native_finding_same_policy' | 'replay_api_finding_same_policy'
   | 'review_static_flow_or_budget' | 'review_check_diagnostics' | 'review_scope';
+
+export const ADVICE_PROJECTION_POLICY_VERSION = 3;
 
 const MAX_CHECKS = 24;
 const MAX_FINDINGS = 24;
@@ -31,6 +34,7 @@ function nativeExecutionEligible(check: AgentReport['checks'][number], nativeChe
 }
 
 function checkRoute(check: AgentReport['checks'][number], mode: AgentReport['mode'], nativeCheckCount: number): RecheckRoute {
+  if (check.checkId === 'source.inventory' && (sanitiseCollectionBudget(check.collectionBudget) || sanitiseCollectionEvidence(check.collectionEvidence))) return 'review_static_flow_or_budget';
   if (check.status !== 'completed') return check.analysisGaps || check.analysisBudget
     ? 'review_static_flow_or_budget' : 'review_check_diagnostics';
   if (nativeExecutionEligible(check, nativeCheckCount)) return 'repeat_native_same_policy';
@@ -42,9 +46,13 @@ function checkCard(check: AgentReport['checks'][number], mode: AgentReport['mode
   const dast = check.checkId === 'url.sql-boolean' ? check.dastExecution : undefined;
   const api = check.checkId === 'api.authorization' ? check.apiExecution : undefined;
   const gaps = check.analysisGaps;
+  const collectionBudget = check.checkId === 'source.inventory' ? sanitiseCollectionBudget(check.collectionBudget) : undefined;
+  const collectionEvidence = check.checkId === 'source.inventory' ? sanitiseCollectionEvidence(check.collectionEvidence) : undefined;
   return {
     referenceId: `check:${check.checkIndex}`, checkIndex: check.checkIndex,
     checkId: boundedText(check.checkId, 100), status: check.status,
+    ...(collectionBudget ? { collectionBudget } : {}),
+    ...(collectionEvidence ? { collectionEvidence } : {}),
     findingRows: check.findingIds.length, recheckRoute: checkRoute(check, mode, nativeCheckCount),
     engine: dast ? 'native_sql_boolean' as const : api ? 'api_authorization' as const
       : mode === 'source' || check.checkId.startsWith('source.') ? 'source_check' as const : 'other' as const,
@@ -146,7 +154,7 @@ export function projectAdviceContext(agent: AgentReport, nativeReplayReportEligi
   const selectedChecks = checks.map(check => checkCard(check, agent.mode, nativeCheckCount));
   const sourceMode = agent.mode === 'source' || agent.mode === 'both' || agent.mode === 'combined';
   const input = {
-    projectionVersion: 2, schemaVersion: agent.schemaVersion, mode: agent.mode,
+    projectionVersion: ADVICE_PROJECTION_POLICY_VERSION, schemaVersion: agent.schemaVersion, mode: agent.mode,
     scanGate: { outcome: agent.scanGate.outcome, exitCode: agent.scanGate.exitCode,
       failOn: agent.scanGate.failOn, reasons: agent.scanGate.reasons.map(reason => reason.code).slice(0, 8) },
     scope: { mode: agent.summary?.scope.mode ?? agent.mode, wholeProjectCoverage: 'not_established' as const,

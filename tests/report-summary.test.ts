@@ -4,7 +4,8 @@ import { createHash } from 'node:crypto';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import type { AnalysisGap, CheckResult, FailOn, Finding } from '../src/contracts.js';
+import type { AnalysisGap, CheckResult, CollectionIssueCode, FailOn, Finding } from '../src/contracts.js';
+import { collectionEvidence, resolveCollectionBudget } from '../src/source/collection-budget.js';
 import { REPORT_TOOL_VERSION, createReport, evaluateGate, sanitiseReport, toAgentReport, toMarkdown, toReportSummary, toSarif, writeReports } from '../src/report.js';
 
 const startedAt = '2026-10-05T00:00:00.000Z';
@@ -18,6 +19,11 @@ const check = (status: CheckResult['status'] = 'completed', findings: Finding[] 
 });
 const gap = (line = 7): AnalysisGap => ({ reason: 'module_missing', phase: 'flow', extent: 'site', observations: 1,
   location: { path: 'src/route.ts', line, column: 4 }, nextReview: 'review_collected_source_context' });
+
+const inventoryCheck = (codes: CollectionIssueCode[] = [], status: CheckResult['status'] = 'completed'): CheckResult => ({
+  id: 'source.inventory', status, findings: [], notes: [], collectionBudget: resolveCollectionBudget({ maxFiles: 12 }),
+  collectionEvidence: collectionEvidence(codes.map(code => ({ code }))),
+});
 
 test('written Markdown and agent summaries share the configured gate across all four artifacts', async () => {
   const root = await mkdtemp(join(tmpdir(), 'wakeio-summary-'));
@@ -235,4 +241,113 @@ test('summary exposes typed requested-tool scope without parsing notes or inferr
   }
   const pkg=JSON.parse(await readFile(new URL('../../package.json',import.meta.url),'utf8'));
   assert.equal(REPORT_TOOL_VERSION,pkg.version);
+});
+
+test('collection first read exposes typed causes and bounded review choices without guessing a remedy', () => {
+  for (const [code, expected] of [
+    ['file_limit', 'review_collection_budget'], ['size_limit', 'review_collection_budget'],
+    ['root_error', 'review_source_root'], ['read_error', 'review_collection_diagnostics'],
+    ['symlink', 'review_source_file_policy'],
+  ] as const) {
+    const report = createReport([inventoryCheck([code], 'partial')], 'source', startedAt);
+    const summary = toReportSummary(report, 'none');
+    assert.equal(summary.scanGate.exitCode, 2);
+    assert.equal(summary.incompleteChecks[0].diagnosticBasis, 'typed_collection_evidence');
+    assert.equal(summary.nextRead.kind, expected);
+    assert.equal(summary.nextRead.collectionReason, code);
+    assert.deepEqual(summary.incompleteChecks[0].collectionEvidence, collectionEvidence([{ code }]));
+    const markdown = toMarkdown(report, 'none');
+    assert.ok(markdown.indexOf(`${code}=1`) < markdown.indexOf('## Checks'));
+    assert.match(markdown, /not authority to run commands/);
+    assert.doesNotMatch(markdown, /increase maxFiles|increase maxBytes/);
+    if (code === 'file_limit') assert.match(markdown, /file count, traversal or directory-depth/);
+    if (code === 'size_limit') assert.match(markdown, /total, per-file or read-size/);
+  }
+});
+
+test('collection metadata survives JSON, agent, Markdown and SARIF, and summary copies do not alias', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'wakeio-collection-report-'));
+  try {
+    const inventory = inventoryCheck(['file_limit', 'file_limit', 'size_limit'], 'partial');
+    const report = createReport([inventory], 'source', startedAt, { fingerprint: 'a'.repeat(64), ruleset: 'test.1', collectionBudget: inventory.collectionBudget });
+    await writeReports(report, root, { failOn: 'none' });
+    const json = JSON.parse(await readFile(join(root, 'report.json'), 'utf8'));
+    const agent = JSON.parse(await readFile(join(root, 'agent-report.json'), 'utf8'));
+    const sarif = JSON.parse(await readFile(join(root, 'report.sarif'), 'utf8'));
+    assert.deepEqual(json.checks[0].collectionEvidence, inventory.collectionEvidence);
+    assert.deepEqual(json.scope.collectionBudget, inventory.collectionBudget);
+    assert.deepEqual(agent.checks[0].collectionBudget, inventory.collectionBudget);
+    assert.deepEqual(agent.checks[0].collectionEvidence, inventory.collectionEvidence);
+    assert.deepEqual(agent.summary.scope.collectionBudget, inventory.collectionBudget);
+    assert.deepEqual(sarif.runs[0].properties.collectionInventories[0].collectionEvidence, inventory.collectionEvidence);
+    assert.deepEqual(sarif.runs[0].properties.collectionBudget, inventory.collectionBudget);
+    assert.match(await readFile(join(root, 'report.md'), 'utf8'), /file_limit=2, size_limit=1/);
+    const summary = toReportSummary(report);
+    summary.incompleteChecks[0].collectionEvidence!.issues[0].count = 99;
+    assert.equal(report.checks[0].collectionEvidence!.issues[0].count, 2);
+    assert.deepEqual(sanitiseReport(report), report);
+  } finally { await rm(root, { recursive: true, force: true }); }
+});
+
+test('unsupported-only inventory remains completed with explicit exclusions; legacy causes remain unknown', () => {
+  const report = createReport([inventoryCheck(['unsupported_file'])], 'source', startedAt);
+  const summary = toReportSummary(report);
+  assert.equal(summary.scanGate.exitCode, 0);
+  assert.equal(summary.counts.incompleteChecks, 0);
+  assert.equal(summary.nextRead.kind, 'review_source_file_policy');
+  assert.equal(summary.nextRead.collectionReason, 'unsupported_file');
+  assert.equal(summary.scope.wholeProjectCoverage, 'not_established');
+  assert.deepEqual(summary.scope.collectionEvidence, report.checks[0].collectionEvidence);
+  const legacy: CheckResult = { id: 'source.inventory', status: 'partial', findings: [], notes: ['size_limit'], metrics: { issues: 2 } };
+  const legacySummary = toReportSummary(createReport([legacy], 'source', startedAt));
+  assert.equal(legacySummary.incompleteChecks[0].diagnosticBasis, 'check_status_only');
+  assert.equal(legacySummary.nextRead.collectionReason, undefined);
+  assert.match(toMarkdown(createReport([legacy], 'source', startedAt)), /Cause: unknown/);
+});
+
+test('summary shows actual inventory limits separately from declared scope consistency and execution gate', () => {
+  const inventory = inventoryCheck();
+  const noScope = createReport([inventory], 'source', startedAt);
+  assert.deepEqual(toReportSummary(noScope).scope.collectionBudget, inventory.collectionBudget);
+  assert.equal(toReportSummary(noScope).scope.collectionBudgetConsistency, 'unknown');
+  const matching = createReport([inventory], 'source', startedAt, { fingerprint: 'a'.repeat(64), ruleset: 'test.1', collectionBudget: inventory.collectionBudget });
+  assert.equal(toReportSummary(matching).scope.collectionBudgetConsistency, 'consistent');
+  const mismatched = createReport([inventory], 'source', startedAt, { fingerprint: 'a'.repeat(64), ruleset: 'test.1', collectionBudget: resolveCollectionBudget({ maxFiles: 99 }) });
+  const summary = toReportSummary(mismatched);
+  assert.deepEqual(summary.scope.collectionBudget, inventory.collectionBudget);
+  assert.equal(summary.scope.collectionBudgetConsistency, 'inconsistent');
+  assert.equal(summary.scanGate.exitCode, 0);
+  const firstRead = toMarkdown(mismatched).split('## Checks')[0];
+  assert.match(firstRead, /max files=12/);
+  assert.doesNotMatch(firstRead, /max files=99/);
+  assert.match(firstRead, /against declared scope: inconsistent/);
+  assert.equal(toAgentReport(mismatched).summary!.scope.collectionBudgetConsistency, 'inconsistent');
+});
+
+test('malformed or fatal collection evidence cannot sanitize into a clean completed check', () => {
+  const valid = inventoryCheck();
+  const badEvidence = [
+    { revision: 'collection-v1', issueCount: 1, issues: [] },
+    { revision: 'collection-v1', issueCount: 2, issues: [{ code: 'file_limit', count: 1 }, { code: 'file_limit', count: 1 }] },
+    { revision: 'collection-v1', issueCount: 1, issues: [{ code: 'invented_reason', count: 1 }] },
+    { revision: 'collection-v1', issueCount: 0, issues: [], path: '/secret/source' },
+  ];
+  for (const evidence of badEvidence) {
+    const report = createReport([{ ...valid, collectionEvidence: evidence as any }], 'source', startedAt);
+    assert.equal(report.checks[0].collectionEvidence, undefined);
+    assert.equal(evaluateGate(report, 'none').exitCode, 2);
+  }
+  for (const code of ['file_limit', 'root_error'] as const) {
+    const report = createReport([inventoryCheck([code])], 'source', startedAt);
+    assert.equal(report.checks[0].status, code === 'root_error' ? 'error' : 'partial');
+    assert.equal(evaluateGate(report, 'none').exitCode, 2);
+  }
+  let reads = 0;
+  const accessor = { ...valid };
+  Object.defineProperty(accessor, 'collectionEvidence', { enumerable: true, get: () => { reads++; throw new Error('must not run'); } });
+  assert.equal(createReport([accessor], 'source', startedAt).checks[0].status, 'partial');
+  const nested = { revision: 'collection-v1', issueCount: 0, issues: [] };
+  Object.defineProperty(nested, 'issueCount', { enumerable: true, get: () => { reads++; throw new Error('must not run'); } });
+  assert.equal(createReport([{ ...valid, collectionEvidence: nested as any }], 'source', startedAt).checks[0].status, 'partial');
+  assert.equal(reads, 0);
 });

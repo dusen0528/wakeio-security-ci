@@ -9,7 +9,7 @@ import { parseScanReport } from './compare.js';
 import { snapshotJsonData } from './json-snapshot.js';
 import { redactSecrets } from './report-path.js';
 import { codexAdvice, type AdviceAuthMode } from './agent-provider.js';
-import { projectAdviceContext, type RecheckRoute } from './agent-advice-context.js';
+import { ADVICE_PROJECTION_POLICY_VERSION, projectAdviceContext, type RecheckRoute } from './agent-advice-context.js';
 
 const HELP = `Usage:
   wakeio-security-ci advise --report DIR|agent-report.json --agent codex --auth cli-login|api-key --allow-report-upload --out NEW_DIR
@@ -165,7 +165,7 @@ export async function adviseMain(args: readonly string[]): Promise<number> {
   let outputCreated = false;
   let temporary: string | undefined;
   let receipt: Record<string, unknown> = { version: 1, status: 'incomplete', verified: false, reason: 'invalid_report',
-    authMode: options.auth, provider: 'codex', policyVersion: 2 };
+    authMode: options.auth, provider: 'codex', policyVersion: ADVICE_PROJECTION_POLICY_VERSION };
   let code = 2;
   try {
     const parent = await realpath(dirname(options.out));

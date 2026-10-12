@@ -14,12 +14,14 @@ import { tmpdir } from "node:os";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import type { SourceOptions } from "../contracts.js";
 import type { CollectedFile, CollectionIssue, SourceSnapshot } from "./types.js";
+import { COLLECTION_DEFAULT_MAX_FILES, COLLECTION_DEFAULT_MAX_BYTES, COLLECTION_MAX_FILES, COLLECTION_MAX_BYTES,
+  COLLECTION_MAX_FILE_BYTES, COLLECTION_MAX_DIRECTORY_DEPTH, resolveCollectionBudget } from './collection-budget.js';
 
-export const DEFAULT_MAX_FILES = 1_000;
-export const DEFAULT_MAX_BYTES = 25 * 1024 * 1024;
-export const DEFAULT_MAX_FILE_BYTES = 2 * 1024 * 1024;
-export const MAX_MAX_FILES = 10_000;
-export const MAX_MAX_BYTES = 128 * 1024 * 1024;
+export const DEFAULT_MAX_FILES = COLLECTION_DEFAULT_MAX_FILES;
+export const DEFAULT_MAX_BYTES = COLLECTION_DEFAULT_MAX_BYTES;
+export const DEFAULT_MAX_FILE_BYTES = COLLECTION_MAX_FILE_BYTES;
+export const MAX_MAX_FILES = COLLECTION_MAX_FILES;
+export const MAX_MAX_BYTES = COLLECTION_MAX_BYTES;
 export const MAX_MAX_FILE_BYTES = 8 * 1024 * 1024;
 
 const IGNORED_DIRECTORIES = new Set([
@@ -171,18 +173,9 @@ export interface CollectorLimits {
   maxFileBytes: number;
 }
 
-function positiveBound(value: number | undefined, fallback: number, maximum: number): number {
-  if (value === undefined) return fallback;
-  if (!Number.isSafeInteger(value) || value <= 0) return fallback;
-  return Math.min(value, maximum);
-}
-
 export function limitsFromOptions(options: Pick<SourceOptions, "maxFiles" | "maxBytes">): CollectorLimits {
-  return {
-    maxFiles: positiveBound(options.maxFiles, DEFAULT_MAX_FILES, MAX_MAX_FILES),
-    maxBytes: positiveBound(options.maxBytes, DEFAULT_MAX_BYTES, MAX_MAX_BYTES),
-    maxFileBytes: DEFAULT_MAX_FILE_BYTES,
-  };
+  const { maxFiles, maxBytes, maxFileBytes } = resolveCollectionBudget(options).limits;
+  return { maxFiles, maxBytes, maxFileBytes };
 }
 
 function issue(code: CollectionIssue["code"], path: string): CollectionIssue {
@@ -294,7 +287,8 @@ function outputPathRelative(root: string, outDir: string | undefined): string | 
  */
 export async function collectSource(options: Pick<SourceOptions, "root" | "maxFiles" | "maxBytes" | "outDir">): Promise<SourceSnapshot> {
   const root = resolve(options.root);
-  const limits = limitsFromOptions(options);
+  const collectionBudget = resolveCollectionBudget(options);
+  const limits = collectionBudget.limits;
   const issues: CollectionIssue[] = [];
   const files: CollectedFile[] = [];
   let ignoredFiles = 0;
@@ -304,7 +298,7 @@ export async function collectSource(options: Pick<SourceOptions, "root" | "maxFi
   // consume that budget; `maxEntries` remains the independent traversal cap.
   let selectedFiles = 0;
   let inspectedEntries = 0;
-  const maxEntries = Math.min(Math.max(limits.maxFiles * 8, 1_000), 100_000);
+  const maxEntries = limits.maxEntries;
   let rootError: string | undefined;
   const outputRelative = outputPathRelative(root, options.outDir);
 
@@ -314,21 +308,21 @@ export async function collectSource(options: Pick<SourceOptions, "root" | "maxFi
   } catch {
     issues.push(issue("root_error", "."));
     rootError = "source root cannot be read";
-    return { root, files, issues, ignoredFiles, totalBytes, complete: false, rootError };
+    return { root, files, issues, ignoredFiles, totalBytes, complete: false, rootError, collectionBudget };
   }
   if (rootStat.isSymbolicLink()) {
     issues.push(issue("root_error", "."));
     rootError = "source root must not be a symlink";
-    return { root, files, issues, ignoredFiles, totalBytes, complete: false, rootError };
+    return { root, files, issues, ignoredFiles, totalBytes, complete: false, rootError, collectionBudget };
   }
   if (!rootStat.isDirectory()) {
     issues.push(issue("root_error", "."));
     rootError = "source root must be a directory";
-    return { root, files, issues, ignoredFiles, totalBytes, complete: false, rootError };
+    return { root, files, issues, ignoredFiles, totalBytes, complete: false, rootError, collectionBudget };
   }
 
   const visit = async (directory: string, depth: number): Promise<void> => {
-    if (depth > 64) {
+    if (depth > COLLECTION_MAX_DIRECTORY_DEPTH) {
       issues.push(issue("file_limit", safeRelativePath(root, directory) ?? "."));
       return;
     }
@@ -440,7 +434,7 @@ export async function collectSource(options: Pick<SourceOptions, "root" | "maxFi
 
   await visit(root, 0);
   const complete = rootError === undefined && issues.every((entry) => !isFatalIssue(entry.code));
-  return { root, files, issues, ignoredFiles, totalBytes, complete, ...(rootError ? { rootError } : {}) };
+  return { root, files, issues, ignoredFiles, totalBytes, complete, collectionBudget, ...(rootError ? { rootError } : {}) };
 }
 
 export interface StagedSnapshot {

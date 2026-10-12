@@ -1,5 +1,6 @@
-import type { AnalysisGap, ReportSummary, ScanGate, ScanReport } from './contracts.js';
+import type { AnalysisGap, CollectionIssueCode, ReportSummary, ScanGate, ScanReport } from './contracts.js';
 import { nextGapReview } from './analysis-gaps.js';
+import { sameCollectionBudget } from './source/collection-budget.js';
 
 const SUMMARY_CHECK_LIMIT = 6;
 const SUMMARY_GAP_LIMIT = 3;
@@ -35,7 +36,9 @@ export function projectReportSummary(report: ScanReport, gate: ScanGate): Report
       if (incomplete.length >= SUMMARY_CHECK_LIMIT) continue;
       const gaps = check.analysisGaps;
       incomplete.push({ checkIndex, checkId: check.id, status: check.status,
-        diagnosticBasis: gaps ? 'typed_analysis_gaps' : 'check_status_only',
+        diagnosticBasis: check.collectionEvidence ? 'typed_collection_evidence' : gaps ? 'typed_analysis_gaps' : 'check_status_only',
+        ...(check.collectionBudget ? { collectionBudget: structuredClone(check.collectionBudget) } : {}),
+        ...(check.collectionEvidence ? { collectionEvidence: structuredClone(check.collectionEvidence) } : {}),
         ...(gaps ? { analysisGaps: {
           accounting: gaps.accounting, eventsObserved: gaps.eventsObserved, eventsDropped: gaps.eventsDropped,
           truncated: gaps.truncated,
@@ -53,9 +56,20 @@ export function projectReportSummary(report: ScanReport, gate: ScanGate): Report
     : firstGap;
   const summary = first?.analysisGaps?.reasonSummary;
   const reason = summary?.accounting === 'exact' ? summary.rows.find(row => row.eventsObserved! > 0)?.reason : undefined;
+  const inventories = report.checks.filter(check => check.id === 'source.inventory');
+  const inventory = inventories.length === 1 ? inventories[0] : undefined;
+  const collectionBudget = inventory?.collectionBudget ?? report.scope?.collectionBudget;
+  const collectionBudgetConsistency = inventory?.collectionBudget && report.scope?.collectionBudget
+    ? sameCollectionBudget(inventory.collectionBudget, report.scope.collectionBudget) ? 'consistent' : 'inconsistent'
+    : 'unknown';
+  const collectionReason = first?.collectionEvidence?.issues.find(issue => issue.code === 'root_error')?.code
+    ?? first?.collectionEvidence?.issues.find(issue => issue.code !== 'unsupported_file')?.code;
+  const exclusion = inventory?.collectionEvidence?.issues.find(issue => issue.code === 'unsupported_file');
   const nextRead: ReportSummary['nextRead'] = first
-    ? { kind: gap?.nextReview ?? (reason ? nextGapReview(reason) : 'review_check_diagnostics'), checkIndex: first.checkIndex, checkId: first.checkId,
+    ? { kind: collectionReason ? collectionReview(collectionReason) : gap?.nextReview ?? (reason ? nextGapReview(reason) : 'review_check_diagnostics'), checkIndex: first.checkIndex, checkId: first.checkId,
+      ...(collectionReason ? { collectionReason } : {}),
       ...(gap?.location ? { location: { ...gap.location } } : {}) }
+    : exclusion ? { kind: 'review_source_file_policy', collectionReason: exclusion.code, checkIndex: report.checks.indexOf(inventory!), checkId: inventory!.id }
     : { kind: gate.outcome === 'incomplete' ? 'review_check_diagnostics'
       : findings > 0 ? 'review_finding_evidence' : 'review_scope_limitations' };
   return {
@@ -68,9 +82,19 @@ export function projectReportSummary(report: ScanReport, gate: ScanGate): Report
     incompleteChecks: incomplete, omittedIncompleteChecks: incompleteCount - incomplete.length,
     scope: { mode: report.mode,
       ...(report.scope ? { fingerprint: report.scope.fingerprint, ruleset: report.scope.ruleset, ...(report.scope.analysisBudget ? { analysisProfile: report.scope.analysisBudget.effectiveProfile, analysisBudgetRevision: report.scope.analysisBudget.revision } : {}) } : {}),
+      ...(collectionBudget ? { collectionBudget: structuredClone(collectionBudget) } : {}),
+      ...(inventory || report.scope?.collectionBudget ? { collectionBudgetConsistency } : {}),
+      ...(inventory?.collectionEvidence ? { collectionEvidence: structuredClone(inventory.collectionEvidence) } : {}),
       toolSelection: selectedTools(report), wholeProjectCoverage: 'not_established' },
     nextRead,
   };
+}
+
+function collectionReview(reason: CollectionIssueCode): ReportSummary['nextRead']['kind'] {
+  if (reason === 'root_error') return 'review_source_root';
+  if (reason === 'file_limit' || reason === 'size_limit') return 'review_collection_budget';
+  if (reason === 'read_error' || reason === 'changed_file') return 'review_collection_diagnostics';
+  return 'review_source_file_policy';
 }
 
 function copyGap(gap: AnalysisGap): AnalysisGap {
