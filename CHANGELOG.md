@@ -23,6 +23,11 @@
   now states that limit and the tunnel count.
 - Provision the checksum-pinned Nuclei engine in `release-check` before the
   required-engine suite, matching `self-test`.
+- Evaluate the DAST Action consent, trigger and origin policy in a preflight
+  step before any engine setup. Python 3.12 and the Schemathesis virtualenv are
+  now prepared only when that policy allows an OpenAPI run; previously a fork
+  pull request or an unlisted origin with consent set still downloaded them.
+  The main step still records every refusal.
 
 - Add opt-in two-round verification for the existing owned synthetic API fixtures.
   Preserve every phase report and earlier observations; inconsistent repeats,
