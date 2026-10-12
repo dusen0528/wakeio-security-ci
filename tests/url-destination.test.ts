@@ -213,7 +213,7 @@ test('conservative branch content union keeps actual source and independent scan
 test('opaque query content retains unknown helper fallback with constant-return safe pair', async () => {
   for (const [returned,count] of [['value',1],["'fixed'",0]] as const) {
     for(const serialization of ['const p=new URLSearchParams({q:read()});return p.toString()', 'return new URLSearchParams({q:read()}).toString()']) {
-      const {ast}=await scan(`function pack(value){const read=()=>${returned};${serialization}}function route(req){db.query(pack(req.query.term));}`);
+      const {ast}=await scan(`function pack(value){function read(){return ${returned}}${serialization}}function route(req){db.query(pack(req.query.term));}`);
       const sql=ast.findings.filter(f=>f.ruleId==='ast:sql-input-sink');
       assert.equal(sql.length,count,returned+' '+serialization);
       if(count) {
@@ -224,6 +224,27 @@ test('opaque query content retains unknown helper fallback with constant-return 
       }
     }
   }
-  const safeActual=await scan(`function pack(value){const read=()=>value;const p=new URLSearchParams({q:read()});return p.toString()}function route(req){db.query(pack('fixed'));}`);
+  const safeActual=await scan(`function pack(value){function read(){return value}const p=new URLSearchParams({q:read()});return p.toString()}function route(req){db.query(pack('fixed'));}`);
   assert.equal(safeActual.ast.findings.filter(f=>f.ruleId==='ast:sql-input-sink').length,0);
+});
+
+test('immutable arrow capture retains the actual source, parameter, arrow return and serialization trace', async () => {
+  for (const serialization of ['const p=new URLSearchParams({q:read()});return p.toString()', 'return new URLSearchParams({q:read()}).toString()']) {
+    const code=`function pack(value){const read=()=>value;${serialization}}function route(req){db.query(pack(req.query.term));}`;
+    const {ast}=await scan(code);
+    const sql=ast.findings.filter(f=>f.ruleId==='ast:sql-input-sink');
+    assert.equal(sql.length,1);
+    assert.equal(sql[0].confidence,'low');
+    assert.equal(sql[0].kind,'candidate');
+    assert.equal(sql[0].staticFlow?.truncated,false);
+    const steps=sql[0].staticFlow!.steps;
+    assert.ok(steps.some(step=>step.role==='source' && step.location.column===code.indexOf('req.query.term')+1));
+    assert.ok(steps.some(step=>step.role==='parameter' && step.location.column===code.indexOf('value')+1));
+    assert.ok(steps.some(step=>step.role==='return' && step.location.column===code.indexOf('=>value')+3));
+    assert.equal(steps.at(-1)?.role,'sink');
+    assert.equal(steps.at(-1)?.location.column,code.indexOf('db.query')+1);
+    for (const safeCode of [code.replace('()=>value',"()=>'fixed'"),code.replace('req.query.term',"'fixed'")]) {
+      assert.equal((await scan(safeCode)).ast.findings.filter(f=>f.ruleId==='ast:sql-input-sink').length,0);
+    }
+  }
 });

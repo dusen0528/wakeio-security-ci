@@ -70,8 +70,10 @@ export class StaticModules {
   readonly callTargets = new Map<ts.FunctionLikeDeclaration, ts.CallExpression[]>();
   readonly references = new Map<ts.Symbol, ts.Identifier[]>();
   readonly nativeBoundaryNodes: ts.Node[] = [];
+  readonly constructorBoundaryNodes: ts.Identifier[] = [];
   readonly newExpressions: ts.NewExpression[] = [];
   readonly importDeclarations: ts.ImportDeclaration[] = [];
+  readonly exportDeclarations: ts.ExportDeclaration[] = [];
   readonly requireDeclarations: ts.VariableDeclaration[] = [];
   readonly sqlLoads: Array<{ specifier: string; node: ts.Node }> = [];
   readonly sqlBoundaryNodes: ts.Identifier[] = [];
@@ -85,6 +87,8 @@ export class StaticModules {
   symbolLookups = 0;
   identifierReferences = 0;
   private readonly symbols = new WeakMap<ts.Node, ts.Symbol | undefined>();
+  private readonly cjsFunctionTargets = new Map<string, ts.FunctionLikeDeclaration | null>();
+  private constructorIntrinsics?: boolean;
   private readonly owners = new WeakMap<ts.Node, ts.FunctionLikeDeclaration | ts.SourceFile>();
   private proofsReady = false;
   private readonly objectExports = new Map<ts.SourceFile, ObjectExport>();
@@ -100,6 +104,7 @@ export class StaticModules {
   private readonly classThis = new Map<ts.ClassDeclaration, ts.Node[]>();
   private readonly methodReceivers = new Map<ts.FunctionLikeDeclaration, ObjectExport>();
   private readonly constructorProof = new Map<ts.ClassDeclaration, boolean>();
+  private readonly independentHelperConstructs = new WeakMap<ts.NewExpression, ObjectExport>();
   private readonly constructorConsumers = new Map<ts.ClassDeclaration, Set<ObjectExport>>();
   private readonly helperWitnesses = new Map<ts.ClassDeclaration, ObjectExport>();
   private readonly singletonEligibility = new Map<ObjectExport, 'closed' | 'conditional' | 'rejected'>();
@@ -213,6 +218,7 @@ export class StaticModules {
         && node.moduleReference.expression.text === 'axios') this.axiosLoads.push(node);
       if (ts.isExportDeclaration(node) && node.moduleSpecifier && ts.isStringLiteralLike(node.moduleSpecifier)
         && node.moduleSpecifier.text === 'axios') this.axiosLoads.push(node);
+      if (ts.isExportDeclaration(node) && node.moduleSpecifier) this.exportDeclarations.push(node);
       if (ts.isImportEqualsDeclaration(node) && ts.isExternalModuleReference(node.moduleReference) && node.moduleReference.expression && ts.isStringLiteralLike(node.moduleReference.expression) && /^(?:node:)?child_process$/.test(node.moduleReference.expression.text)) this.forkLoads.push(node);
       if (ts.isExportDeclaration(node) && node.moduleSpecifier && ts.isStringLiteralLike(node.moduleSpecifier) && /^(?:node:)?child_process$/.test(node.moduleSpecifier.text)) this.forkLoads.push(node);
       if (ts.isVariableDeclaration(node) && node.initializer && ts.isCallExpression(node.initializer)
@@ -235,6 +241,7 @@ export class StaticModules {
           references.push(node); this.cjsReferences.set(file, references);
         }
         if (node.text === 'URLSearchParams') this.nativeBoundaryNodes.push(node);
+        if (['Object', 'Function', 'Reflect', 'Symbol', 'globalThis'].includes(node.text)) this.constructorBoundaryNodes.push(node);
         if (['Object','String','Array','Reflect','process','globalThis'].includes(node.text)) this.sqlBoundaryNodes.push(node);
         if (node.text === 'require') this.loaderReferences.push(node);
       }
@@ -411,6 +418,186 @@ export class StaticModules {
       }
     }
     this.exports.set(file.fileName, output);
+  }
+
+  /** Budgeted snapshot-only resolution shared by role models. */
+  resolveSourceModule(file: ts.SourceFile, specifier: string) { return this.importedFile(file, specifier, true); }
+
+  /** Separate new-expression lane: receiver-dependent constructors are never
+   * granted ordinary function dispatch by this certificate. */
+  resolveConstruct(node: ts.NewExpression): ts.FunctionDeclaration | ts.FunctionExpression | undefined {
+    if (!this.proofsReady || !this.objectScopeComplete || !this.tick() || !ts.isIdentifier(node.expression)) return undefined;
+    const helper = this.independentHelperConstructs.get(node);
+    // Already covered by the existing closed singleton's own-data helper proof;
+    // this function-constructor lane must not relabel it unsupported.
+    if (helper?.valid && this.singletonEligibility.get(helper) === 'closed') return undefined;
+    const target = this.cjsOrLocalBinding(node.expression);
+    if (!target || !(ts.isFunctionDeclaration(target) || ts.isFunctionExpression(target)) || !this.constructorIntrinsicsClosed()) {
+      const declaration = this.symbol(node.expression)?.declarations?.[0];
+      const init = declaration && ts.isVariableDeclaration(declaration) ? declaration.initializer : undefined;
+      const recognized = declaration && ts.isFunctionDeclaration(declaration) || init && (ts.isFunctionExpression(init)
+        || ts.isCallExpression(init) && ts.isIdentifier(init.expression) && init.expression.text === 'require' && init.arguments.length === 1 && ts.isStringLiteralLike(init.arguments[0]) && init.arguments[0].text.startsWith('.')
+        || ts.isPropertyAccessExpression(init) && ts.isCallExpression(init.expression) && ts.isIdentifier(init.expression.expression) && init.expression.expression.text === 'require' && init.expression.arguments.length === 1 && ts.isStringLiteralLike(init.expression.arguments[0]) && init.expression.arguments[0].text.startsWith('.'));
+      if (recognized) this.incomplete('module_export_unsupported');
+      return undefined;
+    }
+    return target;
+  }
+
+  resolveCjsFunctionCall(call: ts.CallExpression): CallResolution | undefined {
+    if (!this.proofsReady || !this.objectScopeComplete || !this.tick() || !ts.isIdentifier(call.expression)) return undefined;
+    const target = this.cjsOrLocalBinding(call.expression, true);
+    return target && !this.receiverDependent.has(target) ? { kind: 'resolved', target } : undefined;
+  }
+
+  private cjsOrLocalBinding(identifier: ts.Identifier, callOnly = false): ts.FunctionLikeDeclaration | undefined {
+    const symbol = this.symbol(identifier), declaration = symbol?.declarations?.length === 1 ? symbol.declarations[0] : undefined;
+    if (!symbol || !declaration || this.mutated.has(symbol) || this.mutatedMembers.has(symbol)) return undefined;
+    let initializer = ts.isVariableDeclaration(declaration) && declaration.initializer && !!(declaration.parent.flags & ts.NodeFlags.Const)
+      ? declaration.initializer : undefined;
+    let key = '';
+    if (initializer && ts.isPropertyAccessExpression(initializer)) { key = initializer.name.text; initializer = initializer.expression; }
+    if (initializer && ts.isCallExpression(initializer) && ts.isIdentifier(initializer.expression) && initializer.expression.text === 'require'
+      && this.cjsGlobal(initializer.expression) && initializer.arguments.length === 1 && ts.isStringLiteralLike(initializer.arguments[0])) {
+      const file = this.importedFile(identifier.getSourceFile(), initializer.arguments[0].text, true);
+      if (file.kind !== 'file' || !this.bindingInvocationRefs(symbol, callOnly)) return undefined;
+      return this.canonicalCjsFunction(file.file, key, callOnly);
+    }
+    if (callOnly) return undefined; // Existing local call resolution remains authoritative.
+    const target = this.functionOf(declaration);
+    return target && target.getSourceFile() === identifier.getSourceFile() && this.bindingInvocationRefs(symbol, false) ? target : undefined;
+  }
+
+  private bindingInvocationRefs(symbol: ts.Symbol, callOnly: boolean, exportValue?: ts.Node): boolean {
+    for (const reference of this.references.get(symbol) ?? []) {
+      if (!this.tick()) return false;
+      const parent = reference.parent;
+      if (reference === exportValue || (ts.isVariableDeclaration(parent) || ts.isFunctionDeclaration(parent)) && parent.name === reference) continue;
+      if (ts.isNewExpression(parent) && parent.expression === reference && !callOnly) continue;
+      if (ts.isCallExpression(parent) && parent.expression === reference && callOnly) continue;
+      // A structurally recognized no-new guard is evaluated only in an actual new context.
+      if (!callOnly && ts.isBinaryExpression(parent) && parent.operatorToken.kind === ts.SyntaxKind.InstanceOfKeyword && parent.right === reference) continue;
+      return false;
+    }
+    return true;
+  }
+
+  private canonicalCjsFunction(file: ts.SourceFile, key: string, callOnly: boolean): ts.FunctionLikeDeclaration | undefined {
+    const cacheKey = `${file.fileName}\0${key}\0${callOnly}`;
+    const cached = this.cjsFunctionTargets.get(cacheKey); if (cached !== undefined) return cached ?? undefined;
+    this.cjsFunctionTargets.set(cacheKey, null);
+    if (this.esmFiles.has(file)) return undefined;
+    const allowed = new Set<ts.Node>(); let value: ts.Expression | undefined;
+    const names = new Set<string>();
+    for (const statement of file.statements) {
+      if (!this.tick()) return undefined;
+      if (!ts.isExpressionStatement(statement) || !ts.isBinaryExpression(statement.expression) || statement.expression.operatorToken.kind !== ts.SyntaxKind.EqualsToken) continue;
+      const assignment = statement.expression, left = assignment.left;
+      let root: ts.Identifier | undefined, slot: string | undefined;
+      if (ts.isPropertyAccessExpression(left) && ts.isIdentifier(left.expression) && left.expression.text === 'module' && left.name.text === 'exports') { root = left.expression; slot = ''; }
+      else if (ts.isPropertyAccessExpression(left) && ts.isPropertyAccessExpression(left.expression) && left.expression.name.text === 'exports'
+        && ts.isIdentifier(left.expression.expression) && left.expression.expression.text === 'module') { root = left.expression.expression; slot = left.name.text; }
+      if (!root || !this.cjsFunctionGlobal(root) || slot === undefined) continue;
+      if (names.has(slot) || slot === '__proto__' || names.size && (slot === '' || names.has(''))) return undefined;
+      names.add(slot); allowed.add(root);
+      if (slot === key) value = assignment.right;
+    }
+    for (const reference of this.cjsReferences.get(file) ?? []) {
+      if (!this.tick()) return undefined;
+      if (this.cjsFunctionGlobal(reference) && !allowed.has(reference)) return undefined;
+    }
+    if (!value) return undefined;
+    const target = this.functionOf(value);
+    if (!target || target.getSourceFile() !== file) return undefined;
+    const binding = ts.isIdentifier(value) ? value : 'name' in target && target.name && ts.isIdentifier(target.name) ? target.name
+      : ts.isVariableDeclaration(target.parent) && ts.isIdentifier(target.parent.name) ? target.parent.name : undefined;
+    const symbol = binding ? this.symbol(binding) : undefined;
+    if (!symbol || !this.bindingInvocationRefs(symbol, callOnly, value) || !this.cjsConsumersClosed(file, key, callOnly)) return undefined;
+    this.cjsFunctionTargets.set(cacheKey, target);
+    return target;
+  }
+
+  private cjsConsumersClosed(file: ts.SourceFile, key: string, callOnly: boolean): boolean {
+    for (const load of this.importDeclarations) {
+      if (!this.tick()) return false;
+      if (!ts.isStringLiteralLike(load.moduleSpecifier) || !load.moduleSpecifier.text.startsWith('.')) continue;
+      const resolved = this.importedFile(load.getSourceFile(), load.moduleSpecifier.text, true);
+      if (resolved.kind === 'file' && resolved.file === file && !load.importClause?.isTypeOnly) return false;
+    }
+    for (const load of this.exportDeclarations) {
+      if (!this.tick()) return false;
+      if (load.isTypeOnly || !load.moduleSpecifier || !ts.isStringLiteralLike(load.moduleSpecifier) || !load.moduleSpecifier.text.startsWith('.')) continue;
+      const resolved = this.importedFile(load.getSourceFile(), load.moduleSpecifier.text, true);
+      if (resolved.kind === 'file' && resolved.file === file) return false;
+    }
+    // Re-exports/import() are not consumers certified by the canonical CJS lane.
+    for (const call of this.calls) {
+      if (!this.tick()) return false;
+      if (call.expression.kind !== ts.SyntaxKind.ImportKeyword) continue;
+      if (call.arguments.length !== 1 || !ts.isStringLiteralLike(call.arguments[0])) return false;
+      const resolved = this.importedFile(call.getSourceFile(), call.arguments[0].text, true);
+      if (resolved.kind === 'file' && resolved.file === file) return false;
+    }
+    for (const reference of this.requireReferences) {
+      if (!this.tick()) return false;
+      if (!this.cjsGlobal(reference)) continue;
+      const load = reference.parent;
+      if (!ts.isCallExpression(load) || load.expression !== reference || load.arguments.length !== 1 || !ts.isStringLiteralLike(load.arguments[0])) return false;
+      if (!load.arguments[0].text.startsWith('.')) continue;
+      const resolved = this.importedFile(load.getSourceFile(), load.arguments[0].text, true);
+      if (resolved.kind !== 'file' || resolved.file !== file) continue;
+      let value: ts.Node = load;
+      if (key) {
+        if (!ts.isPropertyAccessExpression(load.parent) || load.parent.expression !== load) return false;
+        if (load.parent.name.text !== key) continue;
+        value = load.parent;
+      }
+      const declaration = value.parent;
+      if (!ts.isVariableDeclaration(declaration) || declaration.initializer !== value || !ts.isIdentifier(declaration.name)
+        || !(declaration.parent.flags & ts.NodeFlags.Const)) return false;
+      const symbol = this.symbol(declaration.name);
+      if (!symbol || this.mutated.has(symbol) || this.mutatedMembers.has(symbol) || !this.bindingInvocationRefs(symbol, callOnly)) return false;
+    }
+    return true;
+  }
+
+  private cjsFunctionGlobal(node: ts.Identifier): boolean {
+    if (this.cjsGlobal(node)) return true;
+    const symbol = this.symbol(node);
+    return node.text === 'module' && symbol?.declarations?.length === 1 && symbol.declarations.every(declaration =>
+      ts.isBinaryExpression(declaration) && declaration.operatorToken.kind === ts.SyntaxKind.EqualsToken
+      && ts.isPropertyAccessExpression(declaration.left) && ts.isIdentifier(declaration.left.expression)
+      && declaration.left.expression.text === 'module' && declaration.left.name.text === 'exports'
+      && ts.isExpressionStatement(declaration.parent) && ts.isSourceFile(declaration.parent.parent)
+      && declaration.getSourceFile() === node.getSourceFile() && !!this.functionOf(declaration.right));
+  }
+
+  private constructorIntrinsicsClosed(): boolean {
+    if (this.constructorIntrinsics !== undefined) return this.constructorIntrinsics;
+    this.constructorIntrinsics = false;
+    for (const root of this.constructorBoundaryNodes) {
+      if (!this.tick()) return false;
+      if (this.symbol(root)?.declarations?.length || ts.isPropertyAccessExpression(root.parent) && root.parent.name === root) continue;
+      if (ts.isTypeNode(root.parent)) continue;
+      let member: ts.Node = root;
+      while ((ts.isPropertyAccessExpression(member.parent) || ts.isElementAccessExpression(member.parent)) && member.parent.expression === member) {
+        if (!this.tick()) return false;
+        if (ts.isElementAccessExpression(member.parent) && !ts.isStringLiteralLike(member.parent.argumentExpression)) return false;
+        member = member.parent;
+      }
+      if (member === root) {
+        if (root.text === 'Symbol' && ts.isCallExpression(root.parent) && root.parent.expression === root) continue;
+        return false; // Aliased/escaped native identity cannot certify a guard.
+      }
+      if (ts.isBinaryExpression(member.parent) && member.parent.left === member || ts.isDeleteExpression(member.parent)
+        || ts.isPrefixUnaryExpression(member.parent) || ts.isPostfixUnaryExpression(member.parent)) return false;
+      if (member.getText().includes('prototype')) {
+        if (ts.isBinaryExpression(member.parent) && member.parent.left === member || ts.isDeleteExpression(member.parent)
+          || ts.isVariableDeclaration(member.parent) || ts.isCallExpression(member.parent) || ts.isReturnStatement(member.parent)) return false;
+      }
+    }
+    this.constructorIntrinsics = true;
+    return true;
   }
 
   private importedFile(file: ts.SourceFile, specifier: string, count: boolean):
@@ -1234,6 +1421,7 @@ export class StaticModules {
       if (!dependency && (!symbol || !this.constructorRefs(symbol,helperGroup))) return false;
       if (!dependency) this.helperWitnesses.set(helper,helperGroup);
       if (!this.constructorShape(helper,helperGroup,depth+1)) return false;
+      this.independentHelperConstructs.set(right, group);
       if (dependency && !group.dependencies!.includes(dependency)) group.dependencies!.push(dependency);
     }
     this.constructorProof.set(classNode,true); return true;
