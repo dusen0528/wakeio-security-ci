@@ -1,13 +1,16 @@
 #!/usr/bin/env node
 import { resolveAnalysisBudget } from './source/analysis-budget.js';
 import { realpathSync } from "node:fs";
+import { mkdir, readFile, rm } from "node:fs/promises";
+import { createHash } from "node:crypto";
 import { fileURLToPath } from "node:url";
-import { isAbsolute, resolve } from "node:path";
+import { dirname, isAbsolute, resolve } from "node:path";
 import type { Mode, ScanScope, SourceOptions, ToolName, UrlOptions } from "./contracts.js";
 import { runSource } from "./source.js";
 import { runUrl } from "./url.js";
 import { createReport, exitCode, writeArtifacts, writeReports, RULESET_VERSION } from "./report.js";
 import { replayApiFinding, replayExitCode } from "./replay.js";
+import { replayDastFinding, dastReplayExitCode } from "./dast-replay.js";
 import { compareReports, comparisonExitCode, readScanReport, writeComparison } from "./compare.js";
 import { runApiPolicy, parseApiPolicy, type ApiPolicy } from "./api.js";
 import { readJsonInput } from "./json-input.js";
@@ -17,6 +20,8 @@ import { doctorMain } from "./doctor.js";
 import { initMain } from "./init.js";
 import { planMain } from "./plan.js";
 import { repairMain } from "./repair.js";
+import { adviseMain } from "./agent-advice.js";
+import { DAST_CHECK_ID, DAST_PROFILE_REVISION, DAST_MAX_REQUESTS, DAST_DEFAULT_MAX_REQUESTS, parseDastPolicy, runDast, type DastPolicy } from "./dast.js";
 import { API_MAX_REQUESTS, API_MAX_TIMEOUT_MS } from "./api.js";
 import { runSchemathesisLive } from "./schemathesis-live.js";
 import { NUCLEI_MAX_RATE_LIMIT, NUCLEI_MAX_REQUESTS, NUCLEI_SCOPES, runNuclei, type NucleiScope } from "./nuclei.js";
@@ -32,6 +37,8 @@ export interface CliOptions {
   pages: string[];
   maxPages?: number;
   apiPolicy?: string;
+  dastPolicy?: string;
+  dastMaxRequests?: number;
   outDir: string;
   tools: ToolName[];
   failOn: "critical" | "high" | "medium" | "low" | "info" | "none";
@@ -71,15 +78,18 @@ export const USAGE = `Usage:
   wakeio-security-ci scan --url URL [options]
   wakeio-security-ci scan --source DIR --url URL [options]
   wakeio-security-ci scan --api-policy policy.json [options]
-  wakeio-security-ci plan --api-policy FILE | --openapi-input FILE [--allow-private] [--timeout-ms N]
+  wakeio-security-ci scan --dast-policy policy.json --active-consent [options]
+  wakeio-security-ci plan --api-policy FILE | --openapi-input FILE | --dast-policy FILE [--allow-private] [--timeout-ms N]
   wakeio-security-ci scan --openapi openapi.json --api-base URL --operation PATH --active-consent [options]
   wakeio-security-ci scan --url URL --engine nuclei --nuclei-templates DIR --active-consent [options]
   wakeio-security-ci compare --before report.json --after report.json --out DIR [--fail-on LEVEL]
   wakeio-security-ci replay --report report.json --api-policy FILE --finding ID --out DIR [--allow-private] [--timeout-ms N]
+  wakeio-security-ci replay --report report.json --dast-policy FILE --finding ID --active-consent --out NEW_DIR [--allow-private]
   wakeio-security-ci doctor [--source DIR] [--tools ...] [--json] [--strict]
   wakeio-security-ci init [--source DIR] [--workflow FILE] [--out DIR] [--tools ...]
   wakeio-security-ci repair --source DIR --policy FILE --out NEW_DIR --proposal FILE
   wakeio-security-ci repair --help
+  wakeio-security-ci advise --report DIR --agent codex --auth cli-login|api-key --allow-report-upload --out NEW_DIR
 
 Options:
   --out DIR                    Report directory (default: wakeio-security-reports)
@@ -105,6 +115,8 @@ Options:
 
 Active DAST (off by default; sends generated or template requests to the target):
   --active-consent             Required: you own or are authorized to test the target
+  --dast-policy FILE           Explicit GET/query numeric SQL differential policy JSON
+  --dast-max-requests N        Native DAST HTTP attempt budget, 1..64 (default 8)
   --openapi FILE               Local OpenAPI 3.0/3.1 JSON (same-document $ref only)
   --api-base URL               Target origin for --openapi (servers are never used)
   --operation PATH             Documented GET path to test (repeatable, 1..16)
@@ -240,6 +252,8 @@ export function parseCliArgs(argv: readonly string[]): CliOptions | { help: true
     }
     else if ((value = valueFlag("--max-pages")) !== undefined) options.maxPages = parsePageLimit(value);
     else if ((value = valueFlag("--api-policy")) !== undefined) options.apiPolicy = value;
+    else if ((value = valueFlag("--dast-policy")) !== undefined) options.dastPolicy = value;
+    else if ((value = valueFlag("--dast-max-requests")) !== undefined) options.dastMaxRequests = parseBoundedInteger("--dast-max-requests", value, DAST_MAX_REQUESTS);
     else if ((value = valueFlag("--out")) !== undefined) options.outDir = value;
     else if ((value = valueFlag('--analysis-profile')) !== undefined) {
       try { options.analysisProfile = resolveAnalysisBudget(value).requestedProfile; }
@@ -319,22 +333,23 @@ export function parseCliArgs(argv: readonly string[]): CliOptions | { help: true
     }
   }
   if (help) return { help: true };
-  if (!options.source && !options.url && !options.apiPolicy && !options.openapi) throw new CliUsageError("provide --source, --url, --api-policy, or --openapi");
+  if (!options.source && !options.url && !options.apiPolicy && !options.openapi && !options.dastPolicy) throw new CliUsageError("provide --source, --url, --api-policy, --dast-policy, or --openapi");
   if (options.pages.length > 0 && !options.url) throw new CliUsageError("--page requires --url");
   if (options.maxPages !== undefined && !options.url) throw new CliUsageError("--max-pages requires --url");
-  if (options.allowPrivate && !options.url && !options.apiPolicy && !options.openapi) throw new CliUsageError("--allow-private requires URL or API mode");
+  if (options.allowPrivate && !options.url && !options.apiPolicy && !options.openapi && !options.dastPolicy) throw new CliUsageError("--allow-private requires URL or API mode");
   const schemathesisOnly = options.apiBase !== undefined || options.operations.length > 0 || options.apiMaxRequests !== undefined || options.seed !== undefined || options.schemathesisPython !== undefined;
   if (schemathesisOnly && !options.openapi) throw new CliUsageError("--api-base, --operation, --api-max-requests, --seed and --schemathesis-python require --openapi");
   if (options.openapi && (!options.apiBase || options.operations.length === 0)) throw new CliUsageError("--openapi requires --api-base and at least one --operation");
   const nucleiOnly = options.nucleiPath !== undefined || options.nucleiTemplates !== undefined || options.nucleiScopes.length > 0 || options.nucleiMaxRequests !== undefined || options.nucleiRateLimit !== undefined || options.nucleiTimeoutMs !== undefined;
   if (nucleiOnly && !options.engines.includes("nuclei")) throw new CliUsageError("--nuclei* options require --engine nuclei");
   if (options.engines.includes("nuclei") && (!options.url || !options.nucleiTemplates)) throw new CliUsageError("--engine nuclei requires --url and --nuclei-templates");
-  const active = Boolean(options.openapi) || options.engines.length > 0;
+  if (options.dastMaxRequests !== undefined && !options.dastPolicy) throw new CliUsageError("--dast-max-requests requires --dast-policy");
+  const active = Boolean(options.openapi || options.dastPolicy) || options.engines.length > 0;
   // Consent is checked before any DNS lookup or request: active testing never starts implicitly.
-  if (active && !options.activeConsent) throw new CliUsageError("active DAST (--openapi or --engine) requires --active-consent; only test targets you own or are authorized to test");
-  if (options.activeConsent && !active) throw new CliUsageError("--active-consent requires --openapi or --engine");
+  if (active && !options.activeConsent) throw new CliUsageError("active DAST (--dast-policy, --openapi or --engine) requires --active-consent; only test targets you own or are authorized to test");
+  if (options.activeConsent && !active) throw new CliUsageError("--active-consent requires --dast-policy, --openapi or --engine");
   if (options.allowedOrigins.length > 0) {
-    if (!options.url && !options.apiPolicy && !options.openapi) throw new CliUsageError("--allowed-origin requires URL or API mode");
+    if (!options.url && !options.apiPolicy && !options.openapi && !options.dastPolicy) throw new CliUsageError("--allowed-origin requires URL or API mode");
     // Checked before any DNS lookup or request; the API policy baseUrl is checked once the file is read.
     if (options.url && !originAllowed(options.url, options.allowedOrigins)) throw new CliUsageError("the --url origin is not in --allowed-origin");
     if (options.apiBase && !originAllowed(options.apiBase, options.allowedOrigins)) throw new CliUsageError("the --api-base origin is not in --allowed-origin");
@@ -347,6 +362,7 @@ export function parseCliArgs(argv: readonly string[]): CliOptions | { help: true
 }
 
 function modeFor(options: CliOptions): Mode {
+  if (options.dastPolicy) return options.source || options.url || options.apiPolicy || options.openapi ? 'combined' : 'url';
   if (options.apiPolicy || options.openapi) return options.source || options.url ? 'combined' : 'api';
   if (options.source && options.url) return "both";
   return options.source ? "source" : "url";
@@ -413,7 +429,77 @@ export function parseReplayArgs(argv: readonly string[]): { report: string; apiP
   return { report: values.get('--report')!, apiPolicy: values.get('--api-policy')!, findingId, outDir: values.get('--out')!, allowPrivate, ...(timeoutMs === undefined ? {} : { timeoutMs }) };
 }
 
+export function parseDastReplayArgs(argv: readonly string[]): { report: string; dastPolicy: string; findingId: string; outDir: string; allowPrivate: boolean; consent: true } {
+  const values = new Map<string, string>();
+  let allowPrivate = false, consent = false;
+  for (let index = 1; index < argv.length; index++) {
+    const flag = argv[index]!;
+    if (flag === '--active-consent' && !consent) { consent = true; continue; }
+    if (flag === '--allow-private' && !allowPrivate) { allowPrivate = true; continue; }
+    const value = argv[index + 1];
+    if (!['--report', '--dast-policy', '--finding', '--out'].includes(flag) || values.has(flag) || !value || value.startsWith('--')) {
+      throw new CliUsageError('native replay requires unique --report, --dast-policy, --finding, --active-consent, --out and optional --allow-private; budgets come from the original execution');
+    }
+    values.set(flag, value); index++;
+  }
+  if (!consent) throw new CliUsageError('native replay requires --active-consent; no target requests were made');
+  const findingId = values.get('--finding');
+  if (!values.get('--report') || !values.get('--dast-policy') || !findingId || !values.get('--out')) {
+    throw new CliUsageError('native replay requires --report, --dast-policy, --finding and --out');
+  }
+  if (!/^[a-f0-9]{64}$/.test(findingId)) throw new CliUsageError('--finding must be a report finding id (64 lowercase hex characters)');
+  return { report: values.get('--report')!, dastPolicy: values.get('--dast-policy')!, findingId,
+    outDir: values.get('--out')!, allowPrivate, consent: true };
+}
+
+async function runDastReplay(argv: readonly string[]): Promise<number> {
+  let options: ReturnType<typeof parseDastReplayArgs>;
+  try { options = parseDastReplayArgs(argv); }
+  catch (error) {
+    process.stderr.write(`Error: ${error instanceof CliUsageError ? error.message : 'invalid native replay arguments'}\n`);
+    return 2;
+  }
+  const controller = new AbortController();
+  const cancel = (): void => controller.abort();
+  process.on('SIGINT', cancel); process.on('SIGTERM', cancel);
+  try {
+    let report: unknown, policy: unknown;
+    try { [report, policy] = await Promise.all([readJsonInput(options.report), readJsonInput(options.dastPolicy, 1024 * 1024)]); }
+    catch { process.stderr.write('Error: native replay report and policy must be bounded JSON files.\n'); return 2; }
+    // Reserve a fresh output directory before target traffic. A refusal must not leave old scan reports beside its receipt.
+    try {
+      await writeArtifacts(dirname(resolve(options.outDir)), []);
+      await mkdir(resolve(options.outDir), { mode: 0o700 });
+      await writeArtifacts(options.outDir, []);
+    } catch { process.stderr.write('Error: native replay requires a new, safe output directory; no target requests were made.\n'); return 2; }
+    const startedAt = new Date().toISOString();
+    const result = await replayDastFinding({ report, policy, findingId: options.findingId, consent: options.consent,
+      allowPrivate: options.allowPrivate, signal: controller.signal });
+    const { check, ...summary } = result;
+    const receiptPath = resolve(options.outDir, 'replay.json');
+    try {
+      let reportArtifact: { name: 'report.json'; algorithm: 'sha256'; digest: string } | undefined;
+      if (check) {
+        await writeReports(createReport([check], 'url', startedAt), options.outDir);
+        reportArtifact = { name: 'report.json', algorithm: 'sha256',
+          digest: createHash('sha256').update(await readFile(resolve(options.outDir, 'report.json'))).digest('hex') };
+      }
+      if (controller.signal.aborted) throw new Error('cancelled');
+      await writeArtifacts(options.outDir, [['replay.json', `${JSON.stringify({ ...summary, ...(reportArtifact ? { reportArtifact } : {}) }, null, 2)}\n`]]);
+      if (controller.signal.aborted) throw new Error('cancelled');
+    } catch {
+      await rm(receiptPath, { force: true }).catch(() => undefined);
+      process.stderr.write('Error: native replay delivery failed or was cancelled; no successful replay receipt was retained.\n'); return 2;
+    }
+    process.stdout.write(`Wakeio native replay: ${result.outcome}${result.reason ? ` (${result.reason})` : ''}.\n`
+      + 'Reproduction is scoped to the same policy and controls; it is not independent exploit or fix verification.\n'
+      + `Details: ${JSON.stringify(resolve(options.outDir))} (replay.json${check ? ', report.json, report.sarif, report.md, agent-report.json' : ''})\n`);
+    return dastReplayExitCode(result);
+  } finally { process.removeListener('SIGINT', cancel); process.removeListener('SIGTERM', cancel); }
+}
+
 async function runReplay(argv: readonly string[]): Promise<number> {
+  if (argv.includes('--dast-policy')) return runDastReplay(argv);
   let options: ReturnType<typeof parseReplayArgs>;
   try { options = parseReplayArgs(argv); }
   catch (error) {
@@ -454,7 +540,7 @@ async function runReplay(argv: readonly string[]): Promise<number> {
   }
 }
 
-async function declaredScope(options: CliOptions, apiPolicy: ApiPolicy | undefined): Promise<ScanScope> {
+async function declaredScope(options: CliOptions, apiPolicy: ApiPolicy | undefined, dastPolicySha256?: string): Promise<ScanScope> {
   return buildScanScope({
     mode: modeFor(options),
     source: options.source,
@@ -473,7 +559,8 @@ async function declaredScope(options: CliOptions, apiPolicy: ApiPolicy | undefin
     maxPages: options.maxPages,
     apiPolicy,
     ruleset: RULESET_VERSION,
-    ...(options.openapi || options.engines.length > 0 ? { dast: {
+    ...(options.openapi || options.dastPolicy || options.engines.length > 0 ? { dast: {
+      ...(options.dastPolicy ? { native: { policySha256: dastPolicySha256 ?? null, profileRevision: DAST_PROFILE_REVISION, maxRequests: options.dastMaxRequests ?? DAST_DEFAULT_MAX_REQUESTS, timeoutMs: Math.min(options.timeoutMs, API_MAX_TIMEOUT_MS) } } : {}),
       ...(options.openapi ? { schemathesis: { apiBase: options.apiBase, operations: [...options.operations], maxRequests: options.apiMaxRequests ?? 32, seed: options.seed ?? 1 } } : {}),
       ...(options.engines.includes("nuclei") ? { nuclei: { scopes: [...options.nucleiScopes].sort(), maxRequests: options.nucleiMaxRequests ?? null, rateLimit: options.nucleiRateLimit ?? null } } : {}),
     } } : {}),
@@ -488,6 +575,7 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
   if (argv[0] === 'doctor') return doctorMain(argv);
   if (argv[0] === 'init') return initMain(argv);
   if (argv[0] === 'repair') return repairMain(argv);
+  if (argv[0] === 'advise') return adviseMain(argv);
   let parsed: CliOptions | { help: true };
   try {
     parsed = parseCliArgs(argv);
@@ -516,6 +604,18 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
       checks.push(runtimeErrorCheck('api.policy', 'API policy must be a valid bounded JSON file with the supported schema.'));
     }
   }
+  let dastPolicy: DastPolicy | undefined;
+  let dastPolicySha256: string | undefined;
+  if (parsed.dastPolicy) {
+    try {
+      const validated = parseDastPolicy(await readJsonInput(parsed.dastPolicy, 1024 * 1024));
+      dastPolicy = validated.policy; dastPolicySha256 = validated.policySha256;
+    } catch {
+      checks.push(runtimeErrorCheck(DAST_CHECK_ID, 'DAST policy must be a valid bounded JSON file with the supported numeric GET/query schema; no DAST requests were made.'));
+    }
+  }
+  const dastPolicyAllowed = dastPolicy !== undefined && (parsed.allowedOrigins.length === 0 || originAllowed(dastPolicy.baseUrl, parsed.allowedOrigins));
+  if (dastPolicy && !dastPolicyAllowed) checks.push(runtimeErrorCheck(DAST_CHECK_ID, 'The DAST policy baseUrl origin is not in --allowed-origin; no DAST requests were made.'));
   // The policy baseUrl is only known after reading the file; refuse it here, before any request.
   const apiPolicyAllowed = apiPolicy !== undefined && (parsed.allowedOrigins.length === 0 || originAllowed(apiPolicy.baseUrl, parsed.allowedOrigins));
   if (apiPolicy && !apiPolicyAllowed) checks.push(runtimeErrorCheck('api.authorization', 'The API policy baseUrl origin is not in --allowed-origin; no API requests were made.'));
@@ -583,7 +683,15 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
       checks.push(runtimeErrorCheck('api.schemathesis', 'OpenAPI input must be a bounded local JSON file; Schemathesis live testing did not start.'));
     }
   }
-  const scope = await declaredScope(parsed, apiPolicy);
+  if (dastPolicy && dastPolicyAllowed && !controller.signal.aborted) {
+    try {
+      checks.push(...await runDast({ policy: dastPolicy, consent: parsed.activeConsent, allowPrivate: parsed.allowPrivate,
+        timeoutMs: Math.min(parsed.timeoutMs, API_MAX_TIMEOUT_MS), maxRequests: parsed.dastMaxRequests, signal: controller.signal }));
+    } catch {
+      checks.push(runtimeErrorCheck(DAST_CHECK_ID, 'Native DAST could not be completed.'));
+    }
+  }
+  const scope = await declaredScope(parsed, apiPolicy, dastPolicySha256);
   const markCancelled = (): void => {
     if (controller.signal.aborted && !checks.some((check) => check.id === 'scan.cancelled')) checks.push({ id: 'scan.cancelled', status: 'partial', findings: [], notes: ['The command was cancelled; completed stages do not establish command completion.'] });
   };

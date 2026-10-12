@@ -234,9 +234,43 @@ node build/src/cli.js compare \
 
 범위가 다르거나 미완료인 검사를 깨끗한 결과로 보여 주지 않습니다. 이전 발견이 사라져도 `not_observed`이며 자동 수정 인증서가 아닙니다. [비교 안내](docs/preview-0.4-comparison.md)를 참고하세요.
 
+## 네이티브 DAST와 선택형 Codex 조언
+
+소스 checkout에는 명시한 GET 쿼리 파라미터 하나에 숫자형 SQL 차등 검사를 수행하는 기능이 포함됩니다. 정책에 정상·참·거짓 JSON 응답 기준을 정하고, 정상/참/거짓/정상 순서를 두 번 반복합니다. 대조군과 차등 결과가 모두 반복될 때만 제한된 `candidate`를 기록합니다. [정책 작성, HTTPS 경계, Action 입력과 SDK](docs/native-dast.md)를 참고하세요. 이 명령은 소스 프리뷰용이며 npm 0.5.0은 아직 발행하지 않았습니다.
+
+```mermaid
+flowchart LR
+  A[승인된 대상 검사] --> B[검사 보고서 4개]
+  B --> C[명시적인 advise 명령]
+  C --> D[Codex CLI 로그인 또는 API 키]
+  D --> E[private 미검증 조언]
+  E --> F[선택적인 수정 검증과 재검사]
+```
+
+```sh
+npm run build
+node build/src/cli.js plan --dast-policy dast-policy.json
+node build/src/cli.js scan --dast-policy dast-policy.json --active-consent --out dast-reports
+node build/src/cli.js advise --report dast-reports --agent codex --auth cli-login \
+  --allow-report-upload --out dast-advice
+# CODEX_API_KEY 인증을 선택하려면 --auth api-key를 사용합니다.
+```
+
+`advise`는 전송 동의를 받은 제한된 보고서 요약만 보내고 `agent-advice.json`을 만듭니다. 소스를 보내거나 수정안을 적용하지 않으며 candidate를 확정 취약점으로 바꾸거나 수정 완료를 선언하지 않습니다. 검사 판정과 조언은 독립적이고, `scan`은 모델을 호출하지 않습니다.
+
+조언에는 대조군·실행 단계 또는 정적 흐름의 구조화된 증거와 로컬에서 검증한 재검사 경로가 포함됩니다. 네이티브 finding은 원래 정책과 새 실행 동의로 다시 검사할 수 있습니다.
+
+```sh
+node build/src/cli.js replay --report dast-reports/report.json \
+  --dast-policy dast-policy.json --finding <finding-id> --active-consent --out dast-replay
+```
+
+원래 private 대상이면 `--allow-private`도 다시 명시해야 합니다. 원래 요청·시간 제한을 그대로 쓰며 출력 디렉터리는 새 경로여야 합니다. `replay.json`과 새 보고서를 기록합니다. 종료 코드 1은 재현, 0은 완료된 범위 내 미재현, 2는 거부 또는 불충분한 결과입니다. 미재현은 수정 증명이 아닙니다. [네이티브 재검사 상세](docs/native-dast.md#repeat-a-native-finding-with-its-original-policy).
+
+
 ## 능동 DAST 프리뷰(선택)
 
-능동 검사는 대상에 생성 요청이나 템플릿 요청을 보내므로 저절로 실행되지 않습니다. 모든 능동 실행에는 `--active-consent`가 필요하며, 없으면 DNS 조회나 요청 전에 exit 2로 끝납니다. 소유했거나 검사 권한을 받은 대상만 검사하세요. 사설·loopback 대상은 `--allow-private`도 필요하고, 메타데이터·link-local 주소는 계속 차단됩니다. `--allowed-origin ORIGIN`(반복 가능)을 지정하면 목록에 없는 `--url`, `--api-base`, API 정책 `baseUrl`은 DNS 조회나 요청 전에 거부됩니다.
+능동 검사는 대상에 생성 요청이나 템플릿 요청을 보내므로 저절로 실행되지 않습니다. 모든 능동 실행에는 `--active-consent`가 필요하며, 없으면 DNS 조회나 요청 전에 exit 2로 끝납니다. 소유했거나 검사 권한을 받은 대상만 검사하세요. 사설·loopback 대상은 `--allow-private`도 필요하고, 메타데이터·link-local 주소는 계속 차단됩니다. `--allowed-origin ORIGIN`(반복 가능)을 지정하면 목록에 없는 `--url`, `--api-base`, API·네이티브 DAST 정책 `baseUrl`은 DNS 조회나 요청 전에 거부됩니다.
 
 ```sh
 # Schemathesis: 명시한 OpenAPI operation에 생성한 GET 입력
@@ -255,7 +289,7 @@ node build/src/cli.js scan --url http://127.0.0.1:3000/ --engine nuclei \
 
 GitHub Actions에서는 별도의 `dast` Action을 씁니다. 수동 검사 workflow가 능동 검사를 시작할 일이 없게 분리했습니다. `active-consent: 'true'`와 모든 대상 origin을 담은 `allowed-origins`가 필요합니다. 정책 평가를 위한 Node.js 설정 후 `pull_request_target`·fork PR·fork `workflow_run`은 엔진 다운로드·Python 설정·대상 요청 전에 거부합니다. Nuclei는 고정 아카이브로 설치하고, nuclei-templates는 기대한 `templates-checksum.txt` digest와 일치해야 합니다. [`examples/github-dast.yml`](examples/github-dast.yml)은 job 안에서 앱을 띄우고 push·PR·매일 스케줄로 검사한 뒤 SARIF를 올리고 보고서를 남깁니다.
 
-보고서에는 실행한 요청 수, 예산 때문에 거부한 요청 수, egress 거부 수, seed와 스키마 digest(Schemathesis), 템플릿 수·제외 수·`templates-checksum.txt` digest(Nuclei)를 남깁니다. 응답 본문, 생성 값, 추출 값, proxy 자격증명, 템플릿 원문은 남기지 않습니다. `wakeio-security-ci doctor --dast`는 아무것도 실행하지 않고 엔진 준비 상태만 보여 줍니다. 인증, 쓰기 요청, 상태 기반 workflow, 브라우저 기반 검사, 자체 probe와 크롤링은 이 프리뷰 범위가 아닙니다.
+보고서에는 실행한 요청 수, 예산 때문에 거부한 요청 수, egress 거부 수, seed와 스키마 digest(Schemathesis), 템플릿 수·제외 수·`templates-checksum.txt` digest(Nuclei)를 남깁니다. 응답 본문, 생성 값, 추출 값, proxy 자격증명, 템플릿 원문은 남기지 않습니다. `wakeio-security-ci doctor --dast`는 아무것도 실행하지 않고 엔진 준비 상태만 보여 줍니다. 인증, 쓰기 요청, 상태 기반 workflow, 브라우저 기반 검사와 크롤링은 이 프리뷰 범위가 아닙니다.
 
 ## 작은 합성 예시
 

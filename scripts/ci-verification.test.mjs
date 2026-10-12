@@ -110,6 +110,22 @@ test('owned DAST application fixture changes are included in the source receipt'
     assert.equal(before.fileCount, 1);
   } finally { await rm(root, { recursive: true, force: true }); }
 });
+test('active DAST Action changes are included in source receipts and symlinks are refused', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'wakeio-ci-dast-action-'));
+  try {
+    await mkdir(join(root, 'dast'));
+    await writeFile(join(root, 'dast/action.yml'), 'name: native DAST\n');
+    const before = sourceSnapshot(root);
+    assert.equal(before.fileCount, 1);
+    assert.match(before.scope, /dast/);
+    await writeFile(join(root, 'dast/action.yml'), 'name: changed native DAST\n');
+    assert.notEqual(sourceSnapshot(root).sha256, before.sha256);
+    await rm(join(root, 'dast/action.yml'));
+    await writeFile(join(root, 'outside.yml'), 'name: outside\n');
+    await symlink(join(root, 'outside.yml'), join(root, 'dast/action.yml'));
+    assert.throws(() => sourceSnapshot(root), /source_symlink_unsupported/);
+  } finally { await rm(root, { recursive: true, force: true }); }
+});
 test('deleted required source cannot use stale JS, and only a safe generated build is cleaned', async () => {
   const root = await mkdtemp(join(tmpdir(), 'wakeio-ci-stale-'));
   try {

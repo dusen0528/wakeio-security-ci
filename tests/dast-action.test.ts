@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { execFile, spawn, type ChildProcess } from "node:child_process";
+import { createServer } from "node:http";
 import { createHash } from "node:crypto";
 import { copyFile, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -263,4 +264,55 @@ test("DAST Action preflight skips engine setup for every refusal and records not
   } finally {
     await rm(top, { recursive: true, force: true });
   }
+});
+
+
+// Synthetic transport oracle; real SQL differential correctness is covered by dast-native.test.ts.
+test("DAST Action runs native policy from its bundle and refuses invalid policy before engine preparation", async () => {
+  let hits = 0;
+  const target = createServer((req, res) => {
+    hits++;
+    const value = new URL(req.url!, 'http://fixture.invalid').searchParams.get('id') ?? '';
+    res.setHeader('content-type', 'application/json');
+    res.end(JSON.stringify({ count: value.includes('1=2') ? 0 : 1 }));
+  });
+  await new Promise<void>(done => target.listen(0, '127.0.0.1', done));
+  const address = target.address(); assert.ok(address && typeof address === 'object');
+  const origin = `http://127.0.0.1:${address.port}`;
+  const top = await mkdtemp(join(tmpdir(), 'wakeio-native-action-'));
+  try {
+    const action = await actionLayout(top);
+    const paths = await workspaceFor(top);
+    const policyPath = join(paths.workspace, 'dast.json');
+    const policy = { version: 1, kind: 'sql-boolean-differential', baseUrl: `${origin}/`, url: `${origin}/items?id=1`,
+      parameter: 'id', profile: 'numeric', oracle: { jsonPointer: '/count', expectedBaseline: 1, expectedTrue: 1, expectedFalse: 0 } };
+    await writeFile(policyPath, JSON.stringify(policy));
+    const env: NodeJS.ProcessEnv = { PATH: process.env.PATH, WAKEIO_MODE: 'dast', WAKEIO_ACTION_PATH: action,
+      GITHUB_WORKSPACE: paths.workspace, GITHUB_OUTPUT: paths.output, GITHUB_STEP_SUMMARY: paths.summary, GITHUB_EVENT_NAME: 'push',
+      WAKEIO_ACTIVE_CONSENT: 'true', WAKEIO_ALLOWED_ORIGINS: origin, WAKEIO_DAST_POLICY: 'dast.json', WAKEIO_ALLOW_PRIVATE: 'true',
+      WAKEIO_OUT: 'reports' };
+    const preflight = await launch(join(action, 'scripts/action-run.mjs'), { ...env, WAKEIO_MODE: 'dast-preflight' }, paths.workspace);
+    assert.equal(preflight.code, 0, preflight.stderr);
+    assert.equal(outputs(await readFile(paths.output, 'utf8'))['prepare-schemathesis'], 'false');
+    assert.equal(hits, 0);
+    for (const override of [{ WAKEIO_ALLOWED_ORIGINS: 'https://outside.example' }, { WAKEIO_ACTIVE_CONSENT: '' }]) {
+      const refused = await launch(join(action, 'scripts/action-run.mjs'), { ...env, ...override }, paths.workspace);
+      assert.equal(refused.code, 2); assert.match(refused.stderr, /DAST refused/); assert.equal(hits, 0);
+    }
+    await writeFile(policyPath, JSON.stringify({ ...policy, parameter: 'unknown' }));
+    const invalid = await launch(join(action, 'scripts/action-run.mjs'), { ...env, WAKEIO_OPENAPI: 'openapi.json',
+      WAKEIO_API_BASE: `${origin}/`, WAKEIO_OPERATIONS: '/search', WAKEIO_SCHEMATHESIS_PYTHON: '/must-not-start' }, paths.workspace);
+    assert.equal(invalid.code, 2); assert.match(invalid.stderr, /DAST refused/); assert.equal(hits, 0);
+    await writeFile(policyPath, JSON.stringify(policy));
+    const complete = await launch(join(action, 'scripts/action-run.mjs'), env, paths.workspace);
+    assert.equal(complete.code, 1, complete.stderr); assert.equal(hits, 8);
+    const report = JSON.parse(await readFile(join(paths.workspace, 'reports/report.json'), 'utf8'));
+    assert.equal(report.checks[0].dastExecution.outcome, 'observed');
+    const values = outputs(await readFile(paths.output, 'utf8'));
+    assert.ok(values['report-agent']?.endsWith('agent-report.json'));
+    assert.match(await readFile(paths.summary, 'utf8'), /native http:\/\/127\.0\.0\.1/);
+    const partial = await launch(join(action, 'scripts/action-run.mjs'), { ...env, WAKEIO_DAST_MAX_REQUESTS: '7',
+      WAKEIO_FAIL_ON: 'none', WAKEIO_OUT: 'partial' }, paths.workspace);
+    assert.equal(partial.code, 2, partial.stderr); assert.match(partial.stderr, /DAST refused/); assert.equal(hits, 8);
+  } finally { await new Promise<void>(done => target.close(() => done())); await rm(top, { recursive: true, force: true }); }
 });

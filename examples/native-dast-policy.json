@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "kind": "sql-boolean-differential",
+  "baseUrl": "http://127.0.0.1:8787/",
+  "url": "http://127.0.0.1:8787/items?id=1",
+  "parameter": "id",
+  "profile": "numeric",
+  "oracle": {
+    "jsonPointer": "/count",
+    "expectedBaseline": 1,
+    "expectedTrue": 1,
+    "expectedFalse": 0
+  }
+}

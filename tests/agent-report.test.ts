@@ -196,11 +196,12 @@ test('agent target symlinks reject delivery before publishing any new report, CL
   } finally { await rm(top, { recursive: true, force: true }); }
 });
 
-test('agent artifacts are excluded from subsequent source collection', async () => {
+test('agent report and advice artifacts are excluded from subsequent source collection', async () => {
   const root = await mkdtemp(join(tmpdir(), 'wakeio-agent-collector-'));
   try {
     await writeFile(join(root, 'app.ts'), 'export const normal = true;');
     await writeFile(join(root, 'agent-report.json'), '{"private":"not source input"}');
+    await writeFile(join(root, 'agent-advice.json'), '{"advice":"not source input"}');
     const snapshot = await collectSource({ root });
     assert.deepEqual(snapshot.files.map((file) => file.path), ['app.ts']);
   } finally { await rm(root, { recursive: true, force: true }); }
