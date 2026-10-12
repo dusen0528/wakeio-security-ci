@@ -5,6 +5,9 @@
 
 - 프로젝트: Wakeio Security CI, npm 이름 `wakeio-security-ci`, Apache-2.0.
 - 공개 저장소: <https://github.com/dusen0528/wakeio-security-ci>.
+- 버전 상태: GitHub 소스와 체크인한 Action은 0.5.0이다. npm에 공개된 최신
+  패키지는 0.4.0이며 npm 0.5.0은 발행하지 않았다. 아래 0.5.0 기능은 검토한
+  Git commit 또는 이 checkout을 빌드해 사용한다.
 - 기본 scan 실행 경계: 로그인, 요금제, 전용 서버, LLM 호출 없이 local CLI와 composite
   Action을 실행한다. CI runner 시간·저장 공간·네트워크 사용량은 사용자의
   환경에서 소비된다.
@@ -16,6 +19,16 @@
 - API 정책 모드: 환경변수 인증정보, 같은 origin의 GET과 소유자 전후 대조,
   다른 계정·익명 거절 검증. 제한된 명시 정책만 실행하며 자동 로그인·결제·쓰기
   요청·퍼징은 하지 않는다.
+- API 실행 증거: 인덱스 기반 계획·실행 ledger와 이번 실행의 owner/actor/case
+  control을 맞춰 기록한다. 서로 맞지 않는 증거는 확인 완료로 승격하지 않는다.
+  `replay`는 정책 digest가 일치하는 case만 다시 검사하며, control 실패나 취소로
+  검사가 미완료면 앞선 노출 관측과 무관하게 `inconclusive`/exit 2다.
+- 능동 DAST: 명시적 동의를 요구한다. CLI의 `--allowed-origin`은 지정했을 때
+  적용하며 DAST Action의 `allowed-origins`는 필수다. HTTP Nuclei는
+  검증한 주소에 고정된 loopback gate에서 요청 예산을 적용한다. HTTPS Nuclei는
+  CONNECT 안의 HTTP 요청 수를 확인할 수 없어 대상 실행 전에 error/exit 2로
+  거부한다. Action은 Node.js 설정 뒤, Python·Schemathesis 엔진 준비 전에
+  trigger·동의·origin 정책을 확인한다.
 - 기본 scan 결과: `report.json` + `report.sarif`(SARIF 2.1.0) + `report.md` + `agent-report.json`. 민감값과 원문 코드를 결과에 담지
   않으며, `partial`, `error`, `skipped`, `not_applicable`, `unknown`,
   `not_observed`를 completed clean과 구분한다.
@@ -47,9 +60,10 @@
   test, target script를 실행하지 않는다. public preview workflow는
   `dusen0528/wakeio-security-ci@main`과 `tools: none`을 명시하며, 운영에서는
   검토한 full commit SHA로 pin한다.
-- 배포 상태: GitHub source repository는 공개되어 있고 source clone과 preview
-  Action을 사용할 수 있다. npm package는 아직 publish하지 않았고 GitHub
-  Marketplace listing/release도 없다. `package:release`는 local tarball,
+- 배포 상태: GitHub source repository와 GitHub release v0.4.0은 공개되어 있고
+  source clone과 preview Action을 사용할 수 있다. npm 0.4.0도 발행되었으나
+  GitHub release와 npm package 모두 0.5.0은 아직 발행하지 않았다.
+  `package:release`는 local tarball,
   source archive, SHA-256 manifest만 만든다.
 
 ## 선택적 repair 경계

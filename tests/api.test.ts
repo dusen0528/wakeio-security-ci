@@ -574,3 +574,159 @@ test("caller cancellation aborts an in-flight API request and prevents subsequen
     assert.ok(!JSON.stringify(result).includes(ENV.WAKEIO_OWNER_AUTH));
   } finally { await close(fixture.server); }
 });
+
+for (const mode of ['json', 'empty', 'malformed', 'canary', 'relocated-canary'] as const) {
+  test(`authenticated 401 is incomplete despite healthy identity controls: ${mode}`, async () => {
+    const fixture = fixtureServer((request, response) => {
+      if (identityResponse(request, response)) return;
+      if (request.headers.authorization === ENV.WAKEIO_OWNER_AUTH) json(response, 200, { id: 'test-one', canary: 'synthetic-private-canary' });
+      else if (request.headers.authorization === ENV.WAKEIO_OTHER_AUTH) {
+        if (mode === 'empty' || mode === 'malformed') response.writeHead(401, { 'Content-Type': 'application/json' }).end(mode === 'empty' ? '' : '{');
+        else json(response, 401, mode === 'canary' ? { canary: 'synthetic-private-canary' }
+          : mode === 'relocated-canary' ? { nested: ['synthetic-private-canary'] } : { error: 'synthetic-expired-session' });
+      } else json(response, 401, { error: 'unauthorized' });
+    });
+    const baseUrl = await listen(fixture.server);
+    try {
+      const configured = policyV2(baseUrl) as unknown as import('../src/api.js').ApiPolicyV2;
+      configured.cases[0]!.deny[0]!.allowEmptyBody = true;
+      configured.cases[0]!.allow.protected.match = 'json-values';
+      const [check] = await runApiPolicy({ policy: configured, allowPrivate: true, env: ENV });
+      assert.equal(check!.status, 'partial');
+      assert.equal(check!.metrics?.identityControlsPassed, 2, 'both point-in-time identity controls succeed');
+      assert.equal(check!.metrics?.authenticatedDeny401Count, 1);
+      assert.equal(check!.metrics?.requestCount, 8, 'same bounded plan, no refresh or retry request');
+      assert.equal(check!.findings.length, mode.includes('canary') ? 1 : 0, 'keep a canary exposure in an incomplete response');
+      assert.ok(check!.notes.some(note => note.includes('authentication was not established for this request')));
+      const { createReport, evaluateGate, toSarif, toMarkdown, toAgentReport } = await import('../src/report.js');
+      const report = createReport([check!], 'api', new Date());
+      assert.equal(evaluateGate(report, 'high').outcome, 'incomplete');
+      assert.equal(evaluateGate(report, 'none').exitCode, 2);
+      assert.equal(report.checks[0]!.metrics?.authenticatedDeny401Count, 1);
+      const serialized = JSON.stringify([report, toSarif(report), toMarkdown(report), toAgentReport(report)]);
+      for (const privateValue of [...Object.values(ENV), 'synthetic-private-canary', 'synthetic-expired-session', 'owner-user', 'other-user', 'shared-org']) {
+        assert.ok(!serialized.includes(privateValue), 'no token, principal, tenant, canary or raw error body');
+      }
+    } finally { await close(fixture.server); }
+  });
+}
+
+for (const empty of [false, true]) {
+  test(`anonymous 401 remains a scoped denial with healthy authenticated actors: empty=${empty}`, async () => {
+    const fixture = fixtureServer((request, response) => {
+      if (identityResponse(request, response)) return;
+      if (request.headers.authorization === ENV.WAKEIO_OWNER_AUTH) json(response, 200, { id: 'test-one', canary: 'synthetic-private-canary' });
+      else if (request.headers.authorization === ENV.WAKEIO_OTHER_AUTH) json(response, 403, { error: 'forbidden' });
+      else if (empty) response.writeHead(401).end();
+      else json(response, 401, { error: 'unauthorized' });
+    });
+    const baseUrl = await listen(fixture.server);
+    try {
+      const configured = policyV2(baseUrl) as unknown as import('../src/api.js').ApiPolicyV2;
+      configured.cases[0]!.deny[1]!.allowEmptyBody = empty;
+      const [check] = await runApiPolicy({ policy: configured, allowPrivate: true, env: ENV });
+      assert.equal(check!.status, 'completed');
+      assert.equal(check!.metrics?.authenticatedDeny401Count, 0);
+      assert.equal(check!.findings.length, 0);
+    } finally { await close(fixture.server); }
+  });
+}
+
+for (const [mode, metric] of [
+  ['expired', 'identityStatusMismatches'], ['principal', 'identityPrincipalMismatches'],
+  ['tenant', 'identityOrganizationMismatches'], ['malformed', 'identityResponseFailures'],
+  ['disconnect', 'identityRequestFailures'],
+] as const) {
+  test(`mid-run identity ${mode} is partial with a fixed diagnostic counter`, async () => {
+    let identityCalls = 0;
+    const fixture = fixtureServer((request, response) => {
+      if (request.url === '/whoami' && request.headers.authorization === ENV.WAKEIO_OTHER_AUTH && ++identityCalls === 2) {
+        if (mode === 'disconnect') { request.socket.destroy(); return; }
+        if (mode === 'malformed') { response.writeHead(200, { 'Content-Type': 'application/json' }).end('{'); return; }
+        json(response, mode === 'expired' ? 401 : 200, {
+          userId: mode === 'principal' ? 'synthetic-replaced-principal' : 'other-user',
+          orgId: mode === 'tenant' ? 'synthetic-other-tenant' : 'shared-org',
+        });
+        return;
+      }
+      if (identityResponse(request, response)) return;
+      if (request.headers.authorization === ENV.WAKEIO_OWNER_AUTH) json(response, 200, { id: 'test-one', canary: 'synthetic-private-canary' });
+      else json(response, 403, { error: 'forbidden' });
+    });
+    const baseUrl = await listen(fixture.server);
+    try {
+      const [check] = await runApiPolicy({ policy: policyV2(baseUrl), allowPrivate: true, env: ENV });
+      assert.equal(check!.status, 'partial');
+      assert.equal(check!.metrics?.identityControlsPassed, 1);
+      assert.equal(check!.metrics?.[metric], 1);
+      assert.equal(check!.metrics?.authenticatedDeny401Count, 0);
+      for (const other of ['identityStatusMismatches', 'identityPrincipalMismatches', 'identityOrganizationMismatches', 'identityResponseFailures', 'identityRequestFailures']) {
+        if (other !== metric) assert.equal(check!.metrics?.[other], 0);
+      }
+      assert.ok(!JSON.stringify(check).includes('synthetic-replaced-principal'));
+      assert.ok(!JSON.stringify(check).includes('synthetic-other-tenant'));
+    } finally { await close(fixture.server); }
+  });
+}
+
+test('a recovered authenticated 401 is still partial when later cases succeed', async () => {
+  let otherProbes = 0;
+  const fixture = fixtureServer((request, response) => {
+    if (identityResponse(request, response)) return;
+    if (request.headers.authorization === ENV.WAKEIO_OWNER_AUTH) json(response, 200, { id: 'test-one', canary: 'synthetic-private-canary' });
+    else if (request.headers.authorization === ENV.WAKEIO_OTHER_AUTH) json(response, ++otherProbes === 1 ? 401 : 403, { error: 'denied' });
+    else json(response, 401, { error: 'unauthorized' });
+  });
+  const baseUrl = await listen(fixture.server);
+  try {
+    const configured = policyV2(baseUrl) as unknown as import('../src/api.js').ApiPolicyV2;
+    configured.cases.push({ ...structuredClone(configured.cases[0]!), id: 'second-read' });
+    const [check] = await runApiPolicy({ policy: configured, allowPrivate: true, env: ENV });
+    assert.equal(check!.status, 'partial');
+    assert.equal(otherProbes, 2);
+    assert.equal(check!.metrics?.authenticatedDeny401Count, 1);
+    assert.equal(check!.metrics?.identityControlsPassed, 2);
+    assert.equal(check!.metrics?.requestCount, 12);
+  } finally { await close(fixture.server); }
+});
+
+test('credentials are snapshotted and never refreshed from a mutated environment mid-run', async () => {
+  const mutableEnv = { ...ENV };
+  const fixture = fixtureServer((request, response) => {
+    mutableEnv.WAKEIO_OTHER_AUTH = ENV.WAKEIO_OWNER_AUTH;
+    if (identityResponse(request, response)) return;
+    if (request.headers.authorization === ENV.WAKEIO_OWNER_AUTH) json(response, 200, { id: 'test-one', canary: 'synthetic-private-canary' });
+    else json(response, 403, { error: 'forbidden' });
+  });
+  const baseUrl = await listen(fixture.server);
+  try {
+    const [check] = await runApiPolicy({ policy: policyV2(baseUrl), allowPrivate: true, env: mutableEnv });
+    assert.equal(check!.status, 'completed');
+    assert.equal(check!.metrics?.identityControlsPassed, 2);
+    assert.equal(fixture.requests.filter(request => request.authorization === ENV.WAKEIO_OTHER_AUTH).length, 3);
+    assert.equal(fixture.requests.filter(request => request.authorization === ENV.WAKEIO_OWNER_AUTH).length, 4);
+  } finally { await close(fixture.server); }
+});
+
+test('mid-run options mutation cannot rewrite effective permissions or cancellation diagnostics', async () => {
+  const original = new AbortController();
+  const replacement = new AbortController();
+  replacement.abort();
+  let options: import('../src/api.js').ApiRunOptions;
+  const fixture = fixtureServer((request, response) => {
+    options.allowPrivate = false;
+    options.signal = replacement.signal;
+    if (identityResponse(request, response)) return;
+    if (request.headers.authorization === ENV.WAKEIO_OWNER_AUTH) json(response, 200, { id: 'test-one', canary: 'synthetic-private-canary' });
+    else json(response, 403, { error: 'forbidden' });
+  });
+  const baseUrl = await listen(fixture.server);
+  try {
+    options = { policy: policyV2(baseUrl), allowPrivate: true, env: ENV, signal: original.signal };
+    const [check] = await runApiPolicy(options);
+    assert.equal(check!.status, 'completed');
+    assert.equal(check!.metrics?.allowPrivate, true, 'report the captured permission that enabled all actual requests');
+    assert.equal(check!.metrics?.requestCount, 8);
+    assert.ok(!check!.notes.some(note => note.includes('cancelled')));
+  } finally { await close(fixture.server); }
+});

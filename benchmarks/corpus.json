@@ -1,5 +1,5 @@
 {
-  "corpusVersion": "2026-10-05.synthetic-js-ts.v2",
+  "corpusVersion": "2026-10-05.synthetic-js-ts.v3",
   "name": "Wakeio built-in source security regression corpus",
   "description": "Small, inspectable JavaScript and TypeScript fixtures for the public runSource API. Every input is synthetic and contains no real credential or customer data.",
   "scope": "The measured signal is the built-in AST candidate detector with tools: []. It is a scoped regression benchmark, not a production accuracy estimate.",
@@ -7,7 +7,8 @@
     "Python semantics are outside this JS/TS AST corpus and are not represented as production coverage.",
     "Real Next.js, React, Supabase, Express, database, or browser runtime behavior is not executed.",
     "Network, package installation, authentication, and framework build behavior are outside the measurement.",
-    "Only the declared static local/relative-module subset is supported; dynamic dispatch, package imports and full framework reachability remain outside the model."
+    "Only the declared static local/relative-module subset is supported; dynamic dispatch, package imports and full framework reachability remain outside the model.",
+    "Koa ctx.request.query input is an explicit known miss in this corpus; other unrepresented frameworks and dispatch patterns are not covered by the measured denominator."
   ],
   "cases": [
     {
@@ -18,7 +19,14 @@
       "fixture": "fixtures/sql-direct",
       "whyVulnerable": "A request query value is passed directly as the SQL argument.",
       "whyFixed": "No fixed variant is represented; request input remains connected to the SQL sink.",
-      "expectedFindings": [{ "ruleId": "ast:sql-input-sink", "path": "app.ts", "line": 2, "support": "supported" }]
+      "expectedFindings": [
+        {
+          "ruleId": "ast:sql-input-sink",
+          "path": "app.ts",
+          "line": 2,
+          "support": "supported"
+        }
+      ]
     },
     {
       "id": "sql-indirect",
@@ -28,7 +36,14 @@
       "fixture": "fixtures/sql-indirect",
       "whyVulnerable": "A request value is interpolated into a statement variable before the database call.",
       "whyFixed": "No fixed variant is represented; request input remains connected through the statement variable.",
-      "expectedFindings": [{ "ruleId": "ast:sql-input-sink", "path": "app.ts", "line": 3, "support": "supported" }]
+      "expectedFindings": [
+        {
+          "ruleId": "ast:sql-input-sink",
+          "path": "app.ts",
+          "line": 3,
+          "support": "supported"
+        }
+      ]
     },
     {
       "id": "sql-reassignment",
@@ -38,7 +53,14 @@
       "fixture": "fixtures/sql-reassignment",
       "whyVulnerable": "A query variable is reassigned from a safe literal to request input before execute.",
       "whyFixed": "No fixed variant is represented; the reassigned statement reaches execute with request data.",
-      "expectedFindings": [{ "ruleId": "ast:sql-input-sink", "path": "app.ts", "line": 4, "support": "supported" }]
+      "expectedFindings": [
+        {
+          "ruleId": "ast:sql-input-sink",
+          "path": "app.ts",
+          "line": 4,
+          "support": "supported"
+        }
+      ]
     },
     {
       "id": "html-direct",
@@ -48,7 +70,14 @@
       "fixture": "fixtures/html-direct",
       "whyVulnerable": "Request HTML is assigned directly to an innerHTML sink.",
       "whyFixed": "No fixed variant is represented; request HTML remains connected to innerHTML.",
-      "expectedFindings": [{ "ruleId": "ast:html-input-sink", "path": "app.ts", "line": 2, "support": "supported" }]
+      "expectedFindings": [
+        {
+          "ruleId": "ast:html-input-sink",
+          "path": "app.ts",
+          "line": 2,
+          "support": "supported"
+        }
+      ]
     },
     {
       "id": "html-indirect",
@@ -58,7 +87,14 @@
       "fixture": "fixtures/html-indirect",
       "whyVulnerable": "Request HTML is first stored in a markup variable and then rendered.",
       "whyFixed": "No fixed variant is represented; request HTML remains connected through the markup variable.",
-      "expectedFindings": [{ "ruleId": "ast:html-input-sink", "path": "app.ts", "line": 3, "support": "supported" }]
+      "expectedFindings": [
+        {
+          "ruleId": "ast:html-input-sink",
+          "path": "app.ts",
+          "line": 3,
+          "support": "supported"
+        }
+      ]
     },
     {
       "id": "html-insert-adjacent",
@@ -68,7 +104,14 @@
       "fixture": "fixtures/html-insert-adjacent",
       "whyVulnerable": "Request HTML is passed to insertAdjacentHTML.",
       "whyFixed": "No fixed variant is represented; request HTML is passed to the HTML insertion sink.",
-      "expectedFindings": [{ "ruleId": "ast:html-input-sink", "path": "app.ts", "line": 2, "support": "supported" }]
+      "expectedFindings": [
+        {
+          "ruleId": "ast:html-input-sink",
+          "path": "app.ts",
+          "line": 2,
+          "support": "supported"
+        }
+      ]
     },
     {
       "id": "exec-direct",
@@ -78,7 +121,14 @@
       "fixture": "fixtures/exec-direct",
       "whyVulnerable": "A request command is passed directly to child_process.exec.",
       "whyFixed": "No fixed variant is represented; request command text reaches exec.",
-      "expectedFindings": [{ "ruleId": "ast:shell-input-sink", "path": "app.ts", "line": 3, "support": "supported" }]
+      "expectedFindings": [
+        {
+          "ruleId": "ast:shell-input-sink",
+          "path": "app.ts",
+          "line": 3,
+          "support": "supported"
+        }
+      ]
     },
     {
       "id": "exec-indirect",
@@ -88,7 +138,14 @@
       "fixture": "fixtures/exec-indirect",
       "whyVulnerable": "A request command is copied into a variable before child_process.exec.",
       "whyFixed": "No fixed variant is represented; request command text reaches exec through a variable.",
-      "expectedFindings": [{ "ruleId": "ast:shell-input-sink", "path": "app.ts", "line": 4, "support": "supported" }]
+      "expectedFindings": [
+        {
+          "ruleId": "ast:shell-input-sink",
+          "path": "app.ts",
+          "line": 4,
+          "support": "supported"
+        }
+      ]
     },
     {
       "id": "exec-reassignment",
@@ -98,7 +155,14 @@
       "fixture": "fixtures/exec-reassignment",
       "whyVulnerable": "A command is initially fixed but later reassigned from request input before execSync.",
       "whyFixed": "No fixed variant is represented; reassignment replaces the fixed command with request input.",
-      "expectedFindings": [{ "ruleId": "ast:shell-input-sink", "path": "app.ts", "line": 5, "support": "supported" }]
+      "expectedFindings": [
+        {
+          "ruleId": "ast:shell-input-sink",
+          "path": "app.ts",
+          "line": 5,
+          "support": "supported"
+        }
+      ]
     },
     {
       "id": "fetch-direct",
@@ -108,7 +172,14 @@
       "fixture": "fixtures/fetch-direct",
       "whyVulnerable": "A request URL controls the outbound fetch target.",
       "whyFixed": "No fixed variant is represented; request URL controls the outbound target.",
-      "expectedFindings": [{ "ruleId": "ast:server-request", "path": "app.ts", "line": 2, "support": "supported" }]
+      "expectedFindings": [
+        {
+          "ruleId": "ast:server-request",
+          "path": "app.ts",
+          "line": 2,
+          "support": "supported"
+        }
+      ]
     },
     {
       "id": "fetch-indirect",
@@ -118,7 +189,14 @@
       "fixture": "fixtures/fetch-indirect",
       "whyVulnerable": "A request URL is stored in a target variable and passed to Axios.",
       "whyFixed": "No fixed variant is represented; request URL controls Axios through a variable.",
-      "expectedFindings": [{ "ruleId": "ast:server-request", "path": "app.ts", "line": 4, "support": "supported" }]
+      "expectedFindings": [
+        {
+          "ruleId": "ast:server-request",
+          "path": "app.ts",
+          "line": 4,
+          "support": "supported"
+        }
+      ]
     },
     {
       "id": "redirect-direct",
@@ -128,7 +206,14 @@
       "fixture": "fixtures/redirect-direct",
       "whyVulnerable": "A request destination controls the Next redirect target.",
       "whyFixed": "No fixed variant is represented; request destination reaches redirect directly.",
-      "expectedFindings": [{ "ruleId": "ast:open-redirect", "path": "app.ts", "line": 3, "support": "supported" }]
+      "expectedFindings": [
+        {
+          "ruleId": "ast:open-redirect",
+          "path": "app.ts",
+          "line": 3,
+          "support": "supported"
+        }
+      ]
     },
     {
       "id": "redirect-indirect",
@@ -138,7 +223,14 @@
       "fixture": "fixtures/redirect-indirect",
       "whyVulnerable": "A destination variable is reassigned from request input before permanentRedirect.",
       "whyFixed": "No fixed variant is represented; reassignment leaves request destination in the redirect argument.",
-      "expectedFindings": [{ "ruleId": "ast:open-redirect", "path": "app.ts", "line": 5, "support": "supported" }]
+      "expectedFindings": [
+        {
+          "ruleId": "ast:open-redirect",
+          "path": "app.ts",
+          "line": 5,
+          "support": "supported"
+        }
+      ]
     },
     {
       "id": "sql-cross-function-known-miss",
@@ -148,7 +240,14 @@
       "fixture": "fixtures/sql-cross-function-known-miss",
       "whyVulnerable": "Request input crosses a helper function before reaching a database sink.",
       "whyFixed": "No fixed variant is represented; the helper return still contains request data.",
-      "expectedFindings": [{ "ruleId": "ast:sql-input-sink", "path": "app.ts", "line": 2, "support": "supported" }]
+      "expectedFindings": [
+        {
+          "ruleId": "ast:sql-input-sink",
+          "path": "app.ts",
+          "line": 2,
+          "support": "supported"
+        }
+      ]
     },
     {
       "id": "sql-cross-file-known-miss",
@@ -158,7 +257,14 @@
       "fixture": "fixtures/sql-cross-file-known-miss",
       "whyVulnerable": "Request input is built in one module and consumed by a sink in another module.",
       "whyFixed": "No fixed variant is represented; the imported helper still builds SQL from request data.",
-      "expectedFindings": [{ "ruleId": "ast:sql-input-sink", "path": "sink.ts", "line": 2, "support": "supported" }]
+      "expectedFindings": [
+        {
+          "ruleId": "ast:sql-input-sink",
+          "path": "sink.ts",
+          "line": 2,
+          "support": "supported"
+        }
+      ]
     },
     {
       "id": "sql-parameterized",
@@ -308,6 +414,277 @@
       "fixture": "fixtures/redirect-string",
       "whyVulnerable": "The corresponding unsafe variant appears only in a string in this negative control.",
       "whyFixed": "The request and redirect text appears only inside a string; the actual redirect is static.",
+      "expectedFindings": []
+    },
+    {
+      "id": "express-send-direct-vulnerable",
+      "classification": "vulnerable",
+      "language": "typescript",
+      "framework": "synthetic Express string response handler",
+      "fixture": "fixtures/express-send-direct-vulnerable",
+      "whyVulnerable": "A string request query value is reflected in an Express HTML response.",
+      "whyFixed": "The request value is returned as JSON rather than parsed as an HTML response.",
+      "expectedFindings": [
+        {
+          "ruleId": "ast:html-input-sink",
+          "path": "app.ts",
+          "line": 2,
+          "support": "supported"
+        }
+      ]
+    },
+    {
+      "id": "express-send-direct-fixed",
+      "classification": "fixed",
+      "language": "typescript",
+      "framework": "synthetic Express string response handler",
+      "fixture": "fixtures/express-send-direct-fixed",
+      "whyVulnerable": "A string request query value is reflected in an Express HTML response.",
+      "whyFixed": "The request value is returned as JSON rather than parsed as an HTML response.",
+      "expectedFindings": []
+    },
+    {
+      "id": "express-send-template-vulnerable",
+      "classification": "vulnerable",
+      "language": "typescript",
+      "framework": "synthetic Express templated HTML handler",
+      "fixture": "fixtures/express-send-template-vulnerable",
+      "whyVulnerable": "An unescaped query value is interpolated into the HTML sent to the browser.",
+      "whyFixed": "Only fixed markup is sent as HTML.",
+      "expectedFindings": [
+        {
+          "ruleId": "ast:html-input-sink",
+          "path": "app.ts",
+          "line": 3,
+          "support": "supported"
+        }
+      ]
+    },
+    {
+      "id": "express-send-template-fixed",
+      "classification": "fixed",
+      "language": "typescript",
+      "framework": "synthetic Express templated HTML handler",
+      "fixture": "fixtures/express-send-template-fixed",
+      "whyVulnerable": "An unescaped query value is interpolated into the HTML sent to the browser.",
+      "whyFixed": "Only fixed markup is sent as HTML.",
+      "expectedFindings": []
+    },
+    {
+      "id": "express-send-receiver-vulnerable",
+      "classification": "vulnerable",
+      "language": "typescript",
+      "framework": "synthetic Express response versus local send method",
+      "fixture": "fixtures/express-send-receiver-vulnerable",
+      "whyVulnerable": "A request value is concatenated into markup sent by the response receiver.",
+      "whyFixed": "The local method named send only counts text length and is not a response or HTML sink.",
+      "expectedFindings": [
+        {
+          "ruleId": "ast:html-input-sink",
+          "path": "app.ts",
+          "line": 2,
+          "support": "supported"
+        }
+      ]
+    },
+    {
+      "id": "express-send-receiver-fixed",
+      "classification": "fixed",
+      "language": "typescript",
+      "framework": "synthetic Express response versus local send method",
+      "fixture": "fixtures/express-send-receiver-fixed",
+      "whyVulnerable": "A request value is concatenated into markup sent by the response receiver.",
+      "whyFixed": "The local method named send only counts text length and is not a response or HTML sink.",
+      "expectedFindings": []
+    },
+    {
+      "id": "express-class-sql-vulnerable",
+      "classification": "vulnerable",
+      "language": "typescript",
+      "framework": "synthetic Express handler with local repository class",
+      "fixture": "fixtures/express-class-sql-vulnerable",
+      "whyVulnerable": "Request input crosses a method on an immutable local repository instance and becomes SQL structure.",
+      "whyFixed": "The same method keeps SQL structure fixed and supplies the request value only as a bound parameter.",
+      "expectedFindings": [
+        {
+          "ruleId": "ast:sql-input-sink",
+          "path": "app.ts",
+          "line": 3,
+          "support": "supported"
+        }
+      ]
+    },
+    {
+      "id": "express-class-sql-fixed",
+      "classification": "fixed",
+      "language": "typescript",
+      "framework": "synthetic Express handler with local repository class",
+      "fixture": "fixtures/express-class-sql-fixed",
+      "whyVulnerable": "Request input crosses a method on an immutable local repository instance and becomes SQL structure.",
+      "whyFixed": "The same method keeps SQL structure fixed and supplies the request value only as a bound parameter.",
+      "expectedFindings": []
+    },
+    {
+      "id": "next-searchparams-sql-vulnerable",
+      "classification": "vulnerable",
+      "language": "typescript",
+      "framework": "synthetic Next request.nextUrl route handler",
+      "fixture": "fixtures/next-searchparams-sql-vulnerable",
+      "whyVulnerable": "The Next request URL query value is interpolated into SQL statement text.",
+      "whyFixed": "The request URL query value is supplied separately from fixed SQL statement text.",
+      "expectedFindings": [
+        {
+          "ruleId": "ast:sql-input-sink",
+          "path": "app.ts",
+          "line": 3,
+          "support": "supported"
+        }
+      ]
+    },
+    {
+      "id": "next-searchparams-sql-fixed",
+      "classification": "fixed",
+      "language": "typescript",
+      "framework": "synthetic Next request.nextUrl route handler",
+      "fixture": "fixtures/next-searchparams-sql-fixed",
+      "whyVulnerable": "The Next request URL query value is interpolated into SQL statement text.",
+      "whyFixed": "The request URL query value is supplied separately from fixed SQL statement text.",
+      "expectedFindings": []
+    },
+    {
+      "id": "next-searchparams-html-vulnerable",
+      "classification": "vulnerable",
+      "language": "typescript",
+      "framework": "synthetic Next route returning an HTML Response",
+      "fixture": "fixtures/next-searchparams-html-vulnerable",
+      "whyVulnerable": "The request URL query value is reflected without escaping into an explicitly HTML response.",
+      "whyFixed": "The response is serialized as JSON with no HTML parsing sink.",
+      "expectedFindings": [
+        {
+          "ruleId": "ast:html-input-sink",
+          "path": "app.ts",
+          "line": 3,
+          "support": "supported"
+        }
+      ]
+    },
+    {
+      "id": "next-searchparams-html-fixed",
+      "classification": "fixed",
+      "language": "typescript",
+      "framework": "synthetic Next route returning an HTML Response",
+      "fixture": "fixtures/next-searchparams-html-fixed",
+      "whyVulnerable": "The request URL query value is reflected without escaping into an explicitly HTML response.",
+      "whyFixed": "The response is serialized as JSON with no HTML parsing sink.",
+      "expectedFindings": []
+    },
+    {
+      "id": "koa-query-sql-vulnerable",
+      "classification": "vulnerable",
+      "language": "typescript",
+      "framework": "synthetic Koa ctx.request.query database handler",
+      "fixture": "fixtures/koa-query-sql-vulnerable",
+      "whyVulnerable": "Koa request query input is interpolated into SQL text.",
+      "whyFixed": "The same Koa input is supplied only as bound parameter data.",
+      "expectedFindings": [
+        {
+          "ruleId": "ast:sql-input-sink",
+          "path": "app.ts",
+          "line": 3,
+          "support": "known_miss",
+          "knownUnsupported": "The bounded input model does not recognize Koa ctx.request.query as request input."
+        }
+      ]
+    },
+    {
+      "id": "koa-query-sql-fixed",
+      "classification": "fixed",
+      "language": "typescript",
+      "framework": "synthetic Koa ctx.request.query database handler",
+      "fixture": "fixtures/koa-query-sql-fixed",
+      "whyVulnerable": "Koa request query input is interpolated into SQL text.",
+      "whyFixed": "The same Koa input is supplied only as bound parameter data.",
+      "expectedFindings": []
+    },
+    {
+      "id": "imported-sql-template-vulnerable",
+      "classification": "vulnerable",
+      "language": "typescript",
+      "framework": "synthetic route with relative ESM SQL template helper",
+      "fixture": "fixtures/imported-sql-template-vulnerable",
+      "whyVulnerable": "A relative imported helper returns a SQL template containing its actual request-derived argument.",
+      "whyFixed": "The helper returns fixed parameterized SQL; the caller passes request input as separate bound data.",
+      "expectedFindings": [
+        {
+          "ruleId": "ast:sql-input-sink",
+          "path": "app.ts",
+          "line": 3,
+          "support": "supported"
+        }
+      ]
+    },
+    {
+      "id": "imported-sql-template-fixed",
+      "classification": "fixed",
+      "language": "typescript",
+      "framework": "synthetic route with relative ESM SQL template helper",
+      "fixture": "fixtures/imported-sql-template-fixed",
+      "whyVulnerable": "A relative imported helper returns a SQL template containing its actual request-derived argument.",
+      "whyFixed": "The helper returns fixed parameterized SQL; the caller passes request input as separate bound data.",
+      "expectedFindings": []
+    },
+    {
+      "id": "imported-sql-concat-vulnerable",
+      "classification": "vulnerable",
+      "language": "typescript",
+      "framework": "synthetic route with relative ESM SQL concatenation helper",
+      "fixture": "fixtures/imported-sql-concat-vulnerable",
+      "whyVulnerable": "An aliased relative import concatenates request-derived text into the SQL statement.",
+      "whyFixed": "The imported helper returns a fixed statement and the caller provides request data as a separate parameter.",
+      "expectedFindings": [
+        {
+          "ruleId": "ast:sql-input-sink",
+          "path": "app.ts",
+          "line": 3,
+          "support": "supported"
+        }
+      ]
+    },
+    {
+      "id": "imported-sql-concat-fixed",
+      "classification": "fixed",
+      "language": "typescript",
+      "framework": "synthetic route with relative ESM SQL concatenation helper",
+      "fixture": "fixtures/imported-sql-concat-fixed",
+      "whyVulnerable": "An aliased relative import concatenates request-derived text into the SQL statement.",
+      "whyFixed": "The imported helper returns a fixed statement and the caller provides request data as a separate parameter.",
+      "expectedFindings": []
+    },
+    {
+      "id": "express-status-send-vulnerable",
+      "classification": "vulnerable",
+      "language": "typescript",
+      "framework": "synthetic Express status-chain HTML response handler",
+      "fixture": "fixtures/express-status-send-vulnerable",
+      "whyVulnerable": "A response status chain sends unescaped request-derived HTML.",
+      "whyFixed": "The response status chain sends JSON rather than parsing request text as HTML.",
+      "expectedFindings": [
+        {
+          "ruleId": "ast:html-input-sink",
+          "path": "app.ts",
+          "line": 2,
+          "support": "supported"
+        }
+      ]
+    },
+    {
+      "id": "express-status-send-fixed",
+      "classification": "fixed",
+      "language": "typescript",
+      "framework": "synthetic Express status-chain HTML response handler",
+      "fixture": "fixtures/express-status-send-fixed",
+      "whyVulnerable": "A response status chain sends unescaped request-derived HTML.",
+      "whyFixed": "The response status chain sends JSON rather than parsing request text as HTML.",
       "expectedFindings": []
     }
   ]

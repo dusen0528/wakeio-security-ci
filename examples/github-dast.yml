@@ -1,0 +1,100 @@
+# Example: continuous active DAST against an application started inside the job.
+# Copy to .github/workflows/ in the application repository and adapt the
+# "Start the application" and "Wait for the application" steps.
+#
+# Safety model:
+# - The scan targets only origins listed in allowed-origins (keep them in a
+#   repository variable) and only runs with active-consent: 'true'.
+# - The Action refuses pull_request_target and pull requests from forks before
+#   any download or request; the job-level `if` skips those runs instead of failing.
+# - Engines and templates are pinned: Nuclei 3.11.1 by archive SHA-256 inside the
+#   Action, nuclei-templates by commit plus the templates-checksum.txt digest.
+# - Reports never contain response bodies, generated values or credentials.
+name: active-dast
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+  schedule:
+    - cron: '17 3 * * *'   # daily continuous check
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dast:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      security-events: write   # SARIF upload only
+    steps:
+      - name: Check out the application
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+
+      - name: Start the application under test
+        # Replace with your own start command. Use test data only; never point
+        # the scan at production or at data you are not allowed to test.
+        run: docker compose up -d
+
+      - name: Wait for the application
+        run: |
+          for attempt in $(seq 1 60); do
+            curl --silent --fail --max-time 2 http://127.0.0.1:3000/ >/dev/null && exit 0
+            sleep 2
+          done
+          echo "application did not become ready" >&2
+          exit 1
+
+      - name: Check out pinned nuclei-templates (v10.5.0)
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: projectdiscovery/nuclei-templates
+          ref: f8b8b8dcd70d93826c3767e1829ef8243af9f03b
+          path: .wakeio/nuclei-templates
+          persist-credentials: false
+
+      - name: Run Wakeio active DAST
+        id: dast
+        # Pin to a reviewed commit of wakeio-security-ci, not a moving tag.
+        uses: dusen0528/wakeio-security-ci/dast@REVIEWED_COMMIT_SHA
+        with:
+          active-consent: 'true'
+          allowed-origins: ${{ vars.WAKEIO_DAST_ALLOWED_ORIGINS }}   # e.g. http://127.0.0.1:3000
+          allow-private: 'true'                                     # the app runs inside this job
+          url: http://127.0.0.1:3000/
+          engines: nuclei
+          nuclei-templates: .wakeio/nuclei-templates
+          nuclei-templates-sha256: a221c053f1bb5562f5c790c76184bc91da2af3819080776a8c87e9c6787cb473
+          nuclei-scope: misconfiguration,exposures
+          openapi: openapi.json
+          api-base: http://127.0.0.1:3000/
+          operations: |
+            /items/{id}
+            /search
+          seed: '1'
+          fail-on: high
+
+      - name: Upload SARIF to code scanning
+        if: always() && steps.dast.outputs.report-sarif != ''
+        uses: github/codeql-action/upload-sarif@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2
+        with:
+          sarif_file: ${{ steps.dast.outputs.report-sarif }}
+          category: wakeio-active-dast
+
+      - name: Save reports
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: wakeio-active-dast-reports
+          path: wakeio-dast-reports
+          if-no-files-found: warn
+
+      - name: Stop the application
+        if: always()
+        run: docker compose down --volumes

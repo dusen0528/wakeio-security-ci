@@ -1,3 +1,5 @@
+import { types as utilTypes } from "node:util";
+import { sanitiseApiExecutionLedger, invalidApiExecutionLedger } from "./api-execution.js";
 import { redactSecrets, safeRelativePath, safeHttpUrl } from './report-path.js';
 import { sanitiseAnalysisBudget } from './source/analysis-budget.js';
 import { sanitiseApiStateEvidence } from './api-state-observer.js';
@@ -10,9 +12,16 @@ import { GAP_REPORT_LIMIT, capAnalysisGaps, sanitiseAnalysisGaps } from './analy
 import type {
   AgentReport,
   AnalysisGapReasonSummary,
+  ApiExecutionLedger,
+  ApiRequestPlanStep,
   CheckResult,
   FailOn,
   Finding,
+  FindingControlOutcome,
+  FindingEvidence,
+  FindingEvidenceStep,
+  FindingReplay,
+  FindingControlVerification,
   Mode,
   ScanProvenance,
   ScanReport,
@@ -25,8 +34,8 @@ import type {
 export const REPORT_SCHEMA_VERSION = '1.0.0' as const;
 
 /** The version advertised to SARIF consumers when the package is built. */
-export const REPORT_TOOL_VERSION = '0.4.0-dev.1';
-export const RULESET_VERSION = '2026-10-05.17';
+export const REPORT_TOOL_VERSION = '0.5.0';
+export const RULESET_VERSION = '2026-10-06.3';
 
 const SEVERITIES: readonly Severity[] = [
   'info',
@@ -261,6 +270,7 @@ function projectAgentReport(report: ScanReport, failOn: FailOn): AgentReport {
       ...(check.analysisBudget ? { analysisBudget: check.analysisBudget } : {}),
       ...(check.analysisGaps ? { analysisGaps: check.analysisGaps } : {}),
       ...(check.apiStateEvidence ? { apiStateEvidence: check.apiStateEvidence } : {}),
+      ...(check.apiExecution ? { apiExecution: check.apiExecution } : {}),
     })),
     findings: report.checks.flatMap((check, checkIndex) => check.findings.map((finding) => ({
       findingId: finding.id!,
@@ -275,6 +285,9 @@ function projectAgentReport(report: ScanReport, failOn: FailOn): AgentReport {
       evidence: { kind: finding.kind, basis: 'scanner_report' as const,
         traceStatus: finding.staticFlow ? finding.staticFlow.truncated ? 'static_truncated' as const : 'static_provided' as const : 'not_provided' as const,
         ...(finding.staticFlow ? { staticFlow: finding.staticFlow } : {}),
+        ...(finding.controlVerification ? { controlVerification: finding.controlVerification } : {}),
+        ...(finding.evidence ? { apiExecution: finding.evidence } : {}),
+        ...(finding.replay ? { replay: finding.replay } : {}),
       },
       location: finding.location,
       ...(finding.references ? { references: finding.references } : {}),
@@ -342,6 +355,9 @@ export function toSarif(report: ScanReport): SarifLog {
           confidence: finding.confidence,
           severity: finding.severity,
           remediation: safeText(finding.remediation, 'Review the finding and verify the affected scope.'),
+          ...(finding.controlVerification ? { controlVerification: finding.controlVerification } : {}),
+          ...(finding.evidence ? { evidence: finding.evidence } : {}),
+          ...(finding.replay ? { replay: finding.replay } : {}),
         },
       };
 
@@ -405,6 +421,10 @@ export function toSarif(report: ScanReport): SarifLog {
           schemaVersion: safeReport.schemaVersion,
           ...(safeReport.scope?.analysisBudget ? { analysisBudget: safeReport.scope.analysisBudget } : {}),
           ...(safeReport.checks.some(check => check.analysisBudget) ? { analysisBudgets: safeReport.checks.flatMap((check, checkIndex) => check.analysisBudget ? [{ checkIndex, checkId: check.id, analysisBudget: check.analysisBudget }] : []) } : {}),
+          ...(safeReport.checks.some(check => check.apiExecution) ? {
+            apiExecution: safeReport.checks.flatMap((check, checkIndex) => check.apiExecution
+              ? [{ checkIndex, checkId: check.id, apiExecution: check.apiExecution }] : []),
+          } : {}),
           ...(safeReport.checks.some(check => check.apiStateEvidence) ? {
             apiStateEvidence: safeReport.checks.flatMap((check, checkIndex) => check.apiStateEvidence
               ? [{ checkIndex, checkId: check.id, apiStateEvidence: check.apiStateEvidence }] : []),
@@ -465,10 +485,20 @@ export function toMarkdown(report: ScanReport, failOn: FailOn = 'high'): string 
       for (const note of check.notes) {
         lines.push(`  - Note: ${markdownInline(note)}`);
       }
+      if (check.apiExecution) {
+        const e = check.apiExecution;
+        lines.push(`  - API execution ledger v1: ${e.status}; evaluated=${e.counts.evaluated ?? 'unknown'}, inconclusive=${e.counts.inconclusive ?? 'unknown'}, not attempted=${e.counts.notAttempted ?? 'unknown'}, HTTP attempts=${e.counts.httpAttempts ?? 'unknown'}. Declared metadata, not independent response proof.`);
+        for (const step of e.steps.filter(step => step.outcome !== 'evaluated')) {
+          const planned = e.plan!.steps[step.ordinal];
+          lines.push(`    - Step ${step.ordinal}: ${planned.phase}, actor index ${planned.actorIndex}${planned.caseIndex === undefined ? '' : `, case index ${planned.caseIndex}`}: ${step.outcome} (${step.reason}).`);
+        }
+      }
       if (check.apiStateEvidence) {
         const e = check.apiStateEvidence;
         lines.push(`  - Owned synthetic resource evidence (${e.phase}): execution=${e.execution}, effect=${e.effect}, normal=${e.normal}, verification=${e.verification}, cleanup=${e.cleanup}.`,
           `  - API requests=${e.counts.apiRequests ?? 'unknown'}; next evidence=${e.nextEvidence}. Finding verification is unchanged; this is not whole-app security proof.`);
+        if (e.controlOutcomes) lines.push(`  - Independent logical control outcomes (0–11): ${e.controlOutcomes.join(', ')}.`);
+        if (e.repetition) lines.push(`  - Owned repetition: requested rounds=2; completed phases=${e.repetition.completedPhases}/4; consistency=${e.repetition.consistency}. Bounded observations, not statistical or production verification.`);
       }
       if (check.analysisGaps) {
         const gaps = check.analysisGaps;
@@ -508,6 +538,12 @@ export function toMarkdown(report: ScanReport, failOn: FailOn = 'high'): string 
         for (const item of finding.staticFlow.steps) {
           lines.push(`    - ${item.role}: ${markdownInline(item.location.path)}:${item.location.line}:${item.location.column}`);
         }
+      }
+      if (finding.controlVerification) {
+        lines.push(`  - In-run controls: ${finding.controlVerification.state} (${finding.controlVerification.method}; scoped to this policy case; not exploit or fix verification)`);
+      }
+      if (finding.replay) {
+        lines.push(`  - Replay: case ${markdownInline(finding.replay.caseId)}, actor ${markdownInline(finding.replay.actor)}, policy sha256 ${finding.replay.policySha256}`);
       }
       lines.push(`  - Remediation: ${markdownInline(finding.remediation)}`);
       if (finding.references && finding.references.length > 0) {
@@ -645,11 +681,18 @@ function sanitiseChecks(input: CheckResult[] | undefined): CheckResult[] {
 
 function sanitiseCheck(input: CheckResult): CheckResult {
   let status = STATUSES.includes(input?.status) ? input.status : 'error';
+  const executionDescriptor = input && typeof input === 'object' && !utilTypes.isProxy(input)
+    ? Object.getOwnPropertyDescriptor(input, 'apiExecution') : undefined;
+  let apiExecution = executionDescriptor ? sanitiseApiExecutionLedger('value' in executionDescriptor ? executionDescriptor.value : undefined) : undefined;
+  if (apiExecution && (input.id !== 'api.authorization'
+    || (input.metrics?.requestCount !== undefined && input.metrics.requestCount !== apiExecution.counts.httpAttempts))) apiExecution = invalidApiExecutionLedger();
+  if (apiExecution && (apiExecution.status !== 'complete' || status === 'not_applicable') && status !== 'error') status = 'partial';
   const apiStateEvidence = input?.apiStateEvidence === undefined ? undefined : sanitiseApiStateEvidence(input.apiStateEvidence);
   if (input?.id === 'api.owned-state-oracle' && apiStateEvidence?.execution !== undefined && apiStateEvidence.execution !== 'completed' && status === 'completed') status = 'partial';
   const analysisBudget = sanitiseAnalysisBudget(input?.analysisBudget);
+  const proofLedger = input?.id === 'api.authorization' ? apiExecution : undefined;
   const findings = Array.isArray(input?.findings)
-    ? input.findings.map(sanitiseFinding)
+    ? input.findings.map((finding) => sanitiseFinding(finding, proofLedger))
     : [];
   const notes = Array.isArray(input?.notes)
     ? input.notes.map((note) => safeText(note)).filter(Boolean)
@@ -680,6 +723,7 @@ function sanitiseCheck(input: CheckResult): CheckResult {
     ...(analysisBudget ? { analysisBudget } : {}),
     ...(analysisGaps ? { analysisGaps } : {}),
     ...(apiStateEvidence ? { apiStateEvidence } : {}),
+    ...(apiExecution ? { apiExecution } : {}),
   };
 }
 
@@ -768,7 +812,96 @@ export async function writeArtifacts(outDir: string, artifacts: ReadonlyArray<re
   for (const [name, contents] of artifacts) await atomicWrite(resolve(targetDir, name), contents);
 }
 
-function sanitiseFinding(input: Finding): Finding {
+const HEX_SHA256 = /^[a-f0-9]{64}$/;
+const POLICY_IDENTIFIER = /^[A-Za-z][A-Za-z0-9_-]{0,63}$/;
+const CONTROL_OUTCOMES: readonly FindingControlOutcome[] = ['passed', 'failed', 'not_applicable'];
+const EVIDENCE_PHASES: readonly FindingEvidenceStep['phase'][] = ['identity-before', 'owner-before', 'deny', 'owner-after', 'identity-after'];
+
+function plainRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value) && !utilTypes.isProxy(value);
+}
+
+function sanitiseFindingReplay(input: unknown): FindingReplay | undefined {
+  if (!plainRecord(input) || input.kind !== 'api-policy-case') return undefined;
+  const { policySha256, caseId, actor } = input;
+  if (typeof policySha256 !== 'string' || !HEX_SHA256.test(policySha256)
+    || typeof caseId !== 'string' || !POLICY_IDENTIFIER.test(caseId)
+    || typeof actor !== 'string' || !POLICY_IDENTIFIER.test(actor)) return undefined;
+  return { kind: 'api-policy-case', policySha256, caseId, actor };
+}
+
+/** Evidence must restate this check's own ledger; anything else is dropped. */
+function sanitiseFindingEvidence(input: unknown, ledger: ApiExecutionLedger): FindingEvidence | undefined {
+  const plan = ledger.plan;
+  if (!plainRecord(input) || input.basis !== 'api-execution-ledger' || ledger.status === 'invalid' || !plan
+    || typeof input.planSha256 !== 'string' || input.planSha256 !== ledger.planSha256) return undefined;
+  const steps = input.steps;
+  if (!Array.isArray(steps) || steps.length === 0 || steps.length > EVIDENCE_PHASES.length) return undefined;
+  const result: FindingEvidenceStep[] = [];
+  const actorByIndex = new Map<number, string>();
+  const plannedByPhase = new Map<FindingEvidenceStep['phase'], ApiRequestPlanStep>();
+  for (const step of steps) {
+    if (!plainRecord(step)) return undefined;
+    const { ordinal, phase, actor, outcome, httpStatus } = step;
+    const recorded = typeof ordinal === 'number' ? ledger.steps.find((entry) => entry.ordinal === ordinal) : undefined;
+    const planned = typeof ordinal === 'number' ? plan.steps.find((entry) => entry.ordinal === ordinal) : undefined;
+    if (!recorded || !planned || planned.phase !== phase || recorded.outcome !== outcome || recorded.httpStatus !== httpStatus
+      || typeof actor !== 'string' || !POLICY_IDENTIFIER.test(actor)
+      || (result.length > 0 && result[result.length - 1].ordinal >= recorded.ordinal)
+      || result.some((entry) => entry.phase === planned.phase)) return undefined;
+    const knownActor = actorByIndex.get(planned.actorIndex);
+    if (knownActor !== undefined && knownActor !== actor) return undefined;
+    actorByIndex.set(planned.actorIndex, actor);
+    plannedByPhase.set(planned.phase, planned);
+    result.push({ ordinal: recorded.ordinal, phase: planned.phase, actor, outcome: recorded.outcome, httpStatus: recorded.httpStatus });
+  }
+  const probe = plannedByPhase.get('deny');
+  const ownerBefore = plannedByPhase.get('owner-before');
+  const ownerAfter = plannedByPhase.get('owner-after');
+  if (probe && (['identity-before', 'identity-after'] as const).some((phase) => {
+    const identity = plannedByPhase.get(phase);
+    const required = plan.steps.find((entry) => entry.phase === phase && entry.actorIndex === probe.actorIndex);
+    return identity?.ordinal !== required?.ordinal;
+  })) return undefined;
+  if (ownerBefore && ownerAfter && (ownerBefore.actorIndex !== ownerAfter.actorIndex || ownerBefore.caseIndex !== ownerAfter.caseIndex)) return undefined;
+  if (probe && (ownerBefore && probe.caseIndex !== ownerBefore.caseIndex || ownerAfter && probe.caseIndex !== ownerAfter.caseIndex)) return undefined;
+  return { basis: 'api-execution-ledger', planSha256: input.planSha256, steps: result };
+}
+
+function verificationSupported(controls: FindingControlVerification['controls'], evidence: FindingEvidence | undefined, replay: FindingReplay | undefined): boolean {
+  if (!evidence || !replay || !controls.probeCompleted || controls.ownerBefore !== 'passed' || controls.ownerAfter !== 'passed') return false;
+  const evaluated = (phase: FindingEvidenceStep['phase']) => evidence.steps.find((step) => step.phase === phase && step.outcome === 'evaluated');
+  const probe = evaluated('deny');
+  if (!probe || !evaluated('owner-before') || !evaluated('owner-after') || probe.actor !== replay.actor) return false;
+  return ([['identityBefore', 'identity-before'], ['identityAfter', 'identity-after']] as const).every(([control, phase]) => {
+    if (controls[control] === 'not_applicable') return probe.actor === 'anonymous' && !evidence.steps.some((step) => step.phase === phase);
+    return controls[control] === 'passed' && evaluated(phase)?.actor === probe.actor;
+  });
+}
+
+/** A controls_passed claim without matching ledger evidence and replay inputs is demoted. */
+function sanitiseFindingControlVerification(input: unknown, evidence: FindingEvidence | undefined, replay: FindingReplay | undefined): FindingControlVerification | undefined {
+  if (!plainRecord(input) || input.method !== 'api-differential-canary' || (input.state !== 'controls_passed' && input.state !== 'inconclusive')) return undefined;
+  const raw = input.controls;
+  if (!plainRecord(raw) || raw.probe !== 'canary_exposed' || typeof raw.probeCompleted !== 'boolean') return undefined;
+  const outcome = (value: unknown) => CONTROL_OUTCOMES.find((entry) => entry === value);
+  const identityBefore = outcome(raw.identityBefore), ownerBefore = outcome(raw.ownerBefore);
+  const ownerAfter = outcome(raw.ownerAfter), identityAfter = outcome(raw.identityAfter);
+  if (!identityBefore || !ownerBefore || !ownerAfter || !identityAfter) return undefined;
+  const controls: FindingControlVerification['controls'] = { identityBefore, ownerBefore, probe: 'canary_exposed', probeCompleted: raw.probeCompleted, ownerAfter, identityAfter };
+  const state = input.state === 'controls_passed' && verificationSupported(controls, evidence, replay) ? 'controls_passed' : 'inconclusive';
+  return { state, method: 'api-differential-canary', controls };
+}
+
+function sanitiseFindingProof(input: Finding, ledger: ApiExecutionLedger | undefined): Pick<Finding, 'controlVerification' | 'evidence' | 'replay'> {
+  if (!ledger || !plainRecord(input)) return {};
+  const replay = sanitiseFindingReplay(input.replay);
+  const evidence = sanitiseFindingEvidence(input.evidence, ledger);
+  const controlVerification = sanitiseFindingControlVerification(input.controlVerification, evidence, replay);
+  return { ...(controlVerification ? { controlVerification } : {}), ...(evidence ? { evidence } : {}), ...(replay ? { replay } : {}) };
+}
+
+function sanitiseFinding(input: Finding, proofLedger?: ApiExecutionLedger): Finding {
   const severity = SEVERITIES.includes(input?.severity) ? input.severity : 'info';
   const confidence = CONFIDENCES.includes(input?.confidence)
     ? input.confidence
@@ -800,6 +933,7 @@ function sanitiseFinding(input: Finding): Finding {
     ...(comparisonKey ? { comparisonKey } : {}),
     ...(staticFlow ? { staticFlow } : {}),
     ...(references && references.length > 0 ? { references } : {}),
+    ...sanitiseFindingProof(input, proofLedger),
   };
 }
 

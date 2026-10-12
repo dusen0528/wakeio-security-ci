@@ -6,7 +6,8 @@ import { isAbsolute, resolve } from "node:path";
 import type { Mode, ScanScope, SourceOptions, ToolName, UrlOptions } from "./contracts.js";
 import { runSource } from "./source.js";
 import { runUrl } from "./url.js";
-import { createReport, exitCode, writeReports, RULESET_VERSION } from "./report.js";
+import { createReport, exitCode, writeArtifacts, writeReports, RULESET_VERSION } from "./report.js";
+import { replayApiFinding, replayExitCode } from "./replay.js";
 import { compareReports, comparisonExitCode, readScanReport, writeComparison } from "./compare.js";
 import { runApiPolicy, parseApiPolicy, type ApiPolicy } from "./api.js";
 import { readJsonInput } from "./json-input.js";
@@ -14,7 +15,11 @@ import { DEFAULT_TOOL_TIMEOUT_MS, MAX_TOOL_TIMEOUT_MS } from "./source/process.j
 import { buildScanScope, validateProjectId } from "./scan-scope.js";
 import { doctorMain } from "./doctor.js";
 import { initMain } from "./init.js";
+import { planMain } from "./plan.js";
 import { repairMain } from "./repair.js";
+import { API_MAX_REQUESTS, API_MAX_TIMEOUT_MS } from "./api.js";
+import { runSchemathesisLive } from "./schemathesis-live.js";
+import { NUCLEI_MAX_RATE_LIMIT, NUCLEI_MAX_REQUESTS, NUCLEI_SCOPES, runNuclei, type NucleiScope } from "./nuclei.js";
 
 const SEVERITY_VALUES = new Set(["critical", "high", "medium", "low", "info", "none"] as const);
 const TOOL_VALUES = new Set<ToolName>(["gitleaks", "osv", "trivy", "bandit"]);
@@ -35,6 +40,23 @@ export interface CliOptions {
   osvOffline: boolean;
   toolPaths: Partial<Record<ToolName, string>>;
   nativePreview?: { executable: string };
+  /** Active DAST is opt-in and requires `activeConsent`; see parseCliArgs. */
+  activeConsent: boolean;
+  /** When non-empty, every network target origin must be listed; empty means unrestricted. */
+  allowedOrigins: string[];
+  openapi?: string;
+  apiBase?: string;
+  operations: string[];
+  apiMaxRequests?: number;
+  seed?: number;
+  schemathesisPython?: string;
+  engines: Array<"nuclei">;
+  nucleiPath?: string;
+  nucleiTemplates?: string;
+  nucleiScopes: NucleiScope[];
+  nucleiMaxRequests?: number;
+  nucleiRateLimit?: number;
+  nucleiTimeoutMs?: number;
 }
 
 export class CliUsageError extends Error {
@@ -49,7 +71,11 @@ export const USAGE = `Usage:
   wakeio-security-ci scan --url URL [options]
   wakeio-security-ci scan --source DIR --url URL [options]
   wakeio-security-ci scan --api-policy policy.json [options]
+  wakeio-security-ci plan --api-policy FILE | --openapi-input FILE [--allow-private] [--timeout-ms N]
+  wakeio-security-ci scan --openapi openapi.json --api-base URL --operation PATH --active-consent [options]
+  wakeio-security-ci scan --url URL --engine nuclei --nuclei-templates DIR --active-consent [options]
   wakeio-security-ci compare --before report.json --after report.json --out DIR [--fail-on LEVEL]
+  wakeio-security-ci replay --report report.json --api-policy FILE --finding ID --out DIR [--allow-private] [--timeout-ms N]
   wakeio-security-ci doctor [--source DIR] [--tools ...] [--json] [--strict]
   wakeio-security-ci init [--source DIR] [--workflow FILE] [--out DIR] [--tools ...]
   wakeio-security-ci repair --source DIR --policy FILE --out NEW_DIR --proposal FILE
@@ -74,6 +100,24 @@ Options:
   --trivy PATH                 Trivy executable
   --bandit PATH                Bandit executable
   --opengrep-core ABS_PATH     Explicit pinned Darwin arm64 native preview (BYO)
+  --allowed-origin ORIGIN      Only scan these origins (repeatable, 1..16): --url, --api-base and
+                               the API policy baseUrl must match before any DNS lookup or request
+
+Active DAST (off by default; sends generated or template requests to the target):
+  --active-consent             Required: you own or are authorized to test the target
+  --openapi FILE               Local OpenAPI 3.0/3.1 JSON (same-document $ref only)
+  --api-base URL               Target origin for --openapi (servers are never used)
+  --operation PATH             Documented GET path to test (repeatable, 1..16)
+  --api-max-requests N         Schemathesis request budget, 1..64 (default 32)
+  --seed N                     Hypothesis seed (default 1)
+  --schemathesis-python PATH   Python with workers/schemathesis/requirements.lock.txt
+  --engine nuclei              Run pinned Nuclei 3.11.1 against the --url origin
+  --nuclei PATH                Nuclei executable (default: PATH lookup)
+  --nuclei-templates DIR       Prepared nuclei-templates directory (never downloaded)
+  --nuclei-scope LIST          misconfiguration,exposures (default: misconfiguration)
+  --nuclei-max-requests N      Gate request budget, 1..20000 (default 6000)
+  --nuclei-rate-limit N        Requests per second, 1..150 (default 50)
+  --nuclei-timeout-ms N        Nuclei time budget, 1..600000 (default 300000; --timeout-ms is unchanged)
   --help                       Show this help
 `;
 
@@ -99,11 +143,31 @@ function parsePositiveTimeout(value: string): number {
   return parsed;
 }
 
+function parseBoundedInteger(flag: string, value: string, max: number): number {
+  if (!/^\d+$/.test(value)) throw new CliUsageError(`${flag} must be a positive integer`);
+  const parsed = Number(value);
+  if (!Number.isSafeInteger(parsed) || parsed < 1 || parsed > max) throw new CliUsageError(`${flag} must be between 1 and ${max}`);
+  return parsed;
+}
+
 function parsePageLimit(value: string): number {
   if (!/^\d+$/.test(value)) throw new CliUsageError("--max-pages must be a positive integer");
   const parsed = Number(value);
   if (!Number.isSafeInteger(parsed) || parsed < 1 || parsed > 8) throw new CliUsageError("--max-pages must be between 1 and 8");
   return parsed;
+}
+
+/** An http(s) origin with no path, query, fragment or credentials; returns its canonical form. */
+function allowedOriginOf(raw: string): string | undefined {
+  let url: URL;
+  try { url = new URL(raw); } catch { return undefined; }
+  if ((url.protocol !== "http:" && url.protocol !== "https:") || url.username || url.password
+    || url.pathname !== "/" || url.search || url.hash || raw.includes("?") || raw.includes("#")) return undefined;
+  return url.origin;
+}
+
+function originAllowed(raw: string, allowed: readonly string[]): boolean {
+  try { return allowed.includes(new URL(raw).origin); } catch { return false; }
 }
 
 /** Parses the intentionally small, strict public CLI grammar. */
@@ -120,6 +184,11 @@ export function parseCliArgs(argv: readonly string[]): CliOptions | { help: true
     timeoutMs: DEFAULT_TOOL_TIMEOUT_MS,
     osvOffline: false,
     toolPaths: {},
+    activeConsent: false,
+    allowedOrigins: [],
+    operations: [],
+    engines: [],
+    nucleiScopes: [],
   };
   const seen = new Set<string>();
   let help = false;
@@ -189,6 +258,54 @@ export function parseCliArgs(argv: readonly string[]): CliOptions | { help: true
       if (!isAbsolute(value) || value.includes('\0')) throw new CliUsageError('--opengrep-core requires an absolute executable path');
       options.nativePreview = { executable: value };
     }
+    else if ((value = valueFlag("--openapi")) !== undefined) options.openapi = value;
+    else if ((value = valueFlag("--api-base")) !== undefined) options.apiBase = value;
+    else if (arg === "--operation" || arg.startsWith("--operation=")) {
+      let operation: string;
+      if (arg === "--operation") {
+        const result = valueAfter(args, index, "--operation");
+        operation = result[0];
+        index = result[1];
+      } else operation = arg.slice("--operation=".length);
+      if (!operation.startsWith("/") || operation.length > 2048) throw new CliUsageError("--operation must be a documented absolute OpenAPI path");
+      if (options.operations.length >= 16) throw new CliUsageError("--operation may be specified at most 16 times");
+      options.operations.push(operation);
+    }
+    else if (arg === "--allowed-origin" || arg.startsWith("--allowed-origin=")) {
+      let raw: string;
+      if (arg === "--allowed-origin") {
+        const result = valueAfter(args, index, "--allowed-origin");
+        raw = result[0];
+        index = result[1];
+      } else raw = arg.slice("--allowed-origin=".length);
+      const origin = allowedOriginOf(raw);
+      if (!origin) throw new CliUsageError("--allowed-origin must be an http(s) origin only, such as https://staging.example.test");
+      if (options.allowedOrigins.length >= 16) throw new CliUsageError("--allowed-origin may be specified at most 16 times");
+      if (!options.allowedOrigins.includes(origin)) options.allowedOrigins.push(origin);
+    }
+    else if ((value = valueFlag("--api-max-requests")) !== undefined) options.apiMaxRequests = parseBoundedInteger("--api-max-requests", value, API_MAX_REQUESTS);
+    else if ((value = valueFlag("--seed")) !== undefined) options.seed = parseBoundedInteger("--seed", value, 2147483647);
+    else if ((value = valueFlag("--schemathesis-python")) !== undefined) options.schemathesisPython = value;
+    else if ((value = valueFlag("--engine")) !== undefined) {
+      const engines = value.split(",").map((part) => part.trim()).filter(Boolean);
+      if (engines.length === 0 || engines.some((engine) => engine !== "nuclei") || new Set(engines).size !== engines.length) throw new CliUsageError("--engine must be nuclei");
+      options.engines = engines as CliOptions["engines"];
+    }
+    else if ((value = valueFlag("--nuclei")) !== undefined) options.nucleiPath = value;
+    else if ((value = valueFlag("--nuclei-templates")) !== undefined) options.nucleiTemplates = value;
+    else if ((value = valueFlag("--nuclei-scope")) !== undefined) {
+      const scopes = value.split(",").map((part) => part.trim()).filter(Boolean);
+      if (scopes.length === 0 || scopes.some((scope) => !(scope in NUCLEI_SCOPES)) || new Set(scopes).size !== scopes.length) throw new CliUsageError("--nuclei-scope must be a comma-separated list of misconfiguration, exposures");
+      options.nucleiScopes = scopes as NucleiScope[];
+    }
+    else if ((value = valueFlag("--nuclei-max-requests")) !== undefined) options.nucleiMaxRequests = parseBoundedInteger("--nuclei-max-requests", value, NUCLEI_MAX_REQUESTS);
+    else if ((value = valueFlag("--nuclei-rate-limit")) !== undefined) options.nucleiRateLimit = parseBoundedInteger("--nuclei-rate-limit", value, NUCLEI_MAX_RATE_LIMIT);
+    else if ((value = valueFlag("--nuclei-timeout-ms")) !== undefined) options.nucleiTimeoutMs = parseBoundedInteger("--nuclei-timeout-ms", value, MAX_TOOL_TIMEOUT_MS);
+    else if (arg === "--active-consent") {
+      if (seen.has(arg)) throw new CliUsageError(`${arg} may only be specified once`);
+      seen.add(arg);
+      options.activeConsent = true;
+    }
     else if (arg === "--allow-private") {
       if (seen.has(arg)) throw new CliUsageError(`${arg} may only be specified once`);
       seen.add(arg);
@@ -202,10 +319,27 @@ export function parseCliArgs(argv: readonly string[]): CliOptions | { help: true
     }
   }
   if (help) return { help: true };
-  if (!options.source && !options.url && !options.apiPolicy) throw new CliUsageError("provide --source, --url, or --api-policy");
+  if (!options.source && !options.url && !options.apiPolicy && !options.openapi) throw new CliUsageError("provide --source, --url, --api-policy, or --openapi");
   if (options.pages.length > 0 && !options.url) throw new CliUsageError("--page requires --url");
   if (options.maxPages !== undefined && !options.url) throw new CliUsageError("--max-pages requires --url");
-  if (options.allowPrivate && !options.url && !options.apiPolicy) throw new CliUsageError("--allow-private requires URL or API mode");
+  if (options.allowPrivate && !options.url && !options.apiPolicy && !options.openapi) throw new CliUsageError("--allow-private requires URL or API mode");
+  const schemathesisOnly = options.apiBase !== undefined || options.operations.length > 0 || options.apiMaxRequests !== undefined || options.seed !== undefined || options.schemathesisPython !== undefined;
+  if (schemathesisOnly && !options.openapi) throw new CliUsageError("--api-base, --operation, --api-max-requests, --seed and --schemathesis-python require --openapi");
+  if (options.openapi && (!options.apiBase || options.operations.length === 0)) throw new CliUsageError("--openapi requires --api-base and at least one --operation");
+  const nucleiOnly = options.nucleiPath !== undefined || options.nucleiTemplates !== undefined || options.nucleiScopes.length > 0 || options.nucleiMaxRequests !== undefined || options.nucleiRateLimit !== undefined || options.nucleiTimeoutMs !== undefined;
+  if (nucleiOnly && !options.engines.includes("nuclei")) throw new CliUsageError("--nuclei* options require --engine nuclei");
+  if (options.engines.includes("nuclei") && (!options.url || !options.nucleiTemplates)) throw new CliUsageError("--engine nuclei requires --url and --nuclei-templates");
+  const active = Boolean(options.openapi) || options.engines.length > 0;
+  // Consent is checked before any DNS lookup or request: active testing never starts implicitly.
+  if (active && !options.activeConsent) throw new CliUsageError("active DAST (--openapi or --engine) requires --active-consent; only test targets you own or are authorized to test");
+  if (options.activeConsent && !active) throw new CliUsageError("--active-consent requires --openapi or --engine");
+  if (options.allowedOrigins.length > 0) {
+    if (!options.url && !options.apiPolicy && !options.openapi) throw new CliUsageError("--allowed-origin requires URL or API mode");
+    // Checked before any DNS lookup or request; the API policy baseUrl is checked once the file is read.
+    if (options.url && !originAllowed(options.url, options.allowedOrigins)) throw new CliUsageError("the --url origin is not in --allowed-origin");
+    if (options.apiBase && !originAllowed(options.apiBase, options.allowedOrigins)) throw new CliUsageError("the --api-base origin is not in --allowed-origin");
+  }
+  if (options.engines.includes("nuclei") && options.nucleiScopes.length === 0) options.nucleiScopes = ["misconfiguration"];
   if (options.osvOffline && !options.source) throw new CliUsageError("--osv-offline requires source mode");
   if (options.analysisProfile !== undefined && !options.source) throw new CliUsageError('--analysis-profile requires source mode');
   if (options.nativePreview && !options.source) throw new CliUsageError('--opengrep-core requires source mode');
@@ -213,7 +347,7 @@ export function parseCliArgs(argv: readonly string[]): CliOptions | { help: true
 }
 
 function modeFor(options: CliOptions): Mode {
-  if (options.apiPolicy) return options.source || options.url ? 'combined' : 'api';
+  if (options.apiPolicy || options.openapi) return options.source || options.url ? 'combined' : 'api';
   if (options.source && options.url) return "both";
   return options.source ? "source" : "url";
 }
@@ -254,6 +388,72 @@ async function runComparison(argv: readonly string[]): Promise<number> {
   }
 }
 
+export function parseReplayArgs(argv: readonly string[]): { report: string; apiPolicy: string; findingId: string; outDir: string; allowPrivate: boolean; timeoutMs?: number } {
+  const values = new Map<string, string>();
+  let allowPrivate = false;
+  for (let index = 1; index < argv.length; index += 1) {
+    const flag = argv[index];
+    if (flag === '--allow-private' && !allowPrivate) { allowPrivate = true; continue; }
+    const value = argv[index + 1];
+    if (!['--report', '--api-policy', '--finding', '--out', '--timeout-ms'].includes(flag) || values.has(flag) || !value || value.startsWith('--')) {
+      throw new CliUsageError('replay requires unique --report, --api-policy, --finding, --out and optional --allow-private, --timeout-ms values');
+    }
+    values.set(flag, value);
+    index += 1;
+  }
+  const findingId = values.get('--finding');
+  if (!values.get('--report') || !values.get('--api-policy') || !findingId || !values.get('--out')) throw new CliUsageError('replay requires --report, --api-policy, --finding and --out');
+  if (!/^[a-f0-9]{64}$/.test(findingId)) throw new CliUsageError('--finding must be a report finding id (64 lowercase hex characters)');
+  const timeout = values.get('--timeout-ms');
+  let timeoutMs: number | undefined;
+  if (timeout !== undefined) {
+    timeoutMs = /^\d+$/.test(timeout) ? Number(timeout) : NaN;
+    if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > API_MAX_TIMEOUT_MS) throw new CliUsageError(`--timeout-ms must be between 1 and ${API_MAX_TIMEOUT_MS} for replay`);
+  }
+  return { report: values.get('--report')!, apiPolicy: values.get('--api-policy')!, findingId, outDir: values.get('--out')!, allowPrivate, ...(timeoutMs === undefined ? {} : { timeoutMs }) };
+}
+
+async function runReplay(argv: readonly string[]): Promise<number> {
+  let options: ReturnType<typeof parseReplayArgs>;
+  try { options = parseReplayArgs(argv); }
+  catch (error) {
+    process.stderr.write(`Error: ${error instanceof CliUsageError ? error.message : 'invalid command line'}\n\n${USAGE}`);
+    return 2;
+  }
+  const controller = new AbortController();
+  const cancel = (): void => controller.abort();
+  process.on('SIGINT', cancel); process.on('SIGTERM', cancel);
+  try {
+    let report: unknown, policy: unknown;
+    try { [report, policy] = await Promise.all([readJsonInput(options.report), readJsonInput(options.apiPolicy, 1024 * 1024)]); }
+    catch {
+      process.stderr.write('Error: replay report and policy must be bounded JSON files.\n');
+      return 2;
+    }
+    const startedAt = new Date().toISOString();
+    const result = await replayApiFinding({ report, policy, findingId: options.findingId, allowPrivate: options.allowPrivate,
+      signal: controller.signal, ...(options.timeoutMs === undefined ? {} : { timeoutMs: options.timeoutMs }) });
+    const { check, ...summary } = result;
+    try {
+      if (check) await writeReports(createReport([check], 'api', startedAt), options.outDir);
+      await writeArtifacts(options.outDir, [['replay.json', `${JSON.stringify(summary, null, 2)}\n`]]);
+    } catch {
+      process.stderr.write('Error: replay files could not be written.\n');
+      return 2;
+    }
+    process.stdout.write([
+      `Wakeio replay: ${result.outcome}${result.reason ? ` (${result.reason})` : ''}`,
+      ...(result.replay ? [`Case ${result.replay.caseId}, actor ${result.replay.actor}`] : []),
+      ...(result.outcome === 'not_reproduced' ? ['Not reproduced in this run is scoped evidence, not proof of a fix.'] : []),
+      `Details: ${JSON.stringify(resolve(options.outDir))} (replay.json${check ? ', report.json, report.sarif, report.md, agent-report.json' : ''})`,
+      '',
+    ].join('\n'));
+    return replayExitCode(result);
+  } finally {
+    process.removeListener('SIGINT', cancel); process.removeListener('SIGTERM', cancel);
+  }
+}
+
 async function declaredScope(options: CliOptions, apiPolicy: ApiPolicy | undefined): Promise<ScanScope> {
   return buildScanScope({
     mode: modeFor(options),
@@ -273,12 +473,18 @@ async function declaredScope(options: CliOptions, apiPolicy: ApiPolicy | undefin
     maxPages: options.maxPages,
     apiPolicy,
     ruleset: RULESET_VERSION,
+    ...(options.openapi || options.engines.length > 0 ? { dast: {
+      ...(options.openapi ? { schemathesis: { apiBase: options.apiBase, operations: [...options.operations], maxRequests: options.apiMaxRequests ?? 32, seed: options.seed ?? 1 } } : {}),
+      ...(options.engines.includes("nuclei") ? { nuclei: { scopes: [...options.nucleiScopes].sort(), maxRequests: options.nucleiMaxRequests ?? null, rateLimit: options.nucleiRateLimit ?? null } } : {}),
+    } } : {}),
   });
 }
 
 /** Executes a scan and writes public reports when scanning starts. */
 export async function main(argv: readonly string[] = process.argv.slice(2)): Promise<number> {
+  if (argv[0] === 'plan') return planMain(argv);
   if (argv[0] === 'compare') return runComparison(argv);
+  if (argv[0] === 'replay') return runReplay(argv);
   if (argv[0] === 'doctor') return doctorMain(argv);
   if (argv[0] === 'init') return initMain(argv);
   if (argv[0] === 'repair') return repairMain(argv);
@@ -294,9 +500,9 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
     process.stdout.write(USAGE);
     return 0;
   }
-  const controller = parsed.nativePreview ? new AbortController() : undefined;
-  const cancel = (): void => controller?.abort();
-  if (controller) { process.on('SIGINT', cancel); process.on('SIGTERM', cancel); }
+  const controller = new AbortController();
+  const cancel = (): void => controller.abort();
+  process.on('SIGINT', cancel); process.on('SIGTERM', cancel);
   try {
   const startedAt = new Date().toISOString();
   const mode = modeFor(parsed);
@@ -310,6 +516,9 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
       checks.push(runtimeErrorCheck('api.policy', 'API policy must be a valid bounded JSON file with the supported schema.'));
     }
   }
+  // The policy baseUrl is only known after reading the file; refuse it here, before any request.
+  const apiPolicyAllowed = apiPolicy !== undefined && (parsed.allowedOrigins.length === 0 || originAllowed(apiPolicy.baseUrl, parsed.allowedOrigins));
+  if (apiPolicy && !apiPolicyAllowed) checks.push(runtimeErrorCheck('api.authorization', 'The API policy baseUrl origin is not in --allowed-origin; no API requests were made.'));
   if (parsed.source) {
     const sourceOptions: SourceOptions = {
       root: parsed.source,
@@ -320,7 +529,7 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
       osvOffline: parsed.osvOffline,
       outDir: parsed.outDir,
       nativePreview: parsed.nativePreview,
-      signal: controller?.signal,
+      signal: controller.signal,
     };
     try {
       checks.push(...await runSource(sourceOptions));
@@ -328,13 +537,14 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
       checks.push(runtimeErrorCheck("source.runtime", "Source scanning could not be completed."));
     }
   }
-  if (parsed.url && !controller?.signal.aborted) {
+  if (parsed.url && !controller.signal.aborted) {
     const urlOptions: UrlOptions = {
       url: parsed.url,
       pages: parsed.pages,
       maxPages: parsed.maxPages,
       allowPrivate: parsed.allowPrivate,
       timeoutMs: parsed.timeoutMs,
+      signal: controller.signal,
     };
     try {
       checks.push(...await runUrl(urlOptions));
@@ -342,22 +552,46 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
       checks.push(runtimeErrorCheck("url.runtime", "URL scanning could not be completed."));
     }
   }
-  if (apiPolicy && !controller?.signal.aborted) {
+  if (apiPolicy && apiPolicyAllowed && !controller.signal.aborted) {
     try {
-      checks.push(...await runApiPolicy({ policy: apiPolicy, allowPrivate: parsed.allowPrivate, timeoutMs: parsed.timeoutMs, signal: controller?.signal }));
+      checks.push(...await runApiPolicy({ policy: apiPolicy, allowPrivate: parsed.allowPrivate, timeoutMs: parsed.timeoutMs, signal: controller.signal }));
     } catch {
       checks.push(runtimeErrorCheck('api.runtime', 'API authorization scanning could not be completed.'));
     }
   }
+  if (parsed.engines.includes("nuclei") && parsed.url && !controller.signal.aborted) {
+    try {
+      checks.push(...await runNuclei({
+        url: `${new URL(parsed.url).origin}/`, executable: parsed.nucleiPath, templatesDir: parsed.nucleiTemplates!, scopes: parsed.nucleiScopes,
+        consent: parsed.activeConsent, allowPrivate: parsed.allowPrivate, timeoutMs: parsed.nucleiTimeoutMs,
+        maxRequests: parsed.nucleiMaxRequests, rateLimit: parsed.nucleiRateLimit, signal: controller.signal,
+      }));
+    } catch {
+      checks.push(runtimeErrorCheck('url.nuclei', 'Nuclei scanning could not be completed.'));
+    }
+  }
+  if (parsed.openapi && !controller.signal.aborted) {
+    try {
+      const document = await readJsonInput(parsed.openapi, 1024 * 1024);
+      checks.push(...await runSchemathesisLive({
+        document, baseUrl: parsed.apiBase!, operations: parsed.operations.map((path) => ({ method: "GET" as const, path })),
+        consent: parsed.activeConsent, allowPrivate: parsed.allowPrivate,
+        python: parsed.schemathesisPython ?? process.env.WAKEIO_SCHEMATHESIS_PYTHON ?? "python3",
+        timeoutMs: Math.min(parsed.timeoutMs, API_MAX_TIMEOUT_MS), maxRequests: parsed.apiMaxRequests, seed: parsed.seed, signal: controller.signal,
+      }));
+    } catch {
+      checks.push(runtimeErrorCheck('api.schemathesis', 'OpenAPI input must be a bounded local JSON file; Schemathesis live testing did not start.'));
+    }
+  }
   const scope = await declaredScope(parsed, apiPolicy);
   const markCancelled = (): void => {
-    if (controller?.signal.aborted && !checks.some((check) => check.id === 'scan.cancelled')) checks.push({ id: 'scan.cancelled', status: 'partial', findings: [], notes: ['The command was cancelled; completed stages do not establish command completion.'] });
+    if (controller.signal.aborted && !checks.some((check) => check.id === 'scan.cancelled')) checks.push({ id: 'scan.cancelled', status: 'partial', findings: [], notes: ['The command was cancelled; completed stages do not establish command completion.'] });
   };
   markCancelled();
   let report = createReport(checks, mode, startedAt, scope);
   try {
     await writeReports(report, parsed.outDir, { failOn: parsed.failOn });
-    if (controller?.signal.aborted && !report.checks.some((check) => check.id === 'scan.cancelled')) {
+    if (controller.signal.aborted && !report.checks.some((check) => check.id === 'scan.cancelled')) {
       markCancelled(); report = createReport(checks, mode, startedAt, scope);
       await writeReports(report, parsed.outDir, { failOn: parsed.failOn });
     }
@@ -387,7 +621,7 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
   ].join("\n"));
   return code;
   } finally {
-    if (controller) { process.removeListener('SIGINT', cancel); process.removeListener('SIGTERM', cancel); }
+    process.removeListener('SIGINT', cancel); process.removeListener('SIGTERM', cancel);
   }
 }
 

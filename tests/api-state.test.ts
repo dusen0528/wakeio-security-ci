@@ -130,7 +130,9 @@ test('owned SDK rejects target/worker/observer inputs and invalid budgets', asyn
 test('observer needs actual row read, actor, received body and ordered completed dispatch', () => {
   const o = observation();
   assert.deepEqual(observeOwnedPhase(state, o.records, o.arrivals, o.reads, false),
-    { effect: 'not_observed', normal: 'passed', incomplete: false, reasons: [], capturedResponses: 12 });
+    { effect: 'not_observed', normal: 'passed', incomplete: false, reasons: [], capturedResponses: 12,
+      controlOutcomes: ['identity_passed', 'identity_passed', 'normal_passed', 'denial_observed', 'denial_observed', 'normal_passed',
+        'normal_passed', 'denial_observed', 'denial_observed', 'normal_passed', 'identity_passed', 'identity_passed'] });
   o.reads[0].rowSha256 = '0'.repeat(64);
   assert.ok(observeOwnedPhase(state, o.records, o.arrivals, o.reads, false).reasons.includes('read_mismatch'));
   assert.equal(observeOwnedPhase(state, [], [], [], false).effect, 'unknown');

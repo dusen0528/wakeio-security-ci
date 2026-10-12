@@ -137,6 +137,15 @@ export function compareReports(beforeInput: ScanReport, afterInput: ScanReport):
   }
   if ((before.checks.some(c => c.id === 'source.builtin-ast' && c.status !== 'not_applicable') || after.checks.some(c => c.id === 'source.builtin-ast' && c.status !== 'not_applicable'))
     && !sameAnalysisBudget(before.scope?.analysisBudget, after.scope?.analysisBudget)) reasons.push('AST analysis budget changed or is unknown.');
+  for (const check of before.checks) {
+    const previous = check.apiExecution;
+    const next = after.checks.find(candidate => candidate.id === check.id)?.apiExecution;
+    if (!previous && !next) continue;
+    if (!previous || !next || previous.status !== 'complete' || next.status !== 'complete'
+      || previous.policyVersion !== next.policyVersion || previous.planSha256 !== next.planSha256) {
+      reasons.push('Declared API execution plan is missing, incomplete, or changed.');
+    }
+  }
   const oldIndex = indexed(before);
   const currentIndex = indexed(after);
   if (oldIndex.ambiguous.size > 0 || currentIndex.ambiguous.size > 0) {

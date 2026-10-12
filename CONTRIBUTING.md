@@ -4,8 +4,9 @@ Wakeio Security CI is a public Apache-2.0 project for bounded local source and
 URL checks. It runs without a Wakeio account or hosted service, and its reports
 describe the evidence available to the run. The GitHub Action is available as
 the moving preview reference `dusen0528/wakeio-security-ci@main`; review and
-pin a full commit SHA before production use. npm publication and Marketplace
-release are still pending. A contribution should keep the evidence boundary
+pin a full commit SHA before production use. The source package is 0.5.0,
+while the latest published npm package and GitHub release remain 0.4.0;
+neither 0.5.0 artifact has been published. A contribution should keep the evidence boundary
 visible: a static candidate is not proof of exploitability, and a clean exit
 code is not a whole-service security guarantee.
 
@@ -56,6 +57,17 @@ Run the checks locally with Node.js 22 or newer:
 npm ci --ignore-scripts
 npm test
 ```
+
+The required-engine CI gate additionally needs Python 3.12.13 and explicitly prepared Nuclei/templates:
+
+```sh
+node scripts/bootstrap-schemathesis.mjs
+node scripts/bootstrap-nuclei.mjs
+node --test scripts/ci-verification.test.mjs scripts/bootstrap-nuclei.test.mjs
+npm run test:schemathesis
+```
+
+The Nuclei bootstrap downloads the existing checksum-pinned 3.11.1 binary and the checksum-pinned official v10.5.0 template archive (commit `f8b8b8dcd70d93826c3767e1829ef8243af9f03b`). It preserves both complete template scopes and the upstream MIT license in generated `artifacts/ci-tools/`, without vendoring them into this repository. The required suite uses the setup receipt or explicit `WAKEIO_NUCLEI` / `WAKEIO_NUCLEI_TEMPLATES` paths and rejects every skipped test. All real-engine targets are owned loopback fixtures. No scan performs installation or template updates.
 
 The release packaging check is local and does not publish anything:
 

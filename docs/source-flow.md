@@ -48,7 +48,7 @@ with equal names, and separate scans do not share a context-free safe result.
 ## Limitations versus incomplete work
 
 Package/dynamic imports, namespace/default imports, re-exports, mutable or
-escaped exports, class dispatch, callback execution, free-variable captures,
+escaped exports, general class dispatch beyond the local subset below, callback execution, free-variable captures,
 full module initialization and framework/authentication/database semantics are
 outside this declared model. Mutable/overwritten export maps and implicit
 cross-file script globals cannot reuse a stale safe summary. Unknown calls are
@@ -133,14 +133,94 @@ Unsafe paths and unknown proof fields are dropped. The agent uses
 Severity and confidence remain separate. Scan-gate/digest/delivery semantics
 remain as documented in [agent-report.md](agent-report.md).
 
-The unchanged 30 fixture sources retain 15 vulnerable and 15 fixed cases.
-Corpus v2 promotes the two historical local/relative-module SQL misses to
-supported expectations (13 to 15 supported findings), so future misses fail
-strict gating. Baseline archives retain their historical v1 labels/counts.
-Generic development safe pairs and independently added acceptance cases test
-model boundaries; neither is a statistical blind holdout or production recall
-estimate. Fixed-origin URLSearchParams encoded-query outbound precision is a
-separate follow-up and is not solved by this change.
+Corpus v3 retains the original 30 sources and adds ten realistic vulnerable/fixed
+pairs: 50 cases, 25 expected findings. Primary precision/recall include the Koa
+known miss; supported-only metrics remain secondary. The current local engine
+finds 24/25 expectations with 0 extra findings on this corpus, versus 18/25 from
+the frozen v0.4.0 engine on the same bytes. These inspectable regression fixtures
+are not a statistical blind holdout or a production accuracy estimate.
+
+## Express registration positions (ruleset 2026-10-06.1)
+
+An additional lexical entry model recognizes renamed request/response parameters
+only at supported same-file Express registrations. It reuses the bounded shared
+index; analyzed code, imports and dependencies are never executed.
+
+- Exact `express` default/default-as, namespace and named `Router` imports, plus
+  unshadowed static `require('express')` and `Router` destructuring, establish
+  factory shapes. Immutable same-file const factory/router aliases are supported.
+- `express()` and `Router()` establish app/router shapes. Literal-path `get`,
+  `post`, `put`, `patch`, `delete`, `head`, `options`, `all`, `use` with or without
+  a literal mount path, and `route(path)` HTTP chains establish handler slots.
+  Paths can be literal strings, regexes or bounded literal arrays. Unrelated
+  callbacks, including `listen`, `engine`, `on` and `param`, are not seeded.
+- Inline callbacks, immutable named local callbacks and bounded literal callback
+  arrays use request/response positions 0/1. Exactly four ordinary parameters use
+  error-handler positions 1/2. Other parameters are unknown regardless of name.
+  Actual helper-call arguments still take precedence over entry seeds, and named
+  registered handlers retain a separate entry analysis after fixed local calls.
+- Known binding/member changes, shared-prototype access, opaque escapes, and
+  mutation of named handler arity revoke positional qualification. This audit is
+  conservative across the observed Express package family. Reassigned/escaped
+  global require loaders, dynamic Express imports and incomplete indexing do not
+  establish positional identity. Safe const aliases and mounting one recognized
+  router with another's `use` remain in scope.
+- Direct ESM default exports of a recognized app/router retain same-file
+  registration candidates. Exporting a binding does not invoke or rewrite it;
+  behavior of consumers of that export is not certified. Exported containers
+  and opaque calls still do not qualify.
+
+Named array variables, spreads, dynamic path/method names, imported handlers,
+wrapper-returned callbacks, bound functions, generators, default/rest/TypeScript
+`this` parameters, and more than four parameters are outside this model. It is
+not a proof of runtime registration, dependency authenticity, callback reachability
+or middleware ordering. Deferred bodies assume initialization as in the existing
+local-call model. Each entry starts with the existing response MIME convention;
+upstream middleware header changes are not composed across registrations.
+The earlier request-shaped-name heuristic remains available outside this subset;
+absence of a finding for an unsupported renamed callback is not a safety verdict.
+
+The model follows the official [routing guide](https://expressjs.com/en/guide/routing/),
+[middleware guide](https://expressjs.com/en/guide/using-middleware/) and
+[router arity dispatch](https://github.com/pillarjs/router/blob/master/lib/layer.js).
+New regression tests are separate from the unchanged 50-case synthetic benchmark;
+its remaining Koa miss stays in the denominator.
+
+## Express/Next response and local class subset (ruleset 2026-10-05.18)
+
+- Request/response-shaped handlers with first parameter `req`/`request` and
+  second `res`/`response` now track response binding through direct aliases,
+  supported helper arguments, documented `locals`/`statusCode`/`statusMessage`
+  writes, and documented response chains. Same-response literal `type`, `set`,
+  `header` and `setHeader` calls track HTML versus plain-text/JSON MIME; direct
+  aliases and control-flow joins preserve that state. Explicit HTML MIME keeps
+  `res.json` and object/array bodies as candidates because serialization does not
+  reset an existing Content-Type. Dynamic/opaque header state stays uncertain;
+  opaque response consumers invalidate prior non-HTML exclusions. Storing a response
+  in object/array containers or property slots permanently disables MIME exclusions
+  for that response in the current analysis; general heap aliases are not resolved. Default JSON,
+  known non-HTML MIME and static bodies are excluded under this API convention.
+  Source type, framework registration and overridden APIs are not proven;
+  reflection and general object/heap aliasing are not a binding-closure proof. Arbitrary fluent chains and opaque object returns are not covered by this addition.
+  Renamed parameters are supported only by the separately bounded registration model below.
+- Global `new Response` and a named `NextResponse` import from `next/server`
+  report input bodies only with a closed literal `text/html` header. JSON/plain
+  responses, shadowed constructors, spread/dynamic headers and duplicate header
+  names are not classified as HTML by this rule. This is an API-shaped candidate,
+  not runtime binding or rendering proof. The model follows the documented
+  [Express send contract](https://expressjs.com/en/5x/api/response/#res.send)
+  and [NextResponse API](https://nextjs.org/docs/app/api-reference/functions/next-response).
+- A same-file top-level named class can resolve a direct method call on an
+  immutable top-level `const instance = new Class()` when every observed class
+  and instance use stays inside that subset. Constructors must be absent or
+  empty; methods must be receiver-independent. Exports, mutation, aliases,
+  escape, inheritance, fields, accessors, computed methods, generators and
+  opaque eval/Function/with syntax veto this certificate. This adds scalar
+  argument-to-method flows, not a heap/constructor or general class model.
+- Existing finding fields, rule IDs, evidence redaction and candidate semantics
+  are unchanged. New HTML titles include the next action in one line. SQL,
+  outbound, URL scanning, API workers and repair scope are not expanded.
+
 
 
 ## URL destination qualifier (ruleset 2026-10-05.2)

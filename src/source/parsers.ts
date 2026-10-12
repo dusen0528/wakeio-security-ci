@@ -282,7 +282,12 @@ export function parseOsvOutput(text: string, stageDir: string, files: CollectedF
       const packageName = requiredString(packageIdentity, "name", "OSV-Scanner");
       const ecosystem = requiredString(packageIdentity, "ecosystem", "OSV-Scanner");
       const packageVersion = requiredString(packageIdentity, "version", "OSV-Scanner");
-      const vulnerabilities = requiredArray(packageObject, "vulnerabilities", "OSV-Scanner");
+      // OSV-Scanner 2.6 omits this field for packages with no advisories
+      // (PackageVulns.MarshalJSON uses omitempty). Only omission is empty:
+      // an explicitly null or non-array value is still a malformed report.
+      const vulnerabilities = own(packageObject, "vulnerabilities") === undefined
+        ? []
+        : requiredArray(packageObject, "vulnerabilities", "OSV-Scanner");
       const groupsValue = own(packageObject, "groups");
       if (groupsValue !== undefined && !Array.isArray(groupsValue)) throw new Error("OSV-Scanner output has an invalid groups field");
       const groups = groupsValue ?? [];

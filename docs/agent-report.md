@@ -5,6 +5,10 @@ Every started `scan` writes `agent-report.json` alongside the existing
 the sanitised public report. It improves consumption and triage; it does not
 change detector accuracy or establish an exploit or verified fix.
 
+This document also describes additive fields in the 0.5.0 GitHub source.
+The latest published npm package remains 0.4.0; use a reviewed source build
+for the 0.5.0 examples and fields.
+
 ```sh
 wakeio-security-ci scan --source . --tools none --fail-on high --out reports
 ```
@@ -48,10 +52,12 @@ checks. Unknown accounting remains unknown/null, not zero. With no typed gap,
 Representative items are navigation, not an exhaustive or ranked cause list.
 
 `scope` records the declared mode and optional fingerprint/ruleset; it does not
-establish whole-project coverage. `toolSelection` is `unknown`: current reports
-do not contain typed requested-tool selection, and the summary does not parse
-notes to infer missing installations, disabled tools or applicability. Existing
-typed statuses/provenance remain available in the original report. A
+establish whole-project coverage. `toolSelection` is projected from the source
+inventory's structured requested-tool metrics: `built_in_only`,
+`external_tools_selected`, or `native_preview_selected`. Older reports, invalid
+metadata or ambiguous duplicate inventories retain `unknown`. The summary never
+parses notes or confuses selection with installation, execution or applicability.
+Existing typed statuses/provenance remain available in the original report. A
 `module_missing` gap does not by itself prescribe installing a dependency.
 
 `nextRead` copies a recorded gap's fixed `nextReview` and optional reported
@@ -62,6 +68,24 @@ authority. Sanitised location syntax is not authentication of source truth.
 Every projection treats incoming report data as untrusted. Original report JSON,
 SARIF results/rules/code flows, scan gate, scope, coverage and finding verification
 are unchanged; the source ruleset remains `.7`.
+
+## API execution navigation
+
+Prepared API runs include optional version-1 `checks[].apiExecution`: the same
+indexed GET plan as preflight, per-step evaluated/inconclusive/not-attempted
+outcomes, counted HTTP attempts and fixed diagnostic codes. It is projected to
+all four report formats; Markdown lists incomplete step indexes. A malformed
+present ledger becomes a fixed invalid envelope and an incomplete check,
+without dropping findings. Legacy reports without a ledger stay readable.
+See [the API execution contract](preview-0.4-api.md#계획-대비-실행-ledger).
+The redacted plan hash excludes targets, assertions and credentials; it is not
+an exact-policy commitment. These are declared execution facts, not independent
+HTTP evidence, exploit confirmation, an authenticated receipt or a verified fix.
+An optional authorization-exposure finding may reference its own ledger's
+actor/case indexes and control steps. The producer retains a finding but demotes a
+control claim to `inconclusive` when those references do not cohere. Only
+completed identity, owner and probe controls can support `controls_passed`;
+the agent report's exploit/fix verification remains `not_run`.
 
 ## Scan gate and delivery
 

@@ -6,11 +6,16 @@
 
 [English](README.md) · [日本語](README.ja.md) · [简体中文](README.zh-CN.md) · [구현 체크리스트](docs/checklist.md) · [0.4 사용법](docs/preview-0.4.md) · [검증 기록](docs/verification-0.4.md)
 
-**릴리스:** `0.4.0` · Apache-2.0 · Node.js 22+
+**GitHub 소스:** `0.5.0` · **npm 공개 버전:** `0.4.0` · Apache-2.0 · Node.js 22+
 
-기본 검사는 무료로 로컬에서 실행합니다. Wakeio 계정·구독·호스팅된 Wakeio 서비스·LLM·소스 업로드가 필요하지 않으며 사용 텔레메트리도 전송하지 않습니다. 아래 버전을 고정한 npm CLI, Git checkout 또는 GitHub Action으로 실행할 수 있습니다. [0.4.0 릴리스 범위](docs/release-0.4.0.md)를 참고하세요.
+기본 검사는 무료로 로컬에서 실행합니다. Wakeio 계정·구독·호스팅된 Wakeio 서비스·LLM·소스 업로드가 필요하지 않으며 사용 텔레메트리도 전송하지 않습니다. 아래 npm 명령은 공개된 0.4.0을 실행합니다. 뒤의 replay·origin 허용 목록·능동 DAST 예시는 이 0.5.0 소스 checkout을 `npm run build`로 빌드하거나 검토한 Git commit의 Action을 사용해야 합니다. npm 0.5.0은 아직 발행하지 않았습니다. [0.5.0 소스 변경점](CHANGELOG.md#050--github-source-preview)과 [0.4.0 릴리스 범위](docs/release-0.4.0.md)를 참고하세요.
 
 별도의 실험적 [`repair` CLI](docs/repair-preview.md)는 검토한 로컬 수정안을 검증하거나 Codex/Claude를 선택적으로 연결합니다. 에이전트 호출에는 명시적 소스 전송 동의와 API 인증이 필요하며 모델 비용이 발생할 수 있습니다. 준비된 Docker 이미지와 고정 검증기로 private patch·검증 기록만 만들고 원본 적용·커밋은 하지 않습니다. 첫 지원 범위는 선언된 SQL fixture이며 범용 앱 수리 완료를 뜻하지 않습니다.
+
+API preview는 redacted index 기반 실행 ledger로 판정한 단계, 불확실한 단계,
+실행하지 못한 단계를 구분한다. [실행 계약](docs/preview-0.4-api.md#계획-대비-실행-ledger)을 참고한다.
+[소유 API pilot](docs/api-state-oracle.md)은 명시적으로 두 번 검증을 선택할 수 있다.
+정상 기능 대조를 반복하고 결과가 다르면 불확실로 남긴다.
 
 ## 무엇을 검사하나요?
 
@@ -19,6 +24,7 @@
 | 소스 코드 | 요청 입력이 SQL·HTML·프로세스·외부 요청·리디렉션 sink로 흐르는 제한된 JS/TS AST 후보, 동적 코드 실행, 일부 자격증명 형태, 선택적인 Next/React·Supabase migration 후보 | 같은 함수와 제한된 로컬 흐름 중심. 일반적인 함수 간·파일 간·타입 기반·런타임·빌드·실제 DB 검증은 제공하지 않음 |
 | 공개 URL | 명시한 페이지와 같은 origin의 정적 JavaScript 모듈, 전송, 보안 헤더, CSP, 쿠키, CORS, 혼합 콘텐츠, source map/debug/version 단서, DOM·비밀값 형태 후보 | 명시된 제한적 GET만 실행. 브라우저 실행, 로그인, endpoint 탐색, API 퍼징, 결제 흐름, 전체 사이트 자동 순회는 하지 않음 |
 | 읽기 전용 API 정책 | 선언한 리소스 식별자와 별도의 보호 데이터 canary를 기준으로 identity, 소유자·다른 계정·비로그인 사용자의 접근 결과 | 정책에 정의한 GET 요청만 실행. 쓰기, 자동 로그인, endpoint 탐색, 일반 퍼징은 하지 않음 |
+| 능동 DAST 프리뷰(선택) | 명시한 OpenAPI operation에 Schemathesis가 생성한 GET 입력(5xx·응답 스키마 위반), `misconfiguration`/`exposures`의 서명된 Nuclei HTTP GET/HEAD 템플릿 | `--active-consent` 필수. 검증한 origin 하나에 loopback egress gate로만 접속. 쓰기·자격증명·리디렉션·OAST·raw/unsafe 템플릿·크롤링 없음 |
 | 전후 보고서 | 논리적 프로젝트 식별자, 의미 기반 source anchor, 새 문제·변경 문제·같은 문제, `not_observed`·`unverified` 상태 | 나중에 발견되지 않았다는 사실만으로 수정 완료라고 판단하지 않음 |
 
 소스와 URL 범위는 한 보고서에 함께 담을 수 있습니다. API 정책은 선택 사항이며 환경변수 이름으로 자격증명을 참조합니다. 토큰과 canary 값은 보고서에 기록하지 않습니다. [API 정책 예제](examples/api-authorization-policy.json)와 [API 안내](docs/preview-0.4-api.md)를 참고하세요.
@@ -164,6 +170,22 @@ node build/src/cli.js scan \
 
 ## 읽기 전용 API 정책과 비교
 
+현재 소스 checkout에서는 staging 실행 전에 대상에 연결하지 않고 로컬 설정을 확인할 수 있습니다.
+
+```sh
+# 합성 placeholder만 사용하며 서버로 전송하지 않습니다.
+WAKEIO_OWNER_AUTH='Bearer synthetic-owner' \
+WAKEIO_OTHER_AUTH='Bearer synthetic-other' \
+node build/src/cli.js plan --openapi-input examples/openapi-preflight-input.json
+
+# 기존 API 정책은 해당 정책이 참조하는 환경변수를 준비한 뒤 확인합니다.
+node build/src/cli.js plan --api-policy /path/to/your-api-policy.json
+```
+
+`plan`은 입력 하나와 선택적인 `--allow-private`, `--timeout-ms 1..120000`을 받습니다. 결과와 설정 오류는 JSON이며 종료 코드 `0`은 설정 `ready`, `2`는 `blocked`입니다. DNS 조회·HTTP 요청·scan 보고서 작성은 하지 않습니다. GET 순서와 요청·시간·응답 예산은 배열 index로 보여 주고 대상 URL·요청 경로·사용자 지정 ID·환경변수 이름·assertion 값은 출력하지 않습니다. [완전한 합성 OpenAPI 입력](examples/openapi-preflight-input.json)의 `.invalid` 주소는 실제로 검증한 staging이 아닙니다.
+
+`ready`는 실행 승인이나 보안 통과가 아닙니다. 허가받은 endpoint, 합성 계정·리소스, GET의 부작용 가능성을 직접 확인해야 하며 자격증명 유효성·DNS·TLS·응답 control은 승인된 실제 실행에서 확인합니다. SDK와 index 기반 오류 확인은 [preflight 안내](docs/preview-0.4-api.md#zero-network-staging-preflight)를 참고하세요. `--openapi-input`은 `plan` 전용이며 API 실행은 기존 `scan --api-policy` 또는 SDK를 사용합니다.
+
 API 정책은 identity endpoint와 기대 principal, 소유자·다른 계정·비로그인 actor, 리소스 식별자, 보호 데이터 canary, 허용할 거부 상태를 선언합니다. 자격증명은 환경변수 이름으로 참조합니다. identity와 소유자의 정상 접근을 deny probe 전후에 확인합니다. 다른 actor가 보호 canary를 받으면 HTTP 상태가 `403`이어도 발견 결과입니다. 오류 응답에 공개 ID만 반복된 경우만으로 정보 유출을 확정하지 않습니다.
 
 ```sh
@@ -175,6 +197,18 @@ node build/src/cli.js scan \
 저장소에 포함된 정책은 `127.0.0.1:8877`의 합성 서버를 대상으로 합니다. 재현하려면 다른 터미널에서 `node examples/api-authorization-demo.mjs --vulnerable`을 실행하고 두 demo authorization 환경변수를 export한 뒤 `--allow-private`를 추가하세요. 전체 명령과 수정된 fixture 실행은 [API 안내](docs/preview-0.4-api.md)에 있습니다.
 
 쓰기·결제·자동 로그인·endpoint 탐색·일반 퍼징은 수행하지 않습니다. 만료된 자격증명, 구분되지 않는 actor, rate limit, 예상하지 못한 응답, 불완전한 control은 partial 또는 unverified로 남습니다.
+
+각 `api.authorization-data-exposure` finding에는 이번 실행의 control 결과가 붙습니다. `controlVerification.state`는 probe actor의 identity before/after, owner positive control before/after, 완료된 probe가 모두 통과했을 때만 `controls_passed`이고 그 외에는 `inconclusive`입니다. `evidence`는 같은 check의 `apiExecution` ledger 단계(ordinal, phase, outcome, HTTP status)만 참조하며 응답 값은 저장하지 않습니다. `replay`는 정책 digest, case, actor를 기록합니다. 이것은 scanner 증거일 뿐이며 finding `kind`는 `candidate`로 유지되고 agent report의 exploit/fix `verification`은 계속 `not_run`입니다.
+
+```sh
+node build/src/cli.js replay \
+  --report /tmp/wakeio-api/report.json \
+  --api-policy /path/to/your-api-policy.json \
+  --finding <report.json의 finding id> \
+  --out /tmp/wakeio-replay
+```
+
+`replay`는 정책 digest가 일치할 때만 해당 case, owner, probe actor만 다시 실행합니다. 완료된 실행에서만 `reproduced`(종료 코드 1) 또는 `not_reproduced`(0, 거부 확인)가 나옵니다. 앞선 응답에서 canary가 노출되어도 뒤의 control 실패나 요청 중단으로 검사가 미완료면 `inconclusive`(2)이며 정책 거부도 종료 코드 2입니다. `replay.json`과 축소 실행의 보고서를 씁니다. `not_reproduced`는 이번 실행 범위의 증거이며 수정 증명이 아닙니다.
 
 수정 전후를 비교하려면 논리적 프로젝트 식별자와 검사 옵션을 유지하세요.
 
@@ -199,6 +233,29 @@ node build/src/cli.js compare \
 ```
 
 범위가 다르거나 미완료인 검사를 깨끗한 결과로 보여 주지 않습니다. 이전 발견이 사라져도 `not_observed`이며 자동 수정 인증서가 아닙니다. [비교 안내](docs/preview-0.4-comparison.md)를 참고하세요.
+
+## 능동 DAST 프리뷰(선택)
+
+능동 검사는 대상에 생성 요청이나 템플릿 요청을 보내므로 저절로 실행되지 않습니다. 모든 능동 실행에는 `--active-consent`가 필요하며, 없으면 DNS 조회나 요청 전에 exit 2로 끝납니다. 소유했거나 검사 권한을 받은 대상만 검사하세요. 사설·loopback 대상은 `--allow-private`도 필요하고, 메타데이터·link-local 주소는 계속 차단됩니다. `--allowed-origin ORIGIN`(반복 가능)을 지정하면 목록에 없는 `--url`, `--api-base`, API 정책 `baseUrl`은 DNS 조회나 요청 전에 거부됩니다.
+
+```sh
+# Schemathesis: 명시한 OpenAPI operation에 생성한 GET 입력
+node build/src/cli.js scan --openapi openapi.json --api-base https://staging.example.test/ \
+  --operation '/items/{id}' --operation /search --active-consent --fail-on low
+
+# Nuclei 3.11.1: 한 번 준비한 뒤 --url origin을 준비된 템플릿으로 검사
+node scripts/install-tools.mjs --tools nuclei          # 고정된 upstream SHA-256 검증
+nuclei -ut -ud /path/to/nuclei-templates                # 검사 중에는 템플릿을 내려받지 않음
+node build/src/cli.js scan --url http://127.0.0.1:3000/ --engine nuclei \
+  --nuclei /path/to/nuclei --nuclei-templates /path/to/nuclei-templates \
+  --nuclei-scope misconfiguration,exposures --active-consent --allow-private --nuclei-timeout-ms 300000
+```
+
+두 엔진은 실행마다 새로 여는 loopback egress gate에만 접속합니다. Gate는 URL 검사와 같은 URL-network 정책으로 origin을 검증하고 검증한 주소에 고정합니다. 일반 HTTP에서는 해당 origin의 GET/HEAD만 전달하고 identity 인코딩과 요청 수·응답당/전체 바이트 예산을 전송 구간에서 적용합니다. 다른 포트를 찌르는 템플릿처럼 origin을 벗어나는 요청은 보내지 않고 거부한 수를 기록합니다. HTTPS Nuclei는 대상에 요청을 보내기 전에 `error`(exit 2)로 거부합니다. CONNECT 터널 안의 HTTP 요청은 gate에서 볼 수 없어 터널 수만으로 요청 예산을 지킬 수 없기 때문입니다. Nuclei는 `-ni -duc -dr`로 서명된 HTTP 템플릿만 실행하며 raw/unsafe·non-GET·self-contained·다른 프로토콜 템플릿은 제외하고 수를 기록합니다. Nuclei는 일부만 진행해도 exit 0을 반환하므로 엔진 진행률 100%, 엔진 오류 0, 예산 중단·upstream 실패 없음까지 확인해야 완료입니다. 그 밖에는 `partial`(exit 2)입니다. 엔진·Python 런타임·템플릿 디렉터리가 없으면 `error`(exit 2)이며 통과로 처리하지 않습니다.
+
+GitHub Actions에서는 별도의 `dast` Action을 씁니다. 수동 검사 workflow가 능동 검사를 시작할 일이 없게 분리했습니다. `active-consent: 'true'`와 모든 대상 origin을 담은 `allowed-origins`가 필요합니다. 정책 평가를 위한 Node.js 설정 후 `pull_request_target`·fork PR·fork `workflow_run`은 엔진 다운로드·Python 설정·대상 요청 전에 거부합니다. Nuclei는 고정 아카이브로 설치하고, nuclei-templates는 기대한 `templates-checksum.txt` digest와 일치해야 합니다. [`examples/github-dast.yml`](examples/github-dast.yml)은 job 안에서 앱을 띄우고 push·PR·매일 스케줄로 검사한 뒤 SARIF를 올리고 보고서를 남깁니다.
+
+보고서에는 실행한 요청 수, 예산 때문에 거부한 요청 수, egress 거부 수, seed와 스키마 digest(Schemathesis), 템플릿 수·제외 수·`templates-checksum.txt` digest(Nuclei)를 남깁니다. 응답 본문, 생성 값, 추출 값, proxy 자격증명, 템플릿 원문은 남기지 않습니다. `wakeio-security-ci doctor --dast`는 아무것도 실행하지 않고 엔진 준비 상태만 보여 줍니다. 인증, 쓰기 요청, 상태 기반 workflow, 브라우저 기반 검사, 자체 probe와 크롤링은 이 프리뷰 범위가 아닙니다.
 
 ## 작은 합성 예시
 

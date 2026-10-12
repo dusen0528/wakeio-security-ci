@@ -6,11 +6,17 @@ Wakeio checks the code, HTTP responses, and optional read-only API policy that y
 
 [한국어](README.ko.md) · [日本語](README.ja.md) · [简体中文](README.zh-CN.md) · [implemented checklist](docs/checklist.md) · [0.4 guide](docs/preview-0.4.md) · [verification record](docs/verification-0.4.md)
 
-**Release:** `0.4.0` · Apache-2.0 · Node.js 22+
+**GitHub source:** `0.5.0` · **published npm:** `0.4.0` · Apache-2.0 · Node.js 22+
 
-The default scan is a free local tool. It does not require a Wakeio account, subscription, hosted Wakeio service, LLM, or source upload, and it does not send usage telemetry. Use the versioned npm CLI below, a Git checkout, or the GitHub Action. See the [0.4.0 release scope](docs/release-0.4.0.md).
+The default scan is a free local tool. It does not require a Wakeio account, subscription, hosted Wakeio service, LLM, or source upload, and it does not send usage telemetry. The npm commands below run the published 0.4.0 package. The newer replay, origin allowlist and active DAST examples use this 0.5.0 source checkout after `npm run build`, or a reviewed Git commit of its Action; npm 0.5.0 is not published. See the [0.5.0 source changes](CHANGELOG.md#050--github-source-preview) and [0.4.0 release scope](docs/release-0.4.0.md).
 
 An experimental, separate [`repair` CLI](docs/repair-preview.md) can verify a reviewed local proposal or optionally request one from Codex/Claude. Agent calls require explicit source-upload consent and API authentication; they may incur provider costs. Repair uses a prepared local Docker image and frozen verifier, writes private patch/verification artifacts only, and never applies changes or commits to the original checkout. Its initial SQL fixture support is not general-purpose application remediation.
+
+The API preview now records a redacted, indexed execution ledger so CI can
+separate evaluated probes from inconclusive and never-attempted steps.
+See the [execution contract](docs/preview-0.4-api.md#계획-대비-실행-ledger).
+The [owned API pilot](docs/api-state-oracle.md) also offers explicit two-round
+normal-behavior controls; inconsistent repeats remain inconclusive.
 
 ## What it checks
 
@@ -19,6 +25,7 @@ An experimental, separate [`repair` CLI](docs/repair-preview.md) can verify a re
 | Source code | Bounded JS/TS AST candidates where request input reaches SQL, HTML, process, outbound-request, or redirect sinks; dynamic evaluation; selected credential shapes; selected Next/React and Supabase migration candidates | Same-function and bounded local-flow analysis. No general cross-function, cross-file, type-aware, runtime, build, or live database proof |
 | Public URL | Explicit pages, same-origin static JavaScript modules, transport, security headers, CSP, cookies, CORS, mixed content, source-map/debug/version clues, DOM and secret-shaped candidates | Explicit bounded GET requests only. No browser execution, login, endpoint discovery, API fuzzing, payment flow, or automatic site crawl |
 | Read-only API policy | Identity checks and owner/other-account/anonymous cases for a declared resource identity and distinct protected-data canary | GET requests defined by the policy. No writes, automatic login, endpoint discovery, or general fuzzing |
+| Active DAST preview (opt-in) | Schemathesis-generated GET inputs for explicitly selected OpenAPI operations (5xx and response-schema violations); signed Nuclei HTTP GET/HEAD templates from `misconfiguration`/`exposures` | Requires `--active-consent`. One validated origin through a loopback egress gate; no writes, credentials, redirects, OAST, raw/unsafe templates, or crawling |
 | Before/after reports | Logical project identity, semantic source anchors, changed findings, unchanged findings, and `not_observed`/`unverified` states | A missing later finding is never treated as proof that a fix is complete |
 
 Source and URL scopes can be combined in one report. The API policy is opt-in and reads credentials from named environment variables; token and canary values are not written to reports. See the [API policy example](examples/api-authorization-policy.json) and [API guide](docs/preview-0.4-api.md).
@@ -73,6 +80,8 @@ node build/src/cli.js scan \
 ```
 
 Private or local URL/API targets require explicit `--allow-private`; metadata-address protections remain enabled. URL collection is limited to the declared pages, their same-origin static module graph, request/byte/time budgets, and a hard maximum of eight pages.
+
+Static HTML references use the first HTML document base without expanding the allowed origin. Text collection supports explicit BOM, HTTP and early HTML-meta encodings; undeclared text keeps the UTF-8 fallback and module scripts use UTF-8. Unsupported/malformed decoding and bounded parser failures remain partial. CLI SIGINT/SIGTERM cancels source, URL and API stages and writes retained findings with an incomplete result; SIGKILL/crashes and arbitrary synchronous parser preemption are not covered.
 
 ## GitHub Actions
 
@@ -164,6 +173,22 @@ Findings are labeled as candidates, observations, or advisories. Missing tools, 
 
 ## Read-only API policy and comparison
 
+Before an authorized staging run, the current source checkout can check local configuration without contacting the target:
+
+```sh
+# Synthetic placeholders only; this command never sends them to a server.
+WAKEIO_OWNER_AUTH='Bearer synthetic-owner' \
+WAKEIO_OTHER_AUTH='Bearer synthetic-other' \
+node build/src/cli.js plan --openapi-input examples/openapi-preflight-input.json
+
+# Or inspect an existing API policy, using its referenced environment variables.
+node build/src/cli.js plan --api-policy /path/to/your-api-policy.json
+```
+
+`plan` accepts exactly one input, plus optional `--allow-private` and `--timeout-ms 1..120000`. Results and configuration errors are JSON: exit `0` means configuration `ready`; exit `2` means `blocked`. It performs no DNS lookups or HTTP requests and writes no scan reports. The redacted plan shows indexed GET steps and request/time/response budgets without target URLs, request paths, caller IDs, environment-variable names or assertion values. The complete [synthetic OpenAPI input](examples/openapi-preflight-input.json) uses an `.invalid` placeholder, not a tested staging service.
+
+Readiness is neither permission to scan nor a security pass. Manually verify the authorized endpoints, synthetic accounts/resources and possible GET side effects; credential freshness, DNS, TLS and response controls still require an authorized runtime check. See the [preflight guide](docs/preview-0.4-api.md#zero-network-staging-preflight) for SDK usage and indexed diagnostics. `--openapi-input` is plan-only; API execution still uses `scan --api-policy` or the SDK.
+
 An API policy names the identity endpoint, expected principal, owner and other actors, resource identity, protected-data canary, and acceptable denial statuses. Credentials are referenced by environment-variable name. Identity controls and owner positive controls run around the deny probes. A protected canary received by the wrong actor is a finding even when the HTTP status is `403`; a repeated public ID by itself is not proof of a leak.
 
 ```sh
@@ -175,6 +200,20 @@ node build/src/cli.js scan \
 The checked-in policy targets the local synthetic server at `127.0.0.1:8877`; start `node examples/api-authorization-demo.mjs --vulnerable` in another terminal, export the two demo authorization variables, and add `--allow-private` to reproduce it. The [API guide](docs/preview-0.4-api.md) has the complete commands and fixed-variant run.
 
 No write operation, payment action, automatic login, endpoint discovery, or general fuzzing is performed. Expired credentials, indistinguishable actors, rate limits, unexpected responses, and incomplete controls remain partial or unverified.
+
+Opt-in `allow.protected.match: "json-values"` checks the same configured synthetic canary at other JSON value positions, with bounded traversal and unchanged owner/identity controls. The SDK's `buildOpenApiPolicy` / `runOpenApiPolicy` compiles an explicit OpenAPI GET allowlist, including identity routes, with caller-supplied scalar path bindings into that same executor. It never follows remote references or generates arbitrary payloads. Run `node examples/openapi-owned-fixture.mjs` for the owned loopback example and `npm run test:dast` for repeated positive/safe/error task coverage, request counts and timing. Real staging remains separately configured and unverified; see the [API guide](docs/preview-0.4-api.md).
+
+Each `api.authorization-data-exposure` finding now carries this run's control results. `controlVerification.state` is `controls_passed` only when the probe actor's identity before/after, the owner positive controls before/after and a completed probe all passed; otherwise it is `inconclusive`. `evidence` references steps of the same check's `apiExecution` ledger (ordinal, phase, outcome, HTTP status) and never response values. `replay` records the policy digest, case and actor. This is scanner evidence: the finding `kind` stays `candidate`, and the agent report's exploit/fix `verification` stays `not_run`.
+
+```sh
+node build/src/cli.js replay \
+  --report /tmp/wakeio-api/report.json \
+  --api-policy /path/to/your-api-policy.json \
+  --finding <finding id from report.json> \
+  --out /tmp/wakeio-replay
+```
+
+`replay` refuses a policy whose digest differs, then re-executes only that case, its owner and the probe actor. Only a completed run can return `reproduced` (exit 1) or `not_reproduced` (exit 0, with an accepted denial). An incomplete check, including a failed control or interrupted request, remains `inconclusive` (exit 2), even if an earlier response exposed the canary; policy refusal also exits 2. It writes `replay.json` plus the reduced run's reports. `not_reproduced` is scoped evidence, not proof of a fix.
 
 For a before/after review, keep the logical project identity and scan options stable:
 
@@ -200,6 +239,44 @@ node build/src/cli.js compare \
 
 Comparison refuses to present mismatched or incomplete scopes as a clean result. A finding that disappeared is `not_observed`, not an automatic fix certificate. See the [comparison guide](docs/preview-0.4-comparison.md).
 
+## Active DAST preview (opt-in)
+
+Active checks send generated or template requests to a target, so they never run implicitly. Every active run needs `--active-consent` (exit 2 before any DNS lookup or request without it). Only test targets you own or are authorized to test; private/loopback targets additionally need `--allow-private`, and metadata/link-local addresses stay blocked. Add `--allowed-origin ORIGIN` (repeatable) to pin a scan to known origins: `--url`, `--api-base` and an API policy `baseUrl` outside the list are refused before any DNS lookup or request.
+
+```sh
+# Schemathesis: generated GET inputs for explicitly listed OpenAPI operations
+node build/src/cli.js scan --openapi openapi.json --api-base https://staging.example.test/ \
+  --operation '/items/{id}' --operation /search --active-consent --fail-on low
+
+# Nuclei 3.11.1: prepare once, then scan the --url origin with prepared templates
+node scripts/install-tools.mjs --tools nuclei          # verifies the pinned upstream SHA-256
+nuclei -ut -ud /path/to/nuclei-templates                # templates are never downloaded during a scan
+node build/src/cli.js scan --url http://127.0.0.1:3000/ --engine nuclei \
+  --nuclei /path/to/nuclei --nuclei-templates /path/to/nuclei-templates \
+  --nuclei-scope misconfiguration,exposures --active-consent --allow-private --nuclei-timeout-ms 300000
+```
+
+Both engines connect only to a per-run loopback egress gate. The gate validates the origin with the same URL-network policy as URL scans and pins the validated address. For plain HTTP, it forwards only that origin and GET/HEAD, forces identity encoding, and enforces request and per-response/total byte budgets on the wire. Requests that leave the origin (for example templates probing another port) are refused and counted, not sent. HTTPS Nuclei is refused before target execution (error, exit 2): a CONNECT tunnel hides the HTTP requests inside it, so counting tunnels cannot enforce the request budget. Nuclei runs only signed HTTP templates with `-ni -duc -dr`; raw/unsafe, non-GET, self-contained and other-protocol templates are excluded and counted. Nuclei can exit 0 after partial progress, so completion also requires 100% engine progress, zero engine errors, no budget stop and no upstream failure; anything else is `partial` (exit 2). A missing engine, Python runtime or template directory is an `error` (exit 2), never a clean pass.
+
+In GitHub Actions, use the separate `dast` Action so passive workflows can never start active testing. It requires `active-consent: 'true'` and an `allowed-origins` list that contains every target origin. After Node.js setup for policy evaluation, it refuses `pull_request_target`, fork pull requests and fork `workflow_run` events before engine download, Python setup or target request. Nuclei is installed from the pinned archive and nuclei-templates must match an expected `templates-checksum.txt` digest. [`examples/github-dast.yml`](examples/github-dast.yml) starts the application inside the job, scans it on push, pull request and a daily schedule, uploads SARIF and keeps the reports:
+
+```yaml
+- uses: dusen0528/wakeio-security-ci/dast@REVIEWED_COMMIT_SHA
+  with:
+    active-consent: 'true'
+    allowed-origins: ${{ vars.WAKEIO_DAST_ALLOWED_ORIGINS }}
+    allow-private: 'true'
+    url: http://127.0.0.1:3000/
+    engines: nuclei
+    nuclei-templates: .wakeio/nuclei-templates
+    nuclei-templates-sha256: a221c053f1bb5562f5c790c76184bc91da2af3819080776a8c87e9c6787cb473
+    openapi: openapi.json
+    api-base: http://127.0.0.1:3000/
+    operations: /items/{id}
+```
+
+Reports record executed requests, requests refused by the budget, egress refusals, the seed and schema digest (Schemathesis), and template counts, exclusions and the `templates-checksum.txt` digest (Nuclei). Response bodies, generated values, extracted values, proxy credentials and template text are not retained. `wakeio-security-ci doctor --dast` reports engine readiness without running anything. Authentication, write operations, stateful workflows, browser-driven checks, own probes and crawling are not part of this preview.
+
 ## A small synthetic example
 
 The following is a labeled regression fixture, not a real application result:
@@ -221,10 +298,13 @@ To reproduce the local checks:
 
 ```sh
 node scripts/bootstrap-schemathesis.mjs
-node --test scripts/ci-verification.test.mjs
+node scripts/bootstrap-nuclei.mjs
+node --test scripts/ci-verification.test.mjs scripts/bootstrap-nuclei.test.mjs
 npm run test:schemathesis
 npm run benchmark -- --strict
 ```
+
+The explicit Nuclei bootstrap verifies the pinned 3.11.1 binary and the SHA-256 of the official v10.5.0 template source archive at commit `f8b8b8dcd70d93826c3767e1829ef8243af9f03b`. It retains the complete upstream scopes and MIT license outside tracked source, writes a local setup receipt under `artifacts/ci/`, and exports engine paths in GitHub Actions. `test:schemathesis` reads that receipt locally (or explicit `WAKEIO_NUCLEI` and `WAKEIO_NUCLEI_TEMPLATES` paths), requires both real engines, and fails on any skip. It only scans owned loopback fixtures; setup downloads are separate from scans.
 
 The implemented [checklist](docs/checklist.md), [0.4 guide](docs/preview-0.4.md), and [verification record](docs/verification-0.4.md) describe the exact scope. Complete penetration testing, exploit generation, browser/runtime proof, broad API fuzzing, live database or cloud inspection, image CVE scanning, and a whole-service safety verdict are outside this project’s contract.
 

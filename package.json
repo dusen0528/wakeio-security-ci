@@ -1,6 +1,6 @@
 {
   "name": "wakeio-security-ci",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Bounded local source and URL security checks for CI",
   "license": "Apache-2.0",
   "repository": {
@@ -18,9 +18,16 @@
   "bin": {
     "wakeio-security-ci": "./build/src/cli.js"
   },
+  "types": "./build/src/index.d.ts",
   "exports": {
-    ".": "./build/src/index.js",
-    "./contracts": "./build/src/contracts.js"
+    ".": {
+      "types": "./build/src/index.d.ts",
+      "default": "./build/src/index.js"
+    },
+    "./contracts": {
+      "types": "./build/src/contracts.d.ts",
+      "default": "./build/src/contracts.js"
+    }
   },
   "files": [
     "build/src",
@@ -45,9 +52,11 @@
   "scripts": {
     "build": "tsc -p tsconfig.json && node scripts/build-action-bundle.mjs",
     "test": "npm run build && node --test build/tests/*.test.js",
+    "test:dast": "npm run build && node examples/dast-owned-corpus.mjs",
     "benchmark": "npm run build && node scripts/benchmark.mjs",
     "package:release": "npm run build && node scripts/package-release.mjs",
     "test:schemathesis": "node scripts/test-schemathesis.mjs",
+    "test:nuclei": "npm run build && WAKEIO_REQUIRE_NUCLEI=1 node --test build/tests/nuclei.test.js",
     "test:repair:docker": "npm run build && node scripts/verify-repair-docker.mjs"
   },
   "dependencies": {

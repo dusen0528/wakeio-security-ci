@@ -1,11 +1,19 @@
+import { createHash } from "node:crypto";
+import { apiRequestPlanDigest, createApiExecutionLedger, finishApiExecutionLedger } from "./api-execution.js";
+import type { ApiExecutionLedger, ApiExecutionStep, ApiRequestPlan, ApiRequestPlanStep } from "./contracts.js";
+export type { ApiRequestPlan, ApiRequestPlanStep } from "./contracts.js";
+import { ApiPolicyError } from "./api-policy-error.js";
+import { types } from "node:util";
+import { snapshotJsonData } from "./json-snapshot.js";
 import { ownedApiCapture, type ApiStateCaptureSession } from './api-state-capture.js';
-import type { CheckResult, Finding } from "./contracts.js";
+import type { CheckResult, Finding, FindingControlOutcome, FindingEvidence, FindingControlVerification } from "./contracts.js";
 import {
   MAX_REQUESTS,
   MAX_SINGLE_BODY_BYTES,
   UrlNetworkError,
   fetchResource,
   normalizeUrl,
+  validateStaticTarget,
   safeUrl,
   type FetchedResource,
   type NormalizedUrl,
@@ -24,8 +32,8 @@ export const API_MAX_SINGLE_BODY_BYTES = MAX_SINGLE_BODY_BYTES;
 export const API_MAX_TOTAL_BODY_BYTES = 10 * 1024 * 1024;
 
 /** Shared deadline/cancellation contract for API runners and worker adapters. */
-export function createApiRunControl(timeoutMs: number, signal?: AbortSignal) {
-  if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > API_MAX_TIMEOUT_MS) {
+export function createApiRunControl(timeoutMs: number, signal?: AbortSignal, maxTimeoutMs: number = API_MAX_TIMEOUT_MS) {
+  if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > maxTimeoutMs) {
     throw new RangeError("invalid API time budget");
   }
   if (signal !== undefined && !(signal instanceof AbortSignal)) throw new TypeError("invalid API cancellation signal");
@@ -55,6 +63,15 @@ export interface ApiScalarExpectation {
   equals: JsonScalar;
 }
 
+/** Only the configured synthetic canary is searched; response values are never reported. */
+export interface ApiProtectedExpectation extends ApiScalarExpectation {
+  /** Default: pointer. json-values also checks exact scalar values at other JSON positions. */
+  match?: "pointer" | "json-values";
+}
+
+export const API_MAX_EVIDENCE_NODES = 10_000;
+export const API_MAX_EVIDENCE_DEPTH = 64;
+
 /**
  * A GET identity control. The primary marker identifies the principal. An
  * optional organization marker may be shared by multiple principals.
@@ -82,7 +99,7 @@ export interface ApiAllowExpectationV2 {
   actor: string;
   status: number;
   resource: ApiScalarExpectation;
-  protected: ApiScalarExpectation;
+  protected: ApiProtectedExpectation;
 }
 
 export type ApiAllowExpectation = ApiAllowExpectationV1 | ApiAllowExpectationV2;
@@ -143,7 +160,7 @@ interface NormalizedAllow {
   actor: string;
   status: number;
   resource: ApiScalarExpectation;
-  protected?: ApiScalarExpectation;
+  protected?: ApiProtectedExpectation;
 }
 
 interface NormalizedDeny {
@@ -182,7 +199,23 @@ interface CredentialSet {
   hasAuthenticatedActor: boolean;
 }
 
+/** Fixed counters only: no credentials, response values or caller identifiers. */
+interface SessionDiagnostics {
+  authenticatedDeny401Count: number;
+  identityStatusMismatches: number;
+  identityResponseFailures: number;
+  identityPrincipalMismatches: number;
+  identityOrganizationMismatches: number;
+  identityRequestFailures: number;
+}
+
 interface RequestContextState {
+  execution: ApiExecutionLedger;
+  requestOffset: number;
+  activeStep?: ApiExecutionStep;
+  actorIndexes: Map<string, number>;
+  caseIndexes: Map<string, number>;
+  session: SessionDiagnostics;
   ownedCapture?: ApiStateCaptureSession;
   context: UrlNetworkContext;
   bytes: number;
@@ -217,22 +250,24 @@ interface ControlResult {
   valid: boolean;
 }
 
-class ApiPolicyError extends Error {
-  readonly code: string;
-
-  constructor(code: string, message: string) {
-    super(message);
-    this.name = "ApiPolicyError";
-    this.code = code;
-  }
-}
 
 function invalid(message: string): never {
   throw new ApiPolicyError("invalid_policy", message);
 }
 
+function policyLocation<T>(location: string, read: () => T): T {
+  try { return read(); }
+  catch (error) {
+    if (error instanceof ApiPolicyError) {
+      if (error.location === 'policy') error.location = location;
+      else if (!error.location.startsWith('policy.')) error.location = `${location}.${error.location}`;
+    }
+    throw error;
+  }
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
+  return typeof value === "object" && value !== null && !types.isProxy(value) && !Array.isArray(value);
 }
 
 function hasOwn(value: Record<string, unknown>, key: string): boolean {
@@ -344,9 +379,9 @@ function parseActor(value: unknown, version: 1 | 2): ApiActor {
   exactKeys(value, ["id"], version === 2 ? ["authorizationEnv", "identity"] : ["authorizationEnv"], "actor");
   const id = safeIdentifier(value.id, "actor id");
   const actor: ApiActor = { id };
-  if (hasOwn(value, "authorizationEnv")) actor.authorizationEnv = safeEnvironmentName(value.authorizationEnv);
+  if (hasOwn(value, "authorizationEnv")) actor.authorizationEnv = policyLocation("authorizationEnv", () => safeEnvironmentName(value.authorizationEnv));
   if (id === "anonymous" && actor.authorizationEnv !== undefined) invalid("anonymous actor cannot carry credentials");
-  if (hasOwn(value, "identity")) actor.identity = parseIdentity(value.identity);
+  if (hasOwn(value, "identity")) actor.identity = policyLocation("identity", () => parseIdentity(value.identity));
   if (version === 1 && actor.identity !== undefined) invalid("policy version 1 actors may not declare identity; migrate to version 2");
   if (version === 2) {
     if (id === "anonymous" && actor.identity !== undefined) invalid("anonymous actor cannot carry identity");
@@ -366,7 +401,13 @@ function parseAllow(value: unknown, version: 1 | 2): ApiAllowExpectation {
   }
   exactKeys(value, ["actor", "status", "resource", "protected"], [], "allow");
   const resource = parseScalarExpectation(value.resource, "allow resource");
-  const protectedMarker = parseScalarExpectation(value.protected, "allow protected");
+  if (!isRecord(value.protected)) invalid("allow protected must be an object");
+  exactKeys(value.protected, ["jsonPointer", "equals"], ["match"], "allow protected");
+  if (hasOwn(value.protected, "match") && value.protected.match !== "pointer" && value.protected.match !== "json-values") invalid("allow protected match is unsupported");
+  const protectedMarker: ApiProtectedExpectation = {
+    ...parseScalarExpectation({ jsonPointer: value.protected.jsonPointer, equals: value.protected.equals }, "allow protected"),
+    ...(hasOwn(value.protected, "match") ? { match: value.protected.match as "pointer" | "json-values" } : {}),
+  };
   if (resource.jsonPointer === protectedMarker.jsonPointer) invalid("allow resource and protected assertions must use separate JSON pointers");
   if (typeof protectedMarker.equals !== "string" || protectedMarker.equals.trim().length === 0) invalid("allow protected equals must be a non-empty string canary");
   if (scalarMatches(protectedMarker.equals, resource.equals)) invalid("allow protected canary must differ from the resource identity marker");
@@ -391,11 +432,11 @@ function parseCase(value: unknown, version: 1 | 2): ApiPolicyCase {
   exactKeys(value, ["id", "path", "allow", "deny"], [], "case");
   const id = safeIdentifier(value.id, "case id");
   const path = safePolicyPath(value.path);
-  const allow = parseAllow(value.allow, version);
+  const allow = policyLocation("allow", () => parseAllow(value.allow, version));
   if (!Array.isArray(value.deny) || value.deny.length === 0 || value.deny.length > MAX_ACTORS) {
     invalid("case deny must be a bounded non-empty array");
   }
-  const deny = value.deny.map((entry) => parseDeny(entry, version));
+  const deny = value.deny.map((entry, index) => policyLocation(`deny[${index}]`, () => parseDeny(entry, version)));
   if (new Set(deny.map((entry) => entry.actor)).size !== deny.length) invalid("case deny actors may not be duplicated");
   return { id, path, allow, deny };
 }
@@ -418,24 +459,36 @@ function normalizeBaseUrl(value: unknown): NormalizedUrl {
  * synchronous and performs no DNS lookup or other network operation.
  */
 export function parseApiPolicy(input: unknown): ParsedApiPolicy {
+  try { input = snapshotJsonData(input); } catch { invalid("policy must be bounded JSON data without accessors or custom objects"); }
   if (!isRecord(input)) invalid("policy must be a JSON object");
   exactKeys(input, ["version", "baseUrl", "actors", "cases"], [], "policy");
   const version = input.version === API_POLICY_VERSION || input.version === API_POLICY_LEGACY_VERSION ? input.version : undefined;
   if (version === undefined) invalid("policy version is unsupported");
-  const baseUrl = normalizeBaseUrl(input.baseUrl);
+  const baseUrl = policyLocation("policy.baseUrl", () => normalizeBaseUrl(input.baseUrl));
   if (!Array.isArray(input.actors) || input.actors.length === 0 || input.actors.length > MAX_ACTORS) {
     invalid("actors must be a bounded non-empty array");
   }
-  const actors = input.actors.map((actor) => parseActor(actor, version));
-  const actorIds = new Set(actors.map((actor) => actor.id));
-  if (actorIds.size !== actors.length) invalid("actor ids may not be duplicated");
-  const authorizationEnvs = actors.map((actor) => actor.authorizationEnv).filter((value): value is string => value !== undefined);
-  if (new Set(authorizationEnvs).size !== authorizationEnvs.length) invalid("authorizationEnv may not be reused");
+  const actors = input.actors.map((actor, index) => policyLocation(`policy.actors[${index}]`, () => parseActor(actor, version)));
+  const actorIds = new Set<string>();
+  actors.forEach((actor, index) => {
+    if (actorIds.has(actor.id)) policyLocation(`policy.actors[${index}].id`, () => invalid("actor ids may not be duplicated"));
+    actorIds.add(actor.id);
+  });
+  const seenEnvs = new Set<string>();
+  actors.forEach((actor, index) => {
+    if (actor.authorizationEnv === undefined) return;
+    if (seenEnvs.has(actor.authorizationEnv)) policyLocation(`policy.actors[${index}].authorizationEnv`, () => invalid("authorizationEnv may not be reused"));
+    seenEnvs.add(actor.authorizationEnv);
+  });
   if (!Array.isArray(input.cases) || input.cases.length === 0 || input.cases.length > API_MAX_CASES) {
     invalid(`cases must contain between 1 and ${API_MAX_CASES} entries`);
   }
-  const cases = input.cases.map((entry) => parseCase(entry, version));
-  if (new Set(cases.map((entry) => entry.id)).size !== cases.length) invalid("case ids may not be duplicated");
+  const cases = input.cases.map((entry, index) => policyLocation(`policy.cases[${index}]`, () => parseCase(entry, version)));
+  const caseIds = new Set<string>();
+  cases.forEach((entry, index) => {
+    if (caseIds.has(entry.id)) policyLocation(`policy.cases[${index}].id`, () => invalid("case ids may not be duplicated"));
+    caseIds.add(entry.id);
+  });
   const parsedCases: ParsedApiCase[] = [];
   const resolvePath = (path: string, label: string): NormalizedUrl => {
     let requestUrl: NormalizedUrl;
@@ -479,13 +532,15 @@ export function parseApiPolicy(input: unknown): ParsedApiPolicy {
   for (const actor of actors) {
     if (actor.identity) identities.set(actor.id, { ...actor.identity, requestUrl: resolvePath(actor.identity.path, "identity") });
   }
-  for (const entry of parsedCases) {
-    if (!actorById.has(entry.allow.actor)) invalid("allow actor must refer to a configured actor");
-    if (actorById.get(entry.allow.actor)?.authorizationEnv === undefined) invalid("allow actor must have an authorizationEnv");
-    for (const deny of entry.deny) {
+  for (const [caseIndex, entry] of parsedCases.entries()) {
+    policyLocation(`policy.cases[${caseIndex}].allow.actor`, () => {
+      if (!actorById.has(entry.allow.actor)) invalid("allow actor must refer to a configured actor");
+      if (actorById.get(entry.allow.actor)?.authorizationEnv === undefined) invalid("allow actor must have an authorizationEnv");
+    });
+    for (const [denyIndex, deny] of entry.deny.entries()) policyLocation(`policy.cases[${caseIndex}].deny[${denyIndex}].actor`, () => {
       if (!actorById.has(deny.actor)) invalid("deny actor must refer to a configured actor");
       if (deny.actor === entry.allow.actor) invalid("deny actor may not equal the allow actor");
-    }
+    });
   }
   const identityCount = version === 2 ? actors.filter((actor) => actor.authorizationEnv !== undefined).length : 0;
   const expectedRequests = identityCount * 2 + parsedCases.reduce((sum, entry) => sum + 2 + entry.deny.length, 0);
@@ -506,9 +561,135 @@ export function parseApiPolicy(input: unknown): ParsedApiPolicy {
   return { policy, baseUrl, cases: parsedCases, identities, expectedRequests, legacy: version === API_POLICY_LEGACY_VERSION };
 }
 
+function parsedPolicyDigest(parsed: ParsedApiPolicy): string {
+  return createHash("sha256").update(JSON.stringify({ version: 1, policy: parsed.policy })).digest("hex");
+}
+
+/**
+ * Digest of the parsed policy data. The parser rebuilds every object in a fixed
+ * key order, so formatting and key order in the source file do not change it.
+ * Environment variable names are included; credential values never are.
+ */
+export function apiPolicyDigest(policy: unknown): string {
+  return parsedPolicyDigest(parseApiPolicy(policy));
+}
+
 /** Alias for callers that prefer a validation-named API. Throws on invalid input. */
 export function validateApiPolicy(input: unknown): ParsedApiPolicy {
   return parseApiPolicy(input);
+}
+
+/** A configuration check, never a scan result or authorization to contact a target. */
+export interface ApiPreflightIssue { code: string; location: string; message: string }
+export interface ApiPreflightResult {
+  version: 1;
+  kind: 'api-preflight';
+  status: 'ready' | 'blocked';
+  execution: 'not_run';
+  networkRequests: 0;
+  dnsLookups: 0;
+  policyVersion: 1 | 2 | null;
+  /** Redacted plan identity only; no target, credential or assertion values are hashed. */
+  planSha256: string | null;
+  issues: ApiPreflightIssue[];
+  plan: ApiRequestPlan | null;
+  limitations: string[];
+}
+const PREFLIGHT_LIMITATIONS = [
+  'Configuration only: no requests or DNS lookups were made; no scan findings or security verdict exist.',
+  'Indexes refer to the input arrays; target URLs, paths, caller identifiers, environment names and assertion values are omitted.',
+  'Runtime must revalidate credentials, DNS answers, pinned connections, responses, principal identity and owner controls.',
+  'The logical GET plan includes before/after controls; failed controls or cancellation may skip steps. Address retries share the HTTP attempt cap.',
+  'An authenticated probe returning HTTP 401 remains incomplete even if listed; before/after identity checks cannot establish uninterrupted session or tenant continuity.',
+  'GET-only does not establish that an application route has no side effects. Use only explicitly authorized synthetic resources.',
+  'No target discovery, write requests, fuzzing, response-schema validation or whole-service security coverage.',
+];
+/** Fixed diagnostic envelope also used by the OpenAPI adapter and CLI. */
+function blockedApiPreflight(code: string, location: string, message: string): ApiPreflightResult {
+  // This constructor accepts only fixed strings at internal call sites, not errors from input.
+  return { version: 1, kind: 'api-preflight', status: 'blocked', execution: 'not_run', networkRequests: 0, dnsLookups: 0,
+    policyVersion: null, planSha256: null, issues: [{ code, location, message }], plan: null, limitations: [...PREFLIGHT_LIMITATIONS] };
+}
+
+class ApiPreparationError extends Error {
+  constructor(readonly issue: ApiPreflightIssue) { super(issue.message); }
+}
+function preparationError(code: string, location: string, message: string): never {
+  throw new ApiPreparationError({ code, location, message });
+}
+
+/** Shared with execution; no network, no retained secret-bearing public output. */
+function prepareApiRun(options: ApiRunOptions): { parsed: ParsedApiPolicy; credentials: CredentialSet; timeoutMs: number; allowPrivate: boolean; signal?: AbortSignal } {
+  if (!isRecord(options)) preparationError('invalid_options', 'options', 'Provide a plain API run options object.');
+  const proto = Object.getPrototypeOf(options);
+  const descriptors = Object.getOwnPropertyDescriptors(options);
+  if ((proto !== Object.prototype && proto !== null) || Object.getOwnPropertySymbols(options).length
+    || Object.keys(descriptors).some(key => !['policy', 'allowPrivate', 'timeoutMs', 'env', 'signal'].includes(key))
+    || Object.values(descriptors).some(value => !('value' in value) || !value.enumerable)) {
+    preparationError('invalid_options', 'options', 'Use only documented data properties; accessors and custom objects are unsupported.');
+  }
+  // Read only this bounded own-data snapshot. Inherited getters must never
+  // enable private transport or supply credentials; later caller mutation must
+  // not change execution options or the report's account of those options.
+  options = Object.create(null, descriptors) as ApiRunOptions;
+  if (options.signal !== undefined && (types.isProxy(options.signal) || !(options.signal instanceof AbortSignal))) preparationError('invalid_options', 'signal', 'signal must be an AbortSignal.');
+  if (options.allowPrivate !== undefined && typeof options.allowPrivate !== 'boolean') preparationError('invalid_options', 'allowPrivate', 'allowPrivate must be boolean.');
+  const timeoutMs = options.timeoutMs === undefined ? API_DEFAULT_TIMEOUT_MS : options.timeoutMs;
+  if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > API_MAX_TIMEOUT_MS) preparationError('invalid_options', 'timeoutMs', `Set timeoutMs between 1 and ${API_MAX_TIMEOUT_MS}.`);
+  let parsed: ParsedApiPolicy;
+  try { parsed = parseApiPolicy(options.policy); }
+  catch (error) { preparationError('invalid_policy', error instanceof ApiPolicyError ? error.location : 'policy', error instanceof ApiPolicyError ? error.message : 'Provide a valid bounded API policy JSON object.'); }
+  const env = options.env === undefined ? process.env : options.env;
+  if (!env || typeof env !== 'object' || types.isProxy(env) || Array.isArray(env)) preparationError('invalid_environment', 'env', 'Provide an environment object with data properties.');
+  const principals = new Set<JsonScalar>();
+  parsed.policy.actors.forEach((actor, actorIndex) => {
+    if (!actor.identity) return;
+    if (principals.has(actor.identity.equals)) preparationError('duplicate_principal', `policy.actors[${actorIndex}].identity.equals`, 'Distinct authenticated actors require distinct expected principal markers; organization markers may be shared.');
+    principals.add(actor.identity.equals);
+  });
+  const credentials = resolveCredentials(parsed, env);
+  if (parsed.baseUrl.protocol === 'http:' && credentials.hasAuthenticatedActor && !(options.allowPrivate === true && isLoopbackHostname(parsed.baseUrl.hostname))) {
+    preparationError('insecure_authenticated_transport', 'policy.baseUrl', 'Use HTTPS for authenticated targets; HTTP is limited to explicit private loopback fixtures.');
+  }
+  return { parsed, credentials, timeoutMs, allowPrivate: options.allowPrivate === true, signal: options.signal };
+}
+
+function requestPlan(parsed: ParsedApiPolicy, timeoutMs: number, allowPrivate: boolean): ApiRequestPlan {
+  const steps: ApiRequestPlanStep[] = [];
+  const indexes = new Map(parsed.policy.actors.map((actor, index) => [actor.id, index]));
+  const add = (phase: ApiRequestPlanStep['phase'], actor: string, caseIndex?: number) => {
+    steps.push({ ordinal: steps.length, method: 'GET', phase, actorIndex: indexes.get(actor)!, ...(caseIndex === undefined ? {} : { caseIndex }) });
+  };
+  if (!parsed.legacy) for (const actor of parsed.policy.actors) if (actor.identity) add('identity-before', actor.id);
+  parsed.cases.forEach((entry, caseIndex) => {
+    add('owner-before', entry.allow.actor, caseIndex);
+    for (const deny of entry.deny) add('deny', deny.actor, caseIndex);
+    add('owner-after', entry.allow.actor, caseIndex);
+  });
+  if (!parsed.legacy) for (const actor of parsed.policy.actors) if (actor.identity) add('identity-after', actor.id);
+  return { actorCount: parsed.policy.actors.length, caseCount: parsed.cases.length, logicalRequests: parsed.expectedRequests,
+    maximumHttpAttempts: API_MAX_REQUESTS, timeoutMs, maximumResponseBytes: API_MAX_SINGLE_BODY_BYTES,
+    maximumTotalResponseBytes: API_MAX_TOTAL_BODY_BYTES, allowPrivate, steps };
+}
+
+/** Offline, redacted configuration and execution-plan preview. Ready is not a scan pass. */
+export function preflightApiPolicy(options: ApiRunOptions): ApiPreflightResult {
+  try {
+    const { parsed, timeoutMs, allowPrivate, signal } = prepareApiRun(options);
+    const issues: ApiPreflightIssue[] = [];
+    if (parsed.legacy) issues.push({ code: 'legacy_policy', location: 'policy.version', message: 'Migrate to version 2 with identity and protected-canary assertions; version 1 cannot establish a clean authorization result.' });
+    if (signal && Object.getOwnPropertyDescriptor(AbortSignal.prototype, 'aborted')!.get!.call(signal)) issues.push({ code: 'cancelled', location: 'signal', message: 'The supplied cancellation signal is already aborted.' });
+    try { validateStaticTarget(parsed.baseUrl, allowPrivate); }
+    catch { issues.push({ code: 'blocked_target', location: 'policy.baseUrl', message: 'The target violates static network policy; metadata and forbidden ranges stay blocked even with allowPrivate.' }); }
+    const plan = requestPlan(parsed, timeoutMs, allowPrivate);
+    return { version: 1, kind: 'api-preflight', status: issues.length ? 'blocked' : 'ready', execution: 'not_run',
+      networkRequests: 0, dnsLookups: 0, policyVersion: parsed.policy.version, issues,
+      plan, planSha256: apiRequestPlanDigest(parsed.policy.version, plan),
+      limitations: [...PREFLIGHT_LIMITATIONS] };
+  } catch (error) {
+    return error instanceof ApiPreparationError ? blockedApiPreflight(error.issue.code, error.issue.location, error.issue.message)
+      : blockedApiPreflight('invalid_options', 'options', 'Could not validate the supplied configuration data.');
+  }
 }
 
 function codeOf(error: unknown): string {
@@ -525,7 +706,7 @@ function validAuthorization(value: unknown): value is string {
   if (typeof value !== "string" || value.length === 0 || value.length > MAX_AUTHORIZATION_LENGTH) return false;
   for (const character of value) {
     const code = character.charCodeAt(0);
-    if (code < 0x20 || code === 0x7f) return false;
+    if (code < 0x20 || code === 0x7f || code > 0xff) return false;
   }
   return true;
 }
@@ -534,12 +715,14 @@ function resolveCredentials(parsed: ParsedApiPolicy, env: NodeJS.ProcessEnv): Cr
   const values = new Map<string, string | undefined>();
   const seenValues = new Set<string>();
   let hasAuthenticatedActor = false;
-  for (const actor of parsed.policy.actors) {
+  for (const [actorIndex, actor] of parsed.policy.actors.entries()) {
     if (actor.authorizationEnv === undefined) continue;
     hasAuthenticatedActor = true;
-    const value = Object.prototype.hasOwnProperty.call(env, actor.authorizationEnv) ? env[actor.authorizationEnv] : undefined;
-    if (!validAuthorization(value)) invalid("an authorization environment variable is missing or invalid");
-    if (seenValues.has(value)) invalid("authorization credentials must resolve to distinct values");
+    const descriptor = Object.getOwnPropertyDescriptor(env, actor.authorizationEnv);
+    const value = descriptor && 'value' in descriptor ? descriptor.value : undefined;
+    const location = `policy.actors[${actorIndex}].authorizationEnv`;
+    if (!validAuthorization(value)) preparationError('invalid_credentials', location, 'Set the referenced environment variable to a non-empty valid HTTP header value; accessors and inherited values are unsupported.');
+    if (seenValues.has(value)) preparationError('duplicate_credentials', location, 'The referenced authorization value must differ from every other authenticated actor.');
     seenValues.add(value);
     values.set(actor.id, value);
   }
@@ -634,10 +817,13 @@ async function requestApi(
   authorization: string | undefined,
   state: RequestContextState,
 ): Promise<RequestOutcome> {
-  if (state.stopRequests) return { errorCode: state.bodyReadIncomplete ? "body_limit" : "total_body_limit" };
-  if (state.bytes >= API_MAX_TOTAL_BODY_BYTES) {
+  if (state.stopRequests || state.ownedCapture?.budget?.bodyExhausted) { state.bodyBudgetExhausted = true; state.bodyReadIncomplete ||= state.ownedCapture?.budget?.bodyReadIncomplete ?? false; if (state.activeStep) state.activeStep.reason = state.ownedCapture?.budget ? "shared_body_budget" : "body_budget"; return { errorCode: state.bodyReadIncomplete ? "body_limit" : "total_body_limit" }; }
+  const bodyBytes = () => state.ownedCapture?.budget?.bytes ?? state.bytes;
+  if (bodyBytes() >= API_MAX_TOTAL_BODY_BYTES) {
     state.stopRequests = true;
     state.bodyBudgetExhausted = true;
+    if (state.ownedCapture?.budget) state.ownedCapture.budget.bodyExhausted = true;
+    if (state.activeStep) state.activeStep.reason = state.ownedCapture?.budget ? "shared_body_budget" : "body_budget";
     return { errorCode: "total_body_limit" };
   }
   const capture = state.ownedCapture;
@@ -653,15 +839,18 @@ async function requestApi(
         acceptJson: true,
       },
       url.origin,
-      Math.min(MAX_SINGLE_BODY_BYTES, API_MAX_TOTAL_BODY_BYTES - state.bytes),
-      Math.min(MAX_SINGLE_BODY_BYTES, API_MAX_TOTAL_BODY_BYTES - state.bytes),
+      Math.min(MAX_SINGLE_BODY_BYTES, API_MAX_TOTAL_BODY_BYTES - bodyBytes()),
+      Math.min(MAX_SINGLE_BODY_BYTES, API_MAX_TOTAL_BODY_BYTES - bodyBytes()),
     );
     state.bytes += resource.body.byteLength;
+    if (state.ownedCapture?.budget) state.ownedCapture.budget.bytes += resource.body.byteLength;
+    if (state.activeStep) state.activeStep.httpStatus = resource.status;
     try { capture?.finish(capturedOrdinal, resource); } catch { /* Oracle handles missing capture. */ }
     return { resource };
   } catch (error) {
     try { capture?.finish(capturedOrdinal); } catch { /* Oracle handles missing capture. */ }
     const errorCode = codeOf(error);
+    if (state.activeStep) state.activeStep.reason = requestFailureReason(errorCode, state);
     // readResponseBody can reject after consuming a final chunk that crosses
     // the cap. Stop the whole preview on that terminal condition so repeated
     // cases cannot accumulate unaccounted response bytes.
@@ -669,9 +858,39 @@ async function requestApi(
       state.stopRequests = true;
       state.bodyBudgetExhausted = true;
       state.bodyReadIncomplete = true;
+      if (state.ownedCapture?.budget) { state.ownedCapture.budget.bodyExhausted = true; state.ownedCapture.budget.bodyReadIncomplete = true; }
     }
     return { errorCode };
   }
+}
+
+function requestFailureReason(code: string, state: RequestContextState): ApiExecutionStep['reason'] {
+  if (Date.now() >= state.context.deadlineAt) return 'deadline';
+  if (state.context.signal.aborted) return 'cancelled';
+  if (['body_limit', 'total_body_limit'].includes(code)) return state.ownedCapture?.budget ? 'shared_body_budget' : 'body_budget';
+  if (code === 'request_limit') return state.ownedCapture?.budget ? 'shared_request_budget' : 'request_budget';
+  if (/blocked|private|metadata|redirect|scheme|port|address/.test(code)) return 'network_policy';
+  return 'transport_error';
+}
+
+function plannedOrdinal(state: RequestContextState, phase: ApiRequestPlanStep['phase'], actor: string, caseId: string | undefined): number | undefined {
+  const actorIndex = state.actorIndexes.get(actor), caseIndex = caseId === undefined ? undefined : state.caseIndexes.get(caseId);
+  return state.execution.plan!.steps.find(step => step.phase === phase && step.actorIndex === actorIndex && step.caseIndex === caseIndex)?.ordinal;
+}
+
+async function recordStep<T>(state: RequestContextState, phase: ApiRequestPlanStep['phase'], actor: string,
+  caseId: string | undefined, execute: () => Promise<T>, evaluated: (result: T) => boolean): Promise<T> {
+  const step = state.execution.steps[plannedOrdinal(state, phase, actor, caseId)!];
+  step.attemptStart = state.context.budget.count - state.requestOffset;
+  state.activeStep = step;
+  try {
+    const result = await execute();
+    step.httpAttempts = state.context.budget.count - state.requestOffset - step.attemptStart;
+    step.outcome = step.httpAttempts === 0 ? 'not_attempted' : evaluated(result) ? 'evaluated' : 'inconclusive';
+    if (step.outcome === 'evaluated') step.reason = 'evaluated';
+    else if (step.reason === 'not_reached') step.reason = 'assertion_inconclusive';
+    return result;
+  } finally { state.activeStep = undefined; }
 }
 
 function controlFailureNote(caseId: string, phase: "before" | "after", detail: string): string {
@@ -730,21 +949,25 @@ async function checkIdentity(
 ): Promise<{ valid: boolean; principal?: JsonScalar }> {
   const outcome = await requestApi(identity.requestUrl, authorization, state);
   if ("errorCode" in outcome) {
+    state.session.identityRequestFailures += 1;
     addNote(notes, identityFailureNote(actorId, `${phase} ${outcome.errorCode}`));
     return { valid: false };
   }
   const { resource } = outcome;
   if (resource.status !== identity.status) {
+    state.session.identityStatusMismatches += 1;
     addNote(notes, identityFailureNote(actorId, `${phase} HTTP ${resource.status}`));
     return { valid: false };
   }
   const parsed = readJson(resource);
   if (!parsed.valid) {
+    state.session.identityResponseFailures += 1;
     addNote(notes, identityFailureNote(actorId, `${phase} ${parsed.reason}`));
     return { valid: false };
   }
   const principal = atJsonPointer(parsed.value, identity.jsonPointer);
   if (!scalarMatches(principal, identity.equals)) {
+    state.session.identityPrincipalMismatches += 1;
     addNote(notes, identityFailureNote(actorId, `${phase} principal marker mismatch`));
     // Keep a non-empty scalar in memory for the duplicate-principal guard.
     // It is never copied into notes, findings, or report output.
@@ -753,6 +976,7 @@ async function checkIdentity(
   if (identity.organization) {
     const organization = atJsonPointer(parsed.value, identity.organization.jsonPointer);
     if (!scalarMatches(organization, identity.organization.equals)) {
+      state.session.identityOrganizationMismatches += 1;
       addNote(notes, identityFailureNote(actorId, `${phase} organization marker mismatch`));
       return { valid: false };
     }
@@ -807,7 +1031,8 @@ async function runIdentityControls(
       incomplete = true;
       continue;
     }
-    const result = await checkIdentity(actor.id, identity, authorization, phase, state, notes);
+    const result = await recordStep(state, phase === "before" ? "identity-before" : "identity-after", actor.id, undefined,
+      () => checkIdentity(actor.id, identity, authorization, phase, state, notes), result => result.valid);
     if (phase === "before") {
       current.beforeValid = result.valid;
       current.beforePrincipal = result.principal;
@@ -835,8 +1060,28 @@ function actorIdentityVerified(actorId: string, actor: ApiActor | undefined, sta
   return state?.beforeValid === true && state.identityReuse === false && state.beforePrincipal !== undefined;
 }
 
-function protectedMatches(value: unknown, marker: ApiScalarExpectation | undefined): boolean {
-  return marker !== undefined && scalarMatches(atJsonPointer(value, marker.jsonPointer), marker.equals);
+function protectedEvidence(value: unknown, marker: ApiProtectedExpectation | undefined): { matched: boolean; complete: boolean } {
+  if (!marker) return { matched: false, complete: true };
+  if (marker.match !== "json-values") return { matched: scalarMatches(atJsonPointer(value, marker.jsonPointer), marker.equals), complete: true };
+  if (scalarMatches(atJsonPointer(value, marker.jsonPointer), marker.equals)) return { matched: true, complete: true };
+  // Iterative, bounded traversal. Keys, substrings, encoded values and arbitrary
+  // secrets are deliberately outside this exact known-canary contract.
+  const pending: Array<{ value: unknown; depth: number }> = [{ value, depth: 0 }];
+  let visited = 0;
+  let complete = true;
+  while (pending.length) {
+    if (++visited > API_MAX_EVIDENCE_NODES) return { matched: false, complete: false };
+    const current = pending.pop()!;
+    if (scalarMatches(current.value, marker.equals)) return { matched: true, complete };
+    if (current.value === null || typeof current.value !== "object") continue;
+    if (current.depth >= API_MAX_EVIDENCE_DEPTH) { complete = false; continue; }
+    const children = Object.values(current.value);
+    // Never queue more work than the remaining node budget. A skipped branch
+    // cannot justify a clean denial, even when the HTTP status was expected.
+    if (children.length > API_MAX_EVIDENCE_NODES - visited - pending.length) return { matched: false, complete: false };
+    for (let index = children.length - 1; index >= 0; index -= 1) pending.push({ value: children[index], depth: current.depth + 1 });
+  }
+  return { matched: false, complete };
 }
 
 function resourceMatches(value: unknown, marker: ApiScalarExpectation): boolean {
@@ -863,11 +1108,27 @@ async function checkDeny(
   const status = resource.status;
   const expected = deny.statuses.includes(status);
   const parsed = readJson(resource);
-  const protectedExposed = parsed.valid && protectedMatches(parsed.value, entry.allow.protected);
+  const evidence = parsed.valid ? protectedEvidence(parsed.value, entry.allow.protected) : { matched: false, complete: true };
+  const protectedExposed = evidence.matched;
 
   if (protectedExposed) {
     findings.push(findingForExposure(entry, deny, status));
     addNote(notes, `API case ${entry.id}: actor ${deny.actor} returned the protected canary with HTTP ${status}; exposure is recorded.`);
+  }
+
+  // Identity controls are point-in-time evidence, not proof that this request
+  // authenticated. A 401 is inconclusive for an authenticated actor even if
+  // whoami succeeds before and after (endpoint-local rejection or recovery).
+  // Preserve observed canary exposure, including in a 401 response.
+  if (status === 401 && actor?.authorizationEnv !== undefined) {
+    state.session.authenticatedDeny401Count += 1;
+    addNote(notes, `API case ${entry.id}: actor ${deny.actor} returned HTTP 401 on an authenticated probe; authentication was not established for this request, so denial is inconclusive. Check credential validity and endpoint authentication requirements before rerunning.`);
+    return true;
+  }
+
+  if (!evidence.complete) {
+    addNote(notes, `API case ${entry.id}: actor ${deny.actor} response exceeded the bounded canary evidence traversal; denial is inconclusive.`);
+    return true;
   }
 
   // A rate limit or server failure is never a denial, even when the policy
@@ -937,6 +1198,66 @@ async function checkDeny(
   return false;
 }
 
+interface ExposureRecord {
+  finding: Finding;
+  caseId: string;
+  actor: string;
+  owner: string;
+}
+
+function identityControlOutcome(actor: ApiActor | undefined, identity: ActorIdentityState | undefined, phase: "before" | "after"): FindingControlOutcome {
+  if (actor?.authorizationEnv === undefined) return actor?.id === "anonymous" ? "not_applicable" : "failed";
+  if (!identity || identity.identityReuse || !identity.beforeValid || identity.beforePrincipal === undefined) return "failed";
+  if (phase === "before") return "passed";
+  return identity.afterValid && identity.afterPrincipal !== undefined
+    && principalKey(identity.afterPrincipal) === principalKey(identity.beforePrincipal) ? "passed" : "failed";
+}
+
+/**
+ * Exposure findings are recorded at the probe, before the owner-after and
+ * identity-after controls run. Decide verification only once the ledger is
+ * final, and reference ledger ordinals instead of copying response data.
+ */
+function attachExposureVerification(exposures: ExposureRecord[], parsed: ParsedApiPolicy, state: RequestContextState,
+  apiExecution: ApiExecutionLedger, identityStates: Map<string, ActorIdentityState>): void {
+  if (!exposures.length) return;
+  const policySha256 = parsedPolicyDigest(parsed);
+  const actors = new Map(parsed.policy.actors.map((actor) => [actor.id, actor]));
+  const ledgerStep = (ordinal: number | undefined) => ordinal === undefined ? undefined : apiExecution.steps.find((step) => step.ordinal === ordinal);
+  const ledgerControl = (ordinal: number | undefined): FindingControlOutcome => ledgerStep(ordinal)?.outcome === "evaluated" ? "passed" : "failed";
+  for (const { finding, caseId, actor, owner } of exposures) {
+    const ordinals = {
+      identityBefore: plannedOrdinal(state, "identity-before", actor, undefined),
+      ownerBefore: plannedOrdinal(state, "owner-before", owner, caseId),
+      probe: plannedOrdinal(state, "deny", actor, caseId),
+      ownerAfter: plannedOrdinal(state, "owner-after", owner, caseId),
+      identityAfter: plannedOrdinal(state, "identity-after", actor, undefined),
+    };
+    const controls: FindingControlVerification["controls"] = {
+      identityBefore: identityControlOutcome(actors.get(actor), identityStates.get(actor), "before"),
+      ownerBefore: ledgerControl(ordinals.ownerBefore),
+      probe: "canary_exposed",
+      probeCompleted: ledgerStep(ordinals.probe)?.outcome === "evaluated",
+      ownerAfter: ledgerControl(ordinals.ownerAfter),
+      identityAfter: identityControlOutcome(actors.get(actor), identityStates.get(actor), "after"),
+    };
+    const plan = apiExecution.plan;
+    const evidence: FindingEvidence | undefined = apiExecution.status !== "invalid" && apiExecution.planSha256 && plan
+      ? { basis: "api-execution-ledger", planSha256: apiExecution.planSha256,
+        steps: Object.values(ordinals).flatMap((ordinal) => {
+          const step = ledgerStep(ordinal), planned = plan.steps.find((entry) => entry.ordinal === ordinal);
+          return step && planned ? [{ ordinal: step.ordinal, phase: planned.phase, actor: parsed.policy.actors[planned.actorIndex].id,
+            outcome: step.outcome, httpStatus: step.httpStatus }] : [];
+        }) }
+      : undefined;
+    const verified = !parsed.legacy && evidence !== undefined && controls.probeCompleted
+      && [controls.identityBefore, controls.ownerBefore, controls.ownerAfter, controls.identityAfter].every((outcome) => outcome !== "failed");
+    finding.controlVerification = { state: verified ? "controls_passed" : "inconclusive", method: "api-differential-canary", controls };
+    if (evidence) finding.evidence = evidence;
+    finding.replay = { kind: "api-policy-case", policySha256, caseId, actor };
+  }
+}
+
 function errorCheck(code: string, note: string, metrics: Record<string, number | string | boolean> = {}): CheckResult {
   return {
     id: "api.authorization",
@@ -952,43 +1273,31 @@ function errorCheck(code: string, note: string, metrics: Record<string, number |
  * policy; this function never interprets a policy string or executes it.
  */
 export async function runApiPolicy(options: ApiRunOptions): Promise<CheckResult[]> {
-  if (!isRecord(options)) return [errorCheck("invalid_options", "API policy options are invalid.")];
-  if (options.signal !== undefined && !(options.signal instanceof AbortSignal)) {
-    return [errorCheck("invalid_options", "signal must be an AbortSignal.")];
+  const startedAt = performance.now();
+  let prepared: ReturnType<typeof prepareApiRun>;
+  try { prepared = prepareApiRun(options); }
+  catch (error) {
+    return [errorCheck(error instanceof ApiPreparationError ? (['invalid_credentials', 'duplicate_credentials'].includes(error.issue.code) ? 'invalid_policy' : error.issue.code) : 'invalid_options',
+      error instanceof ApiPreparationError ? `${error.issue.message} Validation failed; no requests were made.` : 'API options could not be validated; no requests were made.')];
   }
-  if (hasOwn(options, "allowPrivate") && options.allowPrivate !== undefined && typeof options.allowPrivate !== "boolean") {
-    return [errorCheck("invalid_options", "allowPrivate must be boolean.")];
-  }
-  const timeoutMs = options.timeoutMs === undefined ? API_DEFAULT_TIMEOUT_MS : options.timeoutMs;
-  if (typeof timeoutMs !== "number" || !Number.isSafeInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > API_MAX_TIMEOUT_MS) {
-    return [errorCheck("invalid_options", `timeoutMs must be between 1 and ${API_MAX_TIMEOUT_MS}.`)];
-  }
-  let parsed: ParsedApiPolicy;
-  try {
-    parsed = parseApiPolicy(options.policy);
-  } catch (error) {
-    return [errorCheck(codeOf(error), "API policy could not be validated; no requests were made.")];
-  }
-  const env = options.env === undefined ? process.env : options.env;
-  if (!env || typeof env !== "object") return [errorCheck("invalid_environment", "API authorization environment is invalid; no requests were made.")];
-  let credentials: CredentialSet;
-  try {
-    credentials = resolveCredentials(parsed, env);
-  } catch (error) {
-    return [errorCheck(codeOf(error), "API authorization credentials are missing or invalid; no requests were made.")];
-  }
-  if (parsed.baseUrl.protocol === "http:" && credentials.hasAuthenticatedActor && !(options.allowPrivate === true && isLoopbackHostname(parsed.baseUrl.hostname))) {
-    return [errorCheck("insecure_authenticated_transport", "Authenticated API policies require HTTPS; HTTP is allowed only for an explicit private loopback fixture.")];
-  }
+  const { parsed, credentials, timeoutMs, allowPrivate, signal } = prepared;
 
   const notes: string[] = [API_SCOPE_NOTE];
   const findings: Finding[] = [];
-  const controller = createApiRunControl(timeoutMs, options.signal);
-  const budget: UrlNetworkContext["budget"] = { count: 0, max: API_MAX_REQUESTS };
+  const controller = createApiRunControl(timeoutMs, signal);
+  const capture = ownedApiCapture(signal);
+  const budget: UrlNetworkContext["budget"] = capture?.budget?.requests ?? { count: 0, max: API_MAX_REQUESTS };
+  const requestOffset = budget.count;
   const state: RequestContextState = {
-    ownedCapture: ownedApiCapture(options.signal),
+    requestOffset,
+    execution: createApiExecutionLedger(parsed.policy.version, requestPlan(parsed, timeoutMs, allowPrivate)),
+    actorIndexes: new Map(parsed.policy.actors.map((actor, index) => [actor.id, index])),
+    caseIndexes: new Map(parsed.cases.map((entry, index) => [entry.id, index])),
+    session: { authenticatedDeny401Count: 0, identityStatusMismatches: 0, identityResponseFailures: 0,
+      identityPrincipalMismatches: 0, identityOrganizationMismatches: 0, identityRequestFailures: 0 },
+    ownedCapture: capture,
     context: {
-      allowPrivate: options.allowPrivate === true,
+      allowPrivate,
       signal: controller.signal,
       budget,
       deadlineAt: controller.deadlineAt,
@@ -1016,6 +1325,7 @@ export async function runApiPolicy(options: ApiRunOptions): Promise<CheckResult[
     addNote(notes, "API policy version 1 is accepted for migration, but it has no actor identity controls or protected-data assertion; authorization results are unverified and remain partial. Migrate to version 2.");
   }
   const actors = new Map(parsed.policy.actors.map((actor) => [actor.id, actor]));
+  const exposures: ExposureRecord[] = [];
   try {
     if (!parsed.legacy) {
       if (await runIdentityControls(parsed, credentials, "before", identityStates, state, notes)) incomplete = true;
@@ -1029,8 +1339,12 @@ export async function runApiPolicy(options: ApiRunOptions): Promise<CheckResult[
         incomplete = true;
         continue;
       }
-      const before = await checkPositiveControl(entry, ownerAuthorization, "before", state, notes);
+      const before = await recordStep(state, "owner-before", entry.allow.actor, entry.id,
+        () => checkPositiveControl(entry, ownerAuthorization, "before", state, notes), result => result.valid);
       if (!before.valid) {
+        for (const step of state.execution.plan!.steps) if (step.caseIndex === state.caseIndexes.get(entry.id) && step.phase !== "owner-before") {
+          state.execution.steps[step.ordinal].reason = "prerequisite_failed";
+        }
         incomplete = true;
         continue;
       }
@@ -1039,10 +1353,14 @@ export async function runApiPolicy(options: ApiRunOptions): Promise<CheckResult[
         const actor = actors.get(deny.actor);
         const authorization = actor?.authorizationEnv === undefined ? undefined : credentials.values.get(deny.actor);
         const identityVerified = actorIdentityVerified(deny.actor, actor, identityStates);
-        if (await checkDeny(entry, deny, actor, authorization, identityVerified, parsed.legacy, state, notes, findings)) incomplete = true;
+        const found = findings.length;
+        if (await recordStep(state, "deny", deny.actor, entry.id,
+          () => checkDeny(entry, deny, actor, authorization, identityVerified, parsed.legacy, state, notes, findings), result => !result)) incomplete = true;
+        for (const finding of findings.slice(found)) exposures.push({ finding, caseId: entry.id, actor: deny.actor, owner: entry.allow.actor });
         if (controller.signal.aborted) incomplete = true;
       }
-      const after = await checkPositiveControl(entry, ownerAuthorization, "after", state, notes);
+      const after = await recordStep(state, "owner-after", entry.allow.actor, entry.id,
+        () => checkPositiveControl(entry, ownerAuthorization, "after", state, notes), result => result.valid);
       if (!after.valid) incomplete = true;
     }
     if (!parsed.legacy) {
@@ -1063,16 +1381,20 @@ export async function runApiPolicy(options: ApiRunOptions): Promise<CheckResult[
     controller.dispose();
   }
   if (controller.signal.aborted || Date.now() >= state.context.deadlineAt) {
-    addNote(notes, options.signal?.aborted
+    addNote(notes, signal?.aborted
       ? "The API policy was cancelled; the authorization preview is incomplete."
       : "The API policy time budget elapsed; the authorization preview is incomplete.");
     incomplete = true;
   }
-  const status: CheckResult["status"] = incomplete ? "partial" : "completed";
+  const apiExecution = finishApiExecutionLedger(state.execution, incomplete);
+  if (apiExecution.status === 'invalid') addNote(notes, 'API execution metadata was inconsistent; the run remains incomplete.');
+  attachExposureVerification(exposures, parsed, state, apiExecution, identityStates);
+  const status: CheckResult["status"] = incomplete || apiExecution.status !== 'complete' ? "partial" : "completed";
   return [{
     id: "api.authorization",
     status,
     findings,
+    apiExecution,
     notes: notes.slice(0, 128),
     metrics: {
       caseCount: parsed.cases.length,
@@ -1080,14 +1402,17 @@ export async function runApiPolicy(options: ApiRunOptions): Promise<CheckResult[
       identityActorCount: identityStates.size,
       identityControlsPassed,
       identityReuseCount,
+      ...state.session,
       legacyPolicy: parsed.legacy,
       controlsPassed,
       expectedRequestCount: parsed.expectedRequests,
-      requestCount: budget.count,
+      requestCount: budget.count - requestOffset,
       bytesInspected: state.bytes,
+      elapsedMs: Math.round(performance.now() - startedAt),
+      jsonValueEvidenceCases: parsed.cases.filter((entry) => entry.allow.protected?.match === "json-values").length,
       bodyBudgetExhausted: state.bodyBudgetExhausted,
       bodyReadIncomplete: state.bodyReadIncomplete,
-      allowPrivate: options.allowPrivate === true,
+      allowPrivate,
     },
   }];
 }

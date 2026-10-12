@@ -15,6 +15,28 @@ async function close(server: Server): Promise<void> {
   await new Promise<void>((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
 }
 
+test("URL assignment findings preserve location, candidate severity and redaction", async () => {
+  const secret = "synthetic_assignment_value_1234";
+  const server = createServer((_request, response) => {
+    response.setHeader("Content-Type", "text/html");
+    response.end(`<script>\nconst APP_API_KEY = "${secret}";\nconst password = process.env.SECRET;\nconst auth = "short";\n</script>`);
+  });
+  const url = await listen(server);
+  try {
+    const checks = await runUrl({ url, allowPrivate: true, timeoutMs: 2_000 });
+    const matches = checks.flatMap((check) => check.findings).filter((finding) => finding.ruleId === "url.secret-assignment");
+    assert.equal(matches.length, 1);
+    assert.equal(matches[0].severity, "medium");
+    assert.equal(matches[0].kind, "candidate");
+    assert.equal(matches[0].confidence, "medium");
+    assert.equal(matches[0].location.line, 2);
+    assert.equal(matches[0].location.column, 7);
+    assert.equal(JSON.stringify(checks).includes(secret), false);
+  } finally {
+    await close(server);
+  }
+});
+
 test("URL mode rejects loopback by default before a request is made", async () => {
   let requests = 0;
   const server = createServer((_request, response) => {

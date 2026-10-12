@@ -6,7 +6,7 @@
 
 Wakeio Security CI は、開発者が自分のコード、公開 URL、読み取り専用 API テストを同じ形式で確認できる無料の OSS CLI と GitHub Action です。Wakeio のアカウント、契約、ホスト型 Wakeio サービス、AI トークンは必要ありません。
 
-現在は **0.4.0-dev.1 の開発プレビュー**です。対象リポジトリは [`dusen0528/wakeio-security-ci`](https://github.com/dusen0528/wakeio-security-ci) の `main` ブランチです。npm にはまだ公開していないため、registry の `npx` や npm パッケージのインストールを前提にしないでください。まずレビュー済みの Git checkout を使います。
+GitHub のソースは **0.5.0**、npm で公開済みの最新版は **0.4.0** です。0.5.0 の新機能を使う場合は [`dusen0528/wakeio-security-ci`](https://github.com/dusen0528/wakeio-security-ci) のレビュー済み Git checkout を `npm run build` でビルドしてください。npm の 0.5.0 は未公開です。機能と配布状態の詳細は [英語版](README.md)・[韓国語版](README.ko.md)を参照してください。
 
 ## 何を確認できるか
 

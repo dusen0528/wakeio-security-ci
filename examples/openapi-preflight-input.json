@@ -1,0 +1,134 @@
+{
+  "document": {
+    "openapi": "3.0.3",
+    "info": {
+      "title": "Synthetic offline preflight example",
+      "version": "1.0.0"
+    },
+    "paths": {
+      "/whoami": {
+        "get": {
+          "operationId": "identity",
+          "responses": {
+            "200": {
+              "description": "Synthetic identity control"
+            }
+          }
+        }
+      },
+      "/documents/{id}": {
+        "get": {
+          "operationId": "readDocument",
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Synthetic owner control"
+            },
+            "403": {
+              "description": "Synthetic denial control"
+            },
+            "404": {
+              "description": "Synthetic denial control"
+            }
+          }
+        }
+      }
+    }
+  },
+  "baseUrl": "https://staging.example.invalid",
+  "actors": [
+    {
+      "id": "owner",
+      "authorizationEnv": "WAKEIO_OWNER_AUTH",
+      "identity": {
+        "path": "/whoami",
+        "status": 200,
+        "jsonPointer": "/userId",
+        "equals": "synthetic-owner",
+        "organization": {
+          "jsonPointer": "/orgId",
+          "equals": "synthetic-shared-org"
+        }
+      }
+    },
+    {
+      "id": "other",
+      "authorizationEnv": "WAKEIO_OTHER_AUTH",
+      "identity": {
+        "path": "/whoami",
+        "status": 200,
+        "jsonPointer": "/userId",
+        "equals": "synthetic-other",
+        "organization": {
+          "jsonPointer": "/orgId",
+          "equals": "synthetic-shared-org"
+        }
+      }
+    },
+    {
+      "id": "anonymous"
+    }
+  ],
+  "operations": [
+    {
+      "id": "identity",
+      "method": "GET",
+      "path": "/whoami",
+      "operationId": "identity"
+    },
+    {
+      "id": "ownerDocument",
+      "method": "GET",
+      "path": "/documents/{id}",
+      "operationId": "readDocument",
+      "pathParameters": {
+        "id": "synthetic-owner-record"
+      }
+    }
+  ],
+  "cases": [
+    {
+      "id": "owner-document-read",
+      "operation": "ownerDocument",
+      "allow": {
+        "actor": "owner",
+        "status": 200,
+        "resource": {
+          "jsonPointer": "/id",
+          "equals": "synthetic-owner-record"
+        },
+        "protected": {
+          "jsonPointer": "/canary",
+          "equals": "synthetic-private-canary",
+          "match": "json-values"
+        }
+      },
+      "deny": [
+        {
+          "actor": "other",
+          "statuses": [
+            403,
+            404
+          ]
+        },
+        {
+          "actor": "anonymous",
+          "statuses": [
+            401,
+            403,
+            404
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "openapi": "3.0.3",
+  "info": { "title": "Wakeio live fixture", "version": "1.0.0" },
+  "paths": {
+    "/items/{id}": {
+      "get": {
+        "operationId": "readItem",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer", "minimum": 1, "maximum": 1000 } }],
+        "responses": { "200": { "description": "item", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Item" } } } } }
+      }
+    },
+    "/search": {
+      "get": {
+        "operationId": "search",
+        "parameters": [{ "name": "q", "in": "query", "required": true, "schema": { "type": "string", "maxLength": 40 } }],
+        "responses": { "200": { "description": "results", "content": { "application/json": { "schema": {
+          "type": "object", "required": ["results"], "properties": { "results": { "type": "array", "items": { "$ref": "#/components/schemas/Item" } } } } } } } }
+      }
+    },
+    "/admin/reset": {
+      "post": { "operationId": "reset", "responses": { "204": { "description": "reset" } } }
+    }
+  },
+  "components": { "schemas": { "Item": { "type": "object", "required": ["id", "name"], "properties": { "id": { "type": "integer" }, "name": { "type": "string" } } } } }
+}

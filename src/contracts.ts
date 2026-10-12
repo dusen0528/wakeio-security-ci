@@ -22,6 +22,51 @@ export interface Finding {
   remediation: string;
   references?: string[];
   staticFlow?: StaticFlow;
+  /** Deterministic in-run control outcome; `kind` keeps its human-review meaning. */
+  controlVerification?: FindingControlVerification;
+  /** References into this check's `apiExecution` ledger; never response values. */
+  evidence?: FindingEvidence;
+  /** Inputs needed to re-execute only this finding's controls. */
+  replay?: FindingReplay;
+}
+export type FindingControlOutcome = 'passed' | 'failed' | 'not_applicable';
+/**
+ * `controls_passed` means every applicable control passed in this run: owner positive
+ * controls before and after the probe, the probe actor's identity before and
+ * after, and a completed probe that returned the configured protected canary.
+ * It is scoped to the policy case. It is scanner evidence, not the independent
+ * exploit or fix verification that agent-report `verification` is reserved for.
+ */
+export interface FindingControlVerification {
+  state: 'controls_passed' | 'inconclusive';
+  method: 'api-differential-canary';
+  controls: {
+    identityBefore: FindingControlOutcome;
+    ownerBefore: FindingControlOutcome;
+    probe: 'canary_exposed';
+    probeCompleted: boolean;
+    ownerAfter: FindingControlOutcome;
+    identityAfter: FindingControlOutcome;
+  };
+}
+export interface FindingEvidenceStep {
+  ordinal: number;
+  phase: ApiRequestPlanStep['phase'];
+  actor: string;
+  outcome: ApiExecutionStep['outcome'];
+  httpStatus: number | null;
+}
+export interface FindingEvidence {
+  basis: 'api-execution-ledger';
+  planSha256: string;
+  steps: FindingEvidenceStep[];
+}
+export interface FindingReplay {
+  kind: 'api-policy-case';
+  /** Digest of the policy document's JSON data; replay refuses a different policy. */
+  policySha256: string;
+  caseId: string;
+  actor: string;
 }
 /** Diagnostic metadata only; neither coverage completeness nor action authority. */
 export type AnalysisGapReason = 'module_export_unsupported' | 'module_missing' | 'module_ambiguous' | 'module_module_budget'
@@ -60,6 +105,48 @@ export interface AstAnalysisBudget {
   effectiveProfile: AnalysisProfile;
   limits: { indexWork: number; flowWork: number; nodeVisits: number; functions: number; summaryWork: number; moduleEdges: number; callDepth: number; aliasSteps: number; traceSteps: number };
 }
+/** Redacted GET plan: indexes refer to the explicitly supplied policy arrays. */
+export interface ApiRequestPlanStep {
+  ordinal: number;
+  method: 'GET';
+  phase: 'identity-before' | 'owner-before' | 'deny' | 'owner-after' | 'identity-after';
+  actorIndex: number;
+  caseIndex?: number;
+}
+export interface ApiRequestPlan {
+  actorCount: number;
+  caseCount: number;
+  logicalRequests: number;
+  maximumHttpAttempts: number;
+  timeoutMs: number;
+  maximumResponseBytes: number;
+  maximumTotalResponseBytes: number;
+  allowPrivate: boolean;
+  steps: ApiRequestPlanStep[];
+}
+export interface ApiExecutionStep {
+  /** Planned ordinal, including steps that were never called. */
+  ordinal: number;
+  outcome: 'evaluated' | 'inconclusive' | 'not_attempted';
+  reason: 'evaluated' | 'assertion_inconclusive' | 'transport_error' | 'network_policy'
+    | 'request_budget' | 'body_budget' | 'shared_request_budget' | 'shared_body_budget' | 'cancelled' | 'deadline' | 'prerequisite_failed' | 'not_reached';
+  /** Zero-based offset into counted HTTP attempts; retries remain separately counted. */
+  attemptStart: number;
+  httpAttempts: number;
+  httpStatus: number | null;
+}
+/** Declared execution metadata only, not independent response evidence or authentication. */
+export interface ApiExecutionLedger {
+  version: 1;
+  basis: 'declared-api-execution';
+  status: 'complete' | 'partial' | 'invalid';
+  policyVersion: 1 | 2 | null;
+  planSha256: string | null;
+  plan: ApiRequestPlan | null;
+  steps: ApiExecutionStep[];
+  counts: { planned: number | null; evaluated: number | null; inconclusive: number | null; notAttempted: number | null; httpAttempts: number | null };
+  reasons: Array<'invalid_ledger' | 'legacy_policy' | 'run_incomplete' | 'incomplete_steps'>;
+}
 export interface CheckResult {
   analysisBudget?: AstAnalysisBudget;
   id: string;
@@ -70,7 +157,9 @@ export interface CheckResult {
   analysisGaps?: AnalysisGaps;
   /** Owned fixture observations only; not authentication of arbitrary external evidence. */
   apiStateEvidence?: ApiStateEvidence;
+  apiExecution?: ApiExecutionLedger;
 }
+export type ApiStateControlOutcome = 'unknown' | 'identity_passed' | 'identity_failed' | 'normal_passed' | 'normal_failed' | 'effect_observed' | 'denial_observed';
 export interface ApiStateEvidence {
   version: 1;
   scope: 'owned-synthetic-resource-read-only';
@@ -90,6 +179,10 @@ export interface ApiStateEvidence {
     beforeReportSha256?: string; afterReportSha256?: string;
     runtimeVersion?: string;
   };
+  /** Fixed logical order of independent, redacted owned-fixture controls. */
+  controlOutcomes?: ApiStateControlOutcome[];
+  /** Optional opt-in repeated owned-fixture observation; not a reliability proof. */
+  repetition?: { rounds: 2; completedPhases: number; consistency: 'consistent' | 'inconsistent' | 'incomplete'; phaseReportSha256: string[] };
   nextEvidence: 'review_owned_fixture' | 'review_execution' | 'retry_delivery_only';
 }
 export interface SourceOptions {
@@ -116,6 +209,8 @@ export interface UrlOptions {
   maxPages?: number;
   maxScripts?: number;
   maxBytes?: number;
+  /** Cooperatively abort collection while preserving already inspected findings. */
+  signal?: AbortSignal;
 }
 
 export interface EngineProvenance {
@@ -214,7 +309,7 @@ export interface ReportSummary {
     mode: Mode;
     fingerprint?: string;
     ruleset?: string;
-    toolSelection: 'unknown';
+    toolSelection: 'unknown' | 'built_in_only' | 'external_tools_selected' | 'native_preview_selected';
     wholeProjectCoverage: 'not_established';
   };
   nextRead: {
@@ -275,6 +370,7 @@ export interface AgentReport {
     analysisBudget?: AstAnalysisBudget;
     analysisGaps?: AnalysisGaps;
     apiStateEvidence?: ApiStateEvidence;
+    apiExecution?: ApiExecutionLedger;
   }>;
   findings: Array<{
     findingId: string;
@@ -286,7 +382,9 @@ export interface AgentReport {
     description: string;
     severity: Severity;
     confidence: Finding['confidence'];
-    evidence: { kind: Finding['kind']; basis: 'scanner_report'; traceStatus: 'not_provided' | 'static_provided' | 'static_truncated'; staticFlow?: StaticFlow };
+    /** In-run control results stay scanner evidence; `verification` below is unchanged. */
+    evidence: { kind: Finding['kind']; basis: 'scanner_report'; traceStatus: 'not_provided' | 'static_provided' | 'static_truncated'; staticFlow?: StaticFlow;
+      controlVerification?: FindingControlVerification; apiExecution?: FindingEvidence; replay?: FindingReplay };
     location: Finding['location'];
     references?: string[];
     reachesFailOn: boolean;

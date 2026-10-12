@@ -384,12 +384,19 @@ async function lookupAddresses(hostname: string, signal: AbortSignal, allowPriva
   return validated;
 }
 
-export async function resolveAddresses(url: NormalizedUrl, signal: AbortSignal, allowPrivate: boolean): Promise<DnsAddress[]> {
+/** Offline checks only. DNS answers and the pinned socket still require runtime validation. */
+export function validateStaticTarget(url: NormalizedUrl, allowPrivate: boolean): void {
   if (isIP(url.hostname) !== 0) {
     if (isAlwaysForbiddenAddress(url.hostname) || (!allowPrivate && isPrivateAddress(url.hostname))) fail("blocked_address", "target address is not allowed");
-    return [{ address: url.hostname, family: isIP(url.hostname) as 4 | 6 }];
+  } else {
+    if (!allowPrivate && (url.hostname === "localhost" || url.hostname.endsWith(".local"))) fail("private_hostname", "private hostname is not allowed");
+    if (hostAlwaysForbidden(url.hostname)) fail("metadata_host", "metadata and internal hostnames are not allowed");
   }
-  if (!allowPrivate && (url.hostname === "localhost" || url.hostname.endsWith(".local"))) fail("private_hostname", "private hostname is not allowed");
+}
+
+export async function resolveAddresses(url: NormalizedUrl, signal: AbortSignal, allowPrivate: boolean): Promise<DnsAddress[]> {
+  validateStaticTarget(url, allowPrivate);
+  if (isIP(url.hostname) !== 0) return [{ address: url.hostname, family: isIP(url.hostname) as 4 | 6 }];
   return lookupAddresses(url.hostname, signal, allowPrivate);
 }
 

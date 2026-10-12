@@ -253,6 +253,12 @@ function observeFile(astFile: AstFile, flowUses: ReadonlyMap<ts.Node, InputFlowU
           'high', 'Review module selection and restrict executable module paths. argv and execution options require separate review.', use.forkRole.identity === 'native' ? confidence : 'low');
       } else if ((name === "eval" || name === "window.eval" || name === "Function" || name === "window.Function") && node.arguments.length > 0) {
         observations.push(dynamicCodeObservation(astFile, node, use)!);
+      } else if (use?.htmlResponse === "express" && flowConfidence(use, 0)) {
+        const json = ts.isPropertyAccessExpression(node.expression) && node.expression.name.text === "json";
+        pushObservation(observations, file, sourceFile, node, "ast:html-input-sink",
+          json ? "Request input reaches JSON with HTML or unknown MIME; set application/json" : "Request input reaches res.send; encode HTML or set a non-HTML type",
+          "Input reaches a response-shaped body whose MIME can render HTML. JSON serialization does not reset an existing Content-Type. Confirm the binding, headers and encoding before assessing exploitability.",
+          "high", "For JSON data, explicitly set application/json before res.json; for HTML, contextually encode untrusted text. Review custom header changes.", use.htmlResponseMime === "unknown" ? "low" : flowConfidence(use, 0));
       } else if (use?.kind === "call" && HTML_SINK.test(name) && (use.argumentFlows?.length ?? 0) > 0) {
         const confidence = use.argumentFlows?.some((flow) => flow.certainty === "unknown") ? "low" : "medium";
         pushObservation(observations, file, sourceFile, node, "ast:html-input-sink", "Request input reaches an HTML sink", "Untrusted request or URL input appears to flow into an HTML rendering sink.", "high", "Validate and contextually encode untrusted values before rendering them.", confidence);
@@ -290,6 +296,12 @@ function observeFile(astFile: AstFile, flowUses: ReadonlyMap<ts.Node, InputFlowU
     if (ts.isNewExpression(node)) {
       const observation = dynamicCodeObservation(astFile, node, flowUses.get(node));
       if (observation) observations.push(observation);
+      const use = flowUses.get(node);
+      if (use?.htmlResponse === "web" && flowConfidence(use, 0)) {
+        pushObservation(observations, file, sourceFile, node, "ast:html-input-sink", "Request input reaches an HTML response; encode text or return JSON",
+          "Input reaches a Response-shaped body with an explicit text/html header. Runtime constructor identity, rendering and exploitability are unverified.",
+          "high", "Use Response.json for data, or contextually encode untrusted text before returning HTML.", flowConfidence(use, 0));
+      }
     }
     ts.forEachChild(node, walk);
   };
@@ -406,7 +418,7 @@ export function runBuiltinAst(snapshot: SourceSnapshot, hasOtherSecurityCheck = 
         argumentsByIndex.set(argument.index, { ...preferred, fixedDestination: before.fixedDestination === true && argument.fixedDestination === true });
       }
     }
-    flowUses.set(use.node, { ...prior, argumentFlows: [...argumentsByIndex.values()].sort((a, b) => a.index - b.index), localForkCall: prior.localForkCall && use.localForkCall ? {complete:prior.localForkCall.complete && use.localForkCall.complete} : undefined, forkRole: prior.forkRole?.identity === 'unresolved' || use.forkRole?.identity === 'unresolved' ? {identity:'unresolved'} : prior.forkRole ?? use.forkRole, sqlRole:mergeSqlRoles(prior.sqlRole,use.sqlRole), httpRole: mergeHttpRoles(prior.httpRole, use.httpRole) });
+    flowUses.set(use.node, { ...prior, htmlResponse: prior.htmlResponse ?? use.htmlResponse, htmlResponseMime: prior.htmlResponseMime === "unknown" || use.htmlResponseMime === "unknown" ? "unknown" : prior.htmlResponseMime ?? use.htmlResponseMime, argumentFlows: [...argumentsByIndex.values()].sort((a, b) => a.index - b.index), localForkCall: prior.localForkCall && use.localForkCall ? {complete:prior.localForkCall.complete && use.localForkCall.complete} : undefined, forkRole: prior.forkRole?.identity === 'unresolved' || use.forkRole?.identity === 'unresolved' ? {identity:'unresolved'} : prior.forkRole ?? use.forkRole, sqlRole:mergeSqlRoles(prior.sqlRole,use.sqlRole), httpRole: mergeHttpRoles(prior.httpRole, use.httpRole) });
   }
   const outboundUses = [...flowUses.values()].filter((use) => ts.isCallExpression(use.node) && FETCH_SINK.test(callName(use.node.expression)) && flowConfidence(use, 0));
   const outboundFixedDestinationSuppressed = outboundUses.filter((use) => destinationQualified(use, use.node as ts.CallExpression)).length;
@@ -435,6 +447,7 @@ export function runBuiltinAst(snapshot: SourceSnapshot, hasOtherSecurityCheck = 
     notes: [
       `Built-in AST checks parsed ${astFiles.length} JavaScript or TypeScript file${astFiles.length === 1 ? "" : "s"}.`,
       "Declared flow model: request-shaped entry parameters, same-function assignments, statically bound local functions/immutable const arrows, named relative ESM imports and constant static CommonJS destructuring exports within the collected snapshot. Source/sink API shapes are candidates, not runtime framework or database identity proof.",
+      "Express entry positions are additionally recognized for a bounded same-file lexical import/require, immutable app/Router and route-registration subset. Request/response parameter spelling is irrelevant inside that subset; dynamic dispatch, upstream middleware state and runtime package identity remain unverified.",
       "Dynamic/package imports, namespace/default/re-exports, mutable exports, callbacks, closures and arbitrary class dispatch are model limitations. A canonical relative CommonJS local class singleton supports receiver-bound actual/body dispatch; opaque native dynamic loading retains only a declared possible body with low-confidence input and partial coverage, without return safety or runtime identity proof. Unknown external calls are not trusted sanitizers and do not alone make declared coverage incomplete. Resolved callees are not freshly seeded unless explicitly exported or passed as a callback to an unresolved/external call; callback execution and runtime entry reachability are not proven.",
       "Outbound destination qualifier covers only canonical literal HTTP(S) origin/path plus native encoded query, direct const params record/toString/append/set and scalar local transfer. Object containers, alias/escape, modified or shadowed native intrinsics and opaque options retain candidates. Options support absent or plain literal method/fixed non-Host headers only. This is initial destination control, not redirect, DNS, proxy, remote query processing or runtime SSRF safety proof.",
       'Axios request config role model separates a closed fixed INITIAL url field from payload-only input under the declared v1.13.2 API contract. Lexical imports/static require bindings and indexed snapshot validation do not authenticate runtime packages or external side effects. Defaults/interceptors/custom transport, alias/mutation, incomplete scope and opaque target roles retain low-confidence candidates; unknown is not safe. No body source is asserted to control URL authority.',
