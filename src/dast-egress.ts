@@ -28,7 +28,11 @@ export interface EgressPolicy {
 export interface EgressCounters {
   /** Requests forwarded to the approved origin (plain HTTP only). */
   forwarded: number;
-  /** HTTPS CONNECT tunnels opened to the approved origin. */
+  /**
+   * HTTPS CONNECT tunnels opened to the approved origin. Capped at
+   * `maxRequests` because every tunnel carries at least one request; requests
+   * reused inside one tunnel are not visible to the gate.
+   */
   tunnels: number;
   blockedOrigin: number;
   blockedMethod: number;
@@ -203,7 +207,11 @@ export async function startEgressGate(policy: EgressPolicy): Promise<EgressGate>
     if (policy.origin.protocol !== "https:" || (request.url ?? "").toLowerCase() !== authority(policy.origin)) {
       counters.blockedOrigin += 1; reject("502 Bad Gateway"); return;
     }
-    if (stopped || policy.signal.aborted) { counters.blockedBudget += 1; reject("503 Service Unavailable"); return; }
+    if (stopped || policy.signal.aborted || counters.tunnels >= policy.maxRequests) {
+      counters.blockedBudget += 1;
+      if (counters.tunnels >= policy.maxRequests) stop("request_limit");
+      reject("503 Service Unavailable"); return;
+    }
     counters.tunnels += 1;
     const upstream = connect({ host: policy.address.address, port: Number(defaultPort(policy.origin)), family: policy.address.family, timeout: remaining() });
     sockets.add(upstream);
