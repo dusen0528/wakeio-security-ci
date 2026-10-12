@@ -239,9 +239,43 @@ node build/src/cli.js compare \
 
 Comparison refuses to present mismatched or incomplete scopes as a clean result. A finding that disappeared is `not_observed`, not an automatic fix certificate. See the [comparison guide](docs/preview-0.4-comparison.md).
 
+## Native DAST and optional Codex advice
+
+The source checkout now includes an explicit numeric SQL differential probe for one approved GET query parameter. A policy supplies the normal/true/false JSON oracle; two baseline/true/false/baseline rounds produce a scoped candidate only when controls and the differential repeat. See [the policy, HTTPS boundaries, Action inputs and SDK](docs/native-dast.md). These are source-preview commands; npm 0.5.0 remains unpublished.
+
+```mermaid
+flowchart LR
+  A[Authorized scan] --> B[Four scan reports]
+  B --> C[Explicit advise command]
+  C --> D[Codex CLI login or API key]
+  D --> E[Private unverified advice]
+  E --> F[Optional authorized repair and retest]
+```
+
+```sh
+npm run build
+node build/src/cli.js plan --dast-policy dast-policy.json
+node build/src/cli.js scan --dast-policy dast-policy.json --active-consent --out dast-reports
+node build/src/cli.js advise --report dast-reports --agent codex --auth cli-login \
+  --allow-report-upload --out dast-advice
+# To select CODEX_API_KEY authentication instead, use --auth api-key.
+```
+
+`advise` sends only a bounded report projection with explicit upload consent and creates `agent-advice.json`. It sends no source, applies no changes, and never upgrades a candidate or declares a fix verified. Scan gates remain deterministic and independent of advice. `scan` never starts a model.
+
+Advice includes typed control/phase or static-flow evidence and a locally validated recheck route. To repeat a native finding, use the original policy and explicit consent:
+
+```sh
+node build/src/cli.js replay --report dast-reports/report.json \
+  --dast-policy dast-policy.json --finding <finding-id> --active-consent --out dast-replay
+```
+
+Add `--allow-private` again for an originally private target. Replay retains the original request/time limits and requires a new output directory. It writes `replay.json` and fresh reports; exit 1 means reproduced, 0 means complete scoped non-reproduction, and 2 means refusal or inconclusive. Neither outcome proves a fix. [Native replay details](docs/native-dast.md#repeat-a-native-finding-with-its-original-policy).
+
+
 ## Active DAST preview (opt-in)
 
-Active checks send generated or template requests to a target, so they never run implicitly. Every active run needs `--active-consent` (exit 2 before any DNS lookup or request without it). Only test targets you own or are authorized to test; private/loopback targets additionally need `--allow-private`, and metadata/link-local addresses stay blocked. Add `--allowed-origin ORIGIN` (repeatable) to pin a scan to known origins: `--url`, `--api-base` and an API policy `baseUrl` outside the list are refused before any DNS lookup or request.
+Active checks send generated or template requests to a target, so they never run implicitly. Every active run needs `--active-consent` (exit 2 before any DNS lookup or request without it). Only test targets you own or are authorized to test; private/loopback targets additionally need `--allow-private`, and metadata/link-local addresses stay blocked. Add `--allowed-origin ORIGIN` (repeatable) to pin a scan to known origins: `--url`, `--api-base` and an API/native DAST policy `baseUrl` outside the list are refused before any DNS lookup or request.
 
 ```sh
 # Schemathesis: generated GET inputs for explicitly listed OpenAPI operations
@@ -275,7 +309,7 @@ In GitHub Actions, use the separate `dast` Action so passive workflows can never
     operations: /items/{id}
 ```
 
-Reports record executed requests, requests refused by the budget, egress refusals, the seed and schema digest (Schemathesis), and template counts, exclusions and the `templates-checksum.txt` digest (Nuclei). Response bodies, generated values, extracted values, proxy credentials and template text are not retained. `wakeio-security-ci doctor --dast` reports engine readiness without running anything. Authentication, write operations, stateful workflows, browser-driven checks, own probes and crawling are not part of this preview.
+Reports record executed requests, requests refused by the budget, egress refusals, the seed and schema digest (Schemathesis), and template counts, exclusions and the `templates-checksum.txt` digest (Nuclei). Response bodies, generated values, extracted values, proxy credentials and template text are not retained. `wakeio-security-ci doctor --dast` reports engine readiness without running anything. Authentication, write operations, stateful workflows, browser-driven checks and crawling are not part of this preview.
 
 ## A small synthetic example
 

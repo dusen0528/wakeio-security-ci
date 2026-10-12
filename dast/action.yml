@@ -47,6 +47,14 @@ inputs:
     description: Nuclei requests per second, 1..150
     required: false
     default: ''
+  dast-policy:
+    description: Workspace-relative native numeric SQL differential policy JSON; validates offline before engine setup
+    required: false
+    default: ''
+  dast-max-requests:
+    description: Native DAST HTTP attempt budget, 1..64 (default 8); every retry counts
+    required: false
+    default: ''
   openapi:
     description: Workspace-relative OpenAPI 3.0/3.1 JSON for Schemathesis live mode
     required: false
@@ -88,7 +96,7 @@ inputs:
     required: false
     default: ''
   timeout-ms:
-    description: Timeout for the passive URL check and Schemathesis (capped at 120000)
+    description: Timeout for passive URL, native DAST and Schemathesis checks (native/API capped at 120000)
     required: false
     default: '30000'
   project-id:
@@ -153,6 +161,10 @@ runs:
         WAKEIO_ENGINES: ${{ inputs.engines }}
         WAKEIO_NUCLEI_TEMPLATES: ${{ inputs.nuclei-templates }}
         WAKEIO_NUCLEI_TEMPLATES_SHA256: ${{ inputs.nuclei-templates-sha256 }}
+        WAKEIO_DAST_POLICY: ${{ inputs.dast-policy }}
+        WAKEIO_DAST_MAX_REQUESTS: ${{ inputs.dast-max-requests }}
+        WAKEIO_ALLOW_PRIVATE: ${{ inputs.allow-private }}
+        WAKEIO_TIMEOUT_MS: ${{ inputs.timeout-ms }}
         WAKEIO_OPENAPI: ${{ inputs.openapi }}
         WAKEIO_API_BASE: ${{ inputs.api-base }}
         WAKEIO_OPERATIONS: ${{ inputs.operations }}
@@ -190,6 +202,8 @@ runs:
         WAKEIO_NUCLEI_MAX_REQUESTS: ${{ inputs.nuclei-max-requests }}
         WAKEIO_NUCLEI_RATE_LIMIT: ${{ inputs.nuclei-rate-limit }}
         WAKEIO_NUCLEI_TIMEOUT_MS: ${{ inputs.nuclei-timeout-ms }}
+        WAKEIO_DAST_POLICY: ${{ inputs.dast-policy }}
+        WAKEIO_DAST_MAX_REQUESTS: ${{ inputs.dast-max-requests }}
         WAKEIO_OPENAPI: ${{ inputs.openapi }}
         WAKEIO_API_BASE: ${{ inputs.api-base }}
         WAKEIO_OPERATIONS: ${{ inputs.operations }}

@@ -19,10 +19,12 @@ export interface ProcessOptions {
   input?: string;
   /** Explicit provider-only authentication; never pass this to target/scanner processes. */
   authentication?: { variable: 'CODEX_API_KEY' | 'ANTHROPIC_API_KEY'; value: string };
+  /** Explicit Codex account-auth state root for the opted-in CLI-login agent lane. Never reads credentials here. */
+  codexHome?: string;
   signal?: AbortSignal;
   tmpdir?: string;
   /** Narrow offline-native lane: confirmed group cleanup and sampled RSS. */
-  supervision?: 'native-offline';
+  supervision?: 'native-offline' | 'agent';
 }
 
 function safeTimeout(value: number): number {
@@ -30,7 +32,8 @@ function safeTimeout(value: number): number {
   return Math.min(value, MAX_TOOL_TIMEOUT_MS);
 }
 
-function minimalEnvironment(home: string | undefined, additions: Record<string, string> | undefined, authentication: ProcessOptions['authentication']): NodeJS.ProcessEnv {
+function minimalEnvironment(home: string | undefined, additions: Record<string, string> | undefined,
+  authentication: ProcessOptions['authentication'], codexHome: string | undefined): NodeJS.ProcessEnv {
   // Keep only paths needed by the binary itself and by a shebang in test
   // adapters. In particular, do not forward proxy, cloud credential, npm, or
   // scanner-specific environment variables from the caller.
@@ -49,6 +52,7 @@ function minimalEnvironment(home: string | undefined, additions: Record<string, 
     LANG: "C",
     TMPDIR: "/tmp",
     ...Object.fromEntries(allowedAdditions),
+    ...(codexHome && isAbsolute(codexHome) ? { CODEX_HOME: codexHome } : {}),
     ...auth,
   };
 }
@@ -60,6 +64,7 @@ function minimalEnvironment(home: string | undefined, additions: Record<string, 
  */
 export function runProcess(executable: string, args: readonly string[], options: ProcessOptions): Promise<ProcessResult> {
   if (options.supervision === 'native-offline') return runStrictProcess(executable, args, options);
+  if (options.supervision === 'agent') return runAgentProcess(executable, args, options);
   if (options.signal?.aborted) return Promise.resolve({ exitCode: null, signal: null, stdout: '', stderr: '', timedOut: false, outputLimitExceeded: false, cancelled: true });
   const timeoutMs = safeTimeout(options.timeoutMs);
   const maxOutputBytes = Number.isSafeInteger(options.maxOutputBytes) && (options.maxOutputBytes ?? 0) > 0
@@ -70,7 +75,7 @@ export function runProcess(executable: string, args: readonly string[], options:
     try {
       child = spawn(executable, [...args], {
         cwd: options.cwd,
-        env: minimalEnvironment(options.home, options.environment, options.authentication),
+        env: minimalEnvironment(options.home, options.environment, options.authentication, options.codexHome),
         shell: false,
         detached: process.platform !== "win32",
         windowsHide: true,
@@ -149,6 +154,78 @@ export function runProcess(executable: string, args: readonly string[], options:
     }, timeoutMs);
     timer.unref();
     child.stdin?.on('error', () => { /* Close/error is the authoritative result. */ });
+    if (options.input !== undefined) child.stdin?.end(options.input);
+  });
+}
+
+/** Credential-capable, argv-only agent lane. Confirm the owned process group is gone before accepting output. */
+function runAgentProcess(executable: string, args: readonly string[], options: ProcessOptions): Promise<ProcessResult> {
+  const empty = { exitCode: null, signal: null, stdout: '', stderr: '', timedOut: false, outputLimitExceeded: false };
+  if (options.signal?.aborted) return Promise.resolve({ ...empty, cancelled: true, stopReason: 'cancelled',
+    cleanupState: 'not_started', cleanupConfirmed: true, closeConfirmed: true });
+  if (!['darwin', 'linux'].includes(process.platform) || !options.home || options.environment ||
+      (options.authentication && options.codexHome)) return Promise.resolve({ ...empty, spawnError: 'invalid agent process profile',
+    stopReason: 'spawn_error', cleanupState: 'not_started', cleanupConfirmed: true, closeConfirmed: true });
+  const timeoutMs = safeTimeout(options.timeoutMs);
+  const maxOutputBytes = Math.min(options.maxOutputBytes ?? MAX_PROCESS_OUTPUT_BYTES, MAX_PROCESS_OUTPUT_BYTES);
+  if (!Number.isSafeInteger(maxOutputBytes) || maxOutputBytes < 1) return Promise.resolve({ ...empty, spawnError: 'invalid output budget',
+    stopReason: 'spawn_error', cleanupState: 'not_started', cleanupConfirmed: true, closeConfirmed: true });
+  let child: ReturnType<typeof spawn>;
+  try {
+    child = spawn(executable, [...args], { cwd: options.cwd, shell: false, detached: true, windowsHide: true,
+      env: minimalEnvironment(options.home, undefined, options.authentication, options.codexHome),
+      stdio: [options.input === undefined ? 'ignore' : 'pipe', 'pipe', 'pipe'] });
+  } catch { return Promise.resolve({ ...empty, spawnError: 'agent could not be started', stopReason: 'spawn_error',
+    cleanupState: 'not_started', cleanupConfirmed: true, closeConfirmed: true }); }
+  return new Promise<ProcessResult>((resolveResult) => {
+    const stdout: Buffer[] = [], stderr: Buffer[] = [];
+    let bytes = 0, exitCode: number | null = null, exitSignal: NodeJS.Signals | null = null;
+    let exited = false, closed = false, finished = false, stopping = false;
+    let reason: ProcessResult['stopReason'];
+    let deadlineTimer: NodeJS.Timeout | undefined, killTimer: NodeJS.Timeout | undefined;
+    let settleTimer: NodeJS.Timeout | undefined, pollTimer: NodeJS.Timeout | undefined;
+    const groupState = () => child.pid ? observeOwnedGroup(child.pid) : 'not_started';
+    const send = (signal: NodeJS.Signals) => { if (child.pid) { try { process.kill(-child.pid, signal); } catch { /* Observation decides completion. */ } } };
+    const finish = () => {
+      if (finished) return;
+      finished = true;
+      clearTimeout(deadlineTimer); clearTimeout(killTimer); clearTimeout(settleTimer); clearInterval(pollTimer);
+      options.signal?.removeEventListener('abort', onAbort);
+      const cleanupState = groupState();
+      const cleanupConfirmed = ['terminated', 'terminated_zombies', 'not_started'].includes(cleanupState) && closed;
+      child.stdout?.destroy(); child.stderr?.destroy(); child.unref();
+      resolveResult({ exitCode, signal: exitSignal, stdout: Buffer.concat(stdout).toString('utf8'),
+        stderr: Buffer.concat(stderr).toString('utf8'), timedOut: reason === 'timeout',
+        outputLimitExceeded: reason === 'output_limit', cancelled: reason === 'cancelled',
+        ...(reason ? { stopReason: reason } : {}), exited, closeConfirmed: closed, cleanupState, cleanupConfirmed });
+    };
+    const check = () => { if (closed && ['terminated', 'terminated_zombies', 'not_started'].includes(groupState())) finish(); };
+    const stop = (why?: ProcessResult['stopReason']) => {
+      if (why && !reason) reason = why;
+      if (stopping) return;
+      stopping = true;
+      send('SIGTERM');
+      killTimer = setTimeout(() => send('SIGKILL'), 250);
+      pollTimer = setInterval(check, 100);
+      settleTimer = setTimeout(finish, 2_000);
+      check();
+    };
+    const onAbort = () => stop('cancelled');
+    const append = (target: Buffer[], chunk: Buffer) => {
+      if (finished || (stopping && reason)) return;
+      bytes += chunk.byteLength;
+      if (bytes > maxOutputBytes) { stop('output_limit'); return; }
+      target.push(chunk);
+    };
+    child.stdout?.on('data', (chunk: Buffer) => append(stdout, chunk));
+    child.stderr?.on('data', (chunk: Buffer) => append(stderr, chunk));
+    child.once('error', () => { reason = 'spawn_error'; exited = true; closed = true; stop('spawn_error'); });
+    child.once('exit', (code, signal) => { exitCode = code; exitSignal = signal; exited = true; stop(); });
+    child.once('close', () => { closed = true; stop(); check(); });
+    options.signal?.addEventListener('abort', onAbort, { once: true });
+    if (options.signal?.aborted) onAbort();
+    deadlineTimer = setTimeout(() => stop('timeout'), timeoutMs);
+    child.stdin?.on('error', () => { /* Root exit and group state are authoritative. */ });
     if (options.input !== undefined) child.stdin?.end(options.input);
   });
 }

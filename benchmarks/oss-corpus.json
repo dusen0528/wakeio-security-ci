@@ -1,0 +1,126 @@
+{
+  "schemaVersion": "oss-corpus-v1",
+  "scope": "Seven independently reviewed source flows in two pinned intentionally vulnerable training applications; source patterns only, not runtime exploit verification.",
+  "repositories": [
+    {
+      "id": "juice-shop",
+      "url": "https://github.com/juice-shop/juice-shop.git",
+      "license": "MIT",
+      "commit": "e39a3bdb8c61295c31fa4e0a03485e68a8ca12a4",
+      "tree": "730757366a3564c5c7ca556cf5f59e6111eb635b",
+      "fileSha256": {
+        "LICENSE": "fa4ca6d61009e537c953f1c0b8455dd66d69f810888546c48db8ea05f0713093",
+        "README.md": "fe91d1f0876aef6efe1b6b3e7ae0a8d8406078e623232836343b9ca359a2f06a",
+        "server.ts": "1aef4d60cbdfb3458a25610d017a678ab4d69fc835bb8b592db9a13aceb20cb1",
+        "routes/search.ts": "6e3272ef4065d080295d995a04964e8c5e6b1e06c4b4c8ebed3234286686ee5f",
+        "routes/login.ts": "cf11d682edff6744bcb54339bce4b2dd6da5e80f9038facd7605df857b0a0b7b",
+        "routes/updateProductReviews.ts": "711928a6d6188c2413e3df62c85db1e77f8fe7ad04e5605e6588de42e9dd6ad2",
+        "routes/redirect.ts": "f1345c3bb3a276a4e80db74f5d1eee04cd62013e8d4d7730ef92153154484607",
+        "lib/insecurity.ts": "c3496760cac6a5fde403bf739a8ab5e2536d2bbc57a6e3b6a0ac50b01a6e8b8d",
+        "routes/address.ts": "99413492a060638771636237a5c178a6a5907948f17cb8bf50dda648386d2084",
+        "data/static/codefixes/unionSqlInjectionChallenge_2_correct.ts": "1d9469f18d5c1f5bfc37312fa8f1e5f5db953c52860f65f7d0f21ca26eeb3de0",
+        "data/static/codefixes/loginJimChallenge_1_correct.ts": "9d41f2879260f5ecc2662b16eef16e9bd5683ee47e11736e2c978275fd3a6847",
+        "data/static/codefixes/noSqlReviewsChallenge_3_correct.ts": "91a37d919710a5661f42478955841489d417504a5802be3cb26c2d78412297a8",
+        "data/static/codefixes/redirectChallenge_4_correct.ts": "9cd52c7b353ae8c08a439859ab88d8d5501f96c173279988ad0b95119b66794e"
+      },
+      "expectedFindings": [
+        {
+          "id": "juice-search-sql", "ruleId": "ast:sql-input-sink", "checkId": "source.builtin-ast", "path": "routes/search.ts",
+          "requiredFindings": [{ "line": 23, "column": 5, "source": { "path": "routes/search.ts", "line": 21, "column": 60 } }], "support": "supported",
+          "basis": "The registered product search route interpolates req.query.q into the Sequelize SQL statement.",
+          "sourceUrl": "https://github.com/juice-shop/juice-shop/blob/e39a3bdb8c61295c31fa4e0a03485e68a8ca12a4/routes/search.ts#L18-L24"
+        },
+        {
+          "id": "juice-login-sql", "ruleId": "ast:sql-input-sink", "checkId": "source.builtin-ast", "path": "routes/login.ts",
+          "requiredFindings": [{ "line": 34, "column": 5, "source": { "path": "routes/login.ts", "line": 34, "column": 66 } }], "support": "supported",
+          "basis": "The registered login route places req.body.email into a SQL template argument.",
+          "sourceUrl": "https://github.com/juice-shop/juice-shop/blob/e39a3bdb8c61295c31fa4e0a03485e68a8ca12a4/routes/login.ts#L32-L35"
+        },
+        {
+          "id": "juice-review-nosql", "ruleId": "unsupported:nosql-selector", "checkId": "source.builtin-ast", "path": "routes/updateProductReviews.ts",
+          "requiredFindings": [{ "line": 17, "column": 5 }], "support": "known_unsupported",
+          "basis": "The review route passes req.body.id into a Mongo selector with multi-document update; this symbolic family has no built-in AST rule.",
+          "sourceUrl": "https://github.com/juice-shop/juice-shop/blob/e39a3bdb8c61295c31fa4e0a03485e68a8ca12a4/routes/updateProductReviews.ts#L13-L24"
+        },
+        {
+          "id": "juice-redirect", "ruleId": "ast:open-redirect", "checkId": "source.builtin-ast", "path": "routes/redirect.ts",
+          "requiredFindings": [{ "line": 18, "column": 7, "source": { "path": "routes/redirect.ts", "line": 14, "column": 27 } }], "support": "exploratory",
+          "basis": "Query destination crosses a helper using substring allowlisting before res.redirect; cross-module proof is outside the committed static subset.",
+          "sourceUrl": "https://github.com/juice-shop/juice-shop/blob/e39a3bdb8c61295c31fa4e0a03485e68a8ca12a4/routes/redirect.ts#L12-L21"
+        }
+      ],
+      "reviewedNegativeSites": [
+        {
+          "id": "juice-union-codefix", "path": "data/static/codefixes/unionSqlInjectionChallenge_2_correct.ts", "firstLine": 3, "lastLine": 7,
+          "ruleIds": ["ast:sql-input-sink"], "support": "supported",
+          "basis": "Unmounted static repair example separates request data into replacements; functional SQL correctness was not exercised.",
+          "sourceUrl": "https://github.com/juice-shop/juice-shop/blob/e39a3bdb8c61295c31fa4e0a03485e68a8ca12a4/data/static/codefixes/unionSqlInjectionChallenge_2_correct.ts#L1-L8"
+        },
+        {
+          "id": "juice-login-codefix", "path": "data/static/codefixes/loginJimChallenge_1_correct.ts", "firstLine": 14, "lastLine": 16,
+          "ruleIds": ["ast:sql-input-sink"], "support": "supported",
+          "basis": "Unmounted static repair example uses separate bound email and password values, not direct SQL text interpolation.",
+          "sourceUrl": "https://github.com/juice-shop/juice-shop/blob/e39a3bdb8c61295c31fa4e0a03485e68a8ca12a4/data/static/codefixes/loginJimChallenge_1_correct.ts#L14-L17"
+        },
+        {
+          "id": "juice-nosql-codefix", "path": "data/static/codefixes/noSqlReviewsChallenge_3_correct.ts", "firstLine": 5, "lastLine": 12,
+          "ruleIds": ["unsupported:nosql-selector"], "support": "known_unsupported",
+          "basis": "Unmounted static repair example checks ID type and removes multi-document update; no NoSQL scanner rule exists.",
+          "sourceUrl": "https://github.com/juice-shop/juice-shop/blob/e39a3bdb8c61295c31fa4e0a03485e68a8ca12a4/data/static/codefixes/noSqlReviewsChallenge_3_correct.ts#L5-L13"
+        },
+        {
+          "id": "juice-redirect-codefix", "path": "data/static/codefixes/redirectChallenge_4_correct.ts", "firstLine": 12, "lastLine": 17,
+          "ruleIds": ["ast:open-redirect"], "support": "exploratory",
+          "basis": "Unmounted static repair example compares exact allowlisted URLs rather than matching URL substrings.",
+          "sourceUrl": "https://github.com/juice-shop/juice-shop/blob/e39a3bdb8c61295c31fa4e0a03485e68a8ca12a4/data/static/codefixes/redirectChallenge_4_correct.ts#L12-L17"
+        },
+        {
+          "id": "juice-active-orm-control", "path": "routes/address.ts", "firstLine": 16, "lastLine": 24,
+          "ruleIds": ["ast:sql-input-sink"], "support": "supported",
+          "basis": "Registered address handler passes fields into an ORM where object without SQL string interpolation; other authorization behavior is untested.",
+          "sourceUrl": "https://github.com/juice-shop/juice-shop/blob/e39a3bdb8c61295c31fa4e0a03485e68a8ca12a4/routes/address.ts#L16-L24"
+        }
+      ]
+    },
+    {
+      "id": "nodegoat",
+      "url": "https://github.com/OWASP/NodeGoat.git",
+      "license": "Apache-2.0",
+      "commit": "c5cb68a7084e4ae7dcc60e6a98768720a81841e8",
+      "tree": "839d7b6856ec6da992d649b2423d5f9fcefdcf1f",
+      "fileSha256": {
+        "LICENSE": "73ba74dfaa520b49a401b5d21459a8523a146f3b7518a833eea5efa85130bf68",
+        "README.md": "a063e8728b30907e3fb16e56df933cb3641e133fd12f057ffeff130628cafe60",
+        "app/routes/index.js": "3ab970b2888bc1501515db24a83cc7851ac9c09d00948c652300401515185eb5",
+        "app/routes/contributions.js": "196bdeaa22da4cfe8a851b1b932710b2fcedd21f14ed75d70b739ba759a01003",
+        "app/routes/allocations.js": "b5b7da1a6b595799cf6cca402756dd9a3f6e2a8b5d712c1989d23b7f01f349a6",
+        "app/data/allocations-dao.js": "c6aebc971ce7f9c8b2a8f0864a500497de25a3ea0318ef94ecd57cadf6e789ea"
+      },
+      "expectedFindings": [
+        {
+          "id": "nodegoat-contribution-eval", "ruleId": "ast:dynamic-code", "checkId": "source.builtin-ast", "path": "app/routes/contributions.js",
+          "requiredFindings": [
+            { "line": 32, "column": 24, "source": { "path": "app/routes/contributions.js", "line": 32, "column": 29 } },
+            { "line": 33, "column": 26, "source": { "path": "app/routes/contributions.js", "line": 33, "column": 31 } },
+            { "line": 34, "column": 22, "source": { "path": "app/routes/contributions.js", "line": 34, "column": 27 } }
+          ], "support": "supported",
+          "basis": "One registered contribution flow has three req.body values each passed to eval; all three sinks form one required expectation.",
+          "sourceUrl": "https://github.com/OWASP/NodeGoat/blob/c5cb68a7084e4ae7dcc60e6a98768720a81841e8/app/routes/contributions.js#L28-L41"
+        },
+        {
+          "id": "nodegoat-allocation-nosql", "ruleId": "unsupported:nosql-where", "checkId": "source.builtin-ast", "path": "app/data/allocations-dao.js",
+          "requiredFindings": [{ "line": 78, "column": 21 }], "support": "known_unsupported",
+          "basis": "Request threshold enters a Mongo dollar-where expression before find; this symbolic family has no built-in AST rule.",
+          "sourceUrl": "https://github.com/OWASP/NodeGoat/blob/c5cb68a7084e4ae7dcc60e6a98768720a81841e8/app/data/allocations-dao.js#L57-L86"
+        },
+        {
+          "id": "nodegoat-redirect", "ruleId": "ast:open-redirect", "checkId": "source.builtin-ast", "path": "app/routes/index.js",
+          "requiredFindings": [{ "line": 72, "column": 16, "source": { "path": "app/routes/index.js", "line": 72, "column": 29 } }], "support": "supported",
+          "basis": "Registered learn route sends req.query.url directly to res.redirect without destination validation.",
+          "sourceUrl": "https://github.com/OWASP/NodeGoat/blob/c5cb68a7084e4ae7dcc60e6a98768720a81841e8/app/routes/index.js#L69-L73"
+        }
+      ],
+      "reviewedNegativeSites": []
+    }
+  ]
+}

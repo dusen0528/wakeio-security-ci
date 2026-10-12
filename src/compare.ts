@@ -146,6 +146,17 @@ export function compareReports(beforeInput: ScanReport, afterInput: ScanReport):
       reasons.push('Declared API execution plan is missing, incomplete, or changed.');
     }
   }
+  for (const check of before.checks) {
+    const previous = check.dastExecution;
+    const next = after.checks.find(candidate => candidate.id === check.id)?.dastExecution;
+    if (!previous && !next) continue;
+    if (!previous || !next || previous.status !== 'complete' || next.status !== 'complete'
+      || previous.policySha256 !== next.policySha256 || previous.profile !== next.profile
+      || previous.profileRevision !== next.profileRevision || previous.maxRequests !== next.maxRequests
+      || previous.timeoutMs !== next.timeoutMs || previous.allowPrivate !== next.allowPrivate) {
+      reasons.push('Native DAST policy or execution is missing, incomplete, or changed.');
+    }
+  }
   const oldIndex = indexed(before);
   const currentIndex = indexed(after);
   if (oldIndex.ambiguous.size > 0 || currentIndex.ambiguous.size > 0) {
