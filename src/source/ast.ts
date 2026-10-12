@@ -8,6 +8,7 @@ import { findSnapshotInputFlows, type InputFlowUse, type ParseFileEvidence } fro
 import { FLOW_LIMITS, type FlowLimits } from "./modules.js";
 import type { CollectedFile, SourceSnapshot } from "./types.js";
 import { mergeHttpRoles } from './http-role.js';
+import { mergeStaticContexts } from '../static-context.js';
 
 interface AstFile {
   file: CollectedFile;
@@ -27,6 +28,7 @@ interface Observation {
   confidence: Finding["confidence"];
   kind?: Finding["kind"];
   staticFlow?: StaticFlow;
+  staticContext?: Finding['staticContext'];
 }
 
 const HTML_SINK = /(?:\.innerHTML\b|\.outerHTML\b|\.insertAdjacentHTML\b|\bdocument\.write\b|\bdangerouslySetInnerHTML\b)/i;
@@ -79,11 +81,12 @@ function findingFromObservation(observation: Observation): Finding {
     title: observation.title,
     description: observation.description,
     severity: observation.severity,
-    confidence: observation.confidence,
-    kind: observation.kind ?? "candidate",
+    confidence: observation.staticContext ? 'low' : observation.confidence,
+    kind: observation.staticContext ? 'candidate' : observation.kind ?? "candidate",
     location: { path: observation.file.path, line: location.line, column: location.column },
     remediation: observation.remediation,
-    ...(observation.staticFlow ? { staticFlow: observation.staticFlow } : {}),
+    ...(observation.staticFlow ? { staticFlow: observation.staticContext ? { ...observation.staticFlow, truncated: true } : observation.staticFlow } : {}),
+    ...(observation.staticContext ? { staticContext: observation.staticContext } : {}),
   };
 }
 
@@ -227,6 +230,7 @@ function observeFile(astFile: AstFile, flowUses: ReadonlyMap<ts.Node, InputFlowU
   const observations: Observation[] = [];
   const { file, sourceFile } = astFile;
   const walk = (node: ts.Node): void => {
+    const observationStart = observations.length;
     if (ts.isBinaryExpression(node)) {
       const use = flowUses.get(node);
       const confidence = use ? flowConfidence(use) : undefined;
@@ -315,6 +319,10 @@ function observeFile(astFile: AstFile, flowUses: ReadonlyMap<ts.Node, InputFlowU
           "Input reaches a Response-shaped body with an explicit text/html header. Runtime constructor identity, rendering and exploitability are unverified.",
           "high", "Use Response.json for data, or contextually encode untrusted text before returning HTML.", flowConfidence(use, 0));
       }
+    }
+    const staticContext = flowUses.get(node)?.staticContext;
+    if (staticContext) for (let index = observationStart; index < observations.length; index++) {
+      if (observations[index].kind !== 'observation') observations[index].staticContext = staticContext;
     }
     ts.forEachChild(node, walk);
   };
@@ -431,7 +439,15 @@ export function runBuiltinAst(snapshot: SourceSnapshot, hasOtherSecurityCheck = 
         argumentsByIndex.set(argument.index, { ...preferred, fixedDestination: before.fixedDestination === true && argument.fixedDestination === true });
       }
     }
-    flowUses.set(use.node, { ...prior, htmlResponse: prior.htmlResponse ?? use.htmlResponse, htmlResponseMime: prior.htmlResponseMime === "unknown" || use.htmlResponseMime === "unknown" ? "unknown" : prior.htmlResponseMime ?? use.htmlResponseMime, argumentFlows: [...argumentsByIndex.values()].sort((a, b) => a.index - b.index), localForkCall: prior.localForkCall && use.localForkCall ? {complete:prior.localForkCall.complete && use.localForkCall.complete} : undefined, forkRole: prior.forkRole?.identity === 'unresolved' || use.forkRole?.identity === 'unresolved' ? {identity:'unresolved'} : prior.forkRole ?? use.forkRole, sqlRole:mergeSqlRoles(prior.sqlRole,use.sqlRole), nosqlRole:mergeNoSqlRoles(prior.nosqlRole,use.nosqlRole), httpRole: mergeHttpRoles(prior.httpRole, use.httpRole) });
+    const staticContext = mergeStaticContexts(prior.staticContext, use.staticContext);
+    const merged: InputFlowUse = { ...prior, staticContext, htmlResponse: prior.htmlResponse ?? use.htmlResponse, htmlResponseMime: prior.htmlResponseMime === "unknown" || use.htmlResponseMime === "unknown" ? "unknown" : prior.htmlResponseMime ?? use.htmlResponseMime, argumentFlows: [...argumentsByIndex.values()].sort((a, b) => a.index - b.index), localForkCall: prior.localForkCall && use.localForkCall ? {complete:prior.localForkCall.complete && use.localForkCall.complete} : undefined, forkRole: prior.forkRole?.identity === 'unresolved' || use.forkRole?.identity === 'unresolved' ? {identity:'unresolved' as const} : prior.forkRole ?? use.forkRole, sqlRole:mergeSqlRoles(prior.sqlRole,use.sqlRole), nosqlRole:mergeNoSqlRoles(prior.nosqlRole,use.nosqlRole), httpRole: mergeHttpRoles(prior.httpRole, use.httpRole) };
+    if (staticContext) {
+      merged.argumentFlows = (merged.argumentFlows ?? []).map(flow => ({ ...flow, certainty: 'unknown' as const, fixedDestination: false, staticFlow: flow.staticFlow ? { ...flow.staticFlow, truncated: true } : undefined }));
+      if (merged.nosqlRole) merged.nosqlRole = { ...merged.nosqlRole, certainty: 'unknown', staticFlow: merged.nosqlRole.staticFlow ? { ...merged.nosqlRole.staticFlow, truncated: true } : undefined };
+      if (merged.sqlRole) merged.sqlRole = { ...merged.sqlRole, certainty: 'unknown', staticFlow: merged.sqlRole.staticFlow ? { ...merged.sqlRole.staticFlow, truncated: true } : undefined };
+      if (merged.httpRole) merged.httpRole = { ...merged.httpRole, certainty: 'unknown', staticFlow: merged.httpRole.staticFlow ? { ...merged.httpRole.staticFlow, truncated: true } : undefined };
+    }
+    flowUses.set(use.node, merged);
   }
   const outboundUses = [...flowUses.values()].filter((use) => ts.isCallExpression(use.node) && FETCH_SINK.test(callName(use.node.expression)) && flowConfidence(use, 0));
   const outboundFixedDestinationSuppressed = outboundUses.filter((use) => destinationQualified(use, use.node as ts.CallExpression)).length;

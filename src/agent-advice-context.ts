@@ -2,11 +2,13 @@ import { sanitiseCollectionBudget, sanitiseCollectionEvidence } from './source/c
 import type { AgentReport } from './contracts.js';
 import { redactSecrets, safeHttpUrl } from './report-path.js';
 import { sanitizeDastExecution } from './dast-execution.js';
+import { sanitiseStaticContext } from './static-context.js';
+import { types } from 'node:util';
 
 export type RecheckRoute = 'repeat_native_same_policy' | 'replay_native_finding_same_policy' | 'replay_api_finding_same_policy'
   | 'review_static_flow_or_budget' | 'review_check_diagnostics' | 'review_scope';
 
-export const ADVICE_PROJECTION_POLICY_VERSION = 3;
+export const ADVICE_PROJECTION_POLICY_VERSION = 4;
 
 const MAX_CHECKS = 24;
 const MAX_FINDINGS = 24;
@@ -91,7 +93,8 @@ function checkCard(check: AgentReport['checks'][number], mode: AgentReport['mode
 
 function findingRoute(finding: AgentReport['findings'][number],
   check: AgentReport['checks'][number], mode: AgentReport['mode'], nativeCheckCount: number,
-  findingRowsForCheck: number, nativeReplayReportEligible: boolean): RecheckRoute {
+  findingRowsForCheck: number, nativeReplayReportEligible: boolean, conditionalContext: boolean): RecheckRoute {
+  if (conditionalContext) return 'review_static_flow_or_budget';
   if (nativeReplayReportEligible && nativeExecutionEligible(check, nativeCheckCount)
       && check.dastExecution?.outcome === 'observed'
       && check.findingIds.length === 1 && findingRowsForCheck === 1
@@ -110,10 +113,13 @@ function findingCard(finding: AgentReport['findings'][number], check: AgentRepor
   mode: AgentReport['mode'], nativeCheckCount: number, findingRowsForCheck: number,
   nativeReplayReportEligible: boolean) {
   const flow = finding.evidence.staticFlow;
+  const contextField = types.isProxy(finding.evidence) ? undefined : Object.getOwnPropertyDescriptor(finding.evidence, 'staticContext');
+  const contextPresent = types.isProxy(finding.evidence) || !!contextField;
+  const context = contextField && Object.hasOwn(contextField, 'value') ? sanitiseStaticContext(contextField.value) : undefined;
   const control = finding.evidence.controlVerification;
   const apiEvidence = finding.evidence.apiExecution;
   const route = findingRoute(finding, check, mode, nativeCheckCount, findingRowsForCheck,
-    nativeReplayReportEligible);
+    nativeReplayReportEligible, contextPresent);
   return { referenceId: `finding:${finding.checkIndex}:${finding.findingId}`,
     findingId: finding.findingId, checkIndex: finding.checkIndex,
     ruleId: boundedText(finding.ruleId, 120), title: boundedText(finding.title, 180),
@@ -123,6 +129,9 @@ function findingCard(finding: AgentReport['findings'][number], check: AgentRepor
     recheckRoute: route,
     ...(flow ? { staticFlow: { roles: flow.steps.map(step => step.role),
       stepCount: flow.steps.length, truncated: flow.truncated } } : {}),
+    ...(context ? { staticContext: { authority: context.authority,
+      kinds: [...new Set(context.items.map(item => item.kind))], itemCount: context.items.length,
+      truncated: context.truncated } } : {}),
     ...(control ? { inRunControl: { state: control.state, method: control.method,
       controls: control.controls } } : {}),
     ...(apiEvidence ? { apiEvidence: { basis: apiEvidence.basis,

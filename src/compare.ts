@@ -1,6 +1,7 @@
 import { sanitiseAnalysisBudget, sameAnalysisBudget } from './source/analysis-budget.js';
 import { sanitiseCollectionBudget, sanitiseCollectionEvidence, sameCollectionBudget } from './source/collection-budget.js';
 import { types as utilTypes } from 'node:util';
+import { sanitiseStaticContext } from './static-context.js';
 import type { Finding, ScanProvenance, ScanReport, Severity } from './contracts.js';
 import { exitCode, sanitiseReport, writeArtifacts } from './report.js';
 import { readJsonInput } from './json-input.js';
@@ -54,10 +55,16 @@ export function parseScanReport(input: unknown): ScanReport {
     count += check.findings.length;
     if (count > 50_000 || (check.status === 'not_applicable' && check.findings.length)) return invalid();
     for (const finding of check.findings) {
+      if (finding && typeof finding === 'object' && utilTypes.isProxy(finding)) return invalid();
       if (!record(finding) || !text(finding.ruleId) || !finding.ruleId || !text(finding.title)
         || !text(finding.description) || !text(finding.remediation) || !severities.includes(finding.severity)
         || !['low', 'medium', 'high'].includes(finding.confidence)
         || !['observation', 'candidate', 'advisory'].includes(finding.kind) || !record(finding.location)) return invalid();
+      const context = collectionField(finding, 'staticContext');
+      if (!context.valid || context.present && (!sanitiseStaticContext(context.value)
+        || finding.confidence !== 'low' || finding.kind !== 'candidate'
+        || ['completed', 'not_applicable'].includes(check.status)
+        || finding.staticFlow !== undefined && finding.staticFlow.truncated !== true)) return invalid();
       if (finding.comparisonKey !== undefined
         && (!text(finding.comparisonKey) || !/^[a-f0-9]{64}$/.test(finding.comparisonKey))) return invalid();
       for (const key of ['path', 'url']) if (finding.location[key] !== undefined && !text(finding.location[key])) return invalid();
@@ -171,6 +178,14 @@ export function compareReports(beforeInput: ScanReport, afterInput: ScanReport):
   }
   const oldIndex = indexed(before);
   const currentIndex = indexed(after);
+  for (const id of new Set([...oldIndex.findings.keys(), ...currentIndex.findings.keys()])) {
+    const previous = oldIndex.findings.get(id)?.finding.staticContext;
+    const next = currentIndex.findings.get(id)?.finding.staticContext;
+    if ((previous || next) && JSON.stringify(previous) !== JSON.stringify(next)) {
+      reasons.push('Conditional static context changed or is missing from a corresponding finding; body hypotheses cannot establish disappearance or a fix.');
+      break;
+    }
+  }
   if (oldIndex.ambiguous.size > 0 || currentIndex.ambiguous.size > 0) {
     reasons.push('A semantic comparison key occurs more than once in a check; matching is ambiguous.');
   }

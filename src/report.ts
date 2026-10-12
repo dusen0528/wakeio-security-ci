@@ -4,6 +4,7 @@ import { sanitiseApiExecutionLedger, invalidApiExecutionLedger } from "./api-exe
 import { redactSecrets, safeRelativePath, safeHttpUrl } from './report-path.js';
 import { sanitiseAnalysisBudget } from './source/analysis-budget.js';
 import { sanitiseCollectionBudget, sanitiseCollectionEvidence } from './source/collection-budget.js';
+import { sanitiseStaticContext } from './static-context.js';
 import { sanitiseApiStateEvidence } from './api-state-observer.js';
 import { projectReportSummary } from './report-summary.js';
 import { createHash } from 'node:crypto';
@@ -39,7 +40,7 @@ export const REPORT_SCHEMA_VERSION = '1.0.0' as const;
 
 /** The version advertised to SARIF consumers when the package is built. */
 export const REPORT_TOOL_VERSION = '0.5.0';
-export const RULESET_VERSION = '2026-10-06.3';
+export const RULESET_VERSION = '2026-10-13.1';
 
 const SEVERITIES: readonly Severity[] = [
   'info',
@@ -292,6 +293,7 @@ function projectAgentReport(report: ScanReport, failOn: FailOn): AgentReport {
       evidence: { kind: finding.kind, basis: 'scanner_report' as const,
         traceStatus: finding.staticFlow ? finding.staticFlow.truncated ? 'static_truncated' as const : 'static_provided' as const : 'not_provided' as const,
         ...(finding.staticFlow ? { staticFlow: finding.staticFlow } : {}),
+        ...(finding.staticContext ? { staticContext: finding.staticContext } : {}),
         ...(finding.controlVerification ? { controlVerification: finding.controlVerification } : {}),
         ...(finding.evidence ? { apiExecution: finding.evidence } : {}),
         ...(finding.replay ? { replay: finding.replay } : {}),
@@ -366,6 +368,7 @@ export function toSarif(report: ScanReport): SarifLog {
           ...(check.dastExecution ? { dastExecution: check.dastExecution } : {}),
           ...(finding.evidence ? { evidence: finding.evidence } : {}),
           ...(finding.replay ? { replay: finding.replay } : {}),
+          ...(finding.staticContext ? { staticContext: finding.staticContext } : {}),
         },
       };
 
@@ -556,6 +559,12 @@ export function toMarkdown(report: ScanReport, failOn: FailOn = 'high'): string 
           lines.push(`    - ${item.role}: ${markdownInline(item.location.path)}:${item.location.line}:${item.location.column}`);
         }
       }
+      if (finding.staticContext) {
+        lines.push(`  - Conditional static context${finding.staticContext.truncated ? ' (context records omitted)' : ''}: observed body/entry hypotheses; execution not verified. These records are separate from input trace steps.`);
+        for (const item of finding.staticContext.items) {
+          lines.push(`    - ${item.kind}: ${markdownInline(item.location.path)}:${item.location.line}:${item.location.column}${item.target ? `; observed target ${markdownInline(item.target.path)}:${item.target.line}:${item.target.column}` : ''}`);
+        }
+      }
       if (finding.controlVerification) {
         lines.push(`  - In-run controls: ${finding.controlVerification.state} (${finding.controlVerification.method}; scoped to this policy case; not exploit or fix verification)`);
       }
@@ -743,6 +752,8 @@ function sanitiseCheck(input: CheckResult): CheckResult {
       .filter(() => input.id !== 'url.sql-boolean' || dastExecution?.status === 'complete' && dastExecution.outcome === 'observed')
       .map(finding => input.id === 'url.sql-boolean' ? { ...finding, kind: 'candidate' as const } : finding)
     : [];
+  if (Array.isArray(input?.findings) && input.findings.some(finding => ownDataField(finding, 'staticContext').present)
+    && (status === 'completed' || status === 'not_applicable')) status = 'partial';
   const notes = Array.isArray(input?.notes)
     ? input.notes.map((note) => safeText(note)).filter(Boolean)
     : [];
@@ -804,7 +815,8 @@ function safeScope(scope: ScanReport['scope']): { scope?: ScanReport['scope'] } 
 
 /** Read new typed metadata without executing accessors supplied by SDK callers. */
 function ownDataField(input: unknown, key: string): { present: boolean; valid: boolean; value?: unknown } {
-  if (!input || typeof input !== 'object' || utilTypes.isProxy(input)) return { present: false, valid: false };
+  if (!input || typeof input !== 'object') return { present: false, valid: false };
+  if (utilTypes.isProxy(input)) return { present: true, valid: false };
   const descriptor = Object.getOwnPropertyDescriptor(input, key);
   return descriptor ? { present: true, valid: 'value' in descriptor, ...('value' in descriptor ? { value: descriptor.value } : {}) } : { present: false, valid: false };
 }
@@ -966,11 +978,17 @@ function sanitiseFindingProof(input: Finding, ledger: ApiExecutionLedger | undef
 }
 
 function sanitiseFinding(input: Finding, proofLedger?: ApiExecutionLedger): Finding {
+  if (input && typeof input === 'object' && utilTypes.isProxy(input)) return {
+    ruleId: 'wakeio-finding', title: 'Security finding', description: 'Unusable finding metadata requires review.',
+    severity: 'info', confidence: 'low', kind: 'candidate', location: {}, remediation: 'Review the finding and verify the affected scope.',
+  };
   const severity = SEVERITIES.includes(input?.severity) ? input.severity : 'info';
-  const confidence = CONFIDENCES.includes(input?.confidence)
+  const contextField = ownDataField(input, 'staticContext');
+  const staticContext = contextField.valid ? sanitiseStaticContext(contextField.value) : undefined;
+  const confidence = contextField.present ? 'low' : CONFIDENCES.includes(input?.confidence)
     ? input.confidence
     : 'low';
-  const kind = KINDS.includes(input?.kind) ? input.kind : 'candidate';
+  const kind = contextField.present ? 'candidate' : KINDS.includes(input?.kind) ? input.kind : 'candidate';
   const references = Array.isArray(input?.references)
     ? input.references
         .map((reference) => safeHttpUrl(reference))
@@ -995,9 +1013,10 @@ function sanitiseFinding(input: Finding, proofLedger?: ApiExecutionLedger): Find
       'Review the finding and verify the affected scope.',
     ),
     ...(comparisonKey ? { comparisonKey } : {}),
-    ...(staticFlow ? { staticFlow } : {}),
+    ...(staticFlow ? { staticFlow: contextField.present ? { ...staticFlow, truncated: true } : staticFlow } : {}),
+    ...(staticContext ? { staticContext } : {}),
     ...(references && references.length > 0 ? { references } : {}),
-    ...sanitiseFindingProof(input, proofLedger),
+    ...(!contextField.present ? sanitiseFindingProof(input, proofLedger) : {}),
   };
 }
 

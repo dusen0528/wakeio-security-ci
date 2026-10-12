@@ -9,6 +9,18 @@ export interface StaticFlow {
   steps: Array<{ role: 'source' | 'call' | 'parameter' | 'return' | 'intermediate' | 'sink'; location: { path: string; line: number; column: number } }>;
   truncated: boolean;
 }
+/** Observed body/entry hypotheses, separate from contributing input trace steps. Never runtime or action authority. */
+export interface StaticCandidateContext {
+  revision: 'static-context-v1';
+  authority: 'conditional';
+  items: Array<{
+    kind: 'unresolved_cjs_dispatch' | 'constructor_continuation' | 'declared_callback_entry' | 'unqualified_mongo_origin';
+    location: { path: string; line: number; column: number };
+    target?: { path: string; line: number; column: number };
+  }>;
+  /** Context record omission only; unknown dispatch remains conditional even when false. */
+  truncated: boolean;
+}
 export interface Finding {
   /** Deterministic report identity; changes when the rule or location changes. */
   id?: string;
@@ -24,6 +36,8 @@ export interface Finding {
   remediation: string;
   references?: string[];
   staticFlow?: StaticFlow;
+  /** Absent on legacy reports; absence does not establish closed dispatch. */
+  staticContext?: StaticCandidateContext;
   /** Deterministic in-run control outcome; `kind` keeps its human-review meaning. */
   controlVerification?: FindingControlVerification;
   /** References into this check's `apiExecution` ledger; never response values. */
@@ -414,7 +428,7 @@ export interface AgentReport {
     severity: Severity;
     confidence: Finding['confidence'];
     /** In-run control results stay scanner evidence; `verification` below is unchanged. */
-    evidence: { kind: Finding['kind']; basis: 'scanner_report'; traceStatus: 'not_provided' | 'static_provided' | 'static_truncated'; staticFlow?: StaticFlow;
+    evidence: { kind: Finding['kind']; basis: 'scanner_report'; traceStatus: 'not_provided' | 'static_provided' | 'static_truncated'; staticFlow?: StaticFlow; staticContext?: StaticCandidateContext;
       controlVerification?: FindingControlVerification; apiExecution?: FindingEvidence; replay?: FindingReplay };
     location: Finding['location'];
     references?: string[];
