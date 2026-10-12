@@ -60,7 +60,8 @@ test("Bandit receives only the staged Python allowlist and its raw output never 
     ].join("\n");
     await writeFile(fake, script);
     await chmod(fake, 0o700);
-    const checks = await runSource({ root, tools: ["bandit"], toolPaths: { bandit: fake }, timeoutMs: 3000 });
+    // The fake Node tool shares CI capacity with the full required-engine suite.
+    const checks = await runSource({ root, tools: ["bandit"], toolPaths: { bandit: fake }, timeoutMs: 10000 });
     const bandit = checks.find((check) => check.id === "source.bandit");
     assert.equal(bandit?.status, "completed");
     assert.equal(bandit?.findings.length, 1);

@@ -1,6 +1,7 @@
 // Finite, independent application-shaped controls. Only generated 127.0.0.1
 // fixtures are contacted. These counts are task coverage, not overall security.
 import assert from 'node:assert/strict';
+import { realpathSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import { runApiPolicy } from '../build/src/index.js';
 import { startOwnedDastFixture } from './dast-owned-fixture.mjs';
@@ -80,7 +81,7 @@ export async function evaluateOwnedDastCorpus({ run = runApiPolicy, repeats = 2 
   return { scope: 'owned-loopback-exact-canary-json-values', comparison: 'same-build pointer configuration versus opt-in json-values configuration; not an overall-security score', repeats, summary, rows };
 }
 
-if (process.argv[1] && pathToFileURL(process.argv[1]).href === import.meta.url) {
+if (process.argv[1] && pathToFileURL(realpathSync(process.argv[1])).href === import.meta.url) {
   const result = await evaluateOwnedDastCorpus();
   process.stdout.write(JSON.stringify({ scope: result.scope, comparison: result.comparison, repeats: result.repeats, summary: result.summary }, null, 2) + '\n');
 }

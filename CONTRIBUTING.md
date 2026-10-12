@@ -4,8 +4,9 @@ Wakeio Security CI is a public Apache-2.0 project for bounded local source and
 URL checks. It runs without a Wakeio account or hosted service, and its reports
 describe the evidence available to the run. The GitHub Action is available as
 the moving preview reference `dusen0528/wakeio-security-ci@main`; review and
-pin a full commit SHA before production use. npm publication and Marketplace
-release are still pending. A contribution should keep the evidence boundary
+pin a full commit SHA before production use. The source package is 0.5.0,
+while the latest published npm package and GitHub release remain 0.4.0;
+neither 0.5.0 artifact has been published. A contribution should keep the evidence boundary
 visible: a static candidate is not proof of exploitability, and a clean exit
 code is not a whole-service security guarantee.
 

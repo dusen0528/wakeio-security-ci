@@ -1,9 +1,10 @@
 import { apiPolicyDigest, parseApiPolicy, runApiPolicy, type ApiPolicyV2 } from "./api.js";
 import { parseScanReport } from "./compare.js";
+import { types } from "node:util";
 import type { CheckResult, FindingReplay } from "./contracts.js";
 
 export type ApiReplayOutcome = 'reproduced' | 'not_reproduced' | 'inconclusive' | 'refused';
-export type ApiReplayRefusal = 'invalid_report' | 'finding_not_found' | 'not_replayable' | 'invalid_policy' | 'legacy_policy' | 'policy_mismatch';
+export type ApiReplayRefusal = 'invalid_options' | 'invalid_report' | 'finding_not_found' | 'not_replayable' | 'invalid_policy' | 'legacy_policy' | 'policy_mismatch';
 
 export interface ApiReplayOptions {
   /** A report.json document produced by `scan --api-policy`. */
@@ -52,7 +53,14 @@ function reducedPolicy(policy: ApiPolicyV2, replay: FindingReplay): ApiPolicyV2 
  * completed run with an accepted denial. Anything else is `inconclusive`.
  */
 export async function replayApiFinding(options: ApiReplayOptions): Promise<ApiReplayResult> {
-  const findingId = typeof options?.findingId === 'string' ? options.findingId : '';
+  if (!options || typeof options !== 'object' || types.isProxy(options)) return refused('', 'invalid_options');
+  const descriptors = Object.getOwnPropertyDescriptors(options);
+  const proto = Object.getPrototypeOf(options);
+  if ((proto !== Object.prototype && proto !== null) || Object.getOwnPropertySymbols(options).length
+    || Object.keys(descriptors).some((key) => !['report', 'policy', 'findingId', 'env', 'allowPrivate', 'timeoutMs', 'signal'].includes(key))
+    || Object.values(descriptors).some((entry) => !('value' in entry) || !entry.enumerable)) return refused('', 'invalid_options');
+  options = Object.create(null, descriptors) as ApiReplayOptions;
+  const findingId = typeof options.findingId === 'string' ? options.findingId : '';
   let replay: FindingReplay | undefined;
   try {
     const report = parseScanReport(options.report);
@@ -67,7 +75,7 @@ export async function replayApiFinding(options: ApiReplayOptions): Promise<ApiRe
   try { policy = parseApiPolicy(options.policy).policy; }
   catch { return refused(findingId, 'invalid_policy', replay); }
   if (policy.version !== 2) return refused(findingId, 'legacy_policy', replay);
-  if (apiPolicyDigest(options.policy) !== replay.policySha256) return refused(findingId, 'policy_mismatch', replay);
+  if (apiPolicyDigest(policy) !== replay.policySha256) return refused(findingId, 'policy_mismatch', replay);
   const reduced = reducedPolicy(policy, replay);
   if (!reduced) return refused(findingId, 'policy_mismatch', replay);
 
@@ -79,9 +87,11 @@ export async function replayApiFinding(options: ApiReplayOptions): Promise<ApiRe
     ...(options.signal === undefined ? {} : { signal: options.signal }),
   });
   const exposure = check.findings.find((item) => item.replay?.caseId === replay.caseId && item.replay.actor === replay.actor);
-  const outcome: ApiReplayOutcome = exposure
-    ? exposure.controlVerification?.state === 'controls_passed' ? 'reproduced' : 'inconclusive'
-    : check.status === 'completed' ? 'not_reproduced' : 'inconclusive';
+  // A positive probe cannot turn an incomplete control run into a reproduced finding.
+  const complete = check.status === 'completed' && check.apiExecution?.status === 'complete';
+  const outcome: ApiReplayOutcome = !complete ? 'inconclusive'
+    : exposure ? exposure.controlVerification?.state === 'controls_passed' ? 'reproduced' : 'inconclusive'
+      : 'not_reproduced';
   return { version: 1, kind: 'api-finding-replay', outcome, findingId, replay, check };
 }
 

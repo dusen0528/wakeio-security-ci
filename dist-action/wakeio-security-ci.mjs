@@ -5412,16 +5412,16 @@ ${lanes.join("\n")}
             };
           }
         }
-        function dumpTypes(types4) {
+        function dumpTypes(types5) {
           var _a2, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m, _n, _o, _p, _q, _r, _s;
           mark("beginDumpTypes");
           const typesPath = legend[legend.length - 1].typesPath;
           const typesFd = fs.openSync(typesPath, "w");
           const recursionIdentityMap = /* @__PURE__ */ new Map();
           fs.writeSync(typesFd, "[");
-          const numTypes = types4.length;
+          const numTypes = types5.length;
           for (let i = 0; i < numTypes; i++) {
-            const type = types4[i];
+            const type = types5[i];
             const objectFlags = type.objectFlags;
             const symbol = type.aliasSymbol ?? type.symbol;
             let display;
@@ -25360,8 +25360,8 @@ ${lanes.join("\n")}
           }
           return parenthesizeOperandOfTypeOperator(type);
         }
-        function parenthesizeElementTypesOfTupleType(types4) {
-          return factory2.createNodeArray(sameMap(types4, parenthesizeElementTypeOfTupleType));
+        function parenthesizeElementTypesOfTupleType(types5) {
+          return factory2.createNodeArray(sameMap(types5, parenthesizeElementTypeOfTupleType));
         }
         function parenthesizeElementTypeOfTupleType(type) {
           if (hasJSDocPostfixQuestion(type)) return factory2.createParenthesizedType(type);
@@ -27439,26 +27439,26 @@ ${lanes.join("\n")}
         function updateRestTypeNode(node, type) {
           return node.type !== type ? update(createRestTypeNode(type), node) : node;
         }
-        function createUnionOrIntersectionTypeNode(kind, types4, parenthesize) {
+        function createUnionOrIntersectionTypeNode(kind, types5, parenthesize) {
           const node = createBaseNode(kind);
-          node.types = factory2.createNodeArray(parenthesize(types4));
+          node.types = factory2.createNodeArray(parenthesize(types5));
           node.transformFlags = 1;
           return node;
         }
-        function updateUnionOrIntersectionTypeNode(node, types4, parenthesize) {
-          return node.types !== types4 ? update(createUnionOrIntersectionTypeNode(node.kind, types4, parenthesize), node) : node;
+        function updateUnionOrIntersectionTypeNode(node, types5, parenthesize) {
+          return node.types !== types5 ? update(createUnionOrIntersectionTypeNode(node.kind, types5, parenthesize), node) : node;
         }
-        function createUnionTypeNode(types4) {
-          return createUnionOrIntersectionTypeNode(193, types4, parenthesizerRules().parenthesizeConstituentTypesOfUnionType);
+        function createUnionTypeNode(types5) {
+          return createUnionOrIntersectionTypeNode(193, types5, parenthesizerRules().parenthesizeConstituentTypesOfUnionType);
         }
-        function updateUnionTypeNode(node, types4) {
-          return updateUnionOrIntersectionTypeNode(node, types4, parenthesizerRules().parenthesizeConstituentTypesOfUnionType);
+        function updateUnionTypeNode(node, types5) {
+          return updateUnionOrIntersectionTypeNode(node, types5, parenthesizerRules().parenthesizeConstituentTypesOfUnionType);
         }
-        function createIntersectionTypeNode(types4) {
-          return createUnionOrIntersectionTypeNode(194, types4, parenthesizerRules().parenthesizeConstituentTypesOfIntersectionType);
+        function createIntersectionTypeNode(types5) {
+          return createUnionOrIntersectionTypeNode(194, types5, parenthesizerRules().parenthesizeConstituentTypesOfIntersectionType);
         }
-        function updateIntersectionTypeNode(node, types4) {
-          return updateUnionOrIntersectionTypeNode(node, types4, parenthesizerRules().parenthesizeConstituentTypesOfIntersectionType);
+        function updateIntersectionTypeNode(node, types5) {
+          return updateUnionOrIntersectionTypeNode(node, types5, parenthesizerRules().parenthesizeConstituentTypesOfIntersectionType);
         }
         function createConditionalTypeNode(checkType, extendsType, trueType, falseType) {
           const node = createBaseNode(
@@ -29636,13 +29636,13 @@ ${lanes.join("\n")}
         function updateDefaultClause(node, statements2) {
           return node.statements !== statements2 ? update(createDefaultClause(statements2), node) : node;
         }
-        function createHeritageClause(token, types4) {
+        function createHeritageClause(token, types5) {
           const node = createBaseNode(
             299
             /* HeritageClause */
           );
           node.token = token;
-          node.types = createNodeArray(types4);
+          node.types = createNodeArray(types5);
           node.transformFlags |= propagateChildrenFlags(node.types);
           switch (token) {
             case 96:
@@ -29656,8 +29656,8 @@ ${lanes.join("\n")}
           }
           return node;
         }
-        function updateHeritageClause(node, types4) {
-          return node.types !== types4 ? update(createHeritageClause(node.token, types4), node) : node;
+        function updateHeritageClause(node, types5) {
+          return node.types !== types5 ? update(createHeritageClause(node.token, types5), node) : node;
         }
         function createCatchClause(variableDeclaration, block) {
           const node = createBaseNode(
@@ -38187,11 +38187,11 @@ ${lanes.join("\n")}
           const hasLeadingOperator = parseOptional(operator);
           let type = hasLeadingOperator && parseFunctionOrConstructorTypeToError(isUnionType) || parseConstituentType();
           if (token() === operator || hasLeadingOperator) {
-            const types4 = [type];
+            const types5 = [type];
             while (parseOptional(operator)) {
-              types4.push(parseFunctionOrConstructorTypeToError(isUnionType) || parseConstituentType());
+              types5.push(parseFunctionOrConstructorTypeToError(isUnionType) || parseConstituentType());
             }
-            type = finishNode(createTypeNode(createNodeArray(types4, pos)), pos);
+            type = finishNode(createTypeNode(createNodeArray(types5, pos)), pos);
           }
           return type;
         }
@@ -41338,8 +41338,8 @@ ${lanes.join("\n")}
             /* ImplementsKeyword */
           );
           nextToken();
-          const types4 = parseDelimitedList(7, parseExpressionWithTypeArguments);
-          return finishNode(factory2.createHeritageClause(tok, types4), pos);
+          const types5 = parseDelimitedList(7, parseExpressionWithTypeArguments);
+          return finishNode(factory2.createHeritageClause(tok, types5), pos);
         }
         function parseExpressionWithTypeArguments() {
           const pos = getNodePos();
@@ -43553,13 +43553,13 @@ ${lanes.join("\n")}
               const typeReferenceDirectives = context.typeReferenceDirectives;
               const libReferenceDirectives = context.libReferenceDirectives;
               forEach(toArray(entryOrList), (arg) => {
-                const { types: types4, lib, path, ["resolution-mode"]: res, preserve: _preserve } = arg.arguments;
+                const { types: types5, lib, path, ["resolution-mode"]: res, preserve: _preserve } = arg.arguments;
                 const preserve = _preserve === "true" ? true : void 0;
                 if (arg.arguments["no-default-lib"] === "true") {
                   context.hasNoDefaultLib = true;
-                } else if (types4) {
-                  const parsed = parseResolutionMode(res, types4.pos, types4.end, reportDiagnostic);
-                  typeReferenceDirectives.push({ pos: types4.pos, end: types4.end, fileName: types4.value, ...parsed ? { resolutionMode: parsed } : {}, ...preserve ? { preserve } : {} });
+                } else if (types5) {
+                  const parsed = parseResolutionMode(res, types5.pos, types5.end, reportDiagnostic);
+                  typeReferenceDirectives.push({ pos: types5.pos, end: types5.end, fileName: types5.value, ...parsed ? { resolutionMode: parsed } : {}, ...preserve ? { preserve } : {} });
                 } else if (lib) {
                   libReferenceDirectives.push({ pos: lib.pos, end: lib.end, fileName: lib.value, ...preserve ? { preserve } : {} });
                 } else if (path) {
@@ -60080,12 +60080,12 @@ ${lanes.join("\n")}
               type = type.origin;
             }
             if (type.flags & (1048576 | 2097152)) {
-              const types4 = type.flags & 1048576 ? formatUnionTypes(type.types, expandingEnum) : type.types;
-              if (length(types4) === 1) {
-                return typeToTypeNodeHelper(types4[0], context);
+              const types5 = type.flags & 1048576 ? formatUnionTypes(type.types, expandingEnum) : type.types;
+              if (length(types5) === 1) {
+                return typeToTypeNodeHelper(types5[0], context);
               }
               const typeNodes = mapToTypeNodes(
-                types4,
+                types5,
                 context,
                 /*isBareList*/
                 true
@@ -60111,12 +60111,12 @@ ${lanes.join("\n")}
             }
             if (type.flags & 134217728) {
               const texts = type.texts;
-              const types4 = type.types;
+              const types5 = type.types;
               const templateHead = factory.createTemplateHead(texts[0]);
               const templateSpans = factory.createNodeArray(
-                map(types4, (t, i) => factory.createTemplateLiteralTypeSpan(
+                map(types5, (t, i) => factory.createTemplateLiteralTypeSpan(
                   typeToTypeNodeHelper(t, context),
-                  (i < types4.length - 1 ? factory.createTemplateMiddle : factory.createTemplateTail)(texts[i + 1])
+                  (i < types5.length - 1 ? factory.createTemplateMiddle : factory.createTemplateTail)(texts[i + 1])
                 ))
               );
               context.approximateLength += 2;
@@ -60483,14 +60483,14 @@ ${lanes.join("\n")}
               }
               const abstractSignatures = filter(resolved.constructSignatures, (signature) => !!(signature.flags & 4));
               if (some(abstractSignatures)) {
-                const types4 = map(abstractSignatures, getOrCreateTypeFromSignature);
+                const types5 = map(abstractSignatures, getOrCreateTypeFromSignature);
                 const typeElementCount = resolved.callSignatures.length + (resolved.constructSignatures.length - abstractSignatures.length) + resolved.indexInfos.length + // exclude `prototype` when writing a class expression as a type literal, as per
                 // the logic in `createTypeNodesFromResolvedType`.
                 (context.flags & 2048 ? countWhere(resolved.properties, (p) => !(p.flags & 4194304)) : length(resolved.properties));
                 if (typeElementCount) {
-                  types4.push(getResolvedTypeWithoutAbstractConstructSignatures(resolved));
+                  types5.push(getResolvedTypeWithoutAbstractConstructSignatures(resolved));
                 }
-                return typeToTypeNodeHelper(getIntersectionType(types4), context);
+                return typeToTypeNodeHelper(getIntersectionType(types5), context);
               }
               const restoreFlags = saveRestoreFlags(context);
               context.flags |= 4194304;
@@ -61021,8 +61021,8 @@ ${lanes.join("\n")}
             }
             return node;
           }
-          function mapToTypeNodes(types4, context, isBareList) {
-            if (some(types4)) {
+          function mapToTypeNodes(types5, context, isBareList) {
+            if (some(types5)) {
               if (checkTruncationLength(context)) {
                 context.out.truncated = true;
                 if (!isBareList) {
@@ -61036,18 +61036,18 @@ ${lanes.join("\n")}
                       void 0
                     )
                   ];
-                } else if (types4.length > 2) {
+                } else if (types5.length > 2) {
                   return [
-                    typeToTypeNodeHelper(types4[0], context),
+                    typeToTypeNodeHelper(types5[0], context),
                     context.flags & 1 ? addSyntheticLeadingComment(factory.createKeywordTypeNode(
                       133
                       /* AnyKeyword */
-                    ), 3, `... ${types4.length - 2} more elided ...`) : factory.createTypeReferenceNode(
-                      `... ${types4.length - 2} more ...`,
+                    ), 3, `... ${types5.length - 2} more elided ...`) : factory.createTypeReferenceNode(
+                      `... ${types5.length - 2} more ...`,
                       /*typeArguments*/
                       void 0
                     ),
-                    typeToTypeNodeHelper(types4[types4.length - 1], context)
+                    typeToTypeNodeHelper(types5[types5.length - 1], context)
                   ];
                 }
               }
@@ -61055,21 +61055,21 @@ ${lanes.join("\n")}
               const seenNames = mayHaveNameCollisions ? createMultiMap() : void 0;
               const result2 = [];
               let i = 0;
-              for (const type of types4) {
+              for (const type of types5) {
                 i++;
-                if (checkTruncationLength(context) && i + 2 < types4.length - 1) {
+                if (checkTruncationLength(context) && i + 2 < types5.length - 1) {
                   context.out.truncated = true;
                   result2.push(
                     context.flags & 1 ? addSyntheticLeadingComment(factory.createKeywordTypeNode(
                       133
                       /* AnyKeyword */
-                    ), 3, `... ${types4.length - i} more elided ...`) : factory.createTypeReferenceNode(
-                      `... ${types4.length - i} more ...`,
+                    ), 3, `... ${types5.length - i} more elided ...`) : factory.createTypeReferenceNode(
+                      `... ${types5.length - i} more ...`,
                       /*typeArguments*/
                       void 0
                     )
                   );
-                  const typeNode2 = typeToTypeNodeHelper(types4[types4.length - 1], context);
+                  const typeNode2 = typeToTypeNodeHelper(types5[types5.length - 1], context);
                   if (typeNode2) {
                     result2.push(typeNode2);
                   }
@@ -64397,18 +64397,18 @@ ${lanes.join("\n")}
             return writer2;
           }
         }
-        function formatUnionTypes(types4, expandingEnum) {
+        function formatUnionTypes(types5, expandingEnum) {
           const result2 = [];
           let flags = 0;
-          for (let i = 0; i < types4.length; i++) {
-            const t = types4[i];
+          for (let i = 0; i < types5.length; i++) {
+            const t = types5[i];
             flags |= t.flags;
             if (!(t.flags & 98304)) {
               if (t.flags & 512 || !expandingEnum && t.flags | 1056) {
                 const baseType = t.flags & 512 ? booleanType : getBaseTypeOfEnumLikeType(t);
                 if (baseType.flags & 1048576) {
                   const count = baseType.types.length;
-                  if (i + count <= types4.length && getRegularTypeOfLiteralType(types4[i + count - 1]) === getRegularTypeOfLiteralType(baseType.types[count - 1])) {
+                  if (i + count <= types5.length && getRegularTypeOfLiteralType(types5[i + count - 1]) === getRegularTypeOfLiteralType(baseType.types[count - 1])) {
                     result2.push(baseType);
                     i += count - 1;
                     continue;
@@ -64420,7 +64420,7 @@ ${lanes.join("\n")}
           }
           if (flags & 65536) result2.push(nullType);
           if (flags & 32768) result2.push(undefinedType);
-          return result2 || types4;
+          return result2 || types5;
         }
         function visibilityToString(flags) {
           if (flags === 2) {
@@ -65218,7 +65218,7 @@ ${lanes.join("\n")}
             type = getFlowTypeInConstructor(symbol, getDeclaringConstructor(symbol));
           }
           if (!type) {
-            let types4;
+            let types5;
             if (symbol.declarations) {
               let jsdocType;
               for (const declaration of symbol.declarations) {
@@ -65238,16 +65238,16 @@ ${lanes.join("\n")}
                   jsdocType = getAnnotatedTypeForAssignmentDeclaration(jsdocType, expression, symbol, declaration);
                 }
                 if (!jsdocType) {
-                  (types4 || (types4 = [])).push(isBinaryExpression6(expression) || isCallExpression11(expression) ? getInitializerTypeFromAssignmentDeclaration(symbol, resolvedSymbol, expression, kind) : neverType);
+                  (types5 || (types5 = [])).push(isBinaryExpression6(expression) || isCallExpression11(expression) ? getInitializerTypeFromAssignmentDeclaration(symbol, resolvedSymbol, expression, kind) : neverType);
                 }
               }
               type = jsdocType;
             }
             if (!type) {
-              if (!length(types4)) {
+              if (!length(types5)) {
                 return errorType;
               }
-              let constructorTypes = definedInConstructor && symbol.declarations ? getConstructorDefinedThisAssignmentTypes(types4, symbol.declarations) : void 0;
+              let constructorTypes = definedInConstructor && symbol.declarations ? getConstructorDefinedThisAssignmentTypes(types5, symbol.declarations) : void 0;
               if (definedInMethod) {
                 const propType = getTypeOfPropertyInBaseClass(symbol);
                 if (propType) {
@@ -65255,7 +65255,7 @@ ${lanes.join("\n")}
                   definedInConstructor = true;
                 }
               }
-              const sourceTypes = some(constructorTypes, (t) => !!(t.flags & ~98304)) ? constructorTypes : types4;
+              const sourceTypes = some(constructorTypes, (t) => !!(t.flags & ~98304)) ? constructorTypes : types5;
               type = getUnionType(sourceTypes);
             }
           }
@@ -65435,9 +65435,9 @@ ${lanes.join("\n")}
           );
           return thisContainer.kind === 177 || thisContainer.kind === 263 || thisContainer.kind === 219 && !isPrototypePropertyAssignment(thisContainer.parent);
         }
-        function getConstructorDefinedThisAssignmentTypes(types4, declarations) {
-          Debug.assert(types4.length === declarations.length);
-          return types4.filter((_, i) => {
+        function getConstructorDefinedThisAssignmentTypes(types5, declarations) {
+          Debug.assert(types5.length === declarations.length);
+          return types5.filter((_, i) => {
             const declaration = declarations[i];
             const expression = isBinaryExpression6(declaration) ? declaration : isBinaryExpression6(declaration.parent) ? declaration.parent : void 0;
             return expression && isDeclarationInConstructor(expression);
@@ -66888,8 +66888,8 @@ ${lanes.join("\n")}
             const typeArguments = getTypeArguments(type);
             return length(target.typeParameters) === length(typeArguments) ? createTypeReference(target, concatenate(typeArguments, [thisArgument || target.thisType])) : type;
           } else if (type.flags & 2097152) {
-            const types4 = sameMap(type.types, (t) => getTypeWithThisArgument(t, thisArgument, needApparentType));
-            return types4 !== type.types ? getIntersectionType(types4) : type;
+            const types5 = sameMap(type.types, (t) => getTypeWithThisArgument(t, thisArgument, needApparentType));
+            return types5 !== type.types ? getIntersectionType(types5) : type;
           }
           return needApparentType ? getApparentType(type) : type;
         }
@@ -67330,14 +67330,14 @@ ${lanes.join("\n")}
           }
           return result2;
         }
-        function getUnionIndexInfos(types4) {
-          const sourceInfos = getIndexInfosOfType(types4[0]);
+        function getUnionIndexInfos(types5) {
+          const sourceInfos = getIndexInfosOfType(types5[0]);
           if (sourceInfos) {
             const result2 = [];
             for (const info of sourceInfos) {
               const indexType = info.keyType;
-              if (every(types4, (t) => !!getIndexInfoOfType(t, indexType))) {
-                result2.push(createIndexInfo(indexType, getUnionType(map(types4, (t) => getIndexTypeOfType(t, indexType))), some(types4, (t) => getIndexInfoOfType(t, indexType).isReadonly)));
+              if (every(types5, (t) => !!getIndexInfoOfType(t, indexType))) {
+                result2.push(createIndexInfo(indexType, getUnionType(map(types5, (t) => getIndexTypeOfType(t, indexType))), some(types5, (t) => getIndexInfoOfType(t, indexType).isReadonly)));
               }
             }
             return result2;
@@ -67361,13 +67361,13 @@ ${lanes.join("\n")}
         function intersectTypes(type1, type2) {
           return !type1 ? type2 : !type2 ? type1 : getIntersectionType([type1, type2]);
         }
-        function findMixins(types4) {
-          const constructorTypeCount = countWhere(types4, (t) => getSignaturesOfType(
+        function findMixins(types5) {
+          const constructorTypeCount = countWhere(types5, (t) => getSignaturesOfType(
             t,
             1
             /* Construct */
           ).length > 0);
-          const mixinFlags = map(types4, isMixinConstructorType);
+          const mixinFlags = map(types5, isMixinConstructorType);
           if (constructorTypeCount > 0 && constructorTypeCount === countWhere(mixinFlags, (b) => b)) {
             const firstMixinIndex = mixinFlags.indexOf(
               /*searchElement*/
@@ -67377,14 +67377,14 @@ ${lanes.join("\n")}
           }
           return mixinFlags;
         }
-        function includeMixinType(type, types4, mixinFlags, index) {
+        function includeMixinType(type, types5, mixinFlags, index) {
           const mixedTypes = [];
-          for (let i = 0; i < types4.length; i++) {
+          for (let i = 0; i < types5.length; i++) {
             if (i === index) {
               mixedTypes.push(type);
             } else if (mixinFlags[i]) {
               mixedTypes.push(getReturnTypeOfSignature(getSignaturesOfType(
-                types4[i],
+                types5[i],
                 1
                 /* Construct */
               )[0]));
@@ -67396,10 +67396,10 @@ ${lanes.join("\n")}
           let callSignatures;
           let constructSignatures;
           let indexInfos;
-          const types4 = type.types;
-          const mixinFlags = findMixins(types4);
+          const types5 = type.types;
+          const mixinFlags = findMixins(types5);
           const mixinCount = countWhere(mixinFlags, (b) => b);
-          for (let i = 0; i < types4.length; i++) {
+          for (let i = 0; i < types5.length; i++) {
             const t = type.types[i];
             if (!mixinFlags[i]) {
               let signatures = getSignaturesOfType(
@@ -67410,7 +67410,7 @@ ${lanes.join("\n")}
               if (signatures.length && mixinCount > 0) {
                 signatures = map(signatures, (s) => {
                   const clone2 = cloneSignature(s);
-                  clone2.resolvedReturnType = includeMixinType(getReturnTypeOfSignature(s), types4, mixinFlags, i);
+                  clone2.resolvedReturnType = includeMixinType(getReturnTypeOfSignature(s), types5, mixinFlags, i);
                   return clone2;
                 });
               }
@@ -67651,8 +67651,8 @@ ${lanes.join("\n")}
             );
           }
           if (type.flags & 2097152) {
-            const types4 = type.types;
-            if (types4.length === 2 && !!(types4[0].flags & (4 | 8 | 64)) && types4[1] === emptyTypeLiteralType) {
+            const types5 = type.types;
+            if (types5.length === 2 && !!(types5[0].flags & (4 | 8 | 64)) && types5[1] === emptyTypeLiteralType) {
               return type;
             }
             return getIntersectionType(sameMap(type.types, getLowerBoundOfKeyType));
@@ -67942,13 +67942,13 @@ ${lanes.join("\n")}
             return !!expected && isLiteralType(expected) && !isTypeAssignableTo(getTypeOfNode(property), expected);
           });
         }
-        function getAllPossiblePropertiesOfTypes(types4) {
-          const unionType = getUnionType(types4);
+        function getAllPossiblePropertiesOfTypes(types5) {
+          const unionType = getUnionType(types5);
           if (!(unionType.flags & 1048576)) {
             return getAugmentedPropertiesOfType(unionType);
           }
           const props = createSymbolTable();
-          for (const memberType of types4) {
+          for (const memberType of types5) {
             for (const { escapedName } of getAugmentedPropertiesOfType(memberType)) {
               if (!props.has(escapedName)) {
                 const prop = createUnionOrIntersectionProperty(unionType, escapedName);
@@ -68045,10 +68045,10 @@ ${lanes.join("\n")}
         function getConstraintOfConditionalType(type) {
           return hasNonCircularBaseConstraint(type) ? getConstraintFromConditionalType(type) : void 0;
         }
-        function getEffectiveConstraintOfIntersection(types4, targetIsUnion) {
+        function getEffectiveConstraintOfIntersection(types5, targetIsUnion) {
           let constraints;
           let hasDisjointDomainType = false;
-          for (const t of types4) {
+          for (const t of types5) {
             if (t.flags & 465829888) {
               let constraint = getConstraintOfType(t);
               while (constraint && constraint.flags & (262144 | 4194304 | 16777216)) {
@@ -68066,7 +68066,7 @@ ${lanes.join("\n")}
           }
           if (constraints && (targetIsUnion || hasDisjointDomainType)) {
             if (hasDisjointDomainType) {
-              for (const t of types4) {
+              for (const t of types5) {
                 if (t.flags & 469892092 || isEmptyAnonymousObjectType(t)) {
                   constraints = append(constraints, t);
                 }
@@ -68149,10 +68149,10 @@ ${lanes.join("\n")}
               return t.isThisType || !constraint ? constraint : getBaseConstraint(constraint);
             }
             if (t.flags & 3145728) {
-              const types4 = t.types;
+              const types5 = t.types;
               const baseTypes = [];
               let different = false;
-              for (const type2 of types4) {
+              for (const type2 of types5) {
                 const baseType = getBaseConstraint(type2);
                 if (baseType) {
                   if (baseType !== type2) {
@@ -68166,15 +68166,15 @@ ${lanes.join("\n")}
               if (!different) {
                 return t;
               }
-              return t.flags & 1048576 && baseTypes.length === types4.length ? getUnionType(baseTypes) : t.flags & 2097152 && baseTypes.length ? getIntersectionType(baseTypes) : void 0;
+              return t.flags & 1048576 && baseTypes.length === types5.length ? getUnionType(baseTypes) : t.flags & 2097152 && baseTypes.length ? getIntersectionType(baseTypes) : void 0;
             }
             if (t.flags & 4194304) {
               return stringNumberSymbolType;
             }
             if (t.flags & 134217728) {
-              const types4 = t.types;
-              const constraints = mapDefined(types4, getBaseConstraint);
-              return constraints.length === types4.length ? getTemplateLiteralType(t.texts, constraints) : stringType;
+              const types5 = t.types;
+              const constraints = mapDefined(types5, getBaseConstraint);
+              return constraints.length === types5.length ? getTemplateLiteralType(t.texts, constraints) : stringType;
             }
             if (t.flags & 268435456) {
               const constraint = getBaseConstraint(t.type);
@@ -69020,8 +69020,8 @@ ${lanes.join("\n")}
             type
           ) : createTypePredicate(node.assertsModifier ? 3 : 1, parameterName2.escapedText, findIndex(signature.parameters, (p) => p.escapedName === parameterName2.escapedText), type);
         }
-        function getUnionOrIntersectionType(types4, kind, unionReduction) {
-          return kind !== 2097152 ? getUnionType(types4, unionReduction) : getIntersectionType(types4);
+        function getUnionOrIntersectionType(types5, kind, unionReduction) {
+          return kind !== 2097152 ? getUnionType(types5, unionReduction) : getIntersectionType(types5);
         }
         function getReturnTypeOfSignature(signature) {
           if (!signature.resolvedReturnType) {
@@ -69369,15 +69369,15 @@ ${lanes.join("\n")}
           const host2 = isJSDocTemplateTag(tp.parent) ? getEffectiveContainerForJSDocTemplateTag(tp.parent) : tp.parent;
           return host2 && getSymbolOfNode(host2);
         }
-        function getTypeListId(types4) {
+        function getTypeListId(types5) {
           let result2 = "";
-          if (types4) {
-            const length2 = types4.length;
+          if (types5) {
+            const length2 = types5.length;
             let i = 0;
             while (i < length2) {
-              const startId = types4[i].id;
+              const startId = types5[i].id;
               let count = 1;
-              while (i + count < length2 && types4[i + count].id === startId + count) {
+              while (i + count < length2 && types5[i + count].id === startId + count) {
                 count++;
               }
               if (result2.length) {
@@ -69395,9 +69395,9 @@ ${lanes.join("\n")}
         function getAliasId(aliasSymbol, aliasTypeArguments) {
           return aliasSymbol ? `@${getSymbolId(aliasSymbol)}` + (aliasTypeArguments ? `:${getTypeListId(aliasTypeArguments)}` : "") : "";
         }
-        function getPropagatingFlagsOfTypes(types4, excludeKinds) {
+        function getPropagatingFlagsOfTypes(types5, excludeKinds) {
           let result2 = 0;
-          for (const type of types4) {
+          for (const type of types5) {
             if (excludeKinds === void 0 || !(type.flags & excludeKinds)) {
               result2 |= getObjectFlags(type);
             }
@@ -69934,16 +69934,16 @@ ${lanes.join("\n")}
           return symbol || reportErrors2 ? getTypeOfGlobalSymbol(symbol, arity) : void 0;
         }
         function getGlobalBuiltinTypes(typeNames, arity) {
-          let types4;
+          let types5;
           for (const typeName of typeNames) {
-            types4 = append(types4, getGlobalType(
+            types5 = append(types5, getGlobalType(
               typeName,
               arity,
               /*reportErrors*/
               false
             ));
           }
-          return types4 ?? emptyArray;
+          return types5 ?? emptyArray;
         }
         function getGlobalTypedPropertyDescriptorType() {
           return deferredGlobalTypedPropertyDescriptorType || (deferredGlobalTypedPropertyDescriptorType = getGlobalType(
@@ -70613,13 +70613,13 @@ ${lanes.join("\n")}
         function getTypeId(type) {
           return type.id;
         }
-        function containsType(types4, type) {
-          return binarySearch(types4, type, getTypeId, compareValues) >= 0;
+        function containsType(types5, type) {
+          return binarySearch(types5, type, getTypeId, compareValues) >= 0;
         }
-        function insertType(types4, type) {
-          const index = binarySearch(types4, type, getTypeId, compareValues);
+        function insertType(types5, type) {
+          const index = binarySearch(types5, type, getTypeId, compareValues);
           if (index < 0) {
-            types4.splice(~index, 0, type);
+            types5.splice(~index, 0, type);
             return true;
           }
           return false;
@@ -70644,9 +70644,9 @@ ${lanes.join("\n")}
           }
           return includes;
         }
-        function addTypesToUnion(typeSet, includes, types4) {
+        function addTypesToUnion(typeSet, includes, types5) {
           let lastType;
-          for (const type of types4) {
+          for (const type of types5) {
             if (type !== lastType) {
               includes = type.flags & 1048576 ? addTypesToUnion(typeSet, includes | (isNamedUnionType(type) ? 1048576 : 0), type.types) : addTypeToUnion(typeSet, includes, type);
               lastType = type;
@@ -70654,38 +70654,38 @@ ${lanes.join("\n")}
           }
           return includes;
         }
-        function removeSubtypes(types4, hasObjectTypes) {
+        function removeSubtypes(types5, hasObjectTypes) {
           var _a2;
-          if (types4.length < 2) {
-            return types4;
+          if (types5.length < 2) {
+            return types5;
           }
-          const id = getTypeListId(types4);
+          const id = getTypeListId(types5);
           const match = subtypeReductionCache.get(id);
           if (match) {
             return match;
           }
-          const hasEmptyObject = hasObjectTypes && some(types4, (t) => !!(t.flags & 524288) && !isGenericMappedType(t) && isEmptyResolvedType(resolveStructuredTypeMembers(t)));
-          const len = types4.length;
+          const hasEmptyObject = hasObjectTypes && some(types5, (t) => !!(t.flags & 524288) && !isGenericMappedType(t) && isEmptyResolvedType(resolveStructuredTypeMembers(t)));
+          const len = types5.length;
           let i = len;
           let count = 0;
           while (i > 0) {
             i--;
-            const source = types4[i];
+            const source = types5[i];
             if (hasEmptyObject || source.flags & 469499904) {
               if (source.flags & 262144 && getBaseConstraintOrType(source).flags & 1048576) {
-                if (isTypeRelatedTo(source, getUnionType(map(types4, (t) => t === source ? neverType : t)), strictSubtypeRelation)) {
-                  orderedRemoveItemAt(types4, i);
+                if (isTypeRelatedTo(source, getUnionType(map(types5, (t) => t === source ? neverType : t)), strictSubtypeRelation)) {
+                  orderedRemoveItemAt(types5, i);
                 }
                 continue;
               }
               const keyProperty = source.flags & (524288 | 2097152 | 58982400) ? find(getPropertiesOfType(source), (p) => isUnitType(getTypeOfSymbol(p))) : void 0;
               const keyPropertyType = keyProperty && getRegularTypeOfLiteralType(getTypeOfSymbol(keyProperty));
-              for (const target of types4) {
+              for (const target of types5) {
                 if (source !== target) {
                   if (count === 1e5) {
                     const estimatedCount = count / (len - i) * len;
                     if (estimatedCount > 1e6) {
-                      (_a2 = tracing) == null ? void 0 : _a2.instant(tracing.Phase.CheckTypes, "removeSubtypes_DepthLimit", { typeIds: types4.map((t) => t.id) });
+                      (_a2 = tracing) == null ? void 0 : _a2.instant(tracing.Phase.CheckTypes, "removeSubtypes_DepthLimit", { typeIds: types5.map((t) => t.id) });
                       error2(currentNode, Diagnostics.Expression_produces_a_union_type_that_is_too_complex_to_represent);
                       return void 0;
                     }
@@ -70698,37 +70698,37 @@ ${lanes.join("\n")}
                     }
                   }
                   if (isTypeRelatedTo(source, target, strictSubtypeRelation) && (!(getObjectFlags(getTargetType(source)) & 1) || !(getObjectFlags(getTargetType(target)) & 1) || isTypeDerivedFrom(source, target))) {
-                    orderedRemoveItemAt(types4, i);
+                    orderedRemoveItemAt(types5, i);
                     break;
                   }
                 }
               }
             }
           }
-          subtypeReductionCache.set(id, types4);
-          return types4;
+          subtypeReductionCache.set(id, types5);
+          return types5;
         }
-        function removeRedundantLiteralTypes(types4, includes, reduceVoidUndefined) {
-          let i = types4.length;
+        function removeRedundantLiteralTypes(types5, includes, reduceVoidUndefined) {
+          let i = types5.length;
           while (i > 0) {
             i--;
-            const t = types4[i];
+            const t = types5[i];
             const flags = t.flags;
-            const remove = flags & (128 | 134217728 | 268435456) && includes & 4 || flags & 256 && includes & 8 || flags & 2048 && includes & 64 || flags & 8192 && includes & 4096 || reduceVoidUndefined && flags & 32768 && includes & 16384 || isFreshLiteralType(t) && containsType(types4, t.regularType);
+            const remove = flags & (128 | 134217728 | 268435456) && includes & 4 || flags & 256 && includes & 8 || flags & 2048 && includes & 64 || flags & 8192 && includes & 4096 || reduceVoidUndefined && flags & 32768 && includes & 16384 || isFreshLiteralType(t) && containsType(types5, t.regularType);
             if (remove) {
-              orderedRemoveItemAt(types4, i);
+              orderedRemoveItemAt(types5, i);
             }
           }
         }
-        function removeStringLiteralsMatchedByTemplateLiterals(types4) {
-          const templates = filter(types4, isPatternLiteralType);
+        function removeStringLiteralsMatchedByTemplateLiterals(types5) {
+          const templates = filter(types5, isPatternLiteralType);
           if (templates.length) {
-            let i = types4.length;
+            let i = types5.length;
             while (i > 0) {
               i--;
-              const t = types4[i];
+              const t = types5[i];
               if (t.flags & 128 && some(templates, (template) => isTypeMatchedByTemplateLiteralOrStringMapping(t, template))) {
-                orderedRemoveItemAt(types4, i);
+                orderedRemoveItemAt(types5, i);
               }
             }
           }
@@ -70736,9 +70736,9 @@ ${lanes.join("\n")}
         function isTypeMatchedByTemplateLiteralOrStringMapping(type, template) {
           return template.flags & 134217728 ? isTypeMatchedByTemplateLiteralType(type, template) : isMemberOfStringMapping(type, template);
         }
-        function removeConstrainedTypeVariables(types4) {
+        function removeConstrainedTypeVariables(types5) {
           const typeVariables = [];
-          for (const type of types4) {
+          for (const type of types5) {
             if (type.flags & 2097152 && getObjectFlags(type) & 67108864) {
               const index = type.types[0].flags & 8650752 ? 0 : 1;
               pushIfUnique(typeVariables, type.types[index]);
@@ -70746,7 +70746,7 @@ ${lanes.join("\n")}
           }
           for (const typeVariable of typeVariables) {
             const primitives = [];
-            for (const type of types4) {
+            for (const type of types5) {
               if (type.flags & 2097152 && getObjectFlags(type) & 67108864) {
                 const index = type.types[0].flags & 8650752 ? 0 : 1;
                 if (type.types[index] === typeVariable) {
@@ -70756,26 +70756,26 @@ ${lanes.join("\n")}
             }
             const constraint = getBaseConstraintOfType(typeVariable);
             if (everyType(constraint, (t) => containsType(primitives, t))) {
-              let i = types4.length;
+              let i = types5.length;
               while (i > 0) {
                 i--;
-                const type = types4[i];
+                const type = types5[i];
                 if (type.flags & 2097152 && getObjectFlags(type) & 67108864) {
                   const index = type.types[0].flags & 8650752 ? 0 : 1;
                   if (type.types[index] === typeVariable && containsType(primitives, type.types[1 - index])) {
-                    orderedRemoveItemAt(types4, i);
+                    orderedRemoveItemAt(types5, i);
                   }
                 }
               }
-              insertType(types4, typeVariable);
+              insertType(types5, typeVariable);
             }
           }
         }
         function isNamedUnionType(type) {
           return !!(type.flags & 1048576 && (type.aliasSymbol || type.origin));
         }
-        function addNamedUnions(namedUnions, types4) {
-          for (const t of types4) {
+        function addNamedUnions(namedUnions, types5) {
+          for (const t of types5) {
             if (t.flags & 1048576) {
               const origin = t.origin;
               if (t.aliasSymbol || origin && !(origin.flags & 1048576)) {
@@ -70786,26 +70786,26 @@ ${lanes.join("\n")}
             }
           }
         }
-        function createOriginUnionOrIntersectionType(flags, types4) {
+        function createOriginUnionOrIntersectionType(flags, types5) {
           const result2 = createOriginType(flags);
-          result2.types = types4;
+          result2.types = types5;
           return result2;
         }
-        function getUnionType(types4, unionReduction = 1, aliasSymbol, aliasTypeArguments, origin) {
-          if (types4.length === 0) {
+        function getUnionType(types5, unionReduction = 1, aliasSymbol, aliasTypeArguments, origin) {
+          if (types5.length === 0) {
             return neverType;
           }
-          if (types4.length === 1) {
-            return types4[0];
+          if (types5.length === 1) {
+            return types5[0];
           }
-          if (types4.length === 2 && !origin && (types4[0].flags & 1048576 || types4[1].flags & 1048576)) {
+          if (types5.length === 2 && !origin && (types5[0].flags & 1048576 || types5[1].flags & 1048576)) {
             const infix = unionReduction === 0 ? "N" : unionReduction === 2 ? "S" : "L";
-            const index = types4[0].id < types4[1].id ? 0 : 1;
-            const id = types4[index].id + infix + types4[1 - index].id + getAliasId(aliasSymbol, aliasTypeArguments);
+            const index = types5[0].id < types5[1].id ? 0 : 1;
+            const id = types5[index].id + infix + types5[1 - index].id + getAliasId(aliasSymbol, aliasTypeArguments);
             let type = unionOfUnionTypes.get(id);
             if (!type) {
               type = getUnionTypeWorker(
-                types4,
+                types5,
                 unionReduction,
                 aliasSymbol,
                 aliasTypeArguments,
@@ -70816,11 +70816,11 @@ ${lanes.join("\n")}
             }
             return type;
           }
-          return getUnionTypeWorker(types4, unionReduction, aliasSymbol, aliasTypeArguments, origin);
+          return getUnionTypeWorker(types5, unionReduction, aliasSymbol, aliasTypeArguments, origin);
         }
-        function getUnionTypeWorker(types4, unionReduction, aliasSymbol, aliasTypeArguments, origin) {
+        function getUnionTypeWorker(types5, unionReduction, aliasSymbol, aliasTypeArguments, origin) {
           let typeSet = [];
-          const includes = addTypesToUnion(typeSet, 0, types4);
+          const includes = addTypesToUnion(typeSet, 0, types5);
           if (unionReduction !== 0) {
             if (includes & 3) {
               return includes & 1 ? includes & 8388608 ? wildcardType : includes & 1073741824 ? errorType : anyType : unknownType;
@@ -70851,7 +70851,7 @@ ${lanes.join("\n")}
           }
           if (!origin && includes & 1048576) {
             const namedUnions = [];
-            addNamedUnions(namedUnions, types4);
+            addNamedUnions(namedUnions, types5);
             const reducedTypes = [];
             for (const t of typeSet) {
               if (!some(namedUnions, (union) => containsType(union.types, t))) {
@@ -70874,7 +70874,7 @@ ${lanes.join("\n")}
         }
         function getUnionOrIntersectionTypePredicate(signatures, kind) {
           let last2;
-          const types4 = [];
+          const types5 = [];
           for (const sig of signatures) {
             const pred = getTypePredicateOfSignature(sig);
             if (pred) {
@@ -70882,7 +70882,7 @@ ${lanes.join("\n")}
                 return void 0;
               }
               last2 = pred;
-              types4.push(pred.type);
+              types5.push(pred.type);
             } else {
               const returnType = kind !== 2097152 ? getReturnTypeOfSignature(sig) : void 0;
               if (returnType !== falseType && returnType !== regularFalseType) {
@@ -70893,20 +70893,20 @@ ${lanes.join("\n")}
           if (!last2) {
             return void 0;
           }
-          const compositeType = getUnionOrIntersectionType(types4, kind);
+          const compositeType = getUnionOrIntersectionType(types5, kind);
           return createTypePredicate(last2.kind, last2.parameterName, last2.parameterIndex, compositeType);
         }
         function typePredicateKindsMatch(a, b) {
           return a.kind === b.kind && a.parameterIndex === b.parameterIndex;
         }
-        function getUnionTypeFromSortedList(types4, precomputedObjectFlags, aliasSymbol, aliasTypeArguments, origin) {
-          if (types4.length === 0) {
+        function getUnionTypeFromSortedList(types5, precomputedObjectFlags, aliasSymbol, aliasTypeArguments, origin) {
+          if (types5.length === 0) {
             return neverType;
           }
-          if (types4.length === 1) {
-            return types4[0];
+          if (types5.length === 1) {
+            return types5[0];
           }
-          const typeKey = !origin ? getTypeListId(types4) : origin.flags & 1048576 ? `|${getTypeListId(origin.types)}` : origin.flags & 2097152 ? `&${getTypeListId(origin.types)}` : `#${origin.type.id}|${getTypeListId(types4)}`;
+          const typeKey = !origin ? getTypeListId(types5) : origin.flags & 1048576 ? `|${getTypeListId(origin.types)}` : origin.flags & 2097152 ? `&${getTypeListId(origin.types)}` : `#${origin.type.id}|${getTypeListId(types5)}`;
           const id = typeKey + getAliasId(aliasSymbol, aliasTypeArguments);
           let type = unionTypes.get(id);
           if (!type) {
@@ -70915,16 +70915,16 @@ ${lanes.join("\n")}
               /* Union */
             );
             type.objectFlags = precomputedObjectFlags | getPropagatingFlagsOfTypes(
-              types4,
+              types5,
               /*excludeKinds*/
               98304
               /* Nullable */
             );
-            type.types = types4;
+            type.types = types5;
             type.origin = origin;
             type.aliasSymbol = aliasSymbol;
             type.aliasTypeArguments = aliasTypeArguments;
-            if (types4.length === 2 && types4[0].flags & 512 && types4[1].flags & 512) {
+            if (types5.length === 2 && types5[0].flags & 512 && types5[1].flags & 512) {
               type.flags |= 16;
               type.intrinsicName = "boolean";
             }
@@ -70970,20 +70970,20 @@ ${lanes.join("\n")}
           }
           return includes;
         }
-        function addTypesToIntersection(typeSet, includes, types4) {
-          for (const type of types4) {
+        function addTypesToIntersection(typeSet, includes, types5) {
+          for (const type of types5) {
             includes = addTypeToIntersection(typeSet, includes, getRegularTypeOfLiteralType(type));
           }
           return includes;
         }
-        function removeRedundantSupertypes(types4, includes) {
-          let i = types4.length;
+        function removeRedundantSupertypes(types5, includes) {
+          let i = types5.length;
           while (i > 0) {
             i--;
-            const t = types4[i];
+            const t = types5[i];
             const remove = t.flags & 4 && includes & (128 | 134217728 | 268435456) || t.flags & 8 && includes & 256 || t.flags & 64 && includes & 2048 || t.flags & 4096 && includes & 8192 || t.flags & 16384 && includes & 32768 || isEmptyAnonymousObjectType(t) && includes & 470302716;
             if (remove) {
-              orderedRemoveItemAt(types4, i);
+              orderedRemoveItemAt(types5, i);
             }
           }
         }
@@ -71004,16 +71004,16 @@ ${lanes.join("\n")}
           }
           return true;
         }
-        function extractRedundantTemplateLiterals(types4) {
-          let i = types4.length;
-          const literals = filter(types4, (t) => !!(t.flags & 128));
+        function extractRedundantTemplateLiterals(types5) {
+          let i = types5.length;
+          const literals = filter(types5, (t) => !!(t.flags & 128));
           while (i > 0) {
             i--;
-            const t = types4[i];
+            const t = types5[i];
             if (!(t.flags & (134217728 | 268435456))) continue;
             for (const t2 of literals) {
               if (isTypeSubtypeOf(t2, t)) {
-                orderedRemoveItemAt(types4, i);
+                orderedRemoveItemAt(types5, i);
                 break;
               } else if (isPatternLiteralType(t)) {
                 return true;
@@ -71022,23 +71022,23 @@ ${lanes.join("\n")}
           }
           return false;
         }
-        function removeFromEach(types4, flag) {
-          for (let i = 0; i < types4.length; i++) {
-            types4[i] = filterType(types4[i], (t) => !(t.flags & flag));
+        function removeFromEach(types5, flag) {
+          for (let i = 0; i < types5.length; i++) {
+            types5[i] = filterType(types5[i], (t) => !(t.flags & flag));
           }
         }
-        function intersectUnionsOfPrimitiveTypes(types4) {
+        function intersectUnionsOfPrimitiveTypes(types5) {
           let unionTypes2;
-          const index = findIndex(types4, (t) => !!(getObjectFlags(t) & 32768));
+          const index = findIndex(types5, (t) => !!(getObjectFlags(t) & 32768));
           if (index < 0) {
             return false;
           }
           let i = index + 1;
-          while (i < types4.length) {
-            const t = types4[i];
+          while (i < types5.length) {
+            const t = types5[i];
             if (getObjectFlags(t) & 32768) {
-              (unionTypes2 || (unionTypes2 = [types4[index]])).push(t);
-              orderedRemoveItemAt(types4, i);
+              (unionTypes2 || (unionTypes2 = [types5[index]])).push(t);
+              orderedRemoveItemAt(types5, i);
             } else {
               i++;
             }
@@ -71064,32 +71064,32 @@ ${lanes.join("\n")}
               }
             }
           }
-          types4[index] = getUnionTypeFromSortedList(
+          types5[index] = getUnionTypeFromSortedList(
             result2,
             32768
             /* PrimitiveUnion */
           );
           return true;
         }
-        function createIntersectionType(types4, objectFlags, aliasSymbol, aliasTypeArguments) {
+        function createIntersectionType(types5, objectFlags, aliasSymbol, aliasTypeArguments) {
           const result2 = createType(
             2097152
             /* Intersection */
           );
           result2.objectFlags = objectFlags | getPropagatingFlagsOfTypes(
-            types4,
+            types5,
             /*excludeKinds*/
             98304
             /* Nullable */
           );
-          result2.types = types4;
+          result2.types = types5;
           result2.aliasSymbol = aliasSymbol;
           result2.aliasTypeArguments = aliasTypeArguments;
           return result2;
         }
-        function getIntersectionType(types4, flags = 0, aliasSymbol, aliasTypeArguments) {
+        function getIntersectionType(types5, flags = 0, aliasSymbol, aliasTypeArguments) {
           const typeMembershipMap = /* @__PURE__ */ new Map();
-          const includes = addTypesToIntersection(typeMembershipMap, 0, types4);
+          const includes = addTypesToIntersection(typeMembershipMap, 0, types5);
           const typeSet = arrayFrom(typeMembershipMap.values());
           let objectFlags = 0;
           if (includes & 131072) {
@@ -71159,7 +71159,7 @@ ${lanes.join("\n")}
                   /* Null */
                 );
                 result2 = getUnionType([getIntersectionType(typeSet, flags), nullType], 1, aliasSymbol, aliasTypeArguments);
-              } else if (typeSet.length >= 3 && types4.length > 2) {
+              } else if (typeSet.length >= 3 && types5.length > 2) {
                 const middle = Math.floor(typeSet.length / 2);
                 result2 = getIntersectionType([getIntersectionType(typeSet.slice(0, middle), flags), getIntersectionType(typeSet.slice(middle), flags)], flags, aliasSymbol, aliasTypeArguments);
               } else {
@@ -71177,28 +71177,28 @@ ${lanes.join("\n")}
           }
           return result2;
         }
-        function getCrossProductUnionSize(types4) {
-          return reduceLeft(types4, (n, t) => t.flags & 1048576 ? n * t.types.length : t.flags & 131072 ? 0 : n, 1);
+        function getCrossProductUnionSize(types5) {
+          return reduceLeft(types5, (n, t) => t.flags & 1048576 ? n * t.types.length : t.flags & 131072 ? 0 : n, 1);
         }
-        function checkCrossProductUnion(types4) {
+        function checkCrossProductUnion(types5) {
           var _a2;
-          const size = getCrossProductUnionSize(types4);
+          const size = getCrossProductUnionSize(types5);
           if (size >= 1e5) {
-            (_a2 = tracing) == null ? void 0 : _a2.instant(tracing.Phase.CheckTypes, "checkCrossProductUnion_DepthLimit", { typeIds: types4.map((t) => t.id), size });
+            (_a2 = tracing) == null ? void 0 : _a2.instant(tracing.Phase.CheckTypes, "checkCrossProductUnion_DepthLimit", { typeIds: types5.map((t) => t.id), size });
             error2(currentNode, Diagnostics.Expression_produces_a_union_type_that_is_too_complex_to_represent);
             return false;
           }
           return true;
         }
-        function getCrossProductIntersections(types4, flags) {
-          const count = getCrossProductUnionSize(types4);
+        function getCrossProductIntersections(types5, flags) {
+          const count = getCrossProductUnionSize(types5);
           const intersections = [];
           for (let i = 0; i < count; i++) {
-            const constituents = types4.slice();
+            const constituents = types5.slice();
             let n = i;
-            for (let j = types4.length - 1; j >= 0; j--) {
-              if (types4[j].flags & 1048576) {
-                const sourceTypes = types4[j].types;
+            for (let j = types5.length - 1; j >= 0; j--) {
+              if (types5[j].flags & 1048576) {
+                const sourceTypes = types5[j].types;
                 const length2 = sourceTypes.length;
                 constituents[j] = sourceTypes[n % length2];
                 n = Math.floor(n / length2);
@@ -71212,18 +71212,18 @@ ${lanes.join("\n")}
         function getConstituentCount(type) {
           return !(type.flags & 3145728) || type.aliasSymbol ? 1 : type.flags & 1048576 && type.origin ? getConstituentCount(type.origin) : getConstituentCountOfTypes(type.types);
         }
-        function getConstituentCountOfTypes(types4) {
-          return reduceLeft(types4, (n, t) => n + getConstituentCount(t), 0);
+        function getConstituentCountOfTypes(types5) {
+          return reduceLeft(types5, (n, t) => n + getConstituentCount(t), 0);
         }
         function getTypeFromIntersectionTypeNode(node) {
           const links = getNodeLinks(node);
           if (!links.resolvedType) {
             const aliasSymbol = getAliasSymbolForTypeNode(node);
-            const types4 = map(node.types, getTypeFromTypeNode);
-            const emptyIndex = types4.length === 2 ? types4.indexOf(emptyTypeLiteralType) : -1;
-            const t = emptyIndex >= 0 ? types4[1 - emptyIndex] : unknownType;
+            const types5 = map(node.types, getTypeFromTypeNode);
+            const emptyIndex = types5.length === 2 ? types5.indexOf(emptyTypeLiteralType) : -1;
+            const t = emptyIndex >= 0 ? types5[1 - emptyIndex] : unknownType;
             const noSupertypeReduction = !!(t.flags & (4 | 8 | 64) || t.flags & 134217728 && isPatternLiteralType(t));
-            links.resolvedType = getIntersectionType(types4, noSupertypeReduction ? 1 : 0, aliasSymbol, getTypeArgumentsForAliasSymbol(aliasSymbol));
+            links.resolvedType = getIntersectionType(types5, noSupertypeReduction ? 1 : 0, aliasSymbol, getTypeArgumentsForAliasSymbol(aliasSymbol));
           }
           return links.resolvedType;
         }
@@ -71393,18 +71393,18 @@ ${lanes.join("\n")}
           }
           return links.resolvedType;
         }
-        function getTemplateLiteralType(texts, types4) {
-          const unionIndex = findIndex(types4, (t) => !!(t.flags & (131072 | 1048576)));
+        function getTemplateLiteralType(texts, types5) {
+          const unionIndex = findIndex(types5, (t) => !!(t.flags & (131072 | 1048576)));
           if (unionIndex >= 0) {
-            return checkCrossProductUnion(types4) ? mapType(types4[unionIndex], (t) => getTemplateLiteralType(texts, replaceElement(types4, unionIndex, t))) : errorType;
+            return checkCrossProductUnion(types5) ? mapType(types5[unionIndex], (t) => getTemplateLiteralType(texts, replaceElement(types5, unionIndex, t))) : errorType;
           }
-          if (contains(types4, wildcardType)) {
+          if (contains(types5, wildcardType)) {
             return wildcardType;
           }
           const newTypes = [];
           const newTexts = [];
           let text2 = texts[0];
-          if (!addSpans(texts, types4)) {
+          if (!addSpans(texts, types5)) {
             return stringType;
           }
           if (newTypes.length === 0) {
@@ -71449,13 +71449,13 @@ ${lanes.join("\n")}
         function getTemplateStringForType(type) {
           return type.flags & 128 ? type.value : type.flags & 256 ? "" + type.value : type.flags & 2048 ? pseudoBigIntToString(type.value) : type.flags & (512 | 98304) ? type.intrinsicName : void 0;
         }
-        function createTemplateLiteralType(texts, types4) {
+        function createTemplateLiteralType(texts, types5) {
           const type = createType(
             134217728
             /* TemplateLiteral */
           );
           type.texts = texts;
-          type.types = types4;
+          type.types = types5;
           return type;
         }
         function getStringMappingType(symbol, type) {
@@ -71480,18 +71480,18 @@ ${lanes.join("\n")}
           }
           return str;
         }
-        function applyTemplateStringMapping(symbol, texts, types4) {
+        function applyTemplateStringMapping(symbol, texts, types5) {
           switch (intrinsicTypeKinds.get(symbol.escapedName)) {
             case 0:
-              return [texts.map((t) => t.toUpperCase()), types4.map((t) => getStringMappingType(symbol, t))];
+              return [texts.map((t) => t.toUpperCase()), types5.map((t) => getStringMappingType(symbol, t))];
             case 1:
-              return [texts.map((t) => t.toLowerCase()), types4.map((t) => getStringMappingType(symbol, t))];
+              return [texts.map((t) => t.toLowerCase()), types5.map((t) => getStringMappingType(symbol, t))];
             case 2:
-              return [texts[0] === "" ? texts : [texts[0].charAt(0).toUpperCase() + texts[0].slice(1), ...texts.slice(1)], texts[0] === "" ? [getStringMappingType(symbol, types4[0]), ...types4.slice(1)] : types4];
+              return [texts[0] === "" ? texts : [texts[0].charAt(0).toUpperCase() + texts[0].slice(1), ...texts.slice(1)], texts[0] === "" ? [getStringMappingType(symbol, types5[0]), ...types5.slice(1)] : types5];
             case 3:
-              return [texts[0] === "" ? texts : [texts[0].charAt(0).toLowerCase() + texts[0].slice(1), ...texts.slice(1)], texts[0] === "" ? [getStringMappingType(symbol, types4[0]), ...types4.slice(1)] : types4];
+              return [texts[0] === "" ? texts : [texts[0].charAt(0).toLowerCase() + texts[0].slice(1), ...texts.slice(1)], texts[0] === "" ? [getStringMappingType(symbol, types5[0]), ...types5.slice(1)] : types5];
           }
-          return [texts, types4];
+          return [texts, types5];
         }
         function getStringMappingTypeForGenericType(symbol, type) {
           const id = `${getSymbolId(symbol)},${getTypeId(type)}`;
@@ -71649,10 +71649,10 @@ ${lanes.join("\n")}
                   diagnostics.add(createDiagnosticForNode(accessExpression, Diagnostics.Property_0_does_not_exist_on_type_1, indexType.value, typeToString(objectType)));
                   return undefinedType;
                 } else if (indexType.flags & (8 | 4)) {
-                  const types4 = map(objectType.properties, (property) => {
+                  const types5 = map(objectType.properties, (property) => {
                     return getTypeOfSymbol(property);
                   });
-                  return getUnionType(append(types4, undefinedType));
+                  return getUnionType(append(types5, undefinedType));
                 }
               }
               if (objectType.symbol === globalThisSymbol && propName !== void 0 && globalThisSymbol.exports.has(propName) && globalThisSymbol.exports.get(propName).flags & 418) {
@@ -71810,14 +71810,14 @@ ${lanes.join("\n")}
         }
         function distributeIndexOverObjectType(objectType, indexType, writing) {
           if (objectType.flags & 1048576 || objectType.flags & 2097152 && !shouldDeferIndexType(objectType)) {
-            const types4 = map(objectType.types, (t) => getSimplifiedType(getIndexedAccessType(t, indexType), writing));
-            return objectType.flags & 2097152 || writing ? getIntersectionType(types4) : getUnionType(types4);
+            const types5 = map(objectType.types, (t) => getSimplifiedType(getIndexedAccessType(t, indexType), writing));
+            return objectType.flags & 2097152 || writing ? getIntersectionType(types5) : getUnionType(types5);
           }
         }
         function distributeObjectOverIndexType(objectType, indexType, writing) {
           if (indexType.flags & 1048576) {
-            const types4 = map(indexType.types, (t) => getSimplifiedType(getIndexedAccessType(objectType, t), writing));
-            return writing ? getIntersectionType(types4) : getUnionType(types4);
+            const types5 = map(indexType.types, (t) => getSimplifiedType(getIndexedAccessType(objectType, t), writing));
+            return writing ? getIntersectionType(types5) : getUnionType(types5);
           }
         }
         function getSimplifiedIndexedAccessType(type, writing) {
@@ -72366,10 +72366,10 @@ ${lanes.join("\n")}
               return right;
             }
             if (left.flags & 2097152) {
-              const types4 = left.types;
-              const lastLeft = types4[types4.length - 1];
+              const types5 = left.types;
+              const lastLeft = types5[types5.length - 1];
               if (isNonGenericObjectType(lastLeft) && isNonGenericObjectType(right)) {
-                return getIntersectionType(concatenate(types4.slice(0, types4.length - 1), [getSpreadType(lastLeft, right, symbol, objectFlags, readonly)]));
+                return getIntersectionType(concatenate(types5.slice(0, types5.length - 1), [getSpreadType(lastLeft, right, symbol, objectFlags, readonly)]));
               }
             }
             return getIntersectionType([left, right]);
@@ -72692,8 +72692,8 @@ ${lanes.join("\n")}
           }
           return items;
         }
-        function instantiateTypes(types4, mapper) {
-          return instantiateList(types4, mapper, instantiateType);
+        function instantiateTypes(types5, mapper) {
+          return instantiateList(types5, mapper, instantiateType);
         }
         function instantiateSignatures(signatures, mapper) {
           return instantiateList(signatures, mapper, instantiateSignature);
@@ -73129,9 +73129,9 @@ ${lanes.join("\n")}
           }
           if (flags & 3145728) {
             const origin = type.flags & 1048576 ? type.origin : void 0;
-            const types4 = origin && origin.flags & 3145728 ? origin.types : type.types;
-            const newTypes = instantiateTypes(types4, mapper);
-            if (newTypes === types4 && aliasSymbol === type.aliasSymbol) {
+            const types5 = origin && origin.flags & 3145728 ? origin.types : type.types;
+            const newTypes = instantiateTypes(types5, mapper);
+            if (newTypes === types5 && aliasSymbol === type.aliasSymbol) {
               return type;
             }
             const newAliasSymbol = aliasSymbol || type.aliasSymbol;
@@ -74074,8 +74074,8 @@ ${lanes.join("\n")}
         function isUnknownLikeUnionType(type) {
           if (strictNullChecks && type.flags & 1048576) {
             if (!(type.objectFlags & 33554432)) {
-              const types4 = type.types;
-              type.objectFlags |= 33554432 | (types4.length >= 3 && types4[0].flags & 32768 && types4[1].flags & 65536 && some(types4, isEmptyAnonymousObjectType) ? 67108864 : 0);
+              const types5 = type.types;
+              type.objectFlags |= 33554432 | (types5.length >= 3 && types5[0].flags & 32768 && types5[1].flags & 65536 && some(types5, isEmptyAnonymousObjectType) ? 67108864 : 0);
             }
             return !!(type.objectFlags & 67108864);
           }
@@ -74629,8 +74629,8 @@ ${lanes.join("\n")}
               return -1;
             }
             if (source2.flags & 470302716 && target2.flags & 1048576) {
-              const types4 = target2.types;
-              const candidate = types4.length === 2 && types4[0].flags & 98304 ? types4[1] : types4.length === 3 && types4[0].flags & 98304 && types4[1].flags & 98304 ? types4[2] : void 0;
+              const types5 = target2.types;
+              const candidate = types5.length === 2 && types5[0].flags & 98304 ? types5[1] : types5.length === 3 && types5[0].flags & 98304 && types5[1].flags & 98304 ? types5[2] : void 0;
               if (candidate && !(candidate.flags & 98304)) {
                 target2 = getNormalizedType(
                   candidate,
@@ -74783,7 +74783,7 @@ ${lanes.join("\n")}
               }
             }
           }
-          function getTypeOfPropertyInTypes(types4, name) {
+          function getTypeOfPropertyInTypes(types5, name) {
             const appendPropType = (propTypes, type) => {
               var _a22;
               type = getApparentType(type);
@@ -74792,7 +74792,7 @@ ${lanes.join("\n")}
               return append(propTypes, propType);
             };
             return getUnionType(reduceLeft(
-              types4,
+              types5,
               appendPropType,
               /*initial*/
               void 0
@@ -76830,16 +76830,16 @@ ${lanes.join("\n")}
           return findMatchingDiscriminantType(source, target, isRelatedTo) || findMatchingTypeReferenceOrTypeAliasReference(source, target) || findBestTypeForObjectLiteral(source, target) || findBestTypeForInvokable(source, target) || findMostOverlappyType(source, target);
         }
         function discriminateTypeByDiscriminableItems(target, discriminators, related) {
-          const types4 = target.types;
-          const include = types4.map(
+          const types5 = target.types;
+          const include = types5.map(
             (t) => t.flags & 402784252 ? 0 : -1
             /* True */
           );
           for (const [getDiscriminatingType, propertyName2] of discriminators) {
             let matched = false;
-            for (let i = 0; i < types4.length; i++) {
+            for (let i = 0; i < types5.length; i++) {
               if (include[i]) {
-                const targetType = getTypeOfPropertyOrIndexSignatureOfType(types4[i], propertyName2);
+                const targetType = getTypeOfPropertyOrIndexSignatureOfType(types5[i], propertyName2);
                 if (targetType) {
                   if (someType(getDiscriminatingType(), (t) => !!related(t, targetType))) {
                     matched = true;
@@ -76849,7 +76849,7 @@ ${lanes.join("\n")}
                 }
               }
             }
-            for (let i = 0; i < types4.length; i++) {
+            for (let i = 0; i < types5.length; i++) {
               if (include[i] === 3) {
                 include[i] = matched ? 0 : -1;
               }
@@ -76860,7 +76860,7 @@ ${lanes.join("\n")}
             0
             /* False */
           ) ? getUnionType(
-            types4.filter((_, i) => include[i]),
+            types5.filter((_, i) => include[i]),
             0
             /* None */
           ) : target;
@@ -77220,9 +77220,9 @@ ${lanes.join("\n")}
         function compareTypePredicatesIdentical(source, target, compareTypes) {
           return !(source && target && typePredicateKindsMatch(source, target)) ? 0 : source.type === target.type ? -1 : source.type && target.type ? compareTypes(source.type, target.type) : 0;
         }
-        function literalTypesWithSameBaseType(types4) {
+        function literalTypesWithSameBaseType(types5) {
           let commonBaseType;
-          for (const t of types4) {
+          for (const t of types5) {
             if (!(t.flags & 131072)) {
               const baseType = getBaseTypeOfLiteralType(t);
               commonBaseType ?? (commonBaseType = baseType);
@@ -77233,27 +77233,27 @@ ${lanes.join("\n")}
           }
           return true;
         }
-        function getCombinedTypeFlags(types4) {
-          return reduceLeft(types4, (flags, t) => flags | (t.flags & 1048576 ? getCombinedTypeFlags(t.types) : t.flags), 0);
+        function getCombinedTypeFlags(types5) {
+          return reduceLeft(types5, (flags, t) => flags | (t.flags & 1048576 ? getCombinedTypeFlags(t.types) : t.flags), 0);
         }
-        function getCommonSupertype(types4) {
-          if (types4.length === 1) {
-            return types4[0];
+        function getCommonSupertype(types5) {
+          if (types5.length === 1) {
+            return types5[0];
           }
-          const primaryTypes = strictNullChecks ? sameMap(types4, (t) => filterType(t, (u) => !(u.flags & 98304))) : types4;
+          const primaryTypes = strictNullChecks ? sameMap(types5, (t) => filterType(t, (u) => !(u.flags & 98304))) : types5;
           const superTypeOrUnion = literalTypesWithSameBaseType(primaryTypes) ? getUnionType(primaryTypes) : getSingleCommonSupertype(primaryTypes);
-          return primaryTypes === types4 ? superTypeOrUnion : getNullableType(
+          return primaryTypes === types5 ? superTypeOrUnion : getNullableType(
             superTypeOrUnion,
-            getCombinedTypeFlags(types4) & 98304
+            getCombinedTypeFlags(types5) & 98304
             /* Nullable */
           );
         }
-        function getSingleCommonSupertype(types4) {
-          const candidate = reduceLeft(types4, (s, t) => isTypeStrictSubtypeOf(s, t) ? t : s);
-          return every(types4, (t) => t === candidate || isTypeStrictSubtypeOf(t, candidate)) ? candidate : reduceLeft(types4, (s, t) => isTypeSubtypeOf(s, t) ? t : s);
+        function getSingleCommonSupertype(types5) {
+          const candidate = reduceLeft(types5, (s, t) => isTypeStrictSubtypeOf(s, t) ? t : s);
+          return every(types5, (t) => t === candidate || isTypeStrictSubtypeOf(t, candidate)) ? candidate : reduceLeft(types5, (s, t) => isTypeSubtypeOf(s, t) ? t : s);
         }
-        function getCommonSubtype(types4) {
-          return reduceLeft(types4, (s, t) => isTypeSubtypeOf(t, s) ? t : s);
+        function getCommonSubtype(types5) {
+          return reduceLeft(types5, (s, t) => isTypeSubtypeOf(t, s) ? t : s);
         }
         function isArrayType(type) {
           return !!(getObjectFlags(type) & 4) && (type.target === globalArrayType || type.target === globalReadonlyArrayType);
@@ -78558,9 +78558,9 @@ ${lanes.join("\n")}
             }
             return void 0;
           }
-          function getSingleTypeVariableFromIntersectionTypes(types4) {
+          function getSingleTypeVariableFromIntersectionTypes(types5) {
             let typeVariable;
-            for (const type of types4) {
+            for (const type of types5) {
               const t = type.flags & 2097152 && find(type.types, (t2) => !!getInferenceInfoForType(t2));
               if (!t || typeVariable && t !== typeVariable) {
                 return void 0;
@@ -78691,11 +78691,11 @@ ${lanes.join("\n")}
           }
           function inferToTemplateLiteralType(source, target) {
             const matches = inferTypesFromTemplateLiteralType(source, target);
-            const types4 = target.types;
+            const types5 = target.types;
             if (matches || every(target.texts, (s) => s.length === 0)) {
-              for (let i = 0; i < types4.length; i++) {
+              for (let i = 0; i < types5.length; i++) {
                 const source2 = matches ? matches[i] : neverType;
-                const target2 = types4[i];
+                const target2 = types5[i];
                 if (source2.flags & 128 && target2.flags & 8650752) {
                   const inferenceContext = getInferenceInfoForType(target2);
                   const constraint = inferenceContext ? getBaseConstraintOfType(inferenceContext.typeParameter) : void 0;
@@ -79270,10 +79270,10 @@ ${lanes.join("\n")}
           }
           return result2;
         }
-        function mapTypesByKeyProperty(types4, name) {
+        function mapTypesByKeyProperty(types5, name) {
           const map2 = /* @__PURE__ */ new Map();
           let count = 0;
-          for (const type of types4) {
+          for (const type of types5) {
             if (type.flags & (524288 | 2097152 | 58982400)) {
               const discriminant = getTypeOfPropertyOfType(type, name);
               if (discriminant) {
@@ -79295,16 +79295,16 @@ ${lanes.join("\n")}
               }
             }
           }
-          return count >= 10 && count * 2 >= types4.length ? map2 : void 0;
+          return count >= 10 && count * 2 >= types5.length ? map2 : void 0;
         }
         function getKeyPropertyName(unionType) {
-          const types4 = unionType.types;
-          if (types4.length < 10 || getObjectFlags(unionType) & 32768 || countWhere(types4, (t) => !!(t.flags & (524288 | 58982400))) < 10) {
+          const types5 = unionType.types;
+          if (types5.length < 10 || getObjectFlags(unionType) & 32768 || countWhere(types5, (t) => !!(t.flags & (524288 | 58982400))) < 10) {
             return void 0;
           }
           if (unionType.keyPropertyName === void 0) {
-            const keyPropertyName = forEach(types4, (t) => t.flags & (524288 | 58982400) ? forEach(getPropertiesOfType(t), (p) => isUnitType(getTypeOfSymbol(p)) ? p.escapedName : void 0) : void 0);
-            const mapByKeyProperty = keyPropertyName && mapTypesByKeyProperty(types4, keyPropertyName);
+            const keyPropertyName = forEach(types5, (t) => t.flags & (524288 | 58982400) ? forEach(getPropertiesOfType(t), (p) => isUnitType(getTypeOfSymbol(p)) ? p.escapedName : void 0) : void 0);
+            const mapByKeyProperty = keyPropertyName && mapTypesByKeyProperty(types5, keyPropertyName);
             unionType.keyPropertyName = mapByKeyProperty ? keyPropertyName : "";
             unionType.constituentMap = mapByKeyProperty;
           }
@@ -79661,8 +79661,8 @@ ${lanes.join("\n")}
           }
           return witnesses;
         }
-        function eachTypeContainedIn(source, types4) {
-          return source.flags & 1048576 ? !forEach(source.types, (t) => !contains(types4, t)) : contains(types4, source);
+        function eachTypeContainedIn(source, types5) {
+          return source.flags & 1048576 ? !forEach(source.types, (t) => !contains(types5, t)) : contains(types5, source);
         }
         function isTypeSubsetOf(source, target) {
           return !!(source === target || source.flags & 131072 || target.flags & 1048576 && isTypeSubsetOfUnion(source, target));
@@ -79695,9 +79695,9 @@ ${lanes.join("\n")}
         }
         function filterType(type, f) {
           if (type.flags & 1048576) {
-            const types4 = type.types;
-            const filtered = filter(types4, f);
-            if (filtered === types4) {
+            const types5 = type.types;
+            const filtered = filter(types5, f);
+            if (filtered === types5) {
               return type;
             }
             const origin = type.origin;
@@ -79705,7 +79705,7 @@ ${lanes.join("\n")}
             if (origin && origin.flags & 1048576) {
               const originTypes = origin.types;
               const originFiltered = filter(originTypes, (t) => !!(t.flags & 1048576) || f(t));
-              if (originTypes.length - originFiltered.length === types4.length - filtered.length) {
+              if (originTypes.length - originFiltered.length === types5.length - filtered.length) {
                 if (originFiltered.length === 1) {
                   return originFiltered[0];
                 }
@@ -79738,10 +79738,10 @@ ${lanes.join("\n")}
             return mapper(type);
           }
           const origin = type.origin;
-          const types4 = origin && origin.flags & 1048576 ? origin.types : type.types;
+          const types5 = origin && origin.flags & 1048576 ? origin.types : type.types;
           let mappedTypes;
           let changed = false;
-          for (const t of types4) {
+          for (const t of types5) {
             const mapped = t.flags & 1048576 ? mapType(t, mapper, noReductions) : mapper(t);
             changed || (changed = t !== mapped);
             if (mapped) {
@@ -79840,9 +79840,9 @@ ${lanes.join("\n")}
         function getElementTypeOfEvolvingArrayType(type) {
           return getObjectFlags(type) & 256 ? type.elementType : neverType;
         }
-        function isEvolvingArrayTypeList(types4) {
+        function isEvolvingArrayTypeList(types5) {
           let hasEvolvingArrayType = false;
-          for (const t of types4) {
+          for (const t of types5) {
             if (!(t.flags & 131072)) {
               if (!(getObjectFlags(t) & 256)) {
                 return false;
@@ -80525,11 +80525,11 @@ ${lanes.join("\n")}
             cache.set(key22, result2);
             return result2;
           }
-          function getUnionOrEvolvingArrayType(types4, subtypeReduction) {
-            if (isEvolvingArrayTypeList(types4)) {
-              return getEvolvingArrayType(getUnionType(map(types4, getElementTypeOfEvolvingArrayType)));
+          function getUnionOrEvolvingArrayType(types5, subtypeReduction) {
+            if (isEvolvingArrayTypeList(types5)) {
+              return getEvolvingArrayType(getUnionType(map(types5, getElementTypeOfEvolvingArrayType)));
             }
-            const result2 = recombineUnknownType(getUnionType(sameMap(types4, finalizeEvolvingArrayType), subtypeReduction));
+            const result2 = recombineUnknownType(getUnionType(sameMap(types5, finalizeEvolvingArrayType), subtypeReduction));
             if (result2 !== declaredType && result2.flags & declaredType.flags & 1048576 && arrayIsEqualTo(result2.types, declaredType.types)) {
               return declaredType;
             }
@@ -83095,7 +83095,7 @@ ${lanes.join("\n")}
             type,
             (t) => {
               if (t.flags & 2097152) {
-                let types4;
+                let types5;
                 let indexInfoCandidates;
                 let ignoreIndexInfos = false;
                 for (const constituentType of t.types) {
@@ -83104,7 +83104,7 @@ ${lanes.join("\n")}
                   }
                   if (isGenericMappedType(constituentType) && getMappedTypeNameTypeKind(constituentType) !== 2) {
                     const substitutedType = getIndexedMappedTypeSubstitutedTypeOfContextualType(constituentType, name, nameType);
-                    types4 = appendContextualPropertyTypeConstituent(types4, substitutedType);
+                    types5 = appendContextualPropertyTypeConstituent(types5, substitutedType);
                     continue;
                   }
                   const propertyType = getTypeOfConcretePropertyOfContextualType(constituentType, name);
@@ -83116,21 +83116,21 @@ ${lanes.join("\n")}
                   }
                   ignoreIndexInfos = true;
                   indexInfoCandidates = void 0;
-                  types4 = appendContextualPropertyTypeConstituent(types4, propertyType);
+                  types5 = appendContextualPropertyTypeConstituent(types5, propertyType);
                 }
                 if (indexInfoCandidates) {
                   for (const candidate of indexInfoCandidates) {
                     const indexInfoType = getTypeFromIndexInfosOfContextualType(candidate, name, nameType);
-                    types4 = appendContextualPropertyTypeConstituent(types4, indexInfoType);
+                    types5 = appendContextualPropertyTypeConstituent(types5, indexInfoType);
                   }
                 }
-                if (!types4) {
+                if (!types5) {
                   return;
                 }
-                if (types4.length === 1) {
-                  return types4[0];
+                if (types5.length === 1) {
+                  return types5[0];
                 }
-                return getIntersectionType(types4);
+                return getIntersectionType(types5);
               }
               if (!(t.flags & 524288)) {
                 return;
@@ -83141,8 +83141,8 @@ ${lanes.join("\n")}
             true
           );
         }
-        function appendContextualPropertyTypeConstituent(types4, type) {
-          return type ? append(types4, type.flags & 1 ? unknownType : type) : types4;
+        function appendContextualPropertyTypeConstituent(types5, type) {
+          return type ? append(types5, type.flags & 1 ? unknownType : type) : types5;
         }
         function getIndexedMappedTypeSubstitutedTypeOfContextualType(type, name, nameType) {
           const propertyNameType = nameType || getStringLiteralType(unescapeLeadingUnderscores(name));
@@ -83866,8 +83866,8 @@ ${lanes.join("\n")}
             return getContextualCallSignature(type, node);
           }
           let signatureList;
-          const types4 = type.types;
-          for (const current of types4) {
+          const types5 = type.types;
+          for (const current of types5) {
             const signature = getContextualCallSignature(current, node);
             if (signature) {
               if (!signatureList) {
@@ -86206,7 +86206,7 @@ ${lanes.join("\n")}
               return createArrayType(checkIteratedTypeOrElementType(33, spreadType, undefinedType, arg.kind === 231 ? arg.expression : arg), inConstContext);
             }
           }
-          const types4 = [];
+          const types5 = [];
           const flags = [];
           const names = [];
           for (let i = index; i < argCount; i++) {
@@ -86214,13 +86214,13 @@ ${lanes.join("\n")}
             if (isSpreadArgument(arg)) {
               const spreadType = arg.kind === 238 ? arg.type : checkExpression(arg.expression);
               if (isArrayLikeType(spreadType)) {
-                types4.push(spreadType);
+                types5.push(spreadType);
                 flags.push(
                   8
                   /* Variadic */
                 );
               } else {
-                types4.push(checkIteratedTypeOrElementType(33, spreadType, undefinedType, arg.kind === 231 ? arg.expression : arg));
+                types5.push(checkIteratedTypeOrElementType(33, spreadType, undefinedType, arg.kind === 231 ? arg.expression : arg));
                 flags.push(
                   4
                   /* Rest */
@@ -86239,7 +86239,7 @@ ${lanes.join("\n")}
                 402784252 | 4194304 | 134217728 | 268435456
                 /* StringMapping */
               );
-              types4.push(hasPrimitiveContextualType ? getRegularTypeOfLiteralType(argType) : getWidenedLiteralType(argType));
+              types5.push(hasPrimitiveContextualType ? getRegularTypeOfLiteralType(argType) : getWidenedLiteralType(argType));
               flags.push(
                 1
                 /* Required */
@@ -86251,7 +86251,7 @@ ${lanes.join("\n")}
               names.push(void 0);
             }
           }
-          return createTupleType(types4, flags, inConstContext && !someType(restType, isMutableArrayLikeType), names);
+          return createTupleType(types5, flags, inConstContext && !someType(restType, isMutableArrayLikeType), names);
         }
         function checkTypeArguments(signature, typeArgumentNodes, reportErrors2, headMessage) {
           const isJavascript = isInJSFile(signature.declaration);
@@ -87153,9 +87153,9 @@ ${lanes.join("\n")}
           const numParams = signature.parameters.length;
           return signatureHasRestParameter(signature) ? numParams - 1 : numParams;
         }
-        function createCombinedSymbolFromTypes(sources, types4) {
+        function createCombinedSymbolFromTypes(sources, types5) {
           return createCombinedSymbolForOverloadFailure(sources, getUnionType(
-            types4,
+            types5,
             2
             /* Subtype */
           ));
@@ -87401,8 +87401,8 @@ ${lanes.join("\n")}
           }
           const firstBase = baseTypes[0];
           if (firstBase.flags & 2097152) {
-            const types4 = firstBase.types;
-            const mixinFlags = findMixins(types4);
+            const types5 = firstBase.types;
+            const mixinFlags = findMixins(types5);
             let i = 0;
             for (const intersectionMember of firstBase.types) {
               if (!mixinFlags[i]) {
@@ -87463,9 +87463,9 @@ ${lanes.join("\n")}
           const awaitedType = getAwaitedType(apparentType);
           const maybeMissingAwait = awaitedType && getSignaturesOfType(awaitedType, kind).length > 0;
           if (apparentType.flags & 1048576) {
-            const types4 = apparentType.types;
+            const types5 = apparentType.types;
             let hasSignatures2 = false;
-            for (const constituent of types4) {
+            for (const constituent of types5) {
               const signatures = getSignaturesOfType(constituent, kind);
               if (signatures.length !== 0) {
                 hasSignatures2 = true;
@@ -88642,18 +88642,18 @@ ${lanes.join("\n")}
           if (restType && pos >= parameterCount - 1) {
             return pos === parameterCount - 1 ? restType : createArrayType(getIndexedAccessType(restType, numberType));
           }
-          const types4 = [];
+          const types5 = [];
           const flags = [];
           const names = [];
           for (let i = pos; i < parameterCount; i++) {
             if (!restType || i < parameterCount - 1) {
-              types4.push(getTypeAtPosition(source, i));
+              types5.push(getTypeAtPosition(source, i));
               flags.push(
                 i < minArgumentCount ? 1 : 2
                 /* Optional */
               );
             } else {
-              types4.push(restType);
+              types5.push(restType);
               flags.push(
                 8
                 /* Variadic */
@@ -88661,7 +88661,7 @@ ${lanes.join("\n")}
             }
             names.push(getNameableDeclarationAtPosition(source, i));
           }
-          return createTupleType(types4, flags, readonly, names);
+          return createTupleType(types5, flags, readonly, names);
         }
         function getRestOrAnyTypeAtPosition(source, pos) {
           const restType = getRestTypeAtPosition(source, pos);
@@ -89198,11 +89198,11 @@ ${lanes.join("\n")}
             ) : void 0;
             nextType = some(nextTypes) ? getIntersectionType(nextTypes) : void 0;
           } else {
-            const types4 = checkAndAggregateReturnExpressionTypes(func, checkMode);
-            if (!types4) {
+            const types5 = checkAndAggregateReturnExpressionTypes(func, checkMode);
+            if (!types5) {
               return functionFlags & 2 ? createPromiseReturnType(func, neverType) : neverType;
             }
-            if (types4.length === 0) {
+            if (types5.length === 0) {
               const contextualReturnType = getContextualReturnType(
                 func,
                 /*contextFlags*/
@@ -89215,7 +89215,7 @@ ${lanes.join("\n")}
               );
             }
             returnType = getUnionType(
-              types4,
+              types5,
               2
               /* Subtype */
             );
@@ -89992,8 +89992,8 @@ ${lanes.join("\n")}
             return true;
           }
           if (type.flags & 3145728) {
-            const types4 = type.types;
-            for (const t of types4) {
+            const types5 = type.types;
+            for (const t of types5) {
               if (maybeTypeOfKind(t, kind)) {
                 return true;
               }
@@ -91169,7 +91169,7 @@ ${lanes.join("\n")}
         }
         function checkTemplateExpression(node) {
           const texts = [node.head.text];
-          const types4 = [];
+          const types5 = [];
           for (const span of node.templateSpans) {
             const type = checkExpression(span.expression);
             if (maybeTypeOfKindConsideringBaseConstraint(
@@ -91180,7 +91180,7 @@ ${lanes.join("\n")}
               error2(span.expression, Diagnostics.Implicit_conversion_of_a_symbol_to_a_string_will_fail_at_runtime_Consider_wrapping_this_expression_in_String);
             }
             texts.push(span.literal.text);
-            types4.push(isTypeAssignableTo(type, templateConstraintType) ? type : stringType);
+            types5.push(isTypeAssignableTo(type, templateConstraintType) ? type : stringType);
           }
           const evaluated = node.parent.kind !== 216 && evaluate(node).value;
           if (evaluated) {
@@ -91191,7 +91191,7 @@ ${lanes.join("\n")}
             /*contextFlags*/
             void 0
           ) || unknownType, isTemplateLiteralContextualType)) {
-            return getTemplateLiteralType(texts, types4);
+            return getTemplateLiteralType(texts, types5);
           }
           return stringType;
         }
@@ -91368,8 +91368,8 @@ ${lanes.join("\n")}
         function isLiteralOfContextualType(candidateType, contextualType) {
           if (contextualType) {
             if (contextualType.flags & 3145728) {
-              const types4 = contextualType.types;
-              return some(types4, (t) => isLiteralOfContextualType(candidateType, t));
+              const types5 = contextualType.types;
+              return some(types5, (t) => isLiteralOfContextualType(candidateType, t));
             }
             if (contextualType.flags & 58982400) {
               const constraint = getBaseConstraintOfType(contextualType) || unknownType;
@@ -93488,9 +93488,9 @@ ${lanes.join("\n")}
             }
           }
         }
-        function getEntityNameForDecoratorMetadataFromTypeList(types4) {
+        function getEntityNameForDecoratorMetadataFromTypeList(types5) {
           let commonEntityName;
-          for (let typeNode of types4) {
+          for (let typeNode of types5) {
             while (typeNode.kind === 197 || typeNode.kind === 203) {
               typeNode = typeNode.type;
             }
@@ -100665,15 +100665,15 @@ ${lanes.join("\n")}
           return false;
         }
         function checkGrammarHeritageClause(node) {
-          const types4 = node.types;
-          if (checkGrammarForDisallowedTrailingComma(types4)) {
+          const types5 = node.types;
+          if (checkGrammarForDisallowedTrailingComma(types5)) {
             return true;
           }
-          if (types4 && types4.length === 0) {
+          if (types5 && types5.length === 0) {
             const listType = tokenToString(node.token);
-            return grammarErrorAtPos(node, types4.pos, 0, Diagnostics._0_list_cannot_be_empty, listType);
+            return grammarErrorAtPos(node, types5.pos, 0, Diagnostics._0_list_cannot_be_empty, listType);
           }
-          return some(types4, checkGrammarExpressionWithTypeArguments);
+          return some(types5, checkGrammarExpressionWithTypeArguments);
         }
         function checkGrammarExpressionWithTypeArguments(node) {
           if (isExpressionWithTypeArguments(node) && isImportKeyword(node.expression) && node.typeArguments) {
@@ -109951,9 +109951,9 @@ ${lanes.join("\n")}
               return Debug.failBadSyntaxKind(node);
           }
         }
-        function serializeUnionOrIntersectionConstituents(types4, isIntersection) {
+        function serializeUnionOrIntersectionConstituents(types5, isIntersection) {
           let serializedType;
-          for (let typeNode of types4) {
+          for (let typeNode of types5) {
             typeNode = skipTypeParentheses(typeNode);
             if (typeNode.kind === 146) {
               if (isIntersection) return factory2.createVoidZero();
@@ -133012,7 +133012,7 @@ ${lanes.join("\n")}
         function emitTripleSlashDirectivesIfNeeded(node) {
           if (node.isDeclarationFile) emitTripleSlashDirectives(node.hasNoDefaultLib, node.referencedFiles, node.typeReferenceDirectives, node.libReferenceDirectives);
         }
-        function emitTripleSlashDirectives(hasNoDefaultLib, files, types4, libs2) {
+        function emitTripleSlashDirectives(hasNoDefaultLib, files, types5, libs2) {
           if (hasNoDefaultLib) {
             writeComment(`/// <reference no-default-lib="true"/>`);
             writeLine();
@@ -133040,7 +133040,7 @@ ${lanes.join("\n")}
             }
           }
           writeDirectives("path", files);
-          writeDirectives("types", types4);
+          writeDirectives("types", types5);
           writeDirectives("lib", libs2);
         }
         function emitSourceFileWorker(node) {
@@ -150160,8 +150160,8 @@ ${lanes.join("\n")}
         if (!type.isIntersection()) {
           return false;
         }
-        const { types: types4, checker } = type;
-        return types4.length === 2 && (areIntersectedTypesAvoidingStringReduction(checker, types4[0], types4[1]) || areIntersectedTypesAvoidingStringReduction(checker, types4[1], types4[0]));
+        const { types: types5, checker } = type;
+        return types5.length === 2 && (areIntersectedTypesAvoidingStringReduction(checker, types5[0], types5[1]) || areIntersectedTypesAvoidingStringReduction(checker, types5[1], types5[0]));
       }
       function isInsideTemplateLiteral(node, position, sourceFile) {
         return isTemplateLiteralKind(node.kind) && (node.getStart(sourceFile) < position && position < node.end) || !!node.isUnterminated && position === node.end;
@@ -167252,7 +167252,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         return innerCbBody;
       }
       function getArgBindingName(funcNode, transformer) {
-        const types4 = [];
+        const types5 = [];
         let name;
         if (isFunctionLikeDeclaration(funcNode)) {
           if (funcNode.parameters.length > 0) {
@@ -167280,10 +167280,10 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           const originalNode = getOriginalNode2(identifier2);
           const symbol = getSymbol2(originalNode);
           if (!symbol) {
-            return createSynthIdentifier(identifier2, types4);
+            return createSynthIdentifier(identifier2, types5);
           }
           const mapEntry = transformer.synthNamesMap.get(getSymbolId(symbol).toString());
-          return mapEntry || createSynthIdentifier(identifier2, types4);
+          return mapEntry || createSynthIdentifier(identifier2, types5);
         }
         function getSymbol2(node) {
           var _a2;
@@ -167302,11 +167302,11 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         }
         return every(bindingName.elements, isEmptyBindingName);
       }
-      function createSynthIdentifier(identifier2, types4 = []) {
-        return { kind: 0, identifier: identifier2, types: types4, hasBeenDeclared: false, hasBeenReferenced: false };
+      function createSynthIdentifier(identifier2, types5 = []) {
+        return { kind: 0, identifier: identifier2, types: types5, hasBeenDeclared: false, hasBeenReferenced: false };
       }
-      function createSynthBindingPattern(bindingPattern, elements = emptyArray, types4 = []) {
-        return { kind: 1, bindingPattern, elements, types: types4 };
+      function createSynthBindingPattern(bindingPattern, elements = emptyArray, types5 = []) {
+        return { kind: 1, bindingPattern, elements, types: types5 };
       }
       function referenceSynthIdentifier(synthId) {
         synthId.hasBeenReferenced = true;
@@ -173888,7 +173888,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
               /*multiLine*/
               true
             ),
-            (types4) => factory.createTupleTypeNode(types4.map(factory.createRestTypeNode))
+            (types5) => factory.createTupleTypeNode(types5.map(factory.createRestTypeNode))
           );
         }
         function typeFromObjectSpreadAssignment(node, name = "temp") {
@@ -174714,26 +174714,26 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           }
           const calls = [...usage.constructs || [], ...usage.calls || []];
           return declaration.parameters.map((parameter, parameterIndex) => {
-            const types4 = [];
+            const types5 = [];
             const isRest = isRestParameter(parameter);
             let isOptional = false;
             for (const call of calls) {
               if (call.argumentTypes.length <= parameterIndex) {
                 isOptional = isInJSFile(declaration);
-                types4.push(checker.getUndefinedType());
+                types5.push(checker.getUndefinedType());
               } else if (isRest) {
                 for (let i = parameterIndex; i < call.argumentTypes.length; i++) {
-                  types4.push(checker.getBaseTypeOfLiteralType(call.argumentTypes[i]));
+                  types5.push(checker.getBaseTypeOfLiteralType(call.argumentTypes[i]));
                 }
               } else {
-                types4.push(checker.getBaseTypeOfLiteralType(call.argumentTypes[parameterIndex]));
+                types5.push(checker.getBaseTypeOfLiteralType(call.argumentTypes[parameterIndex]));
               }
             }
             if (isIdentifier10(parameter.name)) {
               const inferred = inferTypesFromReferencesSingle(getReferences(parameter.name, program, cancellationToken));
-              types4.push(...isRest ? mapDefined(inferred, checker.getElementTypeOfArrayType) : inferred);
+              types5.push(...isRest ? mapDefined(inferred, checker.getElementTypeOfArrayType) : inferred);
             }
-            const type = combineTypes(types4);
+            const type = combineTypes(types5);
             return {
               type: isRest ? checker.createArrayType(type) : type,
               isOptional: isOptional && !isRest,
@@ -175071,10 +175071,10 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
               numberIndexReadonly = numberIndexReadonly || numberIndexInfo.isReadonly;
             }
           }
-          const members = mapEntries(props, (name, types4) => {
-            const isOptional = types4.length < anons.length ? 16777216 : 0;
+          const members = mapEntries(props, (name, types5) => {
+            const isOptional = types5.length < anons.length ? 16777216 : 0;
             const s = checker.createSymbol(4 | isOptional, name);
-            s.links.type = checker.getUnionType(types4);
+            s.links.type = checker.getUnionType(types5);
             return [name, s];
           });
           const indexInfos = [];
@@ -175090,40 +175090,40 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         }
         function inferTypes(usage) {
           var _a2, _b, _c;
-          const types4 = [];
+          const types5 = [];
           if (usage.isNumber) {
-            types4.push(checker.getNumberType());
+            types5.push(checker.getNumberType());
           }
           if (usage.isString) {
-            types4.push(checker.getStringType());
+            types5.push(checker.getStringType());
           }
           if (usage.isNumberOrString) {
-            types4.push(checker.getUnionType([checker.getStringType(), checker.getNumberType()]));
+            types5.push(checker.getUnionType([checker.getStringType(), checker.getNumberType()]));
           }
           if (usage.numberIndex) {
-            types4.push(checker.createArrayType(combineFromUsage(usage.numberIndex)));
+            types5.push(checker.createArrayType(combineFromUsage(usage.numberIndex)));
           }
           if (((_a2 = usage.properties) == null ? void 0 : _a2.size) || ((_b = usage.constructs) == null ? void 0 : _b.length) || usage.stringIndex) {
-            types4.push(inferStructuralType(usage));
+            types5.push(inferStructuralType(usage));
           }
           const candidateTypes = (usage.candidateTypes || []).map((t) => checker.getBaseTypeOfLiteralType(t));
           const callsType = ((_c = usage.calls) == null ? void 0 : _c.length) ? inferStructuralType(usage) : void 0;
           if (callsType && candidateTypes) {
-            types4.push(checker.getUnionType(
+            types5.push(checker.getUnionType(
               [callsType, ...candidateTypes],
               2
               /* Subtype */
             ));
           } else {
             if (callsType) {
-              types4.push(callsType);
+              types5.push(callsType);
             }
             if (length(candidateTypes)) {
-              types4.push(...candidateTypes);
+              types5.push(...candidateTypes);
             }
           }
-          types4.push(...inferNamedTypesFromProperties(usage));
-          return types4;
+          types5.push(...inferNamedTypesFromProperties(usage));
+          return types5;
         }
         function inferStructuralType(usage) {
           const members = /* @__PURE__ */ new Map();
@@ -175153,9 +175153,9 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         }
         function inferNamedTypesFromProperties(usage) {
           if (!usage.properties || !usage.properties.size) return [];
-          const types4 = builtins.filter((t) => allPropertiesAreAssignableToUsage(t, usage));
-          if (0 < types4.length && types4.length < 3) {
-            return types4.map((t) => inferInstantiationFromUsage(t, usage));
+          const types5 = builtins.filter((t) => allPropertiesAreAssignableToUsage(t, usage));
+          if (0 < types5.length && types5.length < 3) {
+            return types5.map((t) => inferInstantiationFromUsage(t, usage));
           }
           return [];
         }
@@ -175185,13 +175185,13 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           const generic = type.target;
           const singleTypeParameter = singleOrUndefined(generic.typeParameters);
           if (!singleTypeParameter) return type;
-          const types4 = [];
+          const types5 = [];
           usage.properties.forEach((propUsage, name) => {
             const genericPropertyType = checker.getTypeOfPropertyOfType(generic, name);
             Debug.assert(!!genericPropertyType, "generic should have all the properties of its reference.");
-            types4.push(...inferTypeParameters(genericPropertyType, combineFromUsage(propUsage), singleTypeParameter));
+            types5.push(...inferTypeParameters(genericPropertyType, combineFromUsage(propUsage), singleTypeParameter));
           });
-          return builtinConstructors[type.symbol.escapedName](combineTypes(types4));
+          return builtinConstructors[type.symbol.escapedName](combineTypes(types5));
         }
         function inferTypeParameters(genericType, usageType, typeParameter) {
           if (genericType === typeParameter) {
@@ -175201,15 +175201,15 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           } else if (getObjectFlags(genericType) & 4 && getObjectFlags(usageType) & 4) {
             const genericArgs = checker.getTypeArguments(genericType);
             const usageArgs = checker.getTypeArguments(usageType);
-            const types4 = [];
+            const types5 = [];
             if (genericArgs && usageArgs) {
               for (let i = 0; i < genericArgs.length; i++) {
                 if (usageArgs[i]) {
-                  types4.push(...inferTypeParameters(genericArgs[i], usageArgs[i], typeParameter));
+                  types5.push(...inferTypeParameters(genericArgs[i], usageArgs[i], typeParameter));
                 }
               }
             }
-            return types4;
+            return types5;
           }
           const genericSigs = checker.getSignaturesOfType(
             genericType,
@@ -175228,7 +175228,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         }
         function inferFromSignatures(genericSig, usageSig, typeParameter) {
           var _a2;
-          const types4 = [];
+          const types5 = [];
           for (let i = 0; i < genericSig.parameters.length; i++) {
             const genericParam = genericSig.parameters[i];
             const usageParam = usageSig.parameters[i];
@@ -175242,12 +175242,12 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
               genericParamType = elementType;
             }
             const targetType = ((_a2 = tryCast(usageParam, isTransientSymbol)) == null ? void 0 : _a2.links.type) || (usageParam.valueDeclaration ? checker.getTypeOfSymbolAtLocation(usageParam, usageParam.valueDeclaration) : checker.getAnyType());
-            types4.push(...inferTypeParameters(genericParamType, targetType, typeParameter));
+            types5.push(...inferTypeParameters(genericParamType, targetType, typeParameter));
           }
           const genericReturn = checker.getReturnTypeOfSignature(genericSig);
           const usageReturn = checker.getReturnTypeOfSignature(usageSig);
-          types4.push(...inferTypeParameters(genericReturn, usageReturn, typeParameter));
-          return types4;
+          types5.push(...inferTypeParameters(genericReturn, usageReturn, typeParameter));
+          return types5;
         }
         function getFunctionFromCalls(calls) {
           return checker.createAnonymousType(
@@ -175935,7 +175935,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         }
         return type.flags & 262144 ? (_a2 = type.getSymbol()) == null ? void 0 : _a2.getName() : void 0;
       }
-      function createDummyParameters(argCount, names, types4, minArgumentCount, inJs) {
+      function createDummyParameters(argCount, names, types5, minArgumentCount, inJs) {
         const parameters2 = [];
         const parameterNameCounts = /* @__PURE__ */ new Map();
         for (let i = 0; i < argCount; i++) {
@@ -175955,7 +175955,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
               /* QuestionToken */
             ) : void 0,
             /*type*/
-            inJs ? void 0 : (types4 == null ? void 0 : types4[i]) || factory.createKeywordTypeNode(
+            inJs ? void 0 : (types5 == null ? void 0 : types5[i]) || factory.createKeywordTypeNode(
               159
               /* UnknownKeyword */
             ),
@@ -176365,8 +176365,8 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           const typeChecker = program.getTypeChecker();
           const type = typeChecker.getTypeFromTypeNode(typeNode);
           if (!typeChecker.isTypeAssignableTo(typeChecker.getUndefinedType(), type)) {
-            const types4 = isUnionTypeNode(typeNode) ? typeNode.types : [typeNode];
-            return factory.createUnionTypeNode([...types4, factory.createKeywordTypeNode(
+            const types5 = isUnionTypeNode(typeNode) ? typeNode.types : [typeNode];
+            return factory.createUnionTypeNode([...types5, factory.createKeywordTypeNode(
               157
               /* UndefinedKeyword */
             )]);
@@ -176546,8 +176546,8 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           157
           /* UndefinedKeyword */
         );
-        const types4 = isUnionTypeNode(info.type) ? info.type.types.concat(undefinedTypeNode) : [info.type, undefinedTypeNode];
-        const unionTypeNode = factory.createUnionTypeNode(types4);
+        const types5 = isUnionTypeNode(info.type) ? info.type.types.concat(undefinedTypeNode) : [info.type, undefinedTypeNode];
+        const unionTypeNode = factory.createUnionTypeNode(types5);
         if (info.isJs) {
           changeTracker.addJSDocTags(sourceFile, info.prop, [factory.createJSDocTypeTag(
             /*tagName*/
@@ -181763,11 +181763,11 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           }
         }
         function fromContextualType(contextFlags = 4) {
-          const types4 = getStringLiteralTypes(getContextualTypeFromParent(node, typeChecker, contextFlags));
-          if (!types4.length) {
+          const types5 = getStringLiteralTypes(getContextualTypeFromParent(node, typeChecker, contextFlags));
+          if (!types5.length) {
             return;
           }
-          return { kind: 2, types: types4, isNewIdentifier: false };
+          return { kind: 2, types: types5, isNewIdentifier: false };
         }
       }
       function walkUpParentheses(node) {
@@ -181788,7 +181788,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         const uniques = /* @__PURE__ */ new Set();
         const editingArgument = isJsxOpeningLikeElement(call) ? Debug.checkDefined(findAncestor(arg.parent, isJsxAttribute3)) : arg;
         const candidates = checker.getCandidateSignaturesForStringLiteralCompletions(call, editingArgument);
-        const types4 = flatMap(candidates, (candidate) => {
+        const types5 = flatMap(candidates, (candidate) => {
           if (!signatureHasRestParameter(candidate) && argumentInfo.argumentCount > candidate.parameters.length) return;
           let type = candidate.getTypeParameterAtPosition(argumentInfo.argumentIndex);
           if (isJsxOpeningLikeElement(call)) {
@@ -181800,7 +181800,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           isNewIdentifier = isNewIdentifier || !!(type.flags & 4);
           return getStringLiteralTypes(type, uniques);
         });
-        return length(types4) ? { kind: 2, types: types4, isNewIdentifier } : void 0;
+        return length(types5) ? { kind: 2, types: types5, isNewIdentifier } : void 0;
       }
       function stringLiteralCompletionsFromProperties(type) {
         return type && {
@@ -231057,7 +231057,7 @@ import { constants as fsConstants } from "node:fs";
 import { lstat as lstat4, mkdir as mkdir4, open as open3, realpath, rename, unlink } from "node:fs/promises";
 import { dirname as dirname6, resolve as resolve6, sep as sep3 } from "node:path";
 var REPORT_SCHEMA_VERSION = "1.0.0";
-var REPORT_TOOL_VERSION = "0.4.0";
+var REPORT_TOOL_VERSION = "0.5.0";
 var RULESET_VERSION = "2026-10-06.3";
 var SEVERITIES = [
   "info",
@@ -231694,6 +231694,8 @@ function sanitiseFindingEvidence(input, ledger) {
   if (!Array.isArray(steps) || steps.length === 0 || steps.length > EVIDENCE_PHASES.length)
     return void 0;
   const result2 = [];
+  const actorByIndex = /* @__PURE__ */ new Map();
+  const plannedByPhase = /* @__PURE__ */ new Map();
   for (const step2 of steps) {
     if (!plainRecord(step2))
       return void 0;
@@ -231702,8 +231704,26 @@ function sanitiseFindingEvidence(input, ledger) {
     const planned = typeof ordinal === "number" ? plan.steps.find((entry) => entry.ordinal === ordinal) : void 0;
     if (!recorded || !planned || planned.phase !== phase || recorded.outcome !== outcome || recorded.httpStatus !== httpStatus || typeof actor !== "string" || !POLICY_IDENTIFIER.test(actor) || result2.length > 0 && result2[result2.length - 1].ordinal >= recorded.ordinal || result2.some((entry) => entry.phase === planned.phase))
       return void 0;
+    const knownActor = actorByIndex.get(planned.actorIndex);
+    if (knownActor !== void 0 && knownActor !== actor)
+      return void 0;
+    actorByIndex.set(planned.actorIndex, actor);
+    plannedByPhase.set(planned.phase, planned);
     result2.push({ ordinal: recorded.ordinal, phase: planned.phase, actor, outcome: recorded.outcome, httpStatus: recorded.httpStatus });
   }
+  const probe = plannedByPhase.get("deny");
+  const ownerBefore = plannedByPhase.get("owner-before");
+  const ownerAfter = plannedByPhase.get("owner-after");
+  if (probe && ["identity-before", "identity-after"].some((phase) => {
+    const identity = plannedByPhase.get(phase);
+    const required = plan.steps.find((entry) => entry.phase === phase && entry.actorIndex === probe.actorIndex);
+    return identity?.ordinal !== required?.ordinal;
+  }))
+    return void 0;
+  if (ownerBefore && ownerAfter && (ownerBefore.actorIndex !== ownerAfter.actorIndex || ownerBefore.caseIndex !== ownerAfter.caseIndex))
+    return void 0;
+  if (probe && (ownerBefore && probe.caseIndex !== ownerBefore.caseIndex || ownerAfter && probe.caseIndex !== ownerAfter.caseIndex))
+    return void 0;
   return { basis: "api-execution-ledger", planSha256: input.planSha256, steps: result2 };
 }
 function verificationSupported(controls, evidence2, replay) {
@@ -233473,6 +233493,7 @@ async function writeComparison(result2, outDir) {
 }
 
 // build/src/replay.js
+import { types as types3 } from "node:util";
 function refused(findingId, reason, replay) {
   return { version: 1, kind: "api-finding-replay", outcome: "refused", findingId, reason, ...replay ? { replay } : {} };
 }
@@ -233489,7 +233510,14 @@ function reducedPolicy(policy, replay) {
   };
 }
 async function replayApiFinding(options) {
-  const findingId = typeof options?.findingId === "string" ? options.findingId : "";
+  if (!options || typeof options !== "object" || types3.isProxy(options))
+    return refused("", "invalid_options");
+  const descriptors = Object.getOwnPropertyDescriptors(options);
+  const proto = Object.getPrototypeOf(options);
+  if (proto !== Object.prototype && proto !== null || Object.getOwnPropertySymbols(options).length || Object.keys(descriptors).some((key2) => !["report", "policy", "findingId", "env", "allowPrivate", "timeoutMs", "signal"].includes(key2)) || Object.values(descriptors).some((entry) => !("value" in entry) || !entry.enumerable))
+    return refused("", "invalid_options");
+  options = Object.create(null, descriptors);
+  const findingId = typeof options.findingId === "string" ? options.findingId : "";
   let replay;
   try {
     const report = parseScanReport(options.report);
@@ -233510,7 +233538,7 @@ async function replayApiFinding(options) {
   }
   if (policy.version !== 2)
     return refused(findingId, "legacy_policy", replay);
-  if (apiPolicyDigest(options.policy) !== replay.policySha256)
+  if (apiPolicyDigest(policy) !== replay.policySha256)
     return refused(findingId, "policy_mismatch", replay);
   const reduced = reducedPolicy(policy, replay);
   if (!reduced)
@@ -233523,7 +233551,8 @@ async function replayApiFinding(options) {
     ...options.signal === void 0 ? {} : { signal: options.signal }
   });
   const exposure = check.findings.find((item) => item.replay?.caseId === replay.caseId && item.replay.actor === replay.actor);
-  const outcome = exposure ? exposure.controlVerification?.state === "controls_passed" ? "reproduced" : "inconclusive" : check.status === "completed" ? "not_reproduced" : "inconclusive";
+  const complete = check.status === "completed" && check.apiExecution?.status === "complete";
+  const outcome = !complete ? "inconclusive" : exposure ? exposure.controlVerification?.state === "controls_passed" ? "reproduced" : "inconclusive" : "not_reproduced";
   return { version: 1, kind: "api-finding-replay", outcome, findingId, replay, check };
 }
 function replayExitCode(result2) {
@@ -234278,7 +234307,7 @@ async function ensureParentDirectories(file) {
 }
 
 // build/src/openapi.js
-import { types as types3 } from "node:util";
+import { types as types4 } from "node:util";
 var OPENAPI_MAX_DEPTH = JSON_MAX_DEPTH;
 var OPENAPI_MAX_REFERENCES = 256;
 var OPENAPI_MAX_PATHS = 1e3;
@@ -234311,7 +234340,7 @@ function limit() {
   throw new OpenApiPolicyError("openapi_limit", "OpenAPI compilation budget exceeded.");
 }
 function record3(value) {
-  return value !== null && typeof value === "object" && !types3.isProxy(value) && !Array.isArray(value);
+  return value !== null && typeof value === "object" && !types4.isProxy(value) && !Array.isArray(value);
 }
 function own2(value, key2) {
   return Object.prototype.hasOwnProperty.call(value, key2);
@@ -236051,6 +236080,7 @@ function bounded2(value, fallback, cap) {
 async function runNuclei(options) {
   if (!options || options.consent !== true)
     return errorCheck5("consent_required", "Active Nuclei testing requires explicit consent; no requests were made.");
+  const targetUrl = options.url;
   let maxRequests, rateLimit, timeoutMs;
   try {
     maxRequests = bounded2(options.maxRequests, NUCLEI_DEFAULT_MAX_REQUESTS, NUCLEI_MAX_REQUESTS);
@@ -236062,6 +236092,13 @@ async function runNuclei(options) {
   const scopes = [...new Set(options.scopes)];
   if (scopes.length === 0 || scopes.some((scope) => !(scope in NUCLEI_SCOPES)))
     return errorCheck5("invalid_scope", "Nuclei template scope is invalid; no requests were made.");
+  if (typeof targetUrl !== "string")
+    return errorCheck5("dast_origin_required", "Nuclei requires one URL origin; no requests were made.");
+  try {
+    if (normalizeUrl(targetUrl).protocol === "https:")
+      return errorCheck5("https_wire_budget_unsupported", "HTTPS Nuclei cannot enforce the HTTP request budget through an opaque CONNECT tunnel; no target requests were made.");
+  } catch {
+  }
   const executable2 = await findExecutable(options.executable ?? "nuclei");
   if (!executable2)
     return errorCheck5("engine_missing", `Nuclei ${NUCLEI_VERSION} was not found; install it with scripts/install-tools.mjs --tools nuclei or pass --nuclei. No requests were made.`);
@@ -236096,7 +236133,7 @@ ${version.stderr}`.includes(`Nuclei Engine Version: v${NUCLEI_VERSION}`)) {
     const provenance = await templateProvenance(templatesRoot);
     let resolved;
     try {
-      resolved = await resolveDastOrigin(options.url, options.allowPrivate === true, control.signal);
+      resolved = await resolveDastOrigin(targetUrl, options.allowPrivate === true, control.signal);
     } catch (error) {
       return errorCheck5(error instanceof UrlNetworkError ? error.code : "dast_origin_required", "The target origin was rejected by the URL-network policy (origin only; metadata/private rules apply); no requests were made.");
     }
@@ -236194,8 +236231,6 @@ ${version.stderr}`.includes(`Nuclei Engine Version: v${NUCLEI_VERSION}`)) {
       `Target ${safeUrl(resolved.origin)}; ${counters.forwarded} request(s) forwarded, ${counters.blockedBudget} refused by the request budget, ${counters.blockedOrigin} refused for leaving the origin; ${selection.selected.length} template(s) selected from ${relativeScopes}.`,
       `Templates ${provenance.templatesVersion} (templates-checksum.txt sha256 ${provenance.templatesChecksumSha256.slice(0, 16)}\u2026); Nuclei ${NUCLEI_VERSION}.`
     ];
-    if (resolved.origin.protocol === "https:")
-      notes.push(`HTTPS: the gate sees CONNECT tunnels only. It caps tunnels at the request budget (${counters.tunnels} opened), but requests reused inside a tunnel are not counted on the wire; time and byte budgets still apply, and Nuclei does not verify TLS certificates.`);
     if (reason !== "complete")
       notes.push(`Incomplete: ${reason}. Nuclei exit status alone does not establish completion; treat absent findings as unverified.`);
     return [{ id: NUCLEI_CHECK_ID, status: reason === "complete" ? "completed" : "partial", findings: parsed.findings, notes, metrics }];

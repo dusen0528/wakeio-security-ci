@@ -5,6 +5,10 @@ Every started `scan` writes `agent-report.json` alongside the existing
 the sanitised public report. It improves consumption and triage; it does not
 change detector accuracy or establish an exploit or verified fix.
 
+This document also describes additive fields in the 0.5.0 GitHub source.
+The latest published npm package remains 0.4.0; use a reviewed source build
+for the 0.5.0 examples and fields.
+
 ```sh
 wakeio-security-ci scan --source . --tools none --fail-on high --out reports
 ```
@@ -77,6 +81,11 @@ See [the API execution contract](preview-0.4-api.md#계획-대비-실행-ledger)
 The redacted plan hash excludes targets, assertions and credentials; it is not
 an exact-policy commitment. These are declared execution facts, not independent
 HTTP evidence, exploit confirmation, an authenticated receipt or a verified fix.
+An optional authorization-exposure finding may reference its own ledger's
+actor/case indexes and control steps. The producer retains a finding but demotes a
+control claim to `inconclusive` when those references do not cohere. Only
+completed identity, owner and probe controls can support `controls_passed`;
+the agent report's exploit/fix verification remains `not_run`.
 
 ## Scan gate and delivery
 

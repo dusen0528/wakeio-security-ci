@@ -29,9 +29,9 @@ export interface EgressCounters {
   /** Requests forwarded to the approved origin (plain HTTP only). */
   forwarded: number;
   /**
-   * HTTPS CONNECT tunnels opened to the approved origin. Capped at
-   * `maxRequests` because every tunnel carries at least one request; requests
-   * reused inside one tunnel are not visible to the gate.
+   * HTTPS CONNECT tunnels opened to the approved origin. This separate tunnel
+   * cap does not count HTTP requests inside TLS; callers requiring a wire
+   * request cap must refuse HTTPS before starting an engine.
    */
   tunnels: number;
   blockedOrigin: number;

@@ -1,6 +1,27 @@
 # Changelog
 
-## Unreleased
+## 0.5.0 — GitHub source preview
+
+Source and the checked-in Action are versioned 0.5.0. The latest published npm
+package remains 0.4.0; use a reviewed Git commit or build this checkout for the
+features below. This entry does not claim an npm 0.5.0 publication.
+
+- Preserve incomplete API replay as `inconclusive` (exit 2), even when a
+  candidate exposure was observed before a later control or request failed.
+  A completed replay is required for `reproduced` or `not_reproduced`.
+- Require API finding evidence to match the same run's ledger and coherent
+  actor/case indexes within its control steps;
+  inconsistent or unsupported control claims remain inconclusive. Freeze SDK
+  inputs from own data properties before execution, rejecting accessors that
+  could change permissions during a run.
+- Refuse HTTPS Nuclei before target execution while opaque CONNECT tunnels
+  prevent enforcement of the HTTP request budget. HTTP Nuclei remains available
+  through the owned loopback egress gate with wire request counting. The CONNECT
+  gate also caps tunnel openings, but a tunnel count is not an HTTP request count.
+- Run the DAST Action trigger, consent and origin preflight before Python and
+  Schemathesis engine preparation. Node.js setup still bootstraps the preflight.
+  Retain SideFit regression fixtures already satisfied by this source branch;
+  they do not establish a scan result for a live SideFit service.
 
 - Attach in-run control evidence to API authorization exposure findings:
   `controlVerification` (`controls_passed` only when identity before/after,
@@ -17,10 +38,9 @@
   The owned DAST corpus now also gates passed controls on every completed exposure.
 - Cap HTTPS CONNECT tunnels through the active DAST egress gate at the request
   budget. A tunnel past the budget is refused with 503 and stops the run as
-  `request_limit`, as plain-HTTP requests already did. Every tunnel carries at
-  least one request, so runs within budget are unaffected. Requests reused
-  inside one tunnel are still not visible to the gate; the Nuclei HTTPS note
-  now states that limit and the tunnel count.
+  `request_limit`, as plain-HTTP requests already did. A CONNECT tunnel can
+  carry zero, one, or multiple HTTP requests; its count is not a substitute
+  for the request budget. HTTPS Nuclei is therefore refused before execution.
 - Provision the checksum-pinned Nuclei engine in `release-check` before the
   required-engine suite, matching `self-test`.
 - Evaluate the DAST Action consent, trigger and origin policy in a preflight
@@ -76,7 +96,8 @@
   arbitrary payload generation, real staging connection or mutation is added.
 - Gate a repeated positive/safe/error loopback corpus and extracted npm consumer;
   report scoped configuration coverage, request counts and elapsed time.
-- Ruleset `2026-10-06.2`; the npm version remains 0.4.0 pending a separate release.
+- Ruleset `2026-10-06.2`; this source revision remains separate from the
+  published npm 0.4.0 package.
 - Replace the URL secret-assignment prefix search with consuming token matching,
   retaining literal detection/redaction while avoiding quadratic failed matches
   on long hyphenated input or whitespace. Add bounded subprocess regression

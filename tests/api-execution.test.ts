@@ -185,7 +185,7 @@ test('legacy reports without a ledger remain readable and are not retroactively 
 
 test('counted HTTP retries share the cap and never become extra logical plan steps', async () => {
   const original = dns.lookup;
-  dns.lookup = (async () => [{ address: '127.0.0.2', family: 4 }, { address: '127.0.0.1', family: 4 }]) as unknown as typeof dns.lookup;
+  dns.lookup = (async () => [{ address: '::1', family: 6 }, { address: '127.0.0.1', family: 4 }]) as unknown as typeof dns.lookup;
   syncBuiltinESMExports();
   try {
     const retried = await fixture('retries'); const first = ledger(retried.check);

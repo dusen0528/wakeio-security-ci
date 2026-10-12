@@ -56,6 +56,19 @@ test("a broken owner control during replay is inconclusive, never a fix", async 
   } finally { await fixture.close(); }
 });
 
+test("a leaking probe with a failed owner identity after control stays inconclusive", async () => {
+  const fixture = await startProofFixture();
+  try {
+    const { policy, report, findingId } = await scanned(fixture);
+    fixture.behaviour.ownerIdentityFailsAfter = 3;
+    const result = await replayApiFinding({ report, policy, findingId, ...replayOptions });
+    assert.equal(result.check?.status, "partial");
+    assert.equal(result.check?.findings.length, 1);
+    assert.equal(result.outcome, "inconclusive");
+    assert.equal(replayExitCode(result), 2);
+  } finally { await fixture.close(); }
+});
+
 test("replay refuses a changed policy, unknown finding or invalid report before any request", async () => {
   const fixture = await startProofFixture();
   try {
@@ -69,6 +82,26 @@ test("replay refuses a changed policy, unknown finding or invalid report before 
     const notReplayable = await replayApiFinding({ report: stripped, policy, findingId, ...replayOptions });
     assert.equal(notReplayable.reason, "not_replayable");
     assert.equal(replayExitCode(notReplayable), 2);
+    assert.equal(fixture.requests.length, 0);
+  } finally { await fixture.close(); }
+});
+
+test("replay rejects inherited and accessor options before reading them or making requests", async () => {
+  const fixture = await startProofFixture();
+  try {
+    const { policy, report, findingId } = await scanned(fixture);
+    const inherited = Object.assign(Object.create({ allowPrivate: true }), { report, policy, findingId, env: PROOF_ENV });
+    assert.equal((await replayApiFinding(inherited)).reason, "invalid_options");
+    let touched = false;
+    const accessor = { report, policy, findingId, env: PROOF_ENV,
+      get allowPrivate() { touched = true; return true; } };
+    assert.equal((await replayApiFinding(accessor)).reason, "invalid_options");
+    assert.equal(touched, false);
+    let policyReads = 0;
+    const changing = { report, findingId, env: PROOF_ENV, allowPrivate: true,
+      get policy() { policyReads += 1; return policy; } };
+    assert.equal((await replayApiFinding(changing)).reason, "invalid_options");
+    assert.equal(policyReads, 0);
     assert.equal(fixture.requests.length, 0);
   } finally { await fixture.close(); }
 });

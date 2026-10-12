@@ -97,6 +97,23 @@ test("the sanitiser demotes or drops claims its own ledger does not support", as
   assert.equal(forgedStatus.evidence, undefined);
   assert.equal(forgedStatus.controlVerification?.state, "inconclusive");
 
+  const foreignIdentity = check.apiExecution!.plan!.steps.find((step) => step.phase === "identity-after" && step.actorIndex === 0)!;
+  const foreignResult = check.apiExecution!.steps.find((step) => step.ordinal === foreignIdentity.ordinal)!;
+  const swappedActor = sanitised({ evidence: { ...finding.evidence!, steps: finding.evidence!.steps.map((step) =>
+    step.phase === "identity-after" ? { ...step, ordinal: foreignIdentity.ordinal, outcome: foreignResult.outcome, httpStatus: foreignResult.httpStatus } : step) } });
+  assert.equal(swappedActor.evidence, undefined);
+  assert.equal(swappedActor.controlVerification?.state, "inconclusive");
+
+  const falseAnonymous = sanitised({
+    replay: { ...finding.replay!, actor: "anonymous" },
+    evidence: { ...finding.evidence!, steps: finding.evidence!.steps.filter((step) => !step.phase.startsWith("identity-")).map((step) =>
+      step.phase === "deny" ? { ...step, actor: "anonymous" } : step) },
+    controlVerification: { ...finding.controlVerification!, controls: { ...finding.controlVerification!.controls,
+      identityBefore: "not_applicable", identityAfter: "not_applicable" } },
+  });
+  assert.equal(falseAnonymous.evidence, undefined);
+  assert.equal(falseAnonymous.controlVerification?.state, "inconclusive");
+
   const foreignPlan = sanitised({ evidence: { ...finding.evidence!, planSha256: "0".repeat(64) } });
   assert.equal(foreignPlan.evidence, undefined);
 

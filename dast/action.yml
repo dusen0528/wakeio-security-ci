@@ -40,7 +40,7 @@ inputs:
     required: false
     default: ''
   nuclei-max-requests:
-    description: Egress gate request budget for Nuclei, 1..20000
+    description: HTTP wire request budget for Nuclei, 1..20000; HTTPS Nuclei is refused before engine setup
     required: false
     default: ''
   nuclei-rate-limit:
@@ -140,7 +140,7 @@ runs:
       with:
         node-version: '22'
     # Same consent, trigger and origin policy as the main step, evaluated before
-    # any engine setup so a refused run downloads nothing.
+    # any engine setup so a refused run starts no engine download or target request.
     - name: Check active DAST policy before engine setup
       id: dast-preflight
       shell: bash

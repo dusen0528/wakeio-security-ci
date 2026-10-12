@@ -185,6 +185,9 @@ function bounded(value: number | undefined, fallback: number, cap: number): numb
 
 export async function runNuclei(options: NucleiOptions): Promise<CheckResult[]> {
   if (!options || options.consent !== true) return errorCheck("consent_required", "Active Nuclei testing requires explicit consent; no requests were made.");
+  // Freeze the target before any await: the protocol checked below must be the
+  // same protocol later resolved and passed to the egress gate.
+  const targetUrl = options.url;
   let maxRequests: number, rateLimit: number, timeoutMs: number;
   try {
     maxRequests = bounded(options.maxRequests, NUCLEI_DEFAULT_MAX_REQUESTS, NUCLEI_MAX_REQUESTS);
@@ -195,6 +198,12 @@ export async function runNuclei(options: NucleiOptions): Promise<CheckResult[]> 
   }
   const scopes = [...new Set(options.scopes)];
   if (scopes.length === 0 || scopes.some((scope) => !(scope in NUCLEI_SCOPES))) return errorCheck("invalid_scope", "Nuclei template scope is invalid; no requests were made.");
+  if (typeof targetUrl !== "string") return errorCheck("dast_origin_required", "Nuclei requires one URL origin; no requests were made.");
+  // CONNECT exposes tunnel count, not the HTTP requests reused inside TLS.
+  // Refuse before engine startup while maxRequests is a mandatory wire cap.
+  try {
+    if (normalizeUrl(targetUrl).protocol === "https:") return errorCheck("https_wire_budget_unsupported", "HTTPS Nuclei cannot enforce the HTTP request budget through an opaque CONNECT tunnel; no target requests were made.");
+  } catch { /* The normal origin validation reports malformed URLs below. */ }
   const executable = await findExecutable(options.executable ?? "nuclei");
   if (!executable) return errorCheck("engine_missing", `Nuclei ${NUCLEI_VERSION} was not found; install it with scripts/install-tools.mjs --tools nuclei or pass --nuclei. No requests were made.`);
   let templatesRoot: string;
@@ -222,7 +231,7 @@ export async function runNuclei(options: NucleiOptions): Promise<CheckResult[]> 
     const provenance = await templateProvenance(templatesRoot);
     let resolved;
     try {
-      resolved = await resolveDastOrigin(options.url, options.allowPrivate === true, control.signal);
+      resolved = await resolveDastOrigin(targetUrl, options.allowPrivate === true, control.signal);
     } catch (error) {
       return errorCheck(error instanceof UrlNetworkError ? error.code : "dast_origin_required", "The target origin was rejected by the URL-network policy (origin only; metadata/private rules apply); no requests were made.");
     }
@@ -266,7 +275,6 @@ export async function runNuclei(options: NucleiOptions): Promise<CheckResult[]> 
     const notes = [SCOPE_NOTE,
       `Target ${safeUrl(resolved.origin)}; ${counters.forwarded} request(s) forwarded, ${counters.blockedBudget} refused by the request budget, ${counters.blockedOrigin} refused for leaving the origin; ${selection.selected.length} template(s) selected from ${relativeScopes}.`,
       `Templates ${provenance.templatesVersion} (templates-checksum.txt sha256 ${provenance.templatesChecksumSha256.slice(0, 16)}…); Nuclei ${NUCLEI_VERSION}.`];
-    if (resolved.origin.protocol === "https:") notes.push(`HTTPS: the gate sees CONNECT tunnels only. It caps tunnels at the request budget (${counters.tunnels} opened), but requests reused inside a tunnel are not counted on the wire; time and byte budgets still apply, and Nuclei does not verify TLS certificates.`);
     if (reason !== "complete") notes.push(`Incomplete: ${reason}. Nuclei exit status alone does not establish completion; treat absent findings as unverified.`);
     return [{ id: NUCLEI_CHECK_ID, status: reason === "complete" ? "completed" : "partial", findings: parsed.findings, notes, metrics }];
   } finally {

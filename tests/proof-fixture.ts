@@ -11,15 +11,16 @@ export const PROOF_CANARY = "proof-synthetic-canary-value";
 export interface ProofFixture {
   baseUrl: string;
   /** Mutable at runtime: the same policy can observe a leak, a fix or a broken owner control. */
-  behaviour: { leakOther: boolean; leakAnonymous: boolean; ownerFailsAfter: number | null };
+  behaviour: { leakOther: boolean; leakAnonymous: boolean; ownerFailsAfter: number | null; ownerIdentityFailsAfter: number | null };
   requests: Array<{ path: string; actor: string }>;
   close(): Promise<void>;
 }
 
 export async function startProofFixture(): Promise<ProofFixture> {
-  const behaviour: ProofFixture["behaviour"] = { leakOther: true, leakAnonymous: false, ownerFailsAfter: null };
+  const behaviour: ProofFixture["behaviour"] = { leakOther: true, leakAnonymous: false, ownerFailsAfter: null, ownerIdentityFailsAfter: null };
   const requests: ProofFixture["requests"] = [];
   let ownerDocumentReads = 0;
+  let ownerIdentityReads = 0;
   const server: Server = createServer((request, response) => {
     const actor = request.headers.authorization === PROOF_ENV.PROOF_OWNER_AUTH ? "owner"
       : request.headers.authorization === PROOF_ENV.PROOF_OTHER_AUTH ? "other" : "anonymous";
@@ -28,6 +29,10 @@ export async function startProofFixture(): Promise<ProofFixture> {
       response.writeHead(status, { "content-type": "application/json" }).end(JSON.stringify(value));
     };
     if (request.url === "/whoami") {
+      if (actor === "owner") {
+        ownerIdentityReads += 1;
+        if (behaviour.ownerIdentityFailsAfter !== null && ownerIdentityReads > behaviour.ownerIdentityFailsAfter) return send(401, { error: "denied" });
+      }
       return actor === "anonymous" ? send(401, { error: "denied" }) : send(200, { userId: `${actor}-principal`, orgId: "proof-org" });
     }
     if (request.url !== "/documents/doc-1") return send(404, { error: "missing" });

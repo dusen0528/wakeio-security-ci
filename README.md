@@ -6,9 +6,9 @@ Wakeio checks the code, HTTP responses, and optional read-only API policy that y
 
 [한국어](README.ko.md) · [日本語](README.ja.md) · [简体中文](README.zh-CN.md) · [implemented checklist](docs/checklist.md) · [0.4 guide](docs/preview-0.4.md) · [verification record](docs/verification-0.4.md)
 
-**Release:** `0.4.0` · Apache-2.0 · Node.js 22+
+**GitHub source:** `0.5.0` · **published npm:** `0.4.0` · Apache-2.0 · Node.js 22+
 
-The default scan is a free local tool. It does not require a Wakeio account, subscription, hosted Wakeio service, LLM, or source upload, and it does not send usage telemetry. Use the versioned npm CLI below, a Git checkout, or the GitHub Action. See the [0.4.0 release scope](docs/release-0.4.0.md).
+The default scan is a free local tool. It does not require a Wakeio account, subscription, hosted Wakeio service, LLM, or source upload, and it does not send usage telemetry. The npm commands below run the published 0.4.0 package. The newer replay, origin allowlist and active DAST examples use this 0.5.0 source checkout after `npm run build`, or a reviewed Git commit of its Action; npm 0.5.0 is not published. See the [0.5.0 source changes](CHANGELOG.md#050--github-source-preview) and [0.4.0 release scope](docs/release-0.4.0.md).
 
 An experimental, separate [`repair` CLI](docs/repair-preview.md) can verify a reviewed local proposal or optionally request one from Codex/Claude. Agent calls require explicit source-upload consent and API authentication; they may incur provider costs. Repair uses a prepared local Docker image and frozen verifier, writes private patch/verification artifacts only, and never applies changes or commits to the original checkout. Its initial SQL fixture support is not general-purpose application remediation.
 
@@ -213,7 +213,7 @@ node build/src/cli.js replay \
   --out /tmp/wakeio-replay
 ```
 
-`replay` refuses a policy whose digest differs, then re-executes only that case, its owner and the probe actor. The outcome is `reproduced` (exit 1), `not_reproduced` (exit 0, a completed run with an accepted denial), `inconclusive` or `refused` (exit 2); it writes `replay.json` plus the reduced run's reports. `not_reproduced` is scoped evidence, not proof of a fix.
+`replay` refuses a policy whose digest differs, then re-executes only that case, its owner and the probe actor. Only a completed run can return `reproduced` (exit 1) or `not_reproduced` (exit 0, with an accepted denial). An incomplete check, including a failed control or interrupted request, remains `inconclusive` (exit 2), even if an earlier response exposed the canary; policy refusal also exits 2. It writes `replay.json` plus the reduced run's reports. `not_reproduced` is scoped evidence, not proof of a fix.
 
 For a before/after review, keep the logical project identity and scan options stable:
 
@@ -251,14 +251,14 @@ node build/src/cli.js scan --openapi openapi.json --api-base https://staging.exa
 # Nuclei 3.11.1: prepare once, then scan the --url origin with prepared templates
 node scripts/install-tools.mjs --tools nuclei          # verifies the pinned upstream SHA-256
 nuclei -ut -ud /path/to/nuclei-templates                # templates are never downloaded during a scan
-node build/src/cli.js scan --url https://staging.example.test/ --engine nuclei \
+node build/src/cli.js scan --url http://127.0.0.1:3000/ --engine nuclei \
   --nuclei /path/to/nuclei --nuclei-templates /path/to/nuclei-templates \
-  --nuclei-scope misconfiguration,exposures --active-consent --nuclei-timeout-ms 300000
+  --nuclei-scope misconfiguration,exposures --active-consent --allow-private --nuclei-timeout-ms 300000
 ```
 
-Both engines connect only to a per-run loopback egress gate. The gate validates the origin with the same URL-network policy as URL scans, pins the validated address, forwards only that origin and only GET/HEAD, forces identity encoding, and enforces request and per-response/total byte budgets on the wire. Requests that leave the origin (for example templates probing another port) are refused and counted, not sent. Nuclei runs only signed HTTP templates with `-ni -duc -dr`; raw/unsafe, non-GET, self-contained and other-protocol templates are excluded and counted. Nuclei can exit 0 after partial progress, so completion also requires 100% engine progress, zero engine errors, no budget stop and no upstream failure; anything else is `partial` (exit 2). A missing engine, Python runtime or template directory is an `error` (exit 2), never a clean pass.
+Both engines connect only to a per-run loopback egress gate. The gate validates the origin with the same URL-network policy as URL scans and pins the validated address. For plain HTTP, it forwards only that origin and GET/HEAD, forces identity encoding, and enforces request and per-response/total byte budgets on the wire. Requests that leave the origin (for example templates probing another port) are refused and counted, not sent. HTTPS Nuclei is refused before target execution (error, exit 2): a CONNECT tunnel hides the HTTP requests inside it, so counting tunnels cannot enforce the request budget. Nuclei runs only signed HTTP templates with `-ni -duc -dr`; raw/unsafe, non-GET, self-contained and other-protocol templates are excluded and counted. Nuclei can exit 0 after partial progress, so completion also requires 100% engine progress, zero engine errors, no budget stop and no upstream failure; anything else is `partial` (exit 2). A missing engine, Python runtime or template directory is an `error` (exit 2), never a clean pass.
 
-In GitHub Actions, use the separate `dast` Action so passive workflows can never start active testing. It requires `active-consent: 'true'` and an `allowed-origins` list that contains every target origin, and it refuses `pull_request_target`, fork pull requests and fork `workflow_run` events before any download or request. Nuclei is installed from the pinned archive and nuclei-templates must match an expected `templates-checksum.txt` digest. [`examples/github-dast.yml`](examples/github-dast.yml) starts the application inside the job, scans it on push, pull request and a daily schedule, uploads SARIF and keeps the reports:
+In GitHub Actions, use the separate `dast` Action so passive workflows can never start active testing. It requires `active-consent: 'true'` and an `allowed-origins` list that contains every target origin. After Node.js setup for policy evaluation, it refuses `pull_request_target`, fork pull requests and fork `workflow_run` events before engine download, Python setup or target request. Nuclei is installed from the pinned archive and nuclei-templates must match an expected `templates-checksum.txt` digest. [`examples/github-dast.yml`](examples/github-dast.yml) starts the application inside the job, scans it on push, pull request and a daily schedule, uploads SARIF and keeps the reports:
 
 ```yaml
 - uses: dusen0528/wakeio-security-ci/dast@REVIEWED_COMMIT_SHA

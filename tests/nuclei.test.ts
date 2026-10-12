@@ -5,7 +5,7 @@ import { createServer, type Server } from "node:http";
 import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { classifyTemplate, parseNucleiOutput, runNuclei, selectNucleiTemplates, type NucleiOptions } from "../src/nuclei.js";
+import { classifyTemplate, parseNucleiOutput, runNuclei, selectNucleiTemplates, type NucleiOptions, type NucleiScope } from "../src/nuclei.js";
 
 const root = process.cwd();
 const SIGNED = "\n# digest: 4a0a00473045022100aaf216ebf8c81edf0fccca9a99f59a60686b67c7ccb1a1cff8ac40197d65981e33:922c64590222798bb761d5b6d8e72950\n";
@@ -115,12 +115,47 @@ test("nuclei adapter never reports completion from exit 0 alone and reports engi
       [runNuclei({ ...base, executable: await fakeEngine(directory, {}), allowPrivate: false }), "blocked_address"],
       [runNuclei({ ...base, executable: await fakeEngine(directory, {}), url: "http://169.254.169.254/" }), "blocked_address"],
       [runNuclei({ ...base, executable: await fakeEngine(directory, {}), rateLimit: 151 }), "invalid_budget"],
+      [runNuclei({ ...base, url: "https://127.0.0.1/", executable: join(directory, "missing-nuclei"), templatesDir: join(directory, "nope") }), "https_wire_budget_unsupported"],
     ];
     for (const [promise, code] of cases) {
       const [check] = await promise;
       assert.equal(check!.status, "error", code);
       assert.equal(check!.metrics?.errorCode, code);
     }
+  } finally {
+    server.close();
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test("HTTPS Nuclei refuses before engine startup or target traffic", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "wakeio-nuclei-https-refusal-"));
+  try {
+    const marker = join(directory, "engine-started");
+    const executable = join(directory, "fake-nuclei");
+    await writeFile(executable, `#!/usr/bin/env node\nrequire('node:fs').writeFileSync(${JSON.stringify(marker)}, 'started');\n`);
+    await chmod(executable, 0o755);
+    const [check] = await runNuclei({ url: "https://127.0.0.1/", executable, templatesDir: join(directory, "missing-templates"), scopes: ["misconfiguration"], consent: true, allowPrivate: true });
+    assert.equal(check?.status, "error");
+    assert.equal(check?.metrics?.errorCode, "https_wire_budget_unsupported");
+    assert.equal(check?.metrics?.requestCount, 0);
+    assert.equal(await readFile(marker).catch(() => undefined), undefined);
+  } finally { await rm(directory, { recursive: true, force: true }); }
+});
+
+test("Nuclei resolves the same captured URL it checked before engine setup", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "wakeio-nuclei-url-snapshot-"));
+  const { server, origin } = await localServer();
+  try {
+    const templates = await templatesDir(directory);
+    const executable = await fakeEngine(directory, {});
+    let reads = 0;
+    const options = { executable, templatesDir: templates, scopes: ["misconfiguration"] as NucleiScope[],
+      consent: true, allowPrivate: true,
+      get url() { return ++reads === 1 ? origin : "https://127.0.0.1/"; } };
+    const [check] = await runNuclei(options);
+    assert.equal(reads, 1);
+    assert.equal(check?.status, "completed", check?.notes.join(" | "));
   } finally {
     server.close();
     await rm(directory, { recursive: true, force: true });

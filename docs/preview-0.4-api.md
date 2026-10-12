@@ -2,6 +2,9 @@
 
 이 문서는 API 권한 preview와 2026-10-06에 추가한 zero-network preflight 사용법이다. `plan`은 로컬 설정만 확인한다. 별도의 API 실행은 사용자가 지정한 합성 fixture에 제한된 GET 요청만 보내며, 소스 업로드·LLM 호출·결제·외부 target 탐색을 하지 않는다.
 
+이 문서의 최신 ledger·replay 동작은 GitHub 소스 0.5.0 기준이다. npm에 공개된
+최신 버전은 0.4.0이므로 아래 `node build/src/cli.js` 예시는 이 소스를 빌드해 실행한다.
+
 ## Zero-network staging preflight
 
 현재 checkout을 빌드한 뒤 `plan`으로 실행 준비 상태를 확인한다. 아래 OpenAPI 예제는 문서·GET 허용 목록·path binding·actor·canary를 모두 담은 **합성 설정**이며 `https://staging.example.invalid`는 실제 대상이 아니다. 이 명령은 네트워크에 연결하지 않는다.
@@ -126,6 +129,12 @@ authenticated actor의 리소스 요청이 HTTP 401이면 앞뒤 identity contro
 
 API/OpenAPI SDK 옵션은 own data property만 사용한다. 상속된 옵션·getter는 실행 권한을 제공하지 않으며, own accessor는 실행 전에 거부한다. `allowPrivate`, `signal`, 시간 예산, 정책과 credential은 실행 시작 시 고정한다. 전달한 env/옵션을 중간에 바꿔 token refresh나 권한 변경을 수행할 수 없다. 받은 signal 자체의 정상 abort는 계속 적용된다. `plan`은 로컬 설정만 확인하므로 401을 포함한 정책이 `ready`여도 실제 401 실행 결과는 `partial`일 수 있다.
 
+`api.authorization-data-exposure`의 선택적 `controlVerification`은 같은 실행의
+identity 전후, owner 전후, 완료된 probe가 모두 통과했을 때만 `controls_passed`다.
+`evidence`의 ledger 단계는 같은 실행 단계와 맞고 control 사이의 actor·case
+index가 서로 일관되어야 한다. 참조가 빠지거나 서로 다른 actor·case를 섞으면 노출 finding을 남기되 control
+주장은 `inconclusive`로 낮춘다. 이 필드는 독립적인 exploit 확인이 아니다.
+
 ## 계획 대비 실행 ledger
 
 정상적으로 준비된 API/OpenAPI 실행은 `api.authorization.apiExecution`에 별도
@@ -175,6 +184,16 @@ report는 그대로 읽으며 사후에 실행 증거를 만들어 넣지 않는
 redacted plan hash가 다르면 `unverified`다. 양쪽 ledger가 없으면 기존 비교 동작을
 유지한다. 동일하고 complete인 ledger도 기존 scope/provenance 검사를 대체하지 않으며,
 `not_observed`를 수정 완료로 승격하지 않는다.
+
+## 노출 finding 재검사
+
+0.5.0 소스의 `replay` CLI와 `replayApiFinding` SDK는 정책 digest가 같은 경우에만
+한 finding의 case, owner, probe actor를 다시 실행한다. 완료된 검사에서 다시
+노출되면 `reproduced`/exit 1, 완료된 검사에서 정상 거부가 확인되면
+`not_reproduced`/exit 0이다. 앞에서 노출을 관측했더라도 뒤의 control 실패나
+요청 중단으로 전체 검사가 미완료면 `inconclusive`/exit 2를 유지한다. 정책
+불일치는 `refused`/exit 2다. `replay.json`과 축소 실행 보고서는 이 한정된
+재실행의 근거이며 `not_reproduced`도 수정 완료 증명은 아니다.
 
 ## 정책 작성
 

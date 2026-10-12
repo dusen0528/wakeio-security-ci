@@ -279,6 +279,7 @@ async function dastPolicy(env) {
   if (engines.includes('nuclei')) {
     const target = originOf(value(env.WAKEIO_URL), true);
     if (!target) return refuse('engines: nuclei requires an http(s) url');
+    if (target.startsWith('https://')) return refuse('HTTPS Nuclei cannot enforce the HTTP request budget through an opaque CONNECT tunnel');
     if (!value(env.WAKEIO_NUCLEI_TEMPLATES) || !/^[a-f0-9]{64}$/i.test(value(env.WAKEIO_NUCLEI_TEMPLATES_SHA256))) return refuse('engines: nuclei requires nuclei-templates and nuclei-templates-sha256');
     if (!allowed.has(target)) return refuse('the url origin is not in allowed-origins');
     plan.nuclei = `${target}/`;

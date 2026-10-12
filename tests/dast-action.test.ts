@@ -247,6 +247,12 @@ test("DAST Action preflight skips engine setup for every refusal and records not
       assert.deepEqual(outputs(await readFile(paths.output, "utf8")), { "prepare-schemathesis": expected }, name);
       assert.equal(await readFile(paths.summary, "utf8"), "", name);
     }
+    const httpsNuclei = await launch(join(action, "scripts/action-run.mjs"), { ...base,
+      WAKEIO_OPENAPI: "", WAKEIO_ENGINES: "nuclei", WAKEIO_URL: `${origin}/`,
+      WAKEIO_NUCLEI_TEMPLATES: "t", WAKEIO_NUCLEI_TEMPLATES_SHA256: "a".repeat(64),
+    }, paths.workspace);
+    assert.match(httpsNuclei.stderr, /preflight refused/);
+    assert.equal(outputs(await readFile(paths.output, "utf8"))["prepare-schemathesis"], "false");
     assert.deepEqual(await readdir(paths.workspace), ["openapi.json"], "preflight writes no report or status artifact");
 
     const workflow = await readFile(resolve(root, "dast/action.yml"), "utf8");

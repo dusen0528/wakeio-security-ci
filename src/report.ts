@@ -13,6 +13,7 @@ import type {
   AgentReport,
   AnalysisGapReasonSummary,
   ApiExecutionLedger,
+  ApiRequestPlanStep,
   CheckResult,
   FailOn,
   Finding,
@@ -33,7 +34,7 @@ import type {
 export const REPORT_SCHEMA_VERSION = '1.0.0' as const;
 
 /** The version advertised to SARIF consumers when the package is built. */
-export const REPORT_TOOL_VERSION = '0.4.0';
+export const REPORT_TOOL_VERSION = '0.5.0';
 export const RULESET_VERSION = '2026-10-06.3';
 
 const SEVERITIES: readonly Severity[] = [
@@ -837,6 +838,8 @@ function sanitiseFindingEvidence(input: unknown, ledger: ApiExecutionLedger): Fi
   const steps = input.steps;
   if (!Array.isArray(steps) || steps.length === 0 || steps.length > EVIDENCE_PHASES.length) return undefined;
   const result: FindingEvidenceStep[] = [];
+  const actorByIndex = new Map<number, string>();
+  const plannedByPhase = new Map<FindingEvidenceStep['phase'], ApiRequestPlanStep>();
   for (const step of steps) {
     if (!plainRecord(step)) return undefined;
     const { ordinal, phase, actor, outcome, httpStatus } = step;
@@ -846,8 +849,22 @@ function sanitiseFindingEvidence(input: unknown, ledger: ApiExecutionLedger): Fi
       || typeof actor !== 'string' || !POLICY_IDENTIFIER.test(actor)
       || (result.length > 0 && result[result.length - 1].ordinal >= recorded.ordinal)
       || result.some((entry) => entry.phase === planned.phase)) return undefined;
+    const knownActor = actorByIndex.get(planned.actorIndex);
+    if (knownActor !== undefined && knownActor !== actor) return undefined;
+    actorByIndex.set(planned.actorIndex, actor);
+    plannedByPhase.set(planned.phase, planned);
     result.push({ ordinal: recorded.ordinal, phase: planned.phase, actor, outcome: recorded.outcome, httpStatus: recorded.httpStatus });
   }
+  const probe = plannedByPhase.get('deny');
+  const ownerBefore = plannedByPhase.get('owner-before');
+  const ownerAfter = plannedByPhase.get('owner-after');
+  if (probe && (['identity-before', 'identity-after'] as const).some((phase) => {
+    const identity = plannedByPhase.get(phase);
+    const required = plan.steps.find((entry) => entry.phase === phase && entry.actorIndex === probe.actorIndex);
+    return identity?.ordinal !== required?.ordinal;
+  })) return undefined;
+  if (ownerBefore && ownerAfter && (ownerBefore.actorIndex !== ownerAfter.actorIndex || ownerBefore.caseIndex !== ownerAfter.caseIndex)) return undefined;
+  if (probe && (ownerBefore && probe.caseIndex !== ownerBefore.caseIndex || ownerAfter && probe.caseIndex !== ownerAfter.caseIndex)) return undefined;
   return { basis: 'api-execution-ledger', planSha256: input.planSha256, steps: result };
 }
 
