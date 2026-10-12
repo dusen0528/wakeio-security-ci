@@ -37,9 +37,9 @@
           "sourceUrl": "https://github.com/juice-shop/juice-shop/blob/e39a3bdb8c61295c31fa4e0a03485e68a8ca12a4/routes/login.ts#L32-L35"
         },
         {
-          "id": "juice-review-nosql", "ruleId": "unsupported:nosql-selector", "checkId": "source.builtin-ast", "path": "routes/updateProductReviews.ts",
-          "requiredFindings": [{ "line": 17, "column": 5 }], "support": "known_unsupported",
-          "basis": "The review route passes req.body.id into a Mongo selector with multi-document update; this symbolic family has no built-in AST rule.",
+          "id": "juice-review-nosql", "ruleId": "ast:nosql-input-sink", "checkId": "source.builtin-ast", "path": "routes/updateProductReviews.ts",
+          "requiredFindings": [{ "line": 17, "column": 5, "source": { "path": "routes/updateProductReviews.ts", "line": 18, "column": 14 } }], "support": "exploratory",
+          "basis": "The registered review route sends req.body.id into a declared MarsDB Collection selector, separate from update data and multi options. Its untruncated source-to-sink trace is observed, but receiver dispatch remains unresolved in the partial whole-checkout scan; this is an exploratory static candidate, not database execution or operator-control confirmation.",
           "sourceUrl": "https://github.com/juice-shop/juice-shop/blob/e39a3bdb8c61295c31fa4e0a03485e68a8ca12a4/routes/updateProductReviews.ts#L13-L24"
         },
         {

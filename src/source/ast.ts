@@ -1,6 +1,7 @@
 import { redactSecrets, safeRelativePath } from '../report-path.js';
 import type { AstAnalysisBudget } from '../contracts.js';
 import { mergeSqlRoles } from './sql-role.js';
+import { mergeNoSqlRoles } from './nosql-role.js';
 import * as ts from "typescript";
 import type { CheckResult, Finding, Severity, StaticFlow } from "../contracts.js";
 import { findSnapshotInputFlows, type InputFlowUse, type ParseFileEvidence } from "./dataflow.js";
@@ -222,7 +223,7 @@ function destinationQualified(use: InputFlowUse, node: ts.CallExpression): boole
     && (node.arguments.length === 1 || node.arguments.length === 2 && dataOnlyOptions(node.arguments[1]));
 }
 
-function observeFile(astFile: AstFile, flowUses: ReadonlyMap<ts.Node, InputFlowUse>): Observation[] {
+function observeFile(astFile: AstFile, flowUses: ReadonlyMap<ts.Node, InputFlowUse>, files: ReadonlyMap<ts.SourceFile, AstFile>): Observation[] {
   const observations: Observation[] = [];
   const { file, sourceFile } = astFile;
   const walk = (node: ts.Node): void => {
@@ -264,6 +265,18 @@ function observeFile(astFile: AstFile, flowUses: ReadonlyMap<ts.Node, InputFlowU
         pushObservation(observations, file, sourceFile, node, "ast:html-input-sink", "Request input reaches an HTML sink", "Untrusted request or URL input appears to flow into an HTML rendering sink.", "high", "Validate and contextually encode untrusted values before rendering them.", confidence);
       } else if (use?.kind === "call" && name === "React.createElement" && hasDangerousHtmlProp(node.arguments[1]) && flowConfidence(use, 1)) {
         pushObservation(observations, file, sourceFile, node, "ast:html-input-sink", "Request input reaches a React HTML sink", "Untrusted request or URL input appears in a dangerouslySetInnerHTML prop passed to React.createElement.", "high", "Avoid dangerouslySetInnerHTML or sanitize and contextually encode untrusted values before rendering them.", flowConfidence(use, 1));
+      } else if (use?.nosqlRole?.inputRelated && use.nosqlRole.outcome !== 'string_selector') {
+        const role = use.nosqlRole;
+        const api = role.api === 'mongodb2' ? 'legacy MongoDB 2.x Collection' : 'MarsDB Collection';
+        const origin = role.operatorNode ? files.get(role.operatorNode.getSourceFile()) ?? astFile : astFile;
+        pushObservation(observations, origin.file, origin.sourceFile, role.operatorNode ?? node, 'ast:nosql-input-sink',
+          role.outcome === 'where_input' ? 'Request input reaches a NoSQL JavaScript selector'
+            : role.outcome === 'selector_input' ? 'Request input reaches a NoSQL query selector' : 'Input-related NoSQL selector roles are unresolved',
+          role.outcome === 'where_input' ? `Input-related data reaches a $where JavaScript field of a declared ${api} query selector. Runtime execution and exploitability are unverified.`
+            : role.outcome === 'selector_input' ? `Input-related data reaches a selector of a declared ${api} API. An operator object may alter matching; update data and options are separate roles. Runtime identity and exploitability are unverified.`
+              : 'Observed input reaches a declared collection selector, but receiver dispatch, selector shape or mutation is unresolved. This is a candidate, not proof of database execution.',
+          'high', 'Validate selector values as primitive data, keep operator keys fixed and avoid constructing $where JavaScript from input.', role.certainty === 'tainted' ? 'medium' : 'low');
+        observations.at(-1)!.staticFlow = role.staticFlow;
       } else if (use?.sqlRole) {
         const role=use.sqlRole;
         if (role.inputRelated && role.outcome!=='values_only_fixed_text') pushObservation(observations,file,sourceFile,node,'ast:sql-input-sink',
@@ -311,8 +324,8 @@ function observeFile(astFile: AstFile, flowUses: ReadonlyMap<ts.Node, InputFlowU
     if (observation.ruleId === 'ast:dynamic-code' && dynamicCodeShape(observation.node)) return observation;
     const use = flowUses.get(observation.node);
     const index = ts.isCallExpression(observation.node) && callName(observation.node.expression) === "React.createElement" ? 1 : 0;
-    const staticFlow = observation.ruleId === 'ast:sql-input-sink' && use?.sqlRole ? use.sqlRole.staticFlow : observation.ruleId === 'ast:server-request' && use?.httpRole
-      ? use.httpRole.staticFlow : use?.argumentFlows?.find((argument) => argument.index === index)?.staticFlow;
+    const staticFlow = observation.staticFlow ?? (observation.ruleId === 'ast:nosql-input-sink' && use?.nosqlRole ? use.nosqlRole.staticFlow : observation.ruleId === 'ast:sql-input-sink' && use?.sqlRole ? use.sqlRole.staticFlow : observation.ruleId === 'ast:server-request' && use?.httpRole
+      ? use.httpRole.staticFlow : use?.argumentFlows?.find((argument) => argument.index === index)?.staticFlow);
     return staticFlow ? { ...observation, staticFlow } : observation;
   });
 }
@@ -401,7 +414,7 @@ export function runBuiltinAst(snapshot: SourceSnapshot, hasOtherSecurityCheck = 
   const parseErrorCount = astFiles.filter((file) => file.parseError).length;
   const sensitiveJsTsExcluded = snapshot.files.some(file => file.sensitive && file.category === 'code' && /\.(?:[cm]?[jt]sx?)$/i.test(file.path));
   const roleProofScopeComplete = snapshot.complete && parseErrorCount === 0 && !sensitiveJsTsExcluded;
-  const analysis = findSnapshotInputFlows(astFiles.filter((file) => !file.parseError).map((file) => file.sourceFile), limits, parseErrorCount, roleProofScopeComplete, parseFileEvidence(astFiles));
+  const analysis = findSnapshotInputFlows(astFiles.filter((file) => !file.parseError).map((file) => file.sourceFile), limits, parseErrorCount, roleProofScopeComplete, parseFileEvidence(astFiles), snapshot.files);
   const flowUses = new Map<ts.Node, InputFlowUse>();
   for (const use of analysis.uses) {
     const prior = flowUses.get(use.node);
@@ -418,17 +431,20 @@ export function runBuiltinAst(snapshot: SourceSnapshot, hasOtherSecurityCheck = 
         argumentsByIndex.set(argument.index, { ...preferred, fixedDestination: before.fixedDestination === true && argument.fixedDestination === true });
       }
     }
-    flowUses.set(use.node, { ...prior, htmlResponse: prior.htmlResponse ?? use.htmlResponse, htmlResponseMime: prior.htmlResponseMime === "unknown" || use.htmlResponseMime === "unknown" ? "unknown" : prior.htmlResponseMime ?? use.htmlResponseMime, argumentFlows: [...argumentsByIndex.values()].sort((a, b) => a.index - b.index), localForkCall: prior.localForkCall && use.localForkCall ? {complete:prior.localForkCall.complete && use.localForkCall.complete} : undefined, forkRole: prior.forkRole?.identity === 'unresolved' || use.forkRole?.identity === 'unresolved' ? {identity:'unresolved'} : prior.forkRole ?? use.forkRole, sqlRole:mergeSqlRoles(prior.sqlRole,use.sqlRole), httpRole: mergeHttpRoles(prior.httpRole, use.httpRole) });
+    flowUses.set(use.node, { ...prior, htmlResponse: prior.htmlResponse ?? use.htmlResponse, htmlResponseMime: prior.htmlResponseMime === "unknown" || use.htmlResponseMime === "unknown" ? "unknown" : prior.htmlResponseMime ?? use.htmlResponseMime, argumentFlows: [...argumentsByIndex.values()].sort((a, b) => a.index - b.index), localForkCall: prior.localForkCall && use.localForkCall ? {complete:prior.localForkCall.complete && use.localForkCall.complete} : undefined, forkRole: prior.forkRole?.identity === 'unresolved' || use.forkRole?.identity === 'unresolved' ? {identity:'unresolved'} : prior.forkRole ?? use.forkRole, sqlRole:mergeSqlRoles(prior.sqlRole,use.sqlRole), nosqlRole:mergeNoSqlRoles(prior.nosqlRole,use.nosqlRole), httpRole: mergeHttpRoles(prior.httpRole, use.httpRole) });
   }
   const outboundUses = [...flowUses.values()].filter((use) => ts.isCallExpression(use.node) && FETCH_SINK.test(callName(use.node.expression)) && flowConfidence(use, 0));
   const outboundFixedDestinationSuppressed = outboundUses.filter((use) => destinationQualified(use, use.node as ts.CallExpression)).length;
   const forkUses = [...flowUses.values()].filter(use => use.forkRole);
   const forkInputUses = forkUses.filter(use => flowConfidence(use, 0));
+  const nosqlUses = [...flowUses.values()].filter(use => use.nosqlRole);
+  const nosqlInputUses = nosqlUses.filter(use => use.nosqlRole!.inputRelated);
   const sqlUses=[...flowUses.values()].filter(use=>use.sqlRole);
   const sqlInputUses=sqlUses.filter(use=>use.sqlRole!.inputRelated);
   const roleUses = [...flowUses.values()].filter(use => use.httpRole);
   const candidateRoleUses = roleUses.filter(use => use.httpRole!.inputRelated);
-  const observations = astFiles.flatMap((file) => observeFile(file, flowUses));
+  const observationFiles = new Map(astFiles.map(file => [file.sourceFile, file]));
+  const observations = astFiles.flatMap((file) => observeFile(file, flowUses, observationFiles));
   const secretFindings = astFiles.filter((file) => !file.parseError).flatMap((file) => inlineSecretFindings(file.file));
   const findings: Finding[] = [];
   const seen = new Set<string>();
@@ -448,9 +464,12 @@ export function runBuiltinAst(snapshot: SourceSnapshot, hasOtherSecurityCheck = 
       `Built-in AST checks parsed ${astFiles.length} JavaScript or TypeScript file${astFiles.length === 1 ? "" : "s"}.`,
       "Declared flow model: request-shaped entry parameters, same-function assignments, statically bound local functions/immutable const arrows, named relative ESM imports and constant static CommonJS destructuring exports within the collected snapshot. Source/sink API shapes are candidates, not runtime framework or database identity proof.",
       "Express entry positions are additionally recognized for a bounded same-file lexical import/require, immutable app/Router and route-registration subset. Request/response parameter spelling is irrelevant inside that subset; dynamic dispatch, upstream middleware state and runtime package identity remain unverified.",
-      "Dynamic/package imports, namespace/default/re-exports, mutable exports, callbacks, closures and arbitrary class dispatch are model limitations. A canonical relative CommonJS local class singleton supports receiver-bound actual/body dispatch; opaque native dynamic loading retains only a declared possible body with low-confidence input and partial coverage, without return safety or runtime identity proof. Unknown external calls are not trusted sanitizers and do not alone make declared coverage incomplete. Resolved callees are not freshly seeded unless explicitly exported or passed as a callback to an unresolved/external call; callback execution and runtime entry reachability are not proven.",
+      "Dynamic/package imports, namespace/default/re-exports, mutable exports and arbitrary class dispatch remain model limitations beyond the separately declared narrow constructor/capture and legacy-driver lanes. A canonical relative CommonJS local class singleton supports receiver-bound actual/body dispatch; opaque native dynamic loading retains only a declared possible body with low-confidence input and partial coverage, without return safety or runtime identity proof. Unknown external calls are not trusted sanitizers and do not alone make declared coverage incomplete. Resolved callees are not freshly seeded unless explicitly exported or passed as a callback to an unresolved/external call; callback execution and runtime entry reachability are not proven.",
       "Outbound destination qualifier covers only canonical literal HTTP(S) origin/path plus native encoded query, direct const params record/toString/append/set and scalar local transfer. Object containers, alias/escape, modified or shadowed native intrinsics and opaque options retain candidates. Options support absent or plain literal method/fixed non-Host headers only. This is initial destination control, not redirect, DNS, proxy, remote query processing or runtime SSRF safety proof.",
       'Axios request config role model separates a closed fixed INITIAL url field from payload-only input under the declared v1.13.2 API contract. Lexical imports/static require bindings and indexed snapshot validation do not authenticate runtime packages or external side effects. Defaults/interceptors/custom transport, alias/mutation, incomplete scope and opaque target roles retain low-confidence candidates; unknown is not safe. No body source is asserted to control URL authority.',
+      'Closed local/relative CommonJS function constructors support actual allocation, own arrow methods, immutable binding-identity capture frames and bounded scalar return/callback transfer. Unmaterialized owned roots, mutation/escape, unsupported captures, cycles and identity failures retain partial coverage. These frames do not establish runtime entry reachability or general callable safety.',
+      'Legacy MongoDB roles use only bounded collected nearest package/lock metadata and anchored 2.x contract evidence. A statically bound MongoClient.connect final callback supplies its second parameter as a declared Db; fixed-name Db.collection creates a collection capability. Missing/contradictory/3+ version evidence, opaque options and escaped/mutated capabilities remain unresolved/partial. Metadata JSON parsing is capped at 1 MiB per file and 256 files, charged to shared indexing work; no installed package, DB connection or target program is executed.',
+      'MarsDB NoSQL role model recognizes declared Collection selector arguments of find/findOne/update/remove/count/ids. Update data and options are separate from the selector. Primitive-string exclusion covers only local const snapshots with a dominating terminating typeof guard and no alias/mutation/opaque intervening effects; repeated member reads remain candidates. Input in $where remains executable-selector input even when it is a string. Package identity, dispatch at runtime and exploitability remain unverified.',
       'pg SQL role model separates supported statement text from bound values under the declared pg JS API. Default dispatch and closed statement shape are required before a text-input claim. A fixed text/values exclusion is not runtime package identity, SQL syntax validity, database-side dynamic SQL safety or confirmed remediation. Unsupported identity, mutation, prototype, native, callback and opaque value/array roles remain unknown; generic SQL/input seed behavior is retained.',
       'Bare fork spelling is not classified as a shell API when every observed invocation resolves to an immutable local/relative function and its actual analysis completes. This is not function safety: nested native/SQL/HTTP/HTML sinks remain findings. Unresolved, mutable and incomplete analysis retain the legacy heuristic and partial gate.',
       'Node fork role model recognizes declared lexical child_process bindings and only the modulePath argument. Fixed modulePath does not establish whole-call safety: argv, execPath, execArgv, cwd and env are unmodeled. Mutable/escaped/incomplete identity retains low candidates; socket dispatch and guards are not newly modeled.',
@@ -461,6 +480,7 @@ export function runBuiltinAst(snapshot: SourceSnapshot, hasOtherSecurityCheck = 
     ],
     metrics: { filesAnalyzed: astFiles.length, filesParsed: astFiles.length, filesParseValid: astFiles.length - parseErrorCount, parseErrorCount, findingCount: findings.length, ...analysis.metrics, rootInventoryComplete: analysis.metrics.indexComplete === true && parseErrorCount === 0, outboundDestinationModel: "literal-http-query-native-params-v1", outboundFixedDestinationSuppressed, outboundQueryQualifiedUses: outboundUses.filter((use) => use.argumentFlows?.find((argument) => argument.index === 0)?.fixedDestination).length,
       forkRoleModel:'node-child-process-fork-v1', forkRoleRecognizedUses:forkUses.length, forkModulePathInputUses:forkInputUses.filter(use=>use.forkRole!.identity==='native').length, forkUnresolvedInputUses:forkInputUses.filter(use=>use.forkRole!.identity==='unresolved').length,
+      nosqlRoleModel: 'marsdb-mongodb2-selector-v1', nosqlRoleBoundUses: nosqlUses.length, nosqlSelectorInputUses: nosqlInputUses.filter(use => use.nosqlRole!.outcome === 'selector_input').length, nosqlWhereInputUses: nosqlInputUses.filter(use => use.nosqlRole!.outcome === 'where_input').length, nosqlStringSelectorExcluded: nosqlInputUses.filter(use => use.nosqlRole!.outcome === 'string_selector').length, nosqlRoleUnknownUses: nosqlInputUses.filter(use => use.nosqlRole!.outcome === 'unknown_role').length,
       sqlRoleModel:'pg-query-config-v1', sqlRoleBoundUses:sqlUses.filter(u=>u.sqlRole!.bound).length, sqlStatementInputUses:sqlInputUses.filter(u=>u.sqlRole!.outcome==='statement_input').length, sqlValuesOnlyExcluded:sqlInputUses.filter(u=>u.sqlRole!.outcome==='values_only_fixed_text').length, sqlRoleUnknownUses:sqlInputUses.filter(u=>u.sqlRole!.outcome==='unknown_role').length,
       outboundRoleModel: 'axios-request-config-query-v2', roleProofScopeComplete,
       outboundRoleBoundUses: roleUses.filter(use => use.httpRole!.bound).length,

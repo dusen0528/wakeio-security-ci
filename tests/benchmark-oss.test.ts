@@ -66,7 +66,28 @@ test('locked corpus has seven whole-repository source flows and one grouped thre
   assert.equal(corpus.data.repositories.reduce((count: number, repo: { expectedFindings: unknown[] }) => count + repo.expectedFindings.length, 0), 7);
   const nodegoat = corpus.data.repositories.find((repo: { id: string }) => repo.id === 'nodegoat');
   assert.equal(nodegoat.expectedFindings.find((item: { id: string }) => item.id === 'nodegoat-contribution-eval').requiredFindings.length, 3);
-  assert.equal(corpus.data.repositories.flatMap((repo: { expectedFindings: Array<{ support: string }> }) => repo.expectedFindings).filter((item: { support: string }) => item.support === 'known_unsupported').length, 2);
+  const expected = corpus.data.repositories.flatMap((repo: { expectedFindings: Array<{ id: string; support: string }> }) => repo.expectedFindings);
+  assert.deepEqual(expected.map((item: { id: string }) => item.id), [
+    'juice-search-sql', 'juice-login-sql', 'juice-review-nosql', 'juice-redirect',
+    'nodegoat-contribution-eval', 'nodegoat-allocation-nosql', 'nodegoat-redirect',
+  ]);
+  assert.deepEqual(expected.filter((item: { support: string }) => item.support === 'known_unsupported')
+    .map((item: { id: string }) => item.id), ['nodegoat-allocation-nosql']);
+  const juice = corpus.data.repositories.find((repo: { id: string }) => repo.id === 'juice-shop');
+  const review = juice.expectedFindings.find((item: { id: string }) => item.id === 'juice-review-nosql');
+  assert.equal(review.ruleId, 'ast:nosql-input-sink');
+  assert.equal(review.support, 'exploratory');
+  assert.equal(review.path, 'routes/updateProductReviews.ts');
+  assert.deepEqual(review.requiredFindings, [{ line: 17, column: 5,
+    source: { path: 'routes/updateProductReviews.ts', line: 18, column: 14 } }]);
+  assert.match(review.basis, /MarsDB/);
+  // Canonical original 5148a43 corpus, excluding only the four approved J3 fields.
+  // This binds every source pin/file hash, negative control and other expectation.
+  const preserved = structuredClone(corpus.data);
+  const revised = preserved.repositories.find((repo: { id: string }) => repo.id === 'juice-shop')
+    .expectedFindings.find((item: { id: string }) => item.id === 'juice-review-nosql');
+  for (const key of ['ruleId', 'requiredFindings', 'support', 'basis']) delete revised[key];
+  assert.equal(sha256(JSON.stringify(preserved)), 'e4c9bbd3023549140fc824a1f4b71fd1af64935492a7cb134f3f2d852fa961fa');
 });
 
 test('one-to-one grouped matching consumes all three sinks; unrelated candidate and observation stay unreviewed', async () => {
