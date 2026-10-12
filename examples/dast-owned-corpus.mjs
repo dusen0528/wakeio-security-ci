@@ -28,6 +28,11 @@ export async function evaluateOwnedDastCorpus({ run = runApiPolicy, repeats = 2 
           assert.equal(checks.length, 1);
           const check = checks[0];
           const count = check.findings.filter(f => f.ruleId === 'api.authorization-data-exposure').length;
+          const controlsPassed = check.findings.filter(f => f.controlVerification?.state === 'controls_passed').length;
+          // Completed exposures carry passed controls and replay inputs; incomplete runs never report passed controls.
+          if (check.status === 'completed') assert.equal(controlsPassed, count, `${mode}: completed exposures carry passed controls`);
+          else assert.equal(controlsPassed, 0, `${mode}: incomplete runs never report passed controls`);
+          assert.ok(check.findings.every(f => f.replay?.kind === 'api-policy-case'));
           assert.equal(check.metrics.requestCount, fixture.requests.length);
           assert.equal(check.metrics.requestCount, fixture.expectedRequests);
           assert.ok(fixture.requests.every(r => r.method === 'GET'));
@@ -48,7 +53,7 @@ export async function evaluateOwnedDastCorpus({ run = runApiPolicy, repeats = 2 
             assert.equal(count, mode === 'direct' ? fixture.expectedExposures : 0);
             assert.equal(check.status, 'completed');
           }
-          rows.push({ repeat, mode, category, match, status: check.status, findings: count, expectedFindings: fixture.expectedExposures, requests: fixture.requests.length, elapsedMs });
+          rows.push({ repeat, mode, category, match, status: check.status, findings: count, controlsPassed, expectedFindings: fixture.expectedExposures, requests: fixture.requests.length, elapsedMs });
         } finally {
           await fixture.close();
           assert.deepEqual(fixture.lifecycle(), { seededCount: 4, remainingObjects: 0, cleaned: true, listening: false });
@@ -61,6 +66,7 @@ export async function evaluateOwnedDastCorpus({ run = runApiPolicy, repeats = 2 
     return [match, {
       positiveTasks: group.filter(r => r.category === 'positive').length,
       detectedPositiveTasks: group.filter(r => r.category === 'positive' && r.findings === r.expectedFindings).length,
+      controlsPassedFindings: group.reduce((sum, r) => sum + r.controlsPassed, 0),
       missedPositiveTasks: group.filter(r => r.category === 'positive' && r.findings !== r.expectedFindings).length,
       negativeTasks: group.filter(r => r.category === 'negative').length,
       falsePositiveTasks: group.filter(r => r.category === 'negative' && r.findings > 0).length,

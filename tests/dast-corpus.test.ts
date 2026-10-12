@@ -13,6 +13,8 @@ test('owned DAST corpus gates positive, safe and error controls with lifecycle a
   assert.equal(result.summary['json-values'].detectedPositiveTasks, 6);
   assert.equal(result.summary['json-values'].missedPositiveTasks, 0);
   assert.equal(result.summary['json-values'].falsePositiveTasks, 0);
+  // 3 positive modes x 16 exposures x 2 repeats, every one with passed in-run controls.
+  assert.equal(result.summary['json-values'].controlsPassedFindings, 96);
   assert.equal(result.summary['json-values'].incompleteErrorTasks, 12);
   t.diagnostic(JSON.stringify(result.summary));
 });

@@ -203,6 +203,18 @@ No write operation, payment action, automatic login, endpoint discovery, or gene
 
 Opt-in `allow.protected.match: "json-values"` checks the same configured synthetic canary at other JSON value positions, with bounded traversal and unchanged owner/identity controls. The SDK's `buildOpenApiPolicy` / `runOpenApiPolicy` compiles an explicit OpenAPI GET allowlist, including identity routes, with caller-supplied scalar path bindings into that same executor. It never follows remote references or generates arbitrary payloads. Run `node examples/openapi-owned-fixture.mjs` for the owned loopback example and `npm run test:dast` for repeated positive/safe/error task coverage, request counts and timing. Real staging remains separately configured and unverified; see the [API guide](docs/preview-0.4-api.md).
 
+Each `api.authorization-data-exposure` finding now carries this run's control results. `controlVerification.state` is `controls_passed` only when the probe actor's identity before/after, the owner positive controls before/after and a completed probe all passed; otherwise it is `inconclusive`. `evidence` references steps of the same check's `apiExecution` ledger (ordinal, phase, outcome, HTTP status) and never response values. `replay` records the policy digest, case and actor. This is scanner evidence: the finding `kind` stays `candidate`, and the agent report's exploit/fix `verification` stays `not_run`.
+
+```sh
+node build/src/cli.js replay \
+  --report /tmp/wakeio-api/report.json \
+  --api-policy /path/to/your-api-policy.json \
+  --finding <finding id from report.json> \
+  --out /tmp/wakeio-replay
+```
+
+`replay` refuses a policy whose digest differs, then re-executes only that case, its owner and the probe actor. The outcome is `reproduced` (exit 1), `not_reproduced` (exit 0, a completed run with an accepted denial), `inconclusive` or `refused` (exit 2); it writes `replay.json` plus the reduced run's reports. `not_reproduced` is scoped evidence, not proof of a fix.
+
 For a before/after review, keep the logical project identity and scan options stable:
 
 ```sh

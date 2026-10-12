@@ -198,6 +198,18 @@ node build/src/cli.js scan \
 
 쓰기·결제·자동 로그인·endpoint 탐색·일반 퍼징은 수행하지 않습니다. 만료된 자격증명, 구분되지 않는 actor, rate limit, 예상하지 못한 응답, 불완전한 control은 partial 또는 unverified로 남습니다.
 
+각 `api.authorization-data-exposure` finding에는 이번 실행의 control 결과가 붙습니다. `controlVerification.state`는 probe actor의 identity before/after, owner positive control before/after, 완료된 probe가 모두 통과했을 때만 `controls_passed`이고 그 외에는 `inconclusive`입니다. `evidence`는 같은 check의 `apiExecution` ledger 단계(ordinal, phase, outcome, HTTP status)만 참조하며 응답 값은 저장하지 않습니다. `replay`는 정책 digest, case, actor를 기록합니다. 이것은 scanner 증거일 뿐이며 finding `kind`는 `candidate`로 유지되고 agent report의 exploit/fix `verification`은 계속 `not_run`입니다.
+
+```sh
+node build/src/cli.js replay \
+  --report /tmp/wakeio-api/report.json \
+  --api-policy /path/to/your-api-policy.json \
+  --finding <report.json의 finding id> \
+  --out /tmp/wakeio-replay
+```
+
+`replay`는 정책 digest가 일치할 때만 해당 case, owner, probe actor만 다시 실행합니다. 결과는 `reproduced`(종료 코드 1), `not_reproduced`(0, 완료된 실행에서 거부가 확인됨), `inconclusive` 또는 `refused`(2)이며 `replay.json`과 축소 실행의 보고서를 씁니다. `not_reproduced`는 이번 실행 범위의 증거이며 수정 증명이 아닙니다.
+
 수정 전후를 비교하려면 논리적 프로젝트 식별자와 검사 옵션을 유지하세요.
 
 ```sh
