@@ -69,7 +69,7 @@ const IGNORED_SCANNER_FILES = new Set([
   "osv-scanner.yml",
 ]);
 
-const IGNORED_OUTPUT_FILES = new Set(["report.json", "report.sarif", "report.md", "agent-report.json", "comparison.json", "comparison.md"]);
+const IGNORED_OUTPUT_FILES = new Set(["report.json", "report.sarif", "report.md", "agent-report.json", "agent-advice.json", "comparison.json", "comparison.md"]);
 
 const CODE_EXTENSIONS = new Set([
   ".c",

@@ -1,3 +1,4 @@
+import { sanitizeDastExecution } from './dast-execution.js';
 import { types as utilTypes } from "node:util";
 import { sanitiseApiExecutionLedger, invalidApiExecutionLedger } from "./api-execution.js";
 import { redactSecrets, safeRelativePath, safeHttpUrl } from './report-path.js';
@@ -271,6 +272,7 @@ function projectAgentReport(report: ScanReport, failOn: FailOn): AgentReport {
       ...(check.analysisGaps ? { analysisGaps: check.analysisGaps } : {}),
       ...(check.apiStateEvidence ? { apiStateEvidence: check.apiStateEvidence } : {}),
       ...(check.apiExecution ? { apiExecution: check.apiExecution } : {}),
+      ...(check.dastExecution ? { dastExecution: check.dastExecution } : {}),
     })),
     findings: report.checks.flatMap((check, checkIndex) => check.findings.map((finding) => ({
       findingId: finding.id!,
@@ -356,6 +358,7 @@ export function toSarif(report: ScanReport): SarifLog {
           severity: finding.severity,
           remediation: safeText(finding.remediation, 'Review the finding and verify the affected scope.'),
           ...(finding.controlVerification ? { controlVerification: finding.controlVerification } : {}),
+          ...(check.dastExecution ? { dastExecution: check.dastExecution } : {}),
           ...(finding.evidence ? { evidence: finding.evidence } : {}),
           ...(finding.replay ? { replay: finding.replay } : {}),
         },
@@ -492,6 +495,10 @@ export function toMarkdown(report: ScanReport, failOn: FailOn = 'high'): string 
           const planned = e.plan!.steps[step.ordinal];
           lines.push(`    - Step ${step.ordinal}: ${planned.phase}, actor index ${planned.actorIndex}${planned.caseIndex === undefined ? '' : `, case index ${planned.caseIndex}`}: ${step.outcome} (${step.reason}).`);
         }
+      }
+      if (check.dastExecution) {
+        const e = check.dastExecution;
+        lines.push(`  - Native DAST: ${e.status}; ${e.outcome}; ${e.counts.evaluated}/${e.plannedRequests} logical steps evaluated; ${e.counts.httpAttempts} HTTP attempts. Two bounded numeric SQL differential rounds; not independent exploit or fix verification.`);
       }
       if (check.apiStateEvidence) {
         const e = check.apiStateEvidence;
@@ -687,12 +694,19 @@ function sanitiseCheck(input: CheckResult): CheckResult {
   if (apiExecution && (input.id !== 'api.authorization'
     || (input.metrics?.requestCount !== undefined && input.metrics.requestCount !== apiExecution.counts.httpAttempts))) apiExecution = invalidApiExecutionLedger();
   if (apiExecution && (apiExecution.status !== 'complete' || status === 'not_applicable') && status !== 'error') status = 'partial';
+  const dastDescriptor = input && typeof input === 'object' && !utilTypes.isProxy(input)
+    ? Object.getOwnPropertyDescriptor(input, 'dastExecution') : undefined;
+  let dastExecution = dastDescriptor ? sanitizeDastExecution('value' in dastDescriptor ? dastDescriptor.value : undefined) ?? undefined : undefined;
+  if (dastExecution && (input.id !== 'url.sql-boolean' || input.metrics?.requestCount !== dastExecution.counts.httpAttempts)) dastExecution = undefined;
+  if ((dastDescriptor && !dastExecution || input.id === 'url.sql-boolean' && (!dastExecution || dastExecution.status !== 'complete')) && status !== 'error') status = 'partial';
   const apiStateEvidence = input?.apiStateEvidence === undefined ? undefined : sanitiseApiStateEvidence(input.apiStateEvidence);
   if (input?.id === 'api.owned-state-oracle' && apiStateEvidence?.execution !== undefined && apiStateEvidence.execution !== 'completed' && status === 'completed') status = 'partial';
   const analysisBudget = sanitiseAnalysisBudget(input?.analysisBudget);
   const proofLedger = input?.id === 'api.authorization' ? apiExecution : undefined;
   const findings = Array.isArray(input?.findings)
     ? input.findings.map((finding) => sanitiseFinding(finding, proofLedger))
+      .filter(() => input.id !== 'url.sql-boolean' || dastExecution?.status === 'complete' && dastExecution.outcome === 'observed')
+      .map(finding => input.id === 'url.sql-boolean' ? { ...finding, kind: 'candidate' as const } : finding)
     : [];
   const notes = Array.isArray(input?.notes)
     ? input.notes.map((note) => safeText(note)).filter(Boolean)
@@ -724,6 +738,7 @@ function sanitiseCheck(input: CheckResult): CheckResult {
     ...(analysisGaps ? { analysisGaps } : {}),
     ...(apiStateEvidence ? { apiStateEvidence } : {}),
     ...(apiExecution ? { apiExecution } : {}),
+    ...(dastExecution ? { dastExecution } : {}),
   };
 }
 

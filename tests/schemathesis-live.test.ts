@@ -136,7 +136,7 @@ test("active DAST CLI requires explicit consent before any request", () => {
   const openapi = ["scan", "--openapi", "spec.json", "--api-base", "https://api.example.test/", "--operation", "/items/{id}"];
   assert.throws(() => parseCliArgs(openapi), (error: Error) => error instanceof CliUsageError && /--active-consent/.test(error.message));
   assert.throws(() => parseCliArgs(["scan", "--url", "https://example.test/", "--engine", "nuclei", "--nuclei-templates", "t"]), /--active-consent/);
-  assert.throws(() => parseCliArgs(["scan", "--url", "https://example.test/", "--active-consent"]), /requires --openapi or --engine/);
+  assert.throws(() => parseCliArgs(["scan", "--url", "https://example.test/", "--active-consent"]), { name: "CliUsageError", message: "--active-consent requires --dast-policy, --openapi or --engine" });
   assert.throws(() => parseCliArgs(["scan", "--openapi", "spec.json", "--active-consent"]), /--api-base and at least one --operation/);
   assert.throws(() => parseCliArgs(["scan", "--url", "https://example.test/", "--engine", "nuclei", "--active-consent"]), /--nuclei-templates/);
   assert.throws(() => parseCliArgs(["scan", "--source", ".", "--seed", "3"]), /require --openapi/);

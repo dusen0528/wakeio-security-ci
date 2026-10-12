@@ -17,3 +17,9 @@ export * from "./schemathesis.js";
 export * from './api-state.js';
 
 export { sanitiseApiExecutionLedger } from './api-execution.js';
+
+export * from './dast.js';
+export { sanitizeDastExecution } from './dast-execution.js';
+export { adviseMain } from './agent-advice.js';
+
+export * from './dast-replay.js';

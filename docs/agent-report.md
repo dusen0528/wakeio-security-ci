@@ -227,3 +227,17 @@ location. Known reason and unavailable representative location remain distinct.
 Existing first-item navigation, findings, scan gate, scope, source models,
 analysis budgets, schemas and ruleset `.13` are unchanged. This is a reporting
 improvement, not a detection-accuracy result or execution authority.
+
+
+## Native DAST and optional advice
+
+Native numeric SQL differential checks expose `checks[].dastExecution`: an eight-step, twice-repeated plan with a policy digest, profile revision, effective attempt/time/private-network settings, redacted outcome categories and HTTP attempt counts. A candidate requires stable normal controls and a repeated configured differential. `not_observed` is limited to this declared case; invalid or incomplete evidence keeps the scan incomplete. Consumers should read this check-level evidence through each finding's `checkIndex`.
+
+The existing finding `verification` remains `not_run` with both confirmation flags false. Native scanner controls do not become independent exploit or remediation verification. See [the native DAST contract](native-dast.md) for policy and transport boundaries.
+
+The separate `advise` command validates the digest-bound report pair and, with explicit `--allow-report-upload`, sends a bounded metadata projection to a selected Codex CLI. `--auth cli-login` and `--auth api-key` are explicit alternatives; neither is an automatic fallback. The new private `agent-advice.json` is separate from all four scan reports, cannot change their gate or evidence, and must be treated as unverified advice. No source or raw target response is uploaded. Ordinary scanning never invokes the advisor.
+
+
+The advisor projection also includes capped typed detection evidence: native phase/control summaries, API control and replay capability, and static-flow structural roles or analysis gaps. It excludes response/query/oracle values and source text. Model recommendations must select a locally permitted `recheckRoute` for their referenced finding or check; unsupported routes are rejected. `replay_native_finding_same_policy` is allowed only for a complete observed native candidate; `repeat_native_same_policy` applies to its check scope. A route is advice only and never starts a request, process or repair.
+
+For a complete native SQL candidate, `replay --report report.json --dast-policy FILE --finding ID --active-consent --out NEW_DIR` repeats the original bounded check. Supply `--allow-private` again when required; the old ledger never supplies permission. Fresh results and `replay.json` are separate from the original reports. `reproduced` and `not_reproduced` remain scanner observations, so exploit/fix `verification` stays `not_run`. See [native replay](native-dast.md#repeat-a-native-finding-with-its-original-policy).

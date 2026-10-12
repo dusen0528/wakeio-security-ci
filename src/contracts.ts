@@ -1,3 +1,5 @@
+import type { DastExecution } from './dast-execution.js';
+export type { DastExecution } from './dast-execution.js';
 export type Severity = 'info' | 'low' | 'medium' | 'high' | 'critical';
 export type Mode = 'source' | 'url' | 'both' | 'api' | 'combined';
 export type ToolName = 'gitleaks' | 'osv' | 'trivy' | 'bandit';
@@ -158,6 +160,8 @@ export interface CheckResult {
   /** Owned fixture observations only; not authentication of arbitrary external evidence. */
   apiStateEvidence?: ApiStateEvidence;
   apiExecution?: ApiExecutionLedger;
+  /** Bounded native differential metadata; not independent exploit verification. */
+  dastExecution?: DastExecution;
 }
 export type ApiStateControlOutcome = 'unknown' | 'identity_passed' | 'identity_failed' | 'normal_passed' | 'normal_failed' | 'effect_observed' | 'denial_observed';
 export interface ApiStateEvidence {
@@ -371,6 +375,8 @@ export interface AgentReport {
     analysisGaps?: AnalysisGaps;
     apiStateEvidence?: ApiStateEvidence;
     apiExecution?: ApiExecutionLedger;
+    /** Bounded native differential metadata; not independent exploit verification. */
+    dastExecution?: DastExecution;
   }>;
   findings: Array<{
     findingId: string;

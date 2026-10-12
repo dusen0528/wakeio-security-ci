@@ -208,6 +208,11 @@ async function dastMain(env) {
       addValueOption(args, '--seed', env.WAKEIO_SEED);
       addValueOption(args, '--schemathesis-python', env.WAKEIO_SCHEMATHESIS_PYTHON);
     }
+    if (plan.native) {
+      args.push('--dast-policy', plan.native.file);
+      addValueOption(args, '--dast-max-requests', env.WAKEIO_DAST_MAX_REQUESTS);
+      for (const origin of plan.allowedOrigins) args.push('--allowed-origin', origin);
+    }
     addValueOption(args, '--timeout-ms', env.WAKEIO_TIMEOUT_MS);
     if (asBoolean(env.WAKEIO_ALLOW_PRIVATE)) args.push('--allow-private');
     const projectId = value(env.WAKEIO_PROJECT_ID) || value(env.GITHUB_REPOSITORY);
@@ -290,7 +295,27 @@ async function dastPolicy(env) {
     if (!allowed.has(target)) return refuse('the api-base origin is not in allowed-origins');
     plan.apiBase = `${target}/`;
   }
-  if (!plan.nuclei && !plan.apiBase) return refuse('select engines: nuclei and/or openapi');
+  if (value(env.WAKEIO_DAST_POLICY)) {
+    if (allowed.size > 16) return refuse('native DAST supports at most 16 allowed origins');
+    try {
+      const workspace = resolve(env.GITHUB_WORKSPACE || process.cwd());
+      const actionPath = resolve(env.WAKEIO_ACTION_PATH || env.GITHUB_ACTION_PATH || process.cwd());
+      const file = resolve(workspace, value(env.WAKEIO_DAST_POLICY));
+      const cli = await findCliEntry(actionPath);
+      const args = [cli, 'plan', '--dast-policy', file];
+      addValueOption(args, '--dast-max-requests', env.WAKEIO_DAST_MAX_REQUESTS);
+      addValueOption(args, '--timeout-ms', env.WAKEIO_TIMEOUT_MS);
+      if (asBoolean(env.WAKEIO_ALLOW_PRIVATE)) args.push('--allow-private');
+      const checked = await runCommand(process.execPath, args, { cwd: workspace, env, capture: true, acceptedStatuses: [0, 2] });
+      const native = JSON.parse(checked.stdout);
+      if (checked.status !== 0 || native.kind !== 'native-dast-plan' || native.status !== 'ready' || !allowed.has(native.origin)) {
+        return refuse('native DAST policy is invalid or its origin is not in allowed-origins');
+      }
+      plan.native = { file, origin: native.origin };
+      plan.allowedOrigins = [...allowed];
+    } catch { return refuse('native DAST policy preflight failed'); }
+  } else if (value(env.WAKEIO_DAST_MAX_REQUESTS)) return refuse('dast-max-requests requires dast-policy');
+  if (!plan.nuclei && !plan.apiBase && !plan.native) return refuse('select dast-policy, engines: nuclei and/or openapi');
   return plan;
 }
 
@@ -498,7 +523,7 @@ async function writeStepSummary(env, reportDirectory, state, reportSummary, dast
   const lines = [
     dastPlan ? '## Wakeio Security CI (active DAST)' : '## Wakeio Security CI',
     '',
-    ...(dastPlan ? [`- Active targets: ${escapeMarkdown([dastPlan.nuclei && `nuclei ${dastPlan.nuclei}`, dastPlan.apiBase && `schemathesis ${dastPlan.apiBase}`].filter(Boolean).join(', ') || 'none (refused before setup)')}`] : []),
+    ...(dastPlan ? [`- Active targets: ${escapeMarkdown([dastPlan.nuclei && `nuclei ${dastPlan.nuclei}`, dastPlan.apiBase && `schemathesis ${dastPlan.apiBase}`, dastPlan.native && `native ${dastPlan.native.origin}`].filter(Boolean).join(', ') || 'none (refused before setup)')}`] : []),
     `- Setup: **${state.setupStatus}**`,
     `- Scan: **${state.scanStatus}** (exit code ${state.exitCode})`,
     `- Findings: **${reportSummary?.findingCount ?? 0}**`,
