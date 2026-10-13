@@ -223,6 +223,19 @@ function classify(path: string): CollectedFile["category"] | undefined {
   return undefined;
 }
 
+/** Name-only policy for metadata consumers; none of these helpers opens a file. */
+export function sourcePathCategory(path: string): CollectedFile["category"] | undefined {
+  return classify(path);
+}
+
+export function sourceDirectoryIgnored(name: string): boolean {
+  return IGNORED_DIRECTORIES.has(name.toLowerCase());
+}
+
+export function sourceOutputFileIgnored(name: string): boolean {
+  return IGNORED_OUTPUT_FILES.has(name.toLowerCase());
+}
+
 function isFatalIssue(code: CollectionIssue["code"]): boolean {
   return code !== "unsupported_file";
 }

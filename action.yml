@@ -81,13 +81,13 @@ outputs:
     description: Absolute report directory used by the scanner
     value: ${{ steps.wakeio-run.outputs.report-dir }}
   report-json:
-    description: Absolute JSON report path
+    description: Fresh current JSON report path; empty when unavailable
     value: ${{ steps.wakeio-run.outputs.report-json }}
   report-sarif:
-    description: Absolute SARIF report path
+    description: Fresh current SARIF report path; empty when missing, stale or unavailable
     value: ${{ steps.wakeio-run.outputs.report-sarif }}
   report-markdown:
-    description: Absolute Markdown report path
+    description: Fresh current Markdown report path; empty when missing, stale or unavailable
     value: ${{ steps.wakeio-run.outputs.report-markdown }}
   report-agent:
     description: Agent report path when bound to this run's fresh report.json; empty when unavailable, not a final CI success receipt
@@ -95,6 +95,12 @@ outputs:
   exit-code:
     description: Action exit code (0 completed checked scope without threshold failure, 1 threshold findings, 2 incomplete/setup/delivery failure)
     value: ${{ steps.wakeio-run.outputs.exit-code }}
+  scan-exit-code:
+    description: Observed scanner child exit code 0, 1 or 2; empty when unavailable, separate from final Action gate
+    value: ${{ steps.wakeio-run.outputs.scan-exit-code }}
+  delivery-status:
+    description: delivered or failed for status artifact and configured Action output writes; does not imply scan success
+    value: ${{ steps.wakeio-run.outputs.delivery-status }}
   finding-count:
     description: Number of findings in report.json
     value: ${{ steps.wakeio-run.outputs.finding-count }}

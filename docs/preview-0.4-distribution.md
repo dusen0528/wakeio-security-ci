@@ -169,6 +169,19 @@ manager·scanner·network를 실행하지 않는다. `vendor`, `.venv`, `node_mo
 lookup/Trivy policy DB의 예상 network, 두 DB의 `unknown`, 실제 다음 `scan` 명령이
 포함된다.
 
+0.5.0 소스 CLI의 `codeAnalysisReadiness`는 collector의 파일 이름·제외 경로·크기
+정책에 맞춰 관찰한 언어와 선택한 provider를 별도로 보고한다. `observedFiles`는
+메타데이터 관찰 수이며 수집·분석 완료 수가 아니다. JS/TS는 내장 AST, Python은
+명시적으로 선택한 가용 Bandit이 있어야 `ready`가 될 수 있다. Java 등 현재 선택할
+수 있는 코드 provider가 없는 언어와 코드 입력이 없는 경우는 `blocked`다. 링크,
+메타데이터 읽기 오류, traversal·파일·크기 한도 때문에 범위를 확인할 수 없으면
+`unknown`으로 남긴다. collector 제외 경로의 언어는 이 판단에 넣지 않는다.
+
+`--require-code-analysis --strict`를 함께 선택하면 `blocked`와 `unknown`은 exit 2다.
+일반 doctor는 기존 exit 정책을 유지하면서 진단을 출력한다. `ready`도 파싱, 실제
+decoded 크기, 분석 완료나 scan gate 통과를 보증하지 않는다. source 내용·target
+실행·scanner 실행 없이 준비 상태만 확인하며, `init`과 실제 scan 계약은 바꾸지 않는다.
+
 workflow를 명시적으로 만들려면 다음을 사용한다.
 
 ```sh
