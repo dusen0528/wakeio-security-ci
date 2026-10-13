@@ -17,6 +17,7 @@ import { MongoRoleModel, type MongoDbRole, type MongoCollectionRole } from './mo
 import type { CollectedFile } from './types.js';
 import { FilesystemRoleModel, type FilesystemStreamRole } from './filesystem-role.js';
 import { ArchiveRoleModel, type ArchiveRole } from './archive-role.js';
+import { BrowserLocationRoleModel, directBrowserLocationReceiver, type BrowserLocationRole } from './browser-location-role.js';
 
 /** A source-to-sink use found by the bounded, same-function analysis. */
 export interface InputFlowUse {
@@ -29,6 +30,7 @@ export interface InputFlowUse {
   htmlResponse?: "express" | "web";
   htmlResponseMime?: "default" | "html" | "unknown";
   httpRole?: HttpRoleUse;
+  browserLocationRole?: BrowserLocationRole;
   sqlRole?: SqlRoleUse;
   nosqlRole?: NoSqlRoleUse;
   forkRole?: ForkRoleUse;
@@ -682,6 +684,7 @@ class FlowSession {
   readonly archiveModel: ArchiveRoleModel;
   readonly expressModel: ExpressRoleModel;
   readonly koaModel: KoaRoleModel;
+  readonly browserLocationModel: BrowserLocationRoleModel;
   readonly active = new Set<string>();
   readonly cache = new Map<string, FunctionSummary>();
   readonly localForkCalls = new WeakMap<ts.CallExpression, { complete: boolean }>();
@@ -731,6 +734,7 @@ class FlowSession {
     this.archiveModel = new ArchiveRoleModel(this.modules, metadata, () => this.tick(), (reason, node) => this.gap(reason, node), roleProofScopeComplete, limits.aliasSteps);
     this.expressModel = new ExpressRoleModel(this.modules, () => this.tick(), this.indexComplete);
     this.koaModel = new KoaRoleModel(this.modules, () => this.tick(), this.indexComplete);
+    this.browserLocationModel = new BrowserLocationRoleModel(this.modules, () => this.tick(), roleProofScopeComplete, limits.aliasSteps);
     this.modules.finishIndex(this.indexComplete);
     this.phase = 'flow';
   }
@@ -1859,7 +1863,13 @@ class DataflowAnalyzer {
   }
 
   private recordAssignment(node: ts.BinaryExpression, value: FlowValue): void {
-    if (isInputRelated(value)) this.uses.push({ node, kind: "assignment", argumentFlows: [{ index: 0, certainty: !this.declared && value.kind === "tainted" ? "tainted" : "unknown", staticFlow: evidence(value, node) }] });
+    if (isInputRelated(value)) {
+      const browserLocationRole: BrowserLocationRole | undefined = directBrowserLocationReceiver(node)
+        ? this.declared || this.staticContext || value.staticContext ? 'unknown_receiver'
+          : this.session?.browserLocationModel.role(node) ?? 'unknown_receiver' : undefined;
+      this.uses.push({ node, kind: "assignment", ...(browserLocationRole ? { browserLocationRole } : {}),
+        argumentFlows: [{ index: 0, certainty: !this.declared && value.kind === "tainted" ? "tainted" : "unknown", staticFlow: evidence(value, node) }] });
+    }
   }
 
   private httpRole(call: ts.CallExpression, value?: FlowValue): HttpRoleUse | undefined {

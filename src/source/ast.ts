@@ -10,6 +10,7 @@ import type { CollectedFile, SourceSnapshot } from "./types.js";
 import { mergeHttpRoles } from './http-role.js';
 import { mergeStaticContexts } from '../static-context.js';
 import { mergeProcessRoles, PROCESS_METHODS } from './process-role.js';
+import { mergeBrowserLocationRoles } from './browser-location-role.js';
 
 interface AstFile {
   file: CollectedFile;
@@ -242,7 +243,13 @@ function observeFile(astFile: AstFile, flowUses: ReadonlyMap<ts.Node, InputFlowU
         pushObservation(observations, file, sourceFile, node, "ast:html-input-sink", "Request input reaches an HTML sink", "Untrusted request or URL input appears to flow into an HTML rendering sink.", "high", "Validate and contextually encode untrusted values before rendering them.", confidence);
       }
       if (use?.kind === "assignment" && confidence && isRedirectLocationTarget(node.left)) {
-        pushObservation(observations, file, sourceFile, node, "ast:open-redirect", "Request input reaches a redirect location", "Untrusted request input appears to control a browser navigation target.", "medium", "Allowlist destination origins or paths before redirecting.", confidence);
+        if (use.browserLocationRole !== 'closed_local_object') {
+          const unknown = use.browserLocationRole === 'unknown_receiver';
+          pushObservation(observations, file, sourceFile, node, "ast:open-redirect", "Request input reaches a redirect location",
+            unknown ? 'Input-related data reaches a location-shaped assignment; browser receiver identity is unresolved. Browser navigation and runtime execution require separate review.'
+              : "Untrusted request input appears to control a browser navigation target.",
+            "medium", "Allowlist destination origins or paths before redirecting.", unknown ? 'low' : confidence);
+        }
       }
     }
     if (ts.isJsxAttribute(node) && ts.isIdentifier(node.name) && node.name.text.toLowerCase() === "dangerouslysetinnerhtml") {
@@ -490,6 +497,7 @@ export function runBuiltinAst(snapshot: SourceSnapshot, hasOtherSecurityCheck = 
     const staticContext = mergeStaticContexts(prior.staticContext, use.staticContext);
     const merged: InputFlowUse = { ...prior, staticContext, htmlResponse: prior.htmlResponse ?? use.htmlResponse, htmlResponseMime: prior.htmlResponseMime === "unknown" || use.htmlResponseMime === "unknown" ? "unknown" : prior.htmlResponseMime ?? use.htmlResponseMime, argumentFlows: [...argumentsByIndex.values()].sort((a, b) => a.index - b.index), localForkCall: prior.localForkCall && use.localForkCall ? {complete:prior.localForkCall.complete && use.localForkCall.complete} : undefined, localProcessCall: prior.localProcessCall && use.localProcessCall ? {complete:prior.localProcessCall.complete && use.localProcessCall.complete} : undefined, forkRole: prior.forkRole?.identity === 'unresolved' || use.forkRole?.identity === 'unresolved' ? {identity:'unresolved' as const} : prior.forkRole ?? use.forkRole, processRole: mergeProcessRoles(prior.processRole, use.processRole), sqlRole:mergeSqlRoles(prior.sqlRole,use.sqlRole), nosqlRole:mergeNoSqlRoles(prior.nosqlRole,use.nosqlRole), httpRole: mergeHttpRoles(prior.httpRole, use.httpRole) };
     const filesystemRoles = [prior.filesystemProcess, use.filesystemProcess].filter((role): role is NonNullable<InputFlowUse['filesystemProcess']> => !!role);
+    merged.browserLocationRole = mergeBrowserLocationRoles(prior.browserLocationRole, use.browserLocationRole);
     const filesystemRank = { argv_shell_input: 4, argv_shell_unknown: 3, direct_argv_interpreter_unknown: 2, argv_only_shell_disabled: 0 };
     merged.filesystemProcess = filesystemRoles.reduce<NonNullable<InputFlowUse['filesystemProcess']> | undefined>((selected, role) =>
       !selected || filesystemRank[role.outcome] > filesystemRank[selected.outcome] ? role : selected, undefined);
@@ -498,6 +506,7 @@ export function runBuiltinAst(snapshot: SourceSnapshot, hasOtherSecurityCheck = 
     merged.archiveWrite = archiveRoles.reduce<NonNullable<InputFlowUse['archiveWrite']> | undefined>((selected, role) =>
       !selected || archiveRank[role.outcome] > archiveRank[selected.outcome] ? role : selected, undefined);
     if (staticContext) {
+      if (merged.browserLocationRole) merged.browserLocationRole = 'unknown_receiver';
       merged.argumentFlows = (merged.argumentFlows ?? []).map(flow => ({ ...flow, certainty: 'unknown' as const, fixedDestination: false, staticFlow: flow.staticFlow ? { ...flow.staticFlow, truncated: true } : undefined }));
       if (merged.nosqlRole) merged.nosqlRole = { ...merged.nosqlRole, certainty: 'unknown', staticFlow: merged.nosqlRole.staticFlow ? { ...merged.nosqlRole.staticFlow, truncated: true } : undefined };
       if (merged.sqlRole) merged.sqlRole = { ...merged.sqlRole, certainty: 'unknown', staticFlow: merged.sqlRole.staticFlow ? { ...merged.sqlRole.staticFlow, truncated: true } : undefined };
@@ -546,6 +555,7 @@ export function runBuiltinAst(snapshot: SourceSnapshot, hasOtherSecurityCheck = 
       'Axios request config role model separates a closed fixed INITIAL url field from payload-only input under the declared v1.13.2 API contract. Lexical imports/static require bindings and indexed snapshot validation do not authenticate runtime packages or external side effects. Defaults/interceptors/custom transport, alias/mutation, incomplete scope and opaque target roles retain low-confidence candidates; unknown is not safe. No body source is asserted to control URL authority.',
       'Closed local/relative CommonJS function constructors support actual allocation, own arrow methods, immutable binding-identity capture frames and bounded scalar return/callback transfer. Unmaterialized owned roots, mutation/escape, unsupported captures, cycles and identity failures retain partial coverage. These frames do not establish runtime entry reachability or general callable safety.',
       'Legacy MongoDB roles use only bounded collected nearest package/lock metadata and anchored 2.x contract evidence. A statically bound MongoClient.connect final callback supplies its second parameter as a declared Db; fixed-name Db.collection creates a collection capability. Missing/contradictory/3+ version evidence, opaque options and escaped/mutated capabilities remain unresolved/partial. Metadata JSON parsing is capped at 1 MiB per file and 256 files, charged to shared indexing work; no installed package, DB connection or target program is executed.',
+      'Direct window.location assignments exclude browser navigation only for a fresh function/module-private const object with an own data location slot and complete bounded proof within the collected static subset. Script-global, opaque, escaped and mutated bindings remain low-confidence candidates. Exact evaluator names in identifiers/static literals and computed destructuring keys veto exclusion; ambient callable identity and runtime realm closure are not certified. Unbound browser-shaped names do not prove runtime browser identity. Bracket spellings, nested href and standalone location retain their existing interpretation.',
       'MarsDB NoSQL role model recognizes declared Collection selector arguments of find/findOne/update/remove/count/ids. Update data and options are separate from the selector. Primitive-string exclusion covers only local const snapshots with a dominating terminating typeof guard and no alias/mutation/opaque intervening effects; repeated member reads remain candidates. Input in $where remains executable-selector input even when it is a string. Package identity, dispatch at runtime and exploitability remain unverified.',
       'pg SQL role model separates supported statement text from bound values under the declared pg JS API. Default dispatch and closed statement shape are required before a text-input claim. A fixed text/values exclusion is not runtime package identity, SQL syntax validity, database-side dynamic SQL safety or confirmed remediation. Unsupported identity, mutation, prototype, native, callback and opaque value/array roles remain unknown; generic SQL/input seed behavior is retained.',
       'Bare fork spelling is not classified as a shell API when every observed invocation resolves to an immutable local/relative function and its actual analysis completes. This is not function safety: nested native/SQL/HTTP/HTML sinks remain findings. Unresolved, mutable and incomplete analysis retain the legacy heuristic and partial gate.',
