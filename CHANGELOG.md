@@ -6,6 +6,14 @@ Source and the checked-in Action are versioned 0.5.0. The latest published npm
 package remains 0.4.0; use a reviewed Git commit or build this checkout for the
 features below. This entry does not claim an npm 0.5.0 publication.
 
+- Add bounded filesystem filename→stream callback→captured accumulator→process
+  argv analysis under ruleset `2026-10-13.3` for the documented reviewed versions.
+  Source-kind and conditional-context metadata preserve low-confidence candidate
+  evidence and incomplete checks; advice policy 7 carries enums/counts only.
+  The public glob advisory is a known source reference, not a new discovery or
+  a whole-fixed-source safety result. See the
+  [supported scope and validation record](docs/source-filesystem-flow.md).
+
 - Add source-only, data-only `handoff create` and `handoff finish` commands.
   Bind one check/finding and the current source to a complete aggregate of
   scan-time collected UTF-8 strings, preserving a partial AST's original gate.

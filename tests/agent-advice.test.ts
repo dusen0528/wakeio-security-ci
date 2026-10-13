@@ -234,7 +234,7 @@ test('fake CLI current policy receives authenticated control enums in both auth 
   }
 });
 
-test('fake CLI policy6 keeps quoted profile metadata bounded in both auth modes without invented identity or replay', async () => {
+test('fake CLI policy7 keeps quoted profile metadata bounded in both auth modes without invented identity or replay', async () => {
   const top = await mkdtemp(join(tmpdir(), 'wakeio-quoted-advice-'));
   const previousKey = process.env.CODEX_API_KEY, previousHome = process.env.CODEX_HOME;
   try {
@@ -267,7 +267,7 @@ test('fake CLI policy6 keeps quoted profile metadata bounded in both auth modes 
         const out = join(top, `advice-${authentication}-${failed}-${mode}`);
         assert.equal(await adviseMain(args(reports, out, fake, mode)), 0);
         const projection = JSON.parse(await readFile(join(top, 'captured-projection.json'), 'utf8'));
-        assert.equal(projection.projectionVersion, 6);
+        assert.equal(projection.projectionVersion, 7);
         assert.equal(projection.checks[0].nativeDast.profileRevision, execution.profileRevision);
         assert.equal(projection.checks[0].nativeDast.steps.length, total);
         assert.equal(projection.findings[0].replayAvailable, !failed);
@@ -276,7 +276,7 @@ test('fake CLI policy6 keeps quoted profile metadata bounded in both auth modes 
           assert.equal('identityControls' in projection.checks[0].nativeDast, false);
           assert.equal('probeOutcome' in projection.checks[0].nativeDast, false);
         } else assert.deepEqual(projection.checks[0].nativeDast.identityControls, execution.identityControls);
-        const produced = await receipt(out); assert.equal(produced.policyVersion, 6); assert.equal(produced.authMode, mode); assert.equal(produced.verified, false);
+        const produced = await receipt(out); assert.equal(produced.policyVersion, 7); assert.equal(produced.authMode, mode); assert.equal(produced.verified, false);
         assert.ok(Buffer.byteLength(JSON.stringify(projection)) <= 32 * 1024);
         for (const forbidden of ['owned.example', 'authorizationEnv', 'jsonPointer', 'expectedBaseline', "AND '1'"])
           assert.equal(JSON.stringify(projection).includes(forbidden), false);

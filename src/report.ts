@@ -41,7 +41,7 @@ export const REPORT_SCHEMA_VERSION = '1.0.0' as const;
 
 /** The version advertised to SARIF consumers when the package is built. */
 export const REPORT_TOOL_VERSION = '0.5.0';
-export const RULESET_VERSION = '2026-10-13.2';
+export const RULESET_VERSION = '2026-10-13.3';
 
 const SEVERITIES: readonly Severity[] = [
   'info',
@@ -567,6 +567,7 @@ export function toMarkdown(report: ScanReport, failOn: FailOn = 'high'): string 
       }
       if (finding.staticFlow) {
         lines.push(`  - Static source flow${finding.staticFlow.truncated ? ' (incomplete/truncated)' : ''}; runtime verification not run:`);
+        if (finding.staticFlow.sourceKind) lines.push(`    - Source kind: ${finding.staticFlow.sourceKind}; declared input origin, not runtime verification.`);
         for (const item of finding.staticFlow.steps) {
           lines.push(`    - ${item.role}: ${markdownInline(item.location.path)}:${item.location.line}:${item.location.column}`);
         }
@@ -776,6 +777,12 @@ function sanitiseCheck(input: CheckResult): CheckResult {
     : [];
   if (Array.isArray(input?.findings) && input.findings.some(finding => ownDataField(finding, 'staticContext').present)
     && (status === 'completed' || status === 'not_applicable')) status = 'partial';
+  if (Array.isArray(input?.findings) && input.findings.some(finding => {
+    const flow = ownDataField(finding, 'staticFlow');
+    const origin = ownDataField(flow.value, 'sourceKind');
+    return origin.present && (!origin.valid || origin.value !== 'filesystem_filename'
+      || !flow.valid || !sanitiseStaticFlow(flow.value as Finding['staticFlow']));
+  }) && status !== 'error') status = 'partial';
   const notes = Array.isArray(input?.notes)
     ? input.notes.map((note) => safeText(note)).filter(Boolean)
     : [];
@@ -1050,6 +1057,8 @@ function sanitiseFinding(input: Finding, proofLedger?: ApiExecutionLedger): Find
 
 function sanitiseStaticFlow(input: Finding['staticFlow'] | undefined): Finding['staticFlow'] | undefined {
   if (!input || input.kind !== 'static_flow' || !Array.isArray(input.steps) || typeof input.truncated !== 'boolean') return undefined;
+  const origin = ownDataField(input, 'sourceKind');
+  if (origin.present && (!origin.valid || origin.value !== 'filesystem_filename')) return undefined;
   const allowed = ['source', 'call', 'parameter', 'return', 'intermediate', 'sink'];
   const steps: NonNullable<Finding['staticFlow']>['steps'] = [];
   for (const item of input.steps.slice(0, 24)) {
@@ -1058,7 +1067,7 @@ function sanitiseStaticFlow(input: Finding['staticFlow'] | undefined): Finding['
     if (!location.path || !location.line || !location.column) continue;
     steps.push({ role: item.role, location: { path: location.path, line: location.line, column: location.column } });
   }
-  return steps.length ? { kind: 'static_flow', steps,
+  return steps.length ? { kind: 'static_flow', steps, ...(origin.present ? { sourceKind: 'filesystem_filename' as const } : {}),
     truncated: input.truncated || input.steps.length > 24 || steps.length !== input.steps.length
       || !steps.some((item) => item.role === 'source') || steps.at(-1)?.role !== 'sink' } : undefined;
 }

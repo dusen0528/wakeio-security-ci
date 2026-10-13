@@ -162,6 +162,8 @@ jobs:
 
 `--fail-on none` は finding による失敗だけを無効にします。未完了の検査や setup failure は引き続き exit `2` です。exit `0` はサービス全体の安全性や認証の完全性を証明しません。
 
+ソースプレビューは、文書に明記したバージョンの[ファイル名から process argv へのフロー](docs/source-filesystem-flow.md)をサポートします。ファイル名 callback と共有配列の蓄積を argv へ接続し、条件付きの low-confidence 候補と未完了の検査を保持します。リンク先に対応範囲と公開 advisory の検証記録があります。新しい脆弱性の発見や修正ソース全体の安全判定ではありません。公開 npm は引き続き 0.4.0 です。
+
 ## ローカル source handoff
 
 レビュー済みの 0.5.0 ソースプレビューでは、source candidate と現在の収集済み

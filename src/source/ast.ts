@@ -77,10 +77,12 @@ function sourceLocation(sourceFile: ts.SourceFile, node: ts.Node): { line: numbe
 
 function findingFromObservation(observation: Observation): Finding {
   const location = sourceLocation(observation.sourceFile, observation.node);
+  const inputText = (value: string) => observation.staticFlow?.sourceKind === 'filesystem_filename'
+    ? value.replace(/(?:untrusted )?(?:request or URL|request|URL) input/gi, 'Filename-derived input') : value;
   return {
     ruleId: observation.ruleId,
-    title: observation.title,
-    description: observation.description,
+    title: inputText(observation.title),
+    description: inputText(observation.description),
     severity: observation.severity,
     confidence: observation.staticContext ? 'low' : observation.confidence,
     kind: observation.staticContext ? 'candidate' : observation.kind ?? "candidate",
@@ -251,7 +253,17 @@ function observeFile(astFile: AstFile, flowUses: ReadonlyMap<ts.Node, InputFlowU
     if (ts.isCallExpression(node)) {
       const name = callName(node.expression);
       const use = flowUses.get(node);
-      if (use?.forkRole) {
+      if (use?.filesystemProcess) {
+        const role = use.filesystemProcess;
+        if (role.outcome !== 'argv_only_shell_disabled') {
+          pushObservation(observations, file, sourceFile, node, 'ast:filesystem-shell-input',
+            role.outcome === 'argv_shell_input' ? 'Filename-derived input reaches declared wrapper argv with shell enabled'
+              : role.outcome === 'direct_argv_interpreter_unknown' ? 'Filename-derived argv reaches an unresolved interpreter boundary' : 'Filename-derived argv has unresolved shell or container roles',
+            'Observed callback filename input is connected through a conditional accumulator to operand 1 of a declared foreground-child package call. Filesystem API origin, callback scheduling, array/intrinsic type, installed wrapper identity and runtime interpretation remain conditional. This is not an exploit or fix verification.',
+            'high', 'Keep filenames in separate positional arguments; review shell and interpreter operands, callback reachability, package provenance and normal/security controls independently.', 'low');
+          observations.at(-1)!.staticFlow = role.staticFlow;
+        }
+      } else if (use?.forkRole) {
         const confidence = flowConfidence(use, 0);
         if (confidence) pushObservation(observations, file, sourceFile, node, 'ast:fork-module-path',
           use.forkRole.identity === 'native' ? 'Input reaches a Node fork module path' : 'Input reaches an unresolved fork-shaped call',
@@ -351,6 +363,7 @@ function observeFile(astFile: AstFile, flowUses: ReadonlyMap<ts.Node, InputFlowU
     // Dynamic code selects its actual relevant operand; timers still use the generic arg0 trace.
     if (observation.ruleId === 'ast:dynamic-code' && dynamicCodeShape(observation.node)) return observation;
     const use = flowUses.get(observation.node);
+    if (observation.ruleId === 'ast:filesystem-shell-input') return observation;
     // A process operand with absent evidence must never borrow argument zero's trace.
     if (use?.processRole && ['ast:shell-input-sink', 'ast:process-executable'].includes(observation.ruleId)) return observation;
     const index = ts.isCallExpression(observation.node) && callName(observation.node.expression) === "React.createElement" ? 1 : 0;
@@ -463,6 +476,10 @@ export function runBuiltinAst(snapshot: SourceSnapshot, hasOtherSecurityCheck = 
     }
     const staticContext = mergeStaticContexts(prior.staticContext, use.staticContext);
     const merged: InputFlowUse = { ...prior, staticContext, htmlResponse: prior.htmlResponse ?? use.htmlResponse, htmlResponseMime: prior.htmlResponseMime === "unknown" || use.htmlResponseMime === "unknown" ? "unknown" : prior.htmlResponseMime ?? use.htmlResponseMime, argumentFlows: [...argumentsByIndex.values()].sort((a, b) => a.index - b.index), localForkCall: prior.localForkCall && use.localForkCall ? {complete:prior.localForkCall.complete && use.localForkCall.complete} : undefined, localProcessCall: prior.localProcessCall && use.localProcessCall ? {complete:prior.localProcessCall.complete && use.localProcessCall.complete} : undefined, forkRole: prior.forkRole?.identity === 'unresolved' || use.forkRole?.identity === 'unresolved' ? {identity:'unresolved' as const} : prior.forkRole ?? use.forkRole, processRole: mergeProcessRoles(prior.processRole, use.processRole), sqlRole:mergeSqlRoles(prior.sqlRole,use.sqlRole), nosqlRole:mergeNoSqlRoles(prior.nosqlRole,use.nosqlRole), httpRole: mergeHttpRoles(prior.httpRole, use.httpRole) };
+    const filesystemRoles = [prior.filesystemProcess, use.filesystemProcess].filter((role): role is NonNullable<InputFlowUse['filesystemProcess']> => !!role);
+    const filesystemRank = { argv_shell_input: 4, argv_shell_unknown: 3, direct_argv_interpreter_unknown: 2, argv_only_shell_disabled: 0 };
+    merged.filesystemProcess = filesystemRoles.reduce<NonNullable<InputFlowUse['filesystemProcess']> | undefined>((selected, role) =>
+      !selected || filesystemRank[role.outcome] > filesystemRank[selected.outcome] ? role : selected, undefined);
     if (staticContext) {
       merged.argumentFlows = (merged.argumentFlows ?? []).map(flow => ({ ...flow, certainty: 'unknown' as const, fixedDestination: false, staticFlow: flow.staticFlow ? { ...flow.staticFlow, truncated: true } : undefined }));
       if (merged.nosqlRole) merged.nosqlRole = { ...merged.nosqlRole, certainty: 'unknown', staticFlow: merged.nosqlRole.staticFlow ? { ...merged.nosqlRole.staticFlow, truncated: true } : undefined };
@@ -478,6 +495,7 @@ export function runBuiltinAst(snapshot: SourceSnapshot, hasOtherSecurityCheck = 
   const forkInputUses = forkUses.filter(use => flowConfidence(use, 0));
   const processUses = [...flowUses.values()].filter(use => use.processRole);
   const processInputUses = processUses.filter(use => use.processRole!.inputRelated);
+  const filesystemUses = [...flowUses.values()].filter(use => use.filesystemProcess);
   const nosqlUses = [...flowUses.values()].filter(use => use.nosqlRole);
   const nosqlInputUses = nosqlUses.filter(use => use.nosqlRole!.inputRelated);
   const sqlUses=[...flowUses.values()].filter(use=>use.sqlRole);
@@ -525,6 +543,11 @@ export function runBuiltinAst(snapshot: SourceSnapshot, hasOtherSecurityCheck = 
       processRoleModel:'node-child-process-operands-v1', processRoleRecognizedUses:processUses.length, processCommandInputUses:processInputUses.filter(use=>['command_input','argv_shell_input'].includes(use.processRole!.outcome)).length,
       processExecutableInputUses:processInputUses.filter(use=>['executable_input','shell_executable_input'].includes(use.processRole!.outcome)).length, processArgvOnlyExcluded:processInputUses.filter(use=>use.processRole!.outcome==='argv_only_fixed_executable').length,
       processUnresolvedInputUses:processInputUses.filter(use=>use.processRole!.outcome==='unknown_role' || use.processRole!.certainty==='unknown').length,
+      filesystemWrapperArgvUses: filesystemUses.length,
+      filesystemShellEnabledUses: filesystemUses.filter(use => use.filesystemProcess!.outcome === 'argv_shell_input').length,
+      filesystemShellUnknownUses: filesystemUses.filter(use => use.filesystemProcess!.outcome === 'argv_shell_unknown').length,
+      filesystemInterpreterUnknownUses: filesystemUses.filter(use => use.filesystemProcess!.outcome === 'direct_argv_interpreter_unknown').length,
+      filesystemShellDisabledExclusions: filesystemUses.filter(use => use.filesystemProcess!.outcome === 'argv_only_shell_disabled').length,
       nosqlRoleModel: 'marsdb-mongodb2-selector-v1', nosqlRoleBoundUses: nosqlUses.length, nosqlSelectorInputUses: nosqlInputUses.filter(use => use.nosqlRole!.outcome === 'selector_input').length, nosqlWhereInputUses: nosqlInputUses.filter(use => use.nosqlRole!.outcome === 'where_input').length, nosqlStringSelectorExcluded: nosqlInputUses.filter(use => use.nosqlRole!.outcome === 'string_selector').length, nosqlRoleUnknownUses: nosqlInputUses.filter(use => use.nosqlRole!.outcome === 'unknown_role').length,
       sqlRoleModel:'pg-query-config-v1', sqlRoleBoundUses:sqlUses.filter(u=>u.sqlRole!.bound).length, sqlStatementInputUses:sqlInputUses.filter(u=>u.sqlRole!.outcome==='statement_input').length, sqlValuesOnlyExcluded:sqlInputUses.filter(u=>u.sqlRole!.outcome==='values_only_fixed_text').length, sqlRoleUnknownUses:sqlInputUses.filter(u=>u.sqlRole!.outcome==='unknown_role').length,
       outboundRoleModel: 'axios-request-config-query-v2', roleProofScopeComplete,
