@@ -5,6 +5,8 @@ import { AnalysisGapRecorder } from "../analysis-gaps.js";
 import { FLOW_LIMITS, StaticModules, type FlowLimits, type SingletonReceiver, type CallResolution } from "./modules.js";
 import { NativeQueryModel, boundedFragments, fixedQueryDestination, type UrlFragment } from "./url-destination.js";
 import { ForkRoleModel, type ForkRoleUse } from './fork-role.js';
+import { ProcessRoleModel, PROCESS_METHODS, type ProcessRoleUse } from './process-role.js';
+import type { ChildProcessBindingUse } from './fork-role.js';
 import { SqlRoleModel, type SqlRoleUse } from './sql-role.js';
 import { HttpRoleModel, fixedInitialHttpUrl, legacyAxiosRequest, type HttpRoleUse } from './http-role.js';
 import { ExpressRoleModel } from './express-role.js';
@@ -27,8 +29,10 @@ export interface InputFlowUse {
   sqlRole?: SqlRoleUse;
   nosqlRole?: NoSqlRoleUse;
   forkRole?: ForkRoleUse;
+  processRole?: ProcessRoleUse;
   /** Scan-local monotonic actual-analysis proof; never general callable safety. */
   localForkCall?: { complete: boolean };
+  localProcessCall?: { complete: boolean };
 }
 
 type RootKind =
@@ -601,6 +605,7 @@ class FlowSession {
   readonly nosqlModel: NoSqlRoleModel;
   readonly mongoModel: MongoRoleModel;
   readonly forkModel: ForkRoleModel;
+  readonly processModel: ProcessRoleModel;
   readonly expressModel: ExpressRoleModel;
   readonly active = new Set<string>();
   readonly cache = new Map<string, FunctionSummary>();
@@ -646,6 +651,7 @@ class FlowSession {
     this.nosqlModel = new NoSqlRoleModel(this.modules, () => this.tick(), roleProofScopeComplete);
     this.mongoModel = new MongoRoleModel(this.modules, metadata, () => this.tick(), (reason, node) => this.gap(reason, node), roleProofScopeComplete, this.indexComplete);
     this.forkModel = new ForkRoleModel(this.modules, () => this.tick(), roleProofScopeComplete, this.indexComplete);
+    this.processModel = new ProcessRoleModel(this.modules, () => this.tick(), roleProofScopeComplete, this.indexComplete);
     this.expressModel = new ExpressRoleModel(this.modules, () => this.tick(), this.indexComplete);
     this.modules.finishIndex(this.indexComplete);
     this.phase = 'flow';
@@ -767,7 +773,7 @@ class FlowSession {
   }
 
   invoke(call: ts.CallExpression, args: FlowValue[], receiver?: SingletonReceiver, declaredContext = false, capability?: FlowValue['callable'], inheritedContext?: StaticCandidateContext): FlowValue | undefined {
-    const localFork = ts.isIdentifier(call.expression) && call.expression.text === 'fork';
+    const localFork = ts.isIdentifier(call.expression) && (call.expression.text === 'fork' || PROCESS_METHODS.has(call.expression.text));
     let proof = localFork ? this.localForkCalls.get(call) : undefined;
     if (localFork && !proof) { proof = { complete: true }; this.localForkCalls.set(call, proof); }
     const observed = (complete: boolean): void => { if (proof) proof.complete &&= complete && this.roleProofScopeComplete && this.modules.indexComplete; };
@@ -950,6 +956,7 @@ class DataflowAnalyzer {
   // A following initializer/return read must not replay operands against later argument writes.
   private readonly evaluationActuals = new WeakMap<ts.Node, { env: FlowEnv; values: FlowValue[] }>();
   private readonly objectActuals = new WeakMap<ts.ObjectLiteralExpression, { env: FlowEnv; values: Map<ts.Node, FlowValue>; keys: Map<ts.Node, FlowValue> }>();
+  private readonly arrayActuals = new WeakMap<ts.ArrayLiteralExpression, { env: FlowEnv; values: Map<ts.Node, FlowValue> }>();
   private readonly constructedActuals = new WeakMap<ts.NewExpression, { env: FlowEnv; value: FlowValue }>();
   private readonly callableActuals = new WeakMap<ts.CallExpression, { env: FlowEnv; value?: FlowValue }>();
   private readonly conditionalActuals = new WeakMap<ts.ConditionalExpression, { env: FlowEnv; value: FlowValue }>();
@@ -998,7 +1005,8 @@ class DataflowAnalyzer {
         argumentFlows: use.argumentFlows?.map(flow => ({ ...flow, certainty: 'unknown' as const, fixedDestination: false, staticFlow: conditionalFlow(flow.staticFlow) })),
         ...(use.nosqlRole ? { nosqlRole: { ...use.nosqlRole, certainty: 'unknown' as const, staticFlow: conditionalFlow(use.nosqlRole.staticFlow) } } : {}),
         ...(use.sqlRole ? { sqlRole: { ...use.sqlRole, certainty: 'unknown' as const, staticFlow: conditionalFlow(use.sqlRole.staticFlow) } } : {}),
-        ...(use.httpRole ? { httpRole: { ...use.httpRole, certainty: 'unknown' as const, staticFlow: conditionalFlow(use.httpRole.staticFlow) } } : {}) };
+        ...(use.httpRole ? { httpRole: { ...use.httpRole, certainty: 'unknown' as const, staticFlow: conditionalFlow(use.httpRole.staticFlow) } } : {}),
+        ...(use.processRole ? { processRole: { ...use.processRole, certainty: 'unknown' as const, staticFlow: conditionalFlow(use.processRole.staticFlow) } } : {}) };
     });
   }
   analyzeTopLevel(): void { this.analyzeStatements(this.sourceFile.statements, new FlowEnv()); }
@@ -1383,10 +1391,11 @@ class DataflowAnalyzer {
       const response = ts.isPropertyAccessExpression(callee) ? this.evalExpression(callee.expression, env) : undefined;
       // Body interpretation happens when send/json runs, after argument evaluation.
       const responseState = response?.expressResponse;
+      const processBinding = this.session?.processModel.binding(expression);
       this.session?.mongoModel.observe(expression);
       const mongoCollection = this.session?.mongoModel.collection(expression, response?.mongoDb);
       // Preserve operand order in this syntax-shaped lane: later writes cannot replace earlier actual evidence.
-      const orderedActuals = evaluationShapedCallee(callee) || this.session?.nosqlModel.bound(expression) === true || !!selectedCallable.callable || !!selectedCallable.opaqueClosure
+      const orderedActuals = !!processBinding || evaluationShapedCallee(callee) || this.session?.nosqlModel.bound(expression) === true || !!selectedCallable.callable || !!selectedCallable.opaqueClosure
         || this.session?.mongoModel.selector(expression, response?.mongoCollection) === true || this.session?.modules.localCallable(expression) === true || this.session?.modules.resolveCjsFunctionCall(expression)?.kind === 'resolved'
         || !!this.session?.modules.discoverCjsBody(expression);
       const args = orderedActuals ? expression.arguments.map(argument => {
@@ -1463,9 +1472,10 @@ class DataflowAnalyzer {
       const sqlRole = this.sqlRole(expression, args);
       const nosqlRole = this.nosqlRole(expression, args[0] ? consumedInput(args[0]) : undefined, response?.mongoCollection);
       const forkRole = this.session?.forkModel.role(expression);
-      if (argumentFlows.length > 0 || httpRole || sqlRole || nosqlRole || forkRole) this.uses.push({ node: expression, kind: "call", argumentFlows,
+      const processRole = processBinding ? this.processRole(expression, args, processBinding) : undefined;
+      if (argumentFlows.length > 0 || httpRole || sqlRole || nosqlRole || forkRole || processRole) this.uses.push({ node: expression, kind: "call", argumentFlows,
         staticContext: contexts(this.staticContext, selectedCallable.staticContext, response?.staticContext, ...args.map(value => value.staticContext)),
-        localCall: this.session?.modules.localCallable(expression), ...(htmlResponse ? { htmlResponse, htmlResponseMime } : {}), ...(httpRole ? { httpRole } : {}), ...(sqlRole ? { sqlRole } : {}), ...(nosqlRole ? { nosqlRole } : {}), ...(forkRole ? { forkRole } : {}), localForkCall: this.session?.localForkCalls.get(expression) });
+        localCall: this.session?.modules.localCallable(expression), ...(htmlResponse ? { htmlResponse, htmlResponseMime } : {}), ...(httpRole ? { httpRole } : {}), ...(sqlRole ? { sqlRole } : {}), ...(nosqlRole ? { nosqlRole } : {}), ...(forkRole ? { forkRole } : {}), ...(processRole ? { processRole } : {}), localForkCall: this.session?.localForkCalls.get(expression), localProcessCall: this.session?.localForkCalls.get(expression) });
       return;
     }
     if (ts.isNewExpression(expression)) {
@@ -1573,9 +1583,14 @@ class DataflowAnalyzer {
       return;
     }
     if (ts.isArrayLiteralExpression(expression)) {
+      const values = new Map<ts.Node, FlowValue>();
       for (const element of expression.elements) {
-        if (!ts.isOmittedExpression(element)) this.analyzeExpression(element, env);
+        if (!ts.isOmittedExpression(element)) {
+          this.analyzeExpression(element, env);
+          values.set(element, this.evalExpression(element, env));
+        }
       }
+      this.arrayActuals.set(expression, { env, values });
       return;
     }
     if (ts.isPropertyAccessExpression(expression)) {
@@ -1673,6 +1688,35 @@ class DataflowAnalyzer {
     const staticFlow = value && inputRelated ? evidence(value, call) : undefined;
     return { bound, inputRelated, outcome: 'unknown_role', certainty: 'unknown',
       ...(staticFlow ? { staticFlow: { ...staticFlow, truncated: true } } : {}) };
+  }
+
+  private processRole(call: ts.CallExpression, args: readonly FlowValue[], binding: ChildProcessBindingUse): ProcessRoleUse {
+    const layout = this.session!.processModel.layout(call, binding);
+    const base = { api: binding.method, identity: binding.identity, shell: layout.shell };
+    const selected = (value: FlowValue, outcome: ProcessRoleUse['outcome'], index: number, executable = false, known = false): ProcessRoleUse => {
+      const certain = known && !this.declared && !this.staticContext && value.kind === 'tainted';
+      const flow = evidence(value, call);
+      return { ...base, inputRelated: true, outcome, operandIndex: index, executable, certainty: certain ? 'tainted' : 'unknown',
+        ...(flow ? { staticFlow: certain ? flow : { ...flow, truncated: true } } : {}) };
+    };
+    const first = args[0] ? consumedInput(args[0]) : undefined;
+    if (first && isInputRelated(first)) return selected(first,
+      layout.shell === 'enabled' ? 'command_input' : layout.shell === 'disabled' ? 'executable_input' : 'unknown_role', 0,
+      layout.shell === 'disabled', layout.qualified && layout.shell !== 'unresolved');
+    const options = layout.optionsIndex === undefined ? undefined : args[layout.optionsIndex];
+    const shell = layout.shellField ? options?.properties?.get('shell') : undefined;
+    if (shell && isInputRelated(shell)) return selected(consumedInput(shell), 'shell_executable_input', layout.optionsIndex!, true, layout.qualified);
+    const argv = layout.argvIndex === undefined ? undefined : args[layout.argvIndex] ? consumedInput(args[layout.argvIndex]) : undefined;
+    if (argv && isInputRelated(argv)) {
+      if (layout.qualified && layout.shell === 'enabled') return selected(argv, 'argv_shell_input', layout.argvIndex!, false, true);
+      if (layout.qualified && layout.shell === 'disabled' && first?.kind === 'safe' && first.sqlFixedText && !first.sqlScalarUnavailable) {
+        return { ...base, inputRelated: true, outcome: 'argv_only_fixed_executable' };
+      }
+      return selected(argv, 'unknown_role', layout.argvIndex!);
+    }
+    // Closed unrelated env/cwd/argv0 data is not shell/executable evidence.
+    if (!layout.qualified && options && isInputRelated(options)) return selected(consumedInput(options), 'unknown_role', layout.optionsIndex!);
+    return { ...base, inputRelated: false, outcome: 'no_input' };
   }
 
   private sqlRole(call: ts.CallExpression, args: readonly FlowValue[]): SqlRoleUse | undefined {
@@ -1860,11 +1904,13 @@ class DataflowAnalyzer {
       return {...value,sqlDataUnavailable:base.sqlDataUnavailable || keyValue.sqlDataUnavailable, httpTargetUnavailable:httpUnavailable([base,keyValue])};
     }
     if (ts.isArrayLiteralExpression(expression)) {
+      const observed = this.arrayActuals.get(expression);
+      const actuals = observed?.env === env ? observed : undefined;
       const properties = new Map<string, FlowValue>();
       const values: FlowValue[] = [];
       expression.elements.forEach((element, index) => {
         if (ts.isOmittedExpression(element)) return;
-        const value = this.evalExpression(element, env);
+        const value = actuals?.values.get(element) ?? this.evalExpression(element, env);
         properties.set(String(index), withoutUrlProof(value));
         values.push(value);
       });

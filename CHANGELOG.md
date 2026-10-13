@@ -6,6 +6,16 @@ Source and the checked-in Action are versioned 0.5.0. The latest published npm
 package remains 0.4.0; use a reviewed Git commit or build this checkout for the
 features below. This entry does not claim an npm 0.5.0 publication.
 
+- Distinguish command, executable, argv and shell-selector roles for all six
+  Node child_process execution APIs. Preserve unknown identity/options as
+  review candidates or incomplete checks, use high `ast:process-executable`
+  candidates for executable selection and critical shell-input candidates,
+  and limit default/false argv exclusions to Node's shell interpretation.
+  Source ruleset `2026-10-13.2` separates this candidate-meaning change from
+  older scopes; report schema and package version are unchanged. Static input
+  evidence does not verify runtime types, execution, program-option safety,
+  exploitability, fixes or OSS detection efficacy. See `docs/process-role.md`.
+
 - Add an explicit policy v3 `single-quoted` SQL differential profile, with optional paired Authorization/identity declarations and fixed eight/ten-step budgets. Numeric v1/v2 canonical hashes, requests and finding IDs remain unchanged; only validated single-quoted revisions namespace new IDs. CLI plans, same-profile replay, four report formats and advice projection policy 6 preserve scoped candidates and incomplete trailing identity evidence. No automatic SQL context discovery, arbitrary payload corpus, general database coverage or live policy-6 model call is claimed.
 
 - Add opt-in native numeric SQL policy v2 with one selected environment Authorization credential, same-origin identity controls before and after the original eight SQL phases, and default ten shared HTTP attempts. HTTPS is required except explicitly permitted literal owned loopback tests. V1 policy hashes, profile and default eight attempts are unchanged. Failed identity controls remain partial; an already observed probe is retained as a low-confidence candidate without replay authority. CLI/Action offline preflight, fresh-credential replay and current advice projection policy 6 preserve these boundaries without storing credentials or identity values. Owned fixture validation does not establish production authentication or SQL coverage.

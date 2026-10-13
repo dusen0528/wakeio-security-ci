@@ -20,6 +20,8 @@ GitHub 源码版本为 **0.5.0**，npm 已发布的最新版本为 **0.4.0**。�
 
 源代码检查包含内置 JS/TS 规则，也可以选择单独准备的 Gitleaks、OSV-Scanner、Trivy 和 Bandit。外部引擎不会被默认视为可信或已安装；先用 `--tools none` 运行内置检查即可。
 
+源代码 preview 区分 [6种 Node process API](docs/process-role.md) 的 command、executable、argv 和 shell 字段。default/false argv 的排除只针对 Node 的 shell 解释，不验证程序选项安全或实际执行。此 ruleset 变更不代表 npm 已发布。
+
 ## 快速开始
 
 准备 Node.js 22 或更高版本，在目标项目之外的目录中进行 checkout：
