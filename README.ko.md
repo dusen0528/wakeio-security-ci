@@ -214,6 +214,12 @@ scan·모델 호출·argv 생성/실행·패치 적용을 하지 않습니다. F
 exit `2`입니다. `not_observed`는 수정 검증이 아닙니다.
 [전체 동선·snapshot 연결·출력 위치](docs/source-handoff.md)를 참고하세요.
 
+`report.md`의 각 finding에는 `ID`와 0부터 시작하는 `Check index`가 표시됩니다.
+검토한 소스 CLI의 `advise --finding FINDING_ID --check-index CHECK_INDEX`에
+같은 쌍을 넣고 인증 방식과 전송 동의를 명시하면 한 행에 집중한 조언을
+받을 수 있습니다. 전체 scan gate는 유지되며 로컬 검토·handoff·재검사는
+별도 단계입니다. [선택한 행의 조언](docs/agent-advice.md#advice-for-one-selected-row)을 참고하세요.
+
 ## 읽기 전용 API 정책과 비교
 
 현재 소스 checkout에서는 staging 실행 전에 대상에 연결하지 않고 로컬 설정을 확인할 수 있습니다.

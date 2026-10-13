@@ -218,6 +218,13 @@ patch. Finish checks comparison **and the full after gate**; unchanged high
 findings block and partial results stay exit `2`. `not_observed` is not a verified
 fix. See [the complete flow, snapshot binding and output locations](docs/source-handoff.md).
 
+`report.md` now lists each finding's zero-based `Check index` next to its `ID`.
+The reviewed source CLI also accepts that exact pair for optional
+`advise --finding FINDING_ID --check-index CHECK_INDEX`, together with explicit
+authentication and upload consent. It focuses advice on one row while keeping
+the full scan gate; local review, source handoff and rescan remain separate
+steps. See [selected-row advice](docs/agent-advice.md#advice-for-one-selected-row).
+
 ## Read-only API policy and comparison
 
 Before an authorized staging run, the current source checkout can check local configuration without contacting the target:

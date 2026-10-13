@@ -2,7 +2,7 @@
 
 `advise` is an explicit follow-up to a completed `scan`. It sends a capped projection of the redacted `agent-report.json` to a user-selected Codex CLI and writes a private `agent-advice.json`. It does not scan again, inspect source files, run target code, apply a patch, or change `report.json`, `agent-report.json`, the scan gate, or the original process/CI result. Its exit `0` means advice was produced; exit `2` means advice was incomplete or rejected. Neither exit verifies a vulnerability or fix.
 
-The command checks that the adjacent `report.json` has the digest named by `agent-report.json`, and that the latter matches the report's sanitised projection. That validates the artifact pair, not final CI delivery. Keep the scan process receipt separately. Projection policy 11 is the source-preview contract and uploads gate state, declared scope, up to 24 coherently selected checks and 24 linked findings, and counted omissions under a 32 KiB cap. Incomplete and blocking checks are selected first. It includes typed native differential phases/outcomes and request budgets, plus authenticated native identity-control and probe-outcome enums without identity values, bounded API phase/outcome/control metadata, static-flow roles without positions, AST budget/gap accounting, and strictly validated `source.inventory` collection bounds with aggregate enumerated issue counts. Conditional static context contributes only its conditional authority, enumerated kinds, item count and truncation flag; context positions and observed target positions remain in local reports. It uses the existing nonexecuting `review_static_flow_or_budget` route and grants no replay authority. Missing or malformed collection metadata remains unknown; it does not receive guessed defaults. Collection cards use the existing nonexecuting `review_static_flow_or_budget` route and exclude notes, file paths and source content. The projection excludes source code, source paths/coordinates, report locations/URLs, target endpoints, request/response values, actor/case labels, credentials, logs, and arbitrary notes. Short titles remain untrusted data; automated redaction cannot recognise every private sentence, so review the report before opting in.
+The command checks that the adjacent `report.json` has the digest named by `agent-report.json`, and that the latter matches the report's sanitised projection. That validates the artifact pair, not final CI delivery. Keep the scan process receipt separately. Projection policy 12 is the source-preview contract and uploads gate state, declared scope, up to 24 coherently selected checks and 24 linked findings, and counted omissions under a 32 KiB cap. Incomplete and blocking checks are selected first in the default projection. It includes typed native differential phases/outcomes and request budgets, plus authenticated native identity-control and probe-outcome enums without identity values, bounded API phase/outcome/control metadata, static-flow roles without positions, AST budget/gap accounting, and strictly validated `source.inventory` collection bounds with aggregate enumerated issue counts. Conditional static context contributes only its conditional authority, enumerated kinds, item count and truncation flag; context positions and observed target positions remain in local reports. It uses the existing nonexecuting `review_static_flow_or_budget` route and grants no replay authority. Missing or malformed collection metadata remains unknown; it does not receive guessed defaults. Collection cards use the existing nonexecuting `review_static_flow_or_budget` route and exclude notes, file paths and source content. The projection excludes source code, source paths/coordinates, report locations/URLs, target endpoints, request/response values, actor/case labels, credentials, logs, and arbitrary notes. Short titles remain untrusted data; automated redaction cannot recognise every private sentence, so review the report before opting in.
 
 ```sh
 # Use the signed-in Codex CLI on this trusted local machine.
@@ -16,13 +16,67 @@ wakeio-security-ci advise --report /absolute/reports/agent-report.json \
   --out /absolute/private/advice-run
 ```
 
-`--report` accepts the report directory or its `agent-report.json`. `--out` must be a new directory whose parent exists; it is created mode `0700`, and the advice file is mode `0600`. `--agent-path` selects a reviewed Codex executable. `--timeout-ms` is a positive value up to 120000 (default 120000). There is no automatic model/provider fallback. `scan` never invokes this command automatically. The current 0.5.0 source preview must be built locally; the last published npm package remains 0.4.0.
+`--report` accepts the report directory or its `agent-report.json`. `--out` must be a new directory whose parent exists; it is created mode `0700`, and the advice file is mode `0600`. `--agent-path` selects a reviewed Codex executable. `--timeout-ms` is a positive value up to 120000 (default 120000). There is no automatic model/provider fallback. `scan` never invokes this command automatically. These policy-12 examples use the reviewed 0.5.0 GitHub source build; this change does not publish an npm package.
+
+## Advice for one selected row
+
+In local `report.md`, each finding lists its `ID` and numeric `Check index`.
+The index is zero-based in the report's checks array, **not** the finding-list
+row number or the check ID. The same pair is available as `findingId` and
+`checkIndex` in `agent-report.json`. Choose the row after reviewing its evidence
+and the original scan gate, then supply both flags together:
+
+```sh
+node /path/to/wakeio-security-ci/build/src/cli.js advise \
+  --report /path/outside/your-app/before \
+  --finding FINDING_ID --check-index CHECK_INDEX \
+  --agent codex --auth cli-login --allow-report-upload \
+  --out /path/outside/your-app/selected-advice
+# To explicitly select CODEX_API_KEY authentication, use --auth api-key.
+```
+
+`--finding` requires 64 lowercase hex characters; `--check-index` requires a
+canonical nonnegative safe integer (`0` or an unpadded decimal integer).
+Signs, padded values, decimals and exponent notation are rejected. The index
+must identify a check in the actual canonical report. Missing one flag, malformed values, a missing row or
+a repeated `(checkIndex, findingId)` is refused with exit `2` before provider
+startup. Equal finding IDs in different checks remain distinct choices.
+
+The focused upload contains only that finding and its parent check, while
+retaining the **full report's** original gate, counts and omission accounting.
+It does not turn a partial scan into a pass or hide other blocking findings.
+The selected evidence must fit the 32 KiB projection cap; otherwise advice
+fails explicitly with `report_projection_too_large` rather than silently
+dropping the selection. `input.selection` in `agent-advice.json` records the
+chosen `findingId` and `checkIndex` alongside the original report-pair hashes.
+Recommendations remain restricted to the supplied references and allowed
+review routes. Advice selection accepts any finding kind; selecting an
+observation or advisory does not make it eligible for source handoff, which
+still requires a supported source candidate.
+
+Without the flags, the default bounded report projection remains available.
+Policy 12 omits every finding row whose `(checkIndex, findingId)` repeats from
+finding references, records the full-report count as numeric
+`ambiguousFindingRows` in the uploaded projection, and retains bounded
+check-level diagnostics. This count is not a field in the advice receipt's
+`input`; the receipt records `input.selection` separately for focused advice.
+Omission is not proof that those findings are safe. A unique selected row can
+be requested even when the default 24-finding selection would omit it.
+
+For a source candidate, read the private advice as unverified guidance and
+inspect the local source with a separately authorised reviewer or coding agent.
+Use [source handoff](source-handoff.md) to bind the same selected candidate to
+the local source, then separately rerun the original scan with the same options
+after an authorised change. `handoff finish` preserves comparison and the full
+after gate; a disappearing candidate is not a verified fix. Advice does not
+change handoff eligibility or authorise source edits, target execution or
+rescan commands.
 
 Both modes use a private working directory, minimal child environment, `codex exec --ignore-user-config --ignore-rules --strict-config --ephemeral --sandbox read-only`, disabled tools/features, schema-constrained output, a bounded JSONL parser, and a process deadline. API-key mode passes only `CODEX_API_KEY` into the child and uses a private home. CLI-login mode passes the selected Codex state-directory **path** to the native CLI so it can use its existing login; Wakeio does not open, copy, print, or store the credential file. The CLI itself owns authentication and may read/write its state. The two auth modes are mutually exclusive and explicitly selected; neither silently falls back to the other. The command does not perform a login or ask for a password. The supervisor confirms termination of the owned process group before accepting advice; processes that deliberately leave that group are not contained by this supervisor. This is a lifecycle check, not a filesystem or network isolation guarantee.
 
 The installed Codex 0.162.0-alpha.17.2 needs its internal `code_mode_host` capability during startup even when agent-facing `code_mode` is disabled. The advisor therefore leaves `code_mode_host` at the CLI default while disabling `code_mode`, shell/unified execution, shell snapshots, browser/computer tools, plugins, hooks, and other listed capabilities. Every JSONL tool event still fails closed. This precise compatibility rule is checked by the fake CLI fixture and the live synthetic run; future CLI versions still require review.
 
-`agent-advice.json` records input hashes, the original scan gate, auth mode, provider version and executable hash, projection policy version 11, `verified: false`, and validated prioritised recommendations linked only to supplied finding/check references or `scope`. Each recommendation must carry the exact locally derived `recheckRoute` for its reference. `replay_native_finding_same_policy` and `replay_api_finding_same_policy` indicate a separate human-initiated replay that requires the original policy and explicit active-scan consent; they do not run it. The native route appears only when the report also meets the replay parser's bounded input and report-only candidate prerequisites. The replay command still checks the supplied policy, target URL and consent before any request, and may refuse. `repeat_native_same_policy` marks check-level review, while static, diagnostic and scope routes name their bounded human review. A completed pass with no findings may return zero recommendations. Model and cost are `unknown` unless separately observed. Model prose is advisory; the underlying finding verification remains `not_run` and remediation remains `not_verified`. Unknown/malformed model references or mismatched routes, any tool event, failed turn, timeout, output overflow, or unsupported CLI option yield an incomplete advice receipt without model prose. Do not publish this private artifact automatically.
+`agent-advice.json` records input hashes, the original scan gate, auth mode, provider version and executable hash, projection policy version 12, `verified: false`, and validated prioritised recommendations linked only to supplied finding/check references or `scope`. Each recommendation must carry the exact locally derived `recheckRoute` for its reference. `replay_native_finding_same_policy` and `replay_api_finding_same_policy` indicate a separate human-initiated replay that requires the original policy and explicit active-scan consent; they do not run it. The native route appears only when the report also meets the replay parser's bounded input and report-only candidate prerequisites. The replay command still checks the supplied policy, target URL and consent before any request, and may refuse. `repeat_native_same_policy` marks check-level review, while static, diagnostic and scope routes name their bounded human review. A completed pass with no findings may return zero recommendations. Model and cost are `unknown` unless separately observed. Model prose is advisory; the underlying finding verification remains `not_run` and remediation remains `not_verified`. Unknown/malformed model references or mismatched routes, any tool event, failed turn, timeout, output overflow, or unsupported CLI option yield an incomplete advice receipt without model prose. Do not publish this private artifact automatically.
 
 OpenAI documents [`codex exec` non-interactive mode](https://learn.chatgpt.com/docs/non-interactive-mode), its [flags](https://learn.chatgpt.com/docs/developer-commands?surface=cli), and the [`CODEX_API_KEY` and `CODEX_HOME` environments](https://learn.chatgpt.com/docs/config-file/environment-variables). Its documentation notes that `--ignore-user-config` leaves authentication attached to `CODEX_HOME`; account login therefore needs an explicit trust boundary. On 2026-10-13, a signed-in Codex 0.162.0-alpha.17.2 produced advice from the owned native SQLite demonstration report under both projection policies 1 and 2. The local private policy-2 receipt records `status: advice_produced`, `authMode: cli-login`, `policyVersion: 2`, `verified: false`, and one recommendation with the locally required native replay route. Its input hashes match the owned report pair; the provider parser rejects every tool event before a successful receipt, so this accepted turn had no tool event. Model and cost remain `unknown`. API-key mode passed fake-CLI contract tests only; `CODEX_API_KEY` was absent, so its live call remains untested. These synthetic runs do not establish a billing limit, real-target efficacy, or hard filesystem/network isolation.
 
@@ -78,3 +132,9 @@ report pair and original scan gate remain authoritative; advice cannot turn
 missing or incomplete controls into a pass. No live policy-11 Codex call is
 claimed; earlier provider receipts do not verify this policy. See the
 [authenticated Schemathesis controls](schemathesis-auth-controls.md).
+
+Policy 12 adds exact row selection and ambiguity handling described above.
+No live policy-12 provider call is claimed. The historical signed-in CLI
+policy-2 receipt does not verify policy 12 or live API-key authentication.
+Deterministic projection, fake-CLI and package checks are recorded separately
+in the [selected-advice validation record](research/selected-agent-advice-2026-10-14.md).

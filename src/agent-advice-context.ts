@@ -10,7 +10,9 @@ import { types } from 'node:util';
 export type RecheckRoute = 'repeat_native_same_policy' | 'replay_native_finding_same_policy' | 'replay_api_finding_same_policy'
   | 'review_static_flow_or_budget' | 'review_check_diagnostics' | 'review_scope';
 
-export const ADVICE_PROJECTION_POLICY_VERSION = 11;
+export const ADVICE_PROJECTION_POLICY_VERSION = 12;
+
+export interface AdviceSelection { findingId: string; checkIndex: number }
 
 const MAX_CHECKS = 24;
 const MAX_FINDINGS = 24;
@@ -164,18 +166,34 @@ function findingCard(finding: AgentReport['findings'][number], check: AgentRepor
 }
 
 /** Typed, data-only evidence projection. Report and source locations never enter this object. */
-export function projectAdviceContext(agent: AgentReport, nativeReplayReportEligible: boolean) {
+export function projectAdviceContext(agent: AgentReport, nativeReplayReportEligible: boolean,
+  selection?: AdviceSelection) {
   const blocking = new Set(agent.scanGate.blockingFindingIds);
   const nativeCheckCount = agent.checks.filter(check => check.checkId === NATIVE_CHECK).length;
   const findingRowsByCheck = new Map<number, number>();
-  for (const finding of agent.findings) findingRowsByCheck.set(finding.checkIndex,
-    (findingRowsByCheck.get(finding.checkIndex) ?? 0) + 1);
-  const checks = [...agent.checks].sort((a, b) => checkPriority(a, blocking) - checkPriority(b, blocking)
-    || a.checkIndex - b.checkIndex).slice(0, MAX_CHECKS);
+  const pairKey = (finding: AdviceSelection) => `${finding.checkIndex}:${finding.findingId}`;
+  const findingRowsByPair = new Map<string, number>();
+  for (const finding of agent.findings) {
+    findingRowsByCheck.set(finding.checkIndex, (findingRowsByCheck.get(finding.checkIndex) ?? 0) + 1);
+    const key = pairKey(finding);
+    findingRowsByPair.set(key, (findingRowsByPair.get(key) ?? 0) + 1);
+  }
+  const ambiguousFindingRows = agent.findings.filter(finding => findingRowsByPair.get(pairKey(finding))! > 1).length;
+  if (selection) {
+    if (!/^[a-f0-9]{64}$/.test(selection.findingId) || !Number.isSafeInteger(selection.checkIndex)
+      || selection.checkIndex < 0 || agent.checks[selection.checkIndex]?.checkIndex !== selection.checkIndex
+      || !findingRowsByPair.has(pairKey(selection))) throw new Error('invalid_finding');
+    if (findingRowsByPair.get(pairKey(selection))! > 1) throw new Error('ambiguous_finding');
+  }
+  const checks = selection ? [agent.checks[selection.checkIndex]]
+    : [...agent.checks].sort((a, b) => checkPriority(a, blocking) - checkPriority(b, blocking)
+      || a.checkIndex - b.checkIndex).slice(0, MAX_CHECKS);
   const selectedCheckIndexes = new Set(checks.map(check => check.checkIndex));
   const checkByIndex = new Map(checks.map(check => [check.checkIndex, check]));
   const findings = agent.findings.map((finding, index) => ({ finding, index }))
-    .filter(({ finding }) => selectedCheckIndexes.has(finding.checkIndex))
+    .filter(({ finding }) => selectedCheckIndexes.has(finding.checkIndex)
+      && findingRowsByPair.get(pairKey(finding)) === 1
+      && (!selection || pairKey(finding) === pairKey(selection)))
     .sort((a, b) => Number(b.finding.reachesFailOn) - Number(a.finding.reachesFailOn)
       || severityRank[b.finding.severity] - severityRank[a.finding.severity] || a.index - b.index)
     .slice(0, MAX_FINDINGS);
@@ -186,6 +204,7 @@ export function projectAdviceContext(agent: AgentReport, nativeReplayReportEligi
   const sourceMode = agent.mode === 'source' || agent.mode === 'both' || agent.mode === 'combined';
   const input = {
     projectionVersion: ADVICE_PROJECTION_POLICY_VERSION, schemaVersion: agent.schemaVersion, mode: agent.mode,
+    ...(selection ? { selection: { findingId: selection.findingId, checkIndex: selection.checkIndex } } : {}),
     scanGate: { outcome: agent.scanGate.outcome, exitCode: agent.scanGate.exitCode,
       failOn: agent.scanGate.failOn, reasons: agent.scanGate.reasons.map(reason => reason.code).slice(0, 8) },
     scope: { mode: agent.summary?.scope.mode ?? agent.mode, wholeProjectCoverage: 'not_established' as const,
@@ -197,6 +216,7 @@ export function projectAdviceContext(agent: AgentReport, nativeReplayReportEligi
     counts: agent.summary?.counts,
     checks: selectedChecks, omittedChecks: 0,
     findings: selectedFindings, omittedFindings: 0,
+    ambiguousFindingRows,
   };
   const updateOmissions = () => {
     input.omittedChecks = agent.checks.length - input.checks.length;
@@ -204,6 +224,8 @@ export function projectAdviceContext(agent: AgentReport, nativeReplayReportEligi
   };
   updateOmissions();
   while (Buffer.byteLength(JSON.stringify(input)) > MAX_BYTES) {
+    // A focused request must retain its exact finding and parent check or fail.
+    if (selection) throw new Error('report_projection_too_large');
     // Preserve the highest-priority check and its linked findings before trimming
     // lower-priority checks; a single oversized check then loses low-priority rows.
     if (input.checks.length > 1) input.checks.pop();
