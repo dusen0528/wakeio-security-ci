@@ -50,7 +50,8 @@ try {
   const eventsPath = join(directory, 'tests.ndjson');
   await stage('tests', process.execPath, ['--test', '--test-reporter=spec', '--test-reporter-destination=stdout',
     '--test-reporter=' + join(root, 'scripts/ci-test-reporter.mjs'), '--test-reporter-destination=' + eventsPath, ...files],
-    180000, { ...engineEnvironment, WAKEIO_SCHEMATHESIS_PYTHON: python });
+    180000, { ...engineEnvironment, WAKEIO_SCHEMATHESIS_PYTHON: python,
+      WAKEIO_REQUIRE_SCHEMATHESIS: '1', WAKEIO_REQUIRE_RUNNER_ENGINES: '1' });
   const bytes = await readFile(eventsPath);
   await chmod(eventsPath, 0o600);
   if (bytes.length > 8 * 1024 * 1024) throw Error('test_receipt_limit');
@@ -77,6 +78,25 @@ try {
     ['real nuclei: risk/normal pair, wire coverage and egress refusal counts',
       'real nuclei: request budget and a failing target are partial even though nuclei exits 0'],
     join(root, 'build/tests/nuclei.test.js'));
+  receipt.agentDastRunner = validateTestEvents(events, [
+    'runner engines independent: real Schemathesis vulnerable/fixed contract pair and irrecoverable transport errors propagate 1/0/2',
+    'runner engines independent: real signed one-template Nuclei and native SQL tasks overlap and share observed run counts',
+    'runner engines independent: real Schemathesis and native execution consume one global cap rather than per-engine caps',
+    'runner engines independent: fabricated Nuclei exit0/progress100 with no wire traffic cannot complete the public run',
+  ], join(root, 'build/tests/agent-dast-runner-engines.test.js'));
+  receipt.agentDastRunnerTemplate = validateTestEvents(events, [
+    'runner template independent: actual generated path-parameter vulnerable/fixed findings retain declared template context and completed1/0 gates',
+  ], join(root, 'build/tests/agent-dast-runner-template.test.js'));
+  receipt.agentDastRunnerAuth = validateTestEvents(events, [
+    'runner auth independent: real authenticated Schemathesis public plan retains identity normal generated controls and global1/0/2 gates without secrets',
+  ], join(root, 'build/tests/agent-dast-runner-auth.test.js'));
+  receipt.runPlanAction = validateTestEvents(events, [
+    'consent, pull_request_target and fork refusals happen before reading inputs or starting the CLI',
+    'exit-zero without a current receipt, tampered hashes, child/JSON disagreement and stale outputs all fail closed',
+    'Action cancellation terminates a trusted CLI, its detached ignoring engine and that engine descendant',
+    'an existing unowned Action receipt is preserved on collision after a real completed native run',
+    'the bounded Action protocol accepts a published partial ledger with 20000 attempt records',
+  ], join(root, 'tests/run-plan-action.test.mjs'));
   receipt.dastAction = validateTestEvents(events,
     ['DAST Action runs Schemathesis from the bundled layout for a same-repository pull request',
       'DAST Action runs pinned Nuclei through the bundled layout',

@@ -1,0 +1,111 @@
+name: Wakeio built-in scan plan
+description: Execute an explicitly authorized data plan with one shared budget through the checked-in trusted CLI bundle
+inputs:
+  plan:
+    description: Workspace-relative reviewed execution plan JSON
+    required: true
+  inputs:
+    description: Workspace-relative owner input aliases and raw-file SHA256 bindings JSON
+    required: true
+  active-consent:
+    description: Must be exactly true for an owned or authorized target
+    default: 'false'
+  allowed-origin:
+    description: One exact owner-authorized HTTP(S) origin
+    required: true
+  out:
+    description: New workspace-relative output directory; existing directories are refused
+    default: wakeio-run-plan-reports
+  max-requests:
+    description: Global admitted HTTP attempt cap, 1..20000
+    default: '64'
+  timeout-ms:
+    description: Global cooperative deadline, 1..600000 milliseconds
+    default: '120000'
+  rate-per-second:
+    description: Global request admission rate, 1..150 per second
+    default: '10'
+  concurrency:
+    description: Concurrent built-in task groups, 1..4
+    default: '2'
+  fail-on:
+    description: Finding threshold; none still fails incomplete work
+    default: high
+  allow-private:
+    description: Permit explicitly authorized loopback/private targets; metadata remains blocked
+    default: 'false'
+  schemathesis-python:
+    description: Optional preinstalled trusted Python with the pinned Schemathesis dependencies; no installation occurs
+    default: ''
+  nuclei-path:
+    description: Optional preinstalled trusted Nuclei executable; no installation occurs
+    default: ''
+  nuclei-templates:
+    description: Optional prepared trusted Nuclei template directory; no download occurs
+    default: ''
+outputs:
+  exit-code:
+    description: 0 completed without threshold findings, 1 threshold findings, 2 refused, incomplete, cancelled or delivery failure
+    value: ${{ steps.run.outputs.exit-code || '2' }}
+  setup-status:
+    description: refused, success or failure
+    value: ${{ steps.run.outputs.setup-status || 'failure' }}
+  scan-status:
+    description: completed, findings, incomplete, cancelled or not-run
+    value: ${{ steps.run.outputs.scan-status || 'not-run' }}
+  delivery-status:
+    description: delivered only after the current child exit and all publication hashes agree
+    value: ${{ steps.run.outputs.delivery-status || 'failed' }}
+  report-dir:
+    description: Current verified output directory, empty when delivery is unacknowledged
+    value: ${{ steps.run.outputs.report-dir }}
+  run-report:
+    description: Current verified run-report.json; task directories contain the four original report formats
+    value: ${{ steps.run.outputs.run-report }}
+  run-agent:
+    description: Current digest-bound agent-run.json; does not prove final Action success
+    value: ${{ steps.run.outputs.run-agent }}
+  manifest:
+    description: Verified run artifact manifest
+    value: ${{ steps.run.outputs.manifest }}
+  publication-marker:
+    description: Publication-only controller marker, separate from child exit
+    value: ${{ steps.run.outputs.publication-marker }}
+  receipt:
+    description: Wrapper acknowledgement of the current child and publication; final Action outcome is separate
+    value: ${{ steps.run.outputs.receipt }}
+  run-id:
+    description: Current verified run identifier
+    value: ${{ steps.run.outputs.run-id }}
+runs:
+  using: composite
+  steps:
+    # Preinstalled Node >=22.13 (or >=23.4/24+) is required. No setup/download
+    # precedes the trigger/consent check, and this Action never builds a target.
+    - name: Execute the trusted bundled scan plan
+      id: run
+      shell: bash
+      env:
+        WAKEIO_ACTION_PATH: ${{ github.action_path }}
+        WAKEIO_PLAN: ${{ inputs.plan }}
+        WAKEIO_PLAN_INPUTS: ${{ inputs.inputs }}
+        WAKEIO_PLAN_ACTIVE_CONSENT: ${{ inputs.active-consent }}
+        WAKEIO_PLAN_ALLOWED_ORIGIN: ${{ inputs.allowed-origin }}
+        WAKEIO_PLAN_OUT: ${{ inputs.out }}
+        WAKEIO_PLAN_MAX_REQUESTS: ${{ inputs.max-requests }}
+        WAKEIO_PLAN_TIMEOUT_MS: ${{ inputs.timeout-ms }}
+        WAKEIO_PLAN_RATE: ${{ inputs.rate-per-second }}
+        WAKEIO_PLAN_CONCURRENCY: ${{ inputs.concurrency }}
+        WAKEIO_PLAN_FAIL_ON: ${{ inputs.fail-on }}
+        WAKEIO_PLAN_ALLOW_PRIVATE: ${{ inputs.allow-private }}
+        WAKEIO_PLAN_SCHEMATHESIS_PYTHON: ${{ inputs.schemathesis-python }}
+        WAKEIO_PLAN_NUCLEI_PATH: ${{ inputs.nuclei-path }}
+        WAKEIO_PLAN_NUCLEI_TEMPLATES: ${{ inputs.nuclei-templates }}
+      run: |
+        if ! command -v node >/dev/null 2>&1; then
+          echo 'exit-code=2' >> "$GITHUB_OUTPUT"
+          echo 'setup-status=failure' >> "$GITHUB_OUTPUT"
+          echo 'A supported preinstalled Node runtime is required.' >&2
+          exit 2
+        fi
+        node "$WAKEIO_ACTION_PATH/run.mjs"

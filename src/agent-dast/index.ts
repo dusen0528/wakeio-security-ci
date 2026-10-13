@@ -1,3 +1,5 @@
-/** Experimental local task/result store SDK; no CLI, provider or target execution. */
+/** Experimental built-in plan execution and controller-owned result store SDK. */
 export * from './result.js';
 export * from './store.js';
+export * from './plan.js';
+export * from './runner.js';

@@ -1,8 +1,10 @@
 # Experimental agent-dast SDK
 
-`wakeio-security-ci/agent-dast` exposes the bounded worker-result validator and
-local task store. It does not execute an agent, provider, target or scan, and is
-not integrated with the CLI or Actions. Store use supports Node 22.13+ within
+`wakeio-security-ci/agent-dast` exposes the bounded worker-result validator,
+local task store and the experimental [built-in plan runner](agent-dast-runner.md).
+The validator/store alone do not execute a target or model. `runExecutionPlan`
+and `run-plan` connect explicit consented plans to existing DAST adapters; agents
+do not receive database authority. Store use supports Node 22.13+ within
 22.x, Node 23.4+ within 23.x, and Node 24 or newer, with `node:sqlite` available;
 unsupported runtimes fail with `node_sqlite_unavailable`.
 The ordinary package entrypoint and CLI do not import SQLite eagerly.

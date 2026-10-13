@@ -7,6 +7,7 @@ import type { CheckResult, Finding, Severity } from "./contracts.js";
 import { resolveDastOrigin, startEgressGate, type EgressGate } from "./dast-egress.js";
 import { findExecutable, MAX_TOOL_TIMEOUT_MS, runProcess } from "./source/process.js";
 import { normalizeUrl, safeUrl, UrlNetworkError } from "./url-network.js";
+import { admissionSignal, type TaskAdmission } from './agent-dast/admission.js';
 
 /**
  * Opt-in Nuclei adapter. Template selection is explicit and static; all
@@ -183,7 +184,7 @@ function bounded(value: number | undefined, fallback: number, cap: number): numb
   return result;
 }
 
-export async function runNuclei(options: NucleiOptions): Promise<CheckResult[]> {
+export async function runNuclei(options: NucleiOptions, runtime?: TaskAdmission): Promise<CheckResult[]> {
   if (!options || options.consent !== true) return errorCheck("consent_required", "Active Nuclei testing requires explicit consent; no requests were made.");
   // Freeze the target before any await: the protocol checked below must be the
   // same protocol later resolved and passed to the egress gate.
@@ -214,7 +215,7 @@ export async function runNuclei(options: NucleiOptions): Promise<CheckResult[]> 
     return errorCheck("templates_missing", "The prepared nuclei-templates directory could not be read; templates are never downloaded during a scan. No requests were made.");
   }
   const work = await mkdtemp(join(tmpdir(), "wakeio-nuclei-"));
-  const control = createApiRunControl(timeoutMs, options.signal, MAX_TOOL_TIMEOUT_MS);
+  const control = createApiRunControl(timeoutMs, admissionSignal(runtime, options.signal), MAX_TOOL_TIMEOUT_MS);
   const engine = new AbortController();
   const stopEngine = () => engine.abort();
   control.signal.addEventListener("abort", stopEngine, { once: true });
@@ -237,7 +238,7 @@ export async function runNuclei(options: NucleiOptions): Promise<CheckResult[]> 
     }
     gate = await startEgressGate({ origin: resolved.origin, address: resolved.address, methods: new Set(["GET", "HEAD"]),
       maxRequests, maxSingleBodyBytes: NUCLEI_MAX_SINGLE_BODY_BYTES, maxTotalBytes: NUCLEI_MAX_TOTAL_BYTES,
-      signal: control.signal, deadlineAt: control.deadlineAt });
+      signal: control.signal, deadlineAt: control.deadlineAt }, runtime);
     gate.onStop(stopEngine);
     const list = join(work, "templates.txt");
     await writeFile(list, `${selection.selected.join("\n")}\n`, { mode: 0o600 });

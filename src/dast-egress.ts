@@ -5,6 +5,7 @@ import { request as httpsRequest } from 'node:https';
 import type { TLSSocket } from 'node:tls';
 import { normalizeUrl, resolveAddresses, type DnsAddress, type NormalizedUrl } from "./url-network.js";
 import { operationPathMatches } from './schemathesis-auth.js';
+import { DastAdmissionError, type AttemptPermit, type TaskAdmission, type AdmissionMethod } from './agent-dast/admission.js';
 
 /**
  * Loopback forward proxy that every active DAST engine must use. It inherits
@@ -26,6 +27,8 @@ export interface EgressPolicy {
   maxTotalBytes: number;
   signal: AbortSignal;
   deadlineAt: number;
+  /** Trusted live-operation allowlist, used only by the controller admission lane. */
+  operations?: readonly string[];
   /** Private Node-only authority. The worker receives only the ordinary proxy credential. */
   authentication?: { authorization: string; operations: readonly string[]; controlPaths: readonly string[]; generatedMaxRequests: number };
 }
@@ -117,7 +120,10 @@ function forwardHeaders(headers: IncomingHttpHeaders, host: string): Record<stri
   return result;
 }
 
-export async function startEgressGate(policy: EgressPolicy): Promise<EgressGate> {
+export async function startEgressGate(policy: EgressPolicy, runtime?: TaskAdmission): Promise<EgressGate> {
+  const shutdown = new AbortController();
+  policy = { ...policy, signal: AbortSignal.any([policy.signal, shutdown.signal, ...(runtime ? [runtime.signal] : [])]),
+    deadlineAt: Math.min(policy.deadlineAt, runtime?.deadlineAt ?? Infinity) };
   const token = randomBytes(18).toString("base64url");
   const expected = Buffer.from(`Basic ${Buffer.from(`wakeio:${token}`).toString("base64")}`);
   const controlToken = randomBytes(24).toString('base64url');
@@ -164,7 +170,7 @@ export async function startEgressGate(policy: EgressPolicy): Promise<EgressGate>
     response.end();
   };
 
-  const onRequest = (request: IncomingMessage, response: ServerResponse) => {
+  const onRequest = async (request: IncomingMessage, response: ServerResponse) => {
     const auth = policy.authentication;
     const control = !!auth && authorized(request.headers,controlExpected);
     if (!control && !authorized(request.headers)) { response.writeHead(407, { "proxy-authenticate": "Basic", "content-length": "0", connection: "close" }); response.end(); return; }
@@ -184,11 +190,35 @@ export async function startEgressGate(policy: EgressPolicy): Promise<EgressGate>
         counters.blockedMethod += 1; request.resume(); refuse(response,405); return;
       }
     }
+    if (!auth && policy.operations) {
+      operationIndex = policy.operations.findIndex(path => operationPathMatches(path, target.pathname));
+      if (operationIndex < 0) { counters.blockedOrigin++; request.resume(); refuse(response, 502); return; }
+    }
     if (!policy.methods.has(request.method ?? "")) { counters.blockedMethod += 1; request.resume(); refuse(response, 405); return; }
     if (closing || stopped || policy.signal.aborted || auth && (authenticatedTransportStopped || Date.now()>=policy.deadlineAt) || counters.forwarded >= policy.maxRequests || auth && !control && observations.length >= auth.generatedMaxRequests) {
       counters.blockedBudget += 1;
       if (counters.forwarded >= policy.maxRequests || auth && !control && observations.length >= auth.generatedMaxRequests) stop("request_limit");
       request.resume(); refuse(response, 503); return;
+    }
+    let permit: AttemptPermit | undefined;
+    const downstream = new AbortController();
+    const cancelWaiting = () => downstream.abort();
+    response.once('close', cancelWaiting);
+    request.once('error', cancelWaiting);
+    const admissionAbort = AbortSignal.any([policy.signal, downstream.signal]);
+    try { permit = runtime ? await runtime.reserve({ method: request.method as AdmissionMethod, kind: control ? 'control' : 'probe',
+      ...(operationIndex >= 0 ? { operationIndex } : {}) }, admissionAbort) : undefined; }
+    catch (error) {
+      counters.blockedBudget++;
+      if (error instanceof DastAdmissionError && error.code === 'request_limit') stop('request_limit');
+      request.resume(); if (!response.destroyed) refuse(response, 503); return;
+    }
+    // The rate wait can outlive a downstream socket, local cap or cancellation.
+    if (response.destroyed || request.destroyed || closing || stopped || policy.signal.aborted || Date.now() >= policy.deadlineAt
+      || counters.forwarded >= policy.maxRequests || auth && !control && observations.length >= auth.generatedMaxRequests) {
+      permit?.finish('transport_error'); counters.blockedBudget++; request.resume();
+      if (counters.forwarded >= policy.maxRequests) stop('request_limit');
+      if (!response.destroyed) refuse(response, 503); return;
     }
     counters.forwarded += 1;
     const attempt = counters.forwarded;
@@ -197,6 +227,7 @@ export async function startEgressGate(policy: EgressPolicy): Promise<EgressGate>
     // Sockets can emit more than one error; count one failure per request and never leave an error unhandled.
     let failed = false;
     const fail = () => {
+      permit?.finish('transport_error');
       // A lost response cannot authorize another authenticated wire attempt,
       // including a worker's failure reproduction or a trailing control.
       if (auth && !closing) authenticatedTransportStopped = true;
@@ -236,12 +267,14 @@ export async function startEgressGate(policy: EgressPolicy): Promise<EgressGate>
       const chunks: Buffer[] = [];
       let single = 0;
       incoming.on("data", (chunk: Buffer) => {
+        permit?.addBytes(chunk.byteLength);
         single += chunk.byteLength;
         if (!countBytes(chunk.byteLength, single)) { incoming.destroy(); response.destroy(); return; }
         chunks.push(chunk);
       });
       incoming.once("end", () => {
         if (response.destroyed) return;
+        permit?.finish('response');
         const body = Buffer.concat(chunks);
         if (observation) observation.completed = true;
         if (control) headers['x-wakeio-attempt'] = String(attempt);
@@ -253,7 +286,7 @@ export async function startEgressGate(policy: EgressPolicy): Promise<EgressGate>
     // The proxy's accepted socket is not the connection to the target. Own
     // both the outgoing request (including pending connects) and its socket.
     upstreams.set(upstream, new Promise<void>((resolve) => {
-      upstream.once("close", () => { upstreams.delete(upstream); resolve(); });
+      upstream.once("close", () => { permit?.finish('transport_error'); upstreams.delete(upstream); resolve(); });
     }));
     upstream.once("socket", trackSocket);
     response.once("close", () => upstream.destroy());
@@ -269,12 +302,14 @@ export async function startEgressGate(policy: EgressPolicy): Promise<EgressGate>
     request.once("end", () => upstream.end());
   };
 
-  const server = createServer({ maxHeaderSize: 16 * 1024 }, onRequest);
+  const server = createServer({ maxHeaderSize: 16 * 1024 }, (request, response) => {
+    void onRequest(request, response).catch(() => { request.destroy(); response.destroy(); });
+  });
   server.on("connection", trackSocket);
   server.on("connect", (request: IncomingMessage, client: Socket) => {
     const reject = (status: string) => { client.end(`HTTP/1.1 ${status}\r\nconnection: close\r\ncontent-length: 0\r\n\r\n`); };
     if (!authorized(request.headers)) { reject("407 Proxy Authentication Required"); return; }
-    if (policy.authentication || policy.origin.protocol !== "https:" || (request.url ?? "").toLowerCase() !== authority(policy.origin)) {
+    if (runtime || policy.authentication || policy.origin.protocol !== "https:" || (request.url ?? "").toLowerCase() !== authority(policy.origin)) {
       counters.blockedOrigin += 1; reject("502 Bad Gateway"); return;
     }
     if (closing || stopped || policy.signal.aborted || counters.tunnels >= policy.maxRequests) {
@@ -304,6 +339,7 @@ export async function startEgressGate(policy: EgressPolicy): Promise<EgressGate>
 
   const closeAll = () => {
     closing = true;
+    shutdown.abort();
     for (const upstream of upstreams.keys()) upstream.destroy();
     for (const socket of sockets.keys()) socket.destroy();
   };

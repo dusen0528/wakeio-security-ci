@@ -10,6 +10,7 @@ import { superviseWorker } from "./schemathesis.js";
 import { safeUrl, UrlNetworkError } from "./url-network.js";
 import { runSchemathesisAuthenticated } from './schemathesis-auth-run.js';
 import { types } from 'node:util';
+import { admissionSignal, type TaskAdmission } from './agent-dast/admission.js';
 
 /**
  * Opt-in Schemathesis generation against an explicitly consented origin.
@@ -157,14 +158,14 @@ async function workerScript(): Promise<string | undefined> {
   return undefined;
 }
 
-export async function runSchemathesisLive(options: SchemathesisLiveOptions): Promise<CheckResult[]> {
+export async function runSchemathesisLive(options: SchemathesisLiveOptions, runtime?: TaskAdmission): Promise<CheckResult[]> {
   // Do not evaluate a caller accessor to decide whether authenticated mode applies.
   if (options && typeof options === 'object') {
-    if (types.isProxy(options)) return runSchemathesisAuthenticated(options);
+    if (types.isProxy(options)) return runSchemathesisAuthenticated(options, runtime);
     const prototype = Object.getPrototypeOf(options);
-    if (prototype !== Object.prototype && prototype !== null) return runSchemathesisAuthenticated(options);
+    if (prototype !== Object.prototype && prototype !== null) return runSchemathesisAuthenticated(options, runtime);
     if (Object.getOwnPropertyDescriptor(options,'authPolicy') || prototype === Object.prototype && Object.getOwnPropertyDescriptor(prototype,'authPolicy')) {
-      return runSchemathesisAuthenticated(options);
+      return runSchemathesisAuthenticated(options, runtime);
     }
   }
   if (!record(options) || options.consent !== true) return errorCheck("consent_required", "Active API testing requires explicit consent; no requests were made.");
@@ -178,6 +179,12 @@ export async function runSchemathesisLive(options: SchemathesisLiveOptions): Pro
   } catch {
     return errorCheck("invalid_budget", "Schemathesis live budgets are invalid; no requests were made.");
   }
+  // This lane otherwise uses opaque CONNECT. The trusted runner cannot attest
+  // per-request counts or methods there. Native and authenticated TLS stay supported.
+  if (runtime) {
+    try { if (new URL(options.baseUrl).protocol === 'https:') return errorCheck('https_wire_budget_unsupported',
+      'Unauthenticated HTTPS Schemathesis requires request-observable forwarding; this task made no target requests.'); } catch { /* Normal origin validation below. */ }
+  }
   let selection;
   try {
     selection = selectOpenApiLiveOperations(options.document, options.operations);
@@ -189,7 +196,7 @@ export async function runSchemathesisLive(options: SchemathesisLiveOptions): Pro
   const script = await workerScript();
   if (!script) return errorCheck("worker_missing", "The bundled Schemathesis worker could not be found; no requests were made.");
   const expectedWorkerSha256 = createHash("sha256").update(await readFile(script)).digest("hex");
-  const control = createApiRunControl(timeoutMs, options.signal);
+  const control = createApiRunControl(timeoutMs, admissionSignal(runtime, options.signal));
   const engine = new AbortController();
   const stopEngine = () => engine.abort();
   control.signal.addEventListener("abort", stopEngine, { once: true });
@@ -208,7 +215,8 @@ export async function runSchemathesisLive(options: SchemathesisLiveOptions): Pro
       return [{ id: LIVE_CHECK_ID, status: "partial", findings: [], notes: [SCOPE_NOTE, "Cancelled before any request was sent."], metrics: { requestCount: 0, stopReason: options.signal?.aborted ? "cancelled" : "timeout" } }];
     }
     gate = await startEgressGate({ origin: resolved.origin, address: resolved.address, methods: new Set(["GET", "HEAD"]),
-      maxRequests, maxSingleBodyBytes: maxBodyBytes, maxTotalBytes, signal: control.signal, deadlineAt: control.deadlineAt });
+      maxRequests, maxSingleBodyBytes: maxBodyBytes, maxTotalBytes, signal: control.signal, deadlineAt: control.deadlineAt,
+      ...(runtime ? { operations: selection.operations.map(item => item.path) } : {}) }, runtime);
     gate.onStop(stopEngine);
     const labels = new Set(selection.operations.map((item) => `GET ${item.path}`));
     const job = { version: 2, mode: "live", proxy: gate.proxyUrl, baseUrl: resolved.origin.href, schema: selection.document,
