@@ -1,4 +1,4 @@
-import { parseDastPolicy, DAST_PROFILE_REVISION, DAST_MAX_REQUESTS, DAST_DEFAULT_MAX_REQUESTS } from './dast.js';
+import { parseDastPolicy, prepareDastPolicy, snapshotDastEnvironment, dastProfileRevision, dastDefaultMaxRequests, DAST_MAX_REQUESTS } from './dast.js';
 import { normalizeUrl, validateStaticTarget } from './url-network.js';
 import { preflightApiPolicy, API_MAX_TIMEOUT_MS, type ApiPreflightResult } from './api.js';
 import { preflightOpenApiPolicy, type OpenApiPolicyInput } from './openapi.js';
@@ -25,7 +25,7 @@ function failure(code: string, location: string, message: string): ApiPreflightR
 export async function planMain(argv: readonly string[]): Promise<number> {
   if (argv.length === 2 && ['--help', '-h'].includes(argv[1]!)) { process.stdout.write(USAGE); return 0; }
   let kind: '--api-policy' | '--openapi-input' | '--dast-policy' | undefined, file: string | undefined;
-  let allowPrivate = false, timeoutMs = DEFAULT_TOOL_TIMEOUT_MS, maxRequests = DAST_DEFAULT_MAX_REQUESTS, result: ApiPreflightResult;
+  let allowPrivate = false, timeoutMs = DEFAULT_TOOL_TIMEOUT_MS, maxRequests: number | undefined, result: ApiPreflightResult;
   const seen = new Set<string>();
   try {
     for (let index = 1; index < argv.length; index++) {
@@ -60,16 +60,24 @@ export async function planMain(argv: readonly string[]): Promise<number> {
   try {
     const input = await readJsonInput(file, 1024 * 1024);
     if (kind === '--dast-policy') {
-      const { policy, policySha256 } = parseDastPolicy(input);
+      const parsed = parseDastPolicy(input);
+      const { policy, policySha256 } = prepareDastPolicy(parsed.policy, { allowPrivate, env: snapshotDastEnvironment(parsed.policy) });
       validateStaticTarget(normalizeUrl(policy.url), allowPrivate);
-      if (maxRequests < 8) {
-        result = failure('insufficient_request_budget', 'dast-max-requests', 'The fixed native DAST plan needs at least eight HTTP attempts; no requests were made.');
+      const plannedRequests = dastDefaultMaxRequests(policy);
+      const effectiveMaxRequests = maxRequests ?? plannedRequests;
+      if (effectiveMaxRequests < plannedRequests) {
+        result = failure('insufficient_request_budget', 'dast-max-requests', 'The selected fixed native DAST plan exceeds the HTTP attempt budget; no requests were made.');
         process.stdout.write(JSON.stringify(result, null, 2) + '\n');
         return 2;
       }
       process.stdout.write(JSON.stringify({ version: 1, kind: 'native-dast-plan', status: 'ready',
-        origin: new URL(policy.baseUrl).origin, policySha256, profileRevision: DAST_PROFILE_REVISION,
-        plannedRequests: 8, maxHttpAttempts: maxRequests, timeoutMs, allowPrivate,
+        origin: new URL(policy.baseUrl).origin, policySha256, profileRevision: dastProfileRevision(policy),
+        plannedRequests, maxHttpAttempts: effectiveMaxRequests, timeoutMs, allowPrivate,
+        ...(policy.version === 2 ? { steps: [
+          { ordinal: 0, phase: 'identity-before' },
+          ...Array.from({ length: 8 }, (_, index) => ({ ordinal: index + 1, phase: ['baseline-before', 'true', 'false', 'baseline-after'][index % 4] })),
+          { ordinal: 9, phase: 'identity-after' },
+        ] } : {}),
         notes: ['Configuration only; explicit active consent is still required to scan. No DNS lookup or request was made.'],
       }, null, 2) + '\n');
       return 0;

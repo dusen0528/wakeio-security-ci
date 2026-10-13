@@ -1,4 +1,4 @@
-import { sanitizeDastExecution } from './dast-execution.js';
+import { sanitizeDastExecution, isDastObservedEvidence } from './dast-execution.js';
 import { types as utilTypes } from "node:util";
 import { sanitiseApiExecutionLedger, invalidApiExecutionLedger } from "./api-execution.js";
 import { redactSecrets, safeRelativePath, safeHttpUrl } from './report-path.js';
@@ -438,6 +438,10 @@ export function toSarif(report: ScanReport): SarifLog {
             apiExecution: safeReport.checks.flatMap((check, checkIndex) => check.apiExecution
               ? [{ checkIndex, checkId: check.id, apiExecution: check.apiExecution }] : []),
           } : {}),
+          ...(safeReport.checks.some(check => check.dastExecution?.version === 2) ? {
+            dastExecution: safeReport.checks.flatMap((check, checkIndex) => check.dastExecution?.version === 2
+              ? [{ checkIndex, checkId: check.id, dastExecution: check.dastExecution }] : []),
+          } : {}),
           ...(safeReport.checks.some(check => check.apiStateEvidence) ? {
             apiStateEvidence: safeReport.checks.flatMap((check, checkIndex) => check.apiStateEvidence
               ? [{ checkIndex, checkId: check.id, apiStateEvidence: check.apiStateEvidence }] : []),
@@ -512,6 +516,10 @@ export function toMarkdown(report: ScanReport, failOn: FailOn = 'high'): string 
       if (check.dastExecution) {
         const e = check.dastExecution;
         lines.push(`  - Native DAST: ${e.status}; ${e.outcome}; ${e.counts.evaluated}/${e.plannedRequests} logical steps evaluated; ${e.counts.httpAttempts} HTTP attempts. Two bounded numeric SQL differential rounds; not independent exploit or fix verification.`);
+        if (e.version === 2) {
+          lines.push(`  - Authenticated identity controls: before=${e.identityControls.before}; after=${e.identityControls.after}. These bounded controls do not establish uninterrupted session continuity.`);
+          lines.push(`  - SQL probe outcome: ${e.probeOutcome}. An observed probe with incomplete identity controls remains a low-confidence candidate; it grants no replay authority.`);
+        }
       }
       if (check.apiStateEvidence) {
         const e = check.apiStateEvidence;
@@ -735,6 +743,8 @@ function sanitiseCheck(input: CheckResult): CheckResult {
   let dastExecution = dastDescriptor ? sanitizeDastExecution('value' in dastDescriptor ? dastDescriptor.value : undefined) ?? undefined : undefined;
   if (dastExecution && (input.id !== 'url.sql-boolean' || input.metrics?.requestCount !== dastExecution.counts.httpAttempts)) dastExecution = undefined;
   if ((dastDescriptor && !dastExecution || input.id === 'url.sql-boolean' && (!dastExecution || dastExecution.status !== 'complete')) && status !== 'error') status = 'partial';
+  if (dastExecution?.version === 2 && isDastObservedEvidence(dastExecution)
+    && (!Array.isArray(input.findings) || input.findings.length !== 1) && status !== 'error') status = 'partial';
   const apiStateEvidence = input?.apiStateEvidence === undefined ? undefined : sanitiseApiStateEvidence(input.apiStateEvidence);
   if (input?.id === 'api.owned-state-oracle' && apiStateEvidence?.execution !== undefined && apiStateEvidence.execution !== 'completed' && status === 'completed') status = 'partial';
   const analysisBudget = sanitiseAnalysisBudget(input?.analysisBudget);
@@ -749,8 +759,10 @@ function sanitiseCheck(input: CheckResult): CheckResult {
   const proofLedger = input?.id === 'api.authorization' ? apiExecution : undefined;
   const findings = Array.isArray(input?.findings)
     ? input.findings.map((finding) => sanitiseFinding(finding, proofLedger))
-      .filter(() => input.id !== 'url.sql-boolean' || dastExecution?.status === 'complete' && dastExecution.outcome === 'observed')
-      .map(finding => input.id === 'url.sql-boolean' ? { ...finding, kind: 'candidate' as const } : finding)
+      .filter(() => input.id !== 'url.sql-boolean' || !!dastExecution && isDastObservedEvidence(dastExecution))
+      .map(finding => input.id === 'url.sql-boolean' ? { ...finding, kind: 'candidate' as const,
+        ...(dastExecution?.version === 2 ? { confidence: dastExecution.status === 'complete' && status === 'completed'
+          && finding.confidence !== 'low' ? 'medium' as const : 'low' as const } : {}) } : finding)
     : [];
   if (Array.isArray(input?.findings) && input.findings.some(finding => ownDataField(finding, 'staticContext').present)
     && (status === 'completed' || status === 'not_applicable')) status = 'partial';

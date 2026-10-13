@@ -5,12 +5,51 @@ import { ADVICE_PROJECTION_POLICY_VERSION, projectAdviceContext } from '../src/a
 import { createApiExecutionLedger, finishApiExecutionLedger, invalidApiExecutionLedger } from '../src/api-execution.js';
 import { resolveCollectionBudget, collectionEvidence, COLLECTION_ISSUE_CODES } from '../src/source/collection-budget.js';
 import type { AgentReport, ApiRequestPlan, CheckResult, StaticCandidateContext } from '../src/contracts.js';
+import type { DastExecutionV2 } from '../src/dast-execution.js';
 
 const NOW = '2026-10-13T00:00:00.000Z';
 const finding = { ruleId: 'fixture:authorization', title: 'Authorization candidate', description: 'private-description-sentinel',
   severity: 'high' as const, confidence: 'medium' as const, kind: 'candidate' as const,
   location: { path: 'private-location-sentinel.ts', line: 3 }, remediation: 'private-remediation-sentinel' };
 const report = (checks: CheckResult[], mode: 'api' | 'source' = 'api') => toAgentReport(createReport(checks, mode, NOW));
+
+function authExecution(after: 'matched' | 'mismatched'): DastExecutionV2 {
+  const phases = ['baseline-before', 'true', 'false', 'baseline-after'] as const;
+  return { version: 2, policySha256: 'a'.repeat(64), profile: 'numeric', profileRevision: 'sql-boolean-numeric-auth-v2',
+    maxRequests: 10, timeoutMs: 30000, allowPrivate: false, status: after === 'matched' ? 'complete' : 'partial',
+    outcome: after === 'matched' ? 'observed' : 'inconclusive', probeOutcome: 'observed', plannedRequests: 10,
+    identityControls: { before: 'matched', after }, stopReason: after === 'matched' ? 'none' : 'identity_mismatch',
+    steps: Array.from({ length: 10 }, (_, ordinal): DastExecutionV2['steps'][number] => {
+      const identity = ordinal === 0 || ordinal === 9, failed = ordinal === 9 && after === 'mismatched';
+      return { ordinal, round: identity ? 0 : ordinal <= 4 ? 1 : 2,
+        phase: identity ? ordinal === 0 ? 'identity-before' : 'identity-after' : phases[(ordinal - 1) % 4],
+        outcome: failed ? 'inconclusive' : 'evaluated', reason: failed ? 'identity_mismatch' : 'evaluated',
+        attemptStart: ordinal, httpAttempts: 1, httpStatus: 200,
+        oracleMatch: identity ? 'unavailable' : (ordinal - 1) % 4 === 2 ? 'false' : 'baseline' };
+    }), counts: { evaluated: after === 'matched' ? 10 : 9, inconclusive: after === 'matched' ? 0 : 1, notAttempted: 0, httpAttempts: 10 } };
+}
+
+test('authenticated native cards expose only typed control/probe outcomes and require complete identity for replay', () => {
+  for (const after of ['matched', 'mismatched'] as const) {
+    const execution = authExecution(after);
+    const scan = createReport([{ id: 'url.sql-boolean', status: after === 'matched' ? 'completed' : 'partial', notes: ['private-auth-note'],
+      metrics: { requestCount: 10 }, dastExecution: execution,
+      findings: [{ ...finding, ruleId: 'dast.sql-boolean-differential', title: 'SQL boolean response differential observed',
+        confidence: after === 'matched' ? 'medium' : 'low', location: { url: 'https://private-auth-target.invalid/items' } }] }], 'url', NOW);
+    const agent = toAgentReport(scan);
+    const projected = projectAdviceContext(agent, true).input;
+    assert.equal(projected.projectionVersion, 5);
+    assert.deepEqual(projected.checks[0].nativeDast?.identityControls, { before: 'matched', after });
+    assert.equal(projected.checks[0].nativeDast?.probeOutcome, 'observed');
+    assert.equal(projected.checks[0].nativeDast?.steps.length, 10);
+    assert.equal(projected.findings.length, 1);
+    assert.equal(projected.findings[0].replayAvailable, after === 'matched');
+    assert.equal(projected.findings[0].recheckRoute, after === 'matched' ? 'replay_native_finding_same_policy' : 'review_check_diagnostics');
+    for (const forbidden of ['private-auth-target', 'private-auth-note', 'private-description', '"url":', '"path":', 'authorizationEnv', 'jsonPointer', '"equals":']) assert.equal(JSON.stringify(projected).includes(forbidden), false);
+    const blocked = projectAdviceContext(agent, false).input;
+    assert.equal(blocked.findings[0].replayAvailable, false, 'strong bounded original report prerequisites still required');
+  }
+});
 
 function apiPlan(): ApiRequestPlan {
   return { actorCount: 2, caseCount: 1, logicalRequests: 5, maximumHttpAttempts: 64,
@@ -167,7 +206,7 @@ test('collection evidence remains bounded by existing card and byte caps with ac
   }
 });
 
-test('policy4 conditional context cards expose enum kinds and counts without any context positions or new action route', () => {
+test('current policy conditional context cards expose enum kinds and counts without any context positions or new action route', () => {
   const context: StaticCandidateContext = { revision: 'static-context-v1', authority: 'conditional', truncated: true,
     items: [
       { kind: 'unresolved_cjs_dispatch', location: { path: 'private-context-call.ts', line: 12345, column: 54321 }, target: { path: 'private-context-body.ts', line: 98765, column: 56789 } },
@@ -175,7 +214,7 @@ test('policy4 conditional context cards expose enum kinds and counts without any
     ] };
   const agent = report([{ id: 'source.builtin-ast', status: 'partial', findings: [{ ...finding, staticContext: context }], notes: [] }], 'source');
   const { input, referenceRoutes } = projectAdviceContext(agent, false);
-  assert.equal(input.projectionVersion, 4);
+  assert.equal(input.projectionVersion, ADVICE_PROJECTION_POLICY_VERSION);
   assert.deepEqual(input.findings[0].staticContext, { authority: 'conditional', kinds: ['constructor_continuation', 'unresolved_cjs_dispatch'], itemCount: 2, truncated: true });
   assert.equal(input.findings[0].replayAvailable, false);
   assert.equal(referenceRoutes.get(input.findings[0].referenceId), 'review_static_flow_or_budget');

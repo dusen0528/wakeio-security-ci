@@ -9,6 +9,7 @@ import { ADVICE_PROJECTION_POLICY_VERSION, projectAdviceContext } from '../src/a
 import { resolveCollectionBudget, collectionEvidence } from '../src/source/collection-budget.js';
 import { runProcess } from '../src/source/process.js';
 import { runDast, type DastPolicy } from '../src/dast.js';
+import { createServer } from 'node:http';
 import type { StaticCandidateContext } from '../src/contracts.js';
 
 const testFinding = {
@@ -36,7 +37,7 @@ if (args.includes('--version')) { process.stdout.write('codex-cli 0.162.0-alpha.
 if (args.includes('--help')) { if (${JSON.stringify(behavior)} === 'slow-help') return setTimeout(() => {}, 100000); process.stdout.write('--ignore-user-config --ignore-rules --strict-config --skip-git-repo-check --ephemeral --sandbox --disable --output-schema --output-last-message --json'); process.exit(0); }
 const mode = ${JSON.stringify(behavior)};
 if (!args.includes('exec') || !args.includes('read-only') || !args.includes('--ephemeral') || !args.includes('--ignore-user-config') || !args.includes('--ignore-rules') || !args.includes('--json') || !args.includes('--output-schema') || !args.includes('--output-last-message') || !args.includes('shell_tool') || !args.includes('shell_snapshot') || !args.includes('code_mode') || args.includes('code_mode_host') || !args.includes('approval_policy="never"') || !args.includes('web_search="disabled"')) process.exit(80);
-if (process.env.WAKEIO_SECRET_CANARY || !process.env.HOME || process.env.HOME === process.env.CODEX_HOME) process.exit(81);
+if (process.env.WAKEIO_SECRET_CANARY || process.env.WAKEIO_OWNED_ADVICE_AUTH || !process.env.HOME || process.env.HOME === process.env.CODEX_HOME) process.exit(81);
 const auth = process.env.CODEX_API_KEY ? 'api-key' : process.env.CODEX_HOME ? 'cli-login' : 'missing';
 if (auth === 'missing') process.exit(82);
 let input = '';
@@ -175,6 +176,61 @@ test('explicit auth modes, bounded projection, and original report unchanged', a
     if (previousHome === undefined) delete process.env.CODEX_HOME; else process.env.CODEX_HOME = previousHome;
     delete process.env.WAKEIO_SECRET_CANARY;
     await rm(top, { recursive: true, force: true });
+  }
+});
+
+test('fake CLI policy5 receives authenticated control enums in both auth modes and no replay authority after failed identity', async () => {
+  const top = await mkdtemp(join(tmpdir(), 'wakeio-auth-dast-advice-'));
+  const previousKey = process.env.CODEX_API_KEY, previousHome = process.env.CODEX_HOME, previousAuth = process.env.WAKEIO_OWNED_ADVICE_AUTH;
+  let identities = 0, failAfter = false;
+  const server = createServer((request, response) => {
+    assert.equal(request.headers.authorization, 'Bearer owned-advice-target-secret');
+    response.setHeader('content-type', 'application/json');
+    if (request.url === '/private-advice-identity') {
+      identities++;
+      response.end(JSON.stringify({ principal: failAfter && identities % 2 === 0 ? 'other-private-principal' : 'owned-private-principal' }));
+    } else {
+      const value = new URL(request.url!, 'http://owned.invalid').searchParams.get('id')!;
+      response.end(JSON.stringify({ count: value.includes('1=2') ? 0 : 1 }));
+    }
+  });
+  await new Promise<void>(done => server.listen(0, '127.0.0.1', done));
+  const address = server.address(); assert.ok(address && typeof address === 'object');
+  try {
+    process.env.CODEX_API_KEY = 'test-only-key'; process.env.WAKEIO_OWNED_ADVICE_AUTH = 'Bearer owned-advice-target-secret';
+    const state = join(top, 'codex-state'); await mkdir(state); process.env.CODEX_HOME = state;
+    const fake = await fakeCodex(top, 'capture'), origin = `http://127.0.0.1:${address.port}`;
+    const policy: DastPolicy = { version: 2, kind: 'sql-boolean-differential', baseUrl: `${origin}/`, url: `${origin}/items?id=1`, parameter: 'id', profile: 'numeric',
+      authorizationEnv: 'WAKEIO_OWNED_ADVICE_AUTH', identity: { path: '/private-advice-identity', status: 200, jsonPointer: '/principal', equals: 'owned-private-principal' },
+      oracle: { jsonPointer: '/count', expectedBaseline: 1, expectedTrue: 1, expectedFalse: 0 } };
+    for (const after of ['matched', 'mismatched'] as const) {
+      failAfter = after === 'mismatched';
+      const [check] = await runDast({ policy, consent: true, allowPrivate: true, env: { ...process.env } });
+      assert.equal(check.status, after === 'matched' ? 'completed' : 'partial'); assert.equal(check.findings.length, 1);
+      const reports = join(top, `reports-${after}`); await writeReports(createReport([check], 'url', '2026-10-13T00:00:00.000Z'), reports);
+      const original = await readFile(join(reports, 'report.json'));
+      for (const mode of ['api-key', 'cli-login'] as const) {
+        const out = join(top, `advice-${after}-${mode}`);
+        assert.equal(await adviseMain(args(reports, out, fake, mode)), 0);
+        const projection = JSON.parse(await readFile(join(top, 'captured-projection.json'), 'utf8'));
+        assert.equal(projection.projectionVersion, 5);
+        assert.deepEqual(projection.checks[0].nativeDast.identityControls, { before: 'matched', after });
+        assert.equal(projection.checks[0].nativeDast.probeOutcome, 'observed'); assert.equal(projection.checks[0].nativeDast.steps.length, 10);
+        assert.equal(projection.findings[0].replayAvailable, after === 'matched');
+        assert.equal(projection.findings[0].recheckRoute, after === 'matched' ? 'replay_native_finding_same_policy' : 'review_check_diagnostics');
+        const produced = await receipt(out); assert.equal(produced.policyVersion, 5); assert.equal(produced.authMode, mode);
+        assert.equal(produced.verified, false);
+        for (const forbidden of ['WAKEIO_OWNED_ADVICE_AUTH', 'owned-advice-target-secret', 'private-advice-identity', 'owned-private-principal', 'jsonPointer', 'authorizationEnv']) {
+          assert.equal(JSON.stringify(projection).includes(forbidden), false); assert.equal(JSON.stringify(produced).includes(forbidden), false);
+        }
+      }
+      assert.deepEqual(await readFile(join(reports, 'report.json')), original);
+    }
+  } finally {
+    if (previousKey === undefined) delete process.env.CODEX_API_KEY; else process.env.CODEX_API_KEY = previousKey;
+    if (previousHome === undefined) delete process.env.CODEX_HOME; else process.env.CODEX_HOME = previousHome;
+    if (previousAuth === undefined) delete process.env.WAKEIO_OWNED_ADVICE_AUTH; else process.env.WAKEIO_OWNED_ADVICE_AUTH = previousAuth;
+    await new Promise<void>(done => server.close(() => done())); await rm(top, { recursive: true, force: true });
   }
 });
 
@@ -320,7 +376,7 @@ test('rejects tool events, unknown finding references/routes, malformed output, 
 });
 
 
-test('fake CLI preserves collection bounds and reasons with the existing nonexecuting review route under policy 4', async () => {
+test('fake CLI preserves collection bounds and reasons with the existing nonexecuting review route', async () => {
   const top = await mkdtemp(join(tmpdir(), 'wakeio-collection-advice-'));
   const previousKey = process.env.CODEX_API_KEY;
   try {
@@ -335,13 +391,13 @@ test('fake CLI preserves collection bounds and reasons with the existing nonexec
     const fake = await fakeCodex(top, 'capture'), out = join(top, 'advice');
     assert.equal(await adviseMain(args(reports, out, fake, 'api-key')), 0);
     const projection = JSON.parse(await readFile(join(top, 'captured-projection.json'), 'utf8'));
-    assert.equal(projection.projectionVersion, 4);
+    assert.equal(projection.projectionVersion, ADVICE_PROJECTION_POLICY_VERSION);
     assert.deepEqual(projection.checks[0].collectionBudget, budget);
     assert.deepEqual(projection.checks[0].collectionEvidence, evidence);
     assert.equal(projection.checks[0].recheckRoute, 'review_static_flow_or_budget');
     assert.equal(JSON.stringify(projection).includes('private-collection-note'), false);
     const produced = await receipt(out);
-    assert.equal(produced.policyVersion, 4);
+    assert.equal(produced.policyVersion, ADVICE_PROJECTION_POLICY_VERSION);
     assert.equal(produced.advice.recommendations[0].referenceId, 'check:0');
     assert.equal(produced.advice.recommendations[0].recheckRoute, 'review_static_flow_or_budget');
     assert.equal(produced.verified, false);
@@ -352,7 +408,7 @@ test('fake CLI preserves collection bounds and reasons with the existing nonexec
   }
 });
 
-test('fake CLI policy4 receives conditional context enum metadata without source positions or new replay authority', async () => {
+test('fake CLI receives conditional context enum metadata without source positions or new replay authority', async () => {
   const top = await mkdtemp(join(tmpdir(), 'wakeio-conditional-advice-'));
   const previousKey = process.env.CODEX_API_KEY;
   try {
@@ -367,7 +423,7 @@ test('fake CLI policy4 receives conditional context enum metadata without source
     const fake = await fakeCodex(top, 'capture'), out = join(top, 'advice');
     assert.equal(await adviseMain(args(reports, out, fake, 'api-key')), 0);
     const projection = JSON.parse(await readFile(join(top, 'captured-projection.json'), 'utf8'));
-    assert.equal(projection.projectionVersion, 4);
+    assert.equal(projection.projectionVersion, ADVICE_PROJECTION_POLICY_VERSION);
     assert.deepEqual(projection.findings[0].staticContext, { authority: 'conditional', kinds: ['unresolved_cjs_dispatch'], itemCount: 1, truncated: false });
     assert.equal(projection.findings[0].recheckRoute, 'review_static_flow_or_budget');
     assert.equal(projection.findings[0].replayAvailable, false);
@@ -375,7 +431,7 @@ test('fake CLI policy4 receives conditional context enum metadata without source
     for (const secret of ['private-dispatch-', '12345', '54321', '98765', '56789', '"path":', '"location":', '"target":']) assert.equal(JSON.stringify(projection).includes(secret), false, secret);
     assert.ok(Buffer.byteLength(JSON.stringify(projection)) <= 32 * 1024);
     const produced = await receipt(out);
-    assert.equal(produced.policyVersion, 4);
+    assert.equal(produced.policyVersion, ADVICE_PROJECTION_POLICY_VERSION);
     assert.equal(produced.verified, false);
     assert.equal(produced.advice.recommendations[0].recheckRoute, 'review_static_flow_or_budget');
     assert.deepEqual(await readFile(join(reports, 'report.json')), original);

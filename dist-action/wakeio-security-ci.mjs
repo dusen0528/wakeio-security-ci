@@ -232761,7 +232761,7 @@ var SHA256 = /^[0-9a-f]{64}$/;
 function record3(value) {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
-function sanitizeDastExecution(raw) {
+function sanitizeV1(raw) {
   try {
     raw = snapshotJsonData(raw);
   } catch {
@@ -232853,6 +232853,111 @@ function sanitizeDastExecution(raw) {
     counts: { evaluated, inconclusive, notAttempted, httpAttempts },
     stopReason: raw.stopReason
   };
+}
+function dastProbeOutcome(steps) {
+  if (steps.length !== 8 || steps.some((step2) => step2.outcome !== "evaluated"))
+    return "inconclusive";
+  if (steps.some((step2) => (step2.phase === "baseline-before" || step2.phase === "baseline-after") && step2.oracleMatch !== "baseline"))
+    return "inconclusive";
+  if (steps.every((step2) => step2.oracleMatch === (step2.phase === "false" ? "false" : "baseline")))
+    return "observed";
+  const probes = steps.filter((step2) => step2.phase === "true" || step2.phase === "false");
+  return probes.every((step2) => step2.oracleMatch === probes[0].oracleMatch && ["baseline", "false"].includes(step2.oracleMatch)) ? "not_observed" : "inconclusive";
+}
+function exact(value, keys3) {
+  return Object.keys(value).sort().join("\0") === [...keys3].sort().join("\0");
+}
+function sanitizeV2(raw) {
+  if (!exact(raw, ["version", "policySha256", "profile", "profileRevision", "maxRequests", "timeoutMs", "allowPrivate", "status", "outcome", "plannedRequests", "steps", "counts", "stopReason", "identityControls", "probeOutcome"]) || typeof raw.policySha256 !== "string" || !SHA256.test(raw.policySha256) || raw.profile !== "numeric" || raw.profileRevision !== "sql-boolean-numeric-auth-v2" || !Number.isSafeInteger(raw.maxRequests) || Number(raw.maxRequests) < 1 || Number(raw.maxRequests) > 64 || !Number.isSafeInteger(raw.timeoutMs) || Number(raw.timeoutMs) < 1 || Number(raw.timeoutMs) > 12e4 || typeof raw.allowPrivate !== "boolean" || !["complete", "partial"].includes(String(raw.status)) || !["observed", "not_observed", "inconclusive"].includes(String(raw.outcome)) || raw.plannedRequests !== 10 || !Array.isArray(raw.steps) || raw.steps.length !== 10 || !record3(raw.counts) || !exact(raw.counts, ["evaluated", "inconclusive", "notAttempted", "httpAttempts"]) || !record3(raw.identityControls) || !exact(raw.identityControls, ["before", "after"]))
+    return null;
+  const steps = [];
+  let evaluated = 0, inconclusive = 0, notAttempted = 0, httpAttempts = 0, stopped = false;
+  for (let ordinal = 0; ordinal < 10; ordinal++) {
+    const value = raw.steps[ordinal], identity = ordinal === 0 || ordinal === 9;
+    const phase = identity ? ordinal === 0 ? "identity-before" : "identity-after" : PHASES[(ordinal - 1) % 4];
+    const round = identity ? 0 : Math.floor((ordinal - 1) / 4) + 1;
+    if (!record3(value) || !exact(value, ["ordinal", "round", "phase", "outcome", "reason", "attemptStart", "httpAttempts", "httpStatus", "oracleMatch"]) || value.ordinal !== ordinal || value.round !== round || value.phase !== phase || !["evaluated", "inconclusive", "not_attempted"].includes(String(value.outcome)) || ![...REASONS2, ...identity ? ["identity_mismatch"] : []].includes(String(value.reason)) || !Number.isSafeInteger(value.attemptStart) || value.attemptStart !== httpAttempts || !Number.isSafeInteger(value.httpAttempts) || Number(value.httpAttempts) < 0 || Number(value.httpAttempts) > 32 || value.httpStatus !== null && (!Number.isSafeInteger(value.httpStatus) || Number(value.httpStatus) < 100 || Number(value.httpStatus) > 599) || !MATCHES.includes(value.oracleMatch) || identity && value.oracleMatch !== "unavailable")
+      return null;
+    if (stopped && value.outcome !== "not_attempted")
+      return null;
+    if (value.outcome === "evaluated") {
+      if (value.reason !== "evaluated" || Number(value.httpAttempts) < 1 || Number(value.httpStatus) < 200 || Number(value.httpStatus) > 299 || !identity && value.oracleMatch === "unavailable")
+        return null;
+      evaluated++;
+    } else if (value.outcome === "inconclusive") {
+      if (["evaluated", "not_reached"].includes(String(value.reason)) || value.oracleMatch !== "unavailable" || value.reason === "identity_mismatch" && (Number(value.httpAttempts) < 1 || Number(value.httpStatus) < 200 || Number(value.httpStatus) > 299))
+        return null;
+      inconclusive++;
+      stopped = true;
+    } else {
+      if (!stopped || value.reason !== "not_reached" || value.httpAttempts !== 0 || value.httpStatus !== null || value.oracleMatch !== "unavailable")
+        return null;
+      notAttempted++;
+    }
+    steps.push({
+      ordinal,
+      round,
+      phase,
+      outcome: value.outcome,
+      reason: value.reason,
+      attemptStart: httpAttempts,
+      httpAttempts: Number(value.httpAttempts),
+      httpStatus: value.httpStatus,
+      oracleMatch: value.oracleMatch
+    });
+    httpAttempts += Number(value.httpAttempts);
+    if (httpAttempts > Number(raw.maxRequests))
+      return null;
+  }
+  const counts2 = { evaluated, inconclusive, notAttempted, httpAttempts };
+  if (Object.entries(counts2).some(([key2, value]) => raw.counts && raw.counts[key2] !== value))
+    return null;
+  const identityOutcome = (step2) => step2.outcome === "evaluated" ? "matched" : step2.outcome === "not_attempted" || step2.httpAttempts === 0 ? "not_attempted" : step2.reason === "identity_mismatch" ? "mismatched" : "inconclusive";
+  const identityControls = { before: identityOutcome(steps[0]), after: identityOutcome(steps[9]) };
+  if (raw.identityControls.before !== identityControls.before || raw.identityControls.after !== identityControls.after)
+    return null;
+  const probeOutcome = dastProbeOutcome(steps.slice(1, 9));
+  if (raw.probeOutcome !== probeOutcome)
+    return null;
+  const outcome = identityControls.before === "matched" && identityControls.after === "matched" ? probeOutcome : "inconclusive";
+  const status = outcome === "inconclusive" ? "partial" : "complete";
+  const firstFailure = steps.find((step2) => step2.outcome === "inconclusive");
+  const stopReason2 = firstFailure?.reason ?? (status === "complete" ? "none" : "oracle_inconsistent");
+  if (raw.outcome !== outcome || raw.status !== status || raw.stopReason !== stopReason2)
+    return null;
+  return {
+    version: 2,
+    policySha256: raw.policySha256,
+    profile: "numeric",
+    profileRevision: "sql-boolean-numeric-auth-v2",
+    maxRequests: Number(raw.maxRequests),
+    timeoutMs: Number(raw.timeoutMs),
+    allowPrivate: raw.allowPrivate,
+    status,
+    outcome,
+    plannedRequests: 10,
+    steps,
+    counts: counts2,
+    identityControls,
+    probeOutcome,
+    stopReason: stopReason2
+  };
+}
+function sanitizeDastExecution(raw) {
+  try {
+    raw = snapshotJsonData(raw);
+  } catch {
+    return null;
+  }
+  if (!record3(raw))
+    return null;
+  return raw.version === 2 ? sanitizeV2(raw) : sanitizeV1(raw);
+}
+function isDastObservedEvidence(execution) {
+  return execution.version === 2 ? execution.probeOutcome === "observed" : execution.status === "complete" && execution.outcome === "observed";
+}
+function isDastReplayableExecution(execution) {
+  return execution.status === "complete" && execution.outcome === "observed" && (execution.version === 1 || execution.probeOutcome === "observed" && execution.identityControls.before === "matched" && execution.identityControls.after === "matched");
 }
 
 // build/src/report.js
@@ -233714,6 +233819,9 @@ function toSarif(report) {
           ...safeReport.checks.some((check) => check.apiExecution) ? {
             apiExecution: safeReport.checks.flatMap((check, checkIndex) => check.apiExecution ? [{ checkIndex, checkId: check.id, apiExecution: check.apiExecution }] : [])
           } : {},
+          ...safeReport.checks.some((check) => check.dastExecution?.version === 2) ? {
+            dastExecution: safeReport.checks.flatMap((check, checkIndex) => check.dastExecution?.version === 2 ? [{ checkIndex, checkId: check.id, dastExecution: check.dastExecution }] : [])
+          } : {},
           ...safeReport.checks.some((check) => check.apiStateEvidence) ? {
             apiStateEvidence: safeReport.checks.flatMap((check, checkIndex) => check.apiStateEvidence ? [{ checkIndex, checkId: check.id, apiStateEvidence: check.apiStateEvidence }] : [])
           } : {},
@@ -233784,6 +233892,10 @@ function toMarkdown(report, failOn = "high") {
       if (check.dastExecution) {
         const e = check.dastExecution;
         lines.push(`  - Native DAST: ${e.status}; ${e.outcome}; ${e.counts.evaluated}/${e.plannedRequests} logical steps evaluated; ${e.counts.httpAttempts} HTTP attempts. Two bounded numeric SQL differential rounds; not independent exploit or fix verification.`);
+        if (e.version === 2) {
+          lines.push(`  - Authenticated identity controls: before=${e.identityControls.before}; after=${e.identityControls.after}. These bounded controls do not establish uninterrupted session continuity.`);
+          lines.push(`  - SQL probe outcome: ${e.probeOutcome}. An observed probe with incomplete identity controls remains a low-confidence candidate; it grants no replay authority.`);
+        }
       }
       if (check.apiStateEvidence) {
         const e = check.apiStateEvidence;
@@ -233960,6 +234072,8 @@ function sanitiseCheck(input) {
     dastExecution = void 0;
   if ((dastDescriptor && !dastExecution || input.id === "url.sql-boolean" && (!dastExecution || dastExecution.status !== "complete")) && status !== "error")
     status = "partial";
+  if (dastExecution?.version === 2 && isDastObservedEvidence(dastExecution) && (!Array.isArray(input.findings) || input.findings.length !== 1) && status !== "error")
+    status = "partial";
   const apiStateEvidence = input?.apiStateEvidence === void 0 ? void 0 : sanitiseApiStateEvidence(input.apiStateEvidence);
   if (input?.id === "api.owned-state-oracle" && apiStateEvidence?.execution !== void 0 && apiStateEvidence.execution !== "completed" && status === "completed")
     status = "partial";
@@ -233976,7 +234090,11 @@ function sanitiseCheck(input) {
   else if (collectionEvidence2?.issues.some((issue2) => issue2.code !== "unsupported_file") && (status === "completed" || status === "not_applicable"))
     status = "partial";
   const proofLedger = input?.id === "api.authorization" ? apiExecution : void 0;
-  const findings = Array.isArray(input?.findings) ? input.findings.map((finding2) => sanitiseFinding(finding2, proofLedger)).filter(() => input.id !== "url.sql-boolean" || dastExecution?.status === "complete" && dastExecution.outcome === "observed").map((finding2) => input.id === "url.sql-boolean" ? { ...finding2, kind: "candidate" } : finding2) : [];
+  const findings = Array.isArray(input?.findings) ? input.findings.map((finding2) => sanitiseFinding(finding2, proofLedger)).filter(() => input.id !== "url.sql-boolean" || !!dastExecution && isDastObservedEvidence(dastExecution)).map((finding2) => input.id === "url.sql-boolean" ? {
+    ...finding2,
+    kind: "candidate",
+    ...dastExecution?.version === 2 ? { confidence: dastExecution.status === "complete" && status === "completed" && finding2.confidence !== "low" ? "medium" : "low" } : {}
+  } : finding2) : [];
   if (Array.isArray(input?.findings) && input.findings.some((finding2) => ownDataField(finding2, "staticContext").present) && (status === "completed" || status === "not_applicable"))
     status = "partial";
   const notes = Array.isArray(input?.notes) ? input.notes.map((note) => safeText(note)).filter(Boolean) : [];
@@ -235662,6 +235780,18 @@ function parseScanReport(input) {
     const evidence2 = collectionEvidence2.present ? sanitiseCollectionEvidence(collectionEvidence2.value) : void 0;
     if (evidence2?.issues.some((issue2) => issue2.code === "root_error") && check.status !== "error" || evidence2?.issues.some((issue2) => issue2.code !== "unsupported_file") && ["completed", "not_applicable"].includes(check.status))
       return invalid4();
+    const nativeField = collectionField(check, "dastExecution");
+    const nativeVersion = nativeField.valid && nativeField.value && typeof nativeField.value === "object" && !utilTypes2.isProxy(nativeField.value) ? Object.getOwnPropertyDescriptor(nativeField.value, "version") : void 0;
+    const nativeV1 = nativeVersion && "value" in nativeVersion && nativeVersion.value === 1;
+    if (nativeField.present && !nativeField.valid)
+      return invalid4();
+    let nativeExecution = null;
+    if (nativeField.present && !nativeV1) {
+      const execution = sanitizeDastExecution(nativeField.value);
+      if (!execution || execution.version !== 2 || check.id !== "url.sql-boolean" || check.metrics?.requestCount !== execution.counts.httpAttempts || execution.status !== "complete" && ["completed", "not_applicable"].includes(check.status) || isDastObservedEvidence(execution) && check.findings.length !== 1 && ["completed", "not_applicable"].includes(check.status) || check.findings.length > 0 && !isDastObservedEvidence(execution))
+        return invalid4();
+      nativeExecution = execution;
+    }
     checkIds.add(check.id);
     count += check.findings.length;
     if (count > 5e4 || check.status === "not_applicable" && check.findings.length)
@@ -235670,6 +235800,8 @@ function parseScanReport(input) {
       if (finding2 && typeof finding2 === "object" && utilTypes2.isProxy(finding2))
         return invalid4();
       if (!record4(finding2) || !text(finding2.ruleId) || !finding2.ruleId || !text(finding2.title) || !text(finding2.description) || !text(finding2.remediation) || !severities.includes(finding2.severity) || !["low", "medium", "high"].includes(finding2.confidence) || !["observation", "candidate", "advisory"].includes(finding2.kind) || !record4(finding2.location))
+        return invalid4();
+      if (nativeExecution?.version === 2 && (finding2.kind !== "candidate" || finding2.confidence === "high" || (nativeExecution.status !== "complete" || check.status !== "completed") && finding2.confidence !== "low"))
         return invalid4();
       const context = collectionField(finding2, "staticContext");
       if (!context.valid || context.present && (!sanitiseStaticContext(context.value) || finding2.confidence !== "low" || finding2.kind !== "candidate" || ["completed", "not_applicable"].includes(check.status) || finding2.staticFlow !== void 0 && finding2.staticFlow.truncated !== true))
@@ -235773,7 +235905,7 @@ function compareReports(beforeInput, afterInput) {
     const next = after.checks.find((candidate) => candidate.id === check.id)?.dastExecution;
     if (!previous && !next)
       continue;
-    if (!previous || !next || previous.status !== "complete" || next.status !== "complete" || previous.policySha256 !== next.policySha256 || previous.profile !== next.profile || previous.profileRevision !== next.profileRevision || previous.maxRequests !== next.maxRequests || previous.timeoutMs !== next.timeoutMs || previous.allowPrivate !== next.allowPrivate) {
+    if (!previous || !next || previous.status !== "complete" || next.status !== "complete" || previous.version !== next.version || previous.plannedRequests !== next.plannedRequests || previous.policySha256 !== next.policySha256 || previous.profile !== next.profile || previous.profileRevision !== next.profileRevision || previous.maxRequests !== next.maxRequests || previous.timeoutMs !== next.timeoutMs || previous.allowPrivate !== next.allowPrivate) {
       reasons.push("Native DAST policy or execution is missing, incomplete, or changed.");
     }
   }
@@ -236056,6 +236188,7 @@ import { types as types6 } from "node:util";
 var DAST_CHECK_ID = "url.sql-boolean";
 var DAST_PROFILE_REVISION = "sql-boolean-numeric-v1";
 var DAST_DEFAULT_MAX_REQUESTS = 8;
+var DAST_AUTH_PROFILE_REVISION = "sql-boolean-numeric-auth-v2";
 var DAST_MAX_REQUESTS = 64;
 var DAST_DEFAULT_TIMEOUT_MS = 3e4;
 var DAST_MAX_TIMEOUT_MS = 12e4;
@@ -236064,6 +236197,12 @@ var TOTAL_BODY_BYTES = 512 * 1024;
 var NOTE2 = "Numeric SQL differential preview: one consented GET URL and one existing query parameter, eight fixed requests, exact configured JSON oracle. A candidate is not proof of exploitability or complete SQL injection coverage.";
 var PARAMETER = /^[A-Za-z_][A-Za-z0-9_.-]{0,63}$/;
 var NUMERIC = /^(?:0|[1-9][0-9]{0,8})$/;
+function dastProfileRevision(policy) {
+  return policy.version === 2 ? DAST_AUTH_PROFILE_REVISION : DAST_PROFILE_REVISION;
+}
+function dastDefaultMaxRequests(policy) {
+  return policy.version === 2 ? 10 : 8;
+}
 function fail4(message) {
   throw new TypeError(`invalid_dast_policy: ${message}`);
 }
@@ -236113,8 +236252,8 @@ function parseDastPolicy(raw) {
   const input = snapshotJsonData(raw, () => fail4("bounded JSON data required"), () => fail4("policy too large"));
   if (!record5(input))
     fail4("object required");
-  keys(input, ["version", "kind", "baseUrl", "url", "parameter", "profile", "oracle"], "policy");
-  if (input.version !== 1 || input.kind !== "sql-boolean-differential" || input.profile !== "numeric")
+  keys(input, ["version", "kind", "baseUrl", "url", "parameter", "profile", "oracle", ...input.version === 2 ? ["authorizationEnv", "identity"] : []], "policy");
+  if (input.version !== 1 && input.version !== 2 || input.kind !== "sql-boolean-differential" || input.profile !== "numeric")
     fail4("unsupported version, kind or profile");
   if (typeof input.baseUrl !== "string" || typeof input.url !== "string")
     fail4("URL strings required");
@@ -236138,7 +236277,7 @@ function parseDastPolicy(raw) {
   };
   if (!sameScalar(oracle.expectedBaseline, oracle.expectedTrue) || sameScalar(oracle.expectedBaseline, oracle.expectedFalse))
     fail4("true oracle must equal baseline; false oracle must differ");
-  const policy = {
+  let policy = {
     version: 1,
     kind: "sql-boolean-differential",
     baseUrl: base.href,
@@ -236147,14 +236286,37 @@ function parseDastPolicy(raw) {
     profile: "numeric",
     oracle
   };
-  const policySha256 = createHash6("sha256").update(JSON.stringify({ revision: DAST_PROFILE_REVISION, policy })).digest("hex");
+  if (input.version === 2) {
+    if (typeof input.authorizationEnv !== "string" || !/^[A-Z][A-Z0-9_]{0,127}$/.test(input.authorizationEnv))
+      fail4("invalid authorization binding");
+    if (!record5(input.identity))
+      fail4("identity object required");
+    keys(input.identity, ["path", "status", "jsonPointer", "equals"], "identity");
+    const identity = input.identity;
+    if (typeof identity.path !== "string" || !identity.path.startsWith("/") || identity.path.startsWith("//") || identity.path.length > 2048 || /[?#\\\u0000-\u001f\u007f]/.test(identity.path))
+      fail4("invalid identity path");
+    const identityUrl = normalizeUrl(new URL(identity.path, base.href).href);
+    if (identityUrl.origin !== base.origin)
+      fail4("identity origin mismatch");
+    if (!Number.isSafeInteger(identity.status) || Number(identity.status) < 200 || Number(identity.status) > 299)
+      fail4("invalid identity status");
+    if (typeof identity.equals !== "string" || identity.equals.trim().length === 0 || identity.equals.length > 512 || /[\u0000-\u001f\u007f]/.test(identity.equals))
+      fail4("invalid identity assertion");
+    policy = {
+      ...policy,
+      version: 2,
+      authorizationEnv: input.authorizationEnv,
+      identity: { path: identity.path, status: Number(identity.status), jsonPointer: pointer(identity.jsonPointer), equals: identity.equals }
+    };
+  }
+  const policySha256 = createHash6("sha256").update(JSON.stringify({ revision: dastProfileRevision(policy), policy })).digest("hex");
   return { policy, policySha256 };
 }
 function optionsSnapshot(raw) {
   if (!raw || typeof raw !== "object" || types6.isProxy(raw) || ![Object.prototype, null].includes(Object.getPrototypeOf(raw)))
     throw new TypeError("invalid_dast_options");
   const descriptors = Object.getOwnPropertyDescriptors(raw);
-  const allowed = /* @__PURE__ */ new Set(["policy", "consent", "allowPrivate", "timeoutMs", "maxRequests", "signal"]);
+  const allowed = /* @__PURE__ */ new Set(["policy", "consent", "allowPrivate", "timeoutMs", "maxRequests", "signal", "env"]);
   for (const [key2, descriptor] of Object.entries(descriptors))
     if (!allowed.has(key2) || !("value" in descriptor))
       throw new TypeError("invalid_dast_options");
@@ -236165,7 +236327,8 @@ function optionsSnapshot(raw) {
     allowPrivate: read("allowPrivate"),
     timeoutMs: read("timeoutMs"),
     maxRequests: read("maxRequests"),
-    signal: read("signal")
+    signal: read("signal"),
+    env: read("env")
   };
 }
 function result2(status, reason, metrics = {}) {
@@ -236246,10 +236409,12 @@ async function runDast(rawOptions) {
   } catch {
     return result2("error", "DAST policy was rejected before requests.", { errorCode: "invalid_policy" });
   }
-  const maxRequests = options.maxRequests ?? DAST_DEFAULT_MAX_REQUESTS;
+  const maxRequests = options.maxRequests ?? dastDefaultMaxRequests(parsed.policy);
   const timeoutMs = options.timeoutMs ?? DAST_DEFAULT_TIMEOUT_MS;
-  if (!Number.isSafeInteger(maxRequests) || maxRequests < 1 || maxRequests > DAST_MAX_REQUESTS || !Number.isSafeInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > DAST_MAX_TIMEOUT_MS || options.signal !== void 0 && (types6.isProxy(options.signal) || !(options.signal instanceof AbortSignal)))
+  if (options.allowPrivate !== void 0 && typeof options.allowPrivate !== "boolean" || !Number.isSafeInteger(maxRequests) || maxRequests < 1 || maxRequests > DAST_MAX_REQUESTS || !Number.isSafeInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > DAST_MAX_TIMEOUT_MS || options.signal !== void 0 && (types6.isProxy(options.signal) || !(options.signal instanceof AbortSignal)))
     return result2("error", "DAST budget or cancellation signal is invalid; no requests were made.", { errorCode: "invalid_budget" });
+  if (parsed.policy.version === 2)
+    return runAuthenticatedDast(parsed.policy, parsed.policySha256, options, maxRequests, timeoutMs);
   const control = createApiRunControl(timeoutMs, options.signal, DAST_MAX_TIMEOUT_MS);
   let abortCause;
   const captureAbortCause = () => {
@@ -236398,6 +236563,202 @@ async function runDast(rawOptions) {
     control.dispose();
   }
 }
+var DastPreparationError = class extends TypeError {
+  code;
+  constructor(code) {
+    super(`DAST preparation failed: ${code}. No requests were made.`);
+    this.code = code;
+  }
+};
+function snapshotDastEnvironment(rawPolicy, env = process.env) {
+  let policy;
+  try {
+    policy = parseDastPolicy(rawPolicy).policy;
+  } catch {
+    throw new DastPreparationError("invalid_policy");
+  }
+  if (policy.version === 1)
+    return void 0;
+  if (!env || typeof env !== "object" || types6.isProxy(env) || Array.isArray(env))
+    throw new DastPreparationError("invalid_credentials");
+  const descriptor = Object.getOwnPropertyDescriptor(env, policy.authorizationEnv);
+  const value = descriptor && "value" in descriptor ? descriptor.value : void 0;
+  if (typeof value !== "string" || !value.trim() || value.length > 8192 || /[^\x20-\x7e\x80-\xff]/.test(value))
+    throw new DastPreparationError("invalid_credentials");
+  return Object.freeze({ [policy.authorizationEnv]: value });
+}
+function authorizationSnapshot(policy, options) {
+  const selected = snapshotDastEnvironment(policy, options.env);
+  const target = new URL(policy.baseUrl);
+  if (target.protocol !== "https:" && !(options.allowPrivate === true && ["127.0.0.1", "[::1]"].includes(target.hostname)))
+    throw new DastPreparationError("insecure_authenticated_transport");
+  return selected[policy.authorizationEnv];
+}
+function prepareDastPolicy(raw, rawOptions = {}) {
+  if (!rawOptions || typeof rawOptions !== "object" || types6.isProxy(rawOptions) || ![Object.prototype, null].includes(Object.getPrototypeOf(rawOptions)) || Object.getOwnPropertySymbols(rawOptions).length)
+    throw new DastPreparationError("invalid_options");
+  const descriptors = Object.getOwnPropertyDescriptors(rawOptions);
+  if (Object.entries(descriptors).some(([key2, value]) => !["allowPrivate", "env"].includes(key2) || !value.enumerable || !("value" in value)))
+    throw new DastPreparationError("invalid_options");
+  const options = { allowPrivate: descriptors.allowPrivate?.value, env: descriptors.env?.value };
+  if (options.allowPrivate !== void 0 && typeof options.allowPrivate !== "boolean")
+    throw new DastPreparationError("invalid_options");
+  let parsed;
+  try {
+    parsed = parseDastPolicy(raw);
+  } catch {
+    throw new DastPreparationError("invalid_policy");
+  }
+  if (parsed.policy.version === 2)
+    authorizationSnapshot(parsed.policy, options);
+  return parsed;
+}
+async function runAuthenticatedDast(policy, policySha256, options, maxRequests, timeoutMs) {
+  let authorization;
+  try {
+    authorization = authorizationSnapshot(policy, options);
+  } catch (error) {
+    return result2("error", "Authenticated DAST preparation failed before requests.", { errorCode: error instanceof DastPreparationError ? error.code : "invalid_credentials" });
+  }
+  const control = createApiRunControl(timeoutMs, options.signal, DAST_MAX_TIMEOUT_MS);
+  let abortCause;
+  const captureAbortCause = () => {
+    abortCause ??= options.signal?.aborted ? "cancelled" : "deadline";
+  };
+  if (control.signal.aborted)
+    captureAbortCause();
+  else
+    control.signal.addEventListener("abort", captureAbortCause, { once: true });
+  const budget = { count: 0, max: maxRequests };
+  const context = {
+    allowPrivate: options.allowPrivate === true,
+    signal: control.signal,
+    budget,
+    deadlineAt: control.deadlineAt,
+    rejectRedirects: true,
+    acceptJson: true,
+    authorization
+  };
+  const phases = ["baseline-before", "true", "false", "baseline-after"];
+  const steps = [];
+  const identityControls = { before: "not_attempted", after: "not_attempted" };
+  let firstFailure, totalBytes = 0;
+  try {
+    for (let ordinal = 0; ordinal < 10; ordinal++) {
+      const identity = ordinal === 0 || ordinal === 9;
+      const phase = identity ? ordinal === 0 ? "identity-before" : "identity-after" : phases[(ordinal - 1) % 4];
+      const round = identity ? 0 : Math.floor((ordinal - 1) / 4) + 1;
+      const attemptStart = budget.count;
+      const common = { ordinal, round, phase, attemptStart };
+      if (firstFailure) {
+        steps.push({ ...common, outcome: "not_attempted", reason: "not_reached", httpAttempts: 0, httpStatus: null, oracleMatch: "unavailable" });
+        continue;
+      }
+      let httpStatus = null;
+      try {
+        if (totalBytes >= TOTAL_BODY_BYTES)
+          throw new UrlNetworkError("body_limit", "cumulative response body budget exhausted");
+        const target = normalizeUrl(identity ? new URL(policy.identity.path, policy.baseUrl).href : phaseUrl(policy, phase));
+        const response = await fetchResource(target, context, new URL(policy.baseUrl).origin, Math.min(SINGLE_BODY_BYTES, TOTAL_BODY_BYTES - totalBytes), Math.min(SINGLE_BODY_BYTES, TOTAL_BODY_BYTES - totalBytes));
+        httpStatus = response.status;
+        totalBytes += response.body.byteLength;
+        if (response.status < 200 || response.status > 299 || identity && response.status !== policy.identity.status || !jsonType(response.headers))
+          throw new Error("response_invalid");
+        let json2;
+        try {
+          json2 = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(response.body));
+        } catch {
+          throw new Error("response_invalid");
+        }
+        if (control.signal.aborted || Date.now() >= control.deadlineAt)
+          throw new Error("run_stopped");
+        const value = atPointer(json2, identity ? policy.identity.jsonPointer : policy.oracle.jsonPointer);
+        if (identity) {
+          if (typeof value !== "string" || value !== policy.identity.equals)
+            throw new Error("identity_mismatch");
+          identityControls[ordinal === 0 ? "before" : "after"] = "matched";
+        } else if (!isScalar(value))
+          throw new Error("response_invalid");
+        steps.push({
+          ...common,
+          outcome: "evaluated",
+          reason: "evaluated",
+          httpAttempts: budget.count - attemptStart,
+          httpStatus,
+          oracleMatch: identity ? "unavailable" : matches(value, policy)
+        });
+      } catch (error) {
+        firstFailure = abortCause ?? (Date.now() >= control.deadlineAt ? "deadline" : error instanceof Error && error.message === "identity_mismatch" ? "identity_mismatch" : error instanceof Error && error.message === "response_invalid" ? "response_invalid" : stopReason(error, abortCause, control.deadlineAt));
+        if (identity)
+          identityControls[ordinal === 0 ? "before" : "after"] = budget.count === attemptStart ? "not_attempted" : firstFailure === "identity_mismatch" ? "mismatched" : "inconclusive";
+        steps.push({ ...common, outcome: "inconclusive", reason: firstFailure, httpAttempts: budget.count - attemptStart, httpStatus, oracleMatch: "unavailable" });
+      }
+    }
+    const probeOutcome = dastProbeOutcome(steps.slice(1, 9));
+    const outcome = identityControls.before === "matched" && identityControls.after === "matched" ? probeOutcome : "inconclusive";
+    const status = outcome === "inconclusive" ? "partial" : "complete";
+    const stop = firstFailure ?? (status === "complete" ? "none" : "oracle_inconsistent");
+    const execution = {
+      version: 2,
+      policySha256,
+      profile: "numeric",
+      profileRevision: DAST_AUTH_PROFILE_REVISION,
+      maxRequests,
+      timeoutMs,
+      allowPrivate: options.allowPrivate === true,
+      plannedRequests: 10,
+      steps,
+      status,
+      outcome,
+      probeOutcome,
+      identityControls,
+      counts: {
+        evaluated: steps.filter((step2) => step2.outcome === "evaluated").length,
+        inconclusive: steps.filter((step2) => step2.outcome === "inconclusive").length,
+        notAttempted: steps.filter((step2) => step2.outcome === "not_attempted").length,
+        httpAttempts: budget.count
+      },
+      stopReason: stop
+    };
+    if (!sanitizeDastExecution(execution))
+      return result2("error", "DAST execution ledger failed its internal validation.", { errorCode: "invalid_execution", requestCount: budget.count });
+    const findings = probeOutcome === "observed" ? [{
+      ruleId: "dast.sql-boolean-differential",
+      title: "SQL boolean response differential observed",
+      description: `The configured JSON oracle changed consistently for numeric true/false conditions on parameter ${policy.parameter}. This is a candidate; SQL execution and exploitability have not been independently proven.`,
+      severity: "high",
+      confidence: status === "complete" ? "medium" : "low",
+      kind: "candidate",
+      location: { url: safeUrl(policy.url) },
+      remediation: "Review how the query parameter reaches database execution. Use parameter binding, then rerun the same normal and differential controls."
+    }] : [];
+    return [{
+      id: DAST_CHECK_ID,
+      status: status === "complete" ? "completed" : "partial",
+      findings,
+      notes: [
+        NOTE2,
+        "Authenticated numeric profile: identity is checked before and after eight SQL phases; matching controls do not prove uninterrupted session identity.",
+        status === "complete" ? "All identity and SQL controls completed for this policy." : `Incomplete: ${stop}. Any retained differential is unverified and cannot authorize replay.`
+      ],
+      metrics: {
+        requestCount: budget.count,
+        plannedRequests: 10,
+        maxRequests,
+        responseBytes: totalBytes,
+        profileRevision: DAST_AUTH_PROFILE_REVISION,
+        policySha256,
+        outcome,
+        probeOutcome,
+        stopReason: stop
+      },
+      dastExecution: execution
+    }];
+  } finally {
+    control.signal.removeEventListener("abort", captureAbortCause);
+    control.dispose();
+  }
+}
 
 // build/src/dast-replay.js
 var ID = /^[0-9a-f]{64}$/;
@@ -236415,7 +236776,7 @@ function snapshotOptions(raw) {
   if (prototype !== Object.prototype && prototype !== null || Object.getOwnPropertySymbols(raw).length)
     return void 0;
   const descriptors = Object.getOwnPropertyDescriptors(raw);
-  const permitted = /* @__PURE__ */ new Set(["report", "policy", "findingId", "consent", "allowPrivate", "signal"]);
+  const permitted = /* @__PURE__ */ new Set(["report", "policy", "findingId", "consent", "allowPrivate", "signal", "env"]);
   if (Object.entries(descriptors).some(([key2, descriptor]) => !permitted.has(key2) || !descriptor.enumerable || !("value" in descriptor)))
     return void 0;
   const value = (key2) => descriptors[key2]?.value;
@@ -236427,7 +236788,8 @@ function snapshotOptions(raw) {
     findingId: value("findingId"),
     consent: value("consent"),
     allowPrivate: value("allowPrivate"),
-    signal: value("signal")
+    signal: value("signal"),
+    env: value("env")
   };
 }
 async function replayDastFinding(rawOptions) {
@@ -236462,7 +236824,7 @@ async function replayDastFinding(rawOptions) {
     sourceToolVersion: report.toolVersion === REPORT_TOOL_VERSION ? REPORT_TOOL_VERSION : "other",
     replayToolVersion: REPORT_TOOL_VERSION,
     policySha256,
-    profileRevision: DAST_PROFILE_REVISION
+    profileRevision: dastProfileRevision(policy)
   };
   const rawChecks = object5(rawReport) && Array.isArray(rawReport.checks) ? rawReport.checks : [];
   const rawNative = rawChecks.filter((item) => object5(item) && item.id === DAST_CHECK_ID);
@@ -236481,15 +236843,15 @@ async function replayDastFinding(rawOptions) {
   const selected = check.findings.filter((finding3) => finding3.id === findingId);
   if (selected.length !== 1)
     return refused2(findingId, "not_replayable", metadata);
-  if (check.findings.length !== 1 || check.status !== "completed" || !check.dastExecution || check.dastExecution.status !== "complete" || check.dastExecution.outcome !== "observed" || check.metrics?.requestCount !== check.dastExecution.counts.httpAttempts || check.dastExecution.counts.evaluated !== 8 || check.dastExecution.counts.httpAttempts < 8) {
+  if (check.findings.length !== 1 || check.status !== "completed" || !check.dastExecution || check.dastExecution.status !== "complete" || check.dastExecution.outcome !== "observed" || check.metrics?.requestCount !== check.dastExecution.counts.httpAttempts || check.dastExecution.counts.evaluated !== check.dastExecution.plannedRequests || check.dastExecution.counts.httpAttempts < check.dastExecution.plannedRequests) {
     return refused2(findingId, "not_replayable", metadata);
   }
   const original = sanitizeDastExecution(check.dastExecution);
-  if (!original)
+  if (!original || !isDastReplayableExecution(original))
     return refused2(findingId, "not_replayable", metadata);
   metadata.sourceExecutionSha256 = digest2(original);
   const finding2 = selected[0];
-  if (original.policySha256 !== policySha256 || original.profile !== policy.profile || original.profileRevision !== DAST_PROFILE_REVISION)
+  if (original.policySha256 !== policySha256 || original.profile !== policy.profile || original.profileRevision !== dastProfileRevision(policy) || original.version !== policy.version)
     return refused2(findingId, "policy_mismatch", metadata);
   if (finding2.ruleId !== RULE || finding2.title !== TITLE || finding2.kind !== "candidate" || finding2.severity !== "high" || finding2.confidence !== "medium" || finding2.location.url !== safeHttpUrl(policy.url))
     return refused2(findingId, "not_replayable", metadata);
@@ -236504,7 +236866,8 @@ async function replayDastFinding(rawOptions) {
       allowPrivate: options.allowPrivate,
       maxRequests: original.maxRequests,
       timeoutMs: original.timeoutMs,
-      signal: options.signal
+      signal: options.signal,
+      env: options.env
     });
     if (rawFresh)
       fresh = createReport([rawFresh], "url", /* @__PURE__ */ new Date()).checks[0];
@@ -236515,7 +236878,7 @@ async function replayDastFinding(rawOptions) {
   if (execution)
     metadata.freshExecutionSha256 = digest2(execution);
   const sameSettings = execution?.policySha256 === original.policySha256 && execution.profileRevision === original.profileRevision && execution.maxRequests === original.maxRequests && execution.timeoutMs === original.timeoutMs && execution.allowPrivate === original.allowPrivate;
-  const completed2 = fresh?.id === DAST_CHECK_ID && fresh.status === "completed" && execution?.status === "complete" && execution.counts.evaluated === 8 && fresh.metrics?.requestCount === execution.counts.httpAttempts && sameSettings;
+  const completed2 = fresh?.id === DAST_CHECK_ID && fresh.status === "completed" && execution?.status === "complete" && execution.counts.evaluated === execution.plannedRequests && fresh.metrics?.requestCount === execution.counts.httpAttempts && sameSettings;
   const outcome = !completed2 ? "inconclusive" : execution?.outcome === "observed" && fresh?.findings.length === 1 && fresh.findings[0]?.id === findingId ? "reproduced" : execution?.outcome === "not_observed" && fresh?.findings.length === 0 ? "not_reproduced" : "inconclusive";
   return { version: 1, kind: "native-dast-finding-replay", outcome, findingId, ...metadata, ...fresh ? { check: fresh } : {} };
 }
@@ -237711,7 +238074,7 @@ async function planMain(argv) {
     return 0;
   }
   let kind, file;
-  let allowPrivate = false, timeoutMs = DEFAULT_TOOL_TIMEOUT_MS, maxRequests = DAST_DEFAULT_MAX_REQUESTS, result3;
+  let allowPrivate = false, timeoutMs = DEFAULT_TOOL_TIMEOUT_MS, maxRequests, result3;
   const seen = /* @__PURE__ */ new Set();
   try {
     for (let index = 1; index < argv.length; index++) {
@@ -237757,10 +238120,13 @@ async function planMain(argv) {
   try {
     const input = await readJsonInput(file, 1024 * 1024);
     if (kind === "--dast-policy") {
-      const { policy, policySha256 } = parseDastPolicy(input);
+      const parsed = parseDastPolicy(input);
+      const { policy, policySha256 } = prepareDastPolicy(parsed.policy, { allowPrivate, env: snapshotDastEnvironment(parsed.policy) });
       validateStaticTarget(normalizeUrl(policy.url), allowPrivate);
-      if (maxRequests < 8) {
-        result3 = failure("insufficient_request_budget", "dast-max-requests", "The fixed native DAST plan needs at least eight HTTP attempts; no requests were made.");
+      const plannedRequests = dastDefaultMaxRequests(policy);
+      const effectiveMaxRequests = maxRequests ?? plannedRequests;
+      if (effectiveMaxRequests < plannedRequests) {
+        result3 = failure("insufficient_request_budget", "dast-max-requests", "The selected fixed native DAST plan exceeds the HTTP attempt budget; no requests were made.");
         process.stdout.write(JSON.stringify(result3, null, 2) + "\n");
         return 2;
       }
@@ -237770,11 +238136,16 @@ async function planMain(argv) {
         status: "ready",
         origin: new URL(policy.baseUrl).origin,
         policySha256,
-        profileRevision: DAST_PROFILE_REVISION,
-        plannedRequests: 8,
-        maxHttpAttempts: maxRequests,
+        profileRevision: dastProfileRevision(policy),
+        plannedRequests,
+        maxHttpAttempts: effectiveMaxRequests,
         timeoutMs,
         allowPrivate,
+        ...policy.version === 2 ? { steps: [
+          { ordinal: 0, phase: "identity-before" },
+          ...Array.from({ length: 8 }, (_, index) => ({ ordinal: index + 1, phase: ["baseline-before", "true", "false", "baseline-after"][index % 4] })),
+          { ordinal: 9, phase: "identity-after" }
+        ] } : {},
         notes: ["Configuration only; explicit active consent is still required to scan. No DNS lookup or request was made."]
       }, null, 2) + "\n");
       return 0;
@@ -237958,7 +238329,7 @@ var digest3 = (data) => createHash10("sha256").update(data).digest("hex");
 var SHA = /^[a-f0-9]{64}$/;
 var inside2 = (root, path2) => path2 === root || path2.startsWith(root.endsWith(sep5) ? root : root + sep5);
 var object6 = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
-function exact(v, keys3) {
+function exact2(v, keys3) {
   if (!object6(v) || Object.keys(v).length !== keys3.length || keys3.some((k) => !Object.hasOwn(v, k)))
     throw new Error("invalid");
 }
@@ -237993,8 +238364,8 @@ async function policyInput(options) {
   if (result3.exitCode !== 0 || result3.spawnError || result3.timedOut || result3.outputLimitExceeded)
     throw new Error("invalid");
   const p = JSON.parse(result3.stdout);
-  exact(p, ["schema_version", "profile", "files", "instructions", "timeout_ms", "verification"]);
-  exact(p.verification, ["image", "verifier", "verifier_sha256"]);
+  exact2(p, ["schema_version", "profile", "files", "instructions", "timeout_ms", "verification"]);
+  exact2(p.verification, ["image", "verifier", "verifier_sha256"]);
   if (p.schema_version !== 1 || p.profile !== "sql_injection" || typeof p.instructions !== "string" || !p.instructions.trim() || p.instructions.length > 4096 || !Number.isSafeInteger(p.timeout_ms) || Number(p.timeout_ms) < 1e3 || Number(p.timeout_ms) > 6e5 || !Array.isArray(p.files) || p.files.length < 1 || p.files.length > 8 || new Set(p.files).size !== p.files.length || p.files.some((f) => typeof f !== "string" || !/^[a-zA-Z0-9_-]+(?:\/[a-zA-Z0-9_-]+)*\.(?:py|js|ts|mjs|json)$/.test(f)) || typeof p.verification.image !== "string" || !/^sha256:[a-f0-9]{64}$/.test(p.verification.image) || typeof p.verification.verifier !== "string" || !p.verification.verifier || p.verification.verifier.length > 1024 || typeof p.verification.verifier_sha256 !== "string" || !SHA.test(p.verification.verifier_sha256))
     throw new Error("invalid");
   return { policy: p, hash: digest3(text2) };
@@ -238026,19 +238397,19 @@ async function workspace(path2, files) {
 }
 function verification(text2) {
   const v = JSON.parse(text2);
-  exact(v, ["version", "inputFingerprint", "security", "normal"]);
+  exact2(v, ["version", "inputFingerprint", "security", "normal"]);
   if (v.version !== 1 || typeof v.inputFingerprint !== "string" || !SHA.test(v.inputFingerprint) || v.security !== "passed" && v.security !== "failed" || v.normal !== "passed" && v.normal !== "failed")
     throw new Error("invalid");
   return v;
 }
 function replacements(value, before) {
-  exact(value, ["version", "replacements"]);
+  exact2(value, ["version", "replacements"]);
   if (value.version !== 1 || !Array.isArray(value.replacements) || value.replacements.length < 1 || value.replacements.length > before.size)
     throw new Error("invalid");
   const after = new Map(before), seen = /* @__PURE__ */ new Set();
   let total = 0;
   for (const r of value.replacements) {
-    exact(r, ["path", "beforeSha256", "content"]);
+    exact2(r, ["path", "beforeSha256", "content"]);
     if (typeof r.path !== "string" || !before.has(r.path) || seen.has(r.path) || typeof r.beforeSha256 !== "string" || r.beforeSha256 !== digest3(before.get(r.path)) || typeof r.content !== "string" || r.content.includes("\0") || Buffer.byteLength(r.content) > 128 * 1024 || r.content === before.get(r.path))
       throw new Error("invalid");
     seen.add(r.path);
@@ -238195,7 +238566,7 @@ async function repairMain(args) {
     if (!completed(runtime) || runtime.exitCode !== 0)
       throw new Error("invalid");
     const actual = JSON.parse(runtime.stdout);
-    exact(actual, ["python", "sqlite"]);
+    exact2(actual, ["python", "sqlite"]);
     if ([actual.python, actual.sqlite].some((v) => typeof v !== "string" || !/^\d+\.\d+\.\d+$/.test(v)))
       throw new Error("invalid");
     report.runtime = actual;
@@ -238528,7 +238899,7 @@ async function codexAdvice(command, authMode, directory, deadline, prompt, schem
 
 // build/src/agent-advice-context.js
 import { types as types9 } from "node:util";
-var ADVICE_PROJECTION_POLICY_VERSION = 4;
+var ADVICE_PROJECTION_POLICY_VERSION = 5;
 var MAX_CHECKS = 24;
 var MAX_FINDINGS2 = 24;
 var MAX_BYTES2 = 32 * 1024;
@@ -238547,8 +238918,8 @@ function checkPriority(check, blocking) {
   return 3;
 }
 function nativeExecutionEligible(check, nativeCheckCount) {
-  const execution = check.dastExecution;
-  return nativeCheckCount === 1 && check.checkId === NATIVE_CHECK && check.status === "completed" && !!execution && execution.status === "complete" && !!sanitizeDastExecution(execution) && check.metrics?.requestCount === execution.counts.httpAttempts && execution.counts.evaluated === 8 && execution.counts.httpAttempts >= 8;
+  const execution = sanitizeDastExecution(check.dastExecution);
+  return nativeCheckCount === 1 && check.checkId === NATIVE_CHECK && check.status === "completed" && !!execution && execution.status === "complete" && check.metrics?.requestCount === execution.counts.httpAttempts && execution.counts.evaluated === execution.plannedRequests && execution.counts.httpAttempts >= execution.plannedRequests && (execution.version === 1 || execution.identityControls.before === "matched" && execution.identityControls.after === "matched");
 }
 function checkRoute(check, mode, nativeCheckCount) {
   if (check.checkId === "source.inventory" && (sanitiseCollectionBudget(check.collectionBudget) || sanitiseCollectionEvidence(check.collectionEvidence)))
@@ -238562,7 +238933,7 @@ function checkRoute(check, mode, nativeCheckCount) {
   return "review_check_diagnostics";
 }
 function checkCard(check, mode, nativeCheckCount) {
-  const dast = check.checkId === "url.sql-boolean" ? check.dastExecution : void 0;
+  const dast = check.checkId === "url.sql-boolean" ? sanitizeDastExecution(check.dastExecution) : void 0;
   const api = check.checkId === "api.authorization" ? check.apiExecution : void 0;
   const gaps = check.analysisGaps;
   const collectionBudget = check.checkId === "source.inventory" ? sanitiseCollectionBudget(check.collectionBudget) : void 0;
@@ -238581,6 +238952,7 @@ function checkCard(check, mode, nativeCheckCount) {
       profileRevision: dast.profileRevision,
       status: dast.status,
       outcome: dast.outcome,
+      ...dast.version === 2 ? { identityControls: { before: dast.identityControls.before, after: dast.identityControls.after }, probeOutcome: dast.probeOutcome } : {},
       plannedRequests: dast.plannedRequests,
       maxRequests: dast.maxRequests,
       timeoutMs: dast.timeoutMs,
@@ -238651,7 +239023,7 @@ function checkCard(check, mode, nativeCheckCount) {
 function findingRoute(finding2, check, mode, nativeCheckCount, findingRowsForCheck, nativeReplayReportEligible, conditionalContext2) {
   if (conditionalContext2)
     return "review_static_flow_or_budget";
-  if (nativeReplayReportEligible && nativeExecutionEligible(check, nativeCheckCount) && check.dastExecution?.outcome === "observed" && check.findingIds.length === 1 && findingRowsForCheck === 1 && check.findingIds[0] === finding2.findingId && finding2.ruleId === NATIVE_RULE && finding2.title === NATIVE_TITLE && finding2.evidence.kind === "candidate" && finding2.severity === "high" && finding2.confidence === "medium" && typeof finding2.location.url === "string" && safeHttpUrl(finding2.location.url) === finding2.location.url)
+  if (nativeReplayReportEligible && nativeExecutionEligible(check, nativeCheckCount) && check.dastExecution && isDastReplayableExecution(check.dastExecution) && check.findingIds.length === 1 && findingRowsForCheck === 1 && check.findingIds[0] === finding2.findingId && finding2.ruleId === NATIVE_RULE && finding2.title === NATIVE_TITLE && finding2.evidence.kind === "candidate" && finding2.severity === "high" && finding2.confidence === "medium" && typeof finding2.location.url === "string" && safeHttpUrl(finding2.location.url) === finding2.location.url)
     return "replay_native_finding_same_policy";
   if (check.checkId === "api.authorization" && check.apiExecution?.status === "complete" && finding2.evidence.replay?.kind === "api-policy-case")
     return "replay_api_finding_same_policy";
@@ -238789,7 +239161,7 @@ Output: private agent-advice.json. Exit 0 advice produced; 2 incomplete/error.
 `;
 var digest4 = (data) => createHash12("sha256").update(data).digest("hex");
 var object7 = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
-var exact2 = (v, keys3) => object7(v) && Object.keys(v).length === keys3.length && keys3.every((key2) => Object.hasOwn(v, key2));
+var exact3 = (v, keys3) => object7(v) && Object.keys(v).length === keys3.length && keys3.every((key2) => Object.hasOwn(v, key2));
 function parse3(args) {
   const values = /* @__PURE__ */ new Map();
   let upload = false;
@@ -238918,10 +239290,10 @@ function adviceSchema(references2, routes, clean) {
   } };
 }
 function validatedAdvice(value, referenceRoutes, clean) {
-  if (!exact2(value, ["version", "overview", "recommendations"]) || value.version !== 1 || typeof value.overview !== "string" || !value.overview.trim() || value.overview.length > 400 || !Array.isArray(value.recommendations) || value.recommendations.length < (clean ? 0 : 1) || value.recommendations.length > (clean ? 0 : 6))
+  if (!exact3(value, ["version", "overview", "recommendations"]) || value.version !== 1 || typeof value.overview !== "string" || !value.overview.trim() || value.overview.length > 400 || !Array.isArray(value.recommendations) || value.recommendations.length < (clean ? 0 : 1) || value.recommendations.length > (clean ? 0 : 6))
     throw new Error("agent_protocol_invalid");
   const recommendations = value.recommendations.map((raw) => {
-    if (!exact2(raw, ["referenceId", "recheckRoute", "priority", "reason", "nextStep", "recheck"]) || typeof raw.referenceId !== "string" || !referenceRoutes.has(raw.referenceId) || raw.recheckRoute !== referenceRoutes.get(raw.referenceId) || !Number.isInteger(raw.priority) || Number(raw.priority) < 1 || Number(raw.priority) > 3 || ["reason", "nextStep", "recheck"].some((key2) => typeof raw[key2] !== "string" || !raw[key2].trim() || raw[key2].length > 400))
+    if (!exact3(raw, ["referenceId", "recheckRoute", "priority", "reason", "nextStep", "recheck"]) || typeof raw.referenceId !== "string" || !referenceRoutes.has(raw.referenceId) || raw.recheckRoute !== referenceRoutes.get(raw.referenceId) || !Number.isInteger(raw.priority) || Number(raw.priority) < 1 || Number(raw.priority) > 3 || ["reason", "nextStep", "recheck"].some((key2) => typeof raw[key2] !== "string" || !raw[key2].trim() || raw[key2].length > 400))
       throw new Error("agent_protocol_invalid");
     return {
       referenceId: raw.referenceId,
@@ -240128,7 +240500,7 @@ Options:
 Active DAST (off by default; sends generated or template requests to the target):
   --active-consent             Required: you own or are authorized to test the target
   --dast-policy FILE           Explicit GET/query numeric SQL differential policy JSON
-  --dast-max-requests N        Native DAST HTTP attempt budget, 1..64 (default 8)
+  --dast-max-requests N        Native DAST HTTP attempt budget, 1..64 (v1 default 8; authenticated v2 default 10)
   --openapi FILE               Local OpenAPI 3.0/3.1 JSON (same-document $ref only)
   --api-base URL               Target origin for --openapi (servers are never used)
   --operation PATH             Documented GET path to test (repeatable, 1..16)
@@ -240588,12 +240960,19 @@ async function runDastReplay(argv) {
       return 2;
     }
     const startedAt = (/* @__PURE__ */ new Date()).toISOString();
+    let env;
+    try {
+      env = snapshotDastEnvironment(parseDastPolicy(policy).policy);
+    } catch {
+      env = {};
+    }
     const result3 = await replayDastFinding({
       report,
       policy,
       findingId: options.findingId,
       consent: options.consent,
       allowPrivate: options.allowPrivate,
+      env,
       signal: controller.signal
     });
     const { check, ...summary } = result3;
@@ -240685,7 +241064,7 @@ ${USAGE2}`);
     process.removeListener("SIGTERM", cancel);
   }
 }
-async function declaredScope(options, apiPolicy, dastPolicySha256) {
+async function declaredScope(options, apiPolicy, dastPolicySha256, dastPolicy) {
   return buildScanScope({
     mode: modeFor(options),
     source: options.source,
@@ -240707,7 +241086,7 @@ async function declaredScope(options, apiPolicy, dastPolicySha256) {
     apiPolicy,
     ruleset: RULESET_VERSION,
     ...options.openapi || options.dastPolicy || options.engines.length > 0 ? { dast: {
-      ...options.dastPolicy ? { native: { policySha256: dastPolicySha256 ?? null, profileRevision: DAST_PROFILE_REVISION, maxRequests: options.dastMaxRequests ?? DAST_DEFAULT_MAX_REQUESTS, timeoutMs: Math.min(options.timeoutMs, API_MAX_TIMEOUT_MS) } } : {},
+      ...options.dastPolicy ? { native: { policySha256: dastPolicySha256 ?? null, profileRevision: dastPolicy ? dastProfileRevision(dastPolicy) : null, maxRequests: options.dastMaxRequests ?? (dastPolicy ? dastDefaultMaxRequests(dastPolicy) : DAST_DEFAULT_MAX_REQUESTS), timeoutMs: Math.min(options.timeoutMs, API_MAX_TIMEOUT_MS) } } : {},
       ...options.openapi ? { schemathesis: { apiBase: options.apiBase, operations: [...options.operations], maxRequests: options.apiMaxRequests ?? 32, seed: options.seed ?? 1 } } : {},
       ...options.engines.includes("nuclei") ? { nuclei: { scopes: [...options.nucleiScopes].sort(), maxRequests: options.nucleiMaxRequests ?? null, rateLimit: options.nucleiRateLimit ?? null } } : {}
     } } : {}
@@ -240762,13 +241141,16 @@ ${USAGE2}`);
     }
     let dastPolicy;
     let dastPolicySha256;
+    let dastEnv;
     if (parsed.dastPolicy) {
       try {
-        const validated = parseDastPolicy(await readJsonInput(parsed.dastPolicy, 1024 * 1024));
+        const input = parseDastPolicy(await readJsonInput(parsed.dastPolicy, 1024 * 1024));
+        dastEnv = snapshotDastEnvironment(input.policy);
+        const validated = prepareDastPolicy(input.policy, { allowPrivate: parsed.allowPrivate, env: dastEnv });
         dastPolicy = validated.policy;
         dastPolicySha256 = validated.policySha256;
       } catch {
-        checks.push(runtimeErrorCheck(DAST_CHECK_ID, "DAST policy must be a valid bounded JSON file with the supported numeric GET/query schema; no DAST requests were made."));
+        checks.push(runtimeErrorCheck(DAST_CHECK_ID, "DAST policy, selected credential or transport is invalid; no DAST requests were made."));
       }
     }
     const dastPolicyAllowed = dastPolicy !== void 0 && (parsed.allowedOrigins.length === 0 || originAllowed(dastPolicy.baseUrl, parsed.allowedOrigins));
@@ -240864,13 +241246,14 @@ ${USAGE2}`);
           allowPrivate: parsed.allowPrivate,
           timeoutMs: Math.min(parsed.timeoutMs, API_MAX_TIMEOUT_MS),
           maxRequests: parsed.dastMaxRequests,
+          env: dastEnv,
           signal: controller.signal
         }));
       } catch {
         checks.push(runtimeErrorCheck(DAST_CHECK_ID, "Native DAST could not be completed."));
       }
     }
-    const scope = await declaredScope(parsed, apiPolicy, dastPolicySha256);
+    const scope = await declaredScope(parsed, apiPolicy, dastPolicySha256, dastPolicy);
     const markCancelled = () => {
       if (controller.signal.aborted && !checks.some((check) => check.id === "scan.cancelled"))
         checks.push({ id: "scan.cancelled", status: "partial", findings: [], notes: ["The command was cancelled; completed stages do not establish command completion."] });
