@@ -22,6 +22,7 @@ import { initMain } from "./init.js";
 import { planMain } from "./plan.js";
 import { repairMain } from "./repair.js";
 import { adviseMain } from "./agent-advice.js";
+import { apiWriteStateMain } from './api-write-cli.js';
 import { handoffMain } from './source-handoff.js';
 import { DAST_CHECK_ID, DAST_MAX_REQUESTS, DAST_DEFAULT_MAX_REQUESTS, parseDastPolicy, prepareDastPolicy, snapshotDastEnvironment, dastProfileRevision, dastDefaultMaxRequests, runDast, type DastPolicy } from "./dast.js";
 import { API_MAX_REQUESTS, API_MAX_TIMEOUT_MS } from "./api.js";
@@ -93,6 +94,8 @@ export const USAGE = `Usage:
   wakeio-security-ci init [--source DIR] [--workflow FILE] [--out DIR] [--tools ...]
   wakeio-security-ci repair --source DIR --policy FILE --out NEW_DIR --proposal FILE
   wakeio-security-ci repair --help
+  wakeio-security-ci api-write-state --candidate fixed|ineffective|all-deny|normal-regression|status-only|wrong-object --active-consent --out NEW_DIR
+    Owned synthetic PATCH resources only; external targets and automatic write retries are unavailable.
   wakeio-security-ci advise --report DIR --agent codex --auth cli-login|api-key --allow-report-upload --out NEW_DIR
   wakeio-security-ci handoff create --report DIR --source DIR --finding ID --check-index N --out NEW_DIR
   wakeio-security-ci handoff finish --handoff DIR --report AFTER_DIR --source DIR --out NEW_DIR
@@ -591,6 +594,7 @@ async function declaredScope(options: CliOptions, apiPolicy: ApiPolicy | undefin
 /** Executes a scan and writes public reports when scanning starts. */
 export async function main(argv: readonly string[] = process.argv.slice(2)): Promise<number> {
   if (argv[0] === 'plan') return planMain(argv);
+  if (argv[0] === 'api-write-state') return apiWriteStateMain(argv);
   if (argv[0] === 'compare') return runComparison(argv);
   if (argv[0] === 'replay') return runReplay(argv);
   if (argv[0] === 'doctor') return doctorMain(argv);

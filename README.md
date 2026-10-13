@@ -18,6 +18,8 @@ See the [execution contract](docs/preview-0.4-api.md#계획-대비-실행-ledger
 The [owned API pilot](docs/api-state-oracle.md) also offers explicit two-round
 normal-behavior controls; inconsistent repeats remain inconclusive.
 
+The separate [owned PATCH state pilot](docs/api-write-state.md) checks actual persisted writes and normal owner controls on fixed synthetic loopback fixtures. Its SDK, CLI and dedicated Action require explicit consent, preserve the original phase gates, and do not accept an external API target.
+
 ## What it checks
 
 | Scope | What Wakeio can observe | Boundary to keep in mind |

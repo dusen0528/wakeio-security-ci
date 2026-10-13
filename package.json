@@ -32,6 +32,7 @@
   "files": [
     "build/src",
     "workers/api-state",
+    "workers/api-write-state",
     "workers/schemathesis/worker.py",
     "workers/schemathesis/openapi.json",
     "workers/schemathesis/requirements.txt",

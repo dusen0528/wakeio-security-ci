@@ -179,6 +179,28 @@ verified fix. The feature is implemented in the source preview; source-validatio
 results and the separately recorded package-consumer boundary are in the linked
 validation record.
 
+## Owned PATCH persisted-state evidence
+
+The source preview adds `CheckResult.apiWriteStateEvidence` version 1 under
+scope `owned-synthetic-resource-patch-write`, preserved in agent check metadata,
+Markdown and SARIF invocation properties. It records phase, execution, effect,
+normal controls, verification, cleanup, bounded reasons/counts/lineage and the
+fixed ordered GET/PATCH execution ledger. `observed` describes independently
+observed stored-state effects on fixed author-owned loopback resources; it is
+separate from a static source candidate.
+
+A denial HTTP status does not prove absence of mutation. Missing or malformed
+write metadata, state/identity/normal-control failures, cancellation and unknown
+cleanup remain incomplete. Original baseline/candidate scan gates are preserved
+alongside the separate comparison gate. `scoped_fix_effect_observed` is limited
+to that owned case, not a verified customer fix or whole-service guarantee.
+Finding-level vulnerability/remediation flags remain false/not verified.
+
+The [owned write contract](api-write-state.md) explains explicit consent, the
+finite shared request/body budgets, exact publication manifest, Action outputs,
+and the separate caller ACK/process boundary. Raw store values, request bodies,
+tokens and source are excluded from the public evidence.
+
 ## Finding evidence and consumer requirements
 
 Each finding links its `findingId`, `checkIndex`, `checkId`, and `ruleId` to the

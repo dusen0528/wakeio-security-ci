@@ -6,6 +6,14 @@ Source and the checked-in Action are versioned 0.5.0. The latest published npm
 package remains 0.4.0; use a reviewed Git commit or build this checkout for the
 features below. This entry does not claim an npm 0.5.0 publication.
 
+- Add an explicitly consented owned PATCH state pilot through SDK, CLI and a
+  dedicated composite Action. A fixed actor/resource matrix and independent
+  persisted-state observer distinguish denial responses from actual mutation,
+  preserving normal owner controls and original before/after gates. The bounded
+  run permits only pinned author-owned loopback fixtures; existing API policy
+  GET semantics remain unchanged. Reports, staged publication and caller ACK
+  remain separate. See [owned write scope and validation](docs/api-write-state.md).
+
 - Add bounded filesystem filename→stream callback→captured accumulator→process
   argv analysis under ruleset `2026-10-13.3` for the documented reviewed versions.
   Source-kind and conditional-context metadata preserve low-confidence candidate

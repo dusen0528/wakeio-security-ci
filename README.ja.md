@@ -10,6 +10,8 @@ Wakeio Security CI は、開発者が自分のコード、公開 URL、読み取
 
 GitHub のソースは **0.5.0**、npm で公開済みの最新版は **0.4.0** です。0.5.0 の新機能を使う場合は [`dusen0528/wakeio-security-ci`](https://github.com/dusen0528/wakeio-security-ci) のレビュー済み Git checkout を `npm run build` でビルドしてください。npm の 0.5.0 は未公開です。機能と配布状態の詳細は [英語版](README.md)・[韓国語版](README.ko.md)を参照してください。
 
+別の[所有 PATCH state pilot](docs/api-write-state.md)は、固定した合成 loopback fixture の保存変更と正常 owner control を確認します。SDK・CLI・専用 Action は明示的同意を要求し、元の phase gate を保持します。外部 API は入力できません。
+
 ## 何を確認できるか
 
 | 入力 | 確認する内容 | このプレビューで分からないこと |
