@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Add an experimental `wakeio-security-ci/agent-dast` SDK with a bounded
+  worker-result contract and RunStore v2. Completion requires the declared
+  plan, retained task observations and trusted runner ledger to agree;
+  deduplication preserves auth/location context, severity and evidence refs.
+  Populated prototype v1 and WAL inputs are refused without inventing trusted
+  evidence. Store runtime support is Node 22.13+ in 22.x, 23.4+ in 23.x, or 24+;
+  other modes retain their Node floor. This adds no worker executor or CLI.
+  See [store contract](docs/agent-dast-store.md).
 - Add an explicit authenticated numeric POST JSON differential policy v4 with
   one bounded body field, distinct benign-value controls, twelve fixed logical
   steps and no automatic POST retry. Existing GET policies retain their scope;

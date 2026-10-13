@@ -27,10 +27,16 @@
     "./contracts": {
       "types": "./build/src/contracts.d.ts",
       "default": "./build/src/contracts.js"
-    }
+    },
+    "./agent-dast": {
+      "types": "./build/src/agent-dast/index.d.ts",
+      "default": "./build/src/agent-dast/index.js"
+    },
+    "./schemas/worker-result.v1.json": "./schemas/worker-result.v1.json"
   },
   "files": [
     "build/src",
+    "schemas",
     "workers/api-state",
     "workers/api-write-state",
     "workers/schemathesis/worker.py",
