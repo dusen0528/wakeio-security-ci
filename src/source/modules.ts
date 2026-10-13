@@ -15,6 +15,12 @@ export const FLOW_LIMITS = Object.freeze({
 export type FlowLimits = { [K in Exclude<keyof typeof FLOW_LIMITS, 'indexWork' | 'flowWork'>]: number }
   & { indexWork?: number; flowWork?: number };
 
+// A spelling vetoes negative receiver proof; it does not prove evaluator identity.
+const BROWSER_LOCATION_EVALUATION_NAMES = new Set([
+  'eval', 'Function', 'execScript', 'setTimeout', 'setInterval',
+  'runInContext', 'runInThisContext', 'runInNewContext', 'compileFunction',
+]);
+
 export function isFlowFunction(node: ts.Node): node is ts.FunctionLikeDeclaration {
   return ts.isFunctionDeclaration(node) || ts.isFunctionExpression(node) || ts.isArrowFunction(node)
     || ts.isMethodDeclaration(node) || ts.isGetAccessorDeclaration(node)
@@ -71,6 +77,8 @@ export class StaticModules {
   readonly references = new Map<ts.Symbol, ts.Identifier[]>();
   readonly nativeBoundaryNodes: ts.Node[] = [];
   readonly constructorBoundaryNodes: ts.Identifier[] = [];
+  /** Evaluation can alter a lexical receiver without explicit object references. */
+  readonly browserLocationBoundaryNodes: ts.Node[] = [];
   readonly newExpressions: ts.NewExpression[] = [];
   /** Writes retained by the existing charged walk for narrow instance-field evidence. */
   readonly instanceFieldWrites: ts.Node[] = [];
@@ -119,6 +127,7 @@ export class StaticModules {
 
   finishIndex(complete: boolean): void { this.proofsReady = complete; }
   get indexComplete(): boolean { return this.proofsReady; }
+  isLocalExportBinding(symbol: ts.Symbol): boolean { return this.localExportBindings.has(symbol); }
   ownerOf(node: ts.Node): ts.FunctionLikeDeclaration | ts.SourceFile { return this.owners.get(node) ?? node.getSourceFile(); }
 
   constructor(files: readonly ts.SourceFile[], private readonly tick: () => boolean,
@@ -189,6 +198,8 @@ export class StaticModules {
       if (!this.tick()) { walkComplete = false; return; }
       this.indexedAstNodes += 1;
       this.owners.set(node, owner);
+      if ((ts.isIdentifier(node) || ts.isStringLiteralLike(node)) && BROWSER_LOCATION_EVALUATION_NAMES.has(node.text)
+        || ts.isComputedPropertyName(node) && ts.isBindingElement(node.parent)) this.browserLocationBoundaryNodes.push(node);
       if (ts.isClassDeclaration(node) && ts.isSourceFile(node.parent)) this.classes.add(node);
       if (ts.isImportDeclaration(node)) {
         this.importDeclarations.push(node);
@@ -261,7 +272,7 @@ export class StaticModules {
         if (['Object','String','Array','Reflect','process','globalThis'].includes(node.text)) this.sqlBoundaryNodes.push(node);
         if (node.text === 'require') this.loaderReferences.push(node);
       }
-      if (ts.isWithStatement(node)) this.opaqueClassScopeFiles.add(node.getSourceFile());
+      if (ts.isWithStatement(node)) { this.opaqueClassScopeFiles.add(node.getSourceFile()); this.browserLocationBoundaryNodes.push(node); }
       if (node.kind === ts.SyntaxKind.ThisKeyword || node.kind === ts.SyntaxKind.SuperKeyword) {
         // Include lexical outer methods as well as nested bodies. No receiver
         // environment is added to the scalar summary/cache contract.

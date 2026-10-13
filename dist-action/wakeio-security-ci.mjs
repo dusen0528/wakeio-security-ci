@@ -344,7 +344,7 @@ var init_report_path = __esm({
 // node_modules/typescript/lib/typescript.js
 var require_typescript = __commonJS({
   "node_modules/typescript/lib/typescript.js"(exports, module) {
-    var ts19 = {};
+    var ts20 = {};
     ((module2) => {
       "use strict";
       var __defProp2 = Object.defineProperty;
@@ -456,7 +456,7 @@ var require_typescript = __commonJS({
         NodeBuilderFlags: () => NodeBuilderFlags,
         NodeCheckFlags: () => NodeCheckFlags,
         NodeFactoryFlags: () => NodeFactoryFlags,
-        NodeFlags: () => NodeFlags15,
+        NodeFlags: () => NodeFlags16,
         NodeResolutionFeatures: () => NodeResolutionFeatures,
         ObjectFlags: () => ObjectFlags,
         OperationCanceledException: () => OperationCanceledException,
@@ -504,7 +504,7 @@ var require_typescript = __commonJS({
         SymbolDisplayPartKind: () => SymbolDisplayPartKind,
         SymbolFlags: () => SymbolFlags,
         SymbolFormatFlags: () => SymbolFormatFlags,
-        SyntaxKind: () => SyntaxKind15,
+        SyntaxKind: () => SyntaxKind16,
         Ternary: () => Ternary,
         ThrottledCancellationToken: () => ThrottledCancellationToken,
         TokenClass: () => TokenClass,
@@ -1524,7 +1524,7 @@ var require_typescript = __commonJS({
         isAwaitExpression: () => isAwaitExpression5,
         isAwaitKeyword: () => isAwaitKeyword,
         isBigIntLiteral: () => isBigIntLiteral2,
-        isBinaryExpression: () => isBinaryExpression11,
+        isBinaryExpression: () => isBinaryExpression12,
         isBinaryLogicalOperator: () => isBinaryLogicalOperator,
         isBinaryOperatorToken: () => isBinaryOperatorToken,
         isBindableObjectDefinePropertyCall: () => isBindableObjectDefinePropertyCall,
@@ -1663,7 +1663,7 @@ var require_typescript = __commonJS({
         isExpressionStatement: () => isExpressionStatement9,
         isExpressionWithTypeArguments: () => isExpressionWithTypeArguments,
         isExpressionWithTypeArgumentsInClassExtendsClause: () => isExpressionWithTypeArgumentsInClassExtendsClause,
-        isExternalModule: () => isExternalModule,
+        isExternalModule: () => isExternalModule2,
         isExternalModuleAugmentation: () => isExternalModuleAugmentation,
         isExternalModuleImportEqualsDeclaration: () => isExternalModuleImportEqualsDeclaration,
         isExternalModuleIndicator: () => isExternalModuleIndicator,
@@ -1706,7 +1706,7 @@ var require_typescript = __commonJS({
         isHeritageClause: () => isHeritageClause,
         isHoistedFunction: () => isHoistedFunction,
         isHoistedVariableStatement: () => isHoistedVariableStatement,
-        isIdentifier: () => isIdentifier17,
+        isIdentifier: () => isIdentifier18,
         isIdentifierANonContextualKeyword: () => isIdentifierANonContextualKeyword,
         isIdentifierName: () => isIdentifierName,
         isIdentifierOrThisTypeNode: () => isIdentifierOrThisTypeNode,
@@ -1932,7 +1932,7 @@ var require_typescript = __commonJS({
         isNotEmittedStatement: () => isNotEmittedStatement,
         isNullishCoalesce: () => isNullishCoalesce,
         isNumber: () => isNumber2,
-        isNumericLiteral: () => isNumericLiteral8,
+        isNumericLiteral: () => isNumericLiteral9,
         isNumericLiteralName: () => isNumericLiteralName,
         isObjectBindingElementWithoutPropertyName: () => isObjectBindingElementWithoutPropertyName,
         isObjectBindingOrAssignmentElement: () => isObjectBindingOrAssignmentElement,
@@ -1940,7 +1940,7 @@ var require_typescript = __commonJS({
         isObjectBindingPattern: () => isObjectBindingPattern10,
         isObjectLiteralElement: () => isObjectLiteralElement,
         isObjectLiteralElementLike: () => isObjectLiteralElementLike,
-        isObjectLiteralExpression: () => isObjectLiteralExpression11,
+        isObjectLiteralExpression: () => isObjectLiteralExpression12,
         isObjectLiteralMethod: () => isObjectLiteralMethod,
         isObjectLiteralOrClassExpressionMethodOrAccessor: () => isObjectLiteralOrClassExpressionMethodOrAccessor,
         isObjectTypeDeclaration: () => isObjectTypeDeclaration,
@@ -1982,10 +1982,10 @@ var require_typescript = __commonJS({
         isPrologueDirective: () => isPrologueDirective,
         isPropertyAccessChain: () => isPropertyAccessChain,
         isPropertyAccessEntityNameExpression: () => isPropertyAccessEntityNameExpression,
-        isPropertyAccessExpression: () => isPropertyAccessExpression16,
+        isPropertyAccessExpression: () => isPropertyAccessExpression17,
         isPropertyAccessOrQualifiedName: () => isPropertyAccessOrQualifiedName,
         isPropertyAccessOrQualifiedNameOrImportTypeNode: () => isPropertyAccessOrQualifiedNameOrImportTypeNode,
-        isPropertyAssignment: () => isPropertyAssignment12,
+        isPropertyAssignment: () => isPropertyAssignment13,
         isPropertyDeclaration: () => isPropertyDeclaration5,
         isPropertyName: () => isPropertyName,
         isPropertyNameLiteral: () => isPropertyNameLiteral,
@@ -2034,7 +2034,7 @@ var require_typescript = __commonJS({
         isSingleOrDoubleQuote: () => isSingleOrDoubleQuote,
         isSolutionConfig: () => isSolutionConfig,
         isSourceElement: () => isSourceElement,
-        isSourceFile: () => isSourceFile6,
+        isSourceFile: () => isSourceFile7,
         isSourceFileFromLibrary: () => isSourceFileFromLibrary,
         isSourceFileJS: () => isSourceFileJS,
         isSourceFileNotJson: () => isSourceFileNotJson,
@@ -2053,7 +2053,7 @@ var require_typescript = __commonJS({
         isStringAndEmptyAnonymousObjectIntersection: () => isStringAndEmptyAnonymousObjectIntersection,
         isStringDoubleQuoted: () => isStringDoubleQuoted,
         isStringLiteral: () => isStringLiteral7,
-        isStringLiteralLike: () => isStringLiteralLike13,
+        isStringLiteralLike: () => isStringLiteralLike14,
         isStringLiteralOrJsxExpression: () => isStringLiteralOrJsxExpression,
         isStringLiteralOrTemplate: () => isStringLiteralOrTemplate,
         isStringOrNumericLiteralLike: () => isStringOrNumericLiteralLike,
@@ -2135,13 +2135,13 @@ var require_typescript = __commonJS({
         isVarConst: () => isVarConst,
         isVarConstLike: () => isVarConstLike,
         isVarUsing: () => isVarUsing,
-        isVariableDeclaration: () => isVariableDeclaration16,
+        isVariableDeclaration: () => isVariableDeclaration17,
         isVariableDeclarationInVariableStatement: () => isVariableDeclarationInVariableStatement,
         isVariableDeclarationInitializedToBareOrAccessedRequire: () => isVariableDeclarationInitializedToBareOrAccessedRequire,
         isVariableDeclarationInitializedToRequire: () => isVariableDeclarationInitializedToRequire,
-        isVariableDeclarationList: () => isVariableDeclarationList9,
+        isVariableDeclarationList: () => isVariableDeclarationList10,
         isVariableLike: () => isVariableLike,
-        isVariableStatement: () => isVariableStatement9,
+        isVariableStatement: () => isVariableStatement10,
         isVoidExpression: () => isVoidExpression,
         isWatchSet: () => isWatchSet,
         isWhileStatement: () => isWhileStatement2,
@@ -4391,7 +4391,7 @@ Node ${formatSyntaxKind(node.kind)} was unexpected.`,
         function formatSyntaxKind(kind) {
           return formatEnum(
             kind,
-            SyntaxKind15,
+            SyntaxKind16,
             /*isFlags*/
             false
           );
@@ -4418,7 +4418,7 @@ Node ${formatSyntaxKind(node.kind)} was unexpected.`,
         function formatNodeFlags(flags) {
           return formatEnum(
             flags,
-            NodeFlags15,
+            NodeFlags16,
             /*isFlags*/
             true
           );
@@ -4688,7 +4688,7 @@ Node ${formatSyntaxKind(node.kind)} was unexpected.`,
                 // for use with vscode-js-debug's new customDescriptionGenerator in launch.json
                 __tsDebuggerDisplay: {
                   value() {
-                    const nodeHeader = isGeneratedIdentifier(this) ? "GeneratedIdentifier" : isIdentifier17(this) ? `Identifier '${idText(this)}'` : isPrivateIdentifier2(this) ? `PrivateIdentifier '${idText(this)}'` : isStringLiteral7(this) ? `StringLiteral ${JSON.stringify(this.text.length < 10 ? this.text : this.text.slice(10) + "...")}` : isNumericLiteral8(this) ? `NumericLiteral ${this.text}` : isBigIntLiteral2(this) ? `BigIntLiteral ${this.text}n` : isTypeParameterDeclaration(this) ? "TypeParameterDeclaration" : isParameter6(this) ? "ParameterDeclaration" : isConstructorDeclaration4(this) ? "ConstructorDeclaration" : isGetAccessorDeclaration6(this) ? "GetAccessorDeclaration" : isSetAccessorDeclaration6(this) ? "SetAccessorDeclaration" : isCallSignatureDeclaration(this) ? "CallSignatureDeclaration" : isConstructSignatureDeclaration(this) ? "ConstructSignatureDeclaration" : isIndexSignatureDeclaration(this) ? "IndexSignatureDeclaration" : isTypePredicateNode(this) ? "TypePredicateNode" : isTypeReferenceNode3(this) ? "TypeReferenceNode" : isFunctionTypeNode(this) ? "FunctionTypeNode" : isConstructorTypeNode(this) ? "ConstructorTypeNode" : isTypeQueryNode2(this) ? "TypeQueryNode" : isTypeLiteralNode(this) ? "TypeLiteralNode" : isArrayTypeNode2(this) ? "ArrayTypeNode" : isTupleTypeNode(this) ? "TupleTypeNode" : isOptionalTypeNode(this) ? "OptionalTypeNode" : isRestTypeNode(this) ? "RestTypeNode" : isUnionTypeNode(this) ? "UnionTypeNode" : isIntersectionTypeNode(this) ? "IntersectionTypeNode" : isConditionalTypeNode(this) ? "ConditionalTypeNode" : isInferTypeNode(this) ? "InferTypeNode" : isParenthesizedTypeNode(this) ? "ParenthesizedTypeNode" : isThisTypeNode(this) ? "ThisTypeNode" : isTypeOperatorNode(this) ? "TypeOperatorNode" : isIndexedAccessTypeNode(this) ? "IndexedAccessTypeNode" : isMappedTypeNode(this) ? "MappedTypeNode" : isLiteralTypeNode(this) ? "LiteralTypeNode" : isNamedTupleMember(this) ? "NamedTupleMember" : isImportTypeNode(this) ? "ImportTypeNode" : formatSyntaxKind(this.kind);
+                    const nodeHeader = isGeneratedIdentifier(this) ? "GeneratedIdentifier" : isIdentifier18(this) ? `Identifier '${idText(this)}'` : isPrivateIdentifier2(this) ? `PrivateIdentifier '${idText(this)}'` : isStringLiteral7(this) ? `StringLiteral ${JSON.stringify(this.text.length < 10 ? this.text : this.text.slice(10) + "...")}` : isNumericLiteral9(this) ? `NumericLiteral ${this.text}` : isBigIntLiteral2(this) ? `BigIntLiteral ${this.text}n` : isTypeParameterDeclaration(this) ? "TypeParameterDeclaration" : isParameter6(this) ? "ParameterDeclaration" : isConstructorDeclaration4(this) ? "ConstructorDeclaration" : isGetAccessorDeclaration6(this) ? "GetAccessorDeclaration" : isSetAccessorDeclaration6(this) ? "SetAccessorDeclaration" : isCallSignatureDeclaration(this) ? "CallSignatureDeclaration" : isConstructSignatureDeclaration(this) ? "ConstructSignatureDeclaration" : isIndexSignatureDeclaration(this) ? "IndexSignatureDeclaration" : isTypePredicateNode(this) ? "TypePredicateNode" : isTypeReferenceNode3(this) ? "TypeReferenceNode" : isFunctionTypeNode(this) ? "FunctionTypeNode" : isConstructorTypeNode(this) ? "ConstructorTypeNode" : isTypeQueryNode2(this) ? "TypeQueryNode" : isTypeLiteralNode(this) ? "TypeLiteralNode" : isArrayTypeNode2(this) ? "ArrayTypeNode" : isTupleTypeNode(this) ? "TupleTypeNode" : isOptionalTypeNode(this) ? "OptionalTypeNode" : isRestTypeNode(this) ? "RestTypeNode" : isUnionTypeNode(this) ? "UnionTypeNode" : isIntersectionTypeNode(this) ? "IntersectionTypeNode" : isConditionalTypeNode(this) ? "ConditionalTypeNode" : isInferTypeNode(this) ? "InferTypeNode" : isParenthesizedTypeNode(this) ? "ParenthesizedTypeNode" : isThisTypeNode(this) ? "ThisTypeNode" : isTypeOperatorNode(this) ? "TypeOperatorNode" : isIndexedAccessTypeNode(this) ? "IndexedAccessTypeNode" : isMappedTypeNode(this) ? "MappedTypeNode" : isLiteralTypeNode(this) ? "LiteralTypeNode" : isNamedTupleMember(this) ? "NamedTupleMember" : isImportTypeNode(this) ? "ImportTypeNode" : formatSyntaxKind(this.kind);
                     return `${nodeHeader}${this.flags ? ` (${formatNodeFlags(this.flags)})` : ""}`;
                   }
                 },
@@ -5839,7 +5839,7 @@ ${lanes.join("\n")}
       })(tracingEnabled || (tracingEnabled = {}));
       var startTracing = tracingEnabled.startTracing;
       var dumpTracingLegend = tracingEnabled.dumpLegend;
-      var SyntaxKind15 = /* @__PURE__ */ ((SyntaxKind52) => {
+      var SyntaxKind16 = /* @__PURE__ */ ((SyntaxKind52) => {
         SyntaxKind52[SyntaxKind52["Unknown"] = 0] = "Unknown";
         SyntaxKind52[SyntaxKind52["EndOfFileToken"] = 1] = "EndOfFileToken";
         SyntaxKind52[SyntaxKind52["SingleLineCommentTrivia"] = 2] = "SingleLineCommentTrivia";
@@ -6345,8 +6345,8 @@ ${lanes.join("\n")}
           /* LastKeyword */
         ] = "LastContextualKeyword";
         return SyntaxKind52;
-      })(SyntaxKind15 || {});
-      var NodeFlags15 = /* @__PURE__ */ ((NodeFlags32) => {
+      })(SyntaxKind16 || {});
+      var NodeFlags16 = /* @__PURE__ */ ((NodeFlags32) => {
         NodeFlags32[NodeFlags32["None"] = 0] = "None";
         NodeFlags32[NodeFlags32["Let"] = 1] = "Let";
         NodeFlags32[NodeFlags32["Const"] = 2] = "Const";
@@ -6395,7 +6395,7 @@ ${lanes.join("\n")}
           /* HasAsyncFunctions */
         ] = "IdentifierIsInJSDocNamespace";
         return NodeFlags32;
-      })(NodeFlags15 || {});
+      })(NodeFlags16 || {});
       var ModifierFlags = /* @__PURE__ */ ((ModifierFlags3) => {
         ModifierFlags3[ModifierFlags3["None"] = 0] = "None";
         ModifierFlags3[ModifierFlags3["Public"] = 1] = "Public";
@@ -15754,7 +15754,7 @@ ${lanes.join("\n")}
                 return expr.name;
               case 213:
                 const arg = expr.argumentExpression;
-                if (isIdentifier17(arg)) {
+                if (isIdentifier18(arg)) {
                   return arg;
                 }
             }
@@ -15772,13 +15772,13 @@ ${lanes.join("\n")}
       }
       function getDeclarationIdentifier(node) {
         const name = getNameOfDeclaration(node);
-        return name && isIdentifier17(name) ? name : void 0;
+        return name && isIdentifier18(name) ? name : void 0;
       }
       function nodeHasName(statement, name) {
-        if (isNamedDeclaration(statement) && isIdentifier17(statement.name) && idText(statement.name) === idText(name)) {
+        if (isNamedDeclaration(statement) && isIdentifier18(statement.name) && idText(statement.name) === idText(name)) {
           return true;
         }
-        if (isVariableStatement9(statement) && some(statement.declarationList.declarations, (d) => nodeHasName(d, name))) {
+        if (isVariableStatement10(statement) && some(statement.declarationList.declarations, (d) => nodeHasName(d, name))) {
           return true;
         }
         return false;
@@ -15824,7 +15824,7 @@ ${lanes.join("\n")}
             return nameForNamelessJSDocTypedef(declaration);
           case 278: {
             const { expression } = declaration;
-            return isIdentifier17(expression) ? expression : void 0;
+            return isIdentifier18(expression) ? expression : void 0;
           }
           case 213:
             const expr = declaration;
@@ -15841,15 +15841,15 @@ ${lanes.join("\n")}
       function getAssignedName(node) {
         if (!node.parent) {
           return void 0;
-        } else if (isPropertyAssignment12(node.parent) || isBindingElement8(node.parent)) {
+        } else if (isPropertyAssignment13(node.parent) || isBindingElement8(node.parent)) {
           return node.parent.name;
-        } else if (isBinaryExpression11(node.parent) && node === node.parent.right) {
-          if (isIdentifier17(node.parent.left)) {
+        } else if (isBinaryExpression12(node.parent) && node === node.parent.right) {
+          if (isIdentifier18(node.parent.left)) {
             return node.parent.left;
           } else if (isAccessExpression(node.parent.left)) {
             return getElementOrPropertyAccessArgumentExpressionOrName(node.parent.left);
           }
-        } else if (isVariableDeclaration16(node.parent) && isIdentifier17(node.parent.name)) {
+        } else if (isVariableDeclaration17(node.parent) && isIdentifier18(node.parent.name)) {
           return node.parent.name;
         }
       }
@@ -15869,9 +15869,9 @@ ${lanes.join("\n")}
       }
       function getJSDocParameterTagsWorker(param, noCache) {
         if (param.name) {
-          if (isIdentifier17(param.name)) {
+          if (isIdentifier18(param.name)) {
             const name = param.name.escapedText;
-            return getJSDocTagsWorker(param.parent, noCache).filter((tag) => isJSDocParameterTag(tag) && isIdentifier17(tag.name) && tag.name.escapedText === name);
+            return getJSDocTagsWorker(param.parent, noCache).filter((tag) => isJSDocParameterTag(tag) && isIdentifier18(tag.name) && tag.name.escapedText === name);
           } else {
             const i = param.parent.parameters.indexOf(param);
             Debug.assert(i > -1, "Parameters should always be in their parents' parameter list");
@@ -16121,7 +16121,7 @@ ${lanes.join("\n")}
         return node.kind === 179 || node.kind === 178;
       }
       function isPropertyAccessChain(node) {
-        return isPropertyAccessExpression16(node) && !!(node.flags & 64);
+        return isPropertyAccessExpression17(node) && !!(node.flags & 64);
       }
       function isElementAccessChain(node) {
         return isElementAccessExpression12(node) && !!(node.flags & 64);
@@ -16146,7 +16146,7 @@ ${lanes.join("\n")}
         return node.kind === 227 && node.operatorToken.kind === 61;
       }
       function isConstTypeReference(node) {
-        return isTypeReferenceNode3(node) && isIdentifier17(node.typeName) && node.typeName.escapedText === "const" && !node.typeArguments;
+        return isTypeReferenceNode3(node) && isIdentifier18(node.typeName) && node.typeName.escapedText === "const" && !node.typeArguments;
       }
       function skipPartiallyEmittedExpressions(node) {
         return skipOuterExpressions(
@@ -16243,11 +16243,11 @@ ${lanes.join("\n")}
         return node.kind === 11 || isTemplateLiteralKind(node.kind);
       }
       function isImportAttributeName(node) {
-        return isStringLiteral7(node) || isIdentifier17(node);
+        return isStringLiteral7(node) || isIdentifier18(node);
       }
       function isGeneratedIdentifier(node) {
         var _a2;
-        return isIdentifier17(node) && ((_a2 = node.emitNode) == null ? void 0 : _a2.autoGenerate) !== void 0;
+        return isIdentifier18(node) && ((_a2 = node.emitNode) == null ? void 0 : _a2.autoGenerate) !== void 0;
       }
       function isGeneratedPrivateIdentifier(node) {
         var _a2;
@@ -16261,7 +16261,7 @@ ${lanes.join("\n")}
         return (isPropertyDeclaration5(node) || isMethodOrAccessor(node)) && isPrivateIdentifier2(node.name);
       }
       function isPrivateIdentifierPropertyAccessExpression(node) {
-        return isPropertyAccessExpression16(node) && isPrivateIdentifier2(node.name);
+        return isPropertyAccessExpression17(node) && isPrivateIdentifier2(node.name);
       }
       function isModifierKind(token) {
         switch (token) {
@@ -16347,7 +16347,7 @@ ${lanes.join("\n")}
         }
       }
       function isFunctionOrModuleBlock(node) {
-        return isSourceFile6(node) || isModuleBlock(node) || isBlock7(node) && isFunctionLike3(node.parent);
+        return isSourceFile7(node) || isModuleBlock(node) || isBlock7(node) && isFunctionLike3(node.parent);
       }
       function isClassElement(node) {
         const kind = node.kind;
@@ -16432,7 +16432,7 @@ ${lanes.join("\n")}
         return false;
       }
       function isBindingOrAssignmentElement(node) {
-        return isVariableDeclaration16(node) || isParameter6(node) || isObjectBindingOrAssignmentElement(node) || isArrayBindingOrAssignmentElement(node);
+        return isVariableDeclaration17(node) || isParameter6(node) || isObjectBindingOrAssignmentElement(node) || isArrayBindingOrAssignmentElement(node);
       }
       function isBindingOrAssignmentPattern(node) {
         return isObjectBindingOrAssignmentPattern(node) || isArrayBindingOrAssignmentPattern(node);
@@ -16671,7 +16671,7 @@ ${lanes.join("\n")}
         return isBlock7(node);
       }
       function isForInitializer(node) {
-        return isVariableDeclarationList9(node) || isExpression3(node);
+        return isVariableDeclarationList10(node) || isExpression3(node);
       }
       function isModuleBody(node) {
         const kind = node.kind;
@@ -16937,7 +16937,7 @@ ${lanes.join("\n")}
         }
         return indentation === MAX_SMI_X86 ? void 0 : indentation;
       }
-      function isStringLiteralLike13(node) {
+      function isStringLiteralLike14(node) {
         return node.kind === 11 || node.kind === 15;
       }
       function isJSDocLinkLike(node) {
@@ -17075,7 +17075,7 @@ ${lanes.join("\n")}
           const res = callback(node);
           if (res === "quit") return void 0;
           if (res !== void 0) return res;
-          if (isSourceFile6(node)) return void 0;
+          if (isSourceFile7(node)) return void 0;
           node = node.parent;
         }
       }
@@ -17295,7 +17295,7 @@ ${lanes.join("\n")}
         if (isClassStaticBlockDeclaration(parent2)) return child === parent2.modifiers;
         if (isPropertySignature(parent2)) return child === parent2.initializer;
         if (isPropertyDeclaration5(parent2)) return child === parent2.questionToken && isAutoAccessorPropertyDeclaration(parent2);
-        if (isPropertyAssignment12(parent2)) return child === parent2.modifiers || child === parent2.questionToken || child === parent2.exclamationToken || isGrammarErrorElement(parent2.modifiers, child, isModifierLike);
+        if (isPropertyAssignment13(parent2)) return child === parent2.modifiers || child === parent2.questionToken || child === parent2.exclamationToken || isGrammarErrorElement(parent2.modifiers, child, isModifierLike);
         if (isShorthandPropertyAssignment10(parent2)) return child === parent2.equalsToken || child === parent2.modifiers || child === parent2.questionToken || child === parent2.exclamationToken || isGrammarErrorElement(parent2.modifiers, child, isModifierLike);
         if (isMethodDeclaration8(parent2)) return child === parent2.exclamationToken;
         if (isConstructorDeclaration4(parent2)) return child === parent2.typeParameters || child === parent2.type || isGrammarErrorElement(parent2.typeParameters, child, isTypeParameterDeclaration);
@@ -18060,7 +18060,7 @@ ${lanes.join("\n")}
         if (nodeIsSynthesized(node) || !node.parent || flags & 4 && node.isUnterminated) {
           return false;
         }
-        if (isNumericLiteral8(node)) {
+        if (isNumericLiteral9(node)) {
           if (node.numericLiteralFlags & 26656) {
             return false;
           }
@@ -18093,7 +18093,7 @@ ${lanes.join("\n")}
         return isModuleDeclaration(node) && isStringLiteral7(node.name);
       }
       function isEffectiveModuleDeclaration(node) {
-        return isModuleDeclaration(node) || isIdentifier17(node);
+        return isModuleDeclaration(node) || isIdentifier18(node);
       }
       function isShorthandAmbientModuleSymbol(moduleSymbol) {
         return isShorthandAmbientModule(moduleSymbol.valueDeclaration);
@@ -18113,9 +18113,9 @@ ${lanes.join("\n")}
       function isModuleAugmentationExternal(node) {
         switch (node.parent.kind) {
           case 308:
-            return isExternalModule(node.parent);
+            return isExternalModule2(node.parent);
           case 269:
-            return isAmbientModule(node.parent.parent) && isSourceFile6(node.parent.parent.parent) && !isExternalModule(node.parent.parent.parent);
+            return isAmbientModule(node.parent.parent) && isSourceFile7(node.parent.parent.parent) && !isExternalModule2(node.parent.parent.parent);
         }
         return false;
       }
@@ -18127,7 +18127,7 @@ ${lanes.join("\n")}
         return kind === 1 || 100 <= kind && kind <= 199;
       }
       function isEffectiveExternalModule(node, compilerOptions) {
-        return isExternalModule(node) || isCommonJSContainingModuleKind(getEmitModuleKind(compilerOptions)) && !!node.commonJsModuleIndicator;
+        return isExternalModule2(node) || isCommonJSContainingModuleKind(getEmitModuleKind(compilerOptions)) && !!node.commonJsModuleIndicator;
       }
       function isEffectiveStrictModeSourceFile(node, compilerOptions) {
         switch (node.scriptKind) {
@@ -18148,7 +18148,7 @@ ${lanes.join("\n")}
         if (startsWithUseStrict(node.statements)) {
           return true;
         }
-        if (isExternalModule(node) || getIsolatedModules(compilerOptions)) {
+        if (isExternalModule2(node) || getIsolatedModules(compilerOptions)) {
           return true;
         }
         return false;
@@ -18316,7 +18316,7 @@ ${lanes.join("\n")}
           case 167:
             return entityNameToString(name.left) + "." + entityNameToString(name.right);
           case 212:
-            if (isIdentifier17(name.name) || isPrivateIdentifier2(name.name)) {
+            if (isIdentifier18(name.name) || isPrivateIdentifier2(name.name)) {
               return entityNameToString(name.expression) + "." + entityNameToString(name.name);
             } else {
               return Debug.assertNever(name.name);
@@ -18591,10 +18591,10 @@ ${lanes.join("\n")}
         return isCustomPrologue(node) && isFunctionDeclaration9(node);
       }
       function isHoistedVariable(node) {
-        return isIdentifier17(node.name) && !node.initializer;
+        return isIdentifier18(node.name) && !node.initializer;
       }
       function isHoistedVariableStatement(node) {
-        return isCustomPrologue(node) && isVariableStatement9(node) && every(node.declarationList.declarations, isHoistedVariable);
+        return isCustomPrologue(node) && isVariableStatement10(node) && every(node.declarationList.declarations, isHoistedVariable);
       }
       function getLeadingCommentRangesOfNode(node, sourceFileOfNode) {
         return node.kind !== 12 ? getLeadingCommentRanges(sourceFileOfNode.text, node.pos) : void 0;
@@ -18793,14 +18793,14 @@ ${lanes.join("\n")}
       }
       function isCommonJsExportedExpression(node) {
         if (!isInJSFile(node)) return false;
-        return isObjectLiteralExpression11(node.parent) && isBinaryExpression11(node.parent.parent) && getAssignmentDeclarationKind(node.parent.parent) === 2 || isCommonJsExportPropertyAssignment(node.parent);
+        return isObjectLiteralExpression12(node.parent) && isBinaryExpression12(node.parent.parent) && getAssignmentDeclarationKind(node.parent.parent) === 2 || isCommonJsExportPropertyAssignment(node.parent);
       }
       function isCommonJsExportPropertyAssignment(node) {
         if (!isInJSFile(node)) return false;
-        return isBinaryExpression11(node) && getAssignmentDeclarationKind(node) === 1;
+        return isBinaryExpression12(node) && getAssignmentDeclarationKind(node) === 1;
       }
       function isValidESSymbolDeclaration(node) {
-        return (isVariableDeclaration16(node) ? isVarConst(node) && isIdentifier17(node.name) && isVariableDeclarationInVariableStatement(node) : isPropertyDeclaration5(node) ? hasEffectiveReadonlyModifier(node) && hasStaticModifier(node) : isPropertySignature(node) && hasEffectiveReadonlyModifier(node)) || isCommonJsExportPropertyAssignment(node);
+        return (isVariableDeclaration17(node) ? isVarConst(node) && isIdentifier18(node.name) && isVariableDeclarationInVariableStatement(node) : isPropertyDeclaration5(node) ? hasEffectiveReadonlyModifier(node) && hasStaticModifier(node) : isPropertySignature(node) && hasEffectiveReadonlyModifier(node)) || isCommonJsExportPropertyAssignment(node);
       }
       function introducesArgumentsExoticObject(node) {
         switch (node.kind) {
@@ -18843,7 +18843,7 @@ ${lanes.join("\n")}
       }
       function forEachPropertyAssignment(objectLiteral, key2, callback, key22) {
         return forEach(objectLiteral == null ? void 0 : objectLiteral.properties, (property) => {
-          if (!isPropertyAssignment12(property)) return void 0;
+          if (!isPropertyAssignment13(property)) return void 0;
           const propName = tryGetTextOfPropertyName(property.name);
           return key2 === propName || key22 && key22 === propName ? callback(property) : void 0;
         });
@@ -18851,7 +18851,7 @@ ${lanes.join("\n")}
       function getTsConfigObjectLiteralExpression(tsConfigSourceFile) {
         if (tsConfigSourceFile && tsConfigSourceFile.statements.length) {
           const expression = tsConfigSourceFile.statements[0].expression;
-          return tryCast(expression, isObjectLiteralExpression11);
+          return tryCast(expression, isObjectLiteralExpression12);
         }
       }
       function getTsConfigPropArrayElementValue(tsConfigSourceFile, propKey, elementValue) {
@@ -18957,7 +18957,7 @@ ${lanes.join("\n")}
         }
       }
       function isInTopLevelContext(node) {
-        if (isIdentifier17(node) && (isClassDeclaration5(node.parent) || isFunctionDeclaration9(node.parent)) && node.parent.name === node) {
+        if (isIdentifier18(node) && (isClassDeclaration5(node.parent) || isFunctionDeclaration9(node.parent)) && node.parent.name === node) {
           node = node.parent;
         }
         const container = getThisContainer(
@@ -18967,7 +18967,7 @@ ${lanes.join("\n")}
           /*includeClassComputedPropertyName*/
           false
         );
-        return isSourceFile6(container);
+        return isSourceFile7(container);
       }
       function getNewTargetContainer(node) {
         const container = getThisContainer(
@@ -19046,10 +19046,10 @@ ${lanes.join("\n")}
       }
       function isThisInitializedDeclaration(node) {
         var _a2;
-        return !!node && isVariableDeclaration16(node) && ((_a2 = node.initializer) == null ? void 0 : _a2.kind) === 110;
+        return !!node && isVariableDeclaration17(node) && ((_a2 = node.initializer) == null ? void 0 : _a2.kind) === 110;
       }
       function isThisInitializedObjectBindingExpression(node) {
-        return !!node && (isShorthandPropertyAssignment10(node) || isPropertyAssignment12(node)) && isBinaryExpression11(node.parent.parent) && node.parent.parent.operatorToken.kind === 64 && node.parent.parent.right.kind === 110;
+        return !!node && (isShorthandPropertyAssignment10(node) || isPropertyAssignment13(node)) && isBinaryExpression12(node.parent.parent) && node.parent.parent.operatorToken.kind === 64 && node.parent.parent.right.kind === 110;
       }
       function getEntityNameFromTypeNode(node) {
         switch (node.kind) {
@@ -19220,7 +19220,7 @@ ${lanes.join("\n")}
             }
             return node.parent.kind === 187 || isJSDocLinkLike(node.parent) || isJSDocNameReference(node.parent) || isJSDocMemberName(node.parent) || isJSXTagName(node);
           case 81:
-            return isBinaryExpression11(node.parent) && node.parent.left === node && node.parent.operatorToken.kind === 103;
+            return isBinaryExpression12(node.parent) && node.parent.left === node && node.parent.operatorToken.kind === 103;
           case 80:
             if (node.parent.kind === 187 || isJSDocLinkLike(node.parent) || isJSDocNameReference(node.parent) || isJSDocMemberName(node.parent) || isJSXTagName(node)) {
               return true;
@@ -19327,7 +19327,7 @@ ${lanes.join("\n")}
         return !!node && !!(node.flags & 16777216);
       }
       function isJSDocIndexSignature(node) {
-        return isTypeReferenceNode3(node) && isIdentifier17(node.typeName) && node.typeName.escapedText === "Object" && node.typeArguments && node.typeArguments.length === 2 && (node.typeArguments[0].kind === 154 || node.typeArguments[0].kind === 150);
+        return isTypeReferenceNode3(node) && isIdentifier18(node.typeName) && node.typeName.escapedText === "Object" && node.typeArguments && node.typeArguments.length === 2 && (node.typeArguments[0].kind === 154 || node.typeArguments[0].kind === 150);
       }
       function isRequireCall(callExpression, requireStringLiteralLikeArgument) {
         if (callExpression.kind !== 214) {
@@ -19341,7 +19341,7 @@ ${lanes.join("\n")}
           return false;
         }
         const arg = args[0];
-        return !requireStringLiteralLikeArgument || isStringLiteralLike13(arg);
+        return !requireStringLiteralLikeArgument || isStringLiteralLike14(arg);
       }
       function isVariableDeclarationInitializedToRequire(node) {
         return isVariableDeclarationInitializedWithRequireHelper(
@@ -19361,14 +19361,14 @@ ${lanes.join("\n")}
         return isBindingElement8(node) && isVariableDeclarationInitializedToBareOrAccessedRequire(node.parent.parent);
       }
       function isVariableDeclarationInitializedWithRequireHelper(node, allowAccessedRequire) {
-        return isVariableDeclaration16(node) && !!node.initializer && isRequireCall(
+        return isVariableDeclaration17(node) && !!node.initializer && isRequireCall(
           allowAccessedRequire ? getLeftmostAccessExpression(node.initializer) : node.initializer,
           /*requireStringLiteralLikeArgument*/
           true
         );
       }
       function isRequireVariableStatement(node) {
-        return isVariableStatement9(node) && node.declarationList.declarations.length > 0 && every(node.declarationList.declarations, (decl) => isVariableDeclarationInitializedToRequire(decl));
+        return isVariableStatement10(node) && node.declarationList.declarations.length > 0 && every(node.declarationList.declarations, (decl) => isVariableDeclarationInitializedToRequire(decl));
       }
       function isSingleOrDoubleQuote(charCode) {
         return charCode === 39 || charCode === 34;
@@ -19377,10 +19377,10 @@ ${lanes.join("\n")}
         return getSourceTextOfNodeFromSourceFile(sourceFile, str).charCodeAt(0) === 34;
       }
       function isAssignmentDeclaration(decl) {
-        return isBinaryExpression11(decl) || isAccessExpression(decl) || isIdentifier17(decl) || isCallExpression18(decl);
+        return isBinaryExpression12(decl) || isAccessExpression(decl) || isIdentifier18(decl) || isCallExpression18(decl);
       }
       function getEffectiveInitializer(node) {
-        if (isInJSFile(node) && node.initializer && isBinaryExpression11(node.initializer) && (node.initializer.operatorToken.kind === 57 || node.initializer.operatorToken.kind === 61) && node.name && isEntityNameExpression(node.name) && isSameEntityName(node.name, node.initializer.left)) {
+        if (isInJSFile(node) && node.initializer && isBinaryExpression12(node.initializer) && (node.initializer.operatorToken.kind === 57 || node.initializer.operatorToken.kind === 61) && node.name && isEntityNameExpression(node.name) && isSameEntityName(node.name, node.initializer.left)) {
           return node.initializer.right;
         }
         return node.initializer;
@@ -19390,10 +19390,10 @@ ${lanes.join("\n")}
         return init && getExpandoInitializer(init, isPrototypeAccess(node.name));
       }
       function hasExpandoValueProperty(node, isPrototypeAssignment) {
-        return forEach(node.properties, (p) => isPropertyAssignment12(p) && isIdentifier17(p.name) && p.name.escapedText === "value" && p.initializer && getExpandoInitializer(p.initializer, isPrototypeAssignment));
+        return forEach(node.properties, (p) => isPropertyAssignment13(p) && isIdentifier18(p.name) && p.name.escapedText === "value" && p.initializer && getExpandoInitializer(p.initializer, isPrototypeAssignment));
       }
       function getAssignedExpandoInitializer(node) {
-        if (node && node.parent && isBinaryExpression11(node.parent) && node.parent.operatorToken.kind === 64) {
+        if (node && node.parent && isBinaryExpression12(node.parent) && node.parent.operatorToken.kind === 64) {
           const isPrototypeAssignment = isPrototypeAccess(node.parent.left);
           return getExpandoInitializer(node.parent.right, isPrototypeAssignment) || getDefaultedExpandoInitializer(node.parent.left, node.parent.right, isPrototypeAssignment);
         }
@@ -19412,27 +19412,27 @@ ${lanes.join("\n")}
         if (initializer.kind === 219 || initializer.kind === 232 || initializer.kind === 220) {
           return initializer;
         }
-        if (isObjectLiteralExpression11(initializer) && (initializer.properties.length === 0 || isPrototypeAssignment)) {
+        if (isObjectLiteralExpression12(initializer) && (initializer.properties.length === 0 || isPrototypeAssignment)) {
           return initializer;
         }
       }
       function getDefaultedExpandoInitializer(name, initializer, isPrototypeAssignment) {
-        const e = isBinaryExpression11(initializer) && (initializer.operatorToken.kind === 57 || initializer.operatorToken.kind === 61) && getExpandoInitializer(initializer.right, isPrototypeAssignment);
+        const e = isBinaryExpression12(initializer) && (initializer.operatorToken.kind === 57 || initializer.operatorToken.kind === 61) && getExpandoInitializer(initializer.right, isPrototypeAssignment);
         if (e && isSameEntityName(name, initializer.left)) {
           return e;
         }
       }
       function isDefaultedExpandoInitializer(node) {
-        const name = isVariableDeclaration16(node.parent) ? node.parent.name : isBinaryExpression11(node.parent) && node.parent.operatorToken.kind === 64 ? node.parent.left : void 0;
+        const name = isVariableDeclaration17(node.parent) ? node.parent.name : isBinaryExpression12(node.parent) && node.parent.operatorToken.kind === 64 ? node.parent.left : void 0;
         return name && getExpandoInitializer(node.right, isPrototypeAccess(name)) && isEntityNameExpression(name) && isSameEntityName(name, node.left);
       }
       function getNameOfExpando(node) {
-        if (isBinaryExpression11(node.parent)) {
-          const parent2 = (node.parent.operatorToken.kind === 57 || node.parent.operatorToken.kind === 61) && isBinaryExpression11(node.parent.parent) ? node.parent.parent : node.parent;
-          if (parent2.operatorToken.kind === 64 && isIdentifier17(parent2.left)) {
+        if (isBinaryExpression12(node.parent)) {
+          const parent2 = (node.parent.operatorToken.kind === 57 || node.parent.operatorToken.kind === 61) && isBinaryExpression12(node.parent.parent) ? node.parent.parent : node.parent;
+          if (parent2.operatorToken.kind === 64 && isIdentifier18(parent2.left)) {
             return parent2.left;
           }
-        } else if (isVariableDeclaration16(node.parent)) {
+        } else if (isVariableDeclaration17(node.parent)) {
           return node.parent.name;
         }
       }
@@ -19440,7 +19440,7 @@ ${lanes.join("\n")}
         if (isPropertyNameLiteral(name) && isPropertyNameLiteral(initializer)) {
           return getTextOfIdentifierOrLiteral(name) === getTextOfIdentifierOrLiteral(initializer);
         }
-        if (isMemberName(name) && isLiteralLikeAccess(initializer) && (initializer.expression.kind === 110 || isIdentifier17(initializer.expression) && (initializer.expression.escapedText === "window" || initializer.expression.escapedText === "self" || initializer.expression.escapedText === "global"))) {
+        if (isMemberName(name) && isLiteralLikeAccess(initializer) && (initializer.expression.kind === 110 || isIdentifier18(initializer.expression) && (initializer.expression.escapedText === "window" || initializer.expression.escapedText === "self" || initializer.expression.escapedText === "global"))) {
           return isSameEntityName(name, getNameOrArgument(initializer));
         }
         if (isLiteralLikeAccess(name) && isLiteralLikeAccess(initializer)) {
@@ -19459,33 +19459,33 @@ ${lanes.join("\n")}
         return node;
       }
       function isExportsIdentifier(node) {
-        return isIdentifier17(node) && node.escapedText === "exports";
+        return isIdentifier18(node) && node.escapedText === "exports";
       }
       function isModuleIdentifier(node) {
-        return isIdentifier17(node) && node.escapedText === "module";
+        return isIdentifier18(node) && node.escapedText === "module";
       }
       function isModuleExportsAccessExpression(node) {
-        return (isPropertyAccessExpression16(node) || isLiteralLikeElementAccess(node)) && isModuleIdentifier(node.expression) && getElementOrPropertyAccessName(node) === "exports";
+        return (isPropertyAccessExpression17(node) || isLiteralLikeElementAccess(node)) && isModuleIdentifier(node.expression) && getElementOrPropertyAccessName(node) === "exports";
       }
       function getAssignmentDeclarationKind(expr) {
         const special = getAssignmentDeclarationKindWorker(expr);
         return special === 5 || isInJSFile(expr) ? special : 0;
       }
       function isBindableObjectDefinePropertyCall(expr) {
-        return length(expr.arguments) === 3 && isPropertyAccessExpression16(expr.expression) && isIdentifier17(expr.expression.expression) && idText(expr.expression.expression) === "Object" && idText(expr.expression.name) === "defineProperty" && isStringOrNumericLiteralLike(expr.arguments[1]) && isBindableStaticNameExpression(
+        return length(expr.arguments) === 3 && isPropertyAccessExpression17(expr.expression) && isIdentifier18(expr.expression.expression) && idText(expr.expression.expression) === "Object" && idText(expr.expression.name) === "defineProperty" && isStringOrNumericLiteralLike(expr.arguments[1]) && isBindableStaticNameExpression(
           expr.arguments[0],
           /*excludeThisKeyword*/
           true
         );
       }
       function isLiteralLikeAccess(node) {
-        return isPropertyAccessExpression16(node) || isLiteralLikeElementAccess(node);
+        return isPropertyAccessExpression17(node) || isLiteralLikeElementAccess(node);
       }
       function isLiteralLikeElementAccess(node) {
         return isElementAccessExpression12(node) && isStringOrNumericLiteralLike(node.argumentExpression);
       }
       function isBindableStaticAccessExpression(node, excludeThisKeyword) {
-        return isPropertyAccessExpression16(node) && (!excludeThisKeyword && node.expression.kind === 110 || isIdentifier17(node.name) && isBindableStaticNameExpression(
+        return isPropertyAccessExpression17(node) && (!excludeThisKeyword && node.expression.kind === 110 || isIdentifier18(node.name) && isBindableStaticNameExpression(
           node.expression,
           /*excludeThisKeyword*/
           true
@@ -19502,7 +19502,7 @@ ${lanes.join("\n")}
         return isEntityNameExpression(node) || isBindableStaticAccessExpression(node, excludeThisKeyword);
       }
       function getNameOrArgument(expr) {
-        if (isPropertyAccessExpression16(expr)) {
+        if (isPropertyAccessExpression17(expr)) {
           return expr.name;
         }
         return expr.argumentExpression;
@@ -19528,20 +19528,20 @@ ${lanes.join("\n")}
           expr.left.expression,
           /*excludeThisKeyword*/
           true
-        ) && getElementOrPropertyAccessName(expr.left) === "prototype" && isObjectLiteralExpression11(getInitializerOfBinaryExpression(expr))) {
+        ) && getElementOrPropertyAccessName(expr.left) === "prototype" && isObjectLiteralExpression12(getInitializerOfBinaryExpression(expr))) {
           return 6;
         }
         return getAssignmentDeclarationPropertyAccessKind(expr.left);
       }
       function isVoidZero(node) {
-        return isVoidExpression(node) && isNumericLiteral8(node.expression) && node.expression.text === "0";
+        return isVoidExpression(node) && isNumericLiteral9(node.expression) && node.expression.text === "0";
       }
       function getElementOrPropertyAccessArgumentExpressionOrName(node) {
-        if (isPropertyAccessExpression16(node)) {
+        if (isPropertyAccessExpression17(node)) {
           return node.name;
         }
         const arg = skipParentheses(node.argumentExpression);
-        if (isNumericLiteral8(arg) || isStringLiteralLike13(arg)) {
+        if (isNumericLiteral9(arg) || isStringLiteralLike14(arg)) {
           return arg;
         }
         return node;
@@ -19549,10 +19549,10 @@ ${lanes.join("\n")}
       function getElementOrPropertyAccessName(node) {
         const name = getElementOrPropertyAccessArgumentExpressionOrName(node);
         if (name) {
-          if (isIdentifier17(name)) {
+          if (isIdentifier18(name)) {
             return name.escapedText;
           }
-          if (isStringLiteralLike13(name) || isNumericLiteral8(name)) {
+          if (isStringLiteralLike14(name) || isNumericLiteral9(name)) {
             return escapeLeadingUnderscores(name.text);
           }
         }
@@ -19572,7 +19572,7 @@ ${lanes.join("\n")}
             return 3;
           }
           let nextToLast = lhs;
-          while (!isIdentifier17(nextToLast.expression)) {
+          while (!isIdentifier18(nextToLast.expression)) {
             nextToLast = nextToLast.expression;
           }
           const id = nextToLast.expression;
@@ -19591,13 +19591,13 @@ ${lanes.join("\n")}
         return 0;
       }
       function getInitializerOfBinaryExpression(expr) {
-        while (isBinaryExpression11(expr.right)) {
+        while (isBinaryExpression12(expr.right)) {
           expr = expr.right;
         }
         return expr.right;
       }
       function isPrototypePropertyAssignment(node) {
-        return isBinaryExpression11(node) && getAssignmentDeclarationKind(node) === 3;
+        return isBinaryExpression12(node) && getAssignmentDeclarationKind(node) === 3;
       }
       function isSpecialPropertyDeclaration(expr) {
         return isInJSFile(expr) && expr.parent && expr.parent.kind === 245 && (!isElementAccessExpression12(expr) || isLiteralLikeElementAccess(expr)) && !!getJSDocTypeTag(expr.parent);
@@ -19613,7 +19613,7 @@ ${lanes.join("\n")}
           return false;
         }
         const decl = symbol.valueDeclaration;
-        return decl.kind === 263 || isVariableDeclaration16(decl) && decl.initializer && isFunctionLike3(decl.initializer);
+        return decl.kind === 263 || isVariableDeclaration17(decl) && decl.initializer && isFunctionLike3(decl.initializer);
       }
       function canHaveModuleSpecifier(node) {
         switch (node == null ? void 0 : node.kind) {
@@ -19645,17 +19645,17 @@ ${lanes.join("\n")}
           case 273:
           case 279:
           case 352:
-            return tryCast(node.moduleSpecifier, isStringLiteralLike13);
+            return tryCast(node.moduleSpecifier, isStringLiteralLike14);
           case 272:
-            return tryCast((_b = tryCast(node.moduleReference, isExternalModuleReference3)) == null ? void 0 : _b.expression, isStringLiteralLike13);
+            return tryCast((_b = tryCast(node.moduleReference, isExternalModuleReference3)) == null ? void 0 : _b.expression, isStringLiteralLike14);
           case 274:
           case 281:
-            return tryCast(node.parent.moduleSpecifier, isStringLiteralLike13);
+            return tryCast(node.parent.moduleSpecifier, isStringLiteralLike14);
           case 275:
           case 282:
-            return tryCast(node.parent.parent.moduleSpecifier, isStringLiteralLike13);
+            return tryCast(node.parent.parent.moduleSpecifier, isStringLiteralLike14);
           case 277:
-            return tryCast(node.parent.parent.parent.moduleSpecifier, isStringLiteralLike13);
+            return tryCast(node.parent.parent.parent.moduleSpecifier, isStringLiteralLike14);
           case 206:
             return isLiteralImportTypeNode(node) ? node.argument.literal : void 0;
           default:
@@ -19749,7 +19749,7 @@ ${lanes.join("\n")}
       }
       function isJSDocConstructSignature(node) {
         const param = isJSDocFunctionType(node) ? firstOrUndefined(node.parameters) : void 0;
-        const name = tryCast(param && param.name, isIdentifier17);
+        const name = tryCast(param && param.name, isIdentifier18);
         return !!name && name.escapedText === "new";
       }
       function isJSDocTypeAlias(node) {
@@ -19759,10 +19759,10 @@ ${lanes.join("\n")}
         return isJSDocTypeAlias(node) || isTypeAliasDeclaration(node);
       }
       function getSourceOfAssignment(node) {
-        return isExpressionStatement9(node) && isBinaryExpression11(node.expression) && node.expression.operatorToken.kind === 64 ? getRightMostAssignedExpression(node.expression) : void 0;
+        return isExpressionStatement9(node) && isBinaryExpression12(node.expression) && node.expression.operatorToken.kind === 64 ? getRightMostAssignedExpression(node.expression) : void 0;
       }
       function getSourceOfDefaultedAssignment(node) {
-        return isExpressionStatement9(node) && isBinaryExpression11(node.expression) && getAssignmentDeclarationKind(node.expression) !== 0 && isBinaryExpression11(node.expression.right) && (node.expression.right.operatorToken.kind === 57 || node.expression.right.operatorToken.kind === 61) ? node.expression.right.right : void 0;
+        return isExpressionStatement9(node) && isBinaryExpression12(node.expression) && getAssignmentDeclarationKind(node.expression) !== 0 && isBinaryExpression12(node.expression.right) && (node.expression.right.operatorToken.kind === 57 || node.expression.right.operatorToken.kind === 61) ? node.expression.right.right : void 0;
       }
       function getSingleInitializerOfVariableStatementOrPropertyDeclaration(node) {
         switch (node.kind) {
@@ -19776,7 +19776,7 @@ ${lanes.join("\n")}
         }
       }
       function getSingleVariableOfVariableStatement(node) {
-        return isVariableStatement9(node) ? firstOrUndefined(node.declarationList.declarations) : void 0;
+        return isVariableStatement10(node) ? firstOrUndefined(node.declarationList.declarations) : void 0;
       }
       function getNestedModuleDeclaration(node) {
         return isModuleDeclaration(node) && node.body && node.body.kind === 268 ? node.body : void 0;
@@ -19927,7 +19927,7 @@ ${lanes.join("\n")}
         if (node.symbol) {
           return node.symbol;
         }
-        if (!isIdentifier17(node.name)) {
+        if (!isIdentifier18(node.name)) {
           return void 0;
         }
         const name = node.name.escapedText;
@@ -20142,7 +20142,7 @@ ${lanes.join("\n")}
         return false;
       }
       function isDeclarationName(name) {
-        return !isSourceFile6(name) && !isBindingPattern2(name) && isDeclaration(name.parent) && name.parent.name === name;
+        return !isSourceFile7(name) && !isBindingPattern2(name) && isDeclaration(name.parent) && name.parent.name === name;
       }
       function getDeclarationFromName(name) {
         const parent2 = name.parent;
@@ -20160,7 +20160,7 @@ ${lanes.join("\n")}
               return isJSDocParameterTag(tag) && tag.name === parent2 ? tag : void 0;
             } else {
               const binExp = parent2.parent;
-              return isBinaryExpression11(binExp) && getAssignmentDeclarationKind(binExp) !== 0 && (binExp.left.symbol || binExp.symbol) && getNameOfDeclaration(binExp) === name ? binExp : void 0;
+              return isBinaryExpression12(binExp) && getAssignmentDeclarationKind(binExp) !== 0 && (binExp.left.symbol || binExp.symbol) && getNameOfDeclaration(binExp) === name ? binExp : void 0;
             }
           case 81:
             return isDeclaration(parent2) && parent2.name === name ? parent2 : void 0;
@@ -20365,10 +20365,10 @@ ${lanes.join("\n")}
         return false;
       }
       function isStringOrNumericLiteralLike(node) {
-        return isStringLiteralLike13(node) || isNumericLiteral8(node);
+        return isStringLiteralLike14(node) || isNumericLiteral9(node);
       }
       function isSignedNumericLiteral(node) {
-        return isPrefixUnaryExpression10(node) && (node.operator === 40 || node.operator === 41) && isNumericLiteral8(node.operand);
+        return isPrefixUnaryExpression10(node) && (node.operator === 40 || node.operator === 41) && isNumericLiteral9(node.operand);
       }
       function hasDynamicName(declaration) {
         const name = getNameOfDeclaration(declaration);
@@ -20435,7 +20435,7 @@ ${lanes.join("\n")}
         return startsWith(symbol.escapedName, "__#");
       }
       function isProtoSetter(node) {
-        return isIdentifier17(node) ? idText(node) === "__proto__" : isStringLiteral7(node) && node.text === "__proto__";
+        return isIdentifier18(node) ? idText(node) === "__proto__" : isStringLiteral7(node) && node.text === "__proto__";
       }
       function isAnonymousFunctionDefinition(node, cb) {
         node = skipOuterExpressions(node);
@@ -20464,11 +20464,11 @@ ${lanes.join("\n")}
           case 305:
             return !!node.objectAssignmentInitializer;
           case 261:
-            return isIdentifier17(node.name) && !!node.initializer;
+            return isIdentifier18(node.name) && !!node.initializer;
           case 170:
-            return isIdentifier17(node.name) && !!node.initializer && !node.dotDotDotToken;
+            return isIdentifier18(node.name) && !!node.initializer && !node.dotDotDotToken;
           case 209:
-            return isIdentifier17(node.name) && !!node.initializer && !node.dotDotDotToken;
+            return isIdentifier18(node.name) && !!node.initializer && !node.dotDotDotToken;
           case 173:
             return !!node.initializer;
           case 227:
@@ -20477,7 +20477,7 @@ ${lanes.join("\n")}
               case 77:
               case 76:
               case 78:
-                return isIdentifier17(node.left);
+                return isIdentifier18(node.left);
             }
             break;
           case 278:
@@ -21109,7 +21109,7 @@ ${lanes.join("\n")}
           return void 0;
         }
         const specifier = getExternalModuleName(declaration);
-        if (specifier && isStringLiteralLike13(specifier) && !pathIsRelative(specifier.text) && !getCanonicalAbsolutePath(host, file.path).includes(getCanonicalAbsolutePath(host, ensureTrailingDirectorySeparator(host.getCommonSourceDirectory())))) {
+        if (specifier && isStringLiteralLike14(specifier) && !pathIsRelative(specifier.text) && !getCanonicalAbsolutePath(host, file.path).includes(getCanonicalAbsolutePath(host, ensureTrailingDirectorySeparator(host.getCommonSourceDirectory())))) {
           return void 0;
         }
         return getResolvedExternalModuleName(host, file);
@@ -21213,7 +21213,7 @@ ${lanes.join("\n")}
           const moduleEmitEnabled = options.emitDeclarationOnly || moduleKind === 2 || moduleKind === 4;
           return filter(
             host.getSourceFiles(),
-            (sourceFile) => (moduleEmitEnabled || !isExternalModule(sourceFile)) && sourceFileMayBeEmitted(sourceFile, host, forceDtsEmit)
+            (sourceFile) => (moduleEmitEnabled || !isExternalModule2(sourceFile)) && sourceFileMayBeEmitted(sourceFile, host, forceDtsEmit)
           );
         } else {
           const sourceFiles = targetSourceFile === void 0 ? host.getSourceFiles() : [targetSourceFile];
@@ -21732,13 +21732,13 @@ ${lanes.join("\n")}
         return token === 76 || token === 77 || token === 78;
       }
       function isLogicalOrCoalescingAssignmentExpression(expr) {
-        return isBinaryExpression11(expr) && isLogicalOrCoalescingAssignmentOperator(expr.operatorToken.kind);
+        return isBinaryExpression12(expr) && isLogicalOrCoalescingAssignmentOperator(expr.operatorToken.kind);
       }
       function isLogicalOrCoalescingBinaryOperator(token) {
         return isBinaryLogicalOperator(token) || token === 61;
       }
       function isLogicalOrCoalescingBinaryExpression(expr) {
-        return isBinaryExpression11(expr) && isLogicalOrCoalescingBinaryOperator(expr.operatorToken.kind);
+        return isBinaryExpression12(expr) && isLogicalOrCoalescingBinaryOperator(expr.operatorToken.kind);
       }
       function isAssignmentOperator2(token) {
         return token >= 64 && token <= 79;
@@ -21766,7 +21766,7 @@ ${lanes.join("\n")}
         return void 0;
       }
       function isAssignmentExpression(node, excludeCompoundAssignment) {
-        return isBinaryExpression11(node) && (excludeCompoundAssignment ? node.operatorToken.kind === 64 : isAssignmentOperator2(node.operatorToken.kind)) && isLeftHandSideExpression(node.left);
+        return isBinaryExpression12(node) && (excludeCompoundAssignment ? node.operatorToken.kind === 64 : isAssignmentOperator2(node.operatorToken.kind)) && isLeftHandSideExpression(node.left);
       }
       function isDestructuringAssignment(node) {
         if (isAssignmentExpression(
@@ -21805,10 +21805,10 @@ ${lanes.join("\n")}
         return node.kind === 80 || node.kind === 110 || node.kind === 108 || node.kind === 237 || node.kind === 212 && isDottedName(node.expression) || node.kind === 218 && isDottedName(node.expression);
       }
       function isPropertyAccessEntityNameExpression(node) {
-        return isPropertyAccessExpression16(node) && isIdentifier17(node.name) && isEntityNameExpression(node.expression);
+        return isPropertyAccessExpression17(node) && isIdentifier18(node.name) && isEntityNameExpression(node.expression);
       }
       function tryGetPropertyAccessOrIdentifierToString(expr) {
-        if (isPropertyAccessExpression16(expr)) {
+        if (isPropertyAccessExpression17(expr)) {
           const baseStr = tryGetPropertyAccessOrIdentifierToString(expr.expression);
           if (baseStr !== void 0) {
             return baseStr + "." + entityNameToString(expr.name);
@@ -21818,7 +21818,7 @@ ${lanes.join("\n")}
           if (baseStr !== void 0 && isPropertyName(expr.argumentExpression)) {
             return baseStr + "." + getPropertyNameForPropertyNameNode(expr.argumentExpression);
           }
-        } else if (isIdentifier17(expr)) {
+        } else if (isIdentifier18(expr)) {
           return unescapeLeadingUnderscores(expr.escapedText);
         } else if (isJsxNamespacedName(expr)) {
           return getTextOfJsxNamespacedName(expr);
@@ -21832,13 +21832,13 @@ ${lanes.join("\n")}
         return node.parent.kind === 167 && node.parent.right === node || node.parent.kind === 212 && node.parent.name === node || node.parent.kind === 237 && node.parent.name === node;
       }
       function isRightSideOfAccessExpression(node) {
-        return !!node.parent && (isPropertyAccessExpression16(node.parent) && node.parent.name === node || isElementAccessExpression12(node.parent) && node.parent.argumentExpression === node);
+        return !!node.parent && (isPropertyAccessExpression17(node.parent) && node.parent.name === node || isElementAccessExpression12(node.parent) && node.parent.argumentExpression === node);
       }
       function isRightSideOfQualifiedNameOrPropertyAccessOrJSDocMemberName(node) {
-        return isQualifiedName(node.parent) && node.parent.right === node || isPropertyAccessExpression16(node.parent) && node.parent.name === node || isJSDocMemberName(node.parent) && node.parent.right === node;
+        return isQualifiedName(node.parent) && node.parent.right === node || isPropertyAccessExpression17(node.parent) && node.parent.name === node || isJSDocMemberName(node.parent) && node.parent.right === node;
       }
       function isInstanceOfExpression(node) {
-        return isBinaryExpression11(node) && node.operatorToken.kind === 104;
+        return isBinaryExpression12(node) && node.operatorToken.kind === 104;
       }
       function isRightSideOfInstanceofExpression(node) {
         return isInstanceOfExpression(node.parent) && node === node.parent.right;
@@ -22144,7 +22144,7 @@ ${lanes.join("\n")}
         return filter(node.declarations, isInitializedVariable);
       }
       function isInitializedVariable(node) {
-        return isVariableDeclaration16(node) && node.initializer !== void 0;
+        return isVariableDeclaration17(node) && node.initializer !== void 0;
       }
       function isWatchSet(options) {
         return options.watch && hasProperty(options, "watch");
@@ -22351,7 +22351,7 @@ ${lanes.join("\n")}
               return res;
             }
           } else if (access7.kind === 213) {
-            if (isIdentifier17(access7.argumentExpression) || isStringLiteralLike13(access7.argumentExpression)) {
+            if (isIdentifier18(access7.argumentExpression) || isStringLiteralLike14(access7.argumentExpression)) {
               const res = action(access7.argumentExpression);
               if (res !== void 0) {
                 return res;
@@ -22363,7 +22363,7 @@ ${lanes.join("\n")}
           if (isAccessExpression(access7.expression)) {
             return walkAccessExpression(access7.expression);
           }
-          if (isIdentifier17(access7.expression)) {
+          if (isIdentifier18(access7.expression)) {
             return action(access7.expression);
           }
           return void 0;
@@ -23925,7 +23925,7 @@ ${lanes.join("\n")}
         return !!(useSite.flags & 33554432) || isInJSDoc(useSite) || isPartOfTypeQuery(useSite) || isIdentifierInNonEmittingHeritageClause(useSite) || isPartOfPossiblyValidTypeOrAbstractComputedPropertyName(useSite) || !(isExpressionNode(useSite) || isShorthandPropertyNameUseSite(useSite));
       }
       function isShorthandPropertyNameUseSite(useSite) {
-        return isIdentifier17(useSite) && isShorthandPropertyAssignment10(useSite.parent) && useSite.parent.name === useSite;
+        return isIdentifier18(useSite) && isShorthandPropertyAssignment10(useSite.parent) && useSite.parent.name === useSite;
       }
       function isPartOfPossiblyValidTypeOrAbstractComputedPropertyName(node) {
         while (node.kind === 80 || node.kind === 212) {
@@ -23960,7 +23960,7 @@ ${lanes.join("\n")}
         return (heritageClause == null ? void 0 : heritageClause.token) === 119 || (heritageClause == null ? void 0 : heritageClause.parent.kind) === 265;
       }
       function isIdentifierTypeReference(node) {
-        return isTypeReferenceNode3(node) && isIdentifier17(node.typeName);
+        return isTypeReferenceNode3(node) && isIdentifier18(node.typeName);
       }
       function arrayIsHomogeneous(array, comparer = equateValues) {
         if (array.length < 2) return true;
@@ -24041,7 +24041,7 @@ ${lanes.join("\n")}
             node = parent2;
             continue;
           }
-          if (isBinaryExpression11(parent2) && parent2.operatorToken.kind === 28) {
+          if (isBinaryExpression12(parent2) && parent2.operatorToken.kind === 28) {
             if (node === parent2.left) return true;
             node = parent2;
             continue;
@@ -24221,7 +24221,7 @@ ${lanes.join("\n")}
         }
       }
       function canHaveExportModifier(node) {
-        return isEnumDeclaration(node) || isVariableStatement9(node) || isFunctionDeclaration9(node) || isClassDeclaration5(node) || isInterfaceDeclaration(node) || isTypeDeclaration(node) || isModuleDeclaration(node) && !isExternalModuleAugmentation(node) && !isGlobalScopeAugmentation(node);
+        return isEnumDeclaration(node) || isVariableStatement10(node) || isFunctionDeclaration9(node) || isClassDeclaration5(node) || isInterfaceDeclaration(node) || isTypeDeclaration(node) || isModuleDeclaration(node) && !isExternalModuleAugmentation(node) && !isGlobalScopeAugmentation(node);
       }
       function isOptionalJSDocPropertyLikeTag(node) {
         if (!isJSDocPropertyLikeTag(node)) {
@@ -24274,10 +24274,10 @@ ${lanes.join("\n")}
         return tag && tag.typeExpression && tag.typeExpression.type;
       }
       function getEscapedTextOfJsxAttributeName(node) {
-        return isIdentifier17(node) ? node.escapedText : getEscapedTextOfJsxNamespacedName(node);
+        return isIdentifier18(node) ? node.escapedText : getEscapedTextOfJsxNamespacedName(node);
       }
       function getTextOfJsxAttributeName(node) {
-        return isIdentifier17(node) ? idText(node) : getTextOfJsxNamespacedName(node);
+        return isIdentifier18(node) ? idText(node) : getTextOfJsxNamespacedName(node);
       }
       function isJsxAttributeName(node) {
         const kind = node.kind;
@@ -24290,7 +24290,7 @@ ${lanes.join("\n")}
         return `${idText(node.namespace)}:${idText(node.name)}`;
       }
       function intrinsicTagNameToString(node) {
-        return isIdentifier17(node) ? idText(node) : getTextOfJsxNamespacedName(node);
+        return isIdentifier18(node) ? idText(node) : getTextOfJsxNamespacedName(node);
       }
       function isTypeUsableAsPropertyName(type) {
         return !!(type.flags & 8576);
@@ -24305,7 +24305,7 @@ ${lanes.join("\n")}
         return Debug.fail();
       }
       function isExpandoPropertyDeclaration(declaration) {
-        return !!declaration && (isPropertyAccessExpression16(declaration) || isElementAccessExpression12(declaration) || isBinaryExpression11(declaration));
+        return !!declaration && (isPropertyAccessExpression17(declaration) || isElementAccessExpression12(declaration) || isBinaryExpression12(declaration));
       }
       function hasResolutionModeOverride(node) {
         if (node === void 0) {
@@ -24318,7 +24318,7 @@ ${lanes.join("\n")}
         return stringReplace.call(s, "*", replacement);
       }
       function getNameFromImportAttribute(node) {
-        return isIdentifier17(node.name) ? node.name.escapedText : escapeLeadingUnderscores(node.name.text);
+        return isIdentifier18(node.name) ? node.name.escapedText : escapeLeadingUnderscores(node.name.text);
       }
       function isSourceElement(node) {
         switch (node.kind) {
@@ -24657,7 +24657,7 @@ ${lanes.join("\n")}
                     meaning & 2623475
                     /* ModuleMember */
                   ))) {
-                    if (isSourceFile6(location2) && location2.commonJsModuleIndicator && !((_b = result3.declarations) == null ? void 0 : _b.some(isJSDocTypeAlias))) {
+                    if (isSourceFile7(location2) && location2.commonJsModuleIndicator && !((_b = result3.declarations) == null ? void 0 : _b.some(isJSDocTypeAlias))) {
                       result3 = void 0;
                     } else {
                       break loop;
@@ -24853,7 +24853,7 @@ ${lanes.join("\n")}
           }
           if (!result3) {
             if (lastLocation) {
-              Debug.assertNode(lastLocation, isSourceFile6);
+              Debug.assertNode(lastLocation, isSourceFile7);
               if (lastLocation.commonJsModuleIndicator && name === "exports" && meaning & lastLocation.symbol.flags) {
                 return lastLocation.symbol;
               }
@@ -24989,10 +24989,10 @@ ${lanes.join("\n")}
             return includeBigInt;
           case 225:
             if (node.operator === 41) {
-              return isNumericLiteral8(node.operand) || includeBigInt && isBigIntLiteral2(node.operand);
+              return isNumericLiteral9(node.operand) || includeBigInt && isBigIntLiteral2(node.operand);
             }
             if (node.operator === 40) {
-              return isNumericLiteral8(node.operand);
+              return isNumericLiteral9(node.operand);
             }
             return false;
           default:
@@ -25113,7 +25113,7 @@ ${lanes.join("\n")}
           );
           if (isJavaScriptFile && isRequireCall(node, requireStringLiteralLikeArgument)) {
             cb(node, node.arguments[0]);
-          } else if (isImportCall(node) && node.arguments.length >= 1 && (!requireStringLiteralLikeArgument || isStringLiteralLike13(node.arguments[0]))) {
+          } else if (isImportCall(node) && node.arguments.length >= 1 && (!requireStringLiteralLikeArgument || isStringLiteralLike14(node.arguments[0]))) {
             cb(node, node.arguments[0]);
           } else if (includeTypeSpaceImports && isLiteralImportTypeNode(node)) {
             cb(node, node.argument.literal);
@@ -25243,7 +25243,7 @@ ${lanes.join("\n")}
           nodeClone
         );
         if (visited === node) {
-          const clone2 = isStringLiteral7(node) ? setOriginalNode(factory.createStringLiteralFromNode(node), node) : isNumericLiteral8(node) ? setOriginalNode(factory.createNumericLiteral(node.text, node.numericLiteralFlags), node) : factory.cloneNode(node);
+          const clone2 = isStringLiteral7(node) ? setOriginalNode(factory.createStringLiteralFromNode(node), node) : isNumericLiteral9(node) ? setOriginalNode(factory.createNumericLiteral(node.text, node.numericLiteralFlags), node) : factory.cloneNode(node);
           return setTextRange(clone2, node);
         }
         visited.parent = void 0;
@@ -25406,7 +25406,7 @@ ${lanes.join("\n")}
         }
         function binaryOperandNeedsParentheses(binaryOperator, operand, isLeftSideOfBinary, leftOperand) {
           const emittedOperand = skipPartiallyEmittedExpressions(operand);
-          if (isBinaryExpression11(emittedOperand) && mixingBinaryOperatorsRequiresParentheses(binaryOperator, emittedOperand.operatorToken.kind)) {
+          if (isBinaryExpression12(emittedOperand) && mixingBinaryOperatorsRequiresParentheses(binaryOperator, emittedOperand.operatorToken.kind)) {
             return true;
           }
           const binaryOperatorPrecedence = getOperatorPrecedence(227, binaryOperator);
@@ -25427,7 +25427,7 @@ ${lanes.join("\n")}
               if (isLeftSideOfBinary) {
                 return binaryOperatorAssociativity === 1;
               } else {
-                if (isBinaryExpression11(emittedOperand) && emittedOperand.operatorToken.kind === binaryOperator) {
+                if (isBinaryExpression12(emittedOperand) && emittedOperand.operatorToken.kind === binaryOperator) {
                   if (operatorHasAssociativeProperty(binaryOperator)) {
                     return false;
                   }
@@ -25796,7 +25796,7 @@ ${lanes.join("\n")}
         function convertToArrayAssignmentElement(element) {
           if (isBindingElement8(element)) {
             if (element.dotDotDotToken) {
-              Debug.assertNode(element.name, isIdentifier17);
+              Debug.assertNode(element.name, isIdentifier18);
               return setOriginalNode(setTextRange(factory2.createSpreadElement(element.name), element), element);
             }
             const expression = convertToAssignmentElementTarget(element.name);
@@ -25813,14 +25813,14 @@ ${lanes.join("\n")}
         function convertToObjectAssignmentElement(element) {
           if (isBindingElement8(element)) {
             if (element.dotDotDotToken) {
-              Debug.assertNode(element.name, isIdentifier17);
+              Debug.assertNode(element.name, isIdentifier18);
               return setOriginalNode(setTextRange(factory2.createSpreadAssignment(element.name), element), element);
             }
             if (element.propertyName) {
               const expression = convertToAssignmentElementTarget(element.name);
               return setOriginalNode(setTextRange(factory2.createPropertyAssignment(element.propertyName, element.initializer ? factory2.createAssignment(expression, element.initializer) : expression), element), element);
             }
-            Debug.assertNode(element.name, isIdentifier17);
+            Debug.assertNode(element.name, isIdentifier18);
             return setOriginalNode(setTextRange(factory2.createShorthandPropertyAssignment(element.name, element.initializer), element), element);
           }
           return cast(element, isObjectLiteralElementLike);
@@ -25845,7 +25845,7 @@ ${lanes.join("\n")}
               node
             );
           }
-          return cast(node, isObjectLiteralExpression11);
+          return cast(node, isObjectLiteralExpression12);
         }
         function convertToArrayAssignmentPattern(node) {
           if (isArrayBindingPattern5(node)) {
@@ -27983,7 +27983,7 @@ ${lanes.join("\n")}
           node.expression = expression;
           node.questionDotToken = questionDotToken;
           node.name = name;
-          node.transformFlags = propagateChildFlags(node.expression) | propagateChildFlags(node.questionDotToken) | (isIdentifier17(node.name) ? propagateIdentifierNameFlags(node.name) : propagateChildFlags(node.name) | 536870912);
+          node.transformFlags = propagateChildFlags(node.expression) | propagateChildFlags(node.questionDotToken) | (isIdentifier18(node.name) ? propagateIdentifierNameFlags(node.name) : propagateChildFlags(node.name) | 536870912);
           node.jsDoc = void 0;
           node.flowNode = void 0;
           return node;
@@ -28006,7 +28006,7 @@ ${lanes.join("\n")}
         }
         function updatePropertyAccessExpression(node, expression, name) {
           if (isPropertyAccessChain(node)) {
-            return updatePropertyAccessChain(node, expression, node.questionDotToken, cast(name, isIdentifier17));
+            return updatePropertyAccessChain(node, expression, node.questionDotToken, cast(name, isIdentifier18));
           }
           return node.expression !== expression || node.name !== name ? update(createPropertyAccessExpression(expression, name), node) : node;
         }
@@ -28320,7 +28320,7 @@ ${lanes.join("\n")}
           node.operator = operator;
           node.operand = parenthesizerRules().parenthesizeOperandOfPrefixUnary(operand);
           node.transformFlags |= propagateChildFlags(node.operand);
-          if ((operator === 46 || operator === 47) && isIdentifier17(node.operand) && !isGeneratedIdentifier(node.operand) && !isLocalName(node.operand)) {
+          if ((operator === 46 || operator === 47) && isIdentifier18(node.operand) && !isGeneratedIdentifier(node.operand) && !isLocalName(node.operand)) {
             node.transformFlags |= 268435456;
           }
           return node;
@@ -28336,7 +28336,7 @@ ${lanes.join("\n")}
           node.operator = operator;
           node.operand = parenthesizerRules().parenthesizeOperandOfPostfixUnary(operand);
           node.transformFlags |= propagateChildFlags(node.operand);
-          if (isIdentifier17(node.operand) && !isGeneratedIdentifier(node.operand) && !isLocalName(node.operand)) {
+          if (isIdentifier18(node.operand) && !isGeneratedIdentifier(node.operand) && !isLocalName(node.operand)) {
             node.transformFlags |= 268435456;
           }
           return node;
@@ -28358,7 +28358,7 @@ ${lanes.join("\n")}
           if (operatorKind === 61) {
             node.transformFlags |= 32;
           } else if (operatorKind === 64) {
-            if (isObjectLiteralExpression11(node.left)) {
+            if (isObjectLiteralExpression12(node.left)) {
               node.transformFlags |= 1024 | 128 | 4096 | propagateAssignmentPatternFlags(node.left);
             } else if (isArrayLiteralExpression8(node.left)) {
               node.transformFlags |= 1024 | 4096 | propagateAssignmentPatternFlags(node.left);
@@ -30245,7 +30245,7 @@ ${lanes.join("\n")}
             if (isCommaListExpression(node)) {
               return node.elements;
             }
-            if (isBinaryExpression11(node) && isCommaToken(node.operatorToken)) {
+            if (isBinaryExpression12(node) && isCommaToken(node.operatorToken)) {
               return [node.left, node.right];
             }
           }
@@ -30315,13 +30315,13 @@ ${lanes.join("\n")}
           if (node === void 0) {
             return node;
           }
-          if (isSourceFile6(node)) {
+          if (isSourceFile7(node)) {
             return cloneSourceFile(node);
           }
           if (isGeneratedIdentifier(node)) {
             return cloneGeneratedIdentifier(node);
           }
-          if (isIdentifier17(node)) {
+          if (isIdentifier18(node)) {
             return cloneIdentifier(node);
           }
           if (isGeneratedPrivateIdentifier(node)) {
@@ -30587,7 +30587,7 @@ ${lanes.join("\n")}
               /*optionalChain*/
               false
             );
-          } else if (isPropertyAccessExpression16(callee)) {
+          } else if (isPropertyAccessExpression17(callee)) {
             if (shouldBeCapturedInTempVariable(callee.expression, cacheIdentifiers)) {
               thisArg = createTempVariable(recordTempVariable);
               target = createPropertyAccessExpression(
@@ -30669,7 +30669,7 @@ ${lanes.join("\n")}
         }
         function getName(node, allowComments, allowSourceMaps, emitFlags = 0, ignoreAssignedName) {
           const nodeName = ignoreAssignedName ? node && getNonAssignedNameOfDeclaration(node) : getNameOfDeclaration(node);
-          if (nodeName && isIdentifier17(nodeName) && !isGeneratedIdentifier(nodeName)) {
+          if (nodeName && isIdentifier18(nodeName) && !isGeneratedIdentifier(nodeName)) {
             const name = setParent(setTextRange(cloneNode(nodeName), nodeName), nodeName.parent);
             emitFlags |= getEmitFlags(nodeName);
             if (!allowSourceMaps) emitFlags |= 96;
@@ -30835,7 +30835,7 @@ ${lanes.join("\n")}
           } else {
             modifierArray = modifiers;
           }
-          return isTypeParameterDeclaration(node) ? updateTypeParameterDeclaration(node, modifierArray, node.name, node.constraint, node.default) : isParameter6(node) ? updateParameterDeclaration(node, modifierArray, node.dotDotDotToken, node.name, node.questionToken, node.type, node.initializer) : isConstructorTypeNode(node) ? updateConstructorTypeNode1(node, modifierArray, node.typeParameters, node.parameters, node.type) : isPropertySignature(node) ? updatePropertySignature(node, modifierArray, node.name, node.questionToken, node.type) : isPropertyDeclaration5(node) ? updatePropertyDeclaration2(node, modifierArray, node.name, node.questionToken ?? node.exclamationToken, node.type, node.initializer) : isMethodSignature(node) ? updateMethodSignature(node, modifierArray, node.name, node.questionToken, node.typeParameters, node.parameters, node.type) : isMethodDeclaration8(node) ? updateMethodDeclaration(node, modifierArray, node.asteriskToken, node.name, node.questionToken, node.typeParameters, node.parameters, node.type, node.body) : isConstructorDeclaration4(node) ? updateConstructorDeclaration(node, modifierArray, node.parameters, node.body) : isGetAccessorDeclaration6(node) ? updateGetAccessorDeclaration(node, modifierArray, node.name, node.parameters, node.type, node.body) : isSetAccessorDeclaration6(node) ? updateSetAccessorDeclaration(node, modifierArray, node.name, node.parameters, node.body) : isIndexSignatureDeclaration(node) ? updateIndexSignature(node, modifierArray, node.parameters, node.type) : isFunctionExpression12(node) ? updateFunctionExpression(node, modifierArray, node.asteriskToken, node.name, node.typeParameters, node.parameters, node.type, node.body) : isArrowFunction12(node) ? updateArrowFunction(node, modifierArray, node.typeParameters, node.parameters, node.type, node.equalsGreaterThanToken, node.body) : isClassExpression3(node) ? updateClassExpression(node, modifierArray, node.name, node.typeParameters, node.heritageClauses, node.members) : isVariableStatement9(node) ? updateVariableStatement(node, modifierArray, node.declarationList) : isFunctionDeclaration9(node) ? updateFunctionDeclaration(node, modifierArray, node.asteriskToken, node.name, node.typeParameters, node.parameters, node.type, node.body) : isClassDeclaration5(node) ? updateClassDeclaration(node, modifierArray, node.name, node.typeParameters, node.heritageClauses, node.members) : isInterfaceDeclaration(node) ? updateInterfaceDeclaration(node, modifierArray, node.name, node.typeParameters, node.heritageClauses, node.members) : isTypeAliasDeclaration(node) ? updateTypeAliasDeclaration(node, modifierArray, node.name, node.typeParameters, node.type) : isEnumDeclaration(node) ? updateEnumDeclaration(node, modifierArray, node.name, node.members) : isModuleDeclaration(node) ? updateModuleDeclaration(node, modifierArray, node.name, node.body) : isImportEqualsDeclaration3(node) ? updateImportEqualsDeclaration(node, modifierArray, node.isTypeOnly, node.name, node.moduleReference) : isImportDeclaration9(node) ? updateImportDeclaration(node, modifierArray, node.importClause, node.moduleSpecifier, node.attributes) : isExportAssignment4(node) ? updateExportAssignment(node, modifierArray, node.expression) : isExportDeclaration4(node) ? updateExportDeclaration(node, modifierArray, node.isTypeOnly, node.exportClause, node.moduleSpecifier, node.attributes) : Debug.assertNever(node);
+          return isTypeParameterDeclaration(node) ? updateTypeParameterDeclaration(node, modifierArray, node.name, node.constraint, node.default) : isParameter6(node) ? updateParameterDeclaration(node, modifierArray, node.dotDotDotToken, node.name, node.questionToken, node.type, node.initializer) : isConstructorTypeNode(node) ? updateConstructorTypeNode1(node, modifierArray, node.typeParameters, node.parameters, node.type) : isPropertySignature(node) ? updatePropertySignature(node, modifierArray, node.name, node.questionToken, node.type) : isPropertyDeclaration5(node) ? updatePropertyDeclaration2(node, modifierArray, node.name, node.questionToken ?? node.exclamationToken, node.type, node.initializer) : isMethodSignature(node) ? updateMethodSignature(node, modifierArray, node.name, node.questionToken, node.typeParameters, node.parameters, node.type) : isMethodDeclaration8(node) ? updateMethodDeclaration(node, modifierArray, node.asteriskToken, node.name, node.questionToken, node.typeParameters, node.parameters, node.type, node.body) : isConstructorDeclaration4(node) ? updateConstructorDeclaration(node, modifierArray, node.parameters, node.body) : isGetAccessorDeclaration6(node) ? updateGetAccessorDeclaration(node, modifierArray, node.name, node.parameters, node.type, node.body) : isSetAccessorDeclaration6(node) ? updateSetAccessorDeclaration(node, modifierArray, node.name, node.parameters, node.body) : isIndexSignatureDeclaration(node) ? updateIndexSignature(node, modifierArray, node.parameters, node.type) : isFunctionExpression12(node) ? updateFunctionExpression(node, modifierArray, node.asteriskToken, node.name, node.typeParameters, node.parameters, node.type, node.body) : isArrowFunction12(node) ? updateArrowFunction(node, modifierArray, node.typeParameters, node.parameters, node.type, node.equalsGreaterThanToken, node.body) : isClassExpression3(node) ? updateClassExpression(node, modifierArray, node.name, node.typeParameters, node.heritageClauses, node.members) : isVariableStatement10(node) ? updateVariableStatement(node, modifierArray, node.declarationList) : isFunctionDeclaration9(node) ? updateFunctionDeclaration(node, modifierArray, node.asteriskToken, node.name, node.typeParameters, node.parameters, node.type, node.body) : isClassDeclaration5(node) ? updateClassDeclaration(node, modifierArray, node.name, node.typeParameters, node.heritageClauses, node.members) : isInterfaceDeclaration(node) ? updateInterfaceDeclaration(node, modifierArray, node.name, node.typeParameters, node.heritageClauses, node.members) : isTypeAliasDeclaration(node) ? updateTypeAliasDeclaration(node, modifierArray, node.name, node.typeParameters, node.type) : isEnumDeclaration(node) ? updateEnumDeclaration(node, modifierArray, node.name, node.members) : isModuleDeclaration(node) ? updateModuleDeclaration(node, modifierArray, node.name, node.body) : isImportEqualsDeclaration3(node) ? updateImportEqualsDeclaration(node, modifierArray, node.isTypeOnly, node.name, node.moduleReference) : isImportDeclaration9(node) ? updateImportDeclaration(node, modifierArray, node.importClause, node.moduleSpecifier, node.attributes) : isExportAssignment4(node) ? updateExportAssignment(node, modifierArray, node.expression) : isExportDeclaration4(node) ? updateExportDeclaration(node, modifierArray, node.isTypeOnly, node.exportClause, node.moduleSpecifier, node.attributes) : Debug.assertNever(node);
         }
         function replaceDecoratorsAndModifiers(node, modifierArray) {
           return isParameter6(node) ? updateParameterDeclaration(node, modifierArray, node.dotDotDotToken, node.name, node.questionToken, node.type, node.initializer) : isPropertyDeclaration5(node) ? updatePropertyDeclaration2(node, modifierArray, node.name, node.questionToken ?? node.exclamationToken, node.type, node.initializer) : isMethodDeclaration8(node) ? updateMethodDeclaration(node, modifierArray, node.asteriskToken, node.name, node.questionToken, node.typeParameters, node.parameters, node.type, node.body) : isGetAccessorDeclaration6(node) ? updateGetAccessorDeclaration(node, modifierArray, node.name, node.parameters, node.type, node.body) : isSetAccessorDeclaration6(node) ? updateSetAccessorDeclaration(node, modifierArray, node.name, node.parameters, node.body) : isClassExpression3(node) ? updateClassExpression(node, modifierArray, node.name, node.typeParameters, node.heritageClauses, node.members) : isClassDeclaration5(node) ? updateClassDeclaration(node, modifierArray, node.name, node.typeParameters, node.heritageClauses, node.members) : Debug.assertNever(node);
@@ -30877,7 +30877,7 @@ ${lanes.join("\n")}
           return statement && isNotEmittedStatement(statement) ? setTextRange(setOriginal(createEmptyStatement(), statement), statement) : statement;
         }
         function asVariableDeclaration(variableDeclaration) {
-          if (typeof variableDeclaration === "string" || variableDeclaration && !isVariableDeclaration16(variableDeclaration)) {
+          if (typeof variableDeclaration === "string" || variableDeclaration && !isVariableDeclaration17(variableDeclaration)) {
             return createVariableDeclaration(
               variableDeclaration,
               /*exclamationToken*/
@@ -30998,7 +30998,7 @@ ${lanes.join("\n")}
         return tokenValue;
       }
       function propagateNameFlags(node) {
-        return node && isIdentifier17(node) ? propagateIdentifierNameFlags(node) : propagateChildFlags(node);
+        return node && isIdentifier18(node) ? propagateIdentifierNameFlags(node) : propagateChildFlags(node);
       }
       function propagateIdentifierNameFlags(node) {
         return propagateChildFlags(node) & ~67108864;
@@ -31590,7 +31590,7 @@ ${lanes.join("\n")}
           );
         }
         function createESDecorateClassElementAccessHasMethod(elementName) {
-          const propertyName2 = elementName.computed ? elementName.name : isIdentifier17(elementName.name) ? factory2.createStringLiteralFromNode(elementName.name) : elementName.name;
+          const propertyName2 = elementName.computed ? elementName.name : isIdentifier18(elementName.name) ? factory2.createStringLiteralFromNode(elementName.name) : elementName.name;
           return factory2.createPropertyAssignment(
             "has",
             factory2.createArrowFunction(
@@ -32513,9 +32513,9 @@ ${lanes.join("\n")}
             })(name => super[name], (name, value) => super[name] = value);`
       };
       function isCallToHelper(firstSegment, helperName) {
-        return isCallExpression18(firstSegment) && isIdentifier17(firstSegment.expression) && (getEmitFlags(firstSegment.expression) & 8192) !== 0 && firstSegment.expression.escapedText === helperName;
+        return isCallExpression18(firstSegment) && isIdentifier18(firstSegment.expression) && (getEmitFlags(firstSegment.expression) & 8192) !== 0 && firstSegment.expression.escapedText === helperName;
       }
-      function isNumericLiteral8(node) {
+      function isNumericLiteral9(node) {
         return node.kind === 9;
       }
       function isBigIntLiteral2(node) {
@@ -32572,7 +32572,7 @@ ${lanes.join("\n")}
       function isEqualsGreaterThanToken(node) {
         return node.kind === 39;
       }
-      function isIdentifier17(node) {
+      function isIdentifier18(node) {
         return node.kind === 80;
       }
       function isPrivateIdentifier2(node) {
@@ -32749,10 +32749,10 @@ ${lanes.join("\n")}
       function isArrayLiteralExpression8(node) {
         return node.kind === 210;
       }
-      function isObjectLiteralExpression11(node) {
+      function isObjectLiteralExpression12(node) {
         return node.kind === 211;
       }
-      function isPropertyAccessExpression16(node) {
+      function isPropertyAccessExpression17(node) {
         return node.kind === 212;
       }
       function isElementAccessExpression12(node) {
@@ -32797,7 +32797,7 @@ ${lanes.join("\n")}
       function isPostfixUnaryExpression10(node) {
         return node.kind === 226;
       }
-      function isBinaryExpression11(node) {
+      function isBinaryExpression12(node) {
         return node.kind === 227;
       }
       function isConditionalExpression4(node) {
@@ -32851,7 +32851,7 @@ ${lanes.join("\n")}
       function isBlock7(node) {
         return node.kind === 242;
       }
-      function isVariableStatement9(node) {
+      function isVariableStatement10(node) {
         return node.kind === 244;
       }
       function isEmptyStatement(node) {
@@ -32905,10 +32905,10 @@ ${lanes.join("\n")}
       function isDebuggerStatement(node) {
         return node.kind === 260;
       }
-      function isVariableDeclaration16(node) {
+      function isVariableDeclaration17(node) {
         return node.kind === 261;
       }
-      function isVariableDeclarationList9(node) {
+      function isVariableDeclarationList10(node) {
         return node.kind === 262;
       }
       function isFunctionDeclaration9(node) {
@@ -33049,7 +33049,7 @@ ${lanes.join("\n")}
       function isCatchClause2(node) {
         return node.kind === 300;
       }
-      function isPropertyAssignment12(node) {
+      function isPropertyAssignment13(node) {
         return node.kind === 304;
       }
       function isShorthandPropertyAssignment10(node) {
@@ -33061,7 +33061,7 @@ ${lanes.join("\n")}
       function isEnumMember(node) {
         return node.kind === 307;
       }
-      function isSourceFile6(node) {
+      function isSourceFile7(node) {
         return node.kind === 308;
       }
       function isBundle(node) {
@@ -33340,7 +33340,7 @@ ${lanes.join("\n")}
         );
       }
       function createForOfBindingStatement(factory2, node, boundValue) {
-        if (isVariableDeclarationList9(node)) {
+        if (isVariableDeclarationList10(node)) {
           const firstDeclaration = first(node.declarations);
           const updatedDeclaration = factory2.updateVariableDeclaration(
             firstDeclaration,
@@ -33383,7 +33383,7 @@ ${lanes.join("\n")}
         }
       }
       function createExpressionForPropertyName(factory2, memberName) {
-        if (isIdentifier17(memberName)) {
+        if (isIdentifier18(memberName)) {
           return factory2.createStringLiteralFromNode(memberName);
         } else if (isComputedPropertyName8(memberName)) {
           return setParent(setTextRange(factory2.cloneNode(memberName.expression), memberName.expression), memberName.expression.parent);
@@ -33647,12 +33647,12 @@ ${lanes.join("\n")}
         );
       }
       function getExternalHelpersModuleName(node) {
-        const parseNode = getOriginalNode(node, isSourceFile6);
+        const parseNode = getOriginalNode(node, isSourceFile7);
         const emitNode = parseNode && parseNode.emitNode;
         return emitNode && emitNode.externalHelpersModuleName;
       }
       function hasRecordedExternalHelpers(sourceFile) {
-        const parseNode = getOriginalNode(sourceFile, isSourceFile6);
+        const parseNode = getOriginalNode(sourceFile, isSourceFile7);
         const emitNode = parseNode && parseNode.emitNode;
         return !!emitNode && (!!emitNode.externalHelpersModuleName || !!emitNode.externalHelpers);
       }
@@ -33686,7 +33686,7 @@ ${lanes.join("\n")}
                     helperFactory.getUnscopedHelperName(name)
                   ))
                 );
-                const parseNode = getOriginalNode(sourceFile, isSourceFile6);
+                const parseNode = getOriginalNode(sourceFile, isSourceFile7);
                 const emitNode = getOrCreateEmitNode(parseNode);
                 emitNode.externalHelpers = true;
                 const externalHelpersImportDeclaration = nodeFactory.createImportDeclaration(
@@ -33742,7 +33742,7 @@ ${lanes.join("\n")}
         }
         const create = some(helpers) || (hasExportStarsToExportValues || getESModuleInterop(compilerOptions) && hasImportStarOrImportDefault) && getEmitModuleFormatOfFileWorker(node, compilerOptions) < 4;
         if (create) {
-          const parseNode = getOriginalNode(node, isSourceFile6);
+          const parseNode = getOriginalNode(node, isSourceFile7);
           const emitNode = getOrCreateEmitNode(parseNode);
           return emitNode.externalHelpersModuleName || (emitNode.externalHelpersModuleName = factory2.createUniqueName(externalHelpersModuleNameText));
         }
@@ -33794,7 +33794,7 @@ ${lanes.join("\n")}
         if (isDeclarationBindingElement(bindingElement)) {
           return bindingElement.initializer;
         }
-        if (isPropertyAssignment12(bindingElement)) {
+        if (isPropertyAssignment13(bindingElement)) {
           const initializer = bindingElement.initializer;
           return isAssignmentExpression(
             initializer,
@@ -33908,8 +33908,8 @@ ${lanes.join("\n")}
         if (fullName) {
           let rightNode = fullName;
           while (true) {
-            if (isIdentifier17(rightNode) || !rightNode.body) {
-              return isIdentifier17(rightNode) ? rightNode : rightNode.name;
+            if (isIdentifier18(rightNode) || !rightNode.body) {
+              return isIdentifier18(rightNode) ? rightNode : rightNode.name;
             }
             rightNode = rightNode.body;
           }
@@ -33935,7 +33935,7 @@ ${lanes.join("\n")}
         return isQuestionToken(node) || isExclamationToken(node);
       }
       function isIdentifierOrThisTypeNode(node) {
-        return isIdentifier17(node) || isThisTypeNode(node);
+        return isIdentifier18(node) || isThisTypeNode(node);
       }
       function isReadonlyKeywordOrPlusOrMinusToken(node) {
         return isReadonlyKeyword(node) || isPlusToken(node) || isMinusToken(node);
@@ -33944,7 +33944,7 @@ ${lanes.join("\n")}
         return isQuestionToken(node) || isPlusToken(node) || isMinusToken(node);
       }
       function isModuleName(node) {
-        return isIdentifier17(node) || isStringLiteral7(node);
+        return isIdentifier18(node) || isStringLiteral7(node);
       }
       function isExponentiationOperator(kind) {
         return kind === 43;
@@ -35493,7 +35493,7 @@ ${lanes.join("\n")}
       function parseJsonText(fileName, sourceText) {
         return Parser2.parseJsonText(fileName, sourceText);
       }
-      function isExternalModule(file) {
+      function isExternalModule2(file) {
         return file.externalModuleIndicator !== void 0;
       }
       function updateSourceFile(sourceFile, newText, textChangeRange, aggressiveChecks = false) {
@@ -35968,7 +35968,7 @@ ${lanes.join("\n")}
           let sourceFile = factory2.createSourceFile(statements2, endOfFileToken, flags);
           setTextRangePosWidth(sourceFile, 0, sourceText.length);
           setFields(sourceFile);
-          if (!isDeclarationFile && isExternalModule(sourceFile) && sourceFile.transformFlags & 67108864) {
+          if (!isDeclarationFile && isExternalModule2(sourceFile) && sourceFile.transformFlags & 67108864) {
             const oldSourceFile = sourceFile;
             sourceFile = reparseTopLevelAwait(sourceFile);
             if (oldSourceFile !== sourceFile) setFields(sourceFile);
@@ -36263,7 +36263,7 @@ ${lanes.join("\n")}
             parseErrorAt(skipTrivia(sourceText, node.template.pos), node.template.end, Diagnostics.Module_declaration_names_may_only_use_or_quoted_strings);
             return;
           }
-          const expressionText = isIdentifier17(node) ? idText(node) : void 0;
+          const expressionText = isIdentifier18(node) ? idText(node) : void 0;
           if (!expressionText || !isIdentifierText(expressionText, languageVersion)) {
             parseErrorAtCurrentToken(Diagnostics._0_expected, tokenToString(
               27
@@ -40582,7 +40582,7 @@ ${lanes.join("\n")}
           let node;
           const hasParen = token() === 21;
           const expression = allowInAnd(parseExpression);
-          if (isIdentifier17(expression) && parseOptional(
+          if (isIdentifier18(expression) && parseOptional(
             59
             /* ColonToken */
           )) {
@@ -42888,7 +42888,7 @@ ${lanes.join("\n")}
                 case 189:
                   return isObjectOrObjectArrayTypeReference(node.elementType);
                 default:
-                  return isTypeReferenceNode3(node) && isIdentifier17(node.typeName) && node.typeName.escapedText === "Object" && !node.typeArguments;
+                  return isTypeReferenceNode3(node) && isIdentifier18(node.typeName) && node.typeName.escapedText === "Object" && !node.typeArguments;
               }
             }
             function parseParameterOrPropertyTag(start2, tagName, target, indent3) {
@@ -43204,8 +43204,8 @@ ${lanes.join("\n")}
               return finishNode(factory2.createJSDocOverloadTag(tagName, typeExpression, comment), start2, end2);
             }
             function escapedTextsEqual(a, b) {
-              while (!isIdentifier17(a) || !isIdentifier17(b)) {
-                if (!isIdentifier17(a) && !isIdentifier17(b) && a.right.escapedText === b.right.escapedText) {
+              while (!isIdentifier18(a) || !isIdentifier18(b)) {
+                if (!isIdentifier18(a) && !isIdentifier18(b) && a.right.escapedText === b.right.escapedText) {
                   a = a.left;
                   b = b.left;
                 } else {
@@ -43225,7 +43225,7 @@ ${lanes.join("\n")}
                   case 60:
                     if (canParseTag) {
                       const child = tryParseChildTag(target, indent3);
-                      if (child && (child.kind === 342 || child.kind === 349) && name && (isIdentifier17(child.name) || !escapedTextsEqual(name, child.name.left))) {
+                      if (child && (child.kind === 342 || child.kind === 349) && name && (isIdentifier18(child.name) || !escapedTextsEqual(name, child.name.left))) {
                         return false;
                       }
                       return child;
@@ -46090,7 +46090,7 @@ ${lanes.join("\n")}
             getBaseFileName(sourceFile.fileName) === "jsconfig.json" ? "jsconfig.json" : "tsconfig.json"
           ));
           if (isArrayLiteralExpression8(rootExpression)) {
-            const firstObject = find(rootExpression.elements, isObjectLiteralExpression11);
+            const firstObject = find(rootExpression.elements, isObjectLiteralExpression12);
             if (firstObject) {
               return convertToJson(
                 sourceFile,
@@ -50348,7 +50348,7 @@ ${lanes.join("\n")}
         }
         let p = specifier.parent;
         while (p) {
-          if (isBlock7(p) || isModuleBlock(p) || isSourceFile6(p)) {
+          if (isBlock7(p) || isModuleBlock(p) || isSourceFile7(p)) {
             const statements2 = p.statements;
             let found;
             for (const statement of statements2) {
@@ -50829,7 +50829,7 @@ ${lanes.join("\n")}
           } else if (containerFlags & 64) {
             seenThisKeyword = false;
             bindChildren(node);
-            Debug.assertNotNode(node, isIdentifier17);
+            Debug.assertNotNode(node, isIdentifier18);
             node.flags = seenThisKeyword ? node.flags | 256 : node.flags & ~256;
           } else {
             bindChildren(node);
@@ -51041,7 +51041,7 @@ ${lanes.join("\n")}
           return false;
         }
         function isNarrowingTypeofOperands(expr1, expr2) {
-          return isTypeOfExpression4(expr1) && isNarrowableOperand(expr1.expression) && isStringLiteralLike13(expr2);
+          return isTypeOfExpression4(expr1) && isNarrowableOperand(expr1.expression) && isStringLiteralLike14(expr2);
         }
         function isNarrowingBinaryExpression(expr) {
           switch (expr.operatorToken.kind) {
@@ -51641,7 +51641,7 @@ ${lanes.join("\n")}
             state.stackIndex--;
           }
           function maybeBind2(node) {
-            if (node && isBinaryExpression11(node) && !isDestructuringAssignment(node)) {
+            if (node && isBinaryExpression12(node) && !isDestructuringAssignment(node)) {
               return node;
             }
             bind2(node);
@@ -51836,7 +51836,7 @@ ${lanes.join("\n")}
           }
           if (node.expression.kind === 212) {
             const propertyAccess = node.expression;
-            if (isIdentifier17(propertyAccess.name) && isNarrowableOperand(propertyAccess.expression) && isPushOrUnshiftIdentifier(propertyAccess.name)) {
+            if (isIdentifier18(propertyAccess.name) && isNarrowableOperand(propertyAccess.expression) && isPushOrUnshiftIdentifier(propertyAccess.name)) {
               currentFlow = createFlowMutation(256, currentFlow, node);
             }
           }
@@ -51901,7 +51901,7 @@ ${lanes.join("\n")}
           return isStatic(node) ? declareSymbol(container.symbol.exports, container.symbol, node, symbolFlags, symbolExcludes) : declareSymbol(container.symbol.members, container.symbol, node, symbolFlags, symbolExcludes);
         }
         function declareSourceFileMember(node, symbolFlags, symbolExcludes) {
-          return isExternalModule(file) ? declareModuleMember(node, symbolFlags, symbolExcludes) : declareSymbol(
+          return isExternalModule2(file) ? declareModuleMember(node, symbolFlags, symbolExcludes) : declareSymbol(
             file.locals,
             /*parent*/
             void 0,
@@ -51911,7 +51911,7 @@ ${lanes.join("\n")}
           );
         }
         function hasExportDeclarations(node) {
-          const body = isSourceFile6(node) ? node : tryCast(node.body, isModuleBlock);
+          const body = isSourceFile7(node) ? node : tryCast(node.body, isModuleBlock);
           return !!body && body.statements.some((s) => isExportDeclaration4(s) || isExportAssignment4(s));
         }
         function setExportContextFlag(node) {
@@ -52075,7 +52075,7 @@ ${lanes.join("\n")}
                   file.symbol,
                   declName.parent,
                   isTopLevel,
-                  !!findAncestor(declName, (d) => isPropertyAccessExpression16(d) && d.name.escapedText === "prototype"),
+                  !!findAncestor(declName, (d) => isPropertyAccessExpression17(d) && d.name.escapedText === "prototype"),
                   /*containerIsClass*/
                   false
                 );
@@ -52096,7 +52096,7 @@ ${lanes.join("\n")}
                     container = declName.parent.expression.name;
                     break;
                   case 5:
-                    container = isExportsOrModuleExportsOrAlias(file, declName.parent.expression) ? file : isPropertyAccessExpression16(declName.parent.expression) ? declName.parent.expression.name : declName.parent.expression;
+                    container = isExportsOrModuleExportsOrAlias(file, declName.parent.expression) ? file : isPropertyAccessExpression17(declName.parent.expression) ? declName.parent.expression.name : declName.parent.expression;
                     break;
                   case 0:
                     return Debug.fail("Shouldn't have detected typedef or enum on non-assignment declaration");
@@ -52169,7 +52169,7 @@ ${lanes.join("\n")}
             if (inStrictMode && originalKeywordKind >= 119 && originalKeywordKind <= 127) {
               file.bindDiagnostics.push(createDiagnosticForNode2(node, getStrictModeIdentifierMessage(node), declarationNameToString(node)));
             } else if (originalKeywordKind === 135) {
-              if (isExternalModule(file) && isInTopLevelContext(node)) {
+              if (isExternalModule2(file) && isInTopLevelContext(node)) {
                 file.bindDiagnostics.push(createDiagnosticForNode2(node, Diagnostics.Identifier_expected_0_is_a_reserved_word_at_the_top_level_of_a_module, declarationNameToString(node)));
               } else if (node.flags & 65536) {
                 file.bindDiagnostics.push(createDiagnosticForNode2(node, Diagnostics.Identifier_expected_0_is_a_reserved_word_that_cannot_be_used_here, declarationNameToString(node)));
@@ -52212,7 +52212,7 @@ ${lanes.join("\n")}
           }
         }
         function isEvalOrArgumentsIdentifier(node) {
-          return isIdentifier17(node) && (node.escapedText === "eval" || node.escapedText === "arguments");
+          return isIdentifier18(node) && (node.escapedText === "eval" || node.escapedText === "arguments");
         }
         function checkStrictModeEvalOrArguments(contextNode, name) {
           if (name && name.kind === 80) {
@@ -52273,7 +52273,7 @@ ${lanes.join("\n")}
         }
         function checkStrictModeLabeledStatement(node) {
           if (inStrictMode && getEmitScriptTarget(options) >= 2) {
-            if (isDeclarationStatement(node.statement) || isVariableStatement9(node.statement)) {
+            if (isDeclarationStatement(node.statement) || isVariableStatement10(node.statement)) {
               errorOnFirstToken(node.label, Diagnostics.A_label_is_not_allowed_here);
             }
           }
@@ -52436,7 +52436,7 @@ ${lanes.join("\n")}
                   break;
                 case 5:
                   const expression = node.left.expression;
-                  if (isInJSFile(node) && isIdentifier17(expression)) {
+                  if (isInJSFile(node) && isIdentifier18(expression)) {
                     const symbol = lookupSymbolForName(blockScopeContainer, expression.escapedText);
                     if (isThisInitializedDeclaration(symbol == null ? void 0 : symbol.valueDeclaration)) {
                       bindThisPropertyAssignment(node);
@@ -52677,7 +52677,7 @@ ${lanes.join("\n")}
         }
         function bindSourceFileIfExternalModule() {
           setExportContextFlag(file);
-          if (isExternalModule(file)) {
+          if (isExternalModule2(file)) {
             bindSourceFileAsExternalModule();
           } else if (isJsonSourceFile(file)) {
             bindSourceFileAsExternalModule();
@@ -52718,7 +52718,7 @@ ${lanes.join("\n")}
           if (some(node.modifiers)) {
             file.bindDiagnostics.push(createDiagnosticForNode2(node, Diagnostics.Modifiers_cannot_appear_here));
           }
-          const diag2 = !isSourceFile6(node.parent) ? Diagnostics.Global_module_exports_may_only_appear_at_top_level : !isExternalModule(node.parent) ? Diagnostics.Global_module_exports_may_only_appear_in_module_files : !node.parent.isDeclarationFile ? Diagnostics.Global_module_exports_may_only_appear_in_declaration_files : void 0;
+          const diag2 = !isSourceFile7(node.parent) ? Diagnostics.Global_module_exports_may_only_appear_at_top_level : !isExternalModule2(node.parent) ? Diagnostics.Global_module_exports_may_only_appear_in_module_files : !node.parent.isDeclarationFile ? Diagnostics.Global_module_exports_may_only_appear_in_declaration_files : void 0;
           if (diag2) {
             file.bindDiagnostics.push(createDiagnosticForNode2(node, diag2));
           } else {
@@ -52853,7 +52853,7 @@ ${lanes.join("\n")}
           if (isEmptyObjectLiteral(assignedExpression) || container === file && isExportsOrModuleExportsOrAlias(file, assignedExpression)) {
             return;
           }
-          if (isObjectLiteralExpression11(assignedExpression) && every(assignedExpression.properties, isShorthandPropertyAssignment10)) {
+          if (isObjectLiteralExpression12(assignedExpression) && every(assignedExpression.properties, isShorthandPropertyAssignment10)) {
             forEach(assignedExpression.properties, bindExportAssignedObjectMemberAlias);
             return;
           }
@@ -52880,7 +52880,7 @@ ${lanes.join("\n")}
         }
         function bindThisPropertyAssignment(node) {
           Debug.assert(isInJSFile(node));
-          const hasPrivateIdentifier = isBinaryExpression11(node) && isPropertyAccessExpression16(node.left) && isPrivateIdentifier2(node.left.name) || isPropertyAccessExpression16(node) && isPrivateIdentifier2(node.name);
+          const hasPrivateIdentifier = isBinaryExpression12(node) && isPropertyAccessExpression17(node.left) && isPrivateIdentifier2(node.left.name) || isPropertyAccessExpression17(node) && isPrivateIdentifier2(node.name);
           if (hasPrivateIdentifier) {
             return;
           }
@@ -52895,7 +52895,7 @@ ${lanes.join("\n")}
             case 263:
             case 219:
               let constructorSymbol = thisContainer.symbol;
-              if (isBinaryExpression11(thisContainer.parent) && thisContainer.parent.operatorToken.kind === 64) {
+              if (isBinaryExpression12(thisContainer.parent) && thisContainer.parent.operatorToken.kind === 64) {
                 const l = thisContainer.parent.left;
                 if (isBindableStaticAccessExpression(l) && isPrototypeAccess(l.expression)) {
                   constructorSymbol = lookupSymbolForPropertyAccess(l.expression.expression, thisParentContainer);
@@ -53073,12 +53073,12 @@ ${lanes.join("\n")}
             return;
           }
           const rootExpr = getLeftmostAccessExpression(node.left);
-          if (isIdentifier17(rootExpr) && ((_a2 = lookupSymbolForName(container, rootExpr.escapedText)) == null ? void 0 : _a2.flags) & 2097152) {
+          if (isIdentifier18(rootExpr) && ((_a2 = lookupSymbolForName(container, rootExpr.escapedText)) == null ? void 0 : _a2.flags) & 2097152) {
             return;
           }
           setParent(node.left, node);
           setParent(node.right, node);
-          if (isIdentifier17(node.left.expression) && container === file && isExportsOrModuleExportsOrAlias(file, node.left.expression)) {
+          if (isIdentifier18(node.left.expression) && container === file && isExportsOrModuleExportsOrAlias(file, node.left.expression)) {
             bindExportsPropertyAssignment(node);
           } else if (hasDynamicName(node)) {
             bindAnonymousDeclaration(
@@ -53102,7 +53102,7 @@ ${lanes.join("\n")}
           }
         }
         function bindStaticPropertyAssignment(node) {
-          Debug.assert(!isIdentifier17(node));
+          Debug.assert(!isIdentifier18(node));
           setParent(node.expression, node);
           bindPropertyAssignment(
             node.expression,
@@ -53153,14 +53153,14 @@ ${lanes.join("\n")}
           } else if (isCallExpression18(declaration) && isBindableObjectDefinePropertyCall(declaration)) {
             if (some(declaration.arguments[2].properties, (p) => {
               const id = getNameOfDeclaration(p);
-              return !!id && isIdentifier17(id) && idText(id) === "set";
+              return !!id && isIdentifier18(id) && idText(id) === "set";
             })) {
               includes |= 65536 | 4;
               excludes |= 78783;
             }
             if (some(declaration.arguments[2].properties, (p) => {
               const id = getNameOfDeclaration(p);
-              return !!id && isIdentifier17(id) && idText(id) === "get";
+              return !!id && isIdentifier18(id) && idText(id) === "get";
             })) {
               includes |= 32768 | 4;
               excludes |= 46015;
@@ -53180,7 +53180,7 @@ ${lanes.join("\n")}
           );
         }
         function isTopLevelNamespaceAssignment(propertyAccess) {
-          return isBinaryExpression11(propertyAccess.parent) ? getParentOfBinaryExpression(propertyAccess.parent).parent.kind === 308 : propertyAccess.parent.parent.kind === 308;
+          return isBinaryExpression12(propertyAccess.parent) ? getParentOfBinaryExpression(propertyAccess.parent).parent.kind === 308 : propertyAccess.parent.parent.kind === 308;
         }
         function bindPropertyAssignment(name, propertyAccess, isPrototypeProperty, containerIsClass) {
           let namespaceSymbol = lookupSymbolForPropertyAccess(name, blockScopeContainer) || lookupSymbolForPropertyAccess(name, container);
@@ -53196,22 +53196,22 @@ ${lanes.join("\n")}
           if (node && isCallExpression18(node)) {
             return !!getAssignedExpandoInitializer(node);
           }
-          let init = !node ? void 0 : isVariableDeclaration16(node) ? node.initializer : isBinaryExpression11(node) ? node.right : isPropertyAccessExpression16(node) && isBinaryExpression11(node.parent) ? node.parent.right : void 0;
+          let init = !node ? void 0 : isVariableDeclaration17(node) ? node.initializer : isBinaryExpression12(node) ? node.right : isPropertyAccessExpression17(node) && isBinaryExpression12(node.parent) ? node.parent.right : void 0;
           init = init && getRightMostAssignedExpression(init);
           if (init) {
-            const isPrototypeAssignment = isPrototypeAccess(isVariableDeclaration16(node) ? node.name : isBinaryExpression11(node) ? node.left : node);
-            return !!getExpandoInitializer(isBinaryExpression11(init) && (init.operatorToken.kind === 57 || init.operatorToken.kind === 61) ? init.right : init, isPrototypeAssignment);
+            const isPrototypeAssignment = isPrototypeAccess(isVariableDeclaration17(node) ? node.name : isBinaryExpression12(node) ? node.left : node);
+            return !!getExpandoInitializer(isBinaryExpression12(init) && (init.operatorToken.kind === 57 || init.operatorToken.kind === 61) ? init.right : init, isPrototypeAssignment);
           }
           return false;
         }
         function getParentOfBinaryExpression(expr) {
-          while (isBinaryExpression11(expr.parent)) {
+          while (isBinaryExpression12(expr.parent)) {
             expr = expr.parent;
           }
           return expr.parent;
         }
         function lookupSymbolForPropertyAccess(node, lookupContainer = container) {
-          if (isIdentifier17(node)) {
+          if (isIdentifier18(node)) {
             return lookupSymbolForName(lookupContainer, node.escapedText);
           } else {
             const symbol = lookupSymbolForPropertyAccess(node.expression);
@@ -53221,7 +53221,7 @@ ${lanes.join("\n")}
         function forEachIdentifierInEntityName(e, parent3, action) {
           if (isExportsOrModuleExportsOrAlias(file, e)) {
             return file.symbol;
-          } else if (isIdentifier17(e)) {
+          } else if (isIdentifier18(e)) {
             return action(e, lookupSymbolForPropertyAccess(e), parent3);
           } else {
             const s = forEachIdentifierInEntityName(e.expression, parent3, action);
@@ -53470,7 +53470,7 @@ ${lanes.join("\n")}
             if (reportError) {
               currentFlow = reportedUnreachableFlow;
               if (!options.allowUnreachableCode) {
-                const isError = unreachableCodeIsError(options) && !(node.flags & 33554432) && (!isVariableStatement9(node) || !!(getCombinedNodeFlags(node.declarationList) & 7) || node.declarationList.declarations.some((d) => !!d.initializer));
+                const isError = unreachableCodeIsError(options) && !(node.flags & 33554432) && (!isVariableStatement10(node) || !!(getCombinedNodeFlags(node.declarationList) & 7) || node.declarationList.declarations.some((d) => !!d.initializer));
                 eachUnreachableRange(node, options, (start, end) => errorOrSuggestionOnRange(isError, start, end, Diagnostics.Unreachable_code_detected));
               }
             }
@@ -53491,7 +53491,7 @@ ${lanes.join("\n")}
         }
         function isExecutableStatement(s) {
           return !isFunctionDeclaration9(s) && !isPurelyTypeDeclaration(s) && // `var x;` may declare a variable used above
-          !(isVariableStatement9(s) && !(getCombinedNodeFlags(s) & 7) && s.declarationList.declarations.some((d) => !d.initializer));
+          !(isVariableStatement10(s) && !(getCombinedNodeFlags(s) & 7) && s.declarationList.declarations.some((d) => !d.initializer));
         }
         function isPurelyTypeDeclaration(s) {
           switch (s.kind) {
@@ -53516,9 +53516,9 @@ ${lanes.join("\n")}
           node = q.dequeue();
           if (isExportsIdentifier(node) || isModuleExportsAccessExpression(node)) {
             return true;
-          } else if (isIdentifier17(node)) {
+          } else if (isIdentifier18(node)) {
             const symbol = lookupSymbolForName(sourceFile, node.escapedText);
-            if (!!symbol && !!symbol.valueDeclaration && isVariableDeclaration16(symbol.valueDeclaration) && !!symbol.valueDeclaration.initializer) {
+            if (!!symbol && !!symbol.valueDeclaration && isVariableDeclaration17(symbol.valueDeclaration) && !!symbol.valueDeclaration.initializer) {
               const init = symbol.valueDeclaration.initializer;
               q.enqueue(init);
               if (isAssignmentExpression(
@@ -53597,7 +53597,7 @@ ${lanes.join("\n")}
         if (local) {
           return local.exportSymbol ?? local;
         }
-        if (isSourceFile6(container) && container.jsGlobalAugmentations && container.jsGlobalAugmentations.has(name)) {
+        if (isSourceFile7(container) && container.jsGlobalAugmentations && container.jsGlobalAugmentations.has(name)) {
           return container.jsGlobalAugmentations.get(name);
         }
         if (canHaveSymbol(container)) {
@@ -54335,7 +54335,7 @@ ${lanes.join("\n")}
           var _a22, _b, _c, _d;
           if (!isModuleDeclaration(d)) return;
           const topNamespace = getTopNamespace(d);
-          if (!(((_a22 = topNamespace == null ? void 0 : topNamespace.parent) == null ? void 0 : _a22.parent) && isModuleBlock(topNamespace.parent) && isAmbientModule(topNamespace.parent.parent) && isSourceFile6(topNamespace.parent.parent.parent))) return;
+          if (!(((_a22 = topNamespace == null ? void 0 : topNamespace.parent) == null ? void 0 : _a22.parent) && isModuleBlock(topNamespace.parent) && isAmbientModule(topNamespace.parent.parent) && isSourceFile7(topNamespace.parent.parent.parent))) return;
           const exportAssignment = (_d = (_c = (_b = topNamespace.parent.parent.symbol.exports) == null ? void 0 : _b.get("export=")) == null ? void 0 : _c.valueDeclaration) == null ? void 0 : _d.expression;
           if (!exportAssignment) return;
           const exportSymbol = checker.getSymbolAtLocation(exportAssignment);
@@ -55250,7 +55250,7 @@ ${lanes.join("\n")}
             return node && getTypeOfAssignmentPattern(node) || errorType;
           },
           getPropertySymbolOfDestructuringAssignment: (locationIn) => {
-            const location2 = getParseTreeNode(locationIn, isIdentifier17);
+            const location2 = getParseTreeNode(locationIn, isIdentifier18);
             return location2 ? getPropertySymbolOfDestructuringAssignment(location2) : void 0;
           },
           signatureToString: (signature, enclosingDeclaration, flags, kind) => {
@@ -55340,7 +55340,7 @@ ${lanes.join("\n")}
             return !!node && isValidPropertyAccess(node, escapeLeadingUnderscores(propertyName2));
           },
           isValidPropertyAccessForCompletions: (nodeIn, type, property) => {
-            const node = getParseTreeNode(nodeIn, isPropertyAccessExpression16);
+            const node = getParseTreeNode(nodeIn, isPropertyAccessExpression17);
             return !!node && isValidPropertyAccessForCompletions(node, type, property);
           },
           getSignatureFromDeclaration: (declarationIn) => {
@@ -55480,7 +55480,7 @@ ${lanes.join("\n")}
             return node && getTypeArgumentConstraint(node);
           },
           getSuggestionDiagnostics: (fileIn, ct) => {
-            const file = getParseTreeNode(fileIn, isSourceFile6) || Debug.fail("Could not determine parsed source file.");
+            const file = getParseTreeNode(fileIn, isSourceFile7) || Debug.fail("Could not determine parsed source file.");
             if (skipTypeChecking(file, compilerOptions, host)) {
               return emptyArray;
             }
@@ -56106,10 +56106,10 @@ ${lanes.join("\n")}
         initializeTypeChecker();
         return checker;
         function isDefinitelyReferenceToGlobalSymbolObject(node) {
-          if (!isPropertyAccessExpression16(node)) return false;
-          if (!isIdentifier17(node.name)) return false;
-          if (!isPropertyAccessExpression16(node.expression) && !isIdentifier17(node.expression)) return false;
-          if (isIdentifier17(node.expression)) {
+          if (!isPropertyAccessExpression17(node)) return false;
+          if (!isIdentifier18(node.name)) return false;
+          if (!isPropertyAccessExpression17(node.expression) && !isIdentifier18(node.expression)) return false;
+          if (isIdentifier18(node.expression)) {
             return idText(node.expression) === "Symbol" && getResolvedSymbol(node.expression) === (getGlobalSymbol(
               "Symbol",
               111551 | 1048576,
@@ -56117,7 +56117,7 @@ ${lanes.join("\n")}
               void 0
             ) || unknownSymbol);
           }
-          if (!isIdentifier17(node.expression.expression)) return false;
+          if (!isIdentifier18(node.expression.expression)) return false;
           return idText(node.expression.name) === "Symbol" && idText(node.expression.expression) === "globalThis" && getResolvedSymbol(node.expression.expression) === globalThisSymbol;
         }
         function getCachedType(key2) {
@@ -56704,7 +56704,7 @@ ${lanes.join("\n")}
                     }
                     if (isPropertyDeclaration5(declaration2) && getContainingClass(usage2) === getContainingClass(declaration2)) {
                       const propName = declaration2.name;
-                      if (isIdentifier17(propName) || isPrivateIdentifier2(propName)) {
+                      if (isIdentifier18(propName) || isPrivateIdentifier2(propName)) {
                         const type = getTypeOfSymbol(getSymbolOfDeclaration(declaration2));
                         const staticBlocks = filter(declaration2.parent.members, isClassStaticBlockDeclaration);
                         if (isPropertyInitializedInStaticBlocks(propName, type, staticBlocks, declaration2.parent.pos, current.pos)) {
@@ -56831,7 +56831,7 @@ ${lanes.join("\n")}
           addLazyDiagnostic(() => {
             var _a2;
             const name = result3.escapedName;
-            const isInExternalModule = lastLocation && isSourceFile6(lastLocation) && isExternalOrCommonJsModule(lastLocation);
+            const isInExternalModule = lastLocation && isSourceFile7(lastLocation) && isExternalOrCommonJsModule(lastLocation);
             if (errorLocation && (meaning & 2 || (meaning & 32 || meaning & 384) && (meaning & 111551) === 111551)) {
               const exportOrLocalSymbol = getExportSymbolOfValueSymbolIfExported(result3);
               if (exportOrLocalSymbol.flags & 2 || exportOrLocalSymbol.flags & 32 || exportOrLocalSymbol.flags & 384) {
@@ -56840,7 +56840,7 @@ ${lanes.join("\n")}
             }
             if (isInExternalModule && (meaning & 111551) === 111551 && !(errorLocation.flags & 16777216)) {
               const merged = getMergedSymbol(result3);
-              if (length(merged.declarations) && every(merged.declarations, (d) => isNamespaceExportDeclaration(d) || isSourceFile6(d) && !!d.symbol.globalExports)) {
+              if (length(merged.declarations) && every(merged.declarations, (d) => isNamespaceExportDeclaration(d) || isSourceFile7(d) && !!d.symbol.globalExports)) {
                 errorOrSuggestion(!compilerOptions.allowUmdGlobalAccess, errorLocation, Diagnostics._0_refers_to_a_UMD_global_but_the_current_file_is_a_module_Consider_adding_an_import_instead, unescapeLeadingUnderscores(name));
               }
             }
@@ -56871,7 +56871,7 @@ ${lanes.join("\n")}
             }
             if (compilerOptions.isolatedModules && result3 && isInExternalModule && (meaning & 111551) === 111551) {
               const isGlobal = getSymbol2(globals, name, meaning) === result3;
-              const nonValueSymbol = isGlobal && isSourceFile6(lastLocation) && lastLocation.locals && getSymbol2(
+              const nonValueSymbol = isGlobal && isSourceFile7(lastLocation) && lastLocation.locals && getSymbol2(
                 lastLocation.locals,
                 name,
                 ~111551
@@ -56904,7 +56904,7 @@ ${lanes.join("\n")}
           return isString(nameArg) ? unescapeLeadingUnderscores(nameArg) : declarationNameToString(nameArg);
         }
         function checkAndReportErrorForMissingPrefix(errorLocation, name, nameArg) {
-          if (!isIdentifier17(errorLocation) || errorLocation.escapedText !== name || isTypeReferenceIdentifier(errorLocation) || isInTypeQuery(errorLocation)) {
+          if (!isIdentifier18(errorLocation) || errorLocation.escapedText !== name || isTypeReferenceIdentifier(errorLocation) || isInTypeQuery(errorLocation)) {
             return false;
           }
           const container = getThisContainer(
@@ -57183,7 +57183,7 @@ ${lanes.join("\n")}
           return symbol.declarations && findLast(symbol.declarations, isAliasSymbolDeclaration);
         }
         function isAliasSymbolDeclaration(node) {
-          return node.kind === 272 || node.kind === 271 || node.kind === 274 && !!node.name || node.kind === 275 || node.kind === 281 || node.kind === 277 || node.kind === 282 || node.kind === 278 && exportAssignmentIsAlias(node) || isBinaryExpression11(node) && getAssignmentDeclarationKind(node) === 2 && exportAssignmentIsAlias(node) || isAccessExpression(node) && isBinaryExpression11(node.parent) && node.parent.left === node && node.parent.operatorToken.kind === 64 && isAliasableOrJsExpression(node.parent.right) || node.kind === 305 || node.kind === 304 && isAliasableOrJsExpression(node.initializer) || node.kind === 261 && isVariableDeclarationInitializedToBareOrAccessedRequire(node) || node.kind === 209 && isVariableDeclarationInitializedToBareOrAccessedRequire(node.parent.parent);
+          return node.kind === 272 || node.kind === 271 || node.kind === 274 && !!node.name || node.kind === 275 || node.kind === 281 || node.kind === 277 || node.kind === 282 || node.kind === 278 && exportAssignmentIsAlias(node) || isBinaryExpression12(node) && getAssignmentDeclarationKind(node) === 2 && exportAssignmentIsAlias(node) || isAccessExpression(node) && isBinaryExpression12(node.parent) && node.parent.left === node && node.parent.operatorToken.kind === 64 && isAliasableOrJsExpression(node.parent.right) || node.kind === 305 || node.kind === 304 && isAliasableOrJsExpression(node.initializer) || node.kind === 261 && isVariableDeclarationInitializedToBareOrAccessedRequire(node) || node.kind === 209 && isVariableDeclarationInitializedToBareOrAccessedRequire(node.parent.parent);
         }
         function isAliasableOrJsExpression(e) {
           return isAliasableExpression(e) || isFunctionExpression12(e) && isJSConstructor(e);
@@ -57192,9 +57192,9 @@ ${lanes.join("\n")}
           const commonJSPropertyAccess = getCommonJSPropertyAccess(node);
           if (commonJSPropertyAccess) {
             const name = getLeftmostAccessExpression(commonJSPropertyAccess.expression).arguments[0];
-            return isIdentifier17(commonJSPropertyAccess.name) ? resolveSymbol(getPropertyOfType(resolveExternalModuleTypeByLiteral(name), commonJSPropertyAccess.name.escapedText)) : void 0;
+            return isIdentifier18(commonJSPropertyAccess.name) ? resolveSymbol(getPropertyOfType(resolveExternalModuleTypeByLiteral(name), commonJSPropertyAccess.name.escapedText)) : void 0;
           }
-          if (isVariableDeclaration16(node) || node.moduleReference.kind === 284) {
+          if (isVariableDeclaration17(node) || node.moduleReference.kind === 284) {
             const immediate = resolveExternalModuleName(
               node,
               getExternalModuleRequireArgument(node) || getExternalModuleImportEqualsDeclarationExpression(node)
@@ -57265,7 +57265,7 @@ ${lanes.join("\n")}
           ) || isExportSpecifier(node) || isNamespaceExport(node);
         }
         function getEmitSyntaxForModuleSpecifierExpression(usage) {
-          return isStringLiteralLike13(usage) ? host.getEmitSyntaxForUsageLocation(getSourceFileOfNode(usage), usage) : void 0;
+          return isStringLiteralLike14(usage) ? host.getEmitSyntaxForUsageLocation(getSourceFileOfNode(usage), usage) : void 0;
         }
         function isESMFormatImportImportingCommonjsFormatFile(usageMode, targetMode) {
           return usageMode === 99 && targetMode === 1;
@@ -57342,7 +57342,7 @@ ${lanes.join("\n")}
         }
         function getTargetofModuleDefault(moduleSymbol, node, dontResolveAlias) {
           var _a2;
-          const file = (_a2 = moduleSymbol.declarations) == null ? void 0 : _a2.find(isSourceFile6);
+          const file = (_a2 = moduleSymbol.declarations) == null ? void 0 : _a2.find(isSourceFile7);
           const specifier = getModuleSpecifierForImportOrExport(node);
           let exportDefaultSymbol;
           let exportModuleDotExportsSymbol;
@@ -57546,8 +57546,8 @@ ${lanes.join("\n")}
           var _a2;
           const moduleSpecifier = getExternalModuleRequireArgument(node) || node.moduleSpecifier;
           const moduleSymbol = resolveExternalModuleName(node, moduleSpecifier);
-          const name = !isPropertyAccessExpression16(specifier) && specifier.propertyName || specifier.name;
-          if (!isIdentifier17(name) && name.kind !== 11) {
+          const name = !isPropertyAccessExpression17(specifier) && specifier.propertyName || specifier.name;
+          if (!isIdentifier18(name) && name.kind !== 11) {
             return void 0;
           }
           const nameText = moduleExportNameTextEscaped(name);
@@ -57581,7 +57581,7 @@ ${lanes.join("\n")}
               symbolFromVariable = resolveSymbol(symbolFromVariable, dontResolveAlias);
               let symbolFromModule = getExportOfModule(targetSymbol, nameText, specifier, dontResolveAlias);
               if (symbolFromModule === void 0 && nameText === "default") {
-                const file = (_a2 = moduleSymbol.declarations) == null ? void 0 : _a2.find(isSourceFile6);
+                const file = (_a2 = moduleSymbol.declarations) == null ? void 0 : _a2.find(isSourceFile7);
                 if (isOnlyImportableAsDefault(moduleSpecifier, moduleSymbol) || canHaveSyntheticDefault(file, moduleSymbol, dontResolveAlias, moduleSpecifier)) {
                   symbolFromModule = resolveExternalModuleSymbol(moduleSymbol, dontResolveAlias) || resolveSymbol(moduleSymbol, dontResolveAlias);
                 }
@@ -57600,7 +57600,7 @@ ${lanes.join("\n")}
           var _a2;
           const moduleName = getFullyQualifiedName(moduleSymbol, node);
           const declarationName2 = declarationNameToString(name);
-          const suggestion = isIdentifier17(name) ? getSuggestedSymbolForNonexistentModule(name, targetSymbol) : void 0;
+          const suggestion = isIdentifier18(name) ? getSuggestedSymbolForNonexistentModule(name, targetSymbol) : void 0;
           if (suggestion !== void 0) {
             const suggestionName = symbolToString(suggestion);
             const diagnostic = error2(name, Diagnostics._0_has_no_exported_member_named_1_Did_you_mean_2, moduleName, declarationName2, suggestionName);
@@ -57671,7 +57671,7 @@ ${lanes.join("\n")}
           const commonJSPropertyAccess = getCommonJSPropertyAccess(root);
           const resolved = getExternalModuleMember(root, commonJSPropertyAccess || node, dontResolveAlias);
           const name = node.propertyName || node.name;
-          if (commonJSPropertyAccess && resolved && isIdentifier17(name)) {
+          if (commonJSPropertyAccess && resolved && isIdentifier18(name)) {
             return resolveSymbol(getPropertyOfType(getTypeOfSymbol(resolved), name.escapedText), dontResolveAlias);
           }
           markSymbolOfAliasDeclarationIfTypeOnly(
@@ -57685,7 +57685,7 @@ ${lanes.join("\n")}
           return resolved;
         }
         function getCommonJSPropertyAccess(node) {
-          if (isVariableDeclaration16(node) && node.initializer && isPropertyAccessExpression16(node.initializer)) {
+          if (isVariableDeclaration17(node) && node.initializer && isPropertyAccessExpression17(node.initializer)) {
             return node.initializer;
           }
         }
@@ -57766,7 +57766,7 @@ ${lanes.join("\n")}
           return getNodeLinks(expression).resolvedSymbol;
         }
         function getTargetOfAccessExpression(node, dontRecursivelyResolve) {
-          if (!(isBinaryExpression11(node.parent) && node.parent.left === node && node.parent.operatorToken.kind === 64)) {
+          if (!(isBinaryExpression12(node.parent) && node.parent.left === node && node.parent.operatorToken.kind === 64)) {
             return void 0;
           }
           return getTargetOfAliasLikeExpression(node.parent.right, dontRecursivelyResolve);
@@ -57877,7 +57877,7 @@ ${lanes.join("\n")}
           return flags;
         }
         function markSymbolOfAliasDeclarationIfTypeOnly(aliasDeclaration, immediateTarget, finalTarget, overwriteEmpty, exportStarDeclaration, exportStarName) {
-          if (!aliasDeclaration || isPropertyAccessExpression16(aliasDeclaration)) return false;
+          if (!aliasDeclaration || isPropertyAccessExpression17(aliasDeclaration)) return false;
           const sourceSymbol = getSymbolOfDeclaration(aliasDeclaration);
           if (isTypeOnlyImportOrExportDeclaration(aliasDeclaration)) {
             const links2 = getSymbolLinks(sourceSymbol);
@@ -58037,7 +58037,7 @@ ${lanes.join("\n")}
             } else if (namespace === unknownSymbol) {
               return namespace;
             }
-            if (namespace.valueDeclaration && isInJSFile(namespace.valueDeclaration) && getEmitModuleResolutionKind(compilerOptions) !== 100 && isVariableDeclaration16(namespace.valueDeclaration) && namespace.valueDeclaration.initializer && isCommonJsRequire(namespace.valueDeclaration.initializer)) {
+            if (namespace.valueDeclaration && isInJSFile(namespace.valueDeclaration) && getEmitModuleResolutionKind(compilerOptions) !== 100 && isVariableDeclaration17(namespace.valueDeclaration) && namespace.valueDeclaration.initializer && isCommonJsRequire(namespace.valueDeclaration.initializer)) {
               const moduleName = namespace.valueDeclaration.initializer.arguments[0];
               const moduleSym = resolveExternalModuleName(moduleName, moduleName);
               if (moduleSym) {
@@ -58140,7 +58140,7 @@ ${lanes.join("\n")}
               return getDeclarationOfJSPrototypeContainer(symbol);
             }
           }
-          if (host2 && (isObjectLiteralMethod(host2) || isPropertyAssignment12(host2)) && isBinaryExpression11(host2.parent.parent) && getAssignmentDeclarationKind(host2.parent.parent) === 6) {
+          if (host2 && (isObjectLiteralMethod(host2) || isPropertyAssignment13(host2)) && isBinaryExpression12(host2.parent.parent) && getAssignmentDeclarationKind(host2.parent.parent) === 6) {
             const symbol = getSymbolOfDeclaration(host2.parent.parent.left);
             if (symbol) {
               return getDeclarationOfJSPrototypeContainer(symbol);
@@ -58169,7 +58169,7 @@ ${lanes.join("\n")}
           )) {
             return void 0;
           }
-          const init = isVariableDeclaration16(decl) ? getDeclaredExpandoInitializer(decl) : getAssignedExpandoInitializer(decl);
+          const init = isVariableDeclaration17(decl) ? getDeclaredExpandoInitializer(decl) : getAssignedExpandoInitializer(decl);
           if (init) {
             const initSymbol = getSymbolOfNode(init);
             if (initSymbol) {
@@ -58183,7 +58183,7 @@ ${lanes.join("\n")}
           return resolveExternalModuleNameWorker(location2, moduleReferenceExpression, ignoreErrors ? void 0 : errorMessage, ignoreErrors);
         }
         function resolveExternalModuleNameWorker(location2, moduleReferenceExpression, moduleNotFoundError, ignoreErrors = false, isForAugmentation = false) {
-          return isStringLiteralLike13(moduleReferenceExpression) ? resolveExternalModule(location2, moduleReferenceExpression.text, moduleNotFoundError, !ignoreErrors ? moduleReferenceExpression : void 0, isForAugmentation) : void 0;
+          return isStringLiteralLike14(moduleReferenceExpression) ? resolveExternalModule(location2, moduleReferenceExpression.text, moduleNotFoundError, !ignoreErrors ? moduleReferenceExpression : void 0, isForAugmentation) : void 0;
         }
         function resolveExternalModule(location2, moduleReference, moduleNotFoundError, errorNode, isForAugmentation = false) {
           var _a2, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l;
@@ -58201,12 +58201,12 @@ ${lanes.join("\n")}
             return ambientModule;
           }
           const currentSourceFile = getSourceFileOfNode(location2);
-          const contextSpecifier = isStringLiteralLike13(location2) ? location2 : ((_a2 = isModuleDeclaration(location2) ? location2 : location2.parent && isModuleDeclaration(location2.parent) && location2.parent.name === location2 ? location2.parent : void 0) == null ? void 0 : _a2.name) || ((_b = isLiteralImportTypeNode(location2) ? location2 : void 0) == null ? void 0 : _b.argument.literal) || (isVariableDeclaration16(location2) && location2.initializer && isRequireCall(
+          const contextSpecifier = isStringLiteralLike14(location2) ? location2 : ((_a2 = isModuleDeclaration(location2) ? location2 : location2.parent && isModuleDeclaration(location2.parent) && location2.parent.name === location2 ? location2.parent : void 0) == null ? void 0 : _a2.name) || ((_b = isLiteralImportTypeNode(location2) ? location2 : void 0) == null ? void 0 : _b.argument.literal) || (isVariableDeclaration17(location2) && location2.initializer && isRequireCall(
             location2.initializer,
             /*requireStringLiteralLikeArgument*/
             true
           ) ? location2.initializer.arguments[0] : void 0) || ((_c = findAncestor(location2, isImportCall)) == null ? void 0 : _c.arguments[0]) || ((_d = findAncestor(location2, or(isImportDeclaration9, isJSDocImportTag, isExportDeclaration4))) == null ? void 0 : _d.moduleSpecifier) || ((_e = findAncestor(location2, isExternalModuleImportEqualsDeclaration)) == null ? void 0 : _e.moduleReference.expression);
-          const mode = contextSpecifier && isStringLiteralLike13(contextSpecifier) ? host.getModeForUsageLocation(currentSourceFile, contextSpecifier) : host.getDefaultResolutionModeForFile(currentSourceFile);
+          const mode = contextSpecifier && isStringLiteralLike14(contextSpecifier) ? host.getModeForUsageLocation(currentSourceFile, contextSpecifier) : host.getDefaultResolutionModeForFile(currentSourceFile);
           const moduleResolutionKind = getEmitModuleResolutionKind(compilerOptions);
           const resolvedModule = (_f = host.getResolvedModule(currentSourceFile, moduleReference, mode)) == null ? void 0 : _f.resolvedModule;
           const resolutionDiagnostic = errorNode && resolvedModule && getResolutionDiagnostic(compilerOptions, resolvedModule, currentSourceFile);
@@ -58460,7 +58460,7 @@ ${lanes.join("\n")}
               if (defaultOnlyType) {
                 return cloneTypeAsModuleType(symbol, defaultOnlyType, referenceParent);
               }
-              const targetFile = (_a2 = moduleSymbol == null ? void 0 : moduleSymbol.declarations) == null ? void 0 : _a2.find(isSourceFile6);
+              const targetFile = (_a2 = moduleSymbol == null ? void 0 : moduleSymbol.declarations) == null ? void 0 : _a2.find(isSourceFile7);
               const usageMode = getEmitSyntaxForModuleSpecifierExpression(reference2);
               let exportModuleDotExportsSymbol;
               if (namespaceImport && targetFile && 102 <= moduleKind && moduleKind <= 199 && usageMode === 1 && host.getImpliedNodeFormatForEmit(targetFile) === 99 && (exportModuleDotExportsSymbol = resolveExportByName(symbol, "module.exports", namespaceImport, dontResolveAlias))) {
@@ -58726,7 +58726,7 @@ ${lanes.join("\n")}
           }
           const otherFiles = host.getSourceFiles();
           for (const file of otherFiles) {
-            if (!isExternalModule(file)) continue;
+            if (!isExternalModule2(file)) continue;
             const sym = getSymbolOfDeclaration(file);
             const ref = getAliasForSymbolInContainer(sym, symbol);
             if (!ref) continue;
@@ -58748,7 +58748,7 @@ ${lanes.join("\n")}
                 return getSymbolOfDeclaration(d.parent.parent);
               }
             }
-            if (isClassExpression3(d) && isBinaryExpression11(d.parent) && d.parent.operatorToken.kind === 64 && isAccessExpression(d.parent.left) && isEntityNameExpression(d.parent.left.expression)) {
+            if (isClassExpression3(d) && isBinaryExpression12(d.parent) && d.parent.operatorToken.kind === 64 && isAccessExpression(d.parent.left) && isEntityNameExpression(d.parent.left.expression)) {
               if (isModuleExportsAccessExpression(d.parent.left) || isExportsIdentifier(d.parent.left.expression)) {
                 return getSymbolOfDeclaration(getSourceFileOfNode(d));
               }
@@ -58799,8 +58799,8 @@ ${lanes.join("\n")}
         }
         function getVariableDeclarationOfObjectLiteral(symbol, meaning) {
           const firstDecl = !!length(symbol.declarations) && first(symbol.declarations);
-          if (meaning & 111551 && firstDecl && firstDecl.parent && isVariableDeclaration16(firstDecl.parent)) {
-            if (isObjectLiteralExpression11(firstDecl) && firstDecl === firstDecl.parent.initializer || isTypeLiteralNode(firstDecl) && firstDecl === firstDecl.parent.type) {
+          if (meaning & 111551 && firstDecl && firstDecl.parent && isVariableDeclaration17(firstDecl.parent)) {
+            if (isObjectLiteralExpression12(firstDecl) && firstDecl === firstDecl.parent.initializer || isTypeLiteralNode(firstDecl) && firstDecl === firstDecl.parent.type) {
               return getSymbolOfDeclaration(firstDecl.parent);
             }
           }
@@ -59056,7 +59056,7 @@ ${lanes.join("\n")}
               return [symbol];
             }
             const result22 = forEachEntry(symbols, (symbolFromSymbolTable) => {
-              if (symbolFromSymbolTable.flags & 2097152 && symbolFromSymbolTable.escapedName !== "export=" && symbolFromSymbolTable.escapedName !== "default" && !(isUMDExportSymbol(symbolFromSymbolTable) && enclosingDeclaration && isExternalModule(getSourceFileOfNode(enclosingDeclaration))) && (!useOnlyExternalAliasing || some(symbolFromSymbolTable.declarations, isExternalModuleImportEqualsDeclaration)) && (isLocalNameLookup ? !some(symbolFromSymbolTable.declarations, isNamespaceReexportDeclaration) : true) && (ignoreQualification || !getDeclarationOfKind(
+              if (symbolFromSymbolTable.flags & 2097152 && symbolFromSymbolTable.escapedName !== "export=" && symbolFromSymbolTable.escapedName !== "default" && !(isUMDExportSymbol(symbolFromSymbolTable) && enclosingDeclaration && isExternalModule2(getSourceFileOfNode(enclosingDeclaration))) && (!useOnlyExternalAliasing || some(symbolFromSymbolTable.declarations, isExternalModuleImportEqualsDeclaration)) && (isLocalNameLookup ? !some(symbolFromSymbolTable.declarations, isNamespaceReexportDeclaration) : true) && (ignoreQualification || !getDeclarationOfKind(
                 symbolFromSymbolTable,
                 282
                 /* ExportSpecifier */
@@ -59298,7 +59298,7 @@ ${lanes.join("\n")}
               ) && // import clause without export
               isDeclarationVisible(anyImportSyntax.parent)) {
                 return addVisibleAlias(declaration, anyImportSyntax);
-              } else if (isVariableDeclaration16(declaration) && isVariableStatement9(declaration.parent.parent) && !hasSyntacticModifier(
+              } else if (isVariableDeclaration17(declaration) && isVariableStatement10(declaration.parent.parent) && !hasSyntacticModifier(
                 declaration.parent.parent,
                 32
                 /* Export */
@@ -59312,7 +59312,7 @@ ${lanes.join("\n")}
               ) && isDeclarationVisible(declaration.parent)) {
                 return addVisibleAlias(declaration, declaration);
               } else if (isBindingElement8(declaration)) {
-                if (symbol.flags & 2097152 && isInJSFile(declaration) && ((_a2 = declaration.parent) == null ? void 0 : _a2.parent) && isVariableDeclaration16(declaration.parent.parent) && ((_b = declaration.parent.parent.parent) == null ? void 0 : _b.parent) && isVariableStatement9(declaration.parent.parent.parent.parent) && !hasSyntacticModifier(
+                if (symbol.flags & 2097152 && isInJSFile(declaration) && ((_a2 = declaration.parent) == null ? void 0 : _a2.parent) && isVariableDeclaration17(declaration.parent.parent) && ((_b = declaration.parent.parent.parent) == null ? void 0 : _b.parent) && isVariableStatement10(declaration.parent.parent.parent.parent) && !hasSyntacticModifier(
                   declaration.parent.parent.parent.parent,
                   32
                   /* Export */
@@ -59630,7 +59630,7 @@ ${lanes.join("\n")}
             },
             getJsDocPropertyOverride(syntacticContext, jsDocTypeLiteral, jsDocProperty) {
               const context = syntacticContext;
-              const name = isIdentifier17(jsDocProperty.name) ? jsDocProperty.name : jsDocProperty.name.right;
+              const name = isIdentifier18(jsDocProperty.name) ? jsDocProperty.name : jsDocProperty.name.right;
               const typeViaParent = getTypeOfPropertyOfType(getTypeFromTypeNode2(context, jsDocTypeLiteral), name.escapedText);
               const overrideTypeNode = typeViaParent && jsDocProperty.typeExpression && getTypeFromTypeNode2(context, jsDocProperty.typeExpression.type) !== typeViaParent ? typeToTypeNodeHelper(typeViaParent, context) : void 0;
               return overrideTypeNode;
@@ -60934,7 +60934,7 @@ ${lanes.join("\n")}
                 let typeArguments = root.typeArguments;
                 let qualifier = root.qualifier;
                 if (qualifier) {
-                  if (isIdentifier17(qualifier)) {
+                  if (isIdentifier18(qualifier)) {
                     if (typeArguments !== getIdentifierTypeArguments(qualifier)) {
                       qualifier = setIdentifierTypeArguments(factory.cloneNode(qualifier), typeArguments);
                     }
@@ -60960,7 +60960,7 @@ ${lanes.join("\n")}
               } else {
                 let typeArguments = root.typeArguments;
                 let typeName = root.typeName;
-                if (isIdentifier17(typeName)) {
+                if (isIdentifier18(typeName)) {
                   if (typeArguments !== getIdentifierTypeArguments(typeName)) {
                     typeName = setIdentifierTypeArguments(factory.cloneNode(typeName), typeArguments);
                   }
@@ -60984,7 +60984,7 @@ ${lanes.join("\n")}
             function getAccessStack(ref) {
               let state = ref.typeName;
               const ids = [];
-              while (!isIdentifier17(state)) {
+              while (!isIdentifier18(state)) {
                 ids.unshift(state.right);
                 state = state.left;
               }
@@ -61143,7 +61143,7 @@ ${lanes.join("\n")}
               if (propertySymbol.declarations) {
                 const decl = first(propertySymbol.declarations);
                 if (hasLateBindableName(decl)) {
-                  if (isBinaryExpression11(decl)) {
+                  if (isBinaryExpression12(decl)) {
                     const name = getNameOfDeclaration(decl);
                     if (name && isElementAccessExpression12(name) && isPropertyAccessEntityNameExpression(name.argumentExpression)) {
                       trackComputedName(name.argumentExpression, saveEnclosingDeclaration, context);
@@ -61510,7 +61510,7 @@ ${lanes.join("\n")}
               modifiers,
               /*asteriskToken*/
               void 0,
-              (options == null ? void 0 : options.name) ? cast(options.name, isIdentifier17) : factory.createIdentifier(""),
+              (options == null ? void 0 : options.name) ? cast(options.name, isIdentifier18) : factory.createIdentifier(""),
               typeParameters,
               parameters2,
               returnTypeNode,
@@ -61520,7 +61520,7 @@ ${lanes.join("\n")}
               modifiers,
               /*asteriskToken*/
               void 0,
-              (options == null ? void 0 : options.name) ? cast(options.name, isIdentifier17) : factory.createIdentifier(""),
+              (options == null ? void 0 : options.name) ? cast(options.name, isIdentifier18) : factory.createIdentifier(""),
               typeParameters,
               parameters2,
               returnTypeNode,
@@ -62173,7 +62173,7 @@ ${lanes.join("\n")}
               context.approximateLength += specifier.length + 10;
               if (!nonRootParts || isEntityName(nonRootParts)) {
                 if (nonRootParts) {
-                  const lastId = isIdentifier17(nonRootParts) ? nonRootParts : nonRootParts.right;
+                  const lastId = isIdentifier18(nonRootParts) ? nonRootParts : nonRootParts.right;
                   setIdentifierTypeArguments(
                     lastId,
                     /*typeArguments*/
@@ -62194,7 +62194,7 @@ ${lanes.join("\n")}
             if (isTypeOf) {
               return factory.createTypeQueryNode(entityName);
             } else {
-              const lastId = isIdentifier17(entityName) ? entityName : entityName.right;
+              const lastId = isIdentifier18(entityName) ? entityName : entityName.right;
               const lastTypeArgs = getIdentifierTypeArguments(lastId);
               setIdentifierTypeArguments(
                 lastId,
@@ -62860,7 +62860,7 @@ ${lanes.join("\n")}
               return !!node && node.kind === 80;
             }
             function getNamesOfDeclaration(statement) {
-              if (isVariableStatement9(statement)) {
+              if (isVariableStatement10(statement)) {
                 return filter(map(statement.declarationList.declarations, getNameOfDeclaration), isIdentifierAndNotUndefined);
               }
               return filter([getNameOfDeclaration(statement)], isIdentifierAndNotUndefined);
@@ -62869,7 +62869,7 @@ ${lanes.join("\n")}
               const exportAssignment = find(statements2, isExportAssignment4);
               const nsIndex = findIndex(statements2, isModuleDeclaration);
               let ns = nsIndex !== -1 ? statements2[nsIndex] : void 0;
-              if (ns && exportAssignment && exportAssignment.isExportEquals && isIdentifier17(exportAssignment.expression) && isIdentifier17(ns.name) && idText(ns.name) === idText(exportAssignment.expression) && ns.body && isModuleBlock(ns.body)) {
+              if (ns && exportAssignment && exportAssignment.isExportEquals && isIdentifier18(exportAssignment.expression) && isIdentifier18(ns.name) && idText(ns.name) === idText(exportAssignment.expression) && ns.body && isModuleBlock(ns.body)) {
                 const excessExports = filter(statements2, (s) => !!(getEffectiveModifierFlags(s) & 32));
                 const name = ns.name;
                 let body = ns.body;
@@ -63001,7 +63001,7 @@ ${lanes.join("\n")}
               statements2 = flattenExportAssignedNamespace(statements2);
               statements2 = mergeExportDeclarations(statements2);
               statements2 = inlineExportModifiers(statements2);
-              if (enclosingDeclaration && (isSourceFile6(enclosingDeclaration) && isExternalOrCommonJsModule(enclosingDeclaration) || isModuleDeclaration(enclosingDeclaration)) && (!some(statements2, isExternalModuleIndicator) || !hasScopeMarker(statements2) && some(statements2, needsScopeMarker))) {
+              if (enclosingDeclaration && (isSourceFile7(enclosingDeclaration) && isExternalOrCommonJsModule(enclosingDeclaration) || isModuleDeclaration(enclosingDeclaration)) && (!some(statements2, isExternalModuleIndicator) || !hasScopeMarker(statements2) && some(statements2, needsScopeMarker))) {
                 statements2.push(createEmptyExports(factory));
               }
               return statements2;
@@ -63110,14 +63110,14 @@ ${lanes.join("\n")}
                   } else if (!(symbol.flags & 16) && isTypeRepresentableAsFunctionNamespaceMerge(type, symbol)) {
                     serializeAsFunctionNamespaceMerge(type, symbol, localName, modifierFlags);
                   } else {
-                    const flags = !(symbol.flags & 2) ? ((_c = symbol.parent) == null ? void 0 : _c.valueDeclaration) && isSourceFile6((_d = symbol.parent) == null ? void 0 : _d.valueDeclaration) ? 2 : void 0 : isConstantVariable(symbol) ? 2 : 1;
+                    const flags = !(symbol.flags & 2) ? ((_c = symbol.parent) == null ? void 0 : _c.valueDeclaration) && isSourceFile7((_d = symbol.parent) == null ? void 0 : _d.valueDeclaration) ? 2 : void 0 : isConstantVariable(symbol) ? 2 : 1;
                     const name = needsPostExportDefault || !(symbol.flags & 4) ? localName : getUnusedName(localName, symbol);
-                    let textRange = symbol.declarations && find(symbol.declarations, (d) => isVariableDeclaration16(d));
-                    if (textRange && isVariableDeclarationList9(textRange.parent) && textRange.parent.declarations.length === 1) {
+                    let textRange = symbol.declarations && find(symbol.declarations, (d) => isVariableDeclaration17(d));
+                    if (textRange && isVariableDeclarationList10(textRange.parent) && textRange.parent.declarations.length === 1) {
                       textRange = textRange.parent.parent;
                     }
-                    const propertyAccessRequire = (_e = symbol.declarations) == null ? void 0 : _e.find(isPropertyAccessExpression16);
-                    if (propertyAccessRequire && isBinaryExpression11(propertyAccessRequire.parent) && isIdentifier17(propertyAccessRequire.parent.right) && ((_f = type.symbol) == null ? void 0 : _f.valueDeclaration) && isSourceFile6(type.symbol.valueDeclaration)) {
+                    const propertyAccessRequire = (_e = symbol.declarations) == null ? void 0 : _e.find(isPropertyAccessExpression17);
+                    if (propertyAccessRequire && isBinaryExpression12(propertyAccessRequire.parent) && isIdentifier18(propertyAccessRequire.parent.right) && ((_f = type.symbol) == null ? void 0 : _f.valueDeclaration) && isSourceFile7(type.symbol.valueDeclaration)) {
                       const alias2 = localName === propertyAccessRequire.parent.right.escapedText ? void 0 : propertyAccessRequire.parent.right;
                       context.approximateLength += 12 + (((_g = alias2 == null ? void 0 : alias2.escapedText) == null ? void 0 : _g.length) ?? 0);
                       addResult(
@@ -63196,7 +63196,7 @@ ${lanes.join("\n")}
                 serializeEnum(symbol, symbolName2, modifierFlags);
               }
               if (symbol.flags & 32) {
-                if (symbol.flags & 4 && symbol.valueDeclaration && isBinaryExpression11(symbol.valueDeclaration.parent) && isClassExpression3(symbol.valueDeclaration.parent.right)) {
+                if (symbol.flags & 4 && symbol.valueDeclaration && isBinaryExpression12(symbol.valueDeclaration.parent) && isClassExpression3(symbol.valueDeclaration.parent.right)) {
                   serializeAsAlias(symbol, getInternalSymbolName(symbol, symbolName2), modifierFlags);
                 } else {
                   serializeAsClass(symbol, getInternalSymbolName(symbol, symbolName2), modifierFlags);
@@ -63280,7 +63280,7 @@ ${lanes.join("\n")}
               deferredPrivatesStack[isExternalImportAlias ? 0 : deferredPrivatesStack.length - 1].set(getSymbolId(symbol), symbol);
             }
             function isExportingScope(enclosingDeclaration2) {
-              return isSourceFile6(enclosingDeclaration2) && (isExternalOrCommonJsModule(enclosingDeclaration2) || isJsonSourceFile(enclosingDeclaration2)) || isAmbientModule(enclosingDeclaration2) && !isGlobalScopeAugmentation(enclosingDeclaration2);
+              return isSourceFile7(enclosingDeclaration2) && (isExternalOrCommonJsModule(enclosingDeclaration2) || isJsonSourceFile(enclosingDeclaration2)) || isAmbientModule(enclosingDeclaration2) && !isGlobalScopeAugmentation(enclosingDeclaration2);
             }
             function addResult(node, additionalModifierFlags) {
               if (canHaveModifiers2(node)) {
@@ -63290,7 +63290,7 @@ ${lanes.join("\n")}
                 if (additionalModifierFlags & 32 && enclosingDeclaration2 && (isExportingScope(enclosingDeclaration2) || isModuleDeclaration(enclosingDeclaration2)) && canHaveExportModifier(node)) {
                   newModifierFlags |= 32;
                 }
-                if (addingDeclare && !(newModifierFlags & 32) && (!enclosingDeclaration2 || !(enclosingDeclaration2.flags & 33554432)) && (isEnumDeclaration(node) || isVariableStatement9(node) || isFunctionDeclaration9(node) || isClassDeclaration5(node) || isModuleDeclaration(node))) {
+                if (addingDeclare && !(newModifierFlags & 32) && (!enclosingDeclaration2 || !(enclosingDeclaration2.flags & 33554432)) && (isEnumDeclaration(node) || isVariableStatement10(node) || isFunctionDeclaration9(node) || isClassDeclaration5(node) || isModuleDeclaration(node))) {
                   newModifierFlags |= 128;
                 }
                 if (additionalModifierFlags & 2048 && (isClassDeclaration5(node) || isInterfaceDeclaration(node) || isFunctionDeclaration9(node))) {
@@ -63608,17 +63608,17 @@ ${lanes.join("\n")}
             }
             function getSignatureTextRangeLocation(signature) {
               if (signature.declaration && signature.declaration.parent) {
-                if (isBinaryExpression11(signature.declaration.parent) && getAssignmentDeclarationKind(signature.declaration.parent) === 5) {
+                if (isBinaryExpression12(signature.declaration.parent) && getAssignmentDeclarationKind(signature.declaration.parent) === 5) {
                   return signature.declaration.parent;
                 }
-                if (isVariableDeclaration16(signature.declaration.parent) && signature.declaration.parent.parent) {
+                if (isVariableDeclaration17(signature.declaration.parent) && signature.declaration.parent.parent) {
                   return signature.declaration.parent.parent;
                 }
               }
               return signature.declaration;
             }
             function serializeAsNamespaceDeclaration(props, localName, modifierFlags, suppressNewPrivateContext) {
-              const nodeFlags = isIdentifier17(localName) ? 32 : 0;
+              const nodeFlags = isIdentifier18(localName) ? 32 : 0;
               const expanding = isExpanding(context);
               if (length(props)) {
                 context.approximateLength += 14;
@@ -63651,7 +63651,7 @@ ${lanes.join("\n")}
                 addingDeclare = oldAddingDeclare;
                 const declarations = results;
                 results = oldResults;
-                const defaultReplaced = map(declarations, (d) => isExportAssignment4(d) && !d.isExportEquals && isIdentifier17(d.expression) ? factory.createExportDeclaration(
+                const defaultReplaced = map(declarations, (d) => isExportAssignment4(d) && !d.isExportEquals && isIdentifier18(d.expression) ? factory.createExportDeclaration(
                   /*modifiers*/
                   void 0,
                   /*isTypeOnly*/
@@ -63701,7 +63701,7 @@ ${lanes.join("\n")}
                 context.enclosingDeclaration = e;
                 let expr = e.expression;
                 if (isEntityNameExpression(expr)) {
-                  if (isIdentifier17(expr) && idText(expr) === "") {
+                  if (isIdentifier18(expr) && idText(expr) === "") {
                     return cleanup(
                       /*result*/
                       void 0
@@ -63835,15 +63835,15 @@ ${lanes.join("\n")}
                 if (isImportSpecifier10(d) || isExportSpecifier(d)) {
                   return moduleExportNameTextUnescaped(d.propertyName || d.name);
                 }
-                if (isBinaryExpression11(d) || isExportAssignment4(d)) {
+                if (isBinaryExpression12(d) || isExportAssignment4(d)) {
                   const expression = isExportAssignment4(d) ? d.expression : d.right;
-                  if (isPropertyAccessExpression16(expression)) {
+                  if (isPropertyAccessExpression17(expression)) {
                     return idText(expression.name);
                   }
                 }
                 if (isAliasSymbolDeclaration(d)) {
                   const name = getNameOfDeclaration(d);
-                  if (name && isIdentifier17(name)) {
+                  if (name && isIdentifier18(name)) {
                     return idText(name);
                   }
                 }
@@ -63873,7 +63873,7 @@ ${lanes.join("\n")}
                   if (((_b = (_a22 = node.parent) == null ? void 0 : _a22.parent) == null ? void 0 : _b.kind) === 261) {
                     const specifier2 = getSpecifierForModuleSymbol(target.parent || target, context);
                     const { propertyName: propertyName2 } = node;
-                    const propertyNameText = propertyName2 && isIdentifier17(propertyName2) ? idText(propertyName2) : void 0;
+                    const propertyNameText = propertyName2 && isIdentifier18(propertyName2) ? idText(propertyName2) : void 0;
                     context.approximateLength += 24 + localName.length + specifier2.length + ((propertyNameText == null ? void 0 : propertyNameText.length) ?? 0);
                     addResult(
                       factory.createImportDeclaration(
@@ -63911,7 +63911,7 @@ ${lanes.join("\n")}
                   }
                   break;
                 case 261:
-                  if (isPropertyAccessExpression16(node.initializer)) {
+                  if (isPropertyAccessExpression17(node.initializer)) {
                     const initializer = node.initializer;
                     const uniqueName = factory.createUniqueName(localName);
                     const specifier2 = getSpecifierForModuleSymbol(target.parent || target, context);
@@ -63944,11 +63944,11 @@ ${lanes.join("\n")}
                   }
                 // else fall through and treat commonjs require just like import=
                 case 272:
-                  if (target.escapedName === "export=" && some(target.declarations, (d) => isSourceFile6(d) && isJsonSourceFile(d))) {
+                  if (target.escapedName === "export=" && some(target.declarations, (d) => isSourceFile7(d) && isJsonSourceFile(d))) {
                     serializeMaybeAliasAssignment(symbol);
                     break;
                   }
-                  const isLocalImport = !(target.flags & 512) && !isVariableDeclaration16(node);
+                  const isLocalImport = !(target.flags & 512) && !isVariableDeclaration17(node);
                   context.approximateLength += 11 + localName.length + unescapeLeadingUnderscores(target.escapedName).length;
                   addResult(
                     factory.createImportEqualsDeclaration(
@@ -64082,7 +64082,7 @@ ${lanes.join("\n")}
                   serializeExportSpecifier(
                     unescapeLeadingUnderscores(symbol.escapedName),
                     specifier ? verbatimTargetName : targetName,
-                    specifier && isStringLiteralLike13(specifier) ? factory.createStringLiteral(specifier.text) : void 0
+                    specifier && isStringLiteralLike14(specifier) ? factory.createStringLiteral(specifier.text) : void 0
                   );
                   break;
                 case 278:
@@ -64137,7 +64137,7 @@ ${lanes.join("\n")}
                 true
               );
               if (target && length(target.declarations) && some(target.declarations, (d) => getSourceFileOfNode(d) === getSourceFileOfNode(enclosingDeclaration))) {
-                const expr = aliasDecl && (isExportAssignment4(aliasDecl) || isBinaryExpression11(aliasDecl) ? getExportAssignmentExpression(aliasDecl) : getPropertyAssignmentAliasLikeExpression(aliasDecl));
+                const expr = aliasDecl && (isExportAssignment4(aliasDecl) || isBinaryExpression12(aliasDecl) ? getExportAssignmentExpression(aliasDecl) : getPropertyAssignmentAliasLikeExpression(aliasDecl));
                 const first2 = expr && isEntityNameExpression(expr) ? getFirstNonModuleExportsIdentifier(expr) : void 0;
                 const referenced = first2 && resolveEntityName(
                   first2,
@@ -64288,7 +64288,7 @@ ${lanes.join("\n")}
                 }
                 const flag = modifierFlags & ~1024 | (isStatic2 ? 256 : 0);
                 const name = getPropertyNameNodeForSymbol(p, context);
-                const firstPropertyLikeDecl = (_a22 = p.declarations) == null ? void 0 : _a22.find(or(isPropertyDeclaration5, isAccessor, isVariableDeclaration16, isPropertySignature, isBinaryExpression11, isPropertyAccessExpression16));
+                const firstPropertyLikeDecl = (_a22 = p.declarations) == null ? void 0 : _a22.find(or(isPropertyDeclaration5, isAccessor, isVariableDeclaration17, isPropertySignature, isBinaryExpression12, isPropertyAccessExpression17));
                 if (p.flags & 98304 && useAccessors) {
                   const result3 = [];
                   if (p.flags & 65536) {
@@ -64299,7 +64299,7 @@ ${lanes.join("\n")}
                       if (isCallExpression18(d) && isBindableObjectDefinePropertyCall(d)) {
                         return forEach(d.arguments[2].properties, (propDecl) => {
                           const id = getNameOfDeclaration(propDecl);
-                          if (!!id && isIdentifier17(id) && idText(id) === "set") {
+                          if (!!id && isIdentifier18(id) && idText(id) === "set") {
                             return propDecl;
                           }
                         });
@@ -64365,7 +64365,7 @@ ${lanes.join("\n")}
                       /*initializer*/
                       void 0
                     ),
-                    ((_e = p.declarations) == null ? void 0 : _e.find(or(isPropertyDeclaration5, isVariableDeclaration16))) || firstPropertyLikeDecl
+                    ((_e = p.declarations) == null ? void 0 : _e.find(or(isPropertyDeclaration5, isVariableDeclaration17))) || firstPropertyLikeDecl
                   );
                 }
                 if (p.flags & (8192 | 16)) {
@@ -64835,7 +64835,7 @@ ${lanes.join("\n")}
               case 339:
               case 347:
               case 341:
-                return !!(node.parent && node.parent.parent && node.parent.parent.parent && isSourceFile6(node.parent.parent.parent));
+                return !!(node.parent && node.parent.parent && node.parent.parent.parent && isSourceFile7(node.parent.parent.parent));
               case 209:
                 return isDeclarationVisible(node.parent.parent);
               case 261:
@@ -65309,7 +65309,7 @@ ${lanes.join("\n")}
           return strictNullChecks && isOptional ? getOptionalType(type, isProperty) : type;
         }
         function getTypeForVariableLikeDeclaration(declaration, includeOptionality, checkMode) {
-          if (isVariableDeclaration16(declaration) && declaration.parent.parent.kind === 250) {
+          if (isVariableDeclaration17(declaration) && declaration.parent.parent.kind === 250) {
             const indexType = getIndexType(getNonNullableTypeIfNeeded(checkExpression(
               declaration.parent.parent.expression,
               /*checkMode*/
@@ -65317,7 +65317,7 @@ ${lanes.join("\n")}
             )));
             return indexType.flags & (262144 | 4194304) ? getExtractStringType(indexType) : stringType;
           }
-          if (isVariableDeclaration16(declaration) && declaration.parent.parent.kind === 251) {
+          if (isVariableDeclaration17(declaration) && declaration.parent.parent.kind === 251) {
             const forOfStatement = declaration.parent.parent;
             return checkRightHandSideOfForOf(forOfStatement) || anyType;
           }
@@ -65336,7 +65336,7 @@ ${lanes.join("\n")}
           if (declaredType) {
             return addOptionality(declaredType, isProperty, isOptional);
           }
-          if ((noImplicitAny || isInJSFile(declaration)) && isVariableDeclaration16(declaration) && !isBindingPattern2(declaration.name) && !(getCombinedModifierFlagsCached(declaration) & 32) && !(declaration.flags & 33554432)) {
+          if ((noImplicitAny || isInJSFile(declaration)) && isVariableDeclaration17(declaration) && !isBindingPattern2(declaration.name) && !(getCombinedModifierFlagsCached(declaration) & 32) && !(declaration.flags & 33554432)) {
             if (!(getCombinedNodeFlagsCached(declaration) & 6) && (!declaration.initializer || isNullOrUndefined3(declaration.initializer))) {
               return autoType;
             }
@@ -65423,11 +65423,11 @@ ${lanes.join("\n")}
           return void 0;
         }
         function isConstructorDeclaredProperty(symbol) {
-          if (symbol.valueDeclaration && isBinaryExpression11(symbol.valueDeclaration)) {
+          if (symbol.valueDeclaration && isBinaryExpression12(symbol.valueDeclaration)) {
             const links = getSymbolLinks(symbol);
             if (links.isConstructorDeclaredProperty === void 0) {
               links.isConstructorDeclaredProperty = false;
-              links.isConstructorDeclaredProperty = !!getDeclaringConstructor(symbol) && every(symbol.declarations, (declaration) => isBinaryExpression11(declaration) && isPossiblyAliasedThisProperty(declaration) && (declaration.left.kind !== 213 || isStringOrNumericLiteralLike(declaration.left.argumentExpression)) && !getAnnotatedTypeForAssignmentDeclaration(
+              links.isConstructorDeclaredProperty = !!getDeclaringConstructor(symbol) && every(symbol.declarations, (declaration) => isBinaryExpression12(declaration) && isPossiblyAliasedThisProperty(declaration) && (declaration.left.kind !== 213 || isStringOrNumericLiteralLike(declaration.left.argumentExpression)) && !getAnnotatedTypeForAssignmentDeclaration(
                 /*declaredType*/
                 void 0,
                 declaration,
@@ -65527,12 +65527,12 @@ ${lanes.join("\n")}
             if (symbol.declarations) {
               let jsdocType;
               for (const declaration of symbol.declarations) {
-                const expression = isBinaryExpression11(declaration) || isCallExpression18(declaration) ? declaration : isAccessExpression(declaration) ? isBinaryExpression11(declaration.parent) ? declaration.parent : declaration : void 0;
+                const expression = isBinaryExpression12(declaration) || isCallExpression18(declaration) ? declaration : isAccessExpression(declaration) ? isBinaryExpression12(declaration.parent) ? declaration.parent : declaration : void 0;
                 if (!expression) {
                   continue;
                 }
                 const kind = isAccessExpression(expression) ? getAssignmentDeclarationPropertyAccessKind(expression) : getAssignmentDeclarationKind(expression);
-                if (kind === 4 || isBinaryExpression11(expression) && isPossiblyAliasedThisProperty(expression, kind)) {
+                if (kind === 4 || isBinaryExpression12(expression) && isPossiblyAliasedThisProperty(expression, kind)) {
                   if (isDeclarationInConstructor(expression)) {
                     definedInConstructor = true;
                   } else {
@@ -65543,7 +65543,7 @@ ${lanes.join("\n")}
                   jsdocType = getAnnotatedTypeForAssignmentDeclaration(jsdocType, expression, symbol, declaration);
                 }
                 if (!jsdocType) {
-                  (types16 || (types16 = [])).push(isBinaryExpression11(expression) || isCallExpression18(expression) ? getInitializerTypeFromAssignmentDeclaration(symbol, resolvedSymbol, expression, kind) : neverType);
+                  (types16 || (types16 = [])).push(isBinaryExpression12(expression) || isCallExpression18(expression) ? getInitializerTypeFromAssignmentDeclaration(symbol, resolvedSymbol, expression, kind) : neverType);
                 }
               }
               type = jsdocType;
@@ -65578,16 +65578,16 @@ ${lanes.join("\n")}
         }
         function getJSContainerObjectType(decl, symbol, init) {
           var _a2, _b;
-          if (!isInJSFile(decl) || !init || !isObjectLiteralExpression11(init) || init.properties.length) {
+          if (!isInJSFile(decl) || !init || !isObjectLiteralExpression12(init) || init.properties.length) {
             return void 0;
           }
           const exports2 = createSymbolTable();
-          while (isBinaryExpression11(decl) || isPropertyAccessExpression16(decl)) {
+          while (isBinaryExpression12(decl) || isPropertyAccessExpression17(decl)) {
             const s2 = getSymbolOfNode(decl);
             if ((_a2 = s2 == null ? void 0 : s2.exports) == null ? void 0 : _a2.size) {
               mergeSymbolTable(exports2, s2.exports);
             }
-            decl = isBinaryExpression11(decl) ? decl.parent : decl.parent.parent;
+            decl = isBinaryExpression12(decl) ? decl.parent : decl.parent.parent;
           }
           const s = getSymbolOfNode(decl);
           if ((_b = s == null ? void 0 : s.exports) == null ? void 0 : _b.size) {
@@ -65657,7 +65657,7 @@ ${lanes.join("\n")}
           if (containsSameNamedThisProperty(expression.left, expression.right)) {
             return anyType;
           }
-          const isDirectExport = kind === 1 && (isPropertyAccessExpression16(expression.left) || isElementAccessExpression12(expression.left)) && (isModuleExportsAccessExpression(expression.left.expression) || isIdentifier17(expression.left.expression) && isExportsIdentifier(expression.left.expression));
+          const isDirectExport = kind === 1 && (isPropertyAccessExpression17(expression.left) || isElementAccessExpression12(expression.left)) && (isModuleExportsAccessExpression(expression.left.expression) || isIdentifier18(expression.left.expression) && isExportsIdentifier(expression.left.expression));
           const type = resolvedSymbol ? getTypeOfSymbol(resolvedSymbol) : isDirectExport ? getRegularTypeOfLiteralType(checkExpressionCached(expression.right)) : getWidenedLiteralType(checkExpressionCached(expression.right));
           if (type.flags & 524288 && kind === 2 && symbol.escapedName === "export=") {
             const exportedType = resolveStructuredTypeMembers(type);
@@ -65728,7 +65728,7 @@ ${lanes.join("\n")}
           return type;
         }
         function containsSameNamedThisProperty(thisProperty, expression) {
-          return isPropertyAccessExpression16(thisProperty) && thisProperty.expression.kind === 110 && forEachChildRecursively(expression, (n) => isMatchingReference(thisProperty, n));
+          return isPropertyAccessExpression17(thisProperty) && thisProperty.expression.kind === 110 && forEachChildRecursively(expression, (n) => isMatchingReference(thisProperty, n));
         }
         function isDeclarationInConstructor(expression) {
           const thisContainer = getThisContainer(
@@ -65744,7 +65744,7 @@ ${lanes.join("\n")}
           Debug.assert(types16.length === declarations.length);
           return types16.filter((_, i) => {
             const declaration = declarations[i];
-            const expression = isBinaryExpression11(declaration) ? declaration : isBinaryExpression11(declaration.parent) ? declaration.parent : void 0;
+            const expression = isBinaryExpression12(declaration) ? declaration : isBinaryExpression12(declaration.parent) ? declaration.parent : void 0;
             return expression && isDeclarationInConstructor(expression);
           });
         }
@@ -65953,7 +65953,7 @@ ${lanes.join("\n")}
           }
           Debug.assertIsDefined(symbol.valueDeclaration);
           const declaration = symbol.valueDeclaration;
-          if (isSourceFile6(declaration) && isJsonSourceFile(declaration)) {
+          if (isSourceFile7(declaration) && isJsonSourceFile(declaration)) {
             if (!declaration.statements.length) {
               return emptyObjectType;
             }
@@ -65975,14 +65975,14 @@ ${lanes.join("\n")}
           let type;
           if (declaration.kind === 278) {
             type = widenTypeForVariableLikeDeclaration(tryGetTypeFromEffectiveTypeNode(declaration) || checkExpressionCached(declaration.expression), declaration);
-          } else if (isBinaryExpression11(declaration) || isInJSFile(declaration) && (isCallExpression18(declaration) || (isPropertyAccessExpression16(declaration) || isBindableStaticElementAccessExpression(declaration)) && isBinaryExpression11(declaration.parent))) {
+          } else if (isBinaryExpression12(declaration) || isInJSFile(declaration) && (isCallExpression18(declaration) || (isPropertyAccessExpression17(declaration) || isBindableStaticElementAccessExpression(declaration)) && isBinaryExpression12(declaration.parent))) {
             type = getWidenedTypeForAssignmentDeclaration(symbol);
-          } else if (isPropertyAccessExpression16(declaration) || isElementAccessExpression12(declaration) || isIdentifier17(declaration) || isStringLiteralLike13(declaration) || isNumericLiteral8(declaration) || isClassDeclaration5(declaration) || isFunctionDeclaration9(declaration) || isMethodDeclaration8(declaration) && !isObjectLiteralMethod(declaration) || isMethodSignature(declaration) || isSourceFile6(declaration)) {
+          } else if (isPropertyAccessExpression17(declaration) || isElementAccessExpression12(declaration) || isIdentifier18(declaration) || isStringLiteralLike14(declaration) || isNumericLiteral9(declaration) || isClassDeclaration5(declaration) || isFunctionDeclaration9(declaration) || isMethodDeclaration8(declaration) && !isObjectLiteralMethod(declaration) || isMethodSignature(declaration) || isSourceFile7(declaration)) {
             if (symbol.flags & (16 | 8192 | 32 | 384 | 512)) {
               return getTypeOfFuncClassEnumModule(symbol);
             }
-            type = isBinaryExpression11(declaration.parent) ? getWidenedTypeForAssignmentDeclaration(symbol) : tryGetTypeFromEffectiveTypeNode(declaration) || anyType;
-          } else if (isPropertyAssignment12(declaration)) {
+            type = isBinaryExpression12(declaration.parent) ? getWidenedTypeForAssignmentDeclaration(symbol) : tryGetTypeFromEffectiveTypeNode(declaration) || anyType;
+          } else if (isPropertyAssignment13(declaration)) {
             type = tryGetTypeFromEffectiveTypeNode(declaration) || checkPropertyAssignment(declaration);
           } else if (isJsxAttribute3(declaration)) {
             type = tryGetTypeFromEffectiveTypeNode(declaration) || checkJsxAttribute(declaration);
@@ -65998,7 +65998,7 @@ ${lanes.join("\n")}
               0
               /* Normal */
             );
-          } else if (isParameter6(declaration) || isPropertyDeclaration5(declaration) || isPropertySignature(declaration) || isVariableDeclaration16(declaration) || isBindingElement8(declaration) || isJSDocPropertyLikeTag(declaration)) {
+          } else if (isParameter6(declaration) || isPropertyDeclaration5(declaration) || isPropertySignature(declaration) || isVariableDeclaration17(declaration) || isBindingElement8(declaration) || isJSDocPropertyLikeTag(declaration)) {
             type = getWidenedTypeForVariableLikeDeclaration(
               declaration,
               /*reportErrors*/
@@ -66163,7 +66163,7 @@ ${lanes.join("\n")}
             return anyType;
           } else if (declaration && (declaration.kind === 227 || isAccessExpression(declaration) && declaration.parent.kind === 227)) {
             return getWidenedTypeForAssignmentDeclaration(symbol);
-          } else if (symbol.flags & 512 && declaration && isSourceFile6(declaration) && declaration.commonJsModuleIndicator) {
+          } else if (symbol.flags & 512 && declaration && isSourceFile7(declaration) && declaration.commonJsModuleIndicator) {
             const resolvedModule = resolveExternalModuleSymbol(symbol);
             if (resolvedModule !== symbol) {
               if (!pushTypeResolution(
@@ -66357,7 +66357,7 @@ ${lanes.join("\n")}
         function getOuterTypeParameters(node, includeThisTypes) {
           while (true) {
             node = node.parent;
-            if (node && isBinaryExpression11(node)) {
+            if (node && isBinaryExpression12(node)) {
               const assignmentKind = getAssignmentDeclarationKind(node);
               if (assignmentKind === 6 || assignmentKind === 3) {
                 const symbol = getSymbolOfDeclaration(node.left);
@@ -66964,7 +66964,7 @@ ${lanes.join("\n")}
               continue;
             }
             const derived = symbols.get(base.escapedName);
-            if (!derived || derived.valueDeclaration && isBinaryExpression11(derived.valueDeclaration) && !isConstructorDeclaredProperty(derived) && !getContainingClassStaticBlock(derived.valueDeclaration)) {
+            if (!derived || derived.valueDeclaration && isBinaryExpression12(derived.valueDeclaration) && !isConstructorDeclaredProperty(derived) && !getContainingClassStaticBlock(derived.valueDeclaration)) {
               symbols.set(base.escapedName, base);
               symbols.set(base.escapedName, base);
             }
@@ -67044,7 +67044,7 @@ ${lanes.join("\n")}
           const links = getNodeLinks(decl);
           if (!links.resolvedSymbol) {
             links.resolvedSymbol = decl.symbol;
-            const declName = isBinaryExpression11(decl) ? decl.left : decl.name;
+            const declName = isBinaryExpression12(decl) ? decl.left : decl.name;
             const type = isElementAccessExpression12(declName) ? checkExpressionCached(declName.argumentExpression) : checkComputedPropertyName(declName);
             if (isTypeUsableAsPropertyName(type)) {
               const memberName = getPropertyNameFromType(type);
@@ -67136,7 +67136,7 @@ ${lanes.join("\n")}
               const decls = arrayFrom(assignments.values());
               for (const member3 of decls) {
                 const assignmentKind = getAssignmentDeclarationKind(member3);
-                const isInstanceMember = assignmentKind === 3 || isBinaryExpression11(member3) && isPossiblyAliasedThisProperty(member3, assignmentKind) || assignmentKind === 9 || assignmentKind === 6;
+                const isInstanceMember = assignmentKind === 3 || isBinaryExpression12(member3) && isPossiblyAliasedThisProperty(member3, assignmentKind) || assignmentKind === 9 || assignmentKind === 6;
                 if (isStatic2 === !isInstanceMember) {
                   if (hasLateBindableName(member3)) {
                     lateBindMember(symbol, earlySymbols, lateSymbols, member3);
@@ -69561,7 +69561,7 @@ ${lanes.join("\n")}
                   }
                 }
               } else if (hasLateBindableIndexSignature(declaration)) {
-                const declName = isBinaryExpression11(declaration) ? declaration.left : declaration.name;
+                const declName = isBinaryExpression12(declaration) ? declaration.left : declaration.name;
                 const keyType = isElementAccessExpression12(declName) ? checkExpressionCached(declName.argumentExpression) : checkComputedPropertyName(declName);
                 if (findIndexInfo(indexInfos, keyType)) {
                   continue;
@@ -70057,7 +70057,7 @@ ${lanes.join("\n")}
           return true;
         }
         function getIntendedTypeFromJSDocTypeReference(node) {
-          if (isIdentifier17(node.typeName)) {
+          if (isIdentifier18(node.typeName)) {
             const typeArgs = node.typeArguments;
             switch (node.typeName.escapedText) {
               case "String":
@@ -71600,7 +71600,7 @@ ${lanes.join("\n")}
           if (isPrivateIdentifier2(name)) {
             return neverType;
           }
-          if (isNumericLiteral8(name)) {
+          if (isNumericLiteral9(name)) {
             return getRegularTypeOfLiteralType(checkExpression(name));
           }
           if (isComputedPropertyName8(name)) {
@@ -71852,7 +71852,7 @@ ${lanes.join("\n")}
           if (symbol.flags & (16 | 8192)) {
             const parent2 = findAncestor(node.parent, (n) => !isAccessExpression(n)) || node.parent;
             if (isCallLikeExpression(parent2)) {
-              return isCallOrNewExpression(parent2) && isIdentifier17(node) && hasMatchingArgument(parent2, node);
+              return isCallOrNewExpression(parent2) && isIdentifier18(node) && hasMatchingArgument(parent2, node);
             }
             return every(symbol.declarations, (d) => !isFunctionLike3(d) || isDeprecatedDeclaration2(d));
           }
@@ -72490,7 +72490,7 @@ ${lanes.join("\n")}
           return links.resolvedType;
         }
         function getIdentifierChain(node) {
-          if (isIdentifier17(node)) {
+          if (isIdentifier18(node)) {
             return [node];
           } else {
             return append(getIdentifierChain(node.left), node.right);
@@ -72829,11 +72829,11 @@ ${lanes.join("\n")}
               return getDeclaredTypeOfClassOrInterface(getSymbolOfDeclaration(parent2)).thisType;
             }
           }
-          if (parent2 && isObjectLiteralExpression11(parent2) && isBinaryExpression11(parent2.parent) && getAssignmentDeclarationKind(parent2.parent) === 6) {
+          if (parent2 && isObjectLiteralExpression12(parent2) && isBinaryExpression12(parent2.parent) && getAssignmentDeclarationKind(parent2.parent) === 6) {
             return getDeclaredTypeOfClassOrInterface(getSymbolOfNode(parent2.parent.left).parent).thisType;
           }
           const host2 = node.flags & 16777216 ? getHostSignatureFromJSDoc(node) : void 0;
-          if (host2 && isFunctionExpression12(host2) && isBinaryExpression11(host2.parent) && getAssignmentDeclarationKind(host2.parent) === 3) {
+          if (host2 && isFunctionExpression12(host2) && isBinaryExpression12(host2.parent) && getAssignmentDeclarationKind(host2.parent) === 3) {
             return getDeclaredTypeOfClassOrInterface(getSymbolOfNode(host2.parent.left).parent).thisType;
           }
           if (isJSConstructor(container) && isNodeDescendantOf(node, container.body)) {
@@ -75144,7 +75144,7 @@ ${lanes.join("\n")}
                         Debug.assertNode(propDeclaration, isObjectLiteralElementLike);
                         const name = propDeclaration.name;
                         errorNode = name;
-                        if (isIdentifier17(name)) {
+                        if (isIdentifier18(name)) {
                           suggestion = getSuggestionForNonexistentProperty(name, errorTarget);
                         }
                       }
@@ -78023,7 +78023,7 @@ ${lanes.join("\n")}
               break;
             case 170:
               const param = declaration;
-              if (isIdentifier17(param.name)) {
+              if (isIdentifier18(param.name)) {
                 const originalKeywordKind = identifierToKeywordKind(param.name);
                 if ((isCallSignatureDeclaration(param.parent) || isMethodSignature(param.parent) || isFunctionTypeNode(param.parent)) && param.parent.parameters.includes(param) && (resolveName(
                   param,
@@ -79418,7 +79418,7 @@ ${lanes.join("\n")}
                 const key2 = getFlowCacheKey(node.expression, declaredType, initialType, flowContainer);
                 return key2 && `${key2}.${propName}`;
               }
-              if (isElementAccessExpression12(node) && isIdentifier17(node.argumentExpression)) {
+              if (isElementAccessExpression12(node) && isIdentifier18(node.argumentExpression)) {
                 const symbol = getResolvedSymbol(node.argumentExpression);
                 if (isConstantVariable(symbol) || isParameterOrMutableLocalVariable(symbol) && !isSymbolAssigned(symbol)) {
                   const key2 = getFlowCacheKey(node.expression, declaredType, initialType, flowContainer);
@@ -79442,14 +79442,14 @@ ${lanes.join("\n")}
             case 236:
               return isMatchingReference(source, target.expression);
             case 227:
-              return isAssignmentExpression(target) && isMatchingReference(source, target.left) || isBinaryExpression11(target) && target.operatorToken.kind === 28 && isMatchingReference(source, target.right);
+              return isAssignmentExpression(target) && isMatchingReference(source, target.left) || isBinaryExpression12(target) && target.operatorToken.kind === 28 && isMatchingReference(source, target.right);
           }
           switch (source.kind) {
             case 237:
               return target.kind === 237 && source.keywordToken === target.keywordToken && source.name.escapedText === target.name.escapedText;
             case 80:
             case 81:
-              return isThisInTypeQuery(source) ? target.kind === 110 : target.kind === 80 && getResolvedSymbol(source) === getResolvedSymbol(target) || (isVariableDeclaration16(target) || isBindingElement8(target)) && getExportSymbolOfValueSymbolIfExported(getResolvedSymbol(source)) === getSymbolOfDeclaration(target);
+              return isThisInTypeQuery(source) ? target.kind === 110 : target.kind === 80 && getResolvedSymbol(source) === getResolvedSymbol(target) || (isVariableDeclaration17(target) || isBindingElement8(target)) && getExportSymbolOfValueSymbolIfExported(getResolvedSymbol(source)) === getSymbolOfDeclaration(target);
             case 110:
               return target.kind === 110;
             case 108:
@@ -79467,7 +79467,7 @@ ${lanes.join("\n")}
                   return targetPropertyName === sourcePropertyName && isMatchingReference(source.expression, target.expression);
                 }
               }
-              if (isElementAccessExpression12(source) && isElementAccessExpression12(target) && isIdentifier17(source.argumentExpression) && isIdentifier17(target.argumentExpression)) {
+              if (isElementAccessExpression12(source) && isElementAccessExpression12(target) && isIdentifier18(source.argumentExpression) && isIdentifier18(target.argumentExpression)) {
                 const symbol = getResolvedSymbol(source.argumentExpression);
                 if (symbol === getResolvedSymbol(target.argumentExpression) && (isConstantVariable(symbol) || isParameterOrMutableLocalVariable(symbol) && !isSymbolAssigned(symbol))) {
                   return isMatchingReference(source.expression, target.expression);
@@ -79477,12 +79477,12 @@ ${lanes.join("\n")}
             case 167:
               return isAccessExpression(target) && source.right.escapedText === getAccessedPropertyName(target) && isMatchingReference(source.left, target.expression);
             case 227:
-              return isBinaryExpression11(source) && source.operatorToken.kind === 28 && isMatchingReference(source.right, target);
+              return isBinaryExpression12(source) && source.operatorToken.kind === 28 && isMatchingReference(source.right, target);
           }
           return false;
         }
         function getAccessedPropertyName(access7) {
-          if (isPropertyAccessExpression16(access7)) {
+          if (isPropertyAccessExpression17(access7)) {
             return access7.name.escapedText;
           }
           if (isElementAccessExpression12(access7)) {
@@ -79956,7 +79956,7 @@ ${lanes.join("\n")}
           return links.switchTypes;
         }
         function getSwitchClauseTypeOfWitnesses(switchStatement) {
-          if (some(switchStatement.caseBlock.clauses, (clause) => clause.kind === 297 && !isStringLiteralLike13(clause.expression))) {
+          if (some(switchStatement.caseBlock.clauses, (clause) => clause.kind === 297 && !isStringLiteralLike14(clause.expression))) {
             return void 0;
           }
           const witnesses = [];
@@ -80160,7 +80160,7 @@ ${lanes.join("\n")}
         function isEvolvingArrayOperationTarget(node) {
           const root = getReferenceRoot(node);
           const parent2 = root.parent;
-          const isLengthPushOrUnshift = isPropertyAccessExpression16(parent2) && (parent2.name.escapedText === "length" || parent2.parent.kind === 214 && isIdentifier17(parent2.name) && isPushOrUnshiftIdentifier(parent2.name));
+          const isLengthPushOrUnshift = isPropertyAccessExpression17(parent2) && (parent2.name.escapedText === "length" || parent2.parent.kind === 214 && isIdentifier18(parent2.name) && isPushOrUnshiftIdentifier(parent2.name));
           const isElementAssignment = parent2.kind === 213 && parent2.expression === root && parent2.parent.kind === 227 && parent2.parent.operatorToken.kind === 64 && parent2.parent.left === parent2 && !isAssignmentTarget(parent2.parent) && isTypeAssignableToKind(
             getTypeOfExpression(parent2.argumentExpression),
             296
@@ -80169,7 +80169,7 @@ ${lanes.join("\n")}
           return isLengthPushOrUnshift || isElementAssignment;
         }
         function isDeclarationWithExplicitTypeAnnotation(node) {
-          return (isVariableDeclaration16(node) || isPropertyDeclaration5(node) || isPropertySignature(node) || isParameter6(node)) && !!(getEffectiveTypeAnnotationNode(node) || isInJSFile(node) && hasInitializer(node) && node.initializer && isFunctionExpressionOrArrowFunction(node.initializer) && getEffectiveReturnTypeNode(node.initializer));
+          return (isVariableDeclaration17(node) || isPropertyDeclaration5(node) || isPropertySignature(node) || isParameter6(node)) && !!(getEffectiveTypeAnnotationNode(node) || isInJSFile(node) && hasInitializer(node) && node.initializer && isFunctionExpressionOrArrowFunction(node.initializer) && getEffectiveReturnTypeNode(node.initializer));
         }
         function getExplicitTypeOfSymbol(symbol, diagnostic) {
           symbol = resolveSymbol(symbol);
@@ -80188,7 +80188,7 @@ ${lanes.join("\n")}
               if (isDeclarationWithExplicitTypeAnnotation(declaration)) {
                 return getTypeOfSymbol(symbol);
               }
-              if (isVariableDeclaration16(declaration) && declaration.parent.parent.kind === 251) {
+              if (isVariableDeclaration17(declaration) && declaration.parent.parent.kind === 251) {
                 const statement = declaration.parent.parent;
                 const expressionType = getTypeOfDottedName(
                   statement.expression,
@@ -80249,7 +80249,7 @@ ${lanes.join("\n")}
           let signature = links.effectsSignature;
           if (signature === void 0) {
             let funcType;
-            if (isBinaryExpression11(node)) {
+            if (isBinaryExpression12(node)) {
               const rightType = checkNonNullExpression(node.right);
               funcType = getSymbolHasInstanceMethodOfObjectType(rightType);
             } else if (node.parent.kind === 245) {
@@ -80444,7 +80444,7 @@ ${lanes.join("\n")}
             case 207:
             case 208:
               const rootDeclaration = getRootDeclaration(node.parent);
-              return isParameter6(rootDeclaration) || isCatchClauseVariableDeclaration(rootDeclaration) ? !isSomeSymbolAssigned(rootDeclaration) : isVariableDeclaration16(rootDeclaration) && isVarConstLike2(rootDeclaration);
+              return isParameter6(rootDeclaration) || isCatchClauseVariableDeclaration(rootDeclaration) ? !isSomeSymbolAssigned(rootDeclaration) : isVariableDeclaration17(rootDeclaration) && isVarConstLike2(rootDeclaration);
           }
           return false;
         }
@@ -80587,7 +80587,7 @@ ${lanes.join("\n")}
               if (!isReachableFlowNode(flow)) {
                 return unreachableNeverType;
               }
-              if (isVariableDeclaration16(node) && (isInJSFile(node) || isVarConstLike2(node))) {
+              if (isVariableDeclaration17(node) && (isInJSFile(node) || isVarConstLike2(node))) {
                 const init = getDeclaredExpandoInitializer(node);
                 if (init && (init.kind === 219 || init.kind === 220)) {
                   return getTypeAtFlowNode(flow.antecedent);
@@ -80595,7 +80595,7 @@ ${lanes.join("\n")}
               }
               return declaredType;
             }
-            if (isVariableDeclaration16(node) && node.parent.parent.kind === 250 && (isMatchingReference(reference2, node.parent.parent.expression) || optionalChainContainsReference(node.parent.parent.expression, reference2))) {
+            if (isVariableDeclaration17(node) && node.parent.parent.kind === 250 && (isMatchingReference(reference2, node.parent.parent.expression) || optionalChainContainsReference(node.parent.parent.expression, reference2))) {
               return getNonNullableTypeIfNeeded(finalizeEvolvingArrayType(getTypeFromFlowType(getTypeAtFlowNode(flow.antecedent))));
             }
             return void 0;
@@ -80842,7 +80842,7 @@ ${lanes.join("\n")}
           }
           function getCandidateDiscriminantPropertyAccess(expr) {
             if (isBindingPattern2(reference2) || isFunctionExpressionOrArrowFunction(reference2) || isObjectLiteralMethod(reference2)) {
-              if (isIdentifier17(expr)) {
+              if (isIdentifier18(expr)) {
                 const symbol = getResolvedSymbol(expr);
                 const declaration = getExportSymbolOfValueSymbolIfExported(symbol).valueDeclaration;
                 if (declaration && (isBindingElement8(declaration) || isParameter6(declaration)) && reference2 === declaration.parent && !declaration.initializer && !declaration.dotDotDotToken) {
@@ -80853,16 +80853,16 @@ ${lanes.join("\n")}
               if (isMatchingReference(reference2, expr.expression)) {
                 return expr;
               }
-            } else if (isIdentifier17(expr)) {
+            } else if (isIdentifier18(expr)) {
               const symbol = getResolvedSymbol(expr);
               if (isConstantVariable(symbol)) {
                 const declaration = symbol.valueDeclaration;
-                if (isVariableDeclaration16(declaration) && !declaration.type && declaration.initializer && isAccessExpression(declaration.initializer) && isMatchingReference(reference2, declaration.initializer.expression)) {
+                if (isVariableDeclaration17(declaration) && !declaration.type && declaration.initializer && isAccessExpression(declaration.initializer) && isMatchingReference(reference2, declaration.initializer.expression)) {
                   return declaration.initializer;
                 }
                 if (isBindingElement8(declaration) && !declaration.initializer) {
                   const parent2 = declaration.parent.parent;
-                  if (isVariableDeclaration16(parent2) && !parent2.type && parent2.initializer && (isIdentifier17(parent2.initializer) || isAccessExpression(parent2.initializer)) && isMatchingReference(reference2, parent2.initializer)) {
+                  if (isVariableDeclaration17(parent2) && !parent2.type && parent2.initializer && (isIdentifier18(parent2.initializer) || isAccessExpression(parent2.initializer)) && isMatchingReference(reference2, parent2.initializer)) {
                     return declaration;
                   }
                 }
@@ -80999,10 +80999,10 @@ ${lanes.join("\n")}
                 const operator = expr.operatorToken.kind;
                 const left = getReferenceCandidate(expr.left);
                 const right = getReferenceCandidate(expr.right);
-                if (left.kind === 222 && isStringLiteralLike13(right)) {
+                if (left.kind === 222 && isStringLiteralLike14(right)) {
                   return narrowTypeByTypeof(type, left, operator, right, assumeTrue);
                 }
-                if (right.kind === 222 && isStringLiteralLike13(left)) {
+                if (right.kind === 222 && isStringLiteralLike14(left)) {
                   return narrowTypeByTypeof(type, right, operator, left, assumeTrue);
                 }
                 if (isMatchingReference(reference2, left)) {
@@ -81397,7 +81397,7 @@ ${lanes.join("\n")}
             ) : neverType));
           }
           function isMatchingConstructorReference(expr) {
-            return (isPropertyAccessExpression16(expr) && idText(expr.name) === "constructor" || isElementAccessExpression12(expr) && isStringLiteralLike13(expr.argumentExpression) && expr.argumentExpression.text === "constructor") && isMatchingReference(reference2, expr.expression);
+            return (isPropertyAccessExpression17(expr) && idText(expr.name) === "constructor" || isElementAccessExpression12(expr) && isStringLiteralLike14(expr.argumentExpression) && expr.argumentExpression.text === "constructor") && isMatchingReference(reference2, expr.expression);
           }
           function narrowTypeByConstructor(type, operator, identifier3, assumeTrue) {
             if (assumeTrue ? operator !== 35 && operator !== 37 : operator !== 36 && operator !== 38) {
@@ -81539,11 +81539,11 @@ ${lanes.join("\n")}
                 return narrowTypeByTypePredicate(type, predicate, callExpression, assumeTrue);
               }
             }
-            if (containsMissingType(type) && isAccessExpression(reference2) && isPropertyAccessExpression16(callExpression.expression)) {
+            if (containsMissingType(type) && isAccessExpression(reference2) && isPropertyAccessExpression17(callExpression.expression)) {
               const callAccess = callExpression.expression;
-              if (isMatchingReference(reference2.expression, getReferenceCandidate(callAccess.expression)) && isIdentifier17(callAccess.name) && callAccess.name.escapedText === "hasOwnProperty" && callExpression.arguments.length === 1) {
+              if (isMatchingReference(reference2.expression, getReferenceCandidate(callAccess.expression)) && isIdentifier18(callAccess.name) && callAccess.name.escapedText === "hasOwnProperty" && callExpression.arguments.length === 1) {
                 const argument = callExpression.arguments[0];
-                if (isStringLiteralLike13(argument) && getAccessedPropertyName(reference2) === escapeLeadingUnderscores(argument.text)) {
+                if (isStringLiteralLike14(argument) && getAccessedPropertyName(reference2) === escapeLeadingUnderscores(argument.text)) {
                   return getTypeWithFacts(
                     type,
                     assumeTrue ? 524288 : 65536
@@ -81593,7 +81593,7 @@ ${lanes.join("\n")}
             return type;
           }
           function narrowType(type, expr, assumeTrue) {
-            if (isExpressionOfOptionalChainRoot(expr) || isBinaryExpression11(expr.parent) && (expr.parent.operatorToken.kind === 61 || expr.parent.operatorToken.kind === 78) && expr.parent.left === expr) {
+            if (isExpressionOfOptionalChainRoot(expr) || isBinaryExpression12(expr.parent) && (expr.parent.operatorToken.kind === 61 || expr.parent.operatorToken.kind === 78) && expr.parent.left === expr) {
               return narrowTypeByOptionality(type, expr, assumeTrue);
             }
             switch (expr.kind) {
@@ -81602,7 +81602,7 @@ ${lanes.join("\n")}
                   const symbol = getResolvedSymbol(expr);
                   if (isConstantVariable(symbol)) {
                     const declaration = symbol.valueDeclaration;
-                    if (declaration && isVariableDeclaration16(declaration) && !declaration.type && declaration.initializer && isConstantReference(reference2)) {
+                    if (declaration && isVariableDeclaration17(declaration) && !declaration.type && declaration.initializer && isConstantReference(reference2)) {
                       inlineLevel++;
                       const result3 = narrowType(type, declaration.initializer, assumeTrue);
                       inlineLevel--;
@@ -81712,7 +81712,7 @@ ${lanes.join("\n")}
           return !symbol.lastAssignmentPos || location2 && Math.abs(symbol.lastAssignmentPos) < location2.pos;
         }
         function isSomeSymbolAssigned(rootDeclaration) {
-          Debug.assert(isVariableDeclaration16(rootDeclaration) || isParameter6(rootDeclaration));
+          Debug.assert(isVariableDeclaration17(rootDeclaration) || isParameter6(rootDeclaration));
           return isSomeSymbolAssignedWorker(rootDeclaration.name);
         }
         function isSomeSymbolAssignedWorker(node) {
@@ -81725,7 +81725,7 @@ ${lanes.join("\n")}
           return !!findAncestor(node.parent, (node2) => isFunctionOrSourceFile(node2) && !!(getNodeLinks(node2).flags & 131072));
         }
         function isFunctionOrSourceFile(node) {
-          return isFunctionLikeDeclaration(node) || isSourceFile6(node);
+          return isFunctionLikeDeclaration(node) || isSourceFile7(node);
         }
         function markNodeAssignments(node) {
           switch (node.kind) {
@@ -81801,7 +81801,7 @@ ${lanes.join("\n")}
         }
         function isParameterOrMutableLocalVariable(symbol) {
           const declaration = symbol.valueDeclaration && getRootDeclaration(symbol.valueDeclaration);
-          return !!declaration && (isParameter6(declaration) || isVariableDeclaration16(declaration) && (isCatchClause2(declaration.parent) || isMutableLocalVariableDeclaration(declaration)));
+          return !!declaration && (isParameter6(declaration) || isVariableDeclaration17(declaration) && (isCatchClause2(declaration.parent) || isMutableLocalVariableDeclaration(declaration)));
         }
         function isMutableLocalVariableDeclaration(declaration) {
           return !!(declaration.parent.flags & 1) && !(getCombinedModifierFlags(declaration) & 32 || declaration.parent.parent.kind === 244 && isGlobalSourceFile(declaration.parent.parent.parent));
@@ -81861,7 +81861,7 @@ ${lanes.join("\n")}
           ));
         }
         function hasContextualTypeWithNoGenericTypes(node, checkMode) {
-          const contextualType = (isIdentifier17(node) || isPropertyAccessExpression16(node) || isElementAccessExpression12(node)) && !((isJsxOpeningElement(node.parent) || isJsxSelfClosingElement2(node.parent)) && node.parent.tagName === node) && (checkMode && checkMode & 32 ? getContextualType2(
+          const contextualType = (isIdentifier18(node) || isPropertyAccessExpression17(node) || isElementAccessExpression12(node)) && !((isJsxOpeningElement(node.parent) || isJsxSelfClosingElement2(node.parent)) && node.parent.tagName === node) && (checkMode && checkMode & 32 ? getContextualType2(
             node,
             8
             /* SkipBindingPatterns */
@@ -81919,9 +81919,9 @@ ${lanes.join("\n")}
             case 8:
               return markDecoratorAliasReferenced(location2);
             case 0: {
-              if (isIdentifier17(location2) && (isExpressionNode(location2) || isShorthandPropertyAssignment10(location2.parent) || isImportEqualsDeclaration3(location2.parent) && location2.parent.moduleReference === location2) && shouldMarkIdentifierAliasReferenced(location2)) {
+              if (isIdentifier18(location2) && (isExpressionNode(location2) || isShorthandPropertyAssignment10(location2.parent) || isImportEqualsDeclaration3(location2.parent) && location2.parent.moduleReference === location2) && shouldMarkIdentifierAliasReferenced(location2)) {
                 if (isPropertyAccessOrQualifiedName(location2.parent)) {
-                  const left = isPropertyAccessExpression16(location2.parent) ? location2.parent.expression : location2.parent.left;
+                  const left = isPropertyAccessExpression17(location2.parent) ? location2.parent.expression : location2.parent.left;
                   if (left !== location2) return;
                 }
                 markIdentifierAliasReferenced(location2);
@@ -81972,8 +81972,8 @@ ${lanes.join("\n")}
           }
         }
         function markPropertyAliasReferenced(location2, propSymbol, parentType) {
-          const left = isPropertyAccessExpression16(location2) ? location2.expression : location2.left;
-          if (isThisIdentifier(left) || !isIdentifier17(left)) {
+          const left = isPropertyAccessExpression17(location2) ? location2.expression : location2.left;
+          if (isThisIdentifier(left) || !isIdentifier18(left)) {
             return;
           }
           const parentSymbol = getResolvedSymbol(left);
@@ -81991,7 +81991,7 @@ ${lanes.join("\n")}
           }
           let prop = propSymbol;
           if (!prop && !parentType) {
-            const right = isPropertyAccessExpression16(location2) ? location2.name : location2.right;
+            const right = isPropertyAccessExpression17(location2) ? location2.name : location2.right;
             const lexicallyScopedSymbol = isPrivateIdentifier2(right) && lookupSymbolForPrivateIdentifierDeclaration(right.escapedText, right);
             const assignmentKind = getAssignmentTargetKind(location2);
             const apparentType = getApparentType(assignmentKind !== 0 || isMethodAccessForCall(location2) ? getWidenedType(leftType) : leftType);
@@ -82003,7 +82003,7 @@ ${lanes.join("\n")}
           return;
         }
         function markExportAssignmentAliasReferenced(location2) {
-          if (isIdentifier17(location2.expression)) {
+          if (isIdentifier18(location2.expression)) {
             const id = location2.expression;
             const sym = getExportSymbolOfValueSymbolIfExported(resolveEntityName(
               id,
@@ -82445,7 +82445,7 @@ ${lanes.join("\n")}
           while (flowContainer !== declarationContainer && (flowContainer.kind === 219 || flowContainer.kind === 220 || isObjectLiteralOrClassExpressionMethodOrAccessor(flowContainer)) && (isConstantVariable(localOrExportSymbol) && type !== autoArrayType || isParameterOrMutableLocalVariable(localOrExportSymbol) && isPastLastAssignment(localOrExportSymbol, node))) {
             flowContainer = getControlFlowContainer(flowContainer);
           }
-          const isNeverInitialized = immediateDeclaration && isVariableDeclaration16(immediateDeclaration) && !immediateDeclaration.initializer && !immediateDeclaration.exclamationToken && isMutableLocalVariableDeclaration(immediateDeclaration) && !isSymbolAssignedDefinitely(symbol);
+          const isNeverInitialized = immediateDeclaration && isVariableDeclaration17(immediateDeclaration) && !immediateDeclaration.initializer && !immediateDeclaration.exclamationToken && isMutableLocalVariableDeclaration(immediateDeclaration) && !isSymbolAssignedDefinitely(symbol);
           const assumeInitialized = isParameter22 || isAlias || isOuterVariable && !isNeverInitialized || isSpreadDestructuringAssignmentTarget || isModuleExports || isSameScopedBindingElement(node, declaration) || type !== autoType && type !== autoArrayType && (!strictNullChecks || (type.flags & (3 | 16384)) !== 0 || isInTypeQuery(node) || isInAmbientOrTypeNode(node) || node.parent.kind === 282) || node.parent.kind === 236 || declaration.kind === 261 && declaration.exclamationToken || declaration.flags & 33554432;
           const initialType = isAutomaticTypeInNonNull ? undefinedType : assumeInitialized ? isParameter22 ? removeOptionalityFromDeclaredType(type, declaration) : type : typeIsAutomatic ? undefinedType : getOptionalType(type);
           const flowType = isAutomaticTypeInNonNull ? getNonNullableType(getFlowTypeOfReference(node, type, initialType, flowContainer)) : getFlowTypeOfReference(node, type, initialType, flowContainer);
@@ -82473,7 +82473,7 @@ ${lanes.join("\n")}
           var _a2;
           const parent2 = node.parent;
           if (parent2) {
-            if (isPropertyAccessExpression16(parent2) && parent2.expression === node) {
+            if (isPropertyAccessExpression17(parent2) && parent2.expression === node) {
               return false;
             }
             if (isExportSpecifier(parent2) && parent2.isTypeOnly) {
@@ -82500,7 +82500,7 @@ ${lanes.join("\n")}
           ));
         }
         function checkNestedBlockScopedBinding(node, symbol) {
-          if (languageVersion >= 2 || (symbol.flags & (2 | 32)) === 0 || !symbol.valueDeclaration || isSourceFile6(symbol.valueDeclaration) || symbol.valueDeclaration.parent.kind === 300) {
+          if (languageVersion >= 2 || (symbol.flags & (2 | 32)) === 0 || !symbol.valueDeclaration || isSourceFile7(symbol.valueDeclaration) || symbol.valueDeclaration.parent.kind === 300) {
             return;
           }
           const container = getEnclosingBlockScopeContainer(symbol.valueDeclaration);
@@ -82669,7 +82669,7 @@ ${lanes.join("\n")}
               error2(node, Diagnostics.The_containing_arrow_function_captures_the_global_value_of_this);
             } else if (!type) {
               const diag2 = error2(node, Diagnostics.this_implicitly_has_type_any_because_it_does_not_have_a_type_annotation);
-              if (!isSourceFile6(container)) {
+              if (!isSourceFile7(container)) {
                 const outsideThis = tryGetThisTypeAt(container);
                 if (outsideThis && outsideThis !== globalThisType2) {
                   addRelatedInfo(diag2, createDiagnosticForNode(container, Diagnostics.An_outer_value_of_this_is_shadowed_by_this_container));
@@ -82710,7 +82710,7 @@ ${lanes.join("\n")}
             const type = isStatic(container) ? getTypeOfSymbol(symbol) : getDeclaredTypeOfSymbol(symbol).thisType;
             return getFlowTypeOfReference(node, type);
           }
-          if (isSourceFile6(container)) {
+          if (isSourceFile7(container)) {
             if (container.commonJsModuleIndicator) {
               const fileSymbol = getSymbolOfDeclaration(container);
               return fileSymbol && getTypeOfSymbol(fileSymbol);
@@ -82741,15 +82741,15 @@ ${lanes.join("\n")}
           }
         }
         function getClassNameFromPrototypeMethod(container) {
-          if (container.kind === 219 && isBinaryExpression11(container.parent) && getAssignmentDeclarationKind(container.parent) === 3) {
+          if (container.kind === 219 && isBinaryExpression12(container.parent) && getAssignmentDeclarationKind(container.parent) === 3) {
             return container.parent.left.expression.expression;
-          } else if (container.kind === 175 && container.parent.kind === 211 && isBinaryExpression11(container.parent.parent) && getAssignmentDeclarationKind(container.parent.parent) === 6) {
+          } else if (container.kind === 175 && container.parent.kind === 211 && isBinaryExpression12(container.parent.parent) && getAssignmentDeclarationKind(container.parent.parent) === 6) {
             return container.parent.parent.left.expression;
-          } else if (container.kind === 219 && container.parent.kind === 304 && container.parent.parent.kind === 211 && isBinaryExpression11(container.parent.parent.parent) && getAssignmentDeclarationKind(container.parent.parent.parent) === 6) {
+          } else if (container.kind === 219 && container.parent.kind === 304 && container.parent.parent.kind === 211 && isBinaryExpression12(container.parent.parent.parent) && getAssignmentDeclarationKind(container.parent.parent.parent) === 6) {
             return container.parent.parent.parent.left.expression;
-          } else if (container.kind === 219 && isPropertyAssignment12(container.parent) && isIdentifier17(container.parent.name) && (container.parent.name.escapedText === "value" || container.parent.name.escapedText === "get" || container.parent.name.escapedText === "set") && isObjectLiteralExpression11(container.parent.parent) && isCallExpression18(container.parent.parent.parent) && container.parent.parent.parent.arguments[2] === container.parent.parent && getAssignmentDeclarationKind(container.parent.parent.parent) === 9) {
+          } else if (container.kind === 219 && isPropertyAssignment13(container.parent) && isIdentifier18(container.parent.name) && (container.parent.name.escapedText === "value" || container.parent.name.escapedText === "get" || container.parent.name.escapedText === "set") && isObjectLiteralExpression12(container.parent.parent) && isCallExpression18(container.parent.parent.parent) && container.parent.parent.parent.arguments[2] === container.parent.parent && getAssignmentDeclarationKind(container.parent.parent.parent) === 9) {
             return container.parent.parent.parent.arguments[0].expression;
-          } else if (isMethodDeclaration8(container) && isIdentifier17(container.name) && (container.name.escapedText === "value" || container.name.escapedText === "get" || container.name.escapedText === "set") && isObjectLiteralExpression11(container.parent) && isCallExpression18(container.parent.parent) && container.parent.parent.arguments[2] === container.parent && getAssignmentDeclarationKind(container.parent.parent) === 9) {
+          } else if (isMethodDeclaration8(container) && isIdentifier18(container.name) && (container.name.escapedText === "value" || container.name.escapedText === "get" || container.name.escapedText === "set") && isObjectLiteralExpression12(container.parent) && isCallExpression18(container.parent.parent) && container.parent.parent.arguments[2] === container.parent && getAssignmentDeclarationKind(container.parent.parent) === 9) {
             return container.parent.parent.arguments[0].expression;
           }
         }
@@ -82821,7 +82821,7 @@ ${lanes.join("\n")}
             nodeCheckFlag = 32;
             if (!isCallExpression22 && languageVersion >= 2 && languageVersion <= 8 && (isPropertyDeclaration5(container) || isClassStaticBlockDeclaration(container))) {
               forEachEnclosingBlockScopeContainer(node.parent, (current) => {
-                if (!isSourceFile6(current) || isExternalOrCommonJsModule(current)) {
+                if (!isSourceFile7(current) || isExternalOrCommonJsModule(current)) {
                   getNodeLinks(current).flags |= 2097152;
                 }
               });
@@ -82944,7 +82944,7 @@ ${lanes.join("\n")}
               const target = parent2.left;
               if (isAccessExpression(target)) {
                 const { expression } = target;
-                if (inJs && isIdentifier17(expression)) {
+                if (inJs && isIdentifier18(expression)) {
                   const sourceFile = getSourceFileOfNode(parent2);
                   if (sourceFile.commonJsModuleIndicator && getResolvedSymbol(expression) === sourceFile.symbol) {
                     return void 0;
@@ -83238,10 +83238,10 @@ ${lanes.join("\n")}
           if (canHaveSymbol(e) && e.symbol) {
             return e.symbol;
           }
-          if (isIdentifier17(e)) {
+          if (isIdentifier18(e)) {
             return getResolvedSymbol(e);
           }
-          if (isPropertyAccessExpression16(e)) {
+          if (isPropertyAccessExpression17(e)) {
             const lhsType = getTypeOfExpression(e.expression);
             return isPrivateIdentifier2(e.name) ? tryGetPrivateIdentifierPropertyOfType(lhsType, e.name) : getPropertyOfType(lhsType, e.name.escapedText);
           }
@@ -83289,7 +83289,7 @@ ${lanes.join("\n")}
                 const overallAnnotation = getEffectiveTypeAnnotationNode(decl2);
                 if (overallAnnotation) {
                   return getTypeFromTypeNode(overallAnnotation);
-                } else if (isIdentifier17(lhs.expression)) {
+                } else if (isIdentifier18(lhs.expression)) {
                   const id = lhs.expression;
                   const parentSymbol = resolveName(
                     id,
@@ -83336,7 +83336,7 @@ ${lanes.join("\n")}
           if (kind === 4) {
             return true;
           }
-          if (!isInJSFile(declaration) || kind !== 5 || !isIdentifier17(declaration.left.expression)) {
+          if (!isInJSFile(declaration) || kind !== 5 || !isIdentifier18(declaration.left.expression)) {
             return false;
           }
           const name = declaration.left.expression.escapedText;
@@ -83496,7 +83496,7 @@ ${lanes.join("\n")}
         }
         function getContextualTypeForObjectLiteralElement(element, contextFlags) {
           const objectLiteral = element.parent;
-          const propertyAssignmentType = isPropertyAssignment12(element) && getContextualTypeForVariableLikeDeclaration(element, contextFlags);
+          const propertyAssignmentType = isPropertyAssignment13(element) && getContextualTypeForVariableLikeDeclaration(element, contextFlags);
           if (propertyAssignmentType) {
             return propertyAssignmentType;
           }
@@ -83725,7 +83725,7 @@ ${lanes.join("\n")}
               /*noReductions*/
               true
             );
-            return apparentType.flags & 1048576 && isObjectLiteralExpression11(node) ? discriminateContextualTypeByObjectMembers(node, apparentType) : apparentType.flags & 1048576 && isJsxAttributes(node) ? discriminateContextualTypeByJSXAttributes(node, apparentType) : apparentType;
+            return apparentType.flags & 1048576 && isObjectLiteralExpression12(node) ? discriminateContextualTypeByObjectMembers(node, apparentType) : apparentType.flags & 1048576 && isJsxAttributes(node) ? discriminateContextualTypeByJSXAttributes(node, apparentType) : apparentType;
           }
         }
         function instantiateContextualType(contextualType, node, contextFlags) {
@@ -84401,7 +84401,7 @@ ${lanes.join("\n")}
         function checkComputedPropertyName(node) {
           const links = getNodeLinks(node.expression);
           if (!links.resolvedType) {
-            if ((isTypeLiteralNode(node.parent.parent) || isClassLike(node.parent.parent) || isInterfaceDeclaration(node.parent.parent)) && isBinaryExpression11(node.expression) && node.expression.operatorToken.kind === 103 && node.parent.kind !== 178 && node.parent.kind !== 179) {
+            if ((isTypeLiteralNode(node.parent.parent) || isClassLike(node.parent.parent) || isInterfaceDeclaration(node.parent.parent)) && isBinaryExpression12(node.expression) && node.expression.operatorToken.kind === 103 && node.parent.kind !== 178 && node.parent.kind !== 179) {
               return links.resolvedType = errorType;
             }
             links.resolvedType = checkExpression(node.expression);
@@ -84706,7 +84706,7 @@ ${lanes.join("\n")}
           return name.includes("-");
         }
         function isJsxIntrinsicTagName(tagName) {
-          return isIdentifier17(tagName) && isIntrinsicJsxName(tagName.escapedText) || isJsxNamespacedName(tagName);
+          return isIdentifier18(tagName) && isIntrinsicJsxName(tagName.escapedText) || isJsxNamespacedName(tagName);
         }
         function checkJsxAttribute(node, checkMode) {
           return node.initializer ? checkExpressionForMutableLocation(node.initializer, checkMode) : trueType;
@@ -84752,7 +84752,7 @@ ${lanes.join("\n")}
                 }
                 if (contextualType) {
                   const prop = getPropertyOfType(contextualType, member3.escapedName);
-                  if (prop && prop.declarations && isDeprecatedSymbol(prop) && isIdentifier17(attributeDecl.name)) {
+                  if (prop && prop.declarations && isDeprecatedSymbol(prop) && isIdentifier18(attributeDecl.name)) {
                     addDeprecatedSuggestion(attributeDecl.name, prop.declarations, attributeDecl.name.escapedText);
                   }
                 }
@@ -84917,7 +84917,7 @@ ${lanes.join("\n")}
           if (!links.resolvedSymbol) {
             const intrinsicElementsType = getJsxType(JsxNames.IntrinsicElements, node);
             if (!isErrorType(intrinsicElementsType)) {
-              if (!isIdentifier17(node.tagName) && !isJsxNamespacedName(node.tagName)) return Debug.fail();
+              if (!isIdentifier18(node.tagName) && !isJsxNamespacedName(node.tagName)) return Debug.fail();
               const propName = isJsxNamespacedName(node.tagName) ? getEscapedTextOfJsxNamespacedName(node.tagName) : node.tagName.escapedText;
               const intrinsicProp = getPropertyOfType(intrinsicElementsType, propName);
               if (intrinsicProp) {
@@ -85277,7 +85277,7 @@ ${lanes.join("\n")}
           }
           if (isInJSFile(symbol.valueDeclaration)) {
             const parent2 = symbol.valueDeclaration.parent;
-            return parent2 && isBinaryExpression11(parent2) && getAssignmentDeclarationKind(parent2) === 3;
+            return parent2 && isBinaryExpression12(parent2) && getAssignmentDeclarationKind(parent2) === 3;
           }
         }
         function checkPropertyAccessibility(node, isSuper, writing, type, prop, reportError = true) {
@@ -85419,7 +85419,7 @@ ${lanes.join("\n")}
             return;
           }
           if (nodeText2 !== void 0 && nodeText2.length < 100) {
-            if (isIdentifier17(node) && nodeText2 === "undefined") {
+            if (isIdentifier18(node) && nodeText2 === "undefined") {
               error2(node, Diagnostics.The_value_0_cannot_be_used_here, "undefined");
               return;
             }
@@ -85473,7 +85473,7 @@ ${lanes.join("\n")}
           if (nonNullType.flags & 16384) {
             if (isEntityNameExpression(node)) {
               const nodeText2 = entityNameToString(node);
-              if (isIdentifier17(node) && nodeText2 === "undefined") {
+              if (isIdentifier18(node) && nodeText2 === "undefined") {
                 error2(node, Diagnostics.The_value_0_cannot_be_used_here, nodeText2);
                 return nonNullType;
               }
@@ -85522,7 +85522,7 @@ ${lanes.join("\n")}
             if (!isExpressionNode(privId)) {
               return grammarErrorOnNode(privId, Diagnostics.Private_identifiers_are_only_allowed_in_class_bodies_and_may_only_be_used_as_part_of_a_class_member_declaration_property_access_or_on_the_left_hand_side_of_an_in_expression);
             }
-            const isInOperation = isBinaryExpression11(privId.parent) && privId.parent.operatorToken.kind === 103;
+            const isInOperation = isBinaryExpression12(privId.parent) && privId.parent.operatorToken.kind === 103;
             if (!getSymbolForPrivateIdentifierExpression(privId) && !isInOperation) {
               return grammarErrorOnNode(privId, Diagnostics.Cannot_find_name_0, idText(privId));
             }
@@ -85671,7 +85671,7 @@ ${lanes.join("\n")}
             }
           } else {
             if (isAnyLike) {
-              if (isIdentifier17(left) && parentSymbol) {
+              if (isIdentifier18(left) && parentSymbol) {
                 markLinkedReferences(
                   node,
                   2,
@@ -85726,7 +85726,7 @@ ${lanes.join("\n")}
             if (compilerOptions.noUncheckedIndexedAccess && getAssignmentTargetKind(node) !== 1) {
               propType = getUnionType([propType, missingType]);
             }
-            if (compilerOptions.noPropertyAccessFromIndexSignature && isPropertyAccessExpression16(node)) {
+            if (compilerOptions.noPropertyAccessFromIndexSignature && isPropertyAccessExpression17(node)) {
               error2(right, Diagnostics.Property_0_comes_from_an_index_signature_so_it_must_be_accessed_with_0, unescapeLeadingUnderscores(right.escapedText));
             }
             if (indexInfo.declaration && isDeprecatedDeclaration2(indexInfo.declaration)) {
@@ -85760,7 +85760,7 @@ ${lanes.join("\n")}
                 false,
                 suggestion.valueDeclaration
               );
-              return !(file !== declarationFile && !!declarationFile && isGlobalSourceFile(declarationFile)) && !(excludeClasses && suggestion && suggestion.flags & 32 && suggestionHasNoExtendsOrDecorators) && !(!!node && excludeClasses && isPropertyAccessExpression16(node) && node.expression.kind === 110 && suggestionHasNoExtendsOrDecorators);
+              return !(file !== declarationFile && !!declarationFile && isGlobalSourceFile(declarationFile)) && !(excludeClasses && suggestion && suggestion.flags & 32 && suggestionHasNoExtendsOrDecorators) && !(!!node && excludeClasses && isPropertyAccessExpression17(node) && node.expression.kind === 110 && suggestionHasNoExtendsOrDecorators);
             }
           }
           return false;
@@ -85788,7 +85788,7 @@ ${lanes.join("\n")}
                 }
               }
             }
-          } else if (strictNullChecks && prop && prop.valueDeclaration && isPropertyAccessExpression16(prop.valueDeclaration) && getAssignmentDeclarationPropertyAccessKind(prop.valueDeclaration) && getControlFlowContainer(node) === getControlFlowContainer(prop.valueDeclaration)) {
+          } else if (strictNullChecks && prop && prop.valueDeclaration && isPropertyAccessExpression17(prop.valueDeclaration) && getAssignmentDeclarationPropertyAccessKind(prop.valueDeclaration) && getControlFlowContainer(node) === getControlFlowContainer(prop.valueDeclaration)) {
             assumeUninitialized = true;
           }
           const flowType = getFlowTypeOfReference(node, propType, assumeUninitialized ? getOptionalType(propType) : propType);
@@ -85949,7 +85949,7 @@ ${lanes.join("\n")}
           let props = getPropertiesOfType(containingType);
           if (typeof name !== "string") {
             const parent2 = name.parent;
-            if (isPropertyAccessExpression16(parent2)) {
+            if (isPropertyAccessExpression17(parent2)) {
               props = filter(props, (prop) => isValidPropertyAccessForCompletions(parent2, containingType, prop));
             }
             name = idText(name);
@@ -86190,7 +86190,7 @@ ${lanes.join("\n")}
           if (isErrorType(objectType) || objectType === silentNeverType) {
             return objectType;
           }
-          if (isConstEnumObjectType(objectType) && !isStringLiteralLike13(indexExpression)) {
+          if (isConstEnumObjectType(objectType) && !isStringLiteralLike14(indexExpression)) {
             error2(indexExpression, Diagnostics.A_const_enum_member_can_only_be_accessed_using_a_string_literal);
             return errorType;
           }
@@ -86219,7 +86219,7 @@ ${lanes.join("\n")}
             checkExpression(node.template);
           } else if (isJsxOpeningLikeElement(node)) {
             checkExpression(node.attributes);
-          } else if (isBinaryExpression11(node)) {
+          } else if (isBinaryExpression12(node)) {
             checkExpression(node.left);
           } else if (isCallOrNewExpression(node)) {
             forEach(node.arguments, (argument) => {
@@ -86913,7 +86913,7 @@ ${lanes.join("\n")}
         }
         function getDiagnosticSpanForCallNode(node) {
           const sourceFile = getSourceFileOfNode(node);
-          const { start, length: length2 } = getErrorSpanForNode(sourceFile, isPropertyAccessExpression16(node.expression) ? node.expression.name : node.expression);
+          const { start, length: length2 } = getErrorSpanForNode(sourceFile, isPropertyAccessExpression17(node.expression) ? node.expression.name : node.expression);
           return { start, length: length2, sourceFile };
         }
         function getDiagnosticForCallNode(node, message, ...args) {
@@ -86932,10 +86932,10 @@ ${lanes.join("\n")}
         }
         function getErrorNodeForCallNode(callLike) {
           if (isCallOrNewExpression(callLike)) {
-            return isPropertyAccessExpression16(callLike.expression) ? callLike.expression.name : callLike.expression;
+            return isPropertyAccessExpression17(callLike.expression) ? callLike.expression.name : callLike.expression;
           }
           if (isTaggedTemplateExpression2(callLike)) {
-            return isPropertyAccessExpression16(callLike.tag) ? callLike.tag.name : callLike.tag;
+            return isPropertyAccessExpression17(callLike.tag) ? callLike.tag.name : callLike.tag;
           }
           if (isJsxOpeningLikeElement(callLike)) {
             return callLike.tagName;
@@ -86943,7 +86943,7 @@ ${lanes.join("\n")}
           return callLike;
         }
         function isPromiseResolveArityError(node) {
-          if (!isCallExpression18(node) || !isIdentifier17(node.expression)) return false;
+          if (!isCallExpression18(node) || !isIdentifier18(node.expression)) return false;
           const symbol = resolveName(
             node.expression,
             node.expression.escapedText,
@@ -86954,7 +86954,7 @@ ${lanes.join("\n")}
             false
           );
           const decl = symbol == null ? void 0 : symbol.valueDeclaration;
-          if (!decl || !isParameter6(decl) || !isFunctionExpressionOrArrowFunction(decl.parent) || !isNewExpression13(decl.parent.parent) || !isIdentifier17(decl.parent.parent.expression)) {
+          if (!decl || !isParameter6(decl) || !isFunctionExpressionOrArrowFunction(decl.parent) || !isNewExpression13(decl.parent.parent) || !isIdentifier18(decl.parent.parent.expression)) {
             return false;
           }
           const globalPromiseSymbol = getGlobalPromiseConstructorSymbol(
@@ -88184,10 +88184,10 @@ ${lanes.join("\n")}
           if (!node || !isInJSFile(node)) {
             return false;
           }
-          const func = isFunctionDeclaration9(node) || isFunctionExpression12(node) ? node : (isVariableDeclaration16(node) || isPropertyAssignment12(node)) && node.initializer && isFunctionExpression12(node.initializer) ? node.initializer : void 0;
+          const func = isFunctionDeclaration9(node) || isFunctionExpression12(node) ? node : (isVariableDeclaration17(node) || isPropertyAssignment13(node)) && node.initializer && isFunctionExpression12(node.initializer) ? node.initializer : void 0;
           if (func) {
             if (getJSDocClassTag(node)) return true;
-            if (isPropertyAssignment12(walkUpParenthesizedExpressions(func.parent))) return false;
+            if (isPropertyAssignment13(walkUpParenthesizedExpressions(func.parent))) return false;
             const symbol = getSymbolOfDeclaration(func);
             return !!((_a2 = symbol == null ? void 0 : symbol.members) == null ? void 0 : _a2.size);
           }
@@ -88231,23 +88231,23 @@ ${lanes.join("\n")}
           }
           let name;
           let decl;
-          if (isVariableDeclaration16(node.parent) && node.parent.initializer === node) {
+          if (isVariableDeclaration17(node.parent) && node.parent.initializer === node) {
             if (!isInJSFile(node) && !(isVarConstLike2(node.parent) && isFunctionLikeDeclaration(node))) {
               return void 0;
             }
             name = node.parent.name;
             decl = node.parent;
-          } else if (isBinaryExpression11(node.parent)) {
+          } else if (isBinaryExpression12(node.parent)) {
             const parentNode = node.parent;
             const parentNodeOperator = node.parent.operatorToken.kind;
             if (parentNodeOperator === 64 && (allowDeclaration || parentNode.right === node)) {
               name = parentNode.left;
               decl = name;
             } else if (parentNodeOperator === 57 || parentNodeOperator === 61) {
-              if (isVariableDeclaration16(parentNode.parent) && parentNode.parent.initializer === parentNode) {
+              if (isVariableDeclaration17(parentNode.parent) && parentNode.parent.initializer === parentNode) {
                 name = parentNode.parent.name;
                 decl = parentNode.parent;
-              } else if (isBinaryExpression11(parentNode.parent) && parentNode.parent.operatorToken.kind === 64 && (allowDeclaration || parentNode.parent.right === parentNode)) {
+              } else if (isBinaryExpression12(parentNode.parent) && parentNode.parent.operatorToken.kind === 64 && (allowDeclaration || parentNode.parent.right === parentNode)) {
                 name = parentNode.parent.left;
                 decl = name;
               }
@@ -88272,9 +88272,9 @@ ${lanes.join("\n")}
           while (parent2 && parent2.kind === 212) {
             parent2 = parent2.parent;
           }
-          if (parent2 && isBinaryExpression11(parent2) && isPrototypeAccess(parent2.left) && parent2.operatorToken.kind === 64) {
+          if (parent2 && isBinaryExpression12(parent2) && isPrototypeAccess(parent2.left) && parent2.operatorToken.kind === 64) {
             const right = getInitializerOfBinaryExpression(parent2);
-            return isObjectLiteralExpression11(right) && right;
+            return isObjectLiteralExpression12(right) && right;
           }
         }
         function checkCallExpression(node, checkMode) {
@@ -88365,10 +88365,10 @@ ${lanes.join("\n")}
         function isSymbolOrSymbolForCall(node) {
           if (!isCallExpression18(node)) return false;
           let left = node.expression;
-          if (isPropertyAccessExpression16(left) && left.name.escapedText === "for") {
+          if (isPropertyAccessExpression17(left) && left.name.escapedText === "for") {
             left = left.expression;
           }
-          if (!isIdentifier17(left) || left.escapedText !== "Symbol") {
+          if (!isIdentifier18(left) || left.escapedText !== "Symbol") {
             return false;
           }
           const globalESSymbol = getGlobalESSymbolConstructorSymbol(
@@ -88464,7 +88464,7 @@ ${lanes.join("\n")}
           if (allowSyntheticDefaultImports && type && !isErrorType(type)) {
             const synthType = type;
             if (!synthType.syntheticType) {
-              const file = (_a2 = originalSymbol.declarations) == null ? void 0 : _a2.find(isSourceFile6);
+              const file = (_a2 = originalSymbol.declarations) == null ? void 0 : _a2.find(isSourceFile7);
               const hasSyntheticDefault = canHaveSyntheticDefault(
                 file,
                 originalSymbol,
@@ -88505,7 +88505,7 @@ ${lanes.join("\n")}
           )) {
             return false;
           }
-          if (!isIdentifier17(node.expression)) return Debug.fail();
+          if (!isIdentifier18(node.expression)) return Debug.fail();
           const resolvedRequire = resolveName(
             node.expression,
             node.expression.escapedText,
@@ -88845,7 +88845,7 @@ ${lanes.join("\n")}
             const restParameter = tryCast(restSymbol == null ? void 0 : restSymbol.valueDeclaration, isParameter6);
             return restParameter ? getTupleElementLabelFromBindingElement(restParameter, index, elementFlags) : `${(restSymbol == null ? void 0 : restSymbol.escapedName) ?? "arg"}_${index}`;
           }
-          Debug.assert(isIdentifier17(d.name));
+          Debug.assert(isIdentifier18(d.name));
           return d.name.escapedText;
         }
         function getParameterNameAtPosition(signature, pos, overrideRestType) {
@@ -88892,7 +88892,7 @@ ${lanes.join("\n")}
             const associatedName = associatedNames == null ? void 0 : associatedNames[index];
             const isRestTupleElement = !!(associatedName == null ? void 0 : associatedName.dotDotDotToken);
             if (associatedName) {
-              Debug.assert(isIdentifier17(associatedName.name));
+              Debug.assert(isIdentifier18(associatedName.name));
               return { parameter: associatedName.name, parameterName: associatedName.name.escapedText, isRestParameter: isRestTupleElement };
             }
             return void 0;
@@ -88903,10 +88903,10 @@ ${lanes.join("\n")}
           return void 0;
         }
         function getParameterDeclarationIdentifier(symbol) {
-          return symbol.valueDeclaration && isParameter6(symbol.valueDeclaration) && isIdentifier17(symbol.valueDeclaration.name) && symbol.valueDeclaration.name;
+          return symbol.valueDeclaration && isParameter6(symbol.valueDeclaration) && isIdentifier18(symbol.valueDeclaration.name) && symbol.valueDeclaration.name;
         }
         function isValidDeclarationForTupleLabel(d) {
-          return d.kind === 203 || isParameter6(d) && d.name && isIdentifier17(d.name);
+          return d.kind === 203 || isParameter6(d) && d.name && isIdentifier18(d.name);
         }
         function getNameableDeclarationAtPosition(signature, pos) {
           const paramCount = signature.parameters.length - (signatureHasRestParameter(signature) ? 1 : 0);
@@ -89788,7 +89788,7 @@ ${lanes.join("\n")}
           if (!(returnType.flags & 16)) return void 0;
           return forEach(func.parameters, (param, i) => {
             const initType = getTypeOfSymbol(param.symbol);
-            if (!initType || initType.flags & 16 || !isIdentifier17(param.name) || isSymbolAssigned(param.symbol) || isRestParameter(param)) {
+            if (!initType || initType.flags & 16 || !isIdentifier18(param.name) || isSymbolAssigned(param.symbol) || isRestParameter(param)) {
               return;
             }
             const trueType2 = checkIfExpressionRefinesParameter(func, expr, param, initType);
@@ -89987,7 +89987,7 @@ ${lanes.join("\n")}
             if (!writableType || writableType === falseType || writableType === regularFalseType) {
               return true;
             }
-            if (writableProp && writableProp.valueDeclaration && isPropertyAssignment12(writableProp.valueDeclaration)) {
+            if (writableProp && writableProp.valueDeclaration && isPropertyAssignment13(writableProp.valueDeclaration)) {
               const initializer = writableProp.valueDeclaration.initializer;
               const rawOriginalType = checkExpression(initializer);
               if (rawOriginalType === falseType || rawOriginalType === regularFalseType) {
@@ -90014,7 +90014,7 @@ ${lanes.join("\n")}
                 return true;
               }
               if (symbol.valueDeclaration) {
-                const isAssignmentDeclaration2 = isBinaryExpression11(symbol.valueDeclaration);
+                const isAssignmentDeclaration2 = isBinaryExpression12(symbol.valueDeclaration);
                 const isLocalPropertyDeclaration = ctor.parent === symbol.valueDeclaration.parent;
                 const isLocalParameterProperty = ctor === symbol.valueDeclaration.parent;
                 const isLocalThisPropertyAssignment = isAssignmentDeclaration2 && ((_a2 = symbol.parent) == null ? void 0 : _a2.valueDeclaration) === ctor.parent;
@@ -90060,7 +90060,7 @@ ${lanes.join("\n")}
             error2(expr, Diagnostics.The_operand_of_a_delete_operator_must_be_a_property_reference);
             return booleanType;
           }
-          if (isPropertyAccessExpression16(expr) && isPrivateIdentifier2(expr.name)) {
+          if (isPropertyAccessExpression17(expr) && isPrivateIdentifier2(expr.name)) {
             error2(expr, Diagnostics.The_operand_of_a_delete_operator_cannot_be_a_private_identifier);
           }
           const links = getNodeLinks(expr);
@@ -90746,7 +90746,7 @@ ${lanes.join("\n")}
             return state;
           }
           function maybeCheckExpression(state, node) {
-            if (isBinaryExpression11(node)) {
+            if (isBinaryExpression12(node)) {
               return node;
             }
             setLastResult(state, checkExpression(node, state.checkMode));
@@ -90768,15 +90768,15 @@ ${lanes.join("\n")}
           if (node.operatorToken.kind !== 61) {
             return;
           }
-          if (isBinaryExpression11(node.parent)) {
+          if (isBinaryExpression12(node.parent)) {
             const { left, operatorToken } = node.parent;
-            if (isBinaryExpression11(left) && operatorToken.kind === 57) {
+            if (isBinaryExpression12(left) && operatorToken.kind === 57) {
               grammarErrorOnNode(left, Diagnostics._0_and_1_operations_cannot_be_mixed_without_parentheses, tokenToString(
                 61
                 /* QuestionQuestionToken */
               ), tokenToString(operatorToken.kind));
             }
-          } else if (isBinaryExpression11(node.left)) {
+          } else if (isBinaryExpression12(node.left)) {
             const { operatorToken } = node.left;
             if (operatorToken.kind === 57 || operatorToken.kind === 56) {
               grammarErrorOnNode(node.left, Diagnostics._0_and_1_operations_cannot_be_mixed_without_parentheses, tokenToString(operatorToken.kind), tokenToString(
@@ -90784,7 +90784,7 @@ ${lanes.join("\n")}
                 /* QuestionQuestionToken */
               ));
             }
-          } else if (isBinaryExpression11(node.right)) {
+          } else if (isBinaryExpression12(node.right)) {
             const { operatorToken } = node.right;
             if (operatorToken.kind === 56) {
               grammarErrorOnNode(node.right, Diagnostics._0_and_1_operations_cannot_be_mixed_without_parentheses, tokenToString(
@@ -90828,7 +90828,7 @@ ${lanes.join("\n")}
           }
         }
         function isNotWithinNullishCoalesceExpression(node) {
-          return !isBinaryExpression11(node.parent) || node.parent.operatorToken.kind !== 61;
+          return !isBinaryExpression12(node.parent) || node.parent.operatorToken.kind !== 61;
         }
         function getSyntacticNullishnessSemantics(node) {
           node = skipOuterExpressions(node);
@@ -91154,7 +91154,7 @@ ${lanes.join("\n")}
               return resultType2;
             }
             case 64:
-              const declKind = isBinaryExpression11(left.parent) ? getAssignmentDeclarationKind(left.parent) : 0;
+              const declKind = isBinaryExpression12(left.parent) ? getAssignmentDeclarationKind(left.parent) : 0;
               checkAssignmentDeclaration(declKind, rightType);
               if (isAssignmentDeclaration2(declKind)) {
                 if (!(rightType.flags & 524288) || declKind !== 2 && declKind !== 6 && !isEmptyObjectType(rightType) && !isFunctionObjectType(rightType) && !(getObjectFlags(rightType) & 1)) {
@@ -91215,8 +91215,8 @@ ${lanes.join("\n")}
             }
           }
           function isIndirectCall(node) {
-            return node.parent.kind === 218 && isNumericLiteral8(node.left) && node.left.text === "0" && (isCallExpression18(node.parent.parent) && node.parent.parent.expression === node.parent || node.parent.parent.kind === 216) && // special-case for "eval" because it's the only non-access case where an indirect call actually affects behavior.
-            (isAccessExpression(node.right) || isIdentifier17(node.right) && node.right.escapedText === "eval");
+            return node.parent.kind === 218 && isNumericLiteral9(node.left) && node.left.text === "0" && (isCallExpression18(node.parent.parent) && node.parent.parent.expression === node.parent || node.parent.parent.kind === 216) && // special-case for "eval" because it's the only non-access case where an indirect call actually affects behavior.
+            (isAccessExpression(node.right) || isIdentifier18(node.right) && node.right.escapedText === "eval");
           }
           function checkForDisallowedESSymbolOperand(operator2) {
             const offendingSymbolOperand = maybeTypeOfKindConsideringBaseConstraint(
@@ -91266,7 +91266,7 @@ ${lanes.join("\n")}
               }
               if (checkReferenceExpression(left, Diagnostics.The_left_hand_side_of_an_assignment_expression_must_be_a_variable_or_a_property_access, Diagnostics.The_left_hand_side_of_an_assignment_expression_may_not_be_an_optional_property_access)) {
                 let headMessage;
-                if (exactOptionalPropertyTypes && isPropertyAccessExpression16(left) && maybeTypeOfKind(
+                if (exactOptionalPropertyTypes && isPropertyAccessExpression17(left) && maybeTypeOfKind(
                   valueType,
                   32768
                   /* Undefined */
@@ -91292,7 +91292,7 @@ ${lanes.join("\n")}
               case 4:
                 const symbol = getSymbolOfNode(left);
                 const init = getAssignedExpandoInitializer(right);
-                return !!init && isObjectLiteralExpression11(init) && !!((_a2 = symbol == null ? void 0 : symbol.exports) == null ? void 0 : _a2.size);
+                return !!init && isObjectLiteralExpression12(init) && !!((_a2 = symbol == null ? void 0 : symbol.exports) == null ? void 0 : _a2.size);
               default:
                 return false;
             }
@@ -91365,7 +91365,7 @@ ${lanes.join("\n")}
             }
           }
           function isGlobalNaN(expr) {
-            if (isIdentifier17(expr) && expr.escapedText === "NaN") {
+            if (isIdentifier18(expr) && expr.escapedText === "NaN") {
               const globalNaNSymbol = getGlobalNaNSymbol();
               return !!globalNaNSymbol && globalNaNSymbol === getResolvedSymbol(expr);
             }
@@ -91742,7 +91742,7 @@ ${lanes.join("\n")}
             node,
             0
             /* None */
-          )) || (isParenthesizedExpression13(parent2) || isArrayLiteralExpression8(parent2) || isSpreadElement12(parent2)) && isConstContext(parent2) || (isPropertyAssignment12(parent2) || isShorthandPropertyAssignment10(parent2) || isTemplateSpan(parent2)) && isConstContext(parent2.parent);
+          )) || (isParenthesizedExpression13(parent2) || isArrayLiteralExpression8(parent2) || isSpreadElement12(parent2)) && isConstContext(parent2) || (isPropertyAssignment13(parent2) || isShorthandPropertyAssignment10(parent2) || isTemplateSpan(parent2)) && isConstContext(parent2.parent);
         }
         function checkExpressionForMutableLocation(node, checkMode, forceTuple) {
           const type = checkExpression(node, checkMode, forceTuple);
@@ -92221,14 +92221,14 @@ ${lanes.join("\n")}
             if (!(func.kind === 177 && nodeIsPresent(func.body))) {
               error2(node, Diagnostics.A_parameter_property_is_only_allowed_in_a_constructor_implementation);
             }
-            if (func.kind === 177 && isIdentifier17(node.name) && node.name.escapedText === "constructor") {
+            if (func.kind === 177 && isIdentifier18(node.name) && node.name.escapedText === "constructor") {
               error2(node.name, Diagnostics.constructor_cannot_be_used_as_a_parameter_property_name);
             }
           }
           if (!node.initializer && isOptionalDeclaration(node) && isBindingPattern2(node.name) && func.body) {
             error2(node, Diagnostics.A_binding_pattern_parameter_cannot_be_optional_in_an_implementation_signature);
           }
-          if (node.name && isIdentifier17(node.name) && (node.name.escapedText === "this" || node.name.escapedText === "new")) {
+          if (node.name && isIdentifier18(node.name) && (node.name.escapedText === "this" || node.name.escapedText === "new")) {
             if (func.parameters.indexOf(node) !== 0) {
               error2(node, Diagnostics.A_0_parameter_must_be_the_first_parameter, node.name.escapedText);
             }
@@ -92586,7 +92586,7 @@ ${lanes.join("\n")}
         }
         function checkMethodDeclaration(node) {
           if (!checkGrammarMethod(node)) checkGrammarComputedPropertyName(node.name);
-          if (isMethodDeclaration8(node) && node.asteriskToken && isIdentifier17(node.name) && idText(node.name) === "constructor") {
+          if (isMethodDeclaration8(node) && node.asteriskToken && isIdentifier18(node.name) && idText(node.name) === "constructor") {
             error2(node.name, Diagnostics.Class_constructor_may_not_be_a_generator);
           }
           checkFunctionOrMethodDeclaration(node);
@@ -92696,7 +92696,7 @@ ${lanes.join("\n")}
           return !!forEachChild5(node, nodeImmediatelyReferencesSuperOrThis);
         }
         function checkAccessorDeclaration(node) {
-          if (isIdentifier17(node.name) && idText(node.name) === "constructor" && isClassLike(node.parent)) {
+          if (isIdentifier18(node.name) && idText(node.name) === "constructor" && isClassLike(node.parent)) {
             error2(node.name, Diagnostics.Class_constructor_may_not_be_an_accessor);
           }
           addLazyDiagnostic(checkAccessorDeclarationDiagnostics);
@@ -93681,7 +93681,7 @@ ${lanes.join("\n")}
                 canHaveCallExpression = false;
                 continue;
               }
-              if (isPropertyAccessExpression16(node)) {
+              if (isPropertyAccessExpression17(node)) {
                 if (node.questionDotToken) {
                   errorNode = node.questionDotToken;
                 }
@@ -93689,7 +93689,7 @@ ${lanes.join("\n")}
                 canHaveCallExpression = false;
                 continue;
               }
-              if (!isIdentifier17(node)) {
+              if (!isIdentifier18(node)) {
                 errorNode = node;
               }
               break;
@@ -93810,7 +93810,7 @@ ${lanes.join("\n")}
               return void 0;
             }
             if (commonEntityName) {
-              if (!isIdentifier17(commonEntityName) || !isIdentifier17(individualEntityName) || commonEntityName.escapedText !== individualEntityName.escapedText) {
+              if (!isIdentifier18(commonEntityName) || !isIdentifier18(individualEntityName) || commonEntityName.escapedText !== individualEntityName.escapedText) {
                 return void 0;
               }
             } else {
@@ -94117,7 +94117,7 @@ ${lanes.join("\n")}
           addDiagnostic(declaration, 0, createDiagnosticForNode(node, message, name));
         }
         function isIdentifierThatStartsWithUnderscore(node) {
-          return isIdentifier17(node) && idText(node).charCodeAt(0) === 95;
+          return isIdentifier18(node) && idText(node).charCodeAt(0) === 95;
         }
         function checkUnusedClassMembers(node, addDiagnostic) {
           for (const member3 of node.members) {
@@ -94208,7 +94208,7 @@ ${lanes.join("\n")}
             }
             return isIdentifierThatStartsWithUnderscore(declaration.name);
           }
-          return isAmbientModule(declaration) || (isVariableDeclaration16(declaration) && isForInOrOfStatement(declaration.parent.parent) || isImportedDeclaration(declaration)) && isIdentifierThatStartsWithUnderscore(declaration.name);
+          return isAmbientModule(declaration) || (isVariableDeclaration17(declaration) && isForInOrOfStatement(declaration.parent.parent) || isImportedDeclaration(declaration)) && isIdentifierThatStartsWithUnderscore(declaration.name);
         }
         function checkUnusedLocalsAndParameters(nodeWithLocals, addDiagnostic) {
           const unusedImports = /* @__PURE__ */ new Map();
@@ -94230,7 +94230,7 @@ ${lanes.join("\n")}
                   if (declaration === lastElement || !last(declaration.parent.elements).dotDotDotToken) {
                     addToGroup(unusedDestructures, declaration.parent, declaration, getNodeId);
                   }
-                } else if (isVariableDeclaration16(declaration)) {
+                } else if (isVariableDeclaration17(declaration)) {
                   const blockScopeKind = getCombinedNodeFlagsCached(declaration) & 7;
                   const name = getNameOfDeclaration(declaration);
                   if (blockScopeKind !== 4 && blockScopeKind !== 6 || !name || !isIdentifierThatStartsWithUnderscore(name)) {
@@ -94442,7 +94442,7 @@ ${lanes.join("\n")}
         function checkWeakMapSetCollision(node) {
           const enclosingBlockScope = getEnclosingBlockScopeContainer(node);
           if (getNodeCheckFlags(enclosingBlockScope) & 1048576) {
-            Debug.assert(isNamedDeclaration(node) && isIdentifier17(node.name) && typeof node.name.escapedText === "string", "The target of a WeakMap/WeakSet collision check should be an identifier");
+            Debug.assert(isNamedDeclaration(node) && isIdentifier18(node.name) && typeof node.name.escapedText === "string", "The target of a WeakMap/WeakSet collision check should be an identifier");
             errorSkippedOn("noEmit", node, Diagnostics.Compiler_reserves_name_0_when_emitting_private_identifier_downlevel, node.name.escapedText);
           }
         }
@@ -94471,7 +94471,7 @@ ${lanes.join("\n")}
             }
           }
           if (hasCollision) {
-            Debug.assert(isNamedDeclaration(node) && isIdentifier17(node.name), "The target of a Reflect collision check should be an identifier");
+            Debug.assert(isNamedDeclaration(node) && isIdentifier18(node.name), "The target of a Reflect collision check should be an identifier");
             errorSkippedOn("noEmit", node, Diagnostics.Duplicate_identifier_0_Compiler_reserves_name_1_when_emitting_super_references_in_static_initializers, declarationNameToString(node.name), "Reflect");
           }
         }
@@ -94496,7 +94496,7 @@ ${lanes.join("\n")}
           }
           const symbol = getSymbolOfDeclaration(node);
           if (symbol.flags & 1) {
-            if (!isIdentifier17(node.name)) return Debug.fail();
+            if (!isIdentifier18(node.name)) return Debug.fail();
             const localDeclarationSymbol = resolveName(
               node,
               node.name.escapedText,
@@ -94542,7 +94542,7 @@ ${lanes.join("\n")}
             }
           }
           if (isBindingElement8(node)) {
-            if (node.propertyName && isIdentifier17(node.name) && isPartOfParameterDeclaration(node) && nodeIsMissing(getContainingFunction(node).body)) {
+            if (node.propertyName && isIdentifier18(node.name) && isPartOfParameterDeclaration(node) && nodeIsMissing(getContainingFunction(node).body)) {
               potentialUnusedRenamedBindingElementsInTypes.push(node);
               return;
             }
@@ -94637,7 +94637,7 @@ ${lanes.join("\n")}
           if (node === symbol.valueDeclaration) {
             const initializer = hasOnlyExpressionInitializer(node) && getEffectiveInitializer(node);
             if (initializer) {
-              const isJSObjectLiteralInitializer = isInJSFile(node) && isObjectLiteralExpression11(initializer) && (initializer.properties.length === 0 || isPrototypeAccess(node.name)) && !!((_a2 = symbol.exports) == null ? void 0 : _a2.size);
+              const isJSObjectLiteralInitializer = isInJSFile(node) && isObjectLiteralExpression12(initializer) && (initializer.properties.length === 0 || isPrototypeAccess(node.name)) && !!((_a2 = symbol.exports) == null ? void 0 : _a2.size);
               if (!isJSObjectLiteralInitializer && node.parent.parent.kind !== 250) {
                 const initializerType = checkExpressionCached(initializer);
                 checkTypeAssignableToAndOptionallyElaborate(
@@ -94777,7 +94777,7 @@ ${lanes.join("\n")}
           function bothHelper(condExpr2, body2) {
             condExpr2 = skipParentheses(condExpr2);
             helper(condExpr2, body2);
-            while (isBinaryExpression11(condExpr2) && (condExpr2.operatorToken.kind === 57 || condExpr2.operatorToken.kind === 61)) {
+            while (isBinaryExpression12(condExpr2) && (condExpr2.operatorToken.kind === 57 || condExpr2.operatorToken.kind === 61)) {
               condExpr2 = skipParentheses(condExpr2.left);
               helper(condExpr2, body2);
             }
@@ -94792,11 +94792,11 @@ ${lanes.join("\n")}
               return;
             }
             const type = location2 === condExpr2 ? condType : checkExpression(location2);
-            if (type.flags & 1024 && isPropertyAccessExpression16(location2) && (getNodeLinks(location2.expression).resolvedSymbol ?? unknownSymbol).flags & 384) {
+            if (type.flags & 1024 && isPropertyAccessExpression17(location2) && (getNodeLinks(location2.expression).resolvedSymbol ?? unknownSymbol).flags & 384) {
               error2(location2, Diagnostics.This_condition_will_always_return_0, !!type.value ? "true" : "false");
               return;
             }
-            const isPropertyExpressionCast = isPropertyAccessExpression16(location2) && isTypeAssertion(location2.expression);
+            const isPropertyExpressionCast = isPropertyAccessExpression17(location2) && isTypeAssertion(location2.expression);
             if (!hasTypeFacts(
               type,
               4194304
@@ -94811,12 +94811,12 @@ ${lanes.join("\n")}
             if (callSignatures.length === 0 && !isPromise) {
               return;
             }
-            const testedNode = isIdentifier17(location2) ? location2 : isPropertyAccessExpression16(location2) ? location2.name : void 0;
+            const testedNode = isIdentifier18(location2) ? location2 : isPropertyAccessExpression17(location2) ? location2.name : void 0;
             const testedSymbol = testedNode && getSymbolAtLocation(testedNode);
             if (!testedSymbol && !isPromise) {
               return;
             }
-            const isUsed = testedSymbol && isBinaryExpression11(condExpr2.parent) && isSymbolUsedInBinaryExpressionChain(condExpr2.parent, testedSymbol) || testedSymbol && body2 && isSymbolUsedInConditionBody(condExpr2, body2, testedNode, testedSymbol);
+            const isUsed = testedSymbol && isBinaryExpression12(condExpr2.parent) && isSymbolUsedInBinaryExpressionChain(condExpr2.parent, testedSymbol) || testedSymbol && body2 && isSymbolUsedInConditionBody(condExpr2, body2, testedNode, testedSymbol);
             if (!isUsed) {
               if (isPromise) {
                 errorAndMaybeSuggestAwait(
@@ -94834,18 +94834,18 @@ ${lanes.join("\n")}
         }
         function isSymbolUsedInConditionBody(expr, body, testedNode, testedSymbol) {
           return !!forEachChild5(body, function check2(childNode) {
-            if (isIdentifier17(childNode)) {
+            if (isIdentifier18(childNode)) {
               const childSymbol = getSymbolAtLocation(childNode);
               if (childSymbol && childSymbol === testedSymbol) {
-                if (isIdentifier17(expr) || isIdentifier17(testedNode) && isBinaryExpression11(testedNode.parent)) {
+                if (isIdentifier18(expr) || isIdentifier18(testedNode) && isBinaryExpression12(testedNode.parent)) {
                   return true;
                 }
                 let testedExpression = testedNode.parent;
                 let childExpression = childNode.parent;
                 while (testedExpression && childExpression) {
-                  if (isIdentifier17(testedExpression) && isIdentifier17(childExpression) || testedExpression.kind === 110 && childExpression.kind === 110) {
+                  if (isIdentifier18(testedExpression) && isIdentifier18(childExpression) || testedExpression.kind === 110 && childExpression.kind === 110) {
                     return getSymbolAtLocation(testedExpression) === getSymbolAtLocation(childExpression);
-                  } else if (isPropertyAccessExpression16(testedExpression) && isPropertyAccessExpression16(childExpression)) {
+                  } else if (isPropertyAccessExpression17(testedExpression) && isPropertyAccessExpression17(childExpression)) {
                     if (getSymbolAtLocation(testedExpression.name) !== getSymbolAtLocation(childExpression.name)) {
                       return false;
                     }
@@ -94864,9 +94864,9 @@ ${lanes.join("\n")}
           });
         }
         function isSymbolUsedInBinaryExpressionChain(node, testedSymbol) {
-          while (isBinaryExpression11(node) && node.operatorToken.kind === 56) {
+          while (isBinaryExpression12(node) && node.operatorToken.kind === 56) {
             const isUsed = forEachChild5(node.right, function visit(child) {
-              if (isIdentifier17(child)) {
+              if (isIdentifier18(child)) {
                 const symbol = getSymbolAtLocation(child);
                 if (symbol && symbol === testedSymbol) {
                   return true;
@@ -95849,7 +95849,7 @@ ${lanes.join("\n")}
         }
         function checkThrowStatement(node) {
           if (!checkGrammarStatementInAmbientContext(node)) {
-            if (isIdentifier17(node.expression) && !node.expression.escapedText) {
+            if (isIdentifier18(node.expression) && !node.expression.escapedText) {
               grammarErrorAfterFirstToken(node, Diagnostics.Line_break_not_permitted_here);
             }
           }
@@ -95993,7 +95993,7 @@ ${lanes.join("\n")}
           const parameters2 = /* @__PURE__ */ new Set();
           const excludedParameters = /* @__PURE__ */ new Set();
           forEach(node.parameters, ({ name }, index) => {
-            if (isIdentifier17(name)) {
+            if (isIdentifier18(name)) {
               parameters2.add(name.escapedText);
             }
             if (isBindingPattern2(name)) {
@@ -96004,12 +96004,12 @@ ${lanes.join("\n")}
           if (containsArguments) {
             const lastJSDocParamIndex = jsdocParameters.length - 1;
             const lastJSDocParam = jsdocParameters[lastJSDocParamIndex];
-            if (isJs && lastJSDocParam && isIdentifier17(lastJSDocParam.name) && lastJSDocParam.typeExpression && lastJSDocParam.typeExpression.type && !parameters2.has(lastJSDocParam.name.escapedText) && !excludedParameters.has(lastJSDocParamIndex) && !isArrayType(getTypeFromTypeNode(lastJSDocParam.typeExpression.type))) {
+            if (isJs && lastJSDocParam && isIdentifier18(lastJSDocParam.name) && lastJSDocParam.typeExpression && lastJSDocParam.typeExpression.type && !parameters2.has(lastJSDocParam.name.escapedText) && !excludedParameters.has(lastJSDocParamIndex) && !isArrayType(getTypeFromTypeNode(lastJSDocParam.typeExpression.type))) {
               error2(lastJSDocParam.name, Diagnostics.JSDoc_param_tag_has_name_0_but_there_is_no_parameter_with_that_name_It_would_match_arguments_if_it_had_an_array_type, idText(lastJSDocParam.name));
             }
           } else {
             forEach(jsdocParameters, ({ name, isNameFirst }, index) => {
-              if (excludedParameters.has(index) || isIdentifier17(name) && parameters2.has(name.escapedText)) {
+              if (excludedParameters.has(index) || isIdentifier18(name) && parameters2.has(name.escapedText)) {
                 return;
               }
               if (isQualifiedName(name)) {
@@ -96165,7 +96165,7 @@ ${lanes.join("\n")}
               4194304
               /* SetFunctionName */
             );
-            if ((isPropertyAssignment12(parent2) || isPropertyDeclaration5(parent2) || isBindingElement8(parent2)) && isComputedPropertyName8(parent2.name)) {
+            if ((isPropertyAssignment13(parent2) || isPropertyDeclaration5(parent2) || isBindingElement8(parent2)) && isComputedPropertyName8(parent2.name)) {
               checkExternalEmitHelpers(
                 location2,
                 8388608
@@ -96598,7 +96598,7 @@ ${lanes.join("\n")}
               const basePropertyFlags = base.flags & 98308;
               const derivedPropertyFlags = derived.flags & 98308;
               if (basePropertyFlags && derivedPropertyFlags) {
-                if ((getCheckFlags(base) & 6 ? (_b = base.declarations) == null ? void 0 : _b.some((d) => isPropertyAbstractOrInterface(d, baseDeclarationFlags)) : (_c = base.declarations) == null ? void 0 : _c.every((d) => isPropertyAbstractOrInterface(d, baseDeclarationFlags))) || getCheckFlags(base) & 262144 || derived.valueDeclaration && isBinaryExpression11(derived.valueDeclaration)) {
+                if ((getCheckFlags(base) & 6 ? (_b = base.declarations) == null ? void 0 : _b.some((d) => isPropertyAbstractOrInterface(d, baseDeclarationFlags)) : (_c = base.declarations) == null ? void 0 : _c.every((d) => isPropertyAbstractOrInterface(d, baseDeclarationFlags))) || getCheckFlags(base) & 262144 || derived.valueDeclaration && isBinaryExpression12(derived.valueDeclaration)) {
                   continue;
                 }
                 const overriddenInstanceProperty = basePropertyFlags !== 4 && derivedPropertyFlags === 4;
@@ -96611,7 +96611,7 @@ ${lanes.join("\n")}
                   if (uninitialized && !(derived.flags & 33554432) && !(baseDeclarationFlags & 64) && !(derivedDeclarationFlags & 64) && !((_e = derived.declarations) == null ? void 0 : _e.some((d) => !!(d.flags & 33554432)))) {
                     const constructor = findConstructorDeclaration(getClassLikeDeclarationOfSymbol(type.symbol));
                     const propName = uninitialized.name;
-                    if (uninitialized.exclamationToken || !constructor || !isIdentifier17(propName) || !strictNullChecks || !isPropertyInitializedInConstructor(propName, type, constructor)) {
+                    if (uninitialized.exclamationToken || !constructor || !isIdentifier18(propName) || !strictNullChecks || !isPropertyInitializedInConstructor(propName, type, constructor)) {
                       const errorMessage2 = Diagnostics.Property_0_will_overwrite_the_base_property_in_1_If_this_is_intentional_add_an_initializer_Otherwise_add_a_declare_modifier_or_remove_the_redundant_declaration;
                       error2(getNameOfDeclaration(derived.valueDeclaration) || derived.valueDeclaration, errorMessage2, symbolToString(base), typeToString(baseType));
                     }
@@ -96729,7 +96729,7 @@ ${lanes.join("\n")}
             }
             if (!isStatic(member3) && isPropertyWithoutInitializer(member3)) {
               const propName = member3.name;
-              if (isIdentifier17(propName) || isPrivateIdentifier2(propName) || isComputedPropertyName8(propName)) {
+              if (isIdentifier18(propName) || isPrivateIdentifier2(propName) || isComputedPropertyName8(propName)) {
                 const type = getTypeOfSymbol(getSymbolOfDeclaration(member3));
                 if (!(type.flags & 3 || containsUndefinedType(type))) {
                   if (!constructor || !isPropertyInitializedInConstructor(propName, type, constructor)) {
@@ -96934,7 +96934,7 @@ ${lanes.join("\n")}
           }
           if (isConstantVariable(symbol)) {
             const declaration = symbol.valueDeclaration;
-            if (declaration && isVariableDeclaration16(declaration) && !declaration.type && declaration.initializer && (!location2 || declaration !== location2 && isBlockScopedNameDeclaredBeforeUse(declaration, location2))) {
+            if (declaration && isVariableDeclaration17(declaration) && !declaration.type && declaration.initializer && (!location2 || declaration !== location2 && isBlockScopedNameDeclaredBeforeUse(declaration, location2))) {
               const result3 = evaluate(declaration.initializer, declaration);
               if (location2 && getSourceFileOfNode(location2) !== getSourceFileOfNode(declaration)) {
                 return evaluatorResult(
@@ -96963,7 +96963,7 @@ ${lanes.join("\n")}
         }
         function evaluateElementAccessExpression(expr, location2) {
           const root = expr.expression;
-          if (isEntityNameExpression(root) && isStringLiteralLike13(expr.argumentExpression)) {
+          if (isEntityNameExpression(root) && isStringLiteralLike14(expr.argumentExpression)) {
             const rootSymbol = resolveEntityName(
               root,
               111551,
@@ -97110,7 +97110,7 @@ ${lanes.join("\n")}
                 grammarErrorOnNode(node.name, Diagnostics.Only_ambient_modules_can_use_quoted_names);
               }
             }
-            if (isIdentifier17(node.name)) {
+            if (isIdentifier18(node.name)) {
               checkCollisionsForDeclarationName(node, node.name);
               if (!(node.flags & (32 | 2048))) {
                 const sourceFile = getSourceFileOfNode(node);
@@ -97321,7 +97321,7 @@ ${lanes.join("\n")}
                 );
                 const importDeclaration = findAncestor(node, or(isImportDeclaration9, isImportEqualsDeclaration3));
                 const moduleSpecifier = (importDeclaration && ((_d = tryGetModuleSpecifierFromDeclaration(importDeclaration)) == null ? void 0 : _d.text)) ?? "...";
-                const importedIdentifier = unescapeLeadingUnderscores(isIdentifier17(errorNode) ? errorNode.escapedText : symbol.escapedName);
+                const importedIdentifier = unescapeLeadingUnderscores(isIdentifier18(errorNode) ? errorNode.escapedText : symbol.escapedName);
                 error2(
                   errorNode,
                   Diagnostics._0_is_a_type_and_cannot_be_imported_in_JavaScript_files_Use_1_in_a_JSDoc_type_annotation,
@@ -97535,7 +97535,7 @@ ${lanes.join("\n")}
         function hasTypeJsonImportAttribute(node) {
           return !!node.attributes && node.attributes.elements.some((attr2) => {
             var _a2;
-            return getTextOfIdentifierOrLiteral(attr2.name) === "type" && ((_a2 = tryCast(attr2.value, isStringLiteralLike13)) == null ? void 0 : _a2.text) === "json";
+            return getTextOfIdentifierOrLiteral(attr2.name) === "type" && ((_a2 = tryCast(attr2.value, isStringLiteralLike14)) == null ? void 0 : _a2.text) === "json";
           });
         }
         function checkImportEqualsDeclaration(node) {
@@ -98396,7 +98396,7 @@ ${lanes.join("\n")}
               }
               switch (location2.kind) {
                 case 308:
-                  if (!isExternalModule(location2)) break;
+                  if (!isExternalModule2(location2)) break;
                 // falls through
                 case 268:
                   copyLocallyVisibleExportSymbols(
@@ -98537,7 +98537,7 @@ ${lanes.join("\n")}
             case 3:
               return getSymbolOfNode(entityName.parent);
             case 5:
-              if (isPropertyAccessExpression16(entityName.parent) && getLeftmostAccessExpression(entityName.parent) === entityName) {
+              if (isPropertyAccessExpression17(entityName.parent) && getLeftmostAccessExpression(entityName.parent) === entityName) {
                 return void 0;
               }
             // falls through
@@ -98795,15 +98795,15 @@ ${lanes.join("\n")}
               true,
               getHostSignatureFromJSDoc(name)
             );
-            if (!symbol && isIdentifier17(name) && container) {
+            if (!symbol && isIdentifier18(name) && container) {
               symbol = getMergedSymbol(getSymbol2(getExportsOfSymbol(container), name.escapedText, meaning));
             }
             if (symbol) {
               return symbol;
             }
           }
-          const left = isIdentifier17(name) ? container : resolveJSDocMemberName(name.left, ignoreErrors, container);
-          const right = isIdentifier17(name) ? name.escapedText : name.right.escapedText;
+          const left = isIdentifier18(name) ? container : resolveJSDocMemberName(name.left, ignoreErrors, container);
+          const right = isIdentifier18(name) ? name.escapedText : name.right.escapedText;
           if (left) {
             const proto = left.flags & 111551 && getPropertyOfType(getTypeOfSymbol(left), "prototype");
             const t = proto ? getTypeOfSymbol(proto) : getDeclaredTypeOfSymbol(left);
@@ -98811,8 +98811,8 @@ ${lanes.join("\n")}
           }
         }
         function getSymbolAtLocation(node, ignoreErrors) {
-          if (isSourceFile6(node)) {
-            return isExternalModule(node) ? getMergedSymbol(node.symbol) : void 0;
+          if (isSourceFile7(node)) {
+            return isExternalModule2(node) ? getMergedSymbol(node.symbol) : void 0;
           }
           const { parent: parent2 } = node;
           const grandParent = parent2.parent;
@@ -98914,7 +98914,7 @@ ${lanes.join("\n")}
             case 105:
               return isMetaProperty2(node.parent) ? checkMetaPropertyKeyword(node.parent).symbol : void 0;
             case 104:
-              if (isBinaryExpression11(node.parent)) {
+              if (isBinaryExpression12(node.parent)) {
                 const type = getTypeOfExpression(node.parent.right);
                 const hasInstanceMethodType = getSymbolHasInstanceMethodOfObjectType(type);
                 return (hasInstanceMethodType == null ? void 0 : hasInstanceMethodType.symbol) ?? type.symbol;
@@ -98933,7 +98933,7 @@ ${lanes.join("\n")}
           }
         }
         function getIndexInfosAtLocation(node) {
-          if (isIdentifier17(node) && isPropertyAccessExpression16(node.parent) && node.parent.name === node) {
+          if (isIdentifier18(node) && isPropertyAccessExpression17(node.parent) && node.parent.name === node) {
             const keyType = getLiteralTypeFromPropertyName(node);
             const objectType = getTypeOfExpression(node.parent.expression);
             const objectTypes = objectType.flags & 1048576 ? objectType.types : [objectType];
@@ -98974,7 +98974,7 @@ ${lanes.join("\n")}
           }
         }
         function getTypeOfNode(node) {
-          if (isSourceFile6(node) && !isExternalModule(node)) {
+          if (isSourceFile7(node) && !isExternalModule2(node)) {
             return errorType;
           }
           if (node.flags & 67108864) {
@@ -99062,7 +99062,7 @@ ${lanes.join("\n")}
             return checkDestructuringAssignment(expr, iteratedType || errorType);
           }
           if (expr.parent.kind === 304) {
-            const node2 = cast(expr.parent.parent, isObjectLiteralExpression11);
+            const node2 = cast(expr.parent.parent, isObjectLiteralExpression12);
             const typeOfParentObjectLiteral = getTypeOfAssignmentPattern(node2) || errorType;
             const propertyIndex = indexOfNode(node2.properties, expr.parent);
             return checkObjectLiteralDestructuringPropertyAssignment(node2, typeOfParentObjectLiteral, propertyIndex);
@@ -99160,11 +99160,11 @@ ${lanes.join("\n")}
         }
         function isArgumentsLocalBinding(nodeIn) {
           if (isGeneratedIdentifier(nodeIn)) return false;
-          const node = getParseTreeNode(nodeIn, isIdentifier17);
+          const node = getParseTreeNode(nodeIn, isIdentifier18);
           if (!node) return false;
           const parent2 = node.parent;
           if (!parent2) return false;
-          const isPropertyName2 = (isPropertyAccessExpression16(parent2) || isPropertyAssignment12(parent2)) && parent2.name === node;
+          const isPropertyName2 = (isPropertyAccessExpression17(parent2) || isPropertyAssignment13(parent2)) && parent2.name === node;
           return !isPropertyName2 && getReferencedValueSymbol(node) === argumentsSymbol;
         }
         function isNameOfModuleOrEnumDeclaration(node) {
@@ -99172,7 +99172,7 @@ ${lanes.join("\n")}
         }
         function getReferencedExportContainer(nodeIn, prefixLocals) {
           var _a2;
-          const node = getParseTreeNode(nodeIn, isIdentifier17);
+          const node = getParseTreeNode(nodeIn, isIdentifier18);
           if (node) {
             let symbol = getReferencedValueSymbol(
               node,
@@ -99205,7 +99205,7 @@ ${lanes.join("\n")}
           if (specifier) {
             return specifier;
           }
-          const node = getParseTreeNode(nodeIn, isIdentifier17);
+          const node = getParseTreeNode(nodeIn, isIdentifier18);
           if (node) {
             const symbol = getReferencedValueOrAliasSymbol(node);
             if (isNonLocalAlias(
@@ -99227,7 +99227,7 @@ ${lanes.join("\n")}
           return symbol.valueDeclaration && isBindingElement8(symbol.valueDeclaration) && walkUpBindingElementsAndPatterns(symbol.valueDeclaration).parent.kind === 300;
         }
         function isSymbolOfDeclarationWithCollidingName(symbol) {
-          if (symbol.flags & 418 && symbol.valueDeclaration && !isSourceFile6(symbol.valueDeclaration)) {
+          if (symbol.flags & 418 && symbol.valueDeclaration && !isSourceFile7(symbol.valueDeclaration)) {
             const links = getSymbolLinks(symbol);
             if (links.isDeclarationWithCollidingName === void 0) {
               const container = getEnclosingBlockScopeContainer(symbol.valueDeclaration);
@@ -99274,7 +99274,7 @@ ${lanes.join("\n")}
         }
         function getReferencedDeclarationWithCollidingName(nodeIn) {
           if (!isGeneratedIdentifier(nodeIn)) {
-            const node = getParseTreeNode(nodeIn, isIdentifier17);
+            const node = getParseTreeNode(nodeIn, isIdentifier18);
             if (node) {
               const symbol = getReferencedValueSymbol(node);
               if (symbol && isSymbolOfDeclarationWithCollidingName(symbol)) {
@@ -99412,12 +99412,12 @@ ${lanes.join("\n")}
           );
         }
         function isExpandoFunctionDeclaration(node) {
-          const declaration = getParseTreeNode(node, (n) => isFunctionDeclaration9(n) || isVariableDeclaration16(n));
+          const declaration = getParseTreeNode(node, (n) => isFunctionDeclaration9(n) || isVariableDeclaration17(n));
           if (!declaration) {
             return false;
           }
           let symbol;
-          if (isVariableDeclaration16(declaration)) {
+          if (isVariableDeclaration17(declaration)) {
             if (declaration.type || !isInJSFile(declaration) && !isVarConstLike2(declaration)) {
               return false;
             }
@@ -99521,9 +99521,9 @@ ${lanes.join("\n")}
           function checkSingleIdentifier(node2) {
             const nodeLinks2 = getNodeLinks(node2);
             nodeLinks2.calculatedFlags |= 536870912;
-            if (isIdentifier17(node2)) {
+            if (isIdentifier18(node2)) {
               nodeLinks2.calculatedFlags |= 32768 | 16384;
-              if (isExpressionNodeOrShorthandPropertyAssignmentName(node2) && !(isPropertyAccessExpression16(node2.parent) && node2.parent.name === node2)) {
+              if (isExpressionNodeOrShorthandPropertyAssignmentName(node2) && !(isPropertyAccessExpression17(node2.parent) && node2.parent.name === node2)) {
                 const s = getResolvedSymbol(node2);
                 if (s && s !== unknownSymbol) {
                   checkIdentifierCalculateNodeCheckFlags(node2, s);
@@ -99806,7 +99806,7 @@ ${lanes.join("\n")}
         }
         function getReferencedValueDeclaration(referenceIn) {
           if (!isGeneratedIdentifier(referenceIn)) {
-            const reference2 = getParseTreeNode(referenceIn, isIdentifier17);
+            const reference2 = getParseTreeNode(referenceIn, isIdentifier18);
             if (reference2) {
               const symbol = getReferencedValueSymbol(reference2);
               if (symbol) {
@@ -99818,7 +99818,7 @@ ${lanes.join("\n")}
         }
         function getReferencedValueDeclarations(referenceIn) {
           if (!isGeneratedIdentifier(referenceIn)) {
-            const reference2 = getParseTreeNode(referenceIn, isIdentifier17);
+            const reference2 = getParseTreeNode(referenceIn, isIdentifier18);
             if (reference2) {
               const symbol = getReferencedValueSymbol(reference2);
               if (symbol) {
@@ -99852,7 +99852,7 @@ ${lanes.join("\n")}
           return void 0;
         }
         function isLiteralConstDeclaration(node) {
-          if (isDeclarationReadonly(node) || isVariableDeclaration16(node) && isVarConstLike2(node)) {
+          if (isDeclarationReadonly(node) || isVariableDeclaration17(node) && isVarConstLike2(node)) {
             return isFreshLiteralType(getTypeOfSymbol(getSymbolOfDeclaration(node)));
           }
           return false;
@@ -99980,7 +99980,7 @@ ${lanes.join("\n")}
             isBindingCapturedByNode: (node, decl) => {
               const parseNode = getParseTreeNode(node);
               const parseDecl = getParseTreeNode(decl);
-              return !!parseNode && !!parseDecl && (isVariableDeclaration16(parseDecl) || isBindingElement8(parseDecl)) && isBindingCapturedByNode(parseNode, parseDecl);
+              return !!parseNode && !!parseDecl && (isVariableDeclaration17(parseDecl) || isBindingElement8(parseDecl)) && isBindingCapturedByNode(parseNode, parseDecl);
             },
             getDeclarationStatementsForSourceFile: (node, flags, internalFlags, tracker) => {
               const n = getParseTreeNode(node);
@@ -100415,7 +100415,7 @@ ${lanes.join("\n")}
           if (isParameter6(node) && parameterIsThisKeyword(node)) {
             return grammarErrorOnFirstToken(node, Diagnostics.Neither_decorators_nor_modifiers_may_be_applied_to_this_parameters);
           }
-          const blockScopeKind = isVariableStatement9(node) ? node.declarationList.flags & 7 : 0;
+          const blockScopeKind = isVariableStatement10(node) ? node.declarationList.flags & 7 : 0;
           let lastStatic, lastDeclare, lastAsync, lastOverride, firstDecorator;
           let flags = 0;
           let sawExportBeforeDecorators = false;
@@ -101073,7 +101073,7 @@ ${lanes.join("\n")}
             if (prop.kind === 306) {
               if (inDestructuring) {
                 const expression = skipParentheses(prop.expression);
-                if (isArrayLiteralExpression8(expression) || isObjectLiteralExpression11(expression)) {
+                if (isArrayLiteralExpression8(expression) || isObjectLiteralExpression12(expression)) {
                   return grammarErrorOnNode(prop.expression, Diagnostics.A_rest_element_cannot_contain_a_binding_pattern);
                 }
               }
@@ -101179,7 +101179,7 @@ ${lanes.join("\n")}
           }
         }
         function checkGrammarJsxName(node) {
-          if (isPropertyAccessExpression16(node) && isJsxNamespacedName(node.expression)) {
+          if (isPropertyAccessExpression17(node) && isJsxNamespacedName(node.expression)) {
             return grammarErrorOnNode(node.expression, Diagnostics.JSX_property_access_expressions_cannot_include_JSX_namespace_names);
           }
           if (isJsxNamespacedName(node) && getJSXTransformEnabled(compilerOptions) && !isIntrinsicJsxName(node.namespace.escapedText)) {
@@ -101245,7 +101245,7 @@ ${lanes.join("\n")}
               }
             }
           }
-          if (isForOfStatement5(forInOrOfStatement) && !(forInOrOfStatement.flags & 65536) && isIdentifier17(forInOrOfStatement.initializer) && forInOrOfStatement.initializer.escapedText === "async") {
+          if (isForOfStatement5(forInOrOfStatement) && !(forInOrOfStatement.flags & 65536) && isIdentifier18(forInOrOfStatement.initializer) && forInOrOfStatement.initializer.escapedText === "async") {
             grammarErrorOnNode(forInOrOfStatement.initializer, Diagnostics.The_left_hand_side_of_a_for_of_statement_may_not_be_async);
             return false;
           }
@@ -101493,7 +101493,7 @@ ${lanes.join("\n")}
           return expr.kind === 10 || expr.kind === 225 && expr.operator === 41 && expr.operand.kind === 10;
         }
         function isSimpleLiteralEnumReference(expr) {
-          if ((isPropertyAccessExpression16(expr) || isElementAccessExpression12(expr) && isStringOrNumberLiteralExpression(expr.argumentExpression)) && isEntityNameExpression(expr.expression)) {
+          if ((isPropertyAccessExpression17(expr) || isElementAccessExpression12(expr) && isStringOrNumberLiteralExpression(expr.argumentExpression)) && isEntityNameExpression(expr.expression)) {
             return !!(checkExpressionCached(expr).flags & 1056);
           }
         }
@@ -101501,7 +101501,7 @@ ${lanes.join("\n")}
           const initializer = node.initializer;
           if (initializer) {
             const isInvalidInitializer = !(isStringOrNumberLiteralExpression(initializer) || isSimpleLiteralEnumReference(initializer) || initializer.kind === 112 || initializer.kind === 97 || isBigIntLiteralExpression(initializer));
-            const isConstOrReadonly = isDeclarationReadonly(node) || isVariableDeclaration16(node) && isVarConstLike2(node);
+            const isConstOrReadonly = isDeclarationReadonly(node) || isVariableDeclaration17(node) && isVarConstLike2(node);
             if (isConstOrReadonly && !node.type) {
               if (isInvalidInitializer) {
                 return grammarErrorOnNode(initializer, Diagnostics.A_const_initializer_in_an_ambient_context_must_be_a_string_or_numeric_literal_or_literal_enum_reference);
@@ -101710,7 +101710,7 @@ ${lanes.join("\n")}
           }
         }
         function checkGrammarProperty(node) {
-          if (isComputedPropertyName8(node.name) && isBinaryExpression11(node.name.expression) && node.name.expression.operatorToken.kind === 103) {
+          if (isComputedPropertyName8(node.name) && isBinaryExpression12(node.name.expression) && node.name.expression.operatorToken.kind === 103) {
             return grammarErrorOnNode(node.parent.members[0], Diagnostics.A_mapped_type_may_not_declare_properties_or_methods);
           }
           if (isClassLike(node.parent)) {
@@ -102041,7 +102041,7 @@ ${lanes.join("\n")}
         switch (name.parent.kind) {
           case 277:
           case 282:
-            return isIdentifier17(name) || name.kind === 11;
+            return isIdentifier18(name) || name.kind === 11;
           default:
             return isDeclarationName(name);
         }
@@ -102472,7 +102472,7 @@ ${lanes.join("\n")}
           return context.factory.updateQualifiedName(
             node,
             Debug.checkDefined(nodeVisitor(node.left, visitor, isEntityName)),
-            Debug.checkDefined(nodeVisitor(node.right, visitor, isIdentifier17))
+            Debug.checkDefined(nodeVisitor(node.right, visitor, isIdentifier18))
           );
         },
         [
@@ -102492,7 +102492,7 @@ ${lanes.join("\n")}
           return context.factory.updateTypeParameterDeclaration(
             node,
             nodesVisitor(node.modifiers, visitor, isModifier),
-            Debug.checkDefined(nodeVisitor(node.name, visitor, isIdentifier17)),
+            Debug.checkDefined(nodeVisitor(node.name, visitor, isIdentifier18)),
             nodeVisitor(node.constraint, visitor, isTypeNode4),
             nodeVisitor(node.default, visitor, isTypeNode4)
           );
@@ -102826,7 +102826,7 @@ ${lanes.join("\n")}
           return context.factory.updateNamedTupleMember(
             node,
             tokenVisitor ? nodeVisitor(node.dotDotDotToken, tokenVisitor, isDotDotDotToken) : node.dotDotDotToken,
-            Debug.checkDefined(nodeVisitor(node.name, visitor, isIdentifier17)),
+            Debug.checkDefined(nodeVisitor(node.name, visitor, isIdentifier18)),
             tokenVisitor ? nodeVisitor(node.questionToken, tokenVisitor, isQuestionToken) : node.questionToken,
             Debug.checkDefined(nodeVisitor(node.type, visitor, isTypeNode4))
           );
@@ -103048,7 +103048,7 @@ ${lanes.join("\n")}
             node,
             nodesVisitor(node.modifiers, visitor, isModifier),
             tokenVisitor ? nodeVisitor(node.asteriskToken, tokenVisitor, isAsteriskToken) : node.asteriskToken,
-            nodeVisitor(node.name, visitor, isIdentifier17),
+            nodeVisitor(node.name, visitor, isIdentifier18),
             nodesVisitor(node.typeParameters, visitor, isTypeParameterDeclaration),
             visitParameterList(node.parameters, visitor, context, nodesVisitor),
             nodeVisitor(node.type, visitor, isTypeNode4),
@@ -103183,7 +103183,7 @@ ${lanes.join("\n")}
           return context.factory.updateClassExpression(
             node,
             nodesVisitor(node.modifiers, visitor, isModifierLike),
-            nodeVisitor(node.name, visitor, isIdentifier17),
+            nodeVisitor(node.name, visitor, isIdentifier18),
             nodesVisitor(node.typeParameters, visitor, isTypeParameterDeclaration),
             nodesVisitor(node.heritageClauses, visitor, isHeritageClause),
             nodesVisitor(node.members, visitor, isClassElement)
@@ -103237,7 +103237,7 @@ ${lanes.join("\n")}
         ]: function visitEachChildOfMetaProperty(node, visitor, context, _nodesVisitor, nodeVisitor, _tokenVisitor) {
           return context.factory.updateMetaProperty(
             node,
-            Debug.checkDefined(nodeVisitor(node.name, visitor, isIdentifier17))
+            Debug.checkDefined(nodeVisitor(node.name, visitor, isIdentifier18))
           );
         },
         // Misc
@@ -103268,7 +103268,7 @@ ${lanes.join("\n")}
           return context.factory.updateVariableStatement(
             node,
             nodesVisitor(node.modifiers, visitor, isModifierLike),
-            Debug.checkDefined(nodeVisitor(node.declarationList, visitor, isVariableDeclarationList9))
+            Debug.checkDefined(nodeVisitor(node.declarationList, visitor, isVariableDeclarationList10))
           );
         },
         [
@@ -103352,7 +103352,7 @@ ${lanes.join("\n")}
         ]: function visitEachChildOfContinueStatement(node, visitor, context, _nodesVisitor, nodeVisitor, _tokenVisitor) {
           return context.factory.updateContinueStatement(
             node,
-            nodeVisitor(node.label, visitor, isIdentifier17)
+            nodeVisitor(node.label, visitor, isIdentifier18)
           );
         },
         [
@@ -103361,7 +103361,7 @@ ${lanes.join("\n")}
         ]: function visitEachChildOfBreakStatement(node, visitor, context, _nodesVisitor, nodeVisitor, _tokenVisitor) {
           return context.factory.updateBreakStatement(
             node,
-            nodeVisitor(node.label, visitor, isIdentifier17)
+            nodeVisitor(node.label, visitor, isIdentifier18)
           );
         },
         [
@@ -103399,7 +103399,7 @@ ${lanes.join("\n")}
         ]: function visitEachChildOfLabeledStatement(node, visitor, context, _nodesVisitor, nodeVisitor, _tokenVisitor) {
           return context.factory.updateLabeledStatement(
             node,
-            Debug.checkDefined(nodeVisitor(node.label, visitor, isIdentifier17)),
+            Debug.checkDefined(nodeVisitor(node.label, visitor, isIdentifier18)),
             Debug.checkDefined(nodeVisitor(node.statement, visitor, isStatement3, context.factory.liftToBlock))
           );
         },
@@ -103441,7 +103441,7 @@ ${lanes.join("\n")}
         ]: function visitEachChildOfVariableDeclarationList(node, visitor, context, nodesVisitor, _nodeVisitor, _tokenVisitor) {
           return context.factory.updateVariableDeclarationList(
             node,
-            nodesVisitor(node.declarations, visitor, isVariableDeclaration16)
+            nodesVisitor(node.declarations, visitor, isVariableDeclaration17)
           );
         },
         [
@@ -103452,7 +103452,7 @@ ${lanes.join("\n")}
             node,
             nodesVisitor(node.modifiers, visitor, isModifier),
             tokenVisitor ? nodeVisitor(node.asteriskToken, tokenVisitor, isAsteriskToken) : node.asteriskToken,
-            nodeVisitor(node.name, visitor, isIdentifier17),
+            nodeVisitor(node.name, visitor, isIdentifier18),
             nodesVisitor(node.typeParameters, visitor, isTypeParameterDeclaration),
             visitParameterList(node.parameters, visitor, context, nodesVisitor),
             nodeVisitor(node.type, visitor, isTypeNode4),
@@ -103466,7 +103466,7 @@ ${lanes.join("\n")}
           return context.factory.updateClassDeclaration(
             node,
             nodesVisitor(node.modifiers, visitor, isModifierLike),
-            nodeVisitor(node.name, visitor, isIdentifier17),
+            nodeVisitor(node.name, visitor, isIdentifier18),
             nodesVisitor(node.typeParameters, visitor, isTypeParameterDeclaration),
             nodesVisitor(node.heritageClauses, visitor, isHeritageClause),
             nodesVisitor(node.members, visitor, isClassElement)
@@ -103479,7 +103479,7 @@ ${lanes.join("\n")}
           return context.factory.updateInterfaceDeclaration(
             node,
             nodesVisitor(node.modifiers, visitor, isModifierLike),
-            Debug.checkDefined(nodeVisitor(node.name, visitor, isIdentifier17)),
+            Debug.checkDefined(nodeVisitor(node.name, visitor, isIdentifier18)),
             nodesVisitor(node.typeParameters, visitor, isTypeParameterDeclaration),
             nodesVisitor(node.heritageClauses, visitor, isHeritageClause),
             nodesVisitor(node.members, visitor, isTypeElement)
@@ -103492,7 +103492,7 @@ ${lanes.join("\n")}
           return context.factory.updateTypeAliasDeclaration(
             node,
             nodesVisitor(node.modifiers, visitor, isModifierLike),
-            Debug.checkDefined(nodeVisitor(node.name, visitor, isIdentifier17)),
+            Debug.checkDefined(nodeVisitor(node.name, visitor, isIdentifier18)),
             nodesVisitor(node.typeParameters, visitor, isTypeParameterDeclaration),
             Debug.checkDefined(nodeVisitor(node.type, visitor, isTypeNode4))
           );
@@ -103504,7 +103504,7 @@ ${lanes.join("\n")}
           return context.factory.updateEnumDeclaration(
             node,
             nodesVisitor(node.modifiers, visitor, isModifierLike),
-            Debug.checkDefined(nodeVisitor(node.name, visitor, isIdentifier17)),
+            Debug.checkDefined(nodeVisitor(node.name, visitor, isIdentifier18)),
             nodesVisitor(node.members, visitor, isEnumMember)
           );
         },
@@ -103543,7 +103543,7 @@ ${lanes.join("\n")}
         ]: function visitEachChildOfNamespaceExportDeclaration(node, visitor, context, _nodesVisitor, nodeVisitor, _tokenVisitor) {
           return context.factory.updateNamespaceExportDeclaration(
             node,
-            Debug.checkDefined(nodeVisitor(node.name, visitor, isIdentifier17))
+            Debug.checkDefined(nodeVisitor(node.name, visitor, isIdentifier18))
           );
         },
         [
@@ -103554,7 +103554,7 @@ ${lanes.join("\n")}
             node,
             nodesVisitor(node.modifiers, visitor, isModifierLike),
             node.isTypeOnly,
-            Debug.checkDefined(nodeVisitor(node.name, visitor, isIdentifier17)),
+            Debug.checkDefined(nodeVisitor(node.name, visitor, isIdentifier18)),
             Debug.checkDefined(nodeVisitor(node.moduleReference, visitor, isModuleReference))
           );
         },
@@ -103597,7 +103597,7 @@ ${lanes.join("\n")}
           return context.factory.updateImportClause(
             node,
             node.phaseModifier,
-            nodeVisitor(node.name, visitor, isIdentifier17),
+            nodeVisitor(node.name, visitor, isIdentifier18),
             nodeVisitor(node.namedBindings, visitor, isNamedImportBindings)
           );
         },
@@ -103607,7 +103607,7 @@ ${lanes.join("\n")}
         ]: function visitEachChildOfNamespaceImport(node, visitor, context, _nodesVisitor, nodeVisitor, _tokenVisitor) {
           return context.factory.updateNamespaceImport(
             node,
-            Debug.checkDefined(nodeVisitor(node.name, visitor, isIdentifier17))
+            Debug.checkDefined(nodeVisitor(node.name, visitor, isIdentifier18))
           );
         },
         [
@@ -103616,7 +103616,7 @@ ${lanes.join("\n")}
         ]: function visitEachChildOfNamespaceExport(node, visitor, context, _nodesVisitor, nodeVisitor, _tokenVisitor) {
           return context.factory.updateNamespaceExport(
             node,
-            Debug.checkDefined(nodeVisitor(node.name, visitor, isIdentifier17))
+            Debug.checkDefined(nodeVisitor(node.name, visitor, isIdentifier18))
           );
         },
         [
@@ -103636,7 +103636,7 @@ ${lanes.join("\n")}
             node,
             node.isTypeOnly,
             nodeVisitor(node.propertyName, visitor, isModuleExportName),
-            Debug.checkDefined(nodeVisitor(node.name, visitor, isIdentifier17))
+            Debug.checkDefined(nodeVisitor(node.name, visitor, isIdentifier18))
           );
         },
         [
@@ -103741,8 +103741,8 @@ ${lanes.join("\n")}
         ]: function forEachChildInJsxNamespacedName2(node, visitor, context, _nodesVisitor, nodeVisitor, _tokenVisitor) {
           return context.factory.updateJsxNamespacedName(
             node,
-            Debug.checkDefined(nodeVisitor(node.namespace, visitor, isIdentifier17)),
-            Debug.checkDefined(nodeVisitor(node.name, visitor, isIdentifier17))
+            Debug.checkDefined(nodeVisitor(node.namespace, visitor, isIdentifier18)),
+            Debug.checkDefined(nodeVisitor(node.name, visitor, isIdentifier18))
           );
         },
         [
@@ -103828,7 +103828,7 @@ ${lanes.join("\n")}
         ]: function visitEachChildOfCatchClause(node, visitor, context, _nodesVisitor, nodeVisitor, _tokenVisitor) {
           return context.factory.updateCatchClause(
             node,
-            nodeVisitor(node.variableDeclaration, visitor, isVariableDeclaration16),
+            nodeVisitor(node.variableDeclaration, visitor, isVariableDeclaration17),
             Debug.checkDefined(nodeVisitor(node.block, visitor, isBlock7))
           );
         },
@@ -103849,7 +103849,7 @@ ${lanes.join("\n")}
         ]: function visitEachChildOfShorthandPropertyAssignment(node, visitor, context, _nodesVisitor, nodeVisitor, _tokenVisitor) {
           return context.factory.updateShorthandPropertyAssignment(
             node,
-            Debug.checkDefined(nodeVisitor(node.name, visitor, isIdentifier17)),
+            Debug.checkDefined(nodeVisitor(node.name, visitor, isIdentifier18)),
             nodeVisitor(node.objectAssignmentInitializer, visitor, isExpression3)
           );
         },
@@ -104766,10 +104766,10 @@ ${lanes.join("\n")}
         }
       };
       function isSimpleCopiableExpression(expression) {
-        return isStringLiteralLike13(expression) || expression.kind === 9 || isKeyword(expression.kind) || isIdentifier17(expression);
+        return isStringLiteralLike14(expression) || expression.kind === 9 || isKeyword(expression.kind) || isIdentifier18(expression);
       }
       function isSimpleInlineableExpression(expression) {
-        return !isIdentifier17(expression) && isSimpleCopiableExpression(expression);
+        return !isIdentifier18(expression) && isSimpleCopiableExpression(expression);
       }
       function isCompoundAssignment(kind) {
         return kind >= 65 && kind <= 79;
@@ -104975,7 +104975,7 @@ ${lanes.join("\n")}
         return walkUpLexicalEnvironments(env, (env2) => getPrivateIdentifier(env2.privateEnv, name));
       }
       function isSimpleParameter(node) {
-        return !node.initializer && isIdentifier17(node.name);
+        return !node.initializer && isIdentifier18(node.name);
       }
       function isSimpleParameterList(nodes) {
         return every(nodes, isSimpleParameter);
@@ -105022,7 +105022,7 @@ ${lanes.join("\n")}
         if (value) {
           value = visitNode(value, visitor, isExpression3);
           Debug.assert(value);
-          if (isIdentifier17(value) && bindingOrAssignmentElementAssignsToName(node, value.escapedText) || bindingOrAssignmentElementContainsNonLiteralComputedName(node)) {
+          if (isIdentifier18(value) && bindingOrAssignmentElementAssignsToName(node, value.escapedText) || bindingOrAssignmentElementContainsNonLiteralComputedName(node)) {
             value = ensureIdentifier(
               flattenContext,
               value,
@@ -105061,7 +105061,7 @@ ${lanes.join("\n")}
           expressions = append(expressions, expression);
         }
         function emitBindingOrAssignment(target, value2, location22, original) {
-          Debug.assertNode(target, createAssignmentCallback ? isIdentifier17 : isExpression3);
+          Debug.assertNode(target, createAssignmentCallback ? isIdentifier18 : isExpression3);
           const expression = createAssignmentCallback ? createAssignmentCallback(target, value2, location22) : setTextRange(
             context.factory.createAssignment(Debug.checkDefined(visitNode(target, visitor, isExpression3)), value2),
             location22
@@ -105074,7 +105074,7 @@ ${lanes.join("\n")}
         const target = getTargetOfBindingOrAssignmentElement(element);
         if (isBindingOrAssignmentPattern(target)) {
           return bindingOrAssignmentPatternAssignsToName(target, escapedName);
-        } else if (isIdentifier17(target)) {
+        } else if (isIdentifier18(target)) {
           return target.escapedText === escapedName;
         }
         return false;
@@ -105115,9 +105115,9 @@ ${lanes.join("\n")}
           createArrayBindingOrAssignmentElement: (name) => makeBindingElement(context.factory, name),
           visitor
         };
-        if (isVariableDeclaration16(node)) {
+        if (isVariableDeclaration17(node)) {
           let initializer = getInitializerOfBindingOrAssignmentElement(node);
-          if (initializer && (isIdentifier17(initializer) && bindingOrAssignmentElementAssignsToName(node, initializer.escapedText) || bindingOrAssignmentElementContainsNonLiteralComputedName(node))) {
+          if (initializer && (isIdentifier18(initializer) && bindingOrAssignmentElementAssignsToName(node, initializer.escapedText) || bindingOrAssignmentElementContainsNonLiteralComputedName(node))) {
             initializer = ensureIdentifier(
               flattenContext,
               Debug.checkDefined(visitNode(initializer, flattenContext.visitor, isExpression3)),
@@ -105351,7 +105351,7 @@ ${lanes.join("\n")}
         const initializer = getInitializerOfBindingOrAssignmentElement(element);
         if (initializer && !isSimpleInlineableExpression(initializer)) return false;
         if (isBindingOrAssignmentPattern(target)) return every(getElementsOfBindingOrAssignmentPattern(target), isSimpleBindingOrAssignmentElement);
-        return isIdentifier17(target);
+        return isIdentifier18(target);
       }
       function createDefaultValueCheck(flattenContext, value, defaultValue, location2) {
         value = ensureIdentifier(
@@ -105392,7 +105392,7 @@ ${lanes.join("\n")}
         }
       }
       function ensureIdentifier(flattenContext, value, reuseIdentifierExpressions, location2) {
-        if (isIdentifier17(value) && reuseIdentifierExpressions) {
+        if (isIdentifier18(value) && reuseIdentifierExpressions) {
           return value;
         } else {
           const temp = flattenContext.context.factory.createTempVariable(
@@ -105464,7 +105464,7 @@ ${lanes.join("\n")}
           statement.expression,
           /*excludeCompoundAssignment*/
           true
-        ) && isIdentifier17(statement.expression.left) && ((_a2 = node.emitNode) == null ? void 0 : _a2.classThis) === statement.expression.left && statement.expression.right.kind === 110;
+        ) && isIdentifier18(statement.expression.left) && ((_a2 = node.emitNode) == null ? void 0 : _a2.classThis) === statement.expression.left && statement.expression.right.kind === 110;
       }
       function classHasClassThisAssignment(node) {
         var _a2;
@@ -105519,7 +105519,7 @@ ${lanes.join("\n")}
           const assignedName2 = factory2.createStringLiteralFromNode(name);
           return { assignedName: assignedName2, name };
         }
-        if (isPropertyNameLiteral(name.expression) && !isIdentifier17(name.expression)) {
+        if (isPropertyNameLiteral(name.expression) && !isIdentifier18(name.expression)) {
           const assignedName2 = factory2.createStringLiteralFromNode(name.expression);
           return { assignedName: assignedName2, name };
         }
@@ -105743,7 +105743,7 @@ ${lanes.join("\n")}
           factory2.createArrayLiteralExpression(cookedStrings),
           factory2.createArrayLiteralExpression(rawStrings)
         );
-        if (isExternalModule(currentSourceFile)) {
+        if (isExternalModule2(currentSourceFile)) {
           const tempVar = factory2.createUniqueName("templateObject");
           recordTaggedTemplateString(tempVar);
           templateArguments[0] = factory2.createLogicalOr(
@@ -106155,7 +106155,7 @@ ${lanes.join("\n")}
           }
         }
         function visitSourceFile(node) {
-          const alwaysStrict = getStrictOptionValue(compilerOptions, "alwaysStrict") && !(isExternalModule(node) && moduleKind >= 5) && !isJsonSourceFile(node);
+          const alwaysStrict = getStrictOptionValue(compilerOptions, "alwaysStrict") && !(isExternalModule2(node) && moduleKind >= 5) && !isJsonSourceFile(node);
           return factory2.updateSourceFile(
             node,
             visitLexicalEnvironment(
@@ -106516,7 +106516,7 @@ ${lanes.join("\n")}
             return factory2.createIdentifier("");
           } else if (isComputedPropertyName8(name)) {
             return generateNameForComputedPropertyName && !isSimpleInlineableExpression(name.expression) ? factory2.getGeneratedNameForNode(name) : name.expression;
-          } else if (isIdentifier17(name)) {
+          } else if (isIdentifier18(name)) {
             return factory2.createStringLiteral(idText(name));
           } else {
             return factory2.cloneNode(name);
@@ -106678,7 +106678,7 @@ ${lanes.join("\n")}
         }
         function transformParameterWithPropertyAssignment(node) {
           const name = node.name;
-          if (!isIdentifier17(name)) {
+          if (!isIdentifier18(name)) {
             return void 0;
           }
           const propertyName2 = setParent(setTextRange(factory2.cloneNode(name), name), name.parent);
@@ -107162,7 +107162,7 @@ ${lanes.join("\n")}
           return true;
         }
         function declaredNameInScope(node) {
-          Debug.assertNode(node.name, isIdentifier17);
+          Debug.assertNode(node.name, isIdentifier18);
           return node.name.escapedText;
         }
         function addVarForEnumOrModuleDeclaration(statements2, node) {
@@ -107204,7 +107204,7 @@ ${lanes.join("\n")}
           if (!shouldEmitModuleDeclaration(node)) {
             return factory2.createNotEmittedStatement(node);
           }
-          Debug.assertNode(node.name, isIdentifier17, "A TypeScript namespace should have an Identifier name.");
+          Debug.assertNode(node.name, isIdentifier18, "A TypeScript namespace should have an Identifier name.");
           enableSubstitutionForNamespaceExports();
           const statements2 = [];
           let emitFlags = 4;
@@ -107418,7 +107418,7 @@ ${lanes.join("\n")}
           return allowEmpty || some(elements) ? factory2.updateNamedExports(node, elements) : void 0;
         }
         function visitNamespaceExports(node) {
-          return factory2.updateNamespaceExport(node, Debug.checkDefined(visitNode(node.name, visitor, isIdentifier17)));
+          return factory2.updateNamespaceExport(node, Debug.checkDefined(visitNode(node.name, visitor, isIdentifier18)));
         }
         function visitNamedExportBindings(node, allowEmpty) {
           return isNamespaceExport(node) ? visitNamespaceExports(node) : visitNamedExports(node, allowEmpty);
@@ -107427,7 +107427,7 @@ ${lanes.join("\n")}
           return !node.isTypeOnly && (compilerOptions.verbatimModuleSyntax || resolver.isValueAliasDeclaration(node)) ? node : void 0;
         }
         function shouldEmitImportEqualsDeclaration(node) {
-          return shouldEmitAliasDeclaration(node) || !isExternalModule(currentSourceFile) && resolver.isTopLevelValueImportEqualsWithEntityName(node);
+          return shouldEmitAliasDeclaration(node) || !isExternalModule2(currentSourceFile) && resolver.isTopLevelValueImportEqualsWithEntityName(node);
         }
         function visitImportEqualsDeclaration(node) {
           if (node.isTypeOnly) {
@@ -107604,7 +107604,7 @@ ${lanes.join("\n")}
         function onEmitNode(hint, node, emitCallback) {
           const savedApplicableSubstitutions = applicableSubstitutions;
           const savedCurrentSourceFile = currentSourceFile;
-          if (isSourceFile6(node)) {
+          if (isSourceFile7(node)) {
             currentSourceFile = node;
           }
           if (enabledSubstitutions & 2 && isTransformedModuleDeclaration(node)) {
@@ -107700,7 +107700,7 @@ ${lanes.join("\n")}
           if (getIsolatedModules(compilerOptions)) {
             return void 0;
           }
-          return isPropertyAccessExpression16(node) || isElementAccessExpression12(node) ? resolver.getConstantValue(node) : void 0;
+          return isPropertyAccessExpression17(node) || isElementAccessExpression12(node) ? resolver.getConstantValue(node) : void 0;
         }
         function shouldEmitAliasDeclaration(node) {
           return compilerOptions.verbatimModuleSyntax || isInJSFile(node) || resolver.isReferencedAliasDeclaration(node);
@@ -108311,7 +108311,7 @@ ${lanes.join("\n")}
               );
             }
           }
-          if (shouldTransformSuperInStaticInitializers && currentClassElement && isSuperProperty(node) && isIdentifier17(node.name) && isStaticPropertyDeclarationOrClassStaticBlock(currentClassElement) && (lexicalEnvironment == null ? void 0 : lexicalEnvironment.data)) {
+          if (shouldTransformSuperInStaticInitializers && currentClassElement && isSuperProperty(node) && isIdentifier18(node.name) && isStaticPropertyDeclarationOrClassStaticBlock(currentClassElement) && (lexicalEnvironment == null ? void 0 : lexicalEnvironment.data)) {
             const { classConstructor, superClassReference, facts } = lexicalEnvironment.data;
             if (facts & 1) {
               return visitInvalidSuperProperty(node);
@@ -108384,8 +108384,8 @@ ${lanes.join("\n")}
               if (classConstructor && superClassReference) {
                 let setterName;
                 let getterName;
-                if (isPropertyAccessExpression16(operand)) {
-                  if (isIdentifier17(operand.name)) {
+                if (isPropertyAccessExpression17(operand)) {
+                  if (isIdentifier18(operand.name)) {
                     getterName = setterName = factory2.createStringLiteralFromNode(operand.name);
                   }
                 } else {
@@ -108607,7 +108607,7 @@ ${lanes.join("\n")}
                 );
               }
               if (classConstructor && superClassReference) {
-                let setterName = isElementAccessExpression12(node.left) ? visitNode(node.left.argumentExpression, visitor, isExpression3) : isIdentifier17(node.left.name) ? factory2.createStringLiteralFromNode(node.left.name) : void 0;
+                let setterName = isElementAccessExpression12(node.left) ? visitNode(node.left.argumentExpression, visitor, isExpression3) : isIdentifier18(node.left.name) ? factory2.createStringLiteralFromNode(node.left.name) : void 0;
                 if (setterName) {
                   let expression = visitNode(node.right, visitor, isExpression3);
                   if (isCompoundAssignment(node.operatorToken.kind)) {
@@ -108807,11 +108807,11 @@ ${lanes.join("\n")}
           const shouldAlwaysTransformPrivateStaticElements = getInternalEmitFlags(node) & 32;
           if (shouldTransformPrivateElementsOrClassStaticBlocks || shouldAlwaysTransformPrivateStaticElements) {
             const name = getNameOfDeclaration(node);
-            if (name && isIdentifier17(name)) {
+            if (name && isIdentifier18(name)) {
               getPrivateIdentifierEnvironment().data.className = name;
             } else if ((_a2 = node.emitNode) == null ? void 0 : _a2.assignedName) {
               if (isStringLiteral7(node.emitNode.assignedName)) {
-                if (node.emitNode.assignedName.textSourceNode && isIdentifier17(node.emitNode.assignedName.textSourceNode)) {
+                if (node.emitNode.assignedName.textSourceNode && isIdentifier18(node.emitNode.assignedName.textSourceNode)) {
                   getPrivateIdentifierEnvironment().data.className = node.emitNode.assignedName.textSourceNode;
                 } else if (isIdentifierText(node.emitNode.assignedName.text, languageVersion)) {
                   const prefixName = factory2.createIdentifier(node.emitNode.assignedName.text);
@@ -109462,10 +109462,10 @@ ${lanes.join("\n")}
             return void 0;
           }
           let initializer = visitNode(property.initializer, visitor, isExpression3);
-          if (isParameterPropertyDeclaration(propertyOriginalNode, propertyOriginalNode.parent) && isIdentifier17(propertyName2)) {
+          if (isParameterPropertyDeclaration(propertyOriginalNode, propertyOriginalNode.parent) && isIdentifier18(propertyName2)) {
             const localName = factory2.cloneNode(propertyName2);
             if (initializer) {
-              if (isParenthesizedExpression13(initializer) && isCommaExpression(initializer.expression) && isCallToHelper(initializer.expression.left, "___runInitializers") && isVoidExpression(initializer.expression.right) && isNumericLiteral8(initializer.expression.right.expression)) {
+              if (isParenthesizedExpression13(initializer) && isCommaExpression(initializer.expression) && isCallToHelper(initializer.expression.left, "___runInitializers") && isVoidExpression(initializer.expression.right) && isNumericLiteral9(initializer.expression.right.expression)) {
                 initializer = initializer.expression.left;
               }
               initializer = factory2.inlineExpressions([initializer, localName]);
@@ -109502,7 +109502,7 @@ ${lanes.join("\n")}
             const expression = factory2.createAssignment(memberAccess, initializer);
             return expression;
           } else {
-            const name = isComputedPropertyName8(propertyName2) ? propertyName2.expression : isIdentifier17(propertyName2) ? factory2.createStringLiteral(unescapeLeadingUnderscores(propertyName2.escapedText)) : propertyName2;
+            const name = isComputedPropertyName8(propertyName2) ? propertyName2.expression : isIdentifier18(propertyName2) ? factory2.createStringLiteral(unescapeLeadingUnderscores(propertyName2.escapedText)) : propertyName2;
             const descriptor = factory2.createPropertyDescriptor({ value: initializer, configurable: true, writable: true, enumerable: true });
             return factory2.createObjectDefinePropertyCall(receiver, name, descriptor);
           }
@@ -109571,7 +109571,7 @@ ${lanes.join("\n")}
           );
         }
         function visitInvalidSuperProperty(node) {
-          return isPropertyAccessExpression16(node) ? factory2.updatePropertyAccessExpression(
+          return isPropertyAccessExpression17(node) ? factory2.updatePropertyAccessExpression(
             node,
             factory2.createVoidZero(),
             node.name
@@ -109601,7 +109601,7 @@ ${lanes.join("\n")}
               }
               return factory2.createAssignment(generatedName, expression);
             }
-            return inlinable || isIdentifier17(innerExpression) ? void 0 : expression;
+            return inlinable || isIdentifier18(innerExpression) ? void 0 : expression;
           }
         }
         function startClassLexicalEnvironment() {
@@ -109794,7 +109794,7 @@ ${lanes.join("\n")}
           );
         }
         function visitDestructuringAssignmentTarget(node) {
-          if (isObjectLiteralExpression11(node) || isArrayLiteralExpression8(node)) {
+          if (isObjectLiteralExpression12(node) || isArrayLiteralExpression8(node)) {
             return visitAssignmentPattern(node);
           }
           if (isPrivateIdentifierPropertyAccessExpression(node)) {
@@ -109804,7 +109804,7 @@ ${lanes.join("\n")}
             if (facts & 1) {
               return visitInvalidSuperProperty(node);
             } else if (classConstructor && superClassReference) {
-              const name = isElementAccessExpression12(node) ? visitNode(node.argumentExpression, visitor, isExpression3) : isIdentifier17(node.name) ? factory2.createStringLiteralFromNode(node.name) : void 0;
+              const name = isElementAccessExpression12(node) ? visitNode(node.argumentExpression, visitor, isExpression3) : isIdentifier18(node.name) ? factory2.createStringLiteralFromNode(node.name) : void 0;
               if (name) {
                 const temp = factory2.createTempVariable(
                   /*recordTempVariable*/
@@ -109886,7 +109886,7 @@ ${lanes.join("\n")}
           Debug.assertNode(node, isObjectBindingOrAssignmentElement);
           if (isSpreadAssignment8(node)) return visitAssignmentRestProperty(node);
           if (isShorthandPropertyAssignment10(node)) return visitShorthandAssignmentProperty(node);
-          if (isPropertyAssignment12(node)) return visitAssignmentProperty(node);
+          if (isPropertyAssignment13(node)) return visitAssignmentProperty(node);
           return visitEachChild(node, visitor, context);
         }
         function visitAssignmentPattern(node) {
@@ -110104,7 +110104,7 @@ ${lanes.join("\n")}
             const numParameters = parameters2.length;
             for (let i = 0; i < numParameters; i++) {
               const parameter = parameters2[i];
-              if (i === 0 && isIdentifier17(parameter.name) && parameter.name.escapedText === "this") {
+              if (i === 0 && isIdentifier18(parameter.name) && parameter.name.escapedText === "this") {
                 continue;
               }
               if (parameter.dotDotDotToken) {
@@ -110275,7 +110275,7 @@ ${lanes.join("\n")}
               continue;
             }
             const serializedConstituent = serializeTypeNode(typeNode);
-            if (isIdentifier17(serializedConstituent) && serializedConstituent.escapedText === "Object") {
+            if (isIdentifier18(serializedConstituent) && serializedConstituent.escapedText === "Object") {
               return serializedConstituent;
             }
             if (serializedType) {
@@ -110293,9 +110293,9 @@ ${lanes.join("\n")}
             // temp vars used in fallback
             isGeneratedIdentifier(left) ? isGeneratedIdentifier(right) : (
               // entity names
-              isIdentifier17(left) ? isIdentifier17(right) && left.escapedText === right.escapedText : isPropertyAccessExpression16(left) ? isPropertyAccessExpression16(right) && equateSerializedTypeNodes(left.expression, right.expression) && equateSerializedTypeNodes(left.name, right.name) : (
+              isIdentifier18(left) ? isIdentifier18(right) && left.escapedText === right.escapedText : isPropertyAccessExpression17(left) ? isPropertyAccessExpression17(right) && equateSerializedTypeNodes(left.expression, right.expression) && equateSerializedTypeNodes(left.name, right.name) : (
                 // `void 0`
-                isVoidExpression(left) ? isVoidExpression(right) && isNumericLiteral8(left.expression) && left.expression.text === "0" && isNumericLiteral8(right.expression) && right.expression.text === "0" : (
+                isVoidExpression(left) ? isVoidExpression(right) && isNumericLiteral9(left.expression) && left.expression.text === "0" && isNumericLiteral9(right.expression) && right.expression.text === "0" : (
                   // `"undefined"` or `"function"` in `typeof` checks
                   isStringLiteral7(left) ? isStringLiteral7(right) && left.text === right.text : (
                     // used in `typeof` checks for fallback
@@ -110305,7 +110305,7 @@ ${lanes.join("\n")}
                         // conditionals used in fallback
                         isConditionalExpression4(left) ? isConditionalExpression4(right) && equateSerializedTypeNodes(left.condition, right.condition) && equateSerializedTypeNodes(left.whenTrue, right.whenTrue) && equateSerializedTypeNodes(left.whenFalse, right.whenFalse) : (
                           // logical binary and assignments used in fallback
-                          isBinaryExpression11(left) ? isBinaryExpression11(right) && left.operatorToken.kind === right.operatorToken.kind && equateSerializedTypeNodes(left.left, right.left) && equateSerializedTypeNodes(left.right, right.right) : false
+                          isBinaryExpression12(left) ? isBinaryExpression12(right) && left.operatorToken.kind === right.operatorToken.kind && equateSerializedTypeNodes(left.left, right.left) && equateSerializedTypeNodes(left.right, right.right) : false
                         )
                       )
                     )
@@ -110912,7 +110912,7 @@ ${lanes.join("\n")}
             return factory2.createIdentifier("");
           } else if (isComputedPropertyName8(name)) {
             return generateNameForComputedPropertyName && !isSimpleInlineableExpression(name.expression) ? factory2.getGeneratedNameForNode(name) : name.expression;
-          } else if (isIdentifier17(name)) {
+          } else if (isIdentifier18(name)) {
             return factory2.createStringLiteral(idText(name));
           } else {
             return factory2.cloneNode(name);
@@ -111258,7 +111258,7 @@ ${lanes.join("\n")}
           }
         }
         function getHelperVariableName(node) {
-          let declarationName2 = node.name && isIdentifier17(node.name) && !isGeneratedIdentifier(node.name) ? idText(node.name) : node.name && isPrivateIdentifier2(node.name) && !isGeneratedIdentifier(node.name) ? idText(node.name).slice(1) : node.name && isStringLiteral7(node.name) && isIdentifierText(
+          let declarationName2 = node.name && isIdentifier18(node.name) && !isGeneratedIdentifier(node.name) ? idText(node.name) : node.name && isPrivateIdentifier2(node.name) && !isGeneratedIdentifier(node.name) ? idText(node.name).slice(1) : node.name && isStringLiteral7(node.name) && isIdentifierText(
             node.name.text,
             99
             /* ESNext */
@@ -111988,13 +111988,13 @@ ${lanes.join("\n")}
             const statements2 = isMethodOrAccessor(member3) || isAutoAccessorPropertyDeclaration(member3) ? isStatic(member3) ? classInfo2.staticNonFieldDecorationStatements ?? (classInfo2.staticNonFieldDecorationStatements = []) : classInfo2.nonStaticNonFieldDecorationStatements ?? (classInfo2.nonStaticNonFieldDecorationStatements = []) : isPropertyDeclaration5(member3) && !isAutoAccessorPropertyDeclaration(member3) ? isStatic(member3) ? classInfo2.staticFieldDecorationStatements ?? (classInfo2.staticFieldDecorationStatements = []) : classInfo2.nonStaticFieldDecorationStatements ?? (classInfo2.nonStaticFieldDecorationStatements = []) : Debug.fail();
             const kind = isGetAccessorDeclaration6(member3) ? "getter" : isSetAccessorDeclaration6(member3) ? "setter" : isMethodDeclaration8(member3) ? "method" : isAutoAccessorPropertyDeclaration(member3) ? "accessor" : isPropertyDeclaration5(member3) ? "field" : Debug.fail();
             let propertyName2;
-            if (isIdentifier17(member3.name) || isPrivateIdentifier2(member3.name)) {
+            if (isIdentifier18(member3.name) || isPrivateIdentifier2(member3.name)) {
               propertyName2 = { computed: false, name: member3.name };
             } else if (isPropertyNameLiteral(member3.name)) {
               propertyName2 = { computed: true, name: factory2.createStringLiteralFromNode(member3.name) };
             } else {
               const expression = member3.name.expression;
-              if (isPropertyNameLiteral(expression) && !isIdentifier17(expression)) {
+              if (isPropertyNameLiteral(expression) && !isIdentifier18(expression)) {
                 propertyName2 = { computed: true, name: factory2.createStringLiteralFromNode(expression) };
               } else {
                 enterName();
@@ -112319,7 +112319,7 @@ ${lanes.join("\n")}
           return visitEachChild(node, visitor, context);
         }
         function visitPropertyAccessExpression(node) {
-          if (isSuperProperty(node) && isIdentifier17(node.name) && classThis && classSuper) {
+          if (isSuperProperty(node) && isIdentifier18(node.name) && classThis && classSuper) {
             const propertyName2 = factory2.createStringLiteralFromNode(node.name);
             const superProperty = factory2.createReflectGetCall(classSuper, propertyName2, classThis);
             setOriginalNode(superProperty, node.expression);
@@ -112401,7 +112401,7 @@ ${lanes.join("\n")}
               return visitEachChild(node, visitor, context);
             }
             if (isSuperProperty(node.left) && classThis && classSuper) {
-              let setterName = isElementAccessExpression12(node.left) ? visitNode(node.left.argumentExpression, visitor, isExpression3) : isIdentifier17(node.left.name) ? factory2.createStringLiteralFromNode(node.left.name) : void 0;
+              let setterName = isElementAccessExpression12(node.left) ? visitNode(node.left.argumentExpression, visitor, isExpression3) : isIdentifier18(node.left.name) ? factory2.createStringLiteralFromNode(node.left.name) : void 0;
               if (setterName) {
                 let expression = visitNode(node.right, visitor, isExpression3);
                 if (isCompoundAssignment(node.operatorToken.kind)) {
@@ -112456,7 +112456,7 @@ ${lanes.join("\n")}
           if (node.operator === 46 || node.operator === 47) {
             const operand = skipParentheses(node.operand);
             if (isSuperProperty(operand) && classThis && classSuper) {
-              let setterName = isElementAccessExpression12(operand) ? visitNode(operand.argumentExpression, visitor, isExpression3) : isIdentifier17(operand.name) ? factory2.createStringLiteralFromNode(operand.name) : void 0;
+              let setterName = isElementAccessExpression12(operand) ? visitNode(operand.argumentExpression, visitor, isExpression3) : isIdentifier18(operand.name) ? factory2.createStringLiteralFromNode(operand.name) : void 0;
               if (setterName) {
                 let getterName = setterName;
                 if (!isSimpleInlineableExpression(setterName)) {
@@ -112491,7 +112491,7 @@ ${lanes.join("\n")}
             const name2 = visitNode(node, visitor, isPropertyName);
             return { referencedName: referencedName2, name: name2 };
           }
-          if (isPropertyNameLiteral(node.expression) && !isIdentifier17(node.expression)) {
+          if (isPropertyNameLiteral(node.expression) && !isIdentifier18(node.expression)) {
             const referencedName2 = factory2.createStringLiteralFromNode(node.expression);
             const name2 = visitNode(node, visitor, isPropertyName);
             return { referencedName: referencedName2, name: name2 };
@@ -112535,11 +112535,11 @@ ${lanes.join("\n")}
           return visitEachChild(node, visitor, context);
         }
         function visitDestructuringAssignmentTarget(node) {
-          if (isObjectLiteralExpression11(node) || isArrayLiteralExpression8(node)) {
+          if (isObjectLiteralExpression12(node) || isArrayLiteralExpression8(node)) {
             return visitAssignmentPattern(node);
           }
           if (isSuperProperty(node) && classThis && classSuper) {
-            const propertyName2 = isElementAccessExpression12(node) ? visitNode(node.argumentExpression, visitor, isExpression3) : isIdentifier17(node.name) ? factory2.createStringLiteralFromNode(node.name) : void 0;
+            const propertyName2 = isElementAccessExpression12(node) ? visitNode(node.argumentExpression, visitor, isExpression3) : isIdentifier18(node.name) ? factory2.createStringLiteralFromNode(node.name) : void 0;
             if (propertyName2) {
               const paramName = factory2.createTempVariable(
                 /*recordTempVariable*/
@@ -112623,7 +112623,7 @@ ${lanes.join("\n")}
           Debug.assertNode(node, isObjectBindingOrAssignmentElement);
           if (isSpreadAssignment8(node)) return visitAssignmentRestProperty(node);
           if (isShorthandPropertyAssignment10(node)) return visitShorthandAssignmentProperty(node);
-          if (isPropertyAssignment12(node)) return visitAssignmentProperty(node);
+          if (isPropertyAssignment13(node)) return visitAssignmentProperty(node);
           return visitEachChild(node, visitor, context);
         }
         function visitAssignmentPattern(node) {
@@ -113083,7 +113083,7 @@ ${lanes.join("\n")}
             case 220:
               return doWithContext(1, visitArrowFunction, node);
             case 212:
-              if (capturedSuperProperties && isPropertyAccessExpression16(node) && node.expression.kind === 108) {
+              if (capturedSuperProperties && isPropertyAccessExpression17(node) && node.expression.kind === 108) {
                 capturedSuperProperties.add(node.name.escapedText);
               }
               return visitEachChild(node, visitor, context);
@@ -113342,7 +113342,7 @@ ${lanes.join("\n")}
           );
         }
         function recordDeclarationName({ name }, names) {
-          if (isIdentifier17(name)) {
+          if (isIdentifier18(name)) {
             names.add(name.escapedText);
           } else {
             for (const element of name.elements) {
@@ -113353,7 +113353,7 @@ ${lanes.join("\n")}
           }
         }
         function isVariableDeclarationListWithCollidingName(node) {
-          return !!node && isVariableDeclarationList9(node) && !(node.flags & 7) && node.declarations.some(collidesWithParameterName);
+          return !!node && isVariableDeclarationList10(node) && !(node.flags & 7) && node.declarations.some(collidesWithParameterName);
         }
         function visitVariableDeclarationListWithCollidingNames(node, hasReceiver) {
           hoistVariableDeclarationList(node);
@@ -113370,7 +113370,7 @@ ${lanes.join("\n")}
           forEach(node.declarations, hoistVariable);
         }
         function hoistVariable({ name }) {
-          if (isIdentifier17(name)) {
+          if (isIdentifier18(name)) {
             hoistVariableDeclaration(name);
           } else {
             for (const element of name.elements) {
@@ -113391,7 +113391,7 @@ ${lanes.join("\n")}
           return Debug.checkDefined(visitNode(converted, visitor, isExpression3));
         }
         function collidesWithParameterName({ name }) {
-          if (isIdentifier17(name)) {
+          if (isIdentifier18(name)) {
             return enclosingFunctionParameterNames.has(name.escapedText);
           } else {
             for (const element of name.elements) {
@@ -113539,7 +113539,7 @@ ${lanes.join("\n")}
                 Debug.assert(i < outerParameters.length);
                 const originalParameter = node.parameters[i];
                 const outerParameter = outerParameters[i];
-                Debug.assertNode(outerParameter.name, isIdentifier17);
+                Debug.assertNode(outerParameter.name, isIdentifier18);
                 if (originalParameter.initializer || originalParameter.dotDotDotToken) {
                   Debug.assert(i === outerParameters.length - 1);
                   parameterBindings.push(factory2.createSpreadElement(outerParameter.name));
@@ -113774,7 +113774,7 @@ ${lanes.join("\n")}
         function substituteCallExpression(node) {
           const expression = node.expression;
           if (isSuperProperty(expression)) {
-            const argumentExpression = isPropertyAccessExpression16(expression) ? substitutePropertyAccessExpression(expression) : substituteElementAccessExpression(expression);
+            const argumentExpression = isPropertyAccessExpression17(expression) ? substitutePropertyAccessExpression(expression) : substituteElementAccessExpression(expression);
             return factory2.createCallExpression(
               factory2.createPropertyAccessExpression(argumentExpression, "call"),
               /*typeArguments*/
@@ -114159,7 +114159,7 @@ ${lanes.join("\n")}
             case 216:
               return visitTaggedTemplateExpression(node);
             case 212:
-              if (capturedSuperProperties && isPropertyAccessExpression16(node) && node.expression.kind === 108) {
+              if (capturedSuperProperties && isPropertyAccessExpression17(node) && node.expression.kind === 108) {
                 capturedSuperProperties.add(node.name.escapedText);
               }
               return visitEachChild(node, visitor, context);
@@ -114501,7 +114501,7 @@ ${lanes.join("\n")}
         }
         function transformForOfStatementWithObjectRest(node) {
           const initializerWithoutParens = skipParentheses(node.initializer);
-          if (isVariableDeclarationList9(initializerWithoutParens) || isAssignmentPattern2(initializerWithoutParens)) {
+          if (isVariableDeclarationList10(initializerWithoutParens) || isAssignmentPattern2(initializerWithoutParens)) {
             let bodyLocation;
             let statementsLocation;
             const temp = factory2.createTempVariable(
@@ -114583,11 +114583,11 @@ ${lanes.join("\n")}
         }
         function transformForAwaitOfStatement(node, outermostLabeledStatement, ancestorFacts) {
           const expression = visitNode(node.expression, visitor, isExpression3);
-          const iterator = isIdentifier17(expression) ? factory2.getGeneratedNameForNode(expression) : factory2.createTempVariable(
+          const iterator = isIdentifier18(expression) ? factory2.getGeneratedNameForNode(expression) : factory2.createTempVariable(
             /*recordTempVariable*/
             void 0
           );
-          const result3 = isIdentifier17(expression) ? factory2.getGeneratedNameForNode(iterator) : factory2.createTempVariable(
+          const result3 = isIdentifier18(expression) ? factory2.getGeneratedNameForNode(iterator) : factory2.createTempVariable(
             /*recordTempVariable*/
             void 0
           );
@@ -115264,7 +115264,7 @@ ${lanes.join("\n")}
         function substituteCallExpression(node) {
           const expression = node.expression;
           if (isSuperProperty(expression)) {
-            const argumentExpression = isPropertyAccessExpression16(expression) ? substitutePropertyAccessExpression(expression) : substituteElementAccessExpression(expression);
+            const argumentExpression = isPropertyAccessExpression17(expression) ? substitutePropertyAccessExpression(expression) : substituteElementAccessExpression(expression);
             return factory2.createCallExpression(
               factory2.createPropertyAccessExpression(argumentExpression, "call"),
               /*typeArguments*/
@@ -115425,7 +115425,7 @@ ${lanes.join("\n")}
               thisArg = expression;
             }
           }
-          expression = node.kind === 212 ? factory2.updatePropertyAccessExpression(node, expression, visitNode(node.name, visitor, isIdentifier17)) : factory2.updateElementAccessExpression(node, expression, visitNode(node.argumentExpression, visitor, isExpression3));
+          expression = node.kind === 212 ? factory2.updatePropertyAccessExpression(node, expression, visitNode(node.name, visitor, isIdentifier18)) : factory2.updateElementAccessExpression(node, expression, visitNode(node.argumentExpression, visitor, isExpression3));
           return thisArg ? factory2.createSyntheticReferenceExpression(expression, thisArg) : expression;
         }
         function visitNonOptionalCallExpression(node, captureThisArg) {
@@ -115507,7 +115507,7 @@ ${lanes.join("\n")}
                     thisArg = rightExpression;
                   }
                 }
-                rightExpression = segment.kind === 212 ? factory2.createPropertyAccessExpression(rightExpression, visitNode(segment.name, visitor, isIdentifier17)) : factory2.createElementAccessExpression(rightExpression, visitNode(segment.argumentExpression, visitor, isExpression3));
+                rightExpression = segment.kind === 212 ? factory2.createPropertyAccessExpression(rightExpression, visitNode(segment.name, visitor, isIdentifier18)) : factory2.createElementAccessExpression(rightExpression, visitNode(segment.argumentExpression, visitor, isExpression3));
                 break;
               case 214:
                 if (i === 0 && leftThisArg) {
@@ -115654,7 +115654,7 @@ ${lanes.join("\n")}
               propertyAccessTarget,
               left.expression
             );
-            if (isPropertyAccessExpression16(left)) {
+            if (isPropertyAccessExpression17(left)) {
               assignmentTarget = factory2.createPropertyAccessExpression(
                 propertyAccessTarget,
                 left.name
@@ -115708,7 +115708,7 @@ ${lanes.join("\n")}
           if (node.isDeclarationFile) {
             return node;
           }
-          const visited = visitNode(node, visitor, isSourceFile6);
+          const visited = visitNode(node, visitor, isSourceFile7);
           addEmitHelpers(visited, context.readEmitHelpers());
           exportVars = void 0;
           exportBindings = void 0;
@@ -115972,10 +115972,10 @@ ${lanes.join("\n")}
             const statement = statementsIn[i];
             const usingKind = getUsingKind(statement);
             if (usingKind) {
-              Debug.assertNode(statement, isVariableStatement9);
+              Debug.assertNode(statement, isVariableStatement10);
               const declarations = [];
               for (let declaration of statement.declarationList.declarations) {
-                if (!isIdentifier17(declaration.name)) {
+                if (!isIdentifier18(declaration.name)) {
                   declarations.length = 0;
                   break;
                 }
@@ -116184,7 +116184,7 @@ ${lanes.join("\n")}
         function hoistInitializedVariable(node) {
           Debug.assertIsDefined(node.initializer);
           let target;
-          if (isIdentifier17(node.name)) {
+          if (isIdentifier18(node.name)) {
             target = factory2.cloneNode(node.name);
             setEmitFlags(target, getEmitFlags(target) & ~(32768 | 16384 | 65536));
           } else {
@@ -116348,7 +116348,7 @@ ${lanes.join("\n")}
         return 0;
       }
       function isUsingVariableDeclarationList(node) {
-        return isVariableDeclarationList9(node) && getUsingKindOfVariableDeclarationList(node) !== 0;
+        return isVariableDeclarationList10(node) && getUsingKindOfVariableDeclarationList(node) !== 0;
       }
       function getUsingKindOfVariableDeclarationList(node) {
         return (node.flags & 7) === 6 ? 2 : (node.flags & 7) === 4 ? 1 : 0;
@@ -116357,7 +116357,7 @@ ${lanes.join("\n")}
         return getUsingKindOfVariableDeclarationList(node.declarationList);
       }
       function getUsingKind(statement) {
-        return isVariableStatement9(statement) ? getUsingKindOfVariableStatement(statement) : 0;
+        return isVariableStatement10(statement) ? getUsingKindOfVariableStatement(statement) : 0;
       }
       function getUsingKindOfStatements(statements2) {
         let result3 = 0;
@@ -116468,7 +116468,7 @@ ${lanes.join("\n")}
           }
           if (currentFileState.utilizedImplicitRuntimeImports) {
             for (const [importSource, importSpecifiersMap] of arrayFrom(currentFileState.utilizedImplicitRuntimeImports.entries())) {
-              if (isExternalModule(node)) {
+              if (isExternalModule2(node)) {
                 const importStatement = factory2.createImportDeclaration(
                   /*modifiers*/
                   void 0,
@@ -116597,15 +116597,15 @@ ${lanes.join("\n")}
         }
         function hasProto(obj) {
           return obj.properties.some(
-            (p) => isPropertyAssignment12(p) && (isIdentifier17(p.name) && idText(p.name) === "__proto__" || isStringLiteral7(p.name) && p.name.text === "__proto__")
+            (p) => isPropertyAssignment13(p) && (isIdentifier18(p.name) && idText(p.name) === "__proto__" || isStringLiteral7(p.name) && p.name.text === "__proto__")
           );
         }
         function hasKeyAfterPropsSpread(node) {
           let spread = false;
           for (const elem of node.attributes.properties) {
-            if (isJsxSpreadAttribute2(elem) && (!isObjectLiteralExpression11(elem.expression) || elem.expression.properties.some(isSpreadAssignment8))) {
+            if (isJsxSpreadAttribute2(elem) && (!isObjectLiteralExpression12(elem.expression) || elem.expression.properties.some(isSpreadAssignment8))) {
               spread = true;
-            } else if (spread && isJsxAttribute3(elem) && isIdentifier17(elem.name) && elem.name.escapedText === "key") {
+            } else if (spread && isJsxAttribute3(elem) && isIdentifier18(elem.name) && elem.name.escapedText === "key") {
               return true;
             }
           }
@@ -116661,7 +116661,7 @@ ${lanes.join("\n")}
         function visitJsxOpeningLikeElementJSX(node, children, isChild, location2) {
           const tagName = getTagName(node);
           const childrenProp = children && children.length ? convertJsxChildrenToChildrenPropAssignment(children) : void 0;
-          const keyAttr = find(node.attributes.properties, (p) => !!p.name && isIdentifier17(p.name) && p.name.escapedText === "key");
+          const keyAttr = find(node.attributes.properties, (p) => !!p.name && isIdentifier18(p.name) && p.name.escapedText === "key");
           const attrs = keyAttr ? filter(node.attributes.properties, (p) => p !== keyAttr) : node.attributes.properties;
           const objectProperties = length(attrs) ? transformJsxAttributesToObjectProps(attrs, childrenProp) : factory2.createObjectLiteralExpression(childrenProp ? [childrenProp] : emptyArray);
           return visitJsxOpeningLikeElementOrFragmentJSX(
@@ -116683,7 +116683,7 @@ ${lanes.join("\n")}
           }
           if (compilerOptions.jsx === 5) {
             const originalFile = getOriginalNode(currentSourceFile);
-            if (originalFile && isSourceFile6(originalFile)) {
+            if (originalFile && isSourceFile7(originalFile)) {
               if (keyAttr === void 0) {
                 args.push(factory2.createVoidZero());
               }
@@ -116770,7 +116770,7 @@ ${lanes.join("\n")}
           return element;
         }
         function transformJsxSpreadAttributeToProps(node) {
-          if (isObjectLiteralExpression11(node.expression) && !hasProto(node.expression)) {
+          if (isObjectLiteralExpression12(node.expression) && !hasProto(node.expression)) {
             return sameMap(node.expression.properties, (p) => Debug.checkDefined(visitNode(p, visitor, isObjectLiteralElementLike)));
           }
           return factory2.createSpreadAssignment(Debug.checkDefined(visitNode(node.expression, visitor, isExpression3)));
@@ -116791,7 +116791,7 @@ ${lanes.join("\n")}
           let properties = [];
           for (const attr2 of attrs) {
             if (isJsxSpreadAttribute2(attr2)) {
-              if (isObjectLiteralExpression11(attr2.expression) && !hasProto(attr2.expression)) {
+              if (isObjectLiteralExpression12(attr2.expression) && !hasProto(attr2.expression)) {
                 for (const prop of attr2.expression.properties) {
                   if (isSpreadAssignment8(prop)) {
                     finishObjectLiteralIfNeeded();
@@ -116812,7 +116812,7 @@ ${lanes.join("\n")}
             properties.push(children);
           }
           finishObjectLiteralIfNeeded();
-          if (expressions.length && !isObjectLiteralExpression11(expressions[0])) {
+          if (expressions.length && !isObjectLiteralExpression12(expressions[0])) {
             expressions.unshift(factory2.createObjectLiteralExpression());
           }
           return singleOrUndefined(expressions) || emitHelpers().createAssignHelper(expressions);
@@ -116915,7 +116915,7 @@ ${lanes.join("\n")}
             return getTagName(node.openingElement);
           } else {
             const tagName = node.tagName;
-            if (isIdentifier17(tagName) && isIntrinsicJsxName(tagName.escapedText)) {
+            if (isIdentifier18(tagName) && isIntrinsicJsxName(tagName.escapedText)) {
               return factory2.createStringLiteral(idText(tagName));
             } else if (isJsxNamespacedName(tagName)) {
               return factory2.createStringLiteral(idText(tagName.namespace) + ":" + idText(tagName.name));
@@ -116926,7 +116926,7 @@ ${lanes.join("\n")}
         }
         function getAttributeName(node) {
           const name = node.name;
-          if (isIdentifier17(name)) {
+          if (isIdentifier18(name)) {
             const text3 = idText(name);
             return /^[A-Z_]\w*$/i.test(text3) ? name : factory2.createStringLiteral(text3);
           }
@@ -117247,7 +117247,7 @@ ${lanes.join("\n")}
               ),
               left
             );
-          } else if (isPropertyAccessExpression16(left)) {
+          } else if (isPropertyAccessExpression17(left)) {
             const expressionTemp = factory2.createTempVariable(hoistVariableDeclaration);
             target = setTextRange(
               factory2.createPropertyAccessExpression(
@@ -117941,7 +117941,7 @@ ${lanes.join("\n")}
           return block;
         }
         function isUninitializedVariableStatement(node) {
-          return isVariableStatement9(node) && every(node.declarationList.declarations, (decl) => isIdentifier17(decl.name) && !decl.initializer);
+          return isVariableStatement10(node) && every(node.declarationList.declarations, (decl) => isIdentifier18(decl.name) && !decl.initializer);
         }
         function containsSuperCall(node) {
           if (isSuperCall(node)) {
@@ -118025,10 +118025,10 @@ ${lanes.join("\n")}
           return isGeneratedIdentifier(node) && idText(node) === "_super";
         }
         function isThisCapturingVariableStatement(node) {
-          return isVariableStatement9(node) && node.declarationList.declarations.length === 1 && isThisCapturingVariableDeclaration(node.declarationList.declarations[0]);
+          return isVariableStatement10(node) && node.declarationList.declarations.length === 1 && isThisCapturingVariableDeclaration(node.declarationList.declarations[0]);
         }
         function isThisCapturingVariableDeclaration(node) {
-          return isVariableDeclaration16(node) && isCapturedThis(node.name) && !!node.initializer;
+          return isVariableDeclaration17(node) && isCapturedThis(node.name) && !!node.initializer;
         }
         function isThisCapturingAssignment(node) {
           return isAssignmentExpression(
@@ -118038,16 +118038,16 @@ ${lanes.join("\n")}
           ) && isCapturedThis(node.left);
         }
         function isTransformedSuperCall(node) {
-          return isCallExpression18(node) && isPropertyAccessExpression16(node.expression) && isSyntheticSuper(node.expression.expression) && isIdentifier17(node.expression.name) && (idText(node.expression.name) === "call" || idText(node.expression.name) === "apply") && node.arguments.length >= 1 && node.arguments[0].kind === 110;
+          return isCallExpression18(node) && isPropertyAccessExpression17(node.expression) && isSyntheticSuper(node.expression.expression) && isIdentifier18(node.expression.name) && (idText(node.expression.name) === "call" || idText(node.expression.name) === "apply") && node.arguments.length >= 1 && node.arguments[0].kind === 110;
         }
         function isTransformedSuperCallWithFallback(node) {
-          return isBinaryExpression11(node) && node.operatorToken.kind === 57 && node.right.kind === 110 && isTransformedSuperCall(node.left);
+          return isBinaryExpression12(node) && node.operatorToken.kind === 57 && node.right.kind === 110 && isTransformedSuperCall(node.left);
         }
         function isImplicitSuperCall(node) {
-          return isBinaryExpression11(node) && node.operatorToken.kind === 56 && isBinaryExpression11(node.left) && node.left.operatorToken.kind === 38 && isSyntheticSuper(node.left.left) && node.left.right.kind === 106 && isTransformedSuperCall(node.right) && idText(node.right.expression.name) === "apply";
+          return isBinaryExpression12(node) && node.operatorToken.kind === 56 && isBinaryExpression12(node.left) && node.left.operatorToken.kind === 38 && isSyntheticSuper(node.left.left) && node.left.right.kind === 106 && isTransformedSuperCall(node.right) && idText(node.right.expression.name) === "apply";
         }
         function isImplicitSuperCallWithFallback(node) {
-          return isBinaryExpression11(node) && node.operatorToken.kind === 57 && node.right.kind === 110 && isImplicitSuperCall(node.left);
+          return isBinaryExpression12(node) && node.operatorToken.kind === 57 && node.right.kind === 110 && isImplicitSuperCall(node.left);
         }
         function isThisCapturingTransformedSuperCallWithFallback(node) {
           return isThisCapturingAssignment(node) && isTransformedSuperCallWithFallback(node.right);
@@ -118210,7 +118210,7 @@ ${lanes.join("\n")}
           return factory2.updateBlock(body, visitNodes2(body.statements, elideUnusedThisCaptureWorker, isStatement3));
         }
         function injectSuperPresenceCheckWorker(node) {
-          if (isTransformedSuperCall(node) && node.arguments.length === 2 && isIdentifier17(node.arguments[1]) && idText(node.arguments[1]) === "arguments") {
+          if (isTransformedSuperCall(node) && node.arguments.length === 2 && isIdentifier18(node.arguments[1]) && idText(node.arguments[1]) === "arguments") {
             return factory2.createLogicalAnd(
               factory2.createStrictInequality(
                 createSyntheticSuper(),
@@ -118736,7 +118736,7 @@ ${lanes.join("\n")}
           Debug.assert(propertyName2);
           let e;
           if (!isPrivateIdentifier2(propertyName2) && getUseDefineForClassFields(context.getCompilerOptions())) {
-            const name = isComputedPropertyName8(propertyName2) ? propertyName2.expression : isIdentifier17(propertyName2) ? factory2.createStringLiteral(unescapeLeadingUnderscores(propertyName2.escapedText)) : propertyName2;
+            const name = isComputedPropertyName8(propertyName2) ? propertyName2.expression : isIdentifier18(propertyName2) ? factory2.createStringLiteral(unescapeLeadingUnderscores(propertyName2.escapedText)) : propertyName2;
             e = factory2.createObjectDefinePropertyCall(receiver, name, factory2.createPropertyDescriptor({ value: memberFunction, enumerable: false, writable: true, configurable: true }));
           } else {
             const memberName = createMemberAccessForPropertyName(
@@ -119228,7 +119228,7 @@ ${lanes.join("\n")}
             const declarations = visitNodes2(
               node.declarations,
               node.flags & 1 ? visitVariableDeclarationInLetDeclarationList : visitVariableDeclaration,
-              isVariableDeclaration16
+              isVariableDeclaration17
             );
             const declarationList = factory2.createVariableDeclarationList(declarations);
             setOriginalNode(declarationList, node);
@@ -119400,7 +119400,7 @@ ${lanes.join("\n")}
         function convertForOfStatementHead(node, boundValue, convertedLoopBodyStatements) {
           const statements2 = [];
           const initializer = node.initializer;
-          if (isVariableDeclarationList9(initializer)) {
+          if (isVariableDeclarationList10(initializer)) {
             if (node.initializer.flags & 7) {
               enableSubstitutionsForBlockScopedBindings();
             }
@@ -119494,7 +119494,7 @@ ${lanes.join("\n")}
           const expression = visitNode(node.expression, visitor, isExpression3);
           Debug.assert(expression);
           const counter = factory2.createLoopVariable();
-          const rhsReference = isIdentifier17(expression) ? factory2.getGeneratedNameForNode(expression) : factory2.createTempVariable(
+          const rhsReference = isIdentifier18(expression) ? factory2.getGeneratedNameForNode(expression) : factory2.createTempVariable(
             /*recordTempVariable*/
             void 0
           );
@@ -119558,11 +119558,11 @@ ${lanes.join("\n")}
         function convertForOfStatementForIterable(node, outermostLabeledStatement, convertedLoopBodyStatements, ancestorFacts) {
           const expression = visitNode(node.expression, visitor, isExpression3);
           Debug.assert(expression);
-          const iterator = isIdentifier17(expression) ? factory2.getGeneratedNameForNode(expression) : factory2.createTempVariable(
+          const iterator = isIdentifier18(expression) ? factory2.getGeneratedNameForNode(expression) : factory2.createTempVariable(
             /*recordTempVariable*/
             void 0
           );
-          const result3 = isIdentifier17(expression) ? factory2.getGeneratedNameForNode(iterator) : factory2.createTempVariable(
+          const result3 = isIdentifier18(expression) ? factory2.getGeneratedNameForNode(iterator) : factory2.createTempVariable(
             /*recordTempVariable*/
             void 0
           );
@@ -120576,18 +120576,18 @@ ${lanes.join("\n")}
         }
         function visitTypeScriptClassWrapper(node) {
           const body = cast(cast(skipOuterExpressions(node.expression), isArrowFunction12).body, isBlock7);
-          const isVariableStatementWithInitializer = (stmt) => isVariableStatement9(stmt) && !!first(stmt.declarationList.declarations).initializer;
+          const isVariableStatementWithInitializer = (stmt) => isVariableStatement10(stmt) && !!first(stmt.declarationList.declarations).initializer;
           const savedConvertedLoopState = convertedLoopState;
           convertedLoopState = void 0;
           const bodyStatements = visitNodes2(body.statements, classWrapperStatementVisitor, isStatement3);
           convertedLoopState = savedConvertedLoopState;
           const classStatements = filter(bodyStatements, isVariableStatementWithInitializer);
           const remainingStatements = filter(bodyStatements, (stmt) => !isVariableStatementWithInitializer(stmt));
-          const varStatement = cast(first(classStatements), isVariableStatement9);
+          const varStatement = cast(first(classStatements), isVariableStatement10);
           const variable = varStatement.declarationList.declarations[0];
           const initializer = skipOuterExpressions(variable.initializer);
           let aliasAssignment = tryCast(initializer, isAssignmentExpression);
-          if (!aliasAssignment && isBinaryExpression11(initializer) && initializer.operatorToken.kind === 28) {
+          if (!aliasAssignment && isBinaryExpression12(initializer) && initializer.operatorToken.kind === 28) {
             aliasAssignment = tryCast(initializer.left, isAssignmentExpression);
           }
           const call = cast(aliasAssignment ? skipOuterExpressions(aliasAssignment.right) : initializer, isCallExpression18);
@@ -120608,7 +120608,7 @@ ${lanes.join("\n")}
               factory2.createExpressionStatement(
                 factory2.createAssignment(
                   aliasAssignment.left,
-                  cast(variable.name, isIdentifier17)
+                  cast(variable.name, isIdentifier18)
                 )
               )
             );
@@ -120622,7 +120622,7 @@ ${lanes.join("\n")}
           }
           const returnStatement = tryCast(elementAt(funcStatements, classBodyEnd), isReturnStatement8);
           for (const statement of remainingStatements) {
-            if (isReturnStatement8(statement) && (returnStatement == null ? void 0 : returnStatement.expression) && !isIdentifier17(returnStatement.expression)) {
+            if (isReturnStatement8(statement) && (returnStatement == null ? void 0 : returnStatement.expression) && !isIdentifier18(returnStatement.expression)) {
               statements2.push(returnStatement);
             } else {
               statements2.push(statement);
@@ -120939,14 +120939,14 @@ ${lanes.join("\n")}
           if (hint === 1) {
             return substituteExpression(node);
           }
-          if (isIdentifier17(node)) {
+          if (isIdentifier18(node)) {
             return substituteIdentifier(node);
           }
           return node;
         }
         function substituteIdentifier(node) {
           if (enabledSubstitutions & 2 && !isInternalName(node)) {
-            const original = getParseTreeNode(node, isIdentifier17);
+            const original = getParseTreeNode(node, isIdentifier18);
             if (original && isNameOfDeclarationWithCollidingName(original)) {
               return setTextRange(factory2.getGeneratedNameForNode(original), node);
             }
@@ -121031,7 +121031,7 @@ ${lanes.join("\n")}
             return false;
           }
           const expression = callArgument.expression;
-          return isIdentifier17(expression) && expression.escapedText === "arguments";
+          return isIdentifier18(expression) && expression.escapedText === "arguments";
         }
       }
       function getInstructionName(instruction) {
@@ -121423,7 +121423,7 @@ ${lanes.join("\n")}
           visit(node.right);
           return factory2.inlineExpressions(pendingExpressions);
           function visit(node2) {
-            if (isBinaryExpression11(node2) && node2.operatorToken.kind === 28) {
+            if (isBinaryExpression12(node2) && node2.operatorToken.kind === 28) {
               visit(node2.left);
               visit(node2.right);
             } else {
@@ -121438,7 +121438,7 @@ ${lanes.join("\n")}
         function visitCommaListExpression(node) {
           let pendingExpressions = [];
           for (const elem of node.elements) {
-            if (isBinaryExpression11(elem) && elem.operatorToken.kind === 28) {
+            if (isBinaryExpression12(elem) && elem.operatorToken.kind === 28) {
               pendingExpressions.push(visitCommaExpression(elem));
             } else {
               if (containsYield(elem) && pendingExpressions.length > 0) {
@@ -121858,7 +121858,7 @@ ${lanes.join("\n")}
             const endLabel = beginLoopBlock(incrementLabel);
             if (node.initializer) {
               const initializer = node.initializer;
-              if (isVariableDeclarationList9(initializer)) {
+              if (isVariableDeclarationList10(initializer)) {
                 transformAndEmitVariableDeclarationList(initializer);
               } else {
                 emitStatement(
@@ -121898,7 +121898,7 @@ ${lanes.join("\n")}
             beginScriptLoopBlock();
           }
           const initializer = node.initializer;
-          if (initializer && isVariableDeclarationList9(initializer)) {
+          if (initializer && isVariableDeclarationList10(initializer)) {
             for (const variable of initializer.declarations) {
               hoistVariableDeclaration(variable.name);
             }
@@ -121951,7 +121951,7 @@ ${lanes.join("\n")}
             emitAssignment(key2, factory2.createElementAccessExpression(keysArray, keysIndex));
             emitBreakWhenFalse(incrementLabel, factory2.createBinaryExpression(key2, 103, obj));
             let variable;
-            if (isVariableDeclarationList9(initializer)) {
+            if (isVariableDeclarationList10(initializer)) {
               for (const variable2 of initializer.declarations) {
                 hoistVariableDeclaration(variable2.name);
               }
@@ -121975,7 +121975,7 @@ ${lanes.join("\n")}
             beginScriptLoopBlock();
           }
           const initializer = node.initializer;
-          if (isVariableDeclarationList9(initializer)) {
+          if (isVariableDeclarationList10(initializer)) {
             for (const variable of initializer.declarations) {
               hoistVariableDeclaration(variable.name);
             }
@@ -122199,7 +122199,7 @@ ${lanes.join("\n")}
           return node;
         }
         function substituteExpression(node) {
-          if (isIdentifier17(node)) {
+          if (isIdentifier18(node)) {
             return substituteExpressionIdentifier(node);
           }
           return node;
@@ -122207,7 +122207,7 @@ ${lanes.join("\n")}
         function substituteExpressionIdentifier(node) {
           if (!isGeneratedIdentifier(node) && renamedCatchVariables && renamedCatchVariables.has(idText(node))) {
             const original = getOriginalNode(node);
-            if (isIdentifier17(original) && original.parent) {
+            if (isIdentifier18(original) && original.parent) {
               const declaration = resolver.getReferencedValueDeclaration(original);
               if (declaration) {
                 const name = renamedCatchVariableDeclarations[getOriginalNodeId(declaration)];
@@ -123173,7 +123173,7 @@ ${lanes.join("\n")}
               /*requireStringLiteralLikeArgument*/
               false,
               (node2) => {
-                if (!isStringLiteralLike13(node2.arguments[0]) || shouldRewriteModuleSpecifier(node2.arguments[0].text, compilerOptions)) {
+                if (!isStringLiteralLike14(node2.arguments[0]) || shouldRewriteModuleSpecifier(node2.arguments[0].text, compilerOptions)) {
                   importsAndRequiresToRewriteOrShim = append(importsAndRequiresToRewriteOrShim, node2);
                 }
               }
@@ -123190,7 +123190,7 @@ ${lanes.join("\n")}
           if (hasJSFileExtension(currentSourceFile.fileName) && currentSourceFile.commonJsModuleIndicator && (!currentSourceFile.externalModuleIndicator || currentSourceFile.externalModuleIndicator === true)) {
             return false;
           }
-          if (!currentModuleInfo.exportEquals && isExternalModule(currentSourceFile)) {
+          if (!currentModuleInfo.exportEquals && isExternalModule2(currentSourceFile)) {
             return true;
           }
           return false;
@@ -123198,7 +123198,7 @@ ${lanes.join("\n")}
         function transformCommonJSModule(node) {
           startLexicalEnvironment();
           const statements2 = [];
-          const ensureUseStrict = getStrictOptionValue(compilerOptions, "alwaysStrict") || isExternalModule(currentSourceFile);
+          const ensureUseStrict = getStrictOptionValue(compilerOptions, "alwaysStrict") || isExternalModule2(currentSourceFile);
           const statementOffset = factory2.copyPrologue(node.statements, statements2, ensureUseStrict && !isJsonSourceFile(node), topLevelVisitor);
           if (shouldEmitUnderscoreUnderscoreESModule()) {
             append(statements2, createUnderscoreUnderscoreESModule());
@@ -123716,7 +123716,7 @@ ${lanes.join("\n")}
           );
         }
         function destructuringNeedsFlattening(node) {
-          if (isObjectLiteralExpression11(node)) {
+          if (isObjectLiteralExpression12(node)) {
             for (const elem of node.properties) {
               switch (elem.kind) {
                 case 304:
@@ -123752,7 +123752,7 @@ ${lanes.join("\n")}
                 return true;
               }
             }
-          } else if (isIdentifier17(node)) {
+          } else if (isIdentifier18(node)) {
             return length(getExports(node)) > (isExportName(node) ? 1 : 0);
           }
           return false;
@@ -123764,7 +123764,7 @@ ${lanes.join("\n")}
           return visitEachChild(node, visitor, context);
         }
         function visitForStatement(node, isTopLevel) {
-          if (isTopLevel && node.initializer && isVariableDeclarationList9(node.initializer) && !(node.initializer.flags & 7)) {
+          if (isTopLevel && node.initializer && isVariableDeclarationList10(node.initializer) && !(node.initializer.flags & 7)) {
             const exportStatements = appendExportsOfVariableDeclarationList(
               /*statements*/
               void 0,
@@ -123774,7 +123774,7 @@ ${lanes.join("\n")}
             );
             if (exportStatements) {
               const statements2 = [];
-              const varDeclList = visitNode(node.initializer, discardedValueVisitor, isVariableDeclarationList9);
+              const varDeclList = visitNode(node.initializer, discardedValueVisitor, isVariableDeclarationList10);
               const varStatement = factory2.createVariableStatement(
                 /*modifiers*/
                 void 0,
@@ -123805,7 +123805,7 @@ ${lanes.join("\n")}
           );
         }
         function visitForInStatement(node) {
-          if (isVariableDeclarationList9(node.initializer) && !(node.initializer.flags & 7)) {
+          if (isVariableDeclarationList10(node.initializer) && !(node.initializer.flags & 7)) {
             const exportStatements = appendExportsOfVariableDeclarationList(
               /*statements*/
               void 0,
@@ -123833,7 +123833,7 @@ ${lanes.join("\n")}
           );
         }
         function visitForOfStatement(node) {
-          if (isVariableDeclarationList9(node.initializer) && !(node.initializer.flags & 7)) {
+          if (isVariableDeclarationList10(node.initializer) && !(node.initializer.flags & 7)) {
             const exportStatements = appendExportsOfVariableDeclarationList(
               /*statements*/
               void 0,
@@ -123947,7 +123947,7 @@ ${lanes.join("\n")}
           return factory2.updatePartiallyEmittedExpression(node, visitNode(node.expression, valueIsDiscarded ? discardedValueVisitor : visitor, isExpression3));
         }
         function visitPreOrPostfixUnaryExpression(node, valueIsDiscarded) {
-          if ((node.operator === 46 || node.operator === 47) && isIdentifier17(node.operand) && !isGeneratedIdentifier(node.operand) && !isLocalName(node.operand) && !isDeclarationNameOfEnumOrNamespace(node.operand)) {
+          if ((node.operator === 46 || node.operator === 47) && isIdentifier18(node.operand) && !isGeneratedIdentifier(node.operand) && !isLocalName(node.operand) && !isDeclarationNameOfEnumOrNamespace(node.operand)) {
             const exportedNames = getExports(node.operand);
             if (exportedNames) {
               let temp;
@@ -123987,7 +123987,7 @@ ${lanes.join("\n")}
             void 0,
             visitNodes2(node.arguments, (arg) => {
               if (arg === node.arguments[0]) {
-                return isStringLiteralLike13(arg) ? rewriteModuleSpecifier(arg, compilerOptions) : emitHelpers().createRewriteRelativeImportExtensionsHelper(arg);
+                return isStringLiteralLike14(arg) ? rewriteModuleSpecifier(arg, compilerOptions) : emitHelpers().createRewriteRelativeImportExtensionsHelper(arg);
               }
               return visitor(arg);
             }, isExpression3)
@@ -124617,7 +124617,7 @@ ${lanes.join("\n")}
             let modifiers;
             let removeCommentsOnExpressions = false;
             for (const variable of node.declarationList.declarations) {
-              if (isIdentifier17(variable.name) && isLocalName(variable.name)) {
+              if (isIdentifier18(variable.name) && isLocalName(variable.name)) {
                 if (!modifiers) {
                   modifiers = visitNodes2(node.modifiers, modifierVisitor, isModifier);
                 }
@@ -124793,7 +124793,7 @@ ${lanes.join("\n")}
                 statements2 = appendExportsOfBindingElement(statements2, element, isForInOrOfInitializer);
               }
             }
-          } else if (!isGeneratedIdentifier(decl.name) && (!isVariableDeclaration16(decl) || decl.initializer || isForInOrOfInitializer)) {
+          } else if (!isGeneratedIdentifier(decl.name) && (!isVariableDeclaration17(decl) || decl.initializer || isForInOrOfInitializer)) {
             statements2 = appendExportsOfDeclaration(statements2, new IdentifierNameMap(), decl);
           }
           return statements2;
@@ -125001,10 +125001,10 @@ ${lanes.join("\n")}
           return node;
         }
         function substituteCallExpression(node) {
-          if (isIdentifier17(node.expression)) {
+          if (isIdentifier18(node.expression)) {
             const expression = substituteExpressionIdentifier(node.expression);
             noSubstitution[getNodeId(expression)] = true;
-            if (!isIdentifier17(expression) && !(getEmitFlags(node.expression) & 8192)) {
+            if (!isIdentifier18(expression) && !(getEmitFlags(node.expression) & 8192)) {
               return addInternalEmitFlags(
                 factory2.updateCallExpression(
                   node,
@@ -125021,10 +125021,10 @@ ${lanes.join("\n")}
           return node;
         }
         function substituteTaggedTemplateExpression(node) {
-          if (isIdentifier17(node.tag)) {
+          if (isIdentifier18(node.tag)) {
             const tag = substituteExpressionIdentifier(node.tag);
             noSubstitution[getNodeId(tag)] = true;
-            if (!isIdentifier17(tag) && !(getEmitFlags(node.tag) & 8192)) {
+            if (!isIdentifier18(tag) && !(getEmitFlags(node.tag) & 8192)) {
               return addInternalEmitFlags(
                 factory2.updateTaggedTemplateExpression(
                   node,
@@ -125085,7 +125085,7 @@ ${lanes.join("\n")}
           return node;
         }
         function substituteBinaryExpression(node) {
-          if (isAssignmentOperator2(node.operatorToken.kind) && isIdentifier17(node.left) && (!isGeneratedIdentifier(node.left) || isFileLevelReservedGeneratedIdentifier(node.left)) && !isLocalName(node.left)) {
+          if (isAssignmentOperator2(node.operatorToken.kind) && isIdentifier18(node.left) && (!isGeneratedIdentifier(node.left) || isFileLevelReservedGeneratedIdentifier(node.left)) && !isLocalName(node.left)) {
             const exportedNames = getExports(node.left);
             if (exportedNames) {
               let expression = node;
@@ -125291,7 +125291,7 @@ ${lanes.join("\n")}
         function createSystemModuleBody(node, dependencyGroups) {
           const statements2 = [];
           startLexicalEnvironment();
-          const ensureUseStrict = getStrictOptionValue(compilerOptions, "alwaysStrict") || isExternalModule(currentSourceFile);
+          const ensureUseStrict = getStrictOptionValue(compilerOptions, "alwaysStrict") || isExternalModule2(currentSourceFile);
           const statementOffset = factory2.copyPrologue(node.statements, statements2, ensureUseStrict, topLevelVisitor);
           statements2.push(
             factory2.createVariableStatement(
@@ -125978,7 +125978,7 @@ ${lanes.join("\n")}
           return statement;
         }
         function createExportExpression(name, value) {
-          const exportName = isIdentifier17(name) ? factory2.createStringLiteralFromNode(name) : name;
+          const exportName = isIdentifier18(name) ? factory2.createStringLiteralFromNode(name) : name;
           setEmitFlags(
             value,
             getEmitFlags(value) | 3072
@@ -126076,7 +126076,7 @@ ${lanes.join("\n")}
           return node;
         }
         function shouldHoistForInitializer(node) {
-          return isVariableDeclarationList9(node) && shouldHoistVariableDeclarationList(node);
+          return isVariableDeclarationList10(node) && shouldHoistVariableDeclarationList(node);
         }
         function visitForInitializer(node) {
           if (shouldHoistForInitializer(node)) {
@@ -126271,15 +126271,15 @@ ${lanes.join("\n")}
             return hasExportedReferenceInDestructuringTarget(node.left);
           } else if (isSpreadElement12(node)) {
             return hasExportedReferenceInDestructuringTarget(node.expression);
-          } else if (isObjectLiteralExpression11(node)) {
+          } else if (isObjectLiteralExpression12(node)) {
             return some(node.properties, hasExportedReferenceInDestructuringTarget);
           } else if (isArrayLiteralExpression8(node)) {
             return some(node.elements, hasExportedReferenceInDestructuringTarget);
           } else if (isShorthandPropertyAssignment10(node)) {
             return hasExportedReferenceInDestructuringTarget(node.name);
-          } else if (isPropertyAssignment12(node)) {
+          } else if (isPropertyAssignment13(node)) {
             return hasExportedReferenceInDestructuringTarget(node.initializer);
-          } else if (isIdentifier17(node)) {
+          } else if (isIdentifier18(node)) {
             const container = resolver.getReferencedExportContainer(node);
             return container !== void 0 && container.kind === 308;
           } else {
@@ -126287,7 +126287,7 @@ ${lanes.join("\n")}
           }
         }
         function visitPrefixOrPostfixUnaryExpression(node, valueIsDiscarded) {
-          if ((node.operator === 46 || node.operator === 47) && isIdentifier17(node.operand) && !isGeneratedIdentifier(node.operand) && !isLocalName(node.operand) && !isDeclarationNameOfEnumOrNamespace(node.operand)) {
+          if ((node.operator === 46 || node.operator === 47) && isIdentifier18(node.operand) && !isGeneratedIdentifier(node.operand) && !isLocalName(node.operand) && !isDeclarationNameOfEnumOrNamespace(node.operand)) {
             const exportedNames = getExports(node.operand);
             if (exportedNames) {
               let temp;
@@ -126444,7 +126444,7 @@ ${lanes.join("\n")}
           return node;
         }
         function substituteBinaryExpression(node) {
-          if (isAssignmentOperator2(node.operatorToken.kind) && isIdentifier17(node.left) && (!isGeneratedIdentifier(node.left) || isFileLevelReservedGeneratedIdentifier(node.left)) && !isLocalName(node.left)) {
+          if (isAssignmentOperator2(node.operatorToken.kind) && isIdentifier18(node.left) && (!isGeneratedIdentifier(node.left) || isFileLevelReservedGeneratedIdentifier(node.left)) && !isLocalName(node.left)) {
             const exportedNames = getExports(node.left);
             if (exportedNames) {
               let expression = node;
@@ -126542,7 +126542,7 @@ ${lanes.join("\n")}
           if (node.isDeclarationFile) {
             return node;
           }
-          if (isExternalModule(node) || getIsolatedModules(compilerOptions)) {
+          if (isExternalModule2(node) || getIsolatedModules(compilerOptions)) {
             currentSourceFile = node;
             importRequireStatements = void 0;
             if (compilerOptions.rewriteRelativeImportExtensions && (currentSourceFile.flags & 4194304 || isInJSFile(node))) {
@@ -126553,7 +126553,7 @@ ${lanes.join("\n")}
                 /*requireStringLiteralLikeArgument*/
                 false,
                 (node2) => {
-                  if (!isStringLiteralLike13(node2.arguments[0]) || shouldRewriteModuleSpecifier(node2.arguments[0].text, compilerOptions)) {
+                  if (!isStringLiteralLike14(node2.arguments[0]) || shouldRewriteModuleSpecifier(node2.arguments[0].text, compilerOptions)) {
                     importsAndRequiresToRewriteOrShim = append(importsAndRequiresToRewriteOrShim, node2);
                   }
                 }
@@ -126568,7 +126568,7 @@ ${lanes.join("\n")}
                 setTextRange(factory2.createNodeArray(insertStatementsAfterCustomPrologue(result3.statements.slice(), importRequireStatements)), result3.statements)
               );
             }
-            if (!isExternalModule(node) || getEmitModuleKind(compilerOptions) === 200 || some(result3.statements, isExternalModuleIndicator)) {
+            if (!isExternalModule2(node) || getEmitModuleKind(compilerOptions) === 200 || some(result3.statements, isExternalModuleIndicator)) {
               return result3;
             }
             return factory2.updateSourceFile(
@@ -126638,7 +126638,7 @@ ${lanes.join("\n")}
             node.expression,
             node.typeArguments,
             [
-              isStringLiteralLike13(node.arguments[0]) ? rewriteModuleSpecifier(node.arguments[0], compilerOptions) : emitHelpers().createRewriteRelativeImportExtensionsHelper(node.arguments[0]),
+              isStringLiteralLike14(node.arguments[0]) ? rewriteModuleSpecifier(node.arguments[0], compilerOptions) : emitHelpers().createRewriteRelativeImportExtensionsHelper(node.arguments[0]),
               ...node.arguments.slice(1)
             ]
           );
@@ -126718,7 +126718,7 @@ ${lanes.join("\n")}
             importRequireStatements = [importStatement, requireStatement];
           }
           const name = importRequireStatements[1].declarationList.declarations[0].name;
-          Debug.assertNode(name, isIdentifier17);
+          Debug.assertNode(name, isIdentifier18);
           return factory2.createCallExpression(
             factory2.cloneNode(name),
             /*typeArguments*/
@@ -126851,8 +126851,8 @@ ${lanes.join("\n")}
           return [importDecl, exportDecl];
         }
         function onEmitNode(hint, node, emitCallback) {
-          if (isSourceFile6(node)) {
-            if ((isExternalModule(node) || getIsolatedModules(compilerOptions)) && compilerOptions.importHelpers) {
+          if (isSourceFile7(node)) {
+            if ((isExternalModule2(node) || getIsolatedModules(compilerOptions)) && compilerOptions.importHelpers) {
               helperNameSubstitutions = /* @__PURE__ */ new Map();
             }
             currentSourceFile = node;
@@ -126868,7 +126868,7 @@ ${lanes.join("\n")}
           if (node.id && noSubstitution.has(node.id)) {
             return node;
           }
-          if (isIdentifier17(node) && getEmitFlags(node) & 8192) {
+          if (isIdentifier18(node) && getEmitFlags(node) & 8192) {
             return substituteHelperName(node);
           }
           return node;
@@ -126919,7 +126919,7 @@ ${lanes.join("\n")}
         let currentSourceFile;
         return transformSourceFileOrBundle;
         function onSubstituteNode(hint, node) {
-          if (isSourceFile6(node)) {
+          if (isSourceFile7(node)) {
             currentSourceFile = node;
             return previousOnSubstituteNode(hint, node);
           } else {
@@ -126933,7 +126933,7 @@ ${lanes.join("\n")}
           }
         }
         function onEmitNode(hint, node, emitCallback) {
-          if (isSourceFile6(node)) {
+          if (isSourceFile7(node)) {
             currentSourceFile = node;
           }
           if (!currentSourceFile) {
@@ -126954,7 +126954,7 @@ ${lanes.join("\n")}
           currentSourceFile = node;
           const result3 = getModuleTransformForFile(node)(node);
           currentSourceFile = void 0;
-          Debug.assert(isSourceFile6(result3));
+          Debug.assert(isSourceFile7(result3));
           return result3;
         }
         function transformSourceFileOrBundle(node) {
@@ -126965,7 +126965,7 @@ ${lanes.join("\n")}
         }
       }
       function canProduceDiagnostics(node) {
-        return isVariableDeclaration16(node) || isPropertyDeclaration5(node) || isPropertySignature(node) || isBindingElement8(node) || isSetAccessor(node) || isGetAccessor(node) || isConstructSignatureDeclaration(node) || isCallSignatureDeclaration(node) || isMethodDeclaration8(node) || isMethodSignature(node) || isFunctionDeclaration9(node) || isParameter6(node) || isTypeParameterDeclaration(node) || isExpressionWithTypeArguments(node) || isImportEqualsDeclaration3(node) || isTypeAliasDeclaration(node) || isConstructorDeclaration4(node) || isIndexSignatureDeclaration(node) || isPropertyAccessExpression16(node) || isElementAccessExpression12(node) || isBinaryExpression11(node) || isJSDocTypeAlias(node);
+        return isVariableDeclaration17(node) || isPropertyDeclaration5(node) || isPropertySignature(node) || isBindingElement8(node) || isSetAccessor(node) || isGetAccessor(node) || isConstructSignatureDeclaration(node) || isCallSignatureDeclaration(node) || isMethodDeclaration8(node) || isMethodSignature(node) || isFunctionDeclaration9(node) || isParameter6(node) || isTypeParameterDeclaration(node) || isExpressionWithTypeArguments(node) || isImportEqualsDeclaration3(node) || isTypeAliasDeclaration(node) || isConstructorDeclaration4(node) || isIndexSignatureDeclaration(node) || isPropertyAccessExpression17(node) || isElementAccessExpression12(node) || isBinaryExpression12(node) || isJSDocTypeAlias(node);
       }
       function createGetSymbolAccessibilityDiagnosticForNodeName(node) {
         if (isSetAccessor(node) || isGetAccessor(node)) {
@@ -127011,7 +127011,7 @@ ${lanes.join("\n")}
         }
       }
       function createGetSymbolAccessibilityDiagnosticForNode(node) {
-        if (isVariableDeclaration16(node) || isPropertyDeclaration5(node) || isPropertySignature(node) || isPropertyAccessExpression16(node) || isElementAccessExpression12(node) || isBinaryExpression11(node) || isBindingElement8(node) || isConstructorDeclaration4(node)) {
+        if (isVariableDeclaration17(node) || isPropertyDeclaration5(node) || isPropertySignature(node) || isPropertyAccessExpression17(node) || isElementAccessExpression12(node) || isBinaryExpression12(node) || isBindingElement8(node) || isConstructorDeclaration4(node)) {
           return getVariableDeclarationTypeVisibilityError;
         } else if (isSetAccessor(node) || isGetAccessor(node)) {
           return getAccessorDeclarationTypeVisibilityError;
@@ -127395,7 +127395,7 @@ ${lanes.join("\n")}
           }
         }
         function findNearestDeclaration(node) {
-          const result3 = findAncestor(node, (n) => isExportAssignment4(n) || isStatement3(n) || isVariableDeclaration16(n) || isPropertyDeclaration5(n) || isParameter6(n));
+          const result3 = findAncestor(node, (n) => isExportAssignment4(n) || isStatement3(n) || isVariableDeclaration17(n) || isPropertyDeclaration5(n) || isParameter6(n));
           if (!result3) return void 0;
           if (isExportAssignment4(result3)) return result3;
           if (isReturnStatement8(result3)) {
@@ -127580,7 +127580,7 @@ ${lanes.join("\n")}
         function reportExpandoFunctionErrors(node) {
           resolver.getPropertiesOfContainerFunction(node).forEach((p) => {
             if (isExpandoPropertyDeclaration(p.valueDeclaration)) {
-              const errorTarget = isBinaryExpression11(p.valueDeclaration) ? p.valueDeclaration.left : p.valueDeclaration;
+              const errorTarget = isBinaryExpression12(p.valueDeclaration) ? p.valueDeclaration.left : p.valueDeclaration;
               context.addDiagnostic(createDiagnosticForNode(
                 errorTarget,
                 Diagnostics.Assigning_properties_to_functions_without_declaring_them_is_not_supported_with_isolatedDeclarations_Add_an_explicit_declaration_for_the_properties_assigned_to_this_function
@@ -127591,7 +127591,7 @@ ${lanes.join("\n")}
         function reportInferenceFallback(node) {
           if (!isolatedDeclarations || isSourceFileJS(currentSourceFile)) return;
           if (getSourceFileOfNode(node) !== currentSourceFile) return;
-          if (isVariableDeclaration16(node) && resolver.isExpandoFunctionDeclaration(node)) {
+          if (isVariableDeclaration17(node) && resolver.isExpandoFunctionDeclaration(node)) {
             reportExpandoFunctionErrors(node);
           } else {
             context.addDiagnostic(getIsolatedDeclarationError(node));
@@ -127637,7 +127637,7 @@ ${lanes.join("\n")}
             context.addDiagnostic(
               addRelatedInfo(
                 createDiagnosticForNode(errorNameNode || errorFallbackNode, Diagnostics.Property_0_of_exported_anonymous_class_type_may_not_be_private_or_protected, propertyName2),
-                ...isVariableDeclaration16((errorNameNode || errorFallbackNode).parent) ? [createDiagnosticForNode(errorNameNode || errorFallbackNode, Diagnostics.Add_a_type_annotation_to_the_variable_0, errorDeclarationNameWithFallback())] : []
+                ...isVariableDeclaration17((errorNameNode || errorFallbackNode).parent) ? [createDiagnosticForNode(errorNameNode || errorFallbackNode, Diagnostics.Add_a_type_annotation_to_the_variable_0, errorDeclarationNameWithFallback())] : []
               )
             );
           }
@@ -127799,7 +127799,7 @@ ${lanes.join("\n")}
           } else {
             const statements2 = visitNodes2(node.statements, visitDeclarationStatements, isStatement3);
             combinedStatements = setTextRange(factory2.createNodeArray(transformAndReplaceLatePaintedStatements(statements2)), node.statements);
-            if (isExternalModule(node) && (!resultHasExternalModuleIndicator || needsScopeFixMarker && !resultHasScopeMarker)) {
+            if (isExternalModule2(node) && (!resultHasExternalModuleIndicator || needsScopeFixMarker && !resultHasScopeMarker)) {
               combinedStatements = setTextRange(factory2.createNodeArray([...combinedStatements, createEmptyExports(factory2)]), combinedStatements);
             }
           }
@@ -128077,7 +128077,7 @@ ${lanes.join("\n")}
           ) ? void 0 : visitNodes2(params, visitDeclarationSubtree, isTypeParameterDeclaration);
         }
         function isEnclosingDeclaration(node) {
-          return isSourceFile6(node) || isTypeAliasDeclaration(node) || isModuleDeclaration(node) || isClassDeclaration5(node) || isInterfaceDeclaration(node) || isFunctionLike3(node) || isIndexSignatureDeclaration(node) || isMappedTypeNode(node);
+          return isSourceFile7(node) || isTypeAliasDeclaration(node) || isModuleDeclaration(node) || isClassDeclaration5(node) || isInterfaceDeclaration(node) || isFunctionLike3(node) || isIndexSignatureDeclaration(node) || isMappedTypeNode(node);
         }
         function checkEntityNameVisibility(entityName, enclosingDeclaration2) {
           const visibilityResult = resolver.isEntityNameVisible(entityName, enclosingDeclaration2);
@@ -128092,7 +128092,7 @@ ${lanes.join("\n")}
         function rewriteModuleSpecifier2(parent2, input) {
           if (!input) return void 0;
           resultHasExternalModuleIndicator = resultHasExternalModuleIndicator || parent2.kind !== 268 && parent2.kind !== 206;
-          if (isStringLiteralLike13(input)) {
+          if (isStringLiteralLike14(input)) {
             if (isBundledEmit) {
               const newName = getExternalModuleNameFromDeclaration(context.getEmitHost(), resolver, parent2);
               if (newName) {
@@ -128206,7 +128206,7 @@ ${lanes.join("\n")}
               return Debug.fail(`Late replaced statement was found which is not handled by the declaration transformer!: ${Debug.formatSyntaxKind(i.kind)}`);
             }
             const priorNeedsDeclare = needsDeclare;
-            needsDeclare = i.parent && isSourceFile6(i.parent) && !(isExternalModule(i.parent) && isBundledEmit);
+            needsDeclare = i.parent && isSourceFile7(i.parent) && !(isExternalModule2(i.parent) && isBundledEmit);
             const result3 = transformTopLevelDeclaration(i);
             needsDeclare = priorNeedsDeclare;
             lateStatementReplacementMap.set(getOriginalNodeId(i), result3);
@@ -128222,7 +128222,7 @@ ${lanes.join("\n")}
                   if (isArray(result3) ? some(result3, needsScopeMarker) : needsScopeMarker(result3)) {
                     needsScopeFixMarker = true;
                   }
-                  if (isSourceFile6(statement.parent) && (isArray(result3) ? some(result3, isExternalModuleIndicator) : isExternalModuleIndicator(result3))) {
+                  if (isSourceFile7(statement.parent) && (isArray(result3) ? some(result3, isExternalModuleIndicator) : isExternalModuleIndicator(result3))) {
                     resultHasExternalModuleIndicator = true;
                   }
                 }
@@ -128239,7 +128239,7 @@ ${lanes.join("\n")}
             if (hasDynamicName(input)) {
               if (isolatedDeclarations) {
                 if (!resolver.isDefinitelyReferenceToGlobalSymbolObject(input.name.expression)) {
-                  if (isClassDeclaration5(input.parent) || isObjectLiteralExpression11(input.parent)) {
+                  if (isClassDeclaration5(input.parent) || isObjectLiteralExpression12(input.parent)) {
                     context.addDiagnostic(createDiagnosticForNode(input, Diagnostics.Computed_property_names_on_class_or_object_literals_cannot_be_inferred_with_isolatedDeclarations));
                     return;
                   } else if (
@@ -128575,7 +128575,7 @@ ${lanes.join("\n")}
           if (shouldStripInternal(input)) return;
           switch (input.kind) {
             case 279: {
-              if (isSourceFile6(input.parent)) {
+              if (isSourceFile7(input.parent)) {
                 resultHasExternalModuleIndicator = true;
               }
               resultHasScopeMarker = true;
@@ -128589,7 +128589,7 @@ ${lanes.join("\n")}
               );
             }
             case 278: {
-              if (isSourceFile6(input.parent)) {
+              if (isSourceFile7(input.parent)) {
                 resultHasExternalModuleIndicator = true;
               }
               resultHasScopeMarker = true;
@@ -128839,7 +128839,7 @@ ${lanes.join("\n")}
                   false,
                   namespaceDecl.name
                 );
-                if (isSourceFile6(input.parent)) {
+                if (isSourceFile7(input.parent)) {
                   resultHasExternalModuleIndicator = true;
                 }
                 resultHasScopeMarker = true;
@@ -129074,7 +129074,7 @@ ${lanes.join("\n")}
         }
         function transformVariableStatement(input) {
           if (!forEach(input.declarationList.declarations, getBindingNameVisible)) return;
-          const nodes = visitNodes2(input.declarationList.declarations, visitDeclarationSubtree, isVariableDeclaration16);
+          const nodes = visitNodes2(input.declarationList.declarations, visitDeclarationSubtree, isVariableDeclaration17);
           if (!length(nodes)) return;
           const modifiers = factory2.createNodeArray(ensureModifiers(input));
           let declList;
@@ -129152,7 +129152,7 @@ ${lanes.join("\n")}
           let mask2 = 131071 ^ (1 | 1024 | 16);
           let additions = needsDeclare && !isAlwaysType(node) ? 128 : 0;
           const parentIsFile = node.parent.kind === 308;
-          if (!parentIsFile || isBundledEmit && parentIsFile && isExternalModule(node.parent)) {
+          if (!parentIsFile || isBundledEmit && parentIsFile && isExternalModule2(node.parent)) {
             mask2 ^= 128;
             additions = 0;
           }
@@ -129450,7 +129450,7 @@ ${lanes.join("\n")}
           diagnostics
         };
         function transformRoot(node) {
-          return node && (!isSourceFile6(node) || !node.isDeclarationFile) ? transformation(node) : node;
+          return node && (!isSourceFile7(node) || !node.isDeclarationFile) ? transformation(node) : node;
         }
         function enableSubstitution(kind) {
           Debug.assert(state < 2, "Cannot modify the transformation context after transformation has completed.");
@@ -130022,7 +130022,7 @@ ${lanes.join("\n")}
             emitSkipped = true;
             return;
           }
-          (isSourceFile6(sourceFileOrBundle) ? [sourceFileOrBundle] : filter(sourceFileOrBundle.sourceFiles, isSourceFileNotJson)).forEach(
+          (isSourceFile7(sourceFileOrBundle) ? [sourceFileOrBundle] : filter(sourceFileOrBundle.sourceFiles, isSourceFileNotJson)).forEach(
             (sourceFile) => {
               if (compilerOptions.noCheck || !canIncludeBindAndCheckDiagnostics(sourceFile, compilerOptions)) markLinkedReferences(sourceFile);
             }
@@ -130073,7 +130073,7 @@ ${lanes.join("\n")}
             if (emitOnly || compilerOptions.emitDeclarationOnly) emitSkipped = true;
             return;
           }
-          const sourceFiles = isSourceFile6(sourceFileOrBundle) ? [sourceFileOrBundle] : sourceFileOrBundle.sourceFiles;
+          const sourceFiles = isSourceFile7(sourceFileOrBundle) ? [sourceFileOrBundle] : sourceFileOrBundle.sourceFiles;
           const filesForEmit = forceDtsEmit ? sourceFiles : filter(sourceFiles, isSourceFileNotJson);
           const inputListOrBundle = compilerOptions.outFile ? [factory.createBundle(filesForEmit)] : filesForEmit;
           filesForEmit.forEach((sourceFile) => {
@@ -130419,10 +130419,10 @@ ${lanes.join("\n")}
         function printNode(hint, node, sourceFile) {
           switch (hint) {
             case 0:
-              Debug.assert(isSourceFile6(node), "Expected a SourceFile node.");
+              Debug.assert(isSourceFile7(node), "Expected a SourceFile node.");
               break;
             case 2:
-              Debug.assert(isIdentifier17(node), "Expected an Identifier node.");
+              Debug.assert(isIdentifier18(node), "Expected an Identifier node.");
               break;
             case 1:
               Debug.assert(isExpression3(node), "Expected an Expression node.");
@@ -130611,10 +130611,10 @@ ${lanes.join("\n")}
           currentParenthesizerRule = void 0;
         }
         function shouldEmitComments(node) {
-          return !commentsDisabled && !isSourceFile6(node);
+          return !commentsDisabled && !isSourceFile7(node);
         }
         function shouldEmitSourceMaps(node) {
-          return !sourceMapsDisabled && !isSourceFile6(node) && !isInJsonFile(node);
+          return !sourceMapsDisabled && !isSourceFile7(node) && !isInJsonFile(node);
         }
         function getPipelinePhase(phase2, emitHint, node) {
           switch (phase2) {
@@ -130674,8 +130674,8 @@ ${lanes.join("\n")}
               return emitSnippetNode(hint, node, snippet);
             }
           }
-          if (hint === 0) return emitSourceFile(cast(node, isSourceFile6));
-          if (hint === 2) return emitIdentifier(cast(node, isIdentifier17));
+          if (hint === 0) return emitSourceFile(cast(node, isSourceFile7));
+          if (hint === 2) return emitIdentifier(cast(node, isIdentifier18));
           if (hint === 6) return emitLiteral(
             cast(node, isStringLiteral7),
             /*jsxAttributeEscape*/
@@ -131159,9 +131159,9 @@ ${lanes.join("\n")}
           const numNodes = bundle ? bundle.sourceFiles.length : 1;
           for (let i = 0; i < numNodes; i++) {
             const currentNode = bundle ? bundle.sourceFiles[i] : node;
-            const sourceFile = isSourceFile6(currentNode) ? currentNode : currentSourceFile;
+            const sourceFile = isSourceFile7(currentNode) ? currentNode : currentSourceFile;
             const shouldSkip = printerOptions.noEmitHelpers || !!sourceFile && hasRecordedExternalHelpers(sourceFile);
-            const shouldBundle = isSourceFile6(currentNode) && !isOwnFileEmit;
+            const shouldBundle = isSourceFile7(currentNode) && !isOwnFileEmit;
             const helpers = getSortedEmitHelpers(currentNode);
             if (helpers) {
               for (const helper of helpers) {
@@ -131716,7 +131716,7 @@ ${lanes.join("\n")}
         }
         function mayNeedDotDotForPropertyAccess(expression) {
           expression = skipPartiallyEmittedExpressions(expression);
-          if (isNumericLiteral8(expression)) {
+          if (isNumericLiteral9(expression)) {
             const text3 = getLiteralTextOfNode(
               expression,
               /*sourceFile*/
@@ -131951,7 +131951,7 @@ ${lanes.join("\n")}
               lastSubstitution = void 0;
             }
             if (pipelinePhase === pipelineEmitWithComments || pipelinePhase === pipelineEmitWithSourceMaps || pipelinePhase === pipelineEmitWithHint) {
-              if (isBinaryExpression11(next)) {
+              if (isBinaryExpression12(next)) {
                 return next;
               }
             }
@@ -133408,7 +133408,7 @@ ${lanes.join("\n")}
           return statements2.length;
         }
         function emitPrologueDirectivesIfNeeded(sourceFileOrBundle) {
-          if (isSourceFile6(sourceFileOrBundle)) {
+          if (isSourceFile7(sourceFileOrBundle)) {
             emitPrologueDirectives(sourceFileOrBundle.statements, sourceFileOrBundle);
           } else {
             const seenPrologueDirectives = /* @__PURE__ */ new Set();
@@ -133419,7 +133419,7 @@ ${lanes.join("\n")}
           }
         }
         function emitShebangIfNeeded(sourceFileOrBundle) {
-          if (isSourceFile6(sourceFileOrBundle)) {
+          if (isSourceFile7(sourceFileOrBundle)) {
             const shebang = getShebang(sourceFileOrBundle.text);
             if (shebang) {
               writeComment(shebang);
@@ -133596,7 +133596,7 @@ ${lanes.join("\n")}
         }
         function canEmitSimpleArrowHead(parentNode, parameters2) {
           const parameter = singleOrUndefined(parameters2);
-          return parameter && parameter.pos === parentNode.pos && isArrowFunction12(parentNode) && !parentNode.type && !some(parentNode.modifiers) && !some(parentNode.typeParameters) && !some(parameter.modifiers) && !parameter.dotDotDotToken && !parameter.questionToken && !parameter.type && !parameter.initializer && isIdentifier17(parameter.name);
+          return parameter && parameter.pos === parentNode.pos && isArrowFunction12(parentNode) && !parentNode.type && !some(parentNode.modifiers) && !some(parentNode.typeParameters) && !some(parameter.modifiers) && !parameter.dotDotDotToken && !parameter.questionToken && !parameter.type && !parameter.initializer && isIdentifier18(parameter.name);
         }
         function emitParametersForArrow(parentNode, parameters2) {
           if (canEmitSimpleArrowHead(parentNode, parameters2)) {
@@ -134100,8 +134100,8 @@ ${lanes.join("\n")}
         function getLiteralTextOfNode(node, sourceFile = currentSourceFile, neverAsciiEscape, jsxAttributeEscape) {
           if (node.kind === 11 && node.textSourceNode) {
             const textSourceNode = node.textSourceNode;
-            if (isIdentifier17(textSourceNode) || isPrivateIdentifier2(textSourceNode) || isNumericLiteral8(textSourceNode) || isJsxNamespacedName(textSourceNode)) {
-              const text3 = isNumericLiteral8(textSourceNode) ? textSourceNode.text : getTextOfNode2(textSourceNode);
+            if (isIdentifier18(textSourceNode) || isPrivateIdentifier2(textSourceNode) || isNumericLiteral9(textSourceNode) || isJsxNamespacedName(textSourceNode)) {
+              const text3 = isNumericLiteral9(textSourceNode) ? textSourceNode.text : getTextOfNode2(textSourceNode);
               return jsxAttributeEscape ? `"${escapeJsxAttributeString(text3)}"` : neverAsciiEscape || getEmitFlags(node) & 16777216 ? `"${escapeString(text3)}"` : `"${escapeNonAsciiString(text3)}"`;
             } else {
               return getLiteralTextOfNode(textSourceNode, getSourceFileOfNode(textSourceNode), neverAsciiEscape, jsxAttributeEscape);
@@ -134494,7 +134494,7 @@ ${lanes.join("\n")}
           );
         }
         function generateNameForMethodOrAccessor(node, privateName, prefix, suffix) {
-          if (isIdentifier17(node.name)) {
+          if (isIdentifier18(node.name)) {
             return generateNameCached(node.name, privateName);
           }
           return makeTempVariableName(
@@ -134581,7 +134581,7 @@ ${lanes.join("\n")}
             case 1:
               return makeTempVariableName(0, !!(autoGenerate.flags & 8), isPrivateIdentifier2(name), prefix, suffix);
             case 2:
-              Debug.assertNode(name, isIdentifier17);
+              Debug.assertNode(name, isIdentifier18);
               return makeTempVariableName(
                 268435456,
                 !!(autoGenerate.flags & 8),
@@ -136046,7 +136046,7 @@ ${lanes.join("\n")}
           return void 0;
         }
         const elem = node.elements[0];
-        if (!isStringLiteralLike13(elem.name)) return void 0;
+        if (!isStringLiteralLike14(elem.name)) return void 0;
         if (elem.name.text !== "resolution-mode") {
           grammarErrorOnNode == null ? void 0 : grammarErrorOnNode(
             elem.name,
@@ -136054,7 +136054,7 @@ ${lanes.join("\n")}
           );
           return void 0;
         }
-        if (!isStringLiteralLike13(elem.value)) return void 0;
+        if (!isStringLiteralLike14(elem.value)) return void 0;
         if (elem.value.text !== "import" && elem.value.text !== "require") {
           grammarErrorOnNode == null ? void 0 : grammarErrorOnNode(elem.value, Diagnostics.resolution_mode_should_be_either_require_or_import);
           return void 0;
@@ -137877,11 +137877,11 @@ ${lanes.join("\n")}
             return;
           }
           const isJavaScriptFile = isSourceFileJS(file);
-          const isExternalModuleFile = isExternalModule(file);
+          const isExternalModuleFile = isExternalModule2(file);
           let imports;
           let moduleAugmentations;
           let ambientModules;
-          if (isJavaScriptFile || !file.isDeclarationFile && (getIsolatedModules(options) || isExternalModule(file))) {
+          if (isJavaScriptFile || !file.isDeclarationFile && (getIsolatedModules(options) || isExternalModule2(file))) {
             if (options.importHelpers) {
               imports = [createSyntheticImport(externalHelpersModuleNameText, file)];
             }
@@ -138704,7 +138704,7 @@ ${lanes.join("\n")}
             createDiagnosticForOptionName(Diagnostics.Option_0_cannot_be_specified_with_option_1, "lib", "noLib");
           }
           const languageVersion = getEmitScriptTarget(options);
-          const firstNonAmbientExternalModuleSourceFile = find(files, (f) => isExternalModule(f) && !f.isDeclarationFile);
+          const firstNonAmbientExternalModuleSourceFile = find(files, (f) => isExternalModule2(f) && !f.isDeclarationFile);
           if (options.isolatedModules || options.verbatimModuleSyntax) {
             if (options.module === 0 && languageVersion < 2 && options.isolatedModules) {
               createDiagnosticForOptionName(Diagnostics.Option_isolatedModules_can_only_be_used_when_either_option_module_is_provided_or_option_target_is_ES2015_or_higher, "isolatedModules", "target");
@@ -139013,7 +139013,7 @@ ${lanes.join("\n")}
         function createDiagnosticForOptionPathKeyValue(key2, valueIndex, message, ...args) {
           let needCompilerDiagnostic = true;
           forEachOptionPathsSyntax((pathProp) => {
-            if (isObjectLiteralExpression11(pathProp.initializer)) {
+            if (isObjectLiteralExpression12(pathProp.initializer)) {
               forEachPropertyAssignment(pathProp.initializer, key2, (keyProps) => {
                 const initializer = keyProps.initializer;
                 if (isArrayLiteralExpression8(initializer) && initializer.elements.length > valueIndex) {
@@ -139030,7 +139030,7 @@ ${lanes.join("\n")}
         function createDiagnosticForOptionPaths(onKey, key2, message, ...args) {
           let needCompilerDiagnostic = true;
           forEachOptionPathsSyntax((pathProp) => {
-            if (isObjectLiteralExpression11(pathProp.initializer) && createOptionDiagnosticInObjectLiteralSyntax(
+            if (isObjectLiteralExpression12(pathProp.initializer) && createOptionDiagnosticInObjectLiteralSyntax(
               pathProp.initializer,
               onKey,
               key2,
@@ -139104,7 +139104,7 @@ ${lanes.join("\n")}
         function getCompilerOptionsObjectLiteralSyntax() {
           if (_compilerOptionsObjectLiteralSyntax === void 0) {
             const compilerOptionsProperty = getCompilerOptionsPropertySyntax();
-            _compilerOptionsObjectLiteralSyntax = compilerOptionsProperty ? tryCast(compilerOptionsProperty.initializer, isObjectLiteralExpression11) || false : false;
+            _compilerOptionsObjectLiteralSyntax = compilerOptionsProperty ? tryCast(compilerOptionsProperty.initializer, isObjectLiteralExpression12) || false : false;
           }
           return _compilerOptionsObjectLiteralSyntax || void 0;
         }
@@ -147441,7 +147441,7 @@ ${lanes.join("\n")}
             }
             if (isJSDocTypeLiteral(node)) {
               return factory.createTypeLiteralNode(map(node.jsDocPropertyTags, (t) => {
-                const name = visitNode(isIdentifier17(t.name) ? t.name : t.name.right, visitExistingNodeTreeSymbols, isIdentifier17);
+                const name = visitNode(isIdentifier18(t.name) ? t.name : t.name.right, visitExistingNodeTreeSymbols, isIdentifier18);
                 const overrideTypeNode = resolver.getJsDocPropertyOverride(context, node, t);
                 return factory.createPropertySignature(
                   /*modifiers*/
@@ -147458,7 +147458,7 @@ ${lanes.join("\n")}
                 );
               }));
             }
-            if (isTypeReferenceNode3(node) && isIdentifier17(node.typeName) && node.typeName.escapedText === "") {
+            if (isTypeReferenceNode3(node) && isIdentifier18(node.typeName) && node.typeName.escapedText === "") {
               return setOriginalNode(factory.createKeywordTypeNode(
                 133
                 /* AnyKeyword */
@@ -147488,7 +147488,7 @@ ${lanes.join("\n")}
                   /*modifiers*/
                   void 0,
                   visitNodes2(node.typeParameters, visitExistingNodeTreeSymbols, isTypeParameterDeclaration),
-                  mapDefined(node.parameters, (p, i) => p.name && isIdentifier17(p.name) && p.name.escapedText === "new" ? (newTypeNode = p.type, void 0) : factory.createParameterDeclaration(
+                  mapDefined(node.parameters, (p, i) => p.name && isIdentifier18(p.name) && p.name.escapedText === "new" ? (newTypeNode = p.type, void 0) : factory.createParameterDeclaration(
                     /*modifiers*/
                     void 0,
                     getEffectiveDotDotDotForParameter(p),
@@ -147645,7 +147645,7 @@ ${lanes.join("\n")}
             }
             if (isTypePredicateNode(node)) {
               let parameterName2;
-              if (isIdentifier17(node.parameterName)) {
+              if (isIdentifier18(node.parameterName)) {
                 const { node: result3, introducesError } = resolver.trackExistingEntityName(context, node.parameterName);
                 if (introducesError) markError();
                 parameterName2 = result3;
@@ -147726,7 +147726,7 @@ ${lanes.join("\n")}
               ) : void 0);
             }
             function getNameForJSDocFunctionParameter(p, index) {
-              return p.name && isIdentifier17(p.name) && p.name.escapedText === "this" ? "this" : getEffectiveDotDotDotForParameter(p) ? `args` : `arg${index}`;
+              return p.name && isIdentifier18(p.name) && p.name.escapedText === "this" ? "this" : getEffectiveDotDotDotForParameter(p) ? `args` : `arg${index}`;
             }
             function rewriteModuleSpecifier2(parent2, lit) {
               const newName = resolver.getModuleSpecifierOverride(context, parent2, lit);
@@ -147913,7 +147913,7 @@ ${lanes.join("\n")}
           let resultType = failed;
           if (declaredType) {
             resultType = syntacticResult(serializeTypeAnnotationOfDeclaration(declaredType, context, node, symbol));
-          } else if (node.initializer && (((_a2 = symbol.declarations) == null ? void 0 : _a2.length) === 1 || countWhere(symbol.declarations, isVariableDeclaration16) === 1)) {
+          } else if (node.initializer && (((_a2 = symbol.declarations) == null ? void 0 : _a2.length) === 1 || countWhere(symbol.declarations, isVariableDeclaration17) === 1)) {
             if (!resolver.isExpandoFunctionDeclaration(node) && !isContextuallyTyped(node)) {
               resultType = typeFromExpression(
                 node.initializer,
@@ -147943,7 +147943,7 @@ ${lanes.join("\n")}
           let resultType = failed;
           if (declaredType) {
             resultType = syntacticResult(serializeTypeAnnotationOfDeclaration(declaredType, context, node, symbol, addUndefined));
-          } else if (isParameter6(node) && node.initializer && isIdentifier17(node.name) && !isContextuallyTyped(node)) {
+          } else if (isParameter6(node) && node.initializer && isIdentifier18(node.name) && !isContextuallyTyped(node)) {
             resultType = typeFromExpression(
               node.initializer,
               context,
@@ -148384,7 +148384,7 @@ ${lanes.join("\n")}
               )
             );
           } else {
-            if (isIdentifier17(name) && name.escapedText === "new") {
+            if (isIdentifier18(name) && name.escapedText === "new") {
               name = factory.createStringLiteral("new");
             }
             return factory.createMethodSignature(
@@ -149363,18 +149363,18 @@ ${lanes.join("\n")}
         return void 0;
       }
       function hasPropertyAccessExpressionWithName(node, funcName) {
-        if (!isPropertyAccessExpression16(node.expression)) {
+        if (!isPropertyAccessExpression17(node.expression)) {
           return false;
         }
         return node.expression.name.text === funcName;
       }
       function isJumpStatementTarget(node) {
         var _a2;
-        return isIdentifier17(node) && ((_a2 = tryCast(node.parent, isBreakOrContinueStatement)) == null ? void 0 : _a2.label) === node;
+        return isIdentifier18(node) && ((_a2 = tryCast(node.parent, isBreakOrContinueStatement)) == null ? void 0 : _a2.label) === node;
       }
       function isLabelOfLabeledStatement(node) {
         var _a2;
-        return isIdentifier17(node) && ((_a2 = tryCast(node.parent, isLabeledStatement3)) == null ? void 0 : _a2.label) === node;
+        return isIdentifier18(node) && ((_a2 = tryCast(node.parent, isLabeledStatement3)) == null ? void 0 : _a2.label) === node;
       }
       function isLabelName(node) {
         return isLabelOfLabeledStatement(node) || isJumpStatementTarget(node);
@@ -149389,7 +149389,7 @@ ${lanes.join("\n")}
       }
       function isRightSideOfPropertyAccess(node) {
         var _a2;
-        return ((_a2 = tryCast(node.parent, isPropertyAccessExpression16)) == null ? void 0 : _a2.name) === node;
+        return ((_a2 = tryCast(node.parent, isPropertyAccessExpression17)) == null ? void 0 : _a2.name) === node;
       }
       function isArgumentExpressionOfElementAccess(node) {
         var _a2;
@@ -149401,7 +149401,7 @@ ${lanes.join("\n")}
       }
       function isNameOfFunctionDeclaration(node) {
         var _a2;
-        return isIdentifier17(node) && ((_a2 = tryCast(node.parent, isFunctionLike3)) == null ? void 0 : _a2.name) === node;
+        return isIdentifier18(node) && ((_a2 = tryCast(node.parent, isFunctionLike3)) == null ? void 0 : _a2.name) === node;
       }
       function isLiteralNameOfPropertyDeclarationOrIndexAccess(node) {
         switch (node.parent.kind) {
@@ -149456,7 +149456,7 @@ ${lanes.join("\n")}
       function getNodeKind(node) {
         switch (node.kind) {
           case 308:
-            return isExternalModule(node) ? "module" : "script";
+            return isExternalModule2(node) ? "module" : "script";
           case 268:
             return "module";
           case 264:
@@ -149864,9 +149864,9 @@ ${lanes.join("\n")}
             return location2;
           }
         }
-        if ((node.kind === 115 || node.kind === 87 || node.kind === 121) && isVariableDeclarationList9(parent2) && parent2.declarations.length === 1) {
+        if ((node.kind === 115 || node.kind === 87 || node.kind === 121) && isVariableDeclarationList10(parent2) && parent2.declarations.length === 1) {
           const decl = parent2.declarations[0];
-          if (isIdentifier17(decl.name)) {
+          if (isIdentifier18(decl.name)) {
             return decl.name;
           }
         }
@@ -149947,7 +149947,7 @@ ${lanes.join("\n")}
               return skipOuterExpressions(parent2.expression);
             }
           }
-          if ((node.kind === 103 || node.kind === 104) && isBinaryExpression11(parent2) && parent2.operatorToken === node) {
+          if ((node.kind === 103 || node.kind === 104) && isBinaryExpression12(parent2) && parent2.operatorToken === node) {
             return skipOuterExpressions(parent2.right);
           }
           if (node.kind === 130 && isAsExpression13(parent2) && isTypeReferenceNode3(parent2.type)) {
@@ -150325,7 +150325,7 @@ ${lanes.join("\n")}
               if (token && token.kind === 29) {
                 token = findPrecedingToken(token.getFullStart(), sourceFile);
               }
-              if (!token || !isIdentifier17(token)) return void 0;
+              if (!token || !isIdentifier18(token)) return void 0;
               if (!remainingLessThanTokens) {
                 return isDeclarationName(token) ? void 0 : { called: token, nTypeArguments };
               }
@@ -150590,7 +150590,7 @@ ${lanes.join("\n")}
         return node.kind === 156;
       }
       function isTypeKeywordTokenOrIdentifier(node) {
-        return isTypeKeywordToken(node) || isIdentifier17(node) && node.text === "type";
+        return isTypeKeywordToken(node) || isIdentifier18(node) && node.text === "type";
       }
       function nodeSeenTracker() {
         const seen = [];
@@ -150713,14 +150713,14 @@ ${lanes.join("\n")}
         });
       }
       function isModuleSpecifierLike(node) {
-        return isStringLiteralLike13(node) && (isExternalModuleReference3(node.parent) || isImportDeclaration9(node.parent) || isJSDocImportTag(node.parent) || isRequireCall(
+        return isStringLiteralLike14(node) && (isExternalModuleReference3(node.parent) || isImportDeclaration9(node.parent) || isJSDocImportTag(node.parent) || isRequireCall(
           node.parent,
           /*requireStringLiteralLikeArgument*/
           false
         ) && node.parent.arguments[0] === node || isImportCall(node.parent) && node.parent.arguments[0] === node);
       }
       function isObjectBindingElementWithoutPropertyName(bindingElement) {
-        return isBindingElement8(bindingElement) && isObjectBindingPattern10(bindingElement.parent) && isIdentifier17(bindingElement.name) && !bindingElement.propertyName;
+        return isBindingElement8(bindingElement) && isObjectBindingPattern10(bindingElement.parent) && isIdentifier18(bindingElement.name) && !bindingElement.propertyName;
       }
       function getPropertySymbolFromBindingElement(checker, bindingElement) {
         const typeOfPattern = checker.getTypeAtLocation(bindingElement.parent);
@@ -150729,7 +150729,7 @@ ${lanes.join("\n")}
       function getParentNodeInSpan(node, file, span) {
         if (!node) return void 0;
         while (node.parent) {
-          if (isSourceFile6(node.parent) || !spanContainsNode(span, node.parent, file)) {
+          if (isSourceFile7(node.parent) || !spanContainsNode(span, node.parent, file)) {
             return node;
           }
           node = node.parent;
@@ -151333,7 +151333,7 @@ ${lanes.join("\n")}
         return idx === -1 ? -1 : idx + 1;
       }
       function needsParentheses(expression) {
-        return isBinaryExpression11(expression) && expression.operatorToken.kind === 28 || isObjectLiteralExpression11(expression) || (isAsExpression13(expression) || isSatisfiesExpression(expression)) && isObjectLiteralExpression11(expression.expression);
+        return isBinaryExpression12(expression) && expression.operatorToken.kind === 28 || isObjectLiteralExpression12(expression) || (isAsExpression13(expression) || isSatisfiesExpression(expression)) && isObjectLiteralExpression12(expression.expression);
       }
       function getContextualTypeFromParent(node, checker, contextFlags) {
         const parent2 = walkUpParenthesizedExpressions(node.parent);
@@ -151804,12 +151804,12 @@ ${lanes.join("\n")}
         return firstDefined(symbol.declarations, (d) => {
           var _a2, _b, _c;
           if (isExportAssignment4(d)) {
-            return (_a2 = tryCast(skipOuterExpressions(d.expression), isIdentifier17)) == null ? void 0 : _a2.text;
+            return (_a2 = tryCast(skipOuterExpressions(d.expression), isIdentifier18)) == null ? void 0 : _a2.text;
           }
           if (isExportSpecifier(d) && d.symbol.flags === 2097152) {
-            return (_b = tryCast(d.propertyName, isIdentifier17)) == null ? void 0 : _b.text;
+            return (_b = tryCast(d.propertyName, isIdentifier18)) == null ? void 0 : _b.text;
           }
-          const name = (_c = tryCast(getNameOfDeclaration(d), isIdentifier17)) == null ? void 0 : _c.text;
+          const name = (_c = tryCast(getNameOfDeclaration(d), isIdentifier18)) == null ? void 0 : _c.text;
           if (name) {
             return name;
           }
@@ -152904,7 +152904,7 @@ ${lanes.join("\n")}
             return;
           }
           checkForClassificationCancellation(cancellationToken, node.kind);
-          if (isIdentifier17(node) && !nodeIsMissing(node) && classifiableNames.has(node.escapedText)) {
+          if (isIdentifier18(node) && !nodeIsMissing(node) && classifiableNames.has(node.escapedText)) {
             const symbol = typeChecker.getSymbolAtLocation(node);
             const type = symbol && classifySymbol(symbol, getMeaningFromLocation(node), typeChecker);
             if (type) {
@@ -153596,7 +153596,7 @@ ${lanes.join("\n")}
             case 147:
               return void 0;
             default:
-              return isModifierKind(node.kind) && (isDeclaration(node.parent) || isVariableStatement9(node.parent)) ? highlightSpans(getModifierOccurrences(node.kind, node.parent)) : void 0;
+              return isModifierKind(node.kind) && (isDeclaration(node.parent) || isVariableStatement10(node.parent)) ? highlightSpans(getModifierOccurrences(node.kind, node.parent)) : void 0;
           }
           function getFromAllDeclarations(nodeTest, keywords) {
             return useParent(node.parent, nodeTest, (decl) => {
@@ -154312,7 +154312,7 @@ ${lanes.join("\n")}
       }
       function getSourceFileToImport(importedModuleSymbol, importLiteral, importingSourceFile, program, host, oldToNew) {
         if (importedModuleSymbol) {
-          const oldFileName = find(importedModuleSymbol.declarations, isSourceFile6).fileName;
+          const oldFileName = find(importedModuleSymbol.declarations, isSourceFile7).fileName;
           const newFileName = oldToNew(oldFileName);
           return newFileName === void 0 ? { newFileName: oldFileName, updated: false } : { newFileName, updated: true };
         } else {
@@ -154356,9 +154356,9 @@ ${lanes.join("\n")}
         return createRange(node.getStart(sourceFile) + 1, node.end - 1);
       }
       function forEachProperty(objectLiteral, cb) {
-        if (!isObjectLiteralExpression11(objectLiteral)) return;
+        if (!isObjectLiteralExpression12(objectLiteral)) return;
         for (const property of objectLiteral.properties) {
-          if (isPropertyAssignment12(property) && isStringLiteral7(property.name)) {
+          if (isPropertyAssignment13(property) && isStringLiteral7(property.name)) {
             cb(property, property.name.text);
           }
         }
@@ -155243,10 +155243,10 @@ ${lanes.join("\n")}
         function check2(node) {
           if (isJsFile) {
             if (canBeConvertedToClass(node, checker)) {
-              diags.push(createDiagnosticForNode(isVariableDeclaration16(node.parent) ? node.parent.name : node, Diagnostics.This_constructor_function_may_be_converted_to_a_class_declaration));
+              diags.push(createDiagnosticForNode(isVariableDeclaration17(node.parent) ? node.parent.name : node, Diagnostics.This_constructor_function_may_be_converted_to_a_class_declaration));
             }
           } else {
-            if (isVariableStatement9(node) && node.parent === sourceFile && node.declarationList.flags & 2 && node.declarationList.declarations.length === 1) {
+            if (isVariableStatement10(node) && node.parent === sourceFile && node.declarationList.flags & 2 && node.declarationList.declarations.length === 1) {
               const init = node.declarationList.declarations[0].initializer;
               if (init && isRequireCall(
                 init,
@@ -155281,7 +155281,7 @@ ${lanes.join("\n")}
               ));
             case 245: {
               const { expression } = statement;
-              if (!isBinaryExpression11(expression)) return isRequireCall(
+              if (!isBinaryExpression12(expression)) return isRequireCall(
                 expression,
                 /*requireStringLiteralLikeArgument*/
                 true
@@ -155295,7 +155295,7 @@ ${lanes.join("\n")}
         });
       }
       function propertyAccessLeftHandSide(node) {
-        return isPropertyAccessExpression16(node) ? propertyAccessLeftHandSide(node.expression) : node;
+        return isPropertyAccessExpression17(node) ? propertyAccessLeftHandSide(node.expression) : node;
       }
       function importNameForConvertToDefaultImport(node) {
         switch (node.kind) {
@@ -155311,7 +155311,7 @@ ${lanes.join("\n")}
       function addConvertToAsyncFunctionDiagnostics(node, checker, diags) {
         if (isConvertibleFunction(node, checker) && !visitedNestedConvertibleFunctions.has(getKeyFromNode(node))) {
           diags.push(createDiagnosticForNode(
-            !node.name && isVariableDeclaration16(node.parent) && isIdentifier17(node.parent.name) ? node.parent.name : node,
+            !node.name && isVariableDeclaration17(node.parent) && isIdentifier18(node.parent.name) ? node.parent.name : node,
             Diagnostics.This_may_be_converted_to_an_async_function
           ));
         }
@@ -155325,7 +155325,7 @@ ${lanes.join("\n")}
         return !!returnType && !!checker.getPromisedTypeOfPromise(returnType);
       }
       function getErrorNodeFromCommonJsIndicator(commonJsModuleIndicator) {
-        return isBinaryExpression11(commonJsModuleIndicator) ? commonJsModuleIndicator.left : commonJsModuleIndicator;
+        return isBinaryExpression12(commonJsModuleIndicator) ? commonJsModuleIndicator.left : commonJsModuleIndicator;
       }
       function hasReturnStatementWithPromiseHandler(body, checker) {
         return !!forEachReturnStatement(body, (statement) => isReturnStatementWithFixablePromiseHandler(statement, checker));
@@ -155338,7 +155338,7 @@ ${lanes.join("\n")}
           return false;
         }
         let currentNode = node.expression.expression;
-        while (isPromiseHandler(currentNode) || isPropertyAccessExpression16(currentNode)) {
+        while (isPromiseHandler(currentNode) || isPropertyAccessExpression17(currentNode)) {
           if (isCallExpression18(currentNode)) {
             if (!hasSupportedNumberOfArguments(currentNode) || !currentNode.arguments.every((arg) => isFixablePromiseArgument(arg, checker))) {
               return false;
@@ -155359,7 +155359,7 @@ ${lanes.join("\n")}
         if (node.arguments.length > maxArguments) return false;
         if (node.arguments.length < maxArguments) return true;
         return maxArguments === 1 || some(node.arguments, (arg) => {
-          return arg.kind === 106 || isIdentifier17(arg) && arg.text === "undefined";
+          return arg.kind === 106 || isIdentifier18(arg) && arg.text === "undefined";
         });
       }
       function isFixablePromiseArgument(arg, checker) {
@@ -155394,7 +155394,7 @@ ${lanes.join("\n")}
       function canBeConvertedToClass(node, checker) {
         var _a2, _b, _c, _d;
         if (isFunctionExpression12(node)) {
-          if (isVariableDeclaration16(node.parent) && ((_a2 = node.symbol.members) == null ? void 0 : _a2.size)) {
+          if (isVariableDeclaration17(node.parent) && ((_a2 = node.symbol.members) == null ? void 0 : _a2.size)) {
             return true;
           }
           const symbol = checker.getSymbolOfExpando(
@@ -155662,7 +155662,7 @@ interface Symbol {
         return !!name && (pushLiteral(name, containers) || name.kind === 168 && tryAddComputedPropertyName(name.expression, containers));
       }
       function tryAddComputedPropertyName(expression, containers) {
-        return pushLiteral(expression, containers) || isPropertyAccessExpression16(expression) && (containers.push(expression.name.text), true) && tryAddComputedPropertyName(expression.expression, containers);
+        return pushLiteral(expression, containers) || isPropertyAccessExpression17(expression) && (containers.push(expression.name.text), true) && tryAddComputedPropertyName(expression.expression, containers);
       }
       function pushLiteral(node, containers) {
         return isPropertyNameLiteral(node) && (containers.push(getTextOfIdentifierOrLiteral(node)), true);
@@ -155841,7 +155841,7 @@ interface Symbol {
         if (name === void 0) return false;
         if (isComputedPropertyName8(name)) {
           const expression = name.expression;
-          return isEntityNameExpression(expression) || isNumericLiteral8(expression) || isStringOrNumericLiteralLike(expression);
+          return isEntityNameExpression(expression) || isNumericLiteral9(expression) || isStringOrNumericLiteralLike(expression);
         }
         return !!name;
       }
@@ -155899,7 +155899,7 @@ interface Symbol {
             break;
           case 306:
             const { expression } = node;
-            isIdentifier17(expression) ? addLeafNode(node, expression) : addLeafNode(node);
+            isIdentifier18(expression) ? addLeafNode(node, expression) : addLeafNode(node);
             break;
           case 209:
           case 304:
@@ -155914,7 +155914,7 @@ interface Symbol {
           }
           case 263:
             const nameNode = node.name;
-            if (nameNode && isIdentifier17(nameNode)) {
+            if (nameNode && isIdentifier18(nameNode)) {
               addTrackedEs5Class(nameNode.text);
             }
             addNodeWithRecursiveChild(node, node.body);
@@ -155946,7 +155946,7 @@ interface Symbol {
             break;
           case 278: {
             const expression2 = node.expression;
-            const child = isObjectLiteralExpression11(expression2) || isCallExpression18(expression2) ? expression2 : isArrowFunction12(expression2) || isFunctionExpression12(expression2) ? expression2.body : void 0;
+            const child = isObjectLiteralExpression12(expression2) || isCallExpression18(expression2) ? expression2 : isArrowFunction12(expression2) || isFunctionExpression12(expression2) ? expression2.body : void 0;
             if (child) {
               startNode(node);
               addChildrenRecursively(child);
@@ -155979,14 +155979,14 @@ interface Symbol {
                 const prototypeAccess = special === 3 ? assignmentTarget.expression : assignmentTarget;
                 let depth = 0;
                 let className;
-                if (isIdentifier17(prototypeAccess.expression)) {
+                if (isIdentifier18(prototypeAccess.expression)) {
                   addTrackedEs5Class(prototypeAccess.expression.text);
                   className = prototypeAccess.expression;
                 } else {
                   [depth, className] = startNestedNodes(binaryExpression, prototypeAccess.expression);
                 }
                 if (special === 6) {
-                  if (isObjectLiteralExpression11(binaryExpression.right)) {
+                  if (isObjectLiteralExpression12(binaryExpression.right)) {
                     if (binaryExpression.right.properties.length > 0) {
                       startNode(binaryExpression, className);
                       forEachChild5(binaryExpression.right, addChildrenRecursively);
@@ -156021,7 +156021,7 @@ interface Symbol {
                 const binaryExpression = node;
                 const assignmentTarget = binaryExpression.left;
                 const targetFunction = assignmentTarget.expression;
-                if (isIdentifier17(targetFunction) && getElementOrPropertyAccessName(assignmentTarget) !== "prototype" && trackedEs5Classes && trackedEs5Classes.has(targetFunction.text)) {
+                if (isIdentifier18(targetFunction) && getElementOrPropertyAccessName(assignmentTarget) !== "prototype" && trackedEs5Classes && trackedEs5Classes.has(targetFunction.text)) {
                   if (isFunctionExpression12(binaryExpression.right) || isArrowFunction12(binaryExpression.right)) {
                     addNodeWithRecursiveChild(node, binaryExpression.right, targetFunction);
                   } else if (isBindableStaticAccessExpression(assignmentTarget)) {
@@ -156130,10 +156130,10 @@ interface Symbol {
       };
       function tryMergeEs5Class(a, b, bIndex, parent2) {
         function isPossibleConstructor(node) {
-          return isFunctionExpression12(node) || isFunctionDeclaration9(node) || isVariableDeclaration16(node);
+          return isFunctionExpression12(node) || isFunctionDeclaration9(node) || isVariableDeclaration17(node);
         }
-        const bAssignmentDeclarationKind = isBinaryExpression11(b.node) || isCallExpression18(b.node) ? getAssignmentDeclarationKind(b.node) : 0;
-        const aAssignmentDeclarationKind = isBinaryExpression11(a.node) || isCallExpression18(a.node) ? getAssignmentDeclarationKind(a.node) : 0;
+        const bAssignmentDeclarationKind = isBinaryExpression12(b.node) || isCallExpression18(b.node) ? getAssignmentDeclarationKind(b.node) : 0;
+        const aAssignmentDeclarationKind = isBinaryExpression12(a.node) || isCallExpression18(a.node) ? getAssignmentDeclarationKind(a.node) : 0;
         if (isEs5ClassMember[bAssignmentDeclarationKind] && isEs5ClassMember[aAssignmentDeclarationKind] || isPossibleConstructor(a.node) && isEs5ClassMember[bAssignmentDeclarationKind] || isPossibleConstructor(b.node) && isEs5ClassMember[aAssignmentDeclarationKind] || isClassDeclaration5(a.node) && isSynthesized(a.node) && isEs5ClassMember[bAssignmentDeclarationKind] || isClassDeclaration5(b.node) && isEs5ClassMember[aAssignmentDeclarationKind] || isClassDeclaration5(a.node) && isSynthesized(a.node) && isPossibleConstructor(b.node) || isClassDeclaration5(b.node) && isPossibleConstructor(a.node) && isSynthesized(a.node)) {
           let lastANode = a.additionalNodes && lastOrUndefined(a.additionalNodes) || a.node;
           if (!isClassDeclaration5(a.node) && !isClassDeclaration5(b.node) || isPossibleConstructor(a.node) || isPossibleConstructor(b.node)) {
@@ -156285,7 +156285,7 @@ interface Symbol {
           return cleanText3(getModuleName(node));
         }
         if (name) {
-          const text3 = isIdentifier17(name) ? name.text : isElementAccessExpression12(name) ? `[${nodeText(name.argumentExpression)}]` : nodeText(name);
+          const text3 = isIdentifier18(name) ? name.text : isElementAccessExpression12(name) ? `[${nodeText(name.argumentExpression)}]` : nodeText(name);
           if (text3.length > 0) {
             return cleanText3(text3);
           }
@@ -156293,7 +156293,7 @@ interface Symbol {
         switch (node.kind) {
           case 308:
             const sourceFile = node;
-            return isExternalModule(sourceFile) ? `"${escapeString(getBaseFileName(removeFileExtension(normalizePath2(sourceFile.fileName))))}"` : "<global>";
+            return isExternalModule2(sourceFile) ? `"${escapeString(getBaseFileName(removeFileExtension(normalizePath2(sourceFile.fileName))))}"` : "<global>";
           case 278:
             return isExportAssignment4(node) && node.isExportEquals ? "export=" : "default";
           case 220:
@@ -156445,11 +156445,11 @@ interface Symbol {
         const { parent: parent2 } = node;
         if (node.name && getFullWidth(node.name) > 0) {
           return cleanText3(declarationNameToString(node.name));
-        } else if (isVariableDeclaration16(parent2)) {
+        } else if (isVariableDeclaration17(parent2)) {
           return cleanText3(declarationNameToString(parent2.name));
-        } else if (isBinaryExpression11(parent2) && parent2.operatorToken.kind === 64) {
+        } else if (isBinaryExpression12(parent2) && parent2.operatorToken.kind === 64) {
           return nodeText(parent2.left).replace(whiteSpaceRegex, "");
-        } else if (isPropertyAssignment12(parent2)) {
+        } else if (isPropertyAssignment13(parent2)) {
           return nodeText(parent2.name);
         } else if (getSyntacticModifierFlags(node) & 2048) {
           return "default";
@@ -156462,16 +156462,16 @@ interface Symbol {
             if (name.length > maxLength) {
               return `${name} callback`;
             }
-            const args = cleanText3(mapDefined(parent2.arguments, (a) => isStringLiteralLike13(a) || isTemplateLiteral(a) ? a.getText(curSourceFile) : void 0).join(", "));
+            const args = cleanText3(mapDefined(parent2.arguments, (a) => isStringLiteralLike14(a) || isTemplateLiteral(a) ? a.getText(curSourceFile) : void 0).join(", "));
             return `${name}(${args}) callback`;
           }
         }
         return "<function>";
       }
       function getCalledExpressionName(expr) {
-        if (isIdentifier17(expr)) {
+        if (isIdentifier18(expr)) {
           return expr.text;
-        } else if (isPropertyAccessExpression16(expr)) {
+        } else if (isPropertyAccessExpression17(expr)) {
           const left = getCalledExpressionName(expr.expression);
           const right = expr.name.text;
           return left === void 0 ? right : `${left}.${right}`;
@@ -156586,7 +156586,7 @@ interface Symbol {
         const span = getRefactorContextSpan(context);
         const token = getTokenAtPosition(file, span.start);
         const exportNode = !!(token.parent && getSyntacticModifierFlags(token.parent) & 32) && considerPartialSpans ? token.parent : getParentNodeInSpan(token, file, span);
-        if (!exportNode || !isSourceFile6(exportNode.parent) && !(isModuleBlock(exportNode.parent) && isAmbientModule(exportNode.parent.parent))) {
+        if (!exportNode || !isSourceFile7(exportNode.parent) && !(isModuleBlock(exportNode.parent) && isAmbientModule(exportNode.parent.parent))) {
           return { error: getLocaleSpecificMessage(Diagnostics.Could_not_find_export_statement) };
         }
         const checker = program.getTypeChecker();
@@ -156599,7 +156599,7 @@ interface Symbol {
         )) {
           return { error: getLocaleSpecificMessage(Diagnostics.This_file_already_has_a_default_export) };
         }
-        const noSymbolError = (id) => isIdentifier17(id) && checker.getSymbolAtLocation(id) ? void 0 : { error: getLocaleSpecificMessage(Diagnostics.Can_only_convert_named_export) };
+        const noSymbolError = (id) => isIdentifier18(id) && checker.getSymbolAtLocation(id) ? void 0 : { error: getLocaleSpecificMessage(Diagnostics.Can_only_convert_named_export) };
         switch (exportNode.kind) {
           case 263:
           case 264:
@@ -156784,7 +156784,7 @@ interface Symbol {
         );
       }
       function getExportingModuleSymbol(parent2, checker) {
-        if (isSourceFile6(parent2)) {
+        if (isSourceFile7(parent2)) {
           return parent2.symbol;
         }
         const symbol = parent2.parent.symbol;
@@ -156940,10 +156940,10 @@ interface Symbol {
         }
       }
       function getRightOfPropertyAccessOrQualifiedName(propertyAccessOrQualifiedName) {
-        return isPropertyAccessExpression16(propertyAccessOrQualifiedName) ? propertyAccessOrQualifiedName.name : propertyAccessOrQualifiedName.right;
+        return isPropertyAccessExpression17(propertyAccessOrQualifiedName) ? propertyAccessOrQualifiedName.name : propertyAccessOrQualifiedName.right;
       }
       function getLeftOfPropertyAccessOrQualifiedName(propertyAccessOrQualifiedName) {
-        return isPropertyAccessExpression16(propertyAccessOrQualifiedName) ? propertyAccessOrQualifiedName.expression : propertyAccessOrQualifiedName.left;
+        return isPropertyAccessExpression17(propertyAccessOrQualifiedName) ? propertyAccessOrQualifiedName.expression : propertyAccessOrQualifiedName.left;
       }
       function doChangeNamedToNamespaceOrDefault(sourceFile, program, changes, toConvert, shouldUseDefault = getShouldUseDefault(program, toConvert.parent)) {
         const checker = program.getTypeChecker();
@@ -157204,7 +157204,7 @@ interface Symbol {
         return { typeParameters: result3, affectedTextRange: selectionRange };
         function visitor(node) {
           if (isTypeReferenceNode3(node)) {
-            if (isIdentifier17(node.typeName)) {
+            if (isIdentifier18(node.typeName)) {
               const typeName = node.typeName;
               const symbol = checker.resolveName(
                 typeName.text,
@@ -157236,7 +157236,7 @@ interface Symbol {
               return true;
             }
           } else if (isTypeQueryNode2(node)) {
-            if (isIdentifier17(node.exprName)) {
+            if (isIdentifier18(node.exprName)) {
               const symbol = checker.resolveName(
                 node.exprName.text,
                 node.exprName,
@@ -157421,7 +157421,7 @@ interface Symbol {
           if (context.triggerReason === "implicit" && context.endPosition !== void 0) {
             const startNodeAncestor = findAncestor(getTokenAtPosition(file, context.startPosition), isBlockLike);
             const endNodeAncestor = findAncestor(getTokenAtPosition(file, context.endPosition), isBlockLike);
-            if (startNodeAncestor && !isSourceFile6(startNodeAncestor) && endNodeAncestor && !isSourceFile6(endNodeAncestor)) {
+            if (startNodeAncestor && !isSourceFile7(startNodeAncestor) && endNodeAncestor && !isSourceFile7(endNodeAncestor)) {
               return emptyArray;
             }
           }
@@ -157502,8 +157502,8 @@ interface Symbol {
         if (!cfg) return;
         const newFileAbsolutePath = normalizePath2(combinePaths(oldFileName, "..", newFileNameWithExtension));
         const newFilePath = getRelativePathFromFile(cfg.fileName, newFileAbsolutePath, getCanonicalFileName);
-        const cfgObject = cfg.statements[0] && tryCast(cfg.statements[0].expression, isObjectLiteralExpression11);
-        const filesProp = cfgObject && find(cfgObject.properties, (prop) => isPropertyAssignment12(prop) && isStringLiteral7(prop.name) && prop.name.text === "files");
+        const cfgObject = cfg.statements[0] && tryCast(cfg.statements[0].expression, isObjectLiteralExpression12);
+        const filesProp = cfgObject && find(cfgObject.properties, (prop) => isPropertyAssignment13(prop) && isStringLiteral7(prop.name) && prop.name.text === "files");
         if (filesProp && isArrayLiteralExpression8(filesProp.initializer)) {
           changes.insertNodeInListAfter(cfg, last(filesProp.initializer.elements), factory.createStringLiteral(newFilePath), filesProp.initializer.elements);
         }
@@ -157572,7 +157572,7 @@ interface Symbol {
           case 272:
             return node.name;
           case 261:
-            return tryCast(node.name, isIdentifier17);
+            return tryCast(node.name, isIdentifier18);
           default:
             return Debug.assertNever(node, `Unexpected node kind ${node.kind}`);
         }
@@ -157586,7 +157586,7 @@ interface Symbol {
         let needUniqueName = false;
         const toChange = [];
         ts_FindAllReferences_exports.Core.eachSymbolReferenceInFile(oldImportId, checker, sourceFile, (ref) => {
-          if (!isPropertyAccessExpression16(ref.parent)) return;
+          if (!isPropertyAccessExpression17(ref.parent)) return;
           needUniqueName = needUniqueName || !!checker.resolveName(
             preferredNewNamespaceName,
             ref,
@@ -157662,10 +157662,10 @@ interface Symbol {
         if (isImportDeclaration9(statement)) {
           if (isStringLiteral7(statement.moduleSpecifier)) cb(statement);
         } else if (isImportEqualsDeclaration3(statement)) {
-          if (isExternalModuleReference3(statement.moduleReference) && isStringLiteralLike13(statement.moduleReference.expression)) {
+          if (isExternalModuleReference3(statement.moduleReference) && isStringLiteralLike14(statement.moduleReference.expression)) {
             cb(statement);
           }
-        } else if (isVariableStatement9(statement)) {
+        } else if (isVariableStatement10(statement)) {
           for (const decl of statement.declarationList.declarations) {
             if (decl.initializer && isRequireCall(
               decl.initializer,
@@ -157698,7 +157698,7 @@ interface Symbol {
             cb(importOrRequire);
           } else if (importOrRequire.name.kind === 207) {
             for (const element of importOrRequire.name.elements) {
-              if (isIdentifier17(element.name)) {
+              if (isIdentifier18(element.name)) {
                 cb(element);
               }
             }
@@ -157756,14 +157756,14 @@ interface Symbol {
           }
         }
         forEachAliasDeclarationInImportOrRequire(importDecl, (i) => {
-          if (i.name && isIdentifier17(i.name) && isUnused(i.name)) {
+          if (i.name && isIdentifier18(i.name) && isUnused(i.name)) {
             changes.delete(sourceFile, i);
           }
         });
       }
       function isTopLevelDeclarationStatement(node) {
-        Debug.assert(isSourceFile6(node.parent), "Node parent should be a SourceFile");
-        return isNonVariableTopLevelDeclaration(node) || isVariableStatement9(node);
+        Debug.assert(isSourceFile7(node.parent), "Node parent should be a SourceFile");
+        return isNonVariableTopLevelDeclaration(node) || isVariableStatement10(node);
       }
       function addExport(decl, useEs6Exports) {
         return useEs6Exports ? [addEs6Export(decl)] : addCommonjsExport(decl);
@@ -157816,7 +157816,7 @@ interface Symbol {
             return [decl.name.text];
           // TODO: GH#18217
           case 244:
-            return mapDefined(decl.declarationList.declarations, (d) => isIdentifier17(d.name) ? d.name.text : void 0);
+            return mapDefined(decl.declarationList.declarations, (d) => isIdentifier18(d.name) ? d.name.text : void 0);
           case 268:
           case 267:
           case 266:
@@ -157870,13 +157870,13 @@ interface Symbol {
           case 208:
             return name;
           case 207: {
-            const newElements = name.elements.filter((prop) => prop.propertyName || !isIdentifier17(prop.name) || keep(prop.name));
+            const newElements = name.elements.filter((prop) => prop.propertyName || !isIdentifier18(prop.name) || keep(prop.name));
             return newElements.length ? factory.createObjectBindingPattern(newElements) : void 0;
           }
         }
       }
       function nameOfTopLevelDeclaration(d) {
-        return isExpressionStatement9(d) ? tryCast(d.expression.left.name, isIdentifier17) : tryCast(d.name, isIdentifier17);
+        return isExpressionStatement9(d) ? tryCast(d.expression.left.name, isIdentifier18) : tryCast(d.name, isIdentifier18);
       }
       function getTopLevelDeclarationStatement(d) {
         switch (d.kind) {
@@ -157884,7 +157884,7 @@ interface Symbol {
             return d.parent.parent;
           case 209:
             return getTopLevelDeclarationStatement(
-              cast(d.parent.parent, (p) => isVariableDeclaration16(p) || isBindingElement8(p))
+              cast(d.parent.parent, (p) => isVariableDeclaration17(p) || isBindingElement8(p))
             );
           default:
             return d;
@@ -157990,7 +157990,7 @@ interface Symbol {
         const targetFileImportsFromOldFile = /* @__PURE__ */ new Map();
         const jsxNamespaceSymbol = getJsxNamespaceSymbol(containsJsx(toMove));
         if (jsxNamespaceSymbol) {
-          oldImportsNeededByTargetFile.set(jsxNamespaceSymbol, [false, tryCast((_a2 = jsxNamespaceSymbol.declarations) == null ? void 0 : _a2[0], (d) => isImportSpecifier10(d) || isImportClause6(d) || isNamespaceImport9(d) || isImportEqualsDeclaration3(d) || isBindingElement8(d) || isVariableDeclaration16(d))]);
+          oldImportsNeededByTargetFile.set(jsxNamespaceSymbol, [false, tryCast((_a2 = jsxNamespaceSymbol.declarations) == null ? void 0 : _a2[0], (d) => isImportSpecifier10(d) || isImportClause6(d) || isNamespaceImport9(d) || isImportEqualsDeclaration3(d) || isBindingElement8(d) || isVariableDeclaration17(d))]);
         }
         for (const statement of toMove) {
           forEachTopLevelDeclaration(statement, (decl) => {
@@ -158012,7 +158012,7 @@ interface Symbol {
               const prevIsTypeOnly = oldImportsNeededByTargetFile.get(symbol);
               oldImportsNeededByTargetFile.set(symbol, [
                 prevIsTypeOnly === void 0 ? isValidTypeOnlyUseSite : prevIsTypeOnly && isValidTypeOnlyUseSite,
-                tryCast(importedDeclaration, (d) => isImportSpecifier10(d) || isImportClause6(d) || isNamespaceImport9(d) || isImportEqualsDeclaration3(d) || isBindingElement8(d) || isVariableDeclaration16(d))
+                tryCast(importedDeclaration, (d) => isImportSpecifier10(d) || isImportClause6(d) || isNamespaceImport9(d) || isImportEqualsDeclaration3(d) || isBindingElement8(d) || isVariableDeclaration17(d))
               ]);
             } else if (!movedSymbols.has(symbol) && every(symbol.declarations, (decl) => isTopLevelDeclaration(decl) && sourceFileOfTopLevelDeclaration(decl) === oldFile)) {
               targetFileImportsFromOldFile.set(symbol, isValidTypeOnlyUseSite);
@@ -158062,7 +158062,7 @@ interface Symbol {
       }
       function forEachReference(node, checker, enclosingRange, onReference) {
         node.forEachChild(function cb(node2) {
-          if (isIdentifier17(node2) && !isDeclarationName(node2)) {
+          if (isIdentifier18(node2) && !isDeclarationName(node2)) {
             if (enclosingRange && !rangeContainsRange(enclosingRange, node2)) {
               return;
             }
@@ -158087,7 +158087,7 @@ interface Symbol {
             return firstDefined(statement.declarationList.declarations, (decl) => forEachTopLevelDeclarationInBindingName(decl.name, cb));
           case 245: {
             const { expression } = statement;
-            return isBinaryExpression11(expression) && getAssignmentDeclarationKind(expression) === 1 ? cb(statement) : void 0;
+            return isBinaryExpression12(expression) && getAssignmentDeclarationKind(expression) === 1 ? cb(statement) : void 0;
           }
         }
       }
@@ -158101,28 +158101,28 @@ interface Symbol {
           case 261:
             return isVariableDeclarationInImport(decl);
           case 209:
-            return isVariableDeclaration16(decl.parent.parent) && isVariableDeclarationInImport(decl.parent.parent);
+            return isVariableDeclaration17(decl.parent.parent) && isVariableDeclarationInImport(decl.parent.parent);
           default:
             return false;
         }
       }
       function isVariableDeclarationInImport(decl) {
-        return isSourceFile6(decl.parent.parent.parent) && !!decl.initializer && isRequireCall(
+        return isSourceFile7(decl.parent.parent.parent) && !!decl.initializer && isRequireCall(
           decl.initializer,
           /*requireStringLiteralLikeArgument*/
           true
         );
       }
       function isTopLevelDeclaration(node) {
-        return isNonVariableTopLevelDeclaration(node) && isSourceFile6(node.parent) || isVariableDeclaration16(node) && isSourceFile6(node.parent.parent.parent);
+        return isNonVariableTopLevelDeclaration(node) && isSourceFile7(node.parent) || isVariableDeclaration17(node) && isSourceFile7(node.parent.parent.parent);
       }
       function sourceFileOfTopLevelDeclaration(node) {
-        return isVariableDeclaration16(node) ? node.parent.parent.parent : node.parent;
+        return isVariableDeclaration17(node) ? node.parent.parent.parent : node.parent;
       }
       function forEachTopLevelDeclarationInBindingName(name, cb) {
         switch (name.kind) {
           case 80:
-            return cb(cast(name.parent, (x) => isVariableDeclaration16(x) || isBindingElement8(x)));
+            return cb(cast(name.parent, (x) => isVariableDeclaration17(x) || isBindingElement8(x)));
           case 208:
           case 207:
             return firstDefined(name.elements, (em) => isOmittedExpression4(em) ? void 0 : forEachTopLevelDeclarationInBindingName(em.name, cb));
@@ -158255,7 +158255,7 @@ interface Symbol {
         return known.substr(0, requested.length) === requested;
       }
       function getIdentifierForNode(node, scope, checker, file) {
-        return isPropertyAccessExpression16(node) && !isClassLike(scope) && !checker.resolveName(
+        return isPropertyAccessExpression17(node) && !isClassLike(scope) && !checker.resolveName(
           node.name.text,
           node,
           111551,
@@ -158334,7 +158334,7 @@ interface Symbol {
           const { references: references2, declaration, replacement } = info;
           const edits = ts_textChanges_exports.ChangeTracker.with(context, (tracker) => {
             for (const node of references2) {
-              const closestStringIdentifierParent = isStringLiteral7(replacement) && isIdentifier17(node) && walkUpParenthesizedExpressions(node.parent);
+              const closestStringIdentifierParent = isStringLiteral7(replacement) && isIdentifier18(node) && walkUpParenthesizedExpressions(node.parent);
               if (closestStringIdentifierParent && isTemplateSpan(closestStringIdentifierParent) && !isTaggedTemplateExpression2(closestStringIdentifierParent.parent.parent)) {
                 replaceTemplateStringVariableWithLiteral(tracker, file, closestStringIdentifierParent, replacement);
               } else {
@@ -158351,10 +158351,10 @@ interface Symbol {
         const checker = program.getTypeChecker();
         const token = getTouchingPropertyName(file, startPosition);
         const parent2 = token.parent;
-        if (!isIdentifier17(token)) {
+        if (!isIdentifier18(token)) {
           return void 0;
         }
-        if (isInitializedVariable(parent2) && isVariableDeclarationInVariableStatement(parent2) && isIdentifier17(parent2.name)) {
+        if (isInitializedVariable(parent2) && isVariableDeclarationInVariableStatement(parent2) && isIdentifier18(parent2.name)) {
           if (((_a2 = checker.getMergedSymbol(parent2.symbol).declarations) == null ? void 0 : _a2.length) !== 1) {
             return { error: getLocaleSpecificMessage(Diagnostics.Variables_with_multiple_declarations_cannot_be_inlined) };
           }
@@ -158377,7 +158377,7 @@ interface Symbol {
             return { error: getLocaleSpecificMessage(Diagnostics.Variables_with_multiple_declarations_cannot_be_inlined) };
           }
           const declaration = definition.declarations[0];
-          if (!isInitializedVariable(declaration) || !isVariableDeclarationInVariableStatement(declaration) || !isIdentifier17(declaration.name)) {
+          if (!isInitializedVariable(declaration) || !isVariableDeclarationInVariableStatement(declaration) || !isIdentifier18(declaration.name)) {
             return void 0;
           }
           if (isDeclarationExported(declaration)) {
@@ -158389,7 +158389,7 @@ interface Symbol {
         return { error: getLocaleSpecificMessage(Diagnostics.Could_not_find_variable_to_inline) };
       }
       function isDeclarationExported(declaration) {
-        const variableStatement = cast(declaration.parent.parent, isVariableStatement9);
+        const variableStatement = cast(declaration.parent.parent, isVariableStatement10);
         return some(variableStatement.modifiers, isExportModifier);
       }
       function getReferenceNodes(declaration, checker, file) {
@@ -158417,13 +158417,13 @@ interface Symbol {
         if (isExpression3(parent2) && (getExpressionPrecedence(replacement) < getExpressionPrecedence(parent2) || needsParentheses(parent2))) {
           return factory.createParenthesizedExpression(replacement);
         }
-        if (isFunctionLike3(replacement) && (isCallLikeExpression(parent2) || isPropertyAccessExpression16(parent2))) {
+        if (isFunctionLike3(replacement) && (isCallLikeExpression(parent2) || isPropertyAccessExpression17(parent2))) {
           return factory.createParenthesizedExpression(replacement);
         }
-        if (isPropertyAccessExpression16(parent2) && (isNumericLiteral8(replacement) || isObjectLiteralExpression11(replacement))) {
+        if (isPropertyAccessExpression17(parent2) && (isNumericLiteral9(replacement) || isObjectLiteralExpression12(replacement))) {
           return factory.createParenthesizedExpression(replacement);
         }
-        if (isIdentifier17(reference2) && isShorthandPropertyAssignment10(parent2)) {
+        if (isIdentifier18(reference2) && isShorthandPropertyAssignment10(parent2)) {
           return factory.createPropertyAssignment(reference2, replacement);
         }
         return replacement;
@@ -158456,7 +158456,7 @@ interface Symbol {
           if (context.triggerReason === "implicit" && context.endPosition !== void 0) {
             const startNodeAncestor = findAncestor(getTokenAtPosition(file, context.startPosition), isBlockLike);
             const endNodeAncestor = findAncestor(getTokenAtPosition(file, context.endPosition), isBlockLike);
-            if (startNodeAncestor && !isSourceFile6(startNodeAncestor) && endNodeAncestor && !isSourceFile6(endNodeAncestor)) {
+            if (startNodeAncestor && !isSourceFile7(startNodeAncestor) && endNodeAncestor && !isSourceFile7(endNodeAncestor)) {
               return emptyArray;
             }
           }
@@ -158626,7 +158626,7 @@ interface Symbol {
           );
         }
         function convertParameterToNamedTupleMember(p) {
-          Debug.assert(isIdentifier17(p.name));
+          Debug.assert(isIdentifier18(p.name));
           const result3 = setTextRange(
             factory.createNamedTupleMember(
               p.dotDotDotToken,
@@ -158699,7 +158699,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           return;
         }
         const signatureDecls = decls;
-        if (some(signatureDecls, (d) => !!d.typeParameters || some(d.parameters, (p) => !!p.modifiers || !isIdentifier17(p.name)))) {
+        if (some(signatureDecls, (d) => !!d.typeParameters || some(d.parameters, (p) => !!p.modifiers || !isIdentifier18(p.name)))) {
           return;
         }
         const signatures = mapDefined(signatureDecls, (d) => checker.getSignatureFromDeclaration(d));
@@ -158831,7 +158831,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         } else if (refactorKindBeginsWith(removeBracesAction.kind, kind) && isBlock7(func.body) && func.body.statements.length === 1) {
           const firstStatement = first(func.body.statements);
           if (isReturnStatement8(firstStatement)) {
-            const expression = firstStatement.expression && isObjectLiteralExpression11(getLeftmostExpression(
+            const expression = firstStatement.expression && isObjectLiteralExpression12(getLeftmostExpression(
               firstStatement.expression,
               /*stopAtCallExpressions*/
               false
@@ -158876,7 +158876,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         const possibleActions = [];
         const errors = [];
         if (refactorKindBeginsWith(toNamedFunctionAction.kind, kind)) {
-          const error2 = selectedVariableDeclaration || isArrowFunction12(func) && isVariableDeclaration16(func.parent) ? void 0 : getLocaleSpecificMessage(Diagnostics.Could_not_convert_to_named_function);
+          const error2 = selectedVariableDeclaration || isArrowFunction12(func) && isVariableDeclaration17(func.parent) ? void 0 : getLocaleSpecificMessage(Diagnostics.Could_not_convert_to_named_function);
           if (error2) {
             errors.push({ ...toNamedFunctionAction, notApplicableReason: error2 });
           } else {
@@ -158957,13 +158957,13 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         return void 0;
       }
       function isSingleVariableDeclaration(parent2) {
-        return isVariableDeclaration16(parent2) || isVariableDeclarationList9(parent2) && parent2.declarations.length === 1;
+        return isVariableDeclaration17(parent2) || isVariableDeclarationList10(parent2) && parent2.declarations.length === 1;
       }
       function tryGetFunctionFromVariableDeclaration(sourceFile, typeChecker, parent2) {
         if (!isSingleVariableDeclaration(parent2)) {
           return void 0;
         }
-        const variableDeclaration = isVariableDeclaration16(parent2) ? parent2 : first(parent2.declarations);
+        const variableDeclaration = isVariableDeclaration17(parent2) ? parent2 : first(parent2.declarations);
         const initializer = variableDeclaration.initializer;
         if (initializer && (isArrowFunction12(initializer) || isFunctionExpression12(initializer) && !isFunctionReferencedInFile(sourceFile, typeChecker, initializer))) {
           return initializer;
@@ -158996,10 +158996,10 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
       }
       function getVariableInfo(func) {
         const variableDeclaration = func.parent;
-        if (!isVariableDeclaration16(variableDeclaration) || !isVariableDeclarationInVariableStatement(variableDeclaration)) return void 0;
+        if (!isVariableDeclaration17(variableDeclaration) || !isVariableDeclarationInVariableStatement(variableDeclaration)) return void 0;
         const variableDeclarationList = variableDeclaration.parent;
         const statement = variableDeclarationList.parent;
-        if (!isVariableDeclarationList9(variableDeclarationList) || !isVariableStatement9(statement) || !isIdentifier17(variableDeclaration.name)) return void 0;
+        if (!isVariableDeclarationList10(variableDeclarationList) || !isVariableStatement10(statement) || !isIdentifier18(variableDeclaration.name)) return void 0;
         return { variableDeclaration, variableDeclarationList, statement, name: variableDeclaration.name };
       }
       function getEditInfoForConvertToAnonymousFunction(context, func) {
@@ -159280,7 +159280,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
               break;
             // x.foo(...)
             case 212:
-              const propertyAccessExpression = tryCast(parent2, isPropertyAccessExpression16);
+              const propertyAccessExpression = tryCast(parent2, isPropertyAccessExpression17);
               if (propertyAccessExpression && propertyAccessExpression.parent && propertyAccessExpression.name === functionReference) {
                 const callOrNewExpression2 = tryCast(propertyAccessExpression.parent, isCallOrNewExpression);
                 if (callOrNewExpression2 && callOrNewExpression2.expression === propertyAccessExpression) {
@@ -159309,7 +159309,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           switch (parent2.kind) {
             // `C.foo`
             case 212:
-              const propertyAccessExpression = tryCast(parent2, isPropertyAccessExpression16);
+              const propertyAccessExpression = tryCast(parent2, isPropertyAccessExpression17);
               if (propertyAccessExpression && propertyAccessExpression.expression === reference2) {
                 return propertyAccessExpression;
               }
@@ -159357,7 +159357,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           case 263:
             return hasNameOrDefault(functionDeclaration) && isSingleImplementation(functionDeclaration, checker);
           case 175:
-            if (isObjectLiteralExpression11(functionDeclaration.parent)) {
+            if (isObjectLiteralExpression12(functionDeclaration.parent)) {
               const contextualSymbol = getSymbolForContextualType(functionDeclaration.name, checker);
               return ((_a2 = contextualSymbol == null ? void 0 : contextualSymbol.declarations) == null ? void 0 : _a2.length) === 1 && isSingleImplementation(functionDeclaration, checker);
             }
@@ -159400,10 +159400,10 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           const type = checker.getTypeAtLocation(parameterDeclaration);
           if (!checker.isArrayType(type) && !checker.isTupleType(type)) return false;
         }
-        return !parameterDeclaration.modifiers && isIdentifier17(parameterDeclaration.name);
+        return !parameterDeclaration.modifiers && isIdentifier18(parameterDeclaration.name);
       }
       function isValidVariableDeclaration(node) {
-        return isVariableDeclaration16(node) && isVarConst(node) && isIdentifier17(node.name) && !node.type;
+        return isVariableDeclaration17(node) && isVarConst(node) && isIdentifier18(node.name) && !node.type;
       }
       function hasThisParameter(parameters2) {
         return parameters2.length > 0 && isThis(parameters2[0].name);
@@ -159421,7 +159421,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         return parameters2;
       }
       function createPropertyOrShorthandAssignment(name, initializer) {
-        if (isIdentifier17(initializer) && getTextOfIdentifierOrLiteral(initializer) === name) {
+        if (isIdentifier18(initializer) && getTextOfIdentifierOrLiteral(initializer) === name) {
           return factory.createShorthandPropertyAssignment(name);
         }
         return factory.createPropertyAssignment(name, initializer);
@@ -159434,7 +159434,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           const parameterName2 = getParameterName(parameters2[i]);
           const property = createPropertyOrShorthandAssignment(parameterName2, arg);
           suppressLeadingAndTrailingTrivia(property.name);
-          if (isPropertyAssignment12(property)) suppressLeadingAndTrailingTrivia(property.initializer);
+          if (isPropertyAssignment13(property)) suppressLeadingAndTrailingTrivia(property.initializer);
           copyComments(arg, property);
           return property;
         });
@@ -159631,7 +159631,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         if (nodeIsStringLiteral && context.triggerReason !== "invoked") {
           return emptyArray;
         }
-        if (isExpressionNode(maybeBinary) && (nodeIsStringLiteral || isBinaryExpression11(maybeBinary) && treeToArray(maybeBinary).isValidConcatenation)) {
+        if (isExpressionNode(maybeBinary) && (nodeIsStringLiteral || isBinaryExpression12(maybeBinary) && treeToArray(maybeBinary).isValidConcatenation)) {
           refactorInfo.actions.push(convertStringAction);
           return [refactorInfo];
         } else if (context.preferences.provideRefactorNotApplicableReason) {
@@ -159644,7 +159644,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         const node = getTokenAtPosition(file, startPosition);
         const nestedBinary = getParentBinaryExpression(node);
         const isNonStringBinary = !treeToArray(nestedBinary).isValidConcatenation;
-        if (isNonStringBinary && isParenthesizedExpression13(nestedBinary.parent) && isBinaryExpression11(nestedBinary.parent.parent)) {
+        if (isNonStringBinary && isParenthesizedExpression13(nestedBinary.parent) && isBinaryExpression12(nestedBinary.parent.parent)) {
           return nestedBinary.parent.parent;
         }
         return node;
@@ -159686,7 +159686,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
               return false;
             case 229:
             case 227:
-              return !(isBinaryExpression11(n.parent) && isNotEqualsOperator(n.parent));
+              return !(isBinaryExpression12(n.parent) && isNotEqualsOperator(n.parent));
             default:
               return "quit";
           }
@@ -159695,7 +159695,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
       }
       function treeToArray(current) {
         const loop = (current2) => {
-          if (!isBinaryExpression11(current2)) {
+          if (!isBinaryExpression12(current2)) {
             return { nodes: [current2], operators: [], validOperators: true, hasString: isStringLiteral7(current2) || isNoSubstitutionTemplateLiteral4(current2) };
           }
           const { nodes: nodes2, operators: operators2, hasString: leftHasString, validOperators: leftOperatorValid } = loop(current2.left);
@@ -159749,7 +159749,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         let text3 = "", rawText = "";
         while (index < nodes.length) {
           const node = nodes[index];
-          if (isStringLiteralLike13(node)) {
+          if (isStringLiteralLike14(node)) {
             text3 += node.text;
             rawText += escapeRawStringForTemplate(getTextOfNode(node).slice(1, -1));
             indexes.push(index);
@@ -159867,10 +159867,10 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         return { edits, renameFilename: void 0, renameLocation: void 0 };
       }
       function isValidExpression(node) {
-        return isBinaryExpression11(node) || isConditionalExpression4(node);
+        return isBinaryExpression12(node) || isConditionalExpression4(node);
       }
       function isValidStatement(node) {
-        return isExpressionStatement9(node) || isReturnStatement8(node) || isVariableStatement9(node);
+        return isExpressionStatement9(node) || isReturnStatement8(node) || isVariableStatement10(node);
       }
       function isValidExpressionOrStatement(node) {
         return isValidExpression(node) || isValidStatement(node);
@@ -159895,9 +159895,9 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         if (!finalExpression || checker.isNullableType(checker.getTypeAtLocation(finalExpression))) {
           return { error: getLocaleSpecificMessage(Diagnostics.Could_not_find_convertible_access_expression) };
         }
-        if ((isPropertyAccessExpression16(condition) || isIdentifier17(condition)) && getMatchingStart(condition, finalExpression.expression)) {
+        if ((isPropertyAccessExpression17(condition) || isIdentifier18(condition)) && getMatchingStart(condition, finalExpression.expression)) {
           return { finalExpression, occurrences: [condition], expression };
-        } else if (isBinaryExpression11(condition)) {
+        } else if (isBinaryExpression12(condition)) {
           const occurrences = getOccurrencesInExpression(finalExpression.expression, condition);
           return occurrences ? { finalExpression, occurrences, expression } : { error: getLocaleSpecificMessage(Diagnostics.Could_not_find_matching_access_expressions) };
         }
@@ -159913,7 +159913,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
       }
       function getOccurrencesInExpression(matchTo, expression) {
         const occurrences = [];
-        while (isBinaryExpression11(expression) && expression.operatorToken.kind === 56) {
+        while (isBinaryExpression12(expression) && expression.operatorToken.kind === 56) {
           const match = getMatchingStart(skipParentheses(matchTo), skipParentheses(expression.right));
           if (!match) {
             break;
@@ -159929,28 +159929,28 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         return occurrences.length > 0 ? occurrences : void 0;
       }
       function getMatchingStart(chain, subchain) {
-        if (!isIdentifier17(subchain) && !isPropertyAccessExpression16(subchain) && !isElementAccessExpression12(subchain)) {
+        if (!isIdentifier18(subchain) && !isPropertyAccessExpression17(subchain) && !isElementAccessExpression12(subchain)) {
           return void 0;
         }
         return chainStartsWith(chain, subchain) ? subchain : void 0;
       }
       function chainStartsWith(chain, subchain) {
-        while (isCallExpression18(chain) || isPropertyAccessExpression16(chain) || isElementAccessExpression12(chain)) {
+        while (isCallExpression18(chain) || isPropertyAccessExpression17(chain) || isElementAccessExpression12(chain)) {
           if (getTextOfChainNode(chain) === getTextOfChainNode(subchain)) break;
           chain = chain.expression;
         }
-        while (isPropertyAccessExpression16(chain) && isPropertyAccessExpression16(subchain) || isElementAccessExpression12(chain) && isElementAccessExpression12(subchain)) {
+        while (isPropertyAccessExpression17(chain) && isPropertyAccessExpression17(subchain) || isElementAccessExpression12(chain) && isElementAccessExpression12(subchain)) {
           if (getTextOfChainNode(chain) !== getTextOfChainNode(subchain)) return false;
           chain = chain.expression;
           subchain = subchain.expression;
         }
-        return isIdentifier17(chain) && isIdentifier17(subchain) && chain.getText() === subchain.getText();
+        return isIdentifier18(chain) && isIdentifier18(subchain) && chain.getText() === subchain.getText();
       }
       function getTextOfChainNode(node) {
-        if (isIdentifier17(node) || isStringOrNumericLiteralLike(node)) {
+        if (isIdentifier18(node) || isStringOrNumericLiteralLike(node)) {
           return node.getText();
         }
-        if (isPropertyAccessExpression16(node)) {
+        if (isPropertyAccessExpression17(node)) {
           return getTextOfChainNode(node.name);
         }
         if (isElementAccessExpression12(node)) {
@@ -159980,7 +159980,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         if (isValidExpression(node)) {
           return node;
         }
-        if (isVariableStatement9(node)) {
+        if (isVariableStatement10(node)) {
           const variable = getSingleVariableOfVariableStatement(node);
           const initializer = variable == null ? void 0 : variable.initializer;
           return initializer && isValidExpression(initializer) ? initializer : void 0;
@@ -159989,15 +159989,15 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
       }
       function getFinalExpressionInChain(node) {
         node = skipParentheses(node);
-        if (isBinaryExpression11(node)) {
+        if (isBinaryExpression12(node)) {
           return getFinalExpressionInChain(node.left);
-        } else if ((isPropertyAccessExpression16(node) || isElementAccessExpression12(node) || isCallExpression18(node)) && !isOptionalChain(node)) {
+        } else if ((isPropertyAccessExpression17(node) || isElementAccessExpression12(node) || isCallExpression18(node)) && !isOptionalChain(node)) {
           return node;
         }
         return void 0;
       }
       function convertOccurrences(checker, toConvert, occurrences) {
-        if (isPropertyAccessExpression16(toConvert) || isElementAccessExpression12(toConvert) || isCallExpression18(toConvert)) {
+        if (isPropertyAccessExpression17(toConvert) || isElementAccessExpression12(toConvert) || isCallExpression18(toConvert)) {
           const chain = convertOccurrences(checker, toConvert.expression, occurrences);
           const lastOccurrence = occurrences.length > 0 ? occurrences[occurrences.length - 1] : void 0;
           const isOccurrence = (lastOccurrence == null ? void 0 : lastOccurrence.getText()) === toConvert.expression.getText();
@@ -160007,7 +160007,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
               29
               /* QuestionDotToken */
             ), toConvert.typeArguments, toConvert.arguments) : factory.createCallChain(chain, toConvert.questionDotToken, toConvert.typeArguments, toConvert.arguments);
-          } else if (isPropertyAccessExpression16(toConvert)) {
+          } else if (isPropertyAccessExpression17(toConvert)) {
             return isOccurrence ? factory.createPropertyAccessChain(chain, factory.createToken(
               29
               /* QuestionDotToken */
@@ -160025,8 +160025,8 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         const { finalExpression, occurrences, expression } = info;
         const firstOccurrence = occurrences[occurrences.length - 1];
         const convertedChain = convertOccurrences(checker, finalExpression, occurrences);
-        if (convertedChain && (isPropertyAccessExpression16(convertedChain) || isElementAccessExpression12(convertedChain) || isCallExpression18(convertedChain))) {
-          if (isBinaryExpression11(expression)) {
+        if (convertedChain && (isPropertyAccessExpression17(convertedChain) || isElementAccessExpression12(convertedChain) || isCallExpression18(convertedChain))) {
+          if (isBinaryExpression12(expression)) {
             changes.replaceNodeRange(sourceFile, firstOccurrence, finalExpression, convertedChain);
           } else if (isConditionalExpression4(expression)) {
             changes.replaceNode(sourceFile, expression, factory.createBinaryExpression(convertedChain, factory.createToken(
@@ -160300,8 +160300,8 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
             if (node2.expression) {
               return node2.expression;
             }
-          } else if (isVariableStatement9(node2) || isVariableDeclarationList9(node2)) {
-            const declarations = isVariableStatement9(node2) ? node2.declarationList.declarations : node2.declarations;
+          } else if (isVariableStatement10(node2) || isVariableDeclarationList10(node2)) {
+            const declarations = isVariableStatement10(node2) ? node2.declarationList.declarations : node2.declarations;
             let numInitializers = 0;
             let lastInitializer;
             for (const declaration of declarations) {
@@ -160313,7 +160313,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
             if (numInitializers === 1) {
               return lastInitializer;
             }
-          } else if (isVariableDeclaration16(node2)) {
+          } else if (isVariableDeclaration17(node2)) {
             if (node2.initializer) {
               return node2.initializer;
             }
@@ -160321,7 +160321,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           return node2;
         }
         function checkRootNode(node2) {
-          if (isIdentifier17(isExpressionStatement9(node2) ? node2.expression : node2)) {
+          if (isIdentifier18(isExpressionStatement9(node2) ? node2.expression : node2)) {
             return [createDiagnosticForNode(node2, Messages.cannotExtractIdentifier)];
           }
           return void 0;
@@ -160433,7 +160433,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
               // falls through
               case 264:
               case 263:
-                if (isSourceFile6(node2.parent) && node2.parent.externalModuleIndicator === void 0) {
+                if (isSourceFile7(node2.parent) && node2.parent.externalModuleIndicator === void 0) {
                   (errors2 || (errors2 = [])).push(createDiagnosticForNode(node2, Messages.functionWillNotBeVisibleInTheNewScope));
                 }
               // falls through
@@ -160541,7 +160541,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         return void 0;
       }
       function isScope(node) {
-        return isArrowFunction12(node) ? isFunctionBody(node.body) : isFunctionLikeDeclaration(node) || isSourceFile6(node) || isModuleBlock(node) || isClassLike(node);
+        return isArrowFunction12(node) ? isFunctionBody(node.body) : isFunctionLikeDeclaration(node) || isSourceFile7(node) || isModuleBlock(node) || isClassLike(node);
       }
       function collectEnclosingScopes(range2) {
         let current = isReadonlyArray(range2.range) ? first(range2.range) : range2.range;
@@ -161199,7 +161199,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           } else {
             if (functionSignature && !!functionSignature.thisParameter) {
               const firstParameter = firstOrUndefined(parameters2);
-              if (!firstParameter || isIdentifier17(firstParameter.name) && firstParameter.name.escapedText !== "this") {
+              if (!firstParameter || isIdentifier18(firstParameter.name) && firstParameter.name.escapedText !== "this") {
                 const thisType = checker.getTypeOfSymbolAtLocation(functionSignature.thisParameter, node);
                 parameters2.splice(
                   0,
@@ -161236,7 +161236,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
       function getContainingVariableDeclarationIfInList(node, scope) {
         let prevNode;
         while (node !== void 0 && node !== scope) {
-          if (isVariableDeclaration16(node) && node.initializer === prevNode && isVariableDeclarationList9(node.parent) && node.parent.declarations.length > 1) {
+          if (isVariableDeclaration17(node) && node.initializer === prevNode && isVariableDeclarationList10(node.parent) && node.parent.declarations.length > 1) {
             return node;
           }
           prevNode = node;
@@ -161351,7 +161351,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           if (isBlock7(body)) {
             return body.statements;
           }
-        } else if (isModuleBlock(scope) || isSourceFile6(scope)) {
+        } else if (isModuleBlock(scope) || isSourceFile7(scope)) {
           return scope.statements;
         } else if (isClassLike(scope)) {
           return scope.members;
@@ -161562,16 +161562,16 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
               2
               /* Write */
             );
-          } else if (isPropertyAccessExpression16(node) || isElementAccessExpression12(node)) {
+          } else if (isPropertyAccessExpression17(node) || isElementAccessExpression12(node)) {
             forEachChild5(node, collectUsages);
-          } else if (isIdentifier17(node)) {
+          } else if (isIdentifier18(node)) {
             if (!node.parent) {
               return;
             }
             if (isQualifiedName(node.parent) && node !== node.parent.left) {
               return;
             }
-            if (isPropertyAccessExpression16(node.parent) && node !== node.parent.expression) {
+            if (isPropertyAccessExpression17(node.parent) && node !== node.parent.expression) {
               return;
             }
             recordUsage(
@@ -161665,11 +161665,11 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           if (node === targetRange.range || isReadonlyArray(targetRange.range) && targetRange.range.includes(node)) {
             return;
           }
-          const sym = isIdentifier17(node) ? getSymbolReferencedByIdentifier(node) : checker.getSymbolAtLocation(node);
+          const sym = isIdentifier18(node) ? getSymbolReferencedByIdentifier(node) : checker.getSymbolAtLocation(node);
           if (sym) {
             const decl = find(visibleDeclarationsInExtractedRange, (d) => d.symbol === sym);
             if (decl) {
-              if (isVariableDeclaration16(decl)) {
+              if (isVariableDeclaration17(decl)) {
                 const idString = decl.symbol.id.toString();
                 if (!exposedVariableSymbolSet.has(idString)) {
                   exposedVariableDeclarations.push(decl);
@@ -161701,7 +161701,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         }
       }
       function getExtractableParent(node) {
-        return findAncestor(node, (node2) => node2.parent && isExtractableExpression(node2) && !isBinaryExpression11(node2.parent));
+        return findAncestor(node, (node2) => node2.parent && isExtractableExpression(node2) && !isBinaryExpression12(node2.parent));
       }
       function isExtractableExpression(node) {
         const { parent: parent2 } = node;
@@ -161745,7 +161745,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           if (!edits) return void 0;
           const renameFilename = context.file.fileName;
           const nameNeedRename = info.renameAccessor ? info.accessorName : info.fieldName;
-          const renameLocationOffset = isIdentifier17(nameNeedRename) ? 0 : -1;
+          const renameLocationOffset = isIdentifier18(nameNeedRename) ? 0 : -1;
           const renameLocation = renameLocationOffset + getRenameLocation(
             edits,
             renameFilename,
@@ -161977,7 +161977,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           if (isJsxExpression2(node)) {
             inJSXElement = false;
           }
-          if (isIdentifier17(node) && !inJSXElement && !inImportClause(node) && !isInfinityOrNaNString(node.escapedText)) {
+          if (isIdentifier18(node) && !inJSXElement && !inImportClause(node) && !isInfinityOrNaNString(node.escapedText)) {
             let symbol = typeChecker.getSymbolAtLocation(node);
             if (symbol) {
               if (symbol.flags & 2097152) {
@@ -162071,10 +162071,10 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         if (isBindingElement8(decl)) {
           decl = getDeclarationForBindingElement(decl);
         }
-        if (isVariableDeclaration16(decl)) {
-          return (!isSourceFile6(decl.parent.parent.parent) || isCatchClause2(decl.parent)) && decl.getSourceFile() === sourceFile;
+        if (isVariableDeclaration17(decl)) {
+          return (!isSourceFile7(decl.parent.parent.parent) || isCatchClause2(decl.parent)) && decl.getSourceFile() === sourceFile;
         } else if (isFunctionDeclaration9(decl)) {
-          return !isSourceFile6(decl.parent) && decl.getSourceFile() === sourceFile;
+          return !isSourceFile7(decl.parent) && decl.getSourceFile() === sourceFile;
         }
         return false;
       }
@@ -162098,7 +162098,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         return isCallExpression18(node.parent) && node.parent.expression === node;
       }
       function isRightSideOfQualifiedNameOrPropertyAccess2(node) {
-        return isQualifiedName(node.parent) && node.parent.right === node || isPropertyAccessExpression16(node.parent) && node.parent.name === node;
+        return isQualifiedName(node.parent) && node.parent.right === node || isPropertyAccessExpression17(node.parent) && node.parent.name === node;
       }
       var tokenFromDeclarationMapping = /* @__PURE__ */ new Map([
         [
@@ -162786,7 +162786,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           }
           function getDeclarationName(declaration) {
             const name = getNonAssignedNameOfDeclaration(declaration);
-            return name && (isComputedPropertyName8(name) && isPropertyAccessExpression16(name.expression) ? name.expression.name.text : isPropertyName(name) ? getNameFromPropertyName(name) : void 0);
+            return name && (isComputedPropertyName8(name) && isPropertyAccessExpression17(name.expression) ? name.expression.name.text : isPropertyName(name) ? getNameFromPropertyName(name) : void 0);
           }
           function visit(node) {
             switch (node.kind) {
@@ -163491,7 +163491,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           if (file.end === span.start + span.length) {
             nodes.push(file.endOfFileToken);
           }
-          if (some(nodes, isSourceFile6)) {
+          if (some(nodes, isSourceFile7)) {
             return void 0;
           }
           return nodes;
@@ -163742,7 +163742,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           const sourceFile = getValidSourceFile(fileName);
           const node = getAdjustedRenameLocation(getTouchingPropertyName(sourceFile, position2));
           if (!ts_Rename_exports.nodeIsEligibleForRename(node)) return void 0;
-          if (isIdentifier17(node) && (isJsxOpeningElement(node.parent) || isJsxClosingElement(node.parent)) && isIntrinsicJsxName(node.escapedText)) {
+          if (isIdentifier18(node) && (isJsxOpeningElement(node.parent) || isJsxClosingElement(node.parent)) && isIntrinsicJsxName(node.escapedText)) {
             const { openingElement, closingElement } = node.parent.parent;
             return [openingElement, closingElement].map((node2) => {
               const textSpan = createTextSpanFromNode(node2.tagName, sourceFile);
@@ -164514,7 +164514,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
       function initializeNameTable(sourceFile) {
         const nameTable = sourceFile.nameTable = /* @__PURE__ */ new Map();
         sourceFile.forEachChild(function walk(node) {
-          if (isIdentifier17(node) && !isTagName(node) && node.escapedText || isStringOrNumericLiteralLike(node) && literalIsName(node)) {
+          if (isIdentifier18(node) && !isTagName(node) && node.escapedText || isStringOrNumericLiteralLike(node) && literalIsName(node)) {
             const text3 = getEscapedTextOfIdentifierOrLiteral(node);
             nameTable.set(text3, nameTable.get(text3) === void 0 ? node.pos : -1);
           } else if (isPrivateIdentifier2(node)) {
@@ -164534,7 +164534,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
       }
       function getContainingObjectLiteralElement(node) {
         const element = getContainingObjectLiteralElementWorker(node);
-        return element && (isObjectLiteralExpression11(element.parent) || isJsxAttributes(element.parent)) ? element : void 0;
+        return element && (isObjectLiteralExpression12(element.parent) || isJsxAttributes(element.parent)) ? element : void 0;
       }
       function getContainingObjectLiteralElementWorker(node) {
         switch (node.kind) {
@@ -164575,7 +164575,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           const symbol = contextualType.getProperty(name);
           return symbol ? [symbol] : emptyArray;
         }
-        const filteredTypes = isObjectLiteralExpression11(node.parent) || isJsxAttributes(node.parent) ? filter(contextualType.types, (t) => !checker.isTypeInvalidDueToUnionDiscriminant(t, node.parent)) : contextualType.types;
+        const filteredTypes = isObjectLiteralExpression12(node.parent) || isJsxAttributes(node.parent) ? filter(contextualType.types, (t) => !checker.isTypeInvalidDueToUnionDiscriminant(t, node.parent)) : contextualType.types;
         const discriminatedPropertySymbols = mapDefined(filteredTypes, (t) => t.getProperty(name));
         if (unionSymbolOk && (discriminatedPropertySymbols.length === 0 || discriminatedPropertySymbols.length === contextualType.types.length)) {
           const symbol = contextualType.getProperty(name);
@@ -164867,7 +164867,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
             }
           }
           function textSpanFromVariableDeclaration(variableDeclaration) {
-            if (isVariableDeclarationList9(variableDeclaration.parent) && variableDeclaration.parent.declarations[0] === variableDeclaration) {
+            if (isVariableDeclarationList10(variableDeclaration.parent) && variableDeclaration.parent.declarations[0] === variableDeclaration) {
               return textSpan(findPrecedingToken(variableDeclaration.pos, sourceFile, variableDeclaration.parent), variableDeclaration);
             } else {
               return textSpan(variableDeclaration);
@@ -164888,7 +164888,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
             ) || parent2.parent.kind === 251) {
               return textSpanFromVariableDeclaration(variableDeclaration);
             }
-            if (isVariableDeclarationList9(variableDeclaration.parent) && variableDeclaration.parent.declarations[0] !== variableDeclaration) {
+            if (isVariableDeclarationList10(variableDeclaration.parent) && variableDeclaration.parent.declarations[0] !== variableDeclaration) {
               return spanInNode(findPrecedingToken(variableDeclaration.pos, sourceFile, variableDeclaration.parent));
             }
           }
@@ -165132,19 +165132,19 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         return (isFunctionExpression12(node) || isClassExpression3(node)) && isNamedDeclaration(node);
       }
       function isVariableLike2(node) {
-        return isPropertyDeclaration5(node) || isVariableDeclaration16(node);
+        return isPropertyDeclaration5(node) || isVariableDeclaration17(node);
       }
       function isAssignedExpression(node) {
-        return (isFunctionExpression12(node) || isArrowFunction12(node) || isClassExpression3(node)) && isVariableLike2(node.parent) && node === node.parent.initializer && isIdentifier17(node.parent.name) && (!!(getCombinedNodeFlags(node.parent) & 2) || isPropertyDeclaration5(node.parent));
+        return (isFunctionExpression12(node) || isArrowFunction12(node) || isClassExpression3(node)) && isVariableLike2(node.parent) && node === node.parent.initializer && isIdentifier18(node.parent.name) && (!!(getCombinedNodeFlags(node.parent) & 2) || isPropertyDeclaration5(node.parent));
       }
       function isPossibleCallHierarchyDeclaration(node) {
-        return isSourceFile6(node) || isModuleDeclaration(node) || isFunctionDeclaration9(node) || isFunctionExpression12(node) || isClassDeclaration5(node) || isClassExpression3(node) || isClassStaticBlockDeclaration(node) || isMethodDeclaration8(node) || isMethodSignature(node) || isGetAccessorDeclaration6(node) || isSetAccessorDeclaration6(node);
+        return isSourceFile7(node) || isModuleDeclaration(node) || isFunctionDeclaration9(node) || isFunctionExpression12(node) || isClassDeclaration5(node) || isClassExpression3(node) || isClassStaticBlockDeclaration(node) || isMethodDeclaration8(node) || isMethodSignature(node) || isGetAccessorDeclaration6(node) || isSetAccessorDeclaration6(node);
       }
       function isValidCallHierarchyDeclaration(node) {
-        return isSourceFile6(node) || isModuleDeclaration(node) && isIdentifier17(node.name) || isFunctionDeclaration9(node) || isClassDeclaration5(node) || isClassStaticBlockDeclaration(node) || isMethodDeclaration8(node) || isMethodSignature(node) || isGetAccessorDeclaration6(node) || isSetAccessorDeclaration6(node) || isNamedExpression(node) || isAssignedExpression(node);
+        return isSourceFile7(node) || isModuleDeclaration(node) && isIdentifier18(node.name) || isFunctionDeclaration9(node) || isClassDeclaration5(node) || isClassStaticBlockDeclaration(node) || isMethodDeclaration8(node) || isMethodSignature(node) || isGetAccessorDeclaration6(node) || isSetAccessorDeclaration6(node) || isNamedExpression(node) || isAssignedExpression(node);
       }
       function getCallHierarchyDeclarationReferenceNode(node) {
-        if (isSourceFile6(node)) return node;
+        if (isSourceFile7(node)) return node;
         if (isNamedDeclaration(node)) return node.name;
         if (isAssignedExpression(node)) return node.parent.name;
         return Debug.checkDefined(node.modifiers && find(node.modifiers, isDefaultModifier3));
@@ -165157,7 +165157,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         return location2 && typeChecker.getSymbolAtLocation(location2);
       }
       function getCallHierarchyItemName(program, node) {
-        if (isSourceFile6(node)) {
+        if (isSourceFile7(node)) {
           return { text: node.fileName, pos: 0, end: 0 };
         }
         if ((isFunctionDeclaration9(node) || isClassDeclaration5(node)) && !isNamedDeclaration(node)) {
@@ -165176,7 +165176,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           return { text: `${prefix}static {}`, pos, end };
         }
         const declName = isAssignedExpression(node) ? node.parent.name : Debug.checkDefined(getNameOfDeclaration(node), "Expected call hierarchy item to have a name");
-        let text3 = isIdentifier17(declName) ? idText(declName) : isStringOrNumericLiteralLike(declName) ? declName.text : isComputedPropertyName8(declName) ? isStringOrNumericLiteralLike(declName.expression) ? declName.expression.text : void 0 : void 0;
+        let text3 = isIdentifier18(declName) ? idText(declName) : isStringOrNumericLiteralLike(declName) ? declName.text : isComputedPropertyName8(declName) ? isStringOrNumericLiteralLike(declName.expression) ? declName.expression.text : void 0 : void 0;
         if (text3 === void 0) {
           const typeChecker = program.getTypeChecker();
           const symbol = typeChecker.getSymbolAtLocation(declName);
@@ -165196,7 +165196,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           if (isPropertyDeclaration5(node.parent) && isClassLike(node.parent.parent)) {
             return isClassExpression3(node.parent.parent) ? (_a2 = getAssignedName(node.parent.parent)) == null ? void 0 : _a2.getText() : (_b = node.parent.parent.name) == null ? void 0 : _b.getText();
           }
-          if (isModuleBlock(node.parent.parent.parent.parent) && isIdentifier17(node.parent.parent.parent.parent.parent.name)) {
+          if (isModuleBlock(node.parent.parent.parent.parent) && isIdentifier18(node.parent.parent.parent.parent.parent.name)) {
             return node.parent.parent.parent.parent.parent.name.getText();
           }
           return;
@@ -165212,7 +165212,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           case 263:
           case 264:
           case 268:
-            if (isModuleBlock(node.parent) && isIdentifier17(node.parent.parent.name)) {
+            if (isModuleBlock(node.parent) && isIdentifier18(node.parent.parent.name)) {
               return node.parent.parent.name.getText();
             }
         }
@@ -165296,7 +165296,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
             location2 = location2.parent;
             continue;
           }
-          if (isVariableDeclaration16(location2) && location2.initializer && isAssignedExpression(location2.initializer)) {
+          if (isVariableDeclaration17(location2) && location2.initializer && isAssignedExpression(location2.initializer)) {
             return location2.initializer;
           }
           if (!followingSymbol) {
@@ -165379,7 +165379,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         return createCallHierarchyIncomingCall(createCallHierarchyItem(program, entries[0].declaration), map(entries, (entry) => createTextSpanFromRange(entry.range)));
       }
       function getIncomingCalls(program, declaration, cancellationToken) {
-        if (isSourceFile6(declaration) || isModuleDeclaration(declaration) || isClassStaticBlockDeclaration(declaration)) {
+        if (isSourceFile7(declaration) || isModuleDeclaration(declaration) || isClassStaticBlockDeclaration(declaration)) {
           return [];
         }
         const location2 = getCallHierarchyDeclarationReferenceNode(declaration);
@@ -165939,8 +165939,8 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           if (!symbol) {
             continue;
           }
-          const declaration = tryCast(symbol.valueDeclaration, isVariableDeclaration16);
-          const variableName = declaration && tryCast(declaration.name, isIdentifier17);
+          const declaration = tryCast(symbol.valueDeclaration, isVariableDeclaration17);
+          const variableName = declaration && tryCast(declaration.name, isIdentifier18);
           const variableStatement = getAncestor(
             declaration,
             244
@@ -165973,19 +165973,19 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         };
       }
       function getIdentifiersFromErrorSpanExpression(expression, checker) {
-        if (isPropertyAccessExpression16(expression.parent) && isIdentifier17(expression.parent.expression)) {
+        if (isPropertyAccessExpression17(expression.parent) && isIdentifier18(expression.parent.expression)) {
           return { identifiers: [expression.parent.expression], isCompleteFix: true };
         }
-        if (isIdentifier17(expression)) {
+        if (isIdentifier18(expression)) {
           return { identifiers: [expression], isCompleteFix: true };
         }
-        if (isBinaryExpression11(expression)) {
+        if (isBinaryExpression12(expression)) {
           let sides;
           let isCompleteFix = true;
           for (const side of [expression.left, expression.right]) {
             const type = checker.getTypeAtLocation(side);
             if (checker.getPromisedTypeOfPromise(type)) {
-              if (!isIdentifier17(side)) {
+              if (!isIdentifier18(side)) {
                 isCompleteFix = false;
                 continue;
               }
@@ -165996,7 +165996,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         }
       }
       function symbolReferenceIsAlsoMissingAwait(reference2, diagnostics, sourceFile, checker) {
-        const errorNode = isPropertyAccessExpression16(reference2.parent) ? reference2.parent.name : isBinaryExpression11(reference2.parent) ? reference2.parent : reference2;
+        const errorNode = isPropertyAccessExpression17(reference2.parent) ? reference2.parent.name : isBinaryExpression12(reference2.parent) ? reference2.parent : reference2;
         const diagnostic = find(diagnostics, (diagnostic2) => diagnostic2.start === errorNode.getStart(sourceFile) && diagnostic2.start + diagnostic2.length === errorNode.getEnd());
         return diagnostic && contains(errorCodes3, diagnostic.code) || // A Promise is usually not correct in a binary expression (it's not valid
         // in an arithmetic expression and an equality comparison seems unusual),
@@ -166023,9 +166023,9 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
             return;
           }
         }
-        if (isBinaryExpression11(insertionSite)) {
+        if (isBinaryExpression12(insertionSite)) {
           for (const side of [insertionSite.left, insertionSite.right]) {
-            if (fixedDeclarations && isIdentifier17(side)) {
+            if (fixedDeclarations && isIdentifier18(side)) {
               const symbol = checker.getSymbolAtLocation(side);
               if (symbol && fixedDeclarations.has(getSymbolId(symbol))) {
                 continue;
@@ -166035,8 +166035,8 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
             const newNode = checker.getPromisedTypeOfPromise(type) ? factory.createAwaitExpression(side) : side;
             changeTracker.replaceNode(sourceFile, side, newNode);
           }
-        } else if (errorCode === propertyAccessCode && isPropertyAccessExpression16(insertionSite.parent)) {
-          if (fixedDeclarations && isIdentifier17(insertionSite.parent.expression)) {
+        } else if (errorCode === propertyAccessCode && isPropertyAccessExpression17(insertionSite.parent)) {
+          if (fixedDeclarations && isIdentifier18(insertionSite.parent.expression)) {
             const symbol = checker.getSymbolAtLocation(insertionSite.parent.expression);
             if (symbol && fixedDeclarations.has(getSymbolId(symbol))) {
               return;
@@ -166049,7 +166049,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           );
           insertLeadingSemicolonIfNeeded(changeTracker, insertionSite.parent.expression, sourceFile);
         } else if (contains(callableConstructableErrorCodes, errorCode) && isCallOrNewExpression(insertionSite.parent)) {
-          if (fixedDeclarations && isIdentifier17(insertionSite)) {
+          if (fixedDeclarations && isIdentifier18(insertionSite)) {
             const symbol = checker.getSymbolAtLocation(insertionSite);
             if (symbol && fixedDeclarations.has(getSymbolId(symbol))) {
               return;
@@ -166058,7 +166058,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           changeTracker.replaceNode(sourceFile, insertionSite, factory.createParenthesizedExpression(factory.createAwaitExpression(insertionSite)));
           insertLeadingSemicolonIfNeeded(changeTracker, insertionSite, sourceFile);
         } else {
-          if (fixedDeclarations && isVariableDeclaration16(insertionSite.parent) && isIdentifier17(insertionSite.parent.name)) {
+          if (fixedDeclarations && isVariableDeclaration17(insertionSite.parent) && isIdentifier18(insertionSite.parent.name)) {
             const symbol = checker.getSymbolAtLocation(insertionSite.parent.name);
             if (symbol && !tryAddToSet(fixedDeclarations, getSymbolId(symbol))) {
               return;
@@ -166097,7 +166097,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         const forInitializer = findAncestor(token, (node) => isForInOrOfStatement(node.parent) ? node.parent.initializer === node : isPossiblyPartOfDestructuring(node) ? false : "quit");
         if (forInitializer) return applyChange(changeTracker, forInitializer, sourceFile, fixedNodes);
         const parent2 = token.parent;
-        if (isBinaryExpression11(parent2) && parent2.operatorToken.kind === 64 && isExpressionStatement9(parent2.parent)) {
+        if (isBinaryExpression12(parent2) && parent2.operatorToken.kind === 64 && isExpressionStatement9(parent2.parent)) {
           return applyChange(changeTracker, token, sourceFile, fixedNodes);
         }
         if (isArrayLiteralExpression8(parent2)) {
@@ -166134,11 +166134,11 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         }
       }
       function arrayElementCouldBeVariableDeclaration(expression, checker) {
-        const identifier3 = isIdentifier17(expression) ? expression : isAssignmentExpression(
+        const identifier3 = isIdentifier18(expression) ? expression : isAssignmentExpression(
           expression,
           /*excludeCompoundAssignment*/
           true
-        ) && isIdentifier17(expression.left) ? expression.left : void 0;
+        ) && isIdentifier18(expression.left) ? expression.left : void 0;
         return !!identifier3 && !checker.getSymbolAtLocation(identifier3);
       }
       function isPossiblyPartOfCommaSeperatedInitializer(node) {
@@ -166152,13 +166152,13 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         }
       }
       function expressionCouldBeVariableDeclaration(expression, checker) {
-        if (!isBinaryExpression11(expression)) {
+        if (!isBinaryExpression12(expression)) {
           return false;
         }
         if (expression.operatorToken.kind === 28) {
           return every([expression.left, expression.right], (expression2) => expressionCouldBeVariableDeclaration(expression2, checker));
         }
-        return expression.operatorToken.kind === 64 && isIdentifier17(expression.left) && !checker.getSymbolAtLocation(expression.left);
+        return expression.operatorToken.kind === 64 && isIdentifier18(expression.left) && !checker.getSymbolAtLocation(expression.left);
       }
       var fixId5 = "addMissingDeclareProperty";
       var errorCodes5 = [
@@ -166180,7 +166180,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
       });
       function makeChange5(changeTracker, sourceFile, pos, fixedNodes) {
         const token = getTokenAtPosition(sourceFile, pos);
-        if (!isIdentifier17(token)) {
+        if (!isIdentifier18(token)) {
           return;
         }
         const declaration = token.parent;
@@ -166373,15 +166373,15 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         return checker.getExactOptionalProperties(target);
       }
       function shouldUseParentTypeOfProperty(sourceNode, targetNode, checker) {
-        return isPropertyAccessExpression16(targetNode) && !!checker.getExactOptionalProperties(checker.getTypeAtLocation(targetNode.expression)).length && checker.getTypeAtLocation(sourceNode) === checker.getUndefinedType();
+        return isPropertyAccessExpression17(targetNode) && !!checker.getExactOptionalProperties(checker.getTypeAtLocation(targetNode.expression)).length && checker.getTypeAtLocation(sourceNode) === checker.getUndefinedType();
       }
       function getSourceTarget(errorNode, checker) {
         var _a2;
         if (!errorNode) {
           return void 0;
-        } else if (isBinaryExpression11(errorNode.parent) && errorNode.parent.operatorToken.kind === 64) {
+        } else if (isBinaryExpression12(errorNode.parent) && errorNode.parent.operatorToken.kind === 64) {
           return { source: errorNode.parent.right, target: errorNode.parent.left };
-        } else if (isVariableDeclaration16(errorNode.parent) && errorNode.parent.initializer) {
+        } else if (isVariableDeclaration17(errorNode.parent) && errorNode.parent.initializer) {
           return { source: errorNode.parent.initializer, target: errorNode.parent.name };
         } else if (isCallExpression18(errorNode.parent)) {
           const n = checker.getSymbolAtLocation(errorNode.parent.expression);
@@ -166390,15 +166390,15 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           const i = errorNode.parent.arguments.indexOf(errorNode);
           if (i === -1) return void 0;
           const name = n.valueDeclaration.parameters[i].name;
-          if (isIdentifier17(name)) return { source: errorNode, target: name };
-        } else if (isPropertyAssignment12(errorNode.parent) && isIdentifier17(errorNode.parent.name) || isShorthandPropertyAssignment10(errorNode.parent)) {
+          if (isIdentifier18(name)) return { source: errorNode, target: name };
+        } else if (isPropertyAssignment13(errorNode.parent) && isIdentifier18(errorNode.parent.name) || isShorthandPropertyAssignment10(errorNode.parent)) {
           const parentTarget = getSourceTarget(errorNode.parent.parent, checker);
           if (!parentTarget) return void 0;
           const prop = checker.getPropertyOfType(checker.getTypeAtLocation(parentTarget.target), errorNode.parent.name.text);
           const declaration = (_a2 = prop == null ? void 0 : prop.declarations) == null ? void 0 : _a2[0];
           if (!declaration) return void 0;
           return {
-            source: isPropertyAssignment12(errorNode.parent) ? errorNode.parent.initializer : errorNode.parent.name,
+            source: isPropertyAssignment13(errorNode.parent) ? errorNode.parent.initializer : errorNode.parent.name,
             target: declaration
           };
         }
@@ -166514,7 +166514,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         const typeNode = factory.createTypeLiteralNode(map(node.jsDocPropertyTags, (tag) => factory.createPropertySignature(
           /*modifiers*/
           void 0,
-          isIdentifier17(tag.name) ? tag.name : tag.name.right,
+          isIdentifier18(tag.name) ? tag.name : tag.name.right,
           isOptionalJSDocPropertyLikeTag(tag) ? factory.createToken(
             58
             /* QuestionToken */
@@ -166559,7 +166559,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
       function transformJSDocTypeReference(node) {
         let name = node.typeName;
         let args = node.typeArguments;
-        if (isIdentifier17(node.typeName)) {
+        if (isIdentifier18(node.typeName)) {
           if (isJSDocIndexSignature(node)) {
             return transformJSDocIndexSignature(node);
           }
@@ -166631,13 +166631,13 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         const ctorDeclaration = ctorSymbol.valueDeclaration;
         if (isFunctionDeclaration9(ctorDeclaration) || isFunctionExpression12(ctorDeclaration)) {
           changes.replaceNode(sourceFile, ctorDeclaration, createClassFromFunction(ctorDeclaration));
-        } else if (isVariableDeclaration16(ctorDeclaration)) {
+        } else if (isVariableDeclaration17(ctorDeclaration)) {
           const classDeclaration = createClassFromVariableDeclaration(ctorDeclaration);
           if (!classDeclaration) {
             return void 0;
           }
           const ancestor = ctorDeclaration.parent.parent;
-          if (isVariableDeclarationList9(ctorDeclaration.parent) && ctorDeclaration.parent.declarations.length > 1) {
+          if (isVariableDeclarationList10(ctorDeclaration.parent) && ctorDeclaration.parent.declarations.length > 1) {
             changes.delete(sourceFile, ctorDeclaration);
             changes.insertNodeAfter(sourceFile, ancestor, classDeclaration);
           } else {
@@ -166650,7 +166650,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
             symbol.exports.forEach((member3) => {
               if (member3.name === "prototype" && member3.declarations) {
                 const firstDeclaration = member3.declarations[0];
-                if (member3.declarations.length === 1 && isPropertyAccessExpression16(firstDeclaration) && isBinaryExpression11(firstDeclaration.parent) && firstDeclaration.parent.operatorToken.kind === 64 && isObjectLiteralExpression11(firstDeclaration.parent.right)) {
+                if (member3.declarations.length === 1 && isPropertyAccessExpression17(firstDeclaration) && isBinaryExpression12(firstDeclaration.parent) && firstDeclaration.parent.operatorToken.kind === 64 && isObjectLiteralExpression12(firstDeclaration.parent.right)) {
                   const prototypes = firstDeclaration.parent.right;
                   createClassElement(
                     prototypes.symbol,
@@ -166672,7 +166672,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
               var _a2, _b, _c, _d;
               if (key2 === "constructor" && member3.valueDeclaration) {
                 const prototypeAssignment = (_d = (_c = (_b = (_a2 = symbol.exports) == null ? void 0 : _a2.get("prototype")) == null ? void 0 : _b.declarations) == null ? void 0 : _c[0]) == null ? void 0 : _d.parent;
-                if (prototypeAssignment && isBinaryExpression11(prototypeAssignment) && isObjectLiteralExpression11(prototypeAssignment.right) && some(prototypeAssignment.right.properties, isConstructorAssignment)) {
+                if (prototypeAssignment && isBinaryExpression12(prototypeAssignment) && isObjectLiteralExpression12(prototypeAssignment.right) && some(prototypeAssignment.right.properties, isConstructorAssignment)) {
                 } else {
                   changes.delete(sourceFile, member3.valueDeclaration.parent);
                 }
@@ -166689,12 +166689,12 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           return memberElements;
           function shouldConvertDeclaration(_target, source) {
             if (isAccessExpression(_target)) {
-              if (isPropertyAccessExpression16(_target) && isConstructorAssignment(_target)) return true;
+              if (isPropertyAccessExpression17(_target) && isConstructorAssignment(_target)) return true;
               return isFunctionLike3(source);
             } else {
               return every(_target.properties, (property) => {
                 if (isMethodDeclaration8(property) || isGetOrSetAccessorDeclaration(property)) return true;
-                if (isPropertyAssignment12(property) && isFunctionExpression12(property.initializer) && !!property.name) return true;
+                if (isPropertyAssignment13(property) && isFunctionExpression12(property.initializer) && !!property.name) return true;
                 if (isConstructorAssignment(property)) return true;
                 return false;
               });
@@ -166712,7 +166712,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
             }
             if (some(members, (m) => {
               const name = getNameOfDeclaration(m);
-              if (name && isIdentifier17(name) && idText(name) === symbolName(symbol2)) {
+              if (name && isIdentifier18(name) && idText(name) === symbolName(symbol2)) {
                 return true;
               }
               return false;
@@ -166741,14 +166741,14 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
                 createFunctionLikeExpressionMember(members, assignmentExpr, name);
               }
               return;
-            } else if (isObjectLiteralExpression11(assignmentExpr)) {
+            } else if (isObjectLiteralExpression12(assignmentExpr)) {
               forEach(
                 assignmentExpr.properties,
                 (property) => {
                   if (isMethodDeclaration8(property) || isGetOrSetAccessorDeclaration(property)) {
                     members.push(property);
                   }
-                  if (isPropertyAssignment12(property) && isFunctionExpression12(property.initializer)) {
+                  if (isPropertyAssignment13(property) && isFunctionExpression12(property.initializer)) {
                     createFunctionLikeExpressionMember(members, property.initializer, property.name);
                   }
                   if (isConstructorAssignment(property)) return;
@@ -166758,7 +166758,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
               return;
             } else {
               if (isSourceFileJS(sourceFile)) return;
-              if (!isPropertyAccessExpression16(memberDeclaration)) return;
+              if (!isPropertyAccessExpression17(memberDeclaration)) return;
               const prop = factory.createPropertyDeclaration(
                 modifiers,
                 memberDeclaration.name,
@@ -166834,7 +166834,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         }
         function createClassFromVariableDeclaration(node) {
           const initializer = node.initializer;
-          if (!initializer || !isFunctionExpression12(initializer) || !isIdentifier17(node.name)) {
+          if (!initializer || !isFunctionExpression12(initializer) || !isIdentifier18(node.name)) {
             return void 0;
           }
           const memberElements = createClassElementsFromSymbol(node.symbol);
@@ -166894,18 +166894,18 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
       }
       function isConstructorAssignment(x) {
         if (!x.name) return false;
-        if (isIdentifier17(x.name) && x.name.text === "constructor") return true;
+        if (isIdentifier18(x.name) && x.name.text === "constructor") return true;
         return false;
       }
       function tryGetPropertyName(node, compilerOptions, quotePreference) {
-        if (isPropertyAccessExpression16(node)) {
+        if (isPropertyAccessExpression17(node)) {
           return node.name;
         }
         const propName = node.argumentExpression;
-        if (isNumericLiteral8(propName)) {
+        if (isNumericLiteral9(propName)) {
           return propName;
         }
-        if (isStringLiteralLike13(propName)) {
+        if (isStringLiteralLike14(propName)) {
           return isIdentifierText(propName.text, getEmitScriptTarget(compilerOptions)) ? factory.createIdentifier(propName.text) : isNoSubstitutionTemplateLiteral4(propName) ? factory.createStringLiteral(
             propName.text,
             quotePreference === 0
@@ -166930,7 +166930,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
       function convertToAsyncFunction(changes, sourceFile, position2, checker) {
         const tokenAtPosition = getTokenAtPosition(sourceFile, position2);
         let functionToConvert;
-        if (isIdentifier17(tokenAtPosition) && isVariableDeclaration16(tokenAtPosition.parent) && tokenAtPosition.parent.initializer && isFunctionLikeDeclaration(tokenAtPosition.parent.initializer)) {
+        if (isIdentifier18(tokenAtPosition) && isVariableDeclaration17(tokenAtPosition.parent) && tokenAtPosition.parent.initializer && isFunctionLikeDeclaration(tokenAtPosition.parent.initializer)) {
           functionToConvert = tokenAtPosition.parent.initializer;
         } else {
           functionToConvert = tryCast(getContainingFunction(getTokenAtPosition(sourceFile, position2)), canBeConvertedToAsync);
@@ -167039,7 +167039,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         const identsToRenameMap = /* @__PURE__ */ new Map();
         const collidingSymbolMap = createMultiMap();
         forEachChild5(nodeToRename, function visit(node) {
-          if (!isIdentifier17(node)) {
+          if (!isIdentifier18(node)) {
             forEachChild5(node, visit);
             return;
           }
@@ -167050,7 +167050,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
             const symbolIdString = getSymbolId(symbol).toString();
             if (lastCallSignature && !isParameter6(node.parent) && !isFunctionLikeDeclaration(node.parent) && !synthNamesMap.has(symbolIdString)) {
               const firstParameter = firstOrUndefined(lastCallSignature.parameters);
-              const ident = (firstParameter == null ? void 0 : firstParameter.valueDeclaration) && isParameter6(firstParameter.valueDeclaration) && tryCast(firstParameter.valueDeclaration.name, isIdentifier17) || factory.createUniqueName(
+              const ident = (firstParameter == null ? void 0 : firstParameter.valueDeclaration) && isParameter6(firstParameter.valueDeclaration) && tryCast(firstParameter.valueDeclaration.name, isIdentifier18) || factory.createUniqueName(
                 "result",
                 16
                 /* Optimistic */
@@ -167058,7 +167058,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
               const synthName = getNewNameIfConflict(ident, collidingSymbolMap);
               synthNamesMap.set(symbolIdString, synthName);
               collidingSymbolMap.add(ident.text, symbol);
-            } else if (node.parent && (isParameter6(node.parent) || isVariableDeclaration16(node.parent) || isBindingElement8(node.parent))) {
+            } else if (node.parent && (isParameter6(node.parent) || isVariableDeclaration17(node.parent) || isBindingElement8(node.parent))) {
               const originalName = node.text;
               const collidingSymbols = collidingSymbolMap.get(originalName);
               if (collidingSymbols && collidingSymbols.some((prevSymbol) => prevSymbol !== symbol)) {
@@ -167079,7 +167079,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           /*includeTrivia*/
           true,
           (original) => {
-            if (isBindingElement8(original) && isIdentifier17(original.name) && isObjectBindingPattern10(original.parent)) {
+            if (isBindingElement8(original) && isIdentifier18(original.name) && isObjectBindingPattern10(original.parent)) {
               const symbol = checker.getSymbolAtLocation(original.name);
               const renameInfo = symbol && identsToRenameMap.get(String(getSymbolId(symbol)));
               if (renameInfo && renameInfo.text !== (original.name || original.propertyName).getText()) {
@@ -167090,7 +167090,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
                   original.initializer
                 );
               }
-            } else if (isIdentifier17(original)) {
+            } else if (isIdentifier18(original)) {
               const symbol = checker.getSymbolAtLocation(original);
               const renameInfo = symbol && identsToRenameMap.get(String(getSymbolId(symbol)));
               if (renameInfo) {
@@ -167122,19 +167122,19 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         if (isPromiseReturningCallExpression(node, transformer.checker, "finally")) {
           return transformFinally(node, elementAt(node.arguments, 0), transformer, hasContinuation, continuationArgName);
         }
-        if (isPropertyAccessExpression16(node)) {
+        if (isPropertyAccessExpression17(node)) {
           return transformExpression(returnContextNode, node.expression, transformer, hasContinuation, continuationArgName);
         }
         const nodeType = transformer.checker.getTypeAtLocation(node);
         if (nodeType && transformer.checker.getPromisedTypeOfPromise(nodeType)) {
-          Debug.assertNode(getOriginalNode(node).parent, isPropertyAccessExpression16);
+          Debug.assertNode(getOriginalNode(node).parent, isPropertyAccessExpression17);
           return transformPromiseExpressionOfPropertyAccess(returnContextNode, node, transformer, hasContinuation, continuationArgName);
         }
         return silentFail();
       }
       function isNullOrUndefined2({ checker }, node) {
         if (node.kind === 106) return true;
-        if (isIdentifier17(node) && !isGeneratedIdentifier(node) && idText(node) === "undefined") {
+        if (isIdentifier18(node) && !isGeneratedIdentifier(node) && idText(node) === "undefined") {
           const symbol = checker.getSymbolAtLocation(node);
           return !symbol || checker.isUndefinedSymbol(symbol);
         }
@@ -167564,9 +167564,9 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
             const param = funcNode.parameters[0].name;
             name = getMappedBindingNameOrDefault(param);
           }
-        } else if (isIdentifier17(funcNode)) {
+        } else if (isIdentifier18(funcNode)) {
           name = getMapEntryOrDefault(funcNode);
-        } else if (isPropertyAccessExpression16(funcNode) && isIdentifier17(funcNode.name)) {
+        } else if (isPropertyAccessExpression17(funcNode) && isIdentifier18(funcNode.name)) {
           name = getMapEntryOrDefault(funcNode.name);
         }
         if (!name || "identifier" in name && name.identifier.text === "undefined") {
@@ -167574,7 +167574,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         }
         return name;
         function getMappedBindingNameOrDefault(bindingName) {
-          if (isIdentifier17(bindingName)) return getMapEntryOrDefault(bindingName);
+          if (isIdentifier18(bindingName)) return getMapEntryOrDefault(bindingName);
           const elements = flatMap(bindingName.elements, (element) => {
             if (isOmittedExpression4(element)) return [];
             return [getMappedBindingNameOrDefault(element.name)];
@@ -167690,13 +167690,13 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         convertExportsAccesses(sourceFile, exports2, changes);
         let moduleExportsChangedToDefault = false;
         let useSitesToUnqualify;
-        for (const statement of filter(sourceFile.statements, isVariableStatement9)) {
+        for (const statement of filter(sourceFile.statements, isVariableStatement10)) {
           const newUseSites = convertVariableStatement(sourceFile, statement, changes, checker, identifiers, target, quotePreference);
           if (newUseSites) {
             copyEntries(newUseSites, useSitesToUnqualify ?? (useSitesToUnqualify = /* @__PURE__ */ new Map()));
           }
         }
-        for (const statement of filter(sourceFile.statements, (s) => !isVariableStatement9(s))) {
+        for (const statement of filter(sourceFile.statements, (s) => !isVariableStatement10(s))) {
           const moduleExportsChanged = convertStatement(sourceFile, statement, checker, changes, identifiers, target, exports2, useSitesToUnqualify, quotePreference);
           moduleExportsChangedToDefault = moduleExportsChangedToDefault || moduleExportsChanged;
         }
@@ -167732,11 +167732,11 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
       }
       function forEachExportReference(sourceFile, cb) {
         sourceFile.forEachChild(function recur(node) {
-          if (isPropertyAccessExpression16(node) && isExportsOrModuleExportsOrAlias(sourceFile, node.expression) && isIdentifier17(node.name)) {
+          if (isPropertyAccessExpression17(node) && isExportsOrModuleExportsOrAlias(sourceFile, node.expression) && isIdentifier18(node.name)) {
             const { parent: parent2 } = node;
             cb(
               node,
-              isBinaryExpression11(parent2) && parent2.left === node && parent2.operatorToken.kind === 64
+              isBinaryExpression12(parent2) && parent2.left === node && parent2.operatorToken.kind === 64
               /* EqualsToken */
             );
           }
@@ -167795,7 +167795,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
             )) {
               foundImport = true;
               return convertSingleImport(name, initializer.arguments[0], checker, identifiers, target, quotePreference);
-            } else if (isPropertyAccessExpression16(initializer) && isRequireCall(
+            } else if (isPropertyAccessExpression17(initializer) && isRequireCall(
               initializer.expression,
               /*requireStringLiteralLikeArgument*/
               true
@@ -167844,14 +167844,14 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
       }
       function convertAssignment(sourceFile, checker, assignment, changes, exports2, useSitesToUnqualify) {
         const { left, right } = assignment;
-        if (!isPropertyAccessExpression16(left)) {
+        if (!isPropertyAccessExpression17(left)) {
           return false;
         }
         if (isExportsOrModuleExportsOrAlias(sourceFile, left)) {
           if (isExportsOrModuleExportsOrAlias(sourceFile, right)) {
             changes.delete(sourceFile, assignment.parent);
           } else {
-            const replacement = isObjectLiteralExpression11(right) ? tryChangeModuleExportsObject(right, useSitesToUnqualify) : isRequireCall(
+            const replacement = isObjectLiteralExpression12(right) ? tryChangeModuleExportsObject(right, useSitesToUnqualify) : isRequireCall(
               right,
               /*requireStringLiteralLikeArgument*/
               true
@@ -167880,9 +167880,9 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
             case 306:
               return void 0;
             case 304:
-              return !isIdentifier17(prop.name) ? void 0 : convertExportsDotXEquals_replaceNode(prop.name.text, prop.initializer, useSitesToUnqualify);
+              return !isIdentifier18(prop.name) ? void 0 : convertExportsDotXEquals_replaceNode(prop.name.text, prop.initializer, useSitesToUnqualify);
             case 175:
-              return !isIdentifier17(prop.name) ? void 0 : functionExpressionToDeclaration(prop.name.text, [factory.createToken(
+              return !isIdentifier18(prop.name) ? void 0 : functionExpressionToDeclaration(prop.name.text, [factory.createToken(
                 95
                 /* ExportKeyword */
               )], prop, useSitesToUnqualify);
@@ -168016,7 +168016,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
       function convertSingleImport(name, moduleSpecifier, checker, identifiers, target, quotePreference) {
         switch (name.kind) {
           case 207: {
-            const importSpecifiers = mapAllOrFail(name.elements, (e) => e.dotDotDotToken || e.initializer || e.propertyName && !isIdentifier17(e.propertyName) || !isIdentifier17(e.name) ? void 0 : makeImportSpecifier2(e.propertyName && e.propertyName.text, e.name.text));
+            const importSpecifiers = mapAllOrFail(name.elements, (e) => e.dotDotDotToken || e.initializer || e.propertyName && !isIdentifier18(e.propertyName) || !isIdentifier18(e.name) ? void 0 : makeImportSpecifier2(e.propertyName && e.propertyName.text, e.name.text));
             if (importSpecifiers) {
               return convertedImports([makeImport(
                 /*defaultImport*/
@@ -168062,7 +168062,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
             continue;
           }
           const { parent: parent2 } = use;
-          if (isPropertyAccessExpression16(parent2)) {
+          if (isPropertyAccessExpression17(parent2)) {
             const { name: { text: propertyName2 } } = parent2;
             if (propertyName2 === "default") {
               needDefaultImport = true;
@@ -168108,7 +168108,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         return map2;
       }
       function forEachFreeIdentifier(node, cb) {
-        if (isIdentifier17(node) && isFreeIdentifier(node)) cb(node);
+        if (isIdentifier18(node) && isFreeIdentifier(node)) cb(node);
         node.forEachChild((child) => forEachFreeIdentifier(child, cb));
       }
       function isFreeIdentifier(node) {
@@ -168222,7 +168222,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
       function getQualifiedName(sourceFile, pos) {
         const qualifiedName = findAncestor(getTokenAtPosition(sourceFile, pos), isQualifiedName);
         Debug.assert(!!qualifiedName, "Expected position to be owned by a qualified name.");
-        return isIdentifier17(qualifiedName.left) ? qualifiedName : void 0;
+        return isIdentifier18(qualifiedName.left) ? qualifiedName : void 0;
       }
       function doChange10(changeTracker, sourceFile, qualifiedName) {
         const rightText = qualifiedName.right.text;
@@ -168662,7 +168662,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
       });
       function getInfo5(sourceFile, pos) {
         const token = getTokenAtPosition(sourceFile, pos);
-        if (isIdentifier17(token)) {
+        if (isIdentifier18(token)) {
           const propertySignature = cast(token.parent.parent, isPropertySignature);
           const propertyName2 = token.getText(sourceFile);
           return {
@@ -168919,7 +168919,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
             preferences
           );
           if (fix) {
-            const localName = ((_b = tryCast(referenceImport == null ? void 0 : referenceImport.name, isIdentifier17)) == null ? void 0 : _b.text) ?? symbolName2;
+            const localName = ((_b = tryCast(referenceImport == null ? void 0 : referenceImport.name, isIdentifier18)) == null ? void 0 : _b.text) ?? symbolName2;
             let addAsTypeOnly;
             let propertyName2;
             if (referenceImport && isTypeOnlyImportDeclaration(referenceImport) && (fix.kind === 3 || fix.kind === 2) && fix.addAsTypeOnly === 1) {
@@ -169533,7 +169533,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         var _a2, _b, _c;
         switch (declaration.kind) {
           case 261:
-            return (_a2 = tryCast(declaration.name, isIdentifier17)) == null ? void 0 : _a2.text;
+            return (_a2 = tryCast(declaration.name, isIdentifier18)) == null ? void 0 : _a2.text;
           case 272:
             return declaration.name.text;
           case 352:
@@ -169580,7 +169580,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
             } : void 0;
           }
           const { importClause } = declaration;
-          if (!importClause || !isStringLiteralLike13(declaration.moduleSpecifier)) {
+          if (!importClause || !isStringLiteralLike14(declaration.moduleSpecifier)) {
             return void 0;
           }
           const { name, namedBindings } = importClause;
@@ -169759,7 +169759,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         let info;
         if (errorCode === Diagnostics._0_refers_to_a_UMD_global_but_the_current_file_is_a_module_Consider_adding_an_import_instead.code) {
           info = getFixesInfoForUMDImport(context, symbolToken);
-        } else if (!isIdentifier17(symbolToken)) {
+        } else if (!isIdentifier18(symbolToken)) {
           return void 0;
         } else if (errorCode === Diagnostics._0_cannot_be_used_as_a_value_because_it_was_imported_using_import_type.code) {
           const symbolName2 = single(getSymbolNamesToImport(context.sourceFile, context.program.getTypeChecker(), symbolToken, context.program.getCompilerOptions()));
@@ -169861,11 +169861,11 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         ).fixes;
         return fixes.map((fix) => {
           var _a2;
-          return { fix, symbolName: symbolName2, errorIdentifierText: (_a2 = tryCast(token, isIdentifier17)) == null ? void 0 : _a2.text };
+          return { fix, symbolName: symbolName2, errorIdentifierText: (_a2 = tryCast(token, isIdentifier18)) == null ? void 0 : _a2.text };
         });
       }
       function getUmdSymbol(token, checker) {
-        const umdSymbol = isIdentifier17(token) ? checker.getSymbolAtLocation(token) : void 0;
+        const umdSymbol = isIdentifier18(token) ? checker.getSymbolAtLocation(token) : void 0;
         if (isUMDExportSymbol(umdSymbol)) return umdSymbol;
         const { parent: parent2 } = token;
         if (isJsxOpeningLikeElement(parent2) && parent2.tagName === token || isJsxOpeningFragment(parent2)) {
@@ -170104,7 +170104,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
       }
       function getModuleSpecifierText(promotedDeclaration) {
         var _a2, _b;
-        return promotedDeclaration.kind === 272 ? ((_b = tryCast((_a2 = tryCast(promotedDeclaration.moduleReference, isExternalModuleReference3)) == null ? void 0 : _a2.expression, isStringLiteralLike13)) == null ? void 0 : _b.text) || promotedDeclaration.moduleReference.getText() : cast(promotedDeclaration.parent.moduleSpecifier, isStringLiteral7).text;
+        return promotedDeclaration.kind === 272 ? ((_b = tryCast((_a2 = tryCast(promotedDeclaration.moduleReference, isExternalModuleReference3)) == null ? void 0 : _a2.expression, isStringLiteralLike14)) == null ? void 0 : _b.text) || promotedDeclaration.moduleReference.getText() : cast(promotedDeclaration.parent.moduleSpecifier, isStringLiteral7).text;
       }
       function promoteFromTypeOnly(changes, aliasDeclaration, program, sourceFile, preferences) {
         const compilerOptions = program.getCompilerOptions();
@@ -170465,7 +170465,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         if (related === void 0 || related.file === void 0 || related.start === void 0 || related.length === void 0) return;
         let declaration = findAncestorMatchingSpan(related.file, createTextSpan(related.start, related.length));
         if (declaration === void 0) return;
-        if (isIdentifier17(declaration) && isTypeParameterDeclaration(declaration.parent)) {
+        if (isIdentifier18(declaration) && isTypeParameterDeclaration(declaration.parent)) {
           declaration = declaration.parent;
         }
         if (isTypeParameterDeclaration(declaration)) {
@@ -170705,7 +170705,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         );
       }
       function getPropertyAccessExpression(sourceFile, pos) {
-        return cast(getTokenAtPosition(sourceFile, pos).parent, isPropertyAccessExpression16);
+        return cast(getTokenAtPosition(sourceFile, pos).parent, isPropertyAccessExpression17);
       }
       var fixId20 = "fixImplicitThis";
       var errorCodes23 = [Diagnostics.this_implicitly_has_type_any_because_it_does_not_have_a_type_annotation.code];
@@ -170735,7 +170735,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           false
         );
         if (!isFunctionDeclaration9(fn) && !isFunctionExpression12(fn)) return void 0;
-        if (!isSourceFile6(getThisContainer(
+        if (!isSourceFile7(getThisContainer(
           fn,
           /*includeArrowFunctions*/
           false,
@@ -170823,7 +170823,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
       function getInfo7(sourceFile, pos, program) {
         var _a2, _b;
         const token = getTokenAtPosition(sourceFile, pos);
-        if (isIdentifier17(token)) {
+        if (isIdentifier18(token)) {
           const importDeclaration = findAncestor(token, isImportDeclaration9);
           if (importDeclaration === void 0) return void 0;
           const moduleSpecifier = isStringLiteral7(importDeclaration.moduleSpecifier) ? importDeclaration.moduleSpecifier : void 0;
@@ -170919,7 +170919,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           return firstOrUndefined(symbol.declarations);
         }
         const declaration = symbol.valueDeclaration;
-        const variableStatement = isVariableDeclaration16(declaration) ? tryCast(declaration.parent.parent, isVariableStatement9) : void 0;
+        const variableStatement = isVariableDeclaration17(declaration) ? tryCast(declaration.parent.parent, isVariableStatement10) : void 0;
         return variableStatement && length(variableStatement.declarationList.declarations) === 1 ? variableStatement : declaration;
       }
       var fixId22 = "fixIncorrectNamedTupleSyntax";
@@ -171019,14 +171019,14 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         if ((errorCode === Diagnostics.No_overload_matches_this_call.code || errorCode === Diagnostics.Type_0_is_not_assignable_to_type_1.code) && !isJsxAttribute3(parent2)) return void 0;
         const checker = context.program.getTypeChecker();
         let suggestedSymbol;
-        if (isPropertyAccessExpression16(parent2) && parent2.name === node) {
+        if (isPropertyAccessExpression17(parent2) && parent2.name === node) {
           Debug.assert(isMemberName(node), "Expected an identifier for spelling (property access)");
           let containingType = checker.getTypeAtLocation(parent2.expression);
           if (parent2.flags & 64) {
             containingType = checker.getNonNullableType(containingType);
           }
           suggestedSymbol = checker.getSuggestedSymbolForNonexistentProperty(node, containingType);
-        } else if (isBinaryExpression11(parent2) && parent2.operatorToken.kind === 103 && parent2.left === node && isPrivateIdentifier2(node)) {
+        } else if (isBinaryExpression12(parent2) && parent2.operatorToken.kind === 103 && parent2.left === node && isPrivateIdentifier2(node)) {
           const receiverType = checker.getTypeAtLocation(parent2.right);
           suggestedSymbol = checker.getSuggestedSymbolForNonexistentProperty(node, receiverType);
         } else if (isQualifiedName(parent2) && parent2.right === node) {
@@ -171035,14 +171035,14 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
             suggestedSymbol = checker.getSuggestedSymbolForNonexistentModule(parent2.right, symbol);
           }
         } else if (isImportSpecifier10(parent2) && parent2.name === node) {
-          Debug.assertNode(node, isIdentifier17, "Expected an identifier for spelling (import)");
+          Debug.assertNode(node, isIdentifier18, "Expected an identifier for spelling (import)");
           const importDeclaration = findAncestor(node, isImportDeclaration9);
           const resolvedSourceFile = getResolvedSourceFileFromImportDeclaration(context, importDeclaration, sourceFile);
           if (resolvedSourceFile && resolvedSourceFile.symbol) {
             suggestedSymbol = checker.getSuggestedSymbolForNonexistentModule(node, resolvedSourceFile.symbol);
           }
         } else if (isJsxAttribute3(parent2) && parent2.name === node) {
-          Debug.assertNode(node, isIdentifier17, "Expected an identifier for JSX attribute");
+          Debug.assertNode(node, isIdentifier18, "Expected an identifier for JSX attribute");
           const tag = findAncestor(node, isJsxOpeningLikeElement);
           const props = checker.getContextualTypeForArgumentAtIndex(tag, 0);
           suggestedSymbol = checker.getSuggestedSymbolForNonexistentJSXAttribute(node, props);
@@ -171063,7 +171063,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
       }
       function doChange18(changes, sourceFile, node, suggestedSymbol, target) {
         const suggestion = symbolName(suggestedSymbol);
-        if (!isIdentifierText(suggestion, target) && isPropertyAccessExpression16(node.parent)) {
+        if (!isIdentifierText(suggestion, target) && isPropertyAccessExpression17(node.parent)) {
           const valDecl = suggestedSymbol.valueDeclaration;
           if (valDecl && isNamedDeclaration(valDecl) && isPrivateIdentifier2(valDecl.name)) {
             changes.replaceNode(sourceFile, node, factory.createIdentifier(suggestion));
@@ -171089,7 +171089,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
       }
       function getResolvedSourceFileFromImportDeclaration(context, importDeclaration, importingFile) {
         var _a2;
-        if (!importDeclaration || !isStringLiteralLike13(importDeclaration.moduleSpecifier)) return void 0;
+        if (!importDeclaration || !isStringLiteralLike14(importDeclaration.moduleSpecifier)) return void 0;
         const resolvedModule = (_a2 = context.program.getResolvedModuleFromModuleSpecifier(importDeclaration.moduleSpecifier, importingFile)) == null ? void 0 : _a2.resolvedModule;
         if (!resolvedModule) return void 0;
         return context.program.getSourceFile(resolvedModule.resolvedFileName);
@@ -171447,13 +171447,13 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         const token = getTokenAtPosition(sourceFile, tokenPos);
         const parent2 = token.parent;
         if (errorCode === Diagnostics.Argument_of_type_0_is_not_assignable_to_parameter_of_type_1.code) {
-          if (!(token.kind === 19 && isObjectLiteralExpression11(parent2) && isCallExpression18(parent2.parent))) return void 0;
+          if (!(token.kind === 19 && isObjectLiteralExpression12(parent2) && isCallExpression18(parent2.parent))) return void 0;
           const argIndex = findIndex(parent2.parent.arguments, (arg) => arg === parent2);
           if (argIndex < 0) return void 0;
           const signature = checker.getResolvedSignature(parent2.parent);
           if (!(signature && signature.declaration && signature.parameters[argIndex])) return void 0;
           const param = signature.parameters[argIndex].valueDeclaration;
-          if (!(param && isParameter6(param) && isIdentifier17(param.name))) return void 0;
+          if (!(param && isParameter6(param) && isIdentifier18(param.name))) return void 0;
           const properties = arrayFrom(checker.getUnmatchedProperties(
             checker.getTypeAtLocation(parent2),
             checker.getParameterType(signature, argIndex).getNonNullableType(),
@@ -171467,7 +171467,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         }
         if (token.kind === 19 || isSatisfiesExpression(parent2) || isReturnStatement8(parent2)) {
           const expression = (isSatisfiesExpression(parent2) || isReturnStatement8(parent2)) && parent2.expression ? parent2.expression : parent2;
-          if (isObjectLiteralExpression11(expression)) {
+          if (isObjectLiteralExpression12(expression)) {
             const targetType = isSatisfiesExpression(parent2) ? checker.getTypeFromTypeNode(parent2.type) : checker.getContextualType(expression) || checker.getTypeAtLocation(expression);
             const properties = arrayFrom(checker.getUnmatchedProperties(
               checker.getTypeAtLocation(parent2),
@@ -171482,7 +171482,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           }
         }
         if (!isMemberName(token)) return void 0;
-        if (isIdentifier17(token) && hasInitializer(parent2) && parent2.initializer && isObjectLiteralExpression11(parent2.initializer)) {
+        if (isIdentifier18(token) && hasInitializer(parent2) && parent2.initializer && isObjectLiteralExpression12(parent2.initializer)) {
           const targetType = (_a2 = checker.getContextualType(token) || checker.getTypeAtLocation(token)) == null ? void 0 : _a2.getNonNullableType();
           const properties = arrayFrom(checker.getUnmatchedProperties(
             checker.getTypeAtLocation(parent2.initializer),
@@ -171495,13 +171495,13 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           if (!length(properties)) return void 0;
           return { kind: 3, token, identifier: token.text, properties, parentDeclaration: parent2.initializer };
         }
-        if (isIdentifier17(token) && isJsxOpeningLikeElement(token.parent)) {
+        if (isIdentifier18(token) && isJsxOpeningLikeElement(token.parent)) {
           const target = getEmitScriptTarget(program.getCompilerOptions());
           const attributes = getUnmatchedAttributes(checker, target, token.parent);
           if (!length(attributes)) return void 0;
           return { kind: 4, token, attributes, parentDeclaration: token.parent };
         }
-        if (isIdentifier17(token)) {
+        if (isIdentifier18(token)) {
           const type = (_b = checker.getContextualType(token)) == null ? void 0 : _b.getNonNullableType();
           if (type && getObjectFlags(type) & 16) {
             const signature = firstOrUndefined(checker.getSignaturesOfType(
@@ -171516,17 +171516,17 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
             return { kind: 2, token, call: parent2, sourceFile, modifierFlags: 0, parentDeclaration: findScope(token) };
           }
         }
-        if (!isPropertyAccessExpression16(parent2)) return void 0;
+        if (!isPropertyAccessExpression17(parent2)) return void 0;
         const leftExpressionType = skipConstraint(checker.getTypeAtLocation(parent2.expression));
         const symbol = leftExpressionType.symbol;
         if (!symbol || !symbol.declarations) return void 0;
-        if (isIdentifier17(token) && isCallExpression18(parent2.parent)) {
+        if (isIdentifier18(token) && isCallExpression18(parent2.parent)) {
           const moduleDeclaration = find(symbol.declarations, isModuleDeclaration);
           const moduleDeclarationSourceFile = moduleDeclaration == null ? void 0 : moduleDeclaration.getSourceFile();
           if (moduleDeclaration && moduleDeclarationSourceFile && !isSourceFileFromLibrary(program, moduleDeclarationSourceFile)) {
             return { kind: 2, token, call: parent2.parent, sourceFile: moduleDeclarationSourceFile, modifierFlags: 32, parentDeclaration: moduleDeclaration };
           }
-          const moduleSourceFile = find(symbol.declarations, isSourceFile6);
+          const moduleSourceFile = find(symbol.declarations, isSourceFile7);
           if (sourceFile.commonJsModuleIndicator) return void 0;
           if (moduleSourceFile && !isSourceFileFromLibrary(program, moduleSourceFile)) {
             return { kind: 2, token, call: parent2.parent, sourceFile: moduleSourceFile, modifierFlags: 32, parentDeclaration: moduleSourceFile };
@@ -172142,7 +172142,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
             pos2++;
             continue;
           }
-          const name2 = expr && isIdentifier17(expr) ? expr.text : `p${paramIndex++}`;
+          const name2 = expr && isIdentifier18(expr) ? expr.text : `p${paramIndex++}`;
           const typeNode = typeToTypeNode(checker, type2, nonOverloadDeclaration);
           append(newParameters, {
             pos: i,
@@ -172176,7 +172176,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         if (name) {
           return name;
         }
-        if (isVariableDeclaration16(node.parent) && isIdentifier17(node.parent.name) || isPropertyDeclaration5(node.parent) || isParameter6(node.parent)) {
+        if (isVariableDeclaration17(node.parent) && isIdentifier18(node.parent.name) || isPropertyDeclaration5(node.parent) || isParameter6(node.parent)) {
           return node.parent.name;
         }
       }
@@ -172443,7 +172443,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         if (token.kind !== 110) return void 0;
         const constructor = getContainingFunction(token);
         const superCall = findSuperCall(constructor.body);
-        return superCall && !superCall.expression.arguments.some((arg) => isPropertyAccessExpression16(arg) && arg.expression === token) ? { constructor, superCall } : void 0;
+        return superCall && !superCall.expression.arguments.some((arg) => isPropertyAccessExpression17(arg) && arg.expression === token) ? { constructor, superCall } : void 0;
       }
       function findSuperCall(n) {
         return isExpressionStatement9(n) && isSuperCall(n.expression) ? n : isFunctionLike3(n) ? void 0 : forEachChild5(n, findSuperCall);
@@ -172533,7 +172533,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         if (related === void 0 || related.file === void 0 || related.start === void 0 || related.length === void 0) return;
         const token = findAncestorMatchingSpan(related.file, createTextSpan(related.start, related.length));
         if (token === void 0) return;
-        if (isExpression3(token) && isBinaryExpression11(token.parent)) {
+        if (isExpression3(token) && isBinaryExpression12(token.parent)) {
           return { suggestion: getSuggestion(related.messageText), expression: token.parent, arg: token };
         }
         return void 0;
@@ -172685,7 +172685,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
       });
       function getInfo13(sourceFile, pos, diagCode) {
         const node = getTokenAtPosition(sourceFile, pos);
-        if (isIdentifier17(node) || isPrivateIdentifier2(node)) {
+        if (isIdentifier18(node) || isPrivateIdentifier2(node)) {
           return { node, className: diagCode === didYouMeanStaticMemberCode ? getContainingClass(node).name.text : void 0 };
         }
       }
@@ -172797,11 +172797,11 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         const tags = getJSDocTags(signature);
         const names = /* @__PURE__ */ new Set();
         for (const tag of tags) {
-          if (isJSDocParameterTag(tag) && isIdentifier17(tag.name)) {
+          if (isJSDocParameterTag(tag) && isIdentifier18(tag.name)) {
             names.add(tag.name.escapedText);
           }
         }
-        const parameterName2 = firstDefined(signature.parameters, (p) => isIdentifier17(p.name) && !names.has(p.name.escapedText) ? p.name.getText(sourceFile) : void 0);
+        const parameterName2 = firstDefined(signature.parameters, (p) => isIdentifier18(p.name) && !names.has(p.name.escapedText) ? p.name.getText(sourceFile) : void 0);
         if (parameterName2 === void 0) return void 0;
         const newJSDocParameterTag = factory.updateJSDocParameterTag(
           jsDocParameterTag,
@@ -172817,7 +172817,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
       }
       function getInfo14(sourceFile, pos) {
         const token = getTokenAtPosition(sourceFile, pos);
-        if (token.parent && isJSDocParameterTag(token.parent) && isIdentifier17(token.parent.name)) {
+        if (token.parent && isJSDocParameterTag(token.parent) && isIdentifier18(token.parent.name)) {
           const jsDocParameterTag = token.parent;
           const jsDocHost = getJSDocHost(jsDocParameterTag);
           const signature = getHostSignatureFromJSDoc(jsDocParameterTag);
@@ -172848,7 +172848,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         fixIds: [fixId33]
       });
       function getImportDeclaration(sourceFile, program, start) {
-        const identifier3 = tryCast(getTokenAtPosition(sourceFile, start), isIdentifier17);
+        const identifier3 = tryCast(getTokenAtPosition(sourceFile, start), isIdentifier18);
         if (!identifier3 || identifier3.parent.kind !== 184) return;
         const checker = program.getTypeChecker();
         const symbol = checker.getSymbolAtLocation(identifier3);
@@ -172943,7 +172943,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
               createDeleteFix(ts_textChanges_exports.ChangeTracker.with(context, (t) => deleteEntireVariableStatement(t, sourceFile, token.parent)), Diagnostics.Remove_variable_statement)
             ];
           }
-          if (isIdentifier17(token) && isFunctionDeclaration9(token.parent)) {
+          if (isIdentifier18(token) && isFunctionDeclaration9(token.parent)) {
             return [createDeleteFix(ts_textChanges_exports.ChangeTracker.with(context, (t) => deleteFunctionLikeDeclaration(t, sourceFile, token.parent)), [Diagnostics.Remove_unused_declaration_for_Colon_0, token.getText(sourceFile)])];
           }
           const result3 = [];
@@ -173021,7 +173021,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
                   break;
                 } else if (canDeleteEntireVariableStatement(sourceFile, token)) {
                   deleteEntireVariableStatement(changes, sourceFile, token.parent);
-                } else if (isIdentifier17(token) && isFunctionDeclaration9(token.parent)) {
+                } else if (isIdentifier18(token) && isFunctionDeclaration9(token.parent)) {
                   deleteFunctionLikeDeclaration(changes, sourceFile, token.parent);
                 } else {
                   tryDeleteDeclaration(
@@ -173068,7 +173068,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         return token.kind === 102 ? tryCast(token.parent, isImportDeclaration9) : void 0;
       }
       function canDeleteEntireVariableStatement(sourceFile, token) {
-        return isVariableDeclarationList9(token.parent) && first(token.parent.getChildren(sourceFile)) === token;
+        return isVariableDeclarationList10(token.parent) && first(token.parent.getChildren(sourceFile)) === token;
       }
       function deleteEntireVariableStatement(changes, sourceFile, node) {
         changes.delete(sourceFile, node.parent.kind === 244 ? node.parent : node);
@@ -173077,8 +173077,8 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         forEach(node.elements, (n) => changes.delete(sourceFile, n));
       }
       function deleteDestructuring(context, changes, sourceFile, { parent: parent2 }) {
-        if (isVariableDeclaration16(parent2) && parent2.initializer && isCallLikeExpression(parent2.initializer)) {
-          if (isVariableDeclarationList9(parent2.parent) && length(parent2.parent.declarations) > 1) {
+        if (isVariableDeclaration17(parent2) && parent2.initializer && isCallLikeExpression(parent2.initializer)) {
+          if (isVariableDeclarationList10(parent2.parent) && length(parent2.parent.declarations) > 1) {
             const varStatement = parent2.parent.parent;
             const pos = varStatement.getStart(sourceFile);
             const end = varStatement.end;
@@ -173099,11 +173099,11 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         if (token.kind === 140) {
           token = cast(token.parent, isInferTypeNode).typeParameter.name;
         }
-        if (isIdentifier17(token) && canPrefix(token)) {
+        if (isIdentifier18(token) && canPrefix(token)) {
           changes.replaceNode(sourceFile, token, factory.createIdentifier(`_${token.text}`));
           if (isParameter6(token.parent)) {
             getJSDocParameterTags(token.parent).forEach((tag) => {
-              if (isIdentifier17(tag.name)) {
+              if (isIdentifier18(tag.name)) {
                 changes.replaceNode(sourceFile, tag.name, factory.createIdentifier(`_${tag.name.text}`));
               }
             });
@@ -173128,9 +173128,9 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
       }
       function tryDeleteDeclaration(sourceFile, token, changes, checker, sourceFiles, program, cancellationToken, isFixAll) {
         tryDeleteDeclarationWorker(token, changes, sourceFile, checker, sourceFiles, program, cancellationToken, isFixAll);
-        if (isIdentifier17(token)) {
+        if (isIdentifier18(token)) {
           ts_FindAllReferences_exports.Core.eachSymbolReferenceInFile(token, checker, sourceFile, (ref) => {
-            if (isPropertyAccessExpression16(ref.parent) && ref.parent.name === ref) ref = ref.parent;
+            if (isPropertyAccessExpression17(ref.parent) && ref.parent.name === ref) ref = ref.parent;
             if (!isFixAll && mayDeleteExpression(ref)) {
               changes.delete(sourceFile, ref.parent.parent);
             }
@@ -173141,7 +173141,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         const { parent: parent2 } = token;
         if (isParameter6(parent2)) {
           tryDeleteParameter(changes, sourceFile, parent2, checker, sourceFiles, program, cancellationToken, isFixAll);
-        } else if (!(isFixAll && isIdentifier17(token) && ts_FindAllReferences_exports.Core.isSymbolReferencedInFile(token, checker, sourceFile))) {
+        } else if (!(isFixAll && isIdentifier18(token) && ts_FindAllReferences_exports.Core.isSymbolReferencedInFile(token, checker, sourceFile))) {
           const node = isImportClause6(parent2) ? token : isComputedPropertyName8(parent2) ? parent2.parent : parent2;
           Debug.assert(node !== sourceFile, "should not delete whole source file");
           changes.delete(sourceFile, node);
@@ -173149,7 +173149,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
       }
       function tryDeleteParameter(changes, sourceFile, parameter, checker, sourceFiles, program, cancellationToken, isFixAll = false) {
         if (mayDeleteParameter(checker, sourceFile, parameter, sourceFiles, program, cancellationToken, isFixAll)) {
-          if (parameter.modifiers && parameter.modifiers.length > 0 && (!isIdentifier17(parameter.name) || ts_FindAllReferences_exports.Core.isSymbolReferencedInFile(parameter.name, checker, sourceFile))) {
+          if (parameter.modifiers && parameter.modifiers.length > 0 && (!isIdentifier18(parameter.name) || ts_FindAllReferences_exports.Core.isSymbolReferencedInFile(parameter.name, checker, sourceFile))) {
             for (const modifier of parameter.modifiers) {
               if (isModifier(modifier)) {
                 changes.deleteModifier(sourceFile, modifier);
@@ -173177,7 +173177,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
                 for (const reference2 of entry.references) {
                   if (reference2.kind === ts_FindAllReferences_exports.EntryKind.Node) {
                     const isSuperCall2 = isSuperKeyword(reference2.node) && isCallExpression18(reference2.node.parent) && reference2.node.parent.arguments.length > index;
-                    const isSuperMethodCall = isPropertyAccessExpression16(reference2.node.parent) && isSuperKeyword(reference2.node.parent.expression) && isCallExpression18(reference2.node.parent.parent) && reference2.node.parent.parent.arguments.length > index;
+                    const isSuperMethodCall = isPropertyAccessExpression17(reference2.node.parent) && isSuperKeyword(reference2.node.parent.expression) && isCallExpression18(reference2.node.parent.parent) && reference2.node.parent.parent.arguments.length > index;
                     const isOverriddenMethod = (isMethodDeclaration8(reference2.node.parent) || isMethodSignature(reference2.node.parent)) && reference2.node.parent !== parameter.parent && reference2.node.parent.parameters.length > index;
                     if (isSuperCall2 || isSuperMethodCall || isOverriddenMethod) return false;
                   }
@@ -173203,16 +173203,16 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         }
       }
       function isCallbackLike(checker, sourceFile, name) {
-        return !!ts_FindAllReferences_exports.Core.eachSymbolReferenceInFile(name, checker, sourceFile, (reference2) => isIdentifier17(reference2) && isCallExpression18(reference2.parent) && reference2.parent.arguments.includes(reference2));
+        return !!ts_FindAllReferences_exports.Core.eachSymbolReferenceInFile(name, checker, sourceFile, (reference2) => isIdentifier18(reference2) && isCallExpression18(reference2.parent) && reference2.parent.arguments.includes(reference2));
       }
       function isLastParameter(func, parameter, isFixAll) {
         const parameters2 = func.parameters;
         const index = parameters2.indexOf(parameter);
         Debug.assert(index !== -1, "The parameter should already be in the list");
-        return isFixAll ? parameters2.slice(index + 1).every((p) => isIdentifier17(p.name) && !p.symbol.isReferenced) : index === parameters2.length - 1;
+        return isFixAll ? parameters2.slice(index + 1).every((p) => isIdentifier18(p.name) && !p.symbol.isReferenced) : index === parameters2.length - 1;
       }
       function mayDeleteExpression(node) {
-        return (isBinaryExpression11(node.parent) && node.parent.left === node || (isPostfixUnaryExpression10(node.parent) || isPrefixUnaryExpression10(node.parent)) && node.parent.operand === node) && isExpressionStatement9(node.parent.parent);
+        return (isBinaryExpression12(node.parent) && node.parent.left === node || (isPostfixUnaryExpression10(node.parent) || isPrefixUnaryExpression10(node.parent)) && node.parent.operand === node) && isExpressionStatement9(node.parent.parent);
       }
       function deleteFunctionLikeDeclaration(changes, sourceFile, node) {
         const declarations = node.symbol.declarations;
@@ -173423,14 +173423,14 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
       }
       function getCallName(sourceFile, start) {
         const token = getTokenAtPosition(sourceFile, start);
-        if (isPropertyAccessExpression16(token.parent)) {
+        if (isPropertyAccessExpression17(token.parent)) {
           let current = token.parent;
-          while (isPropertyAccessExpression16(current.parent)) {
+          while (isPropertyAccessExpression17(current.parent)) {
             current = current.parent;
           }
           return current.name;
         }
-        if (isIdentifier17(token)) {
+        if (isIdentifier18(token)) {
           return token;
         }
         return void 0;
@@ -173559,7 +173559,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           const newProperties = [];
           for (const symbol of elements) {
             if (!isIdentifierText(symbol.name, getEmitScriptTarget(program.getCompilerOptions()))) continue;
-            if (symbol.valueDeclaration && isVariableDeclaration16(symbol.valueDeclaration)) continue;
+            if (symbol.valueDeclaration && isVariableDeclaration17(symbol.valueDeclaration)) continue;
             newProperties.push(factory.createVariableStatement(
               [factory.createModifier(
                 95
@@ -173604,7 +173604,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           return [Diagnostics.Annotate_types_of_properties_expando_function_in_a_namespace];
         }
         function needsParenthesizedExpressionForAssertion(node) {
-          return !isEntityNameExpression(node) && !isCallExpression18(node) && !isObjectLiteralExpression11(node) && !isArrayLiteralExpression8(node);
+          return !isEntityNameExpression(node) && !isCallExpression18(node) && !isObjectLiteralExpression12(node) && !isArrayLiteralExpression8(node);
         }
         function createAsExpression(node, type) {
           if (needsParenthesizedExpressionForAssertion(node)) {
@@ -173642,7 +173642,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           if (isSpreadElement12(targetNode)) {
             return void 0;
           }
-          const variableDeclaration = findAncestor(targetNode, isVariableDeclaration16);
+          const variableDeclaration = findAncestor(targetNode, isVariableDeclaration17);
           const type = variableDeclaration && typeChecker.getTypeAtLocation(variableDeclaration);
           if (type && type.flags & 8192) {
             return void 0;
@@ -173691,7 +173691,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
             );
             return [Diagnostics.Mark_array_literal_as_const];
           }
-          const parentPropertyAssignment = findAncestor(targetNode, isPropertyAssignment12);
+          const parentPropertyAssignment = findAncestor(targetNode, isPropertyAssignment13);
           if (parentPropertyAssignment) {
             if (parentPropertyAssignment === targetNode.parent && isEntityNameExpression(targetNode)) return;
             const tempName = factory.createUniqueName(
@@ -173750,7 +173750,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           const expandoDeclaration = findAncestor(node, (n) => isStatement3(n) ? "quit" : isExpandoPropertyDeclaration(n));
           if (expandoDeclaration && isExpandoPropertyDeclaration(expandoDeclaration)) {
             let assignmentTarget = expandoDeclaration;
-            if (isBinaryExpression11(assignmentTarget)) {
+            if (isBinaryExpression12(assignmentTarget)) {
               assignmentTarget = assignmentTarget.left;
               if (!isExpandoPropertyDeclaration(assignmentTarget)) return void 0;
             }
@@ -173760,7 +173760,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
             if (some(properties, (p) => p.valueDeclaration === expandoDeclaration || p.valueDeclaration === expandoDeclaration.parent)) {
               const fn = targetType.symbol.valueDeclaration;
               if (fn) {
-                if (isFunctionExpressionOrArrowFunction(fn) && isVariableDeclaration16(fn.parent)) {
+                if (isFunctionExpressionOrArrowFunction(fn) && isVariableDeclaration17(fn.parent)) {
                   return fn.parent;
                 }
                 if (isFunctionDeclaration9(fn)) {
@@ -173903,7 +173903,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           if (!enclosingVariableDeclaration.initializer) return void 0;
           let baseExpr;
           const newNodes = [];
-          if (!isIdentifier17(enclosingVariableDeclaration.initializer)) {
+          if (!isIdentifier18(enclosingVariableDeclaration.initializer)) {
             const tempHolderForReturn = factory.createUniqueName(
               "dest",
               16
@@ -173972,7 +173972,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
               if (bindingElement.element.initializer) {
                 const propertyName2 = (_a2 = bindingElement.element) == null ? void 0 : _a2.propertyName;
                 const tempName = factory.createUniqueName(
-                  propertyName2 && isIdentifier17(propertyName2) ? propertyName2.text : "temp",
+                  propertyName2 && isIdentifier18(propertyName2) ? propertyName2.text : "temp",
                   16
                   /* Optimistic */
                 );
@@ -174168,7 +174168,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
             mutatedTarget: false
           };
           function getFlags(type2) {
-            return (isVariableDeclaration16(node) || isPropertyDeclaration5(node) && hasSyntacticModifier(
+            return (isVariableDeclaration17(node) || isPropertyDeclaration5(node) && hasSyntacticModifier(
               node,
               256 | 8
               /* Readonly */
@@ -174304,16 +174304,16 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
             return relativeType(node.expression);
           }
           if (isArrayLiteralExpression8(node)) {
-            const variableDecl = findAncestor(node, isVariableDeclaration16);
-            const partName = variableDecl && isIdentifier17(variableDecl.name) ? variableDecl.name.text : void 0;
+            const variableDecl = findAncestor(node, isVariableDeclaration17);
+            const partName = variableDecl && isIdentifier18(variableDecl.name) ? variableDecl.name.text : void 0;
             return typeFromArraySpreadElements(node, partName);
           }
-          if (isObjectLiteralExpression11(node)) {
-            const variableDecl = findAncestor(node, isVariableDeclaration16);
-            const partName = variableDecl && isIdentifier17(variableDecl.name) ? variableDecl.name.text : void 0;
+          if (isObjectLiteralExpression12(node)) {
+            const variableDecl = findAncestor(node, isVariableDeclaration17);
+            const partName = variableDecl && isIdentifier18(variableDecl.name) ? variableDecl.name.text : void 0;
             return typeFromObjectSpreadAssignment(node, partName);
           }
-          if (isVariableDeclaration16(node) && node.initializer) {
+          if (isVariableDeclaration17(node) && node.initializer) {
             return relativeType(node.initializer);
           }
           if (isConditionalExpression4(node)) {
@@ -174394,7 +174394,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         }
         function findAncestorWithMissingType(node) {
           return findAncestor(node, (n) => {
-            return canHaveTypeAnnotation.has(n.kind) && (!isObjectBindingPattern10(n) && !isArrayBindingPattern5(n) || isVariableDeclaration16(n.parent));
+            return canHaveTypeAnnotation.has(n.kind) && (!isObjectBindingPattern10(n) && !isArrayBindingPattern5(n) || isVariableDeclaration17(n.parent));
           });
         }
         function findBestFittingNode(node, span) {
@@ -174404,7 +174404,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           while (node.parent.pos === node.pos && node.parent.end === node.end) {
             node = node.parent;
           }
-          if (isIdentifier17(node) && hasInitializer(node.parent) && node.parent.initializer) {
+          if (isIdentifier18(node) && hasInitializer(node.parent) && node.parent.initializer) {
             return node.parent.initializer;
           }
           return node;
@@ -174440,7 +174440,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         if (expr.type) {
           return expr.type;
         }
-        if (isVariableDeclaration16(expr.parent) && expr.parent.type && isFunctionTypeNode(expr.parent.type)) {
+        if (isVariableDeclaration17(expr.parent) && expr.parent.type && isFunctionTypeNode(expr.parent.type)) {
           return expr.parent.type.type;
         }
       }
@@ -174647,12 +174647,12 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           // Variable and Property declarations
           case Diagnostics.Member_0_implicitly_has_an_1_type.code:
           case Diagnostics.Variable_0_implicitly_has_type_1_in_some_locations_where_its_type_cannot_be_determined.code:
-            if (isVariableDeclaration16(parent2) && markSeen(parent2) || isPropertyDeclaration5(parent2) || isPropertySignature(parent2)) {
+            if (isVariableDeclaration17(parent2) && markSeen(parent2) || isPropertyDeclaration5(parent2) || isPropertySignature(parent2)) {
               annotateVariableDeclaration(changes, importAdder, sourceFile, parent2, program, host, cancellationToken);
               importAdder.writeFixes(changes);
               return parent2;
             }
-            if (isPropertyAccessExpression16(parent2)) {
+            if (isPropertyAccessExpression17(parent2)) {
               const type = inferTypeForVariableFromUsage(parent2.name, program, cancellationToken);
               const typeNode = getTypeNodeIfAccessible(type, parent2, program, host);
               if (typeNode) {
@@ -174671,7 +174671,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
             return void 0;
           case Diagnostics.Variable_0_implicitly_has_an_1_type.code: {
             const symbol = program.getTypeChecker().getSymbolAtLocation(token);
-            if (symbol && symbol.valueDeclaration && isVariableDeclaration16(symbol.valueDeclaration) && markSeen(symbol.valueDeclaration)) {
+            if (symbol && symbol.valueDeclaration && isVariableDeclaration17(symbol.valueDeclaration) && markSeen(symbol.valueDeclaration)) {
               annotateVariableDeclaration(changes, importAdder, getSourceFileOfNode(symbol.valueDeclaration), symbol.valueDeclaration, program, host, cancellationToken);
               importAdder.writeFixes(changes);
               return symbol.valueDeclaration;
@@ -174703,7 +174703,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           // Get Accessor declarations
           case Diagnostics.Property_0_implicitly_has_type_any_because_its_get_accessor_lacks_a_return_type_annotation.code:
           case Diagnostics._0_which_lacks_return_type_annotation_implicitly_has_an_1_return_type.code:
-            if (isGetAccessorDeclaration6(containingFunction) && isIdentifier17(containingFunction.name)) {
+            if (isGetAccessorDeclaration6(containingFunction) && isIdentifier18(containingFunction.name)) {
               annotate(changes, importAdder, sourceFile, containingFunction, inferTypeForVariableFromUsage(containingFunction.name, program, cancellationToken), program, host);
               declaration = containingFunction;
             }
@@ -174729,12 +174729,12 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         return declaration;
       }
       function annotateVariableDeclaration(changes, importAdder, sourceFile, declaration, program, host, cancellationToken) {
-        if (isIdentifier17(declaration.name)) {
+        if (isIdentifier18(declaration.name)) {
           annotate(changes, importAdder, sourceFile, declaration, inferTypeForVariableFromUsage(declaration.name, program, cancellationToken), program, host);
         }
       }
       function annotateParameters(changes, importAdder, sourceFile, parameterDeclaration, containingFunction, program, host, cancellationToken) {
-        if (!isIdentifier17(parameterDeclaration.name)) {
+        if (!isIdentifier18(parameterDeclaration.name)) {
           return;
         }
         const parameterInferences = inferTypeForParametersFromUsage(containingFunction, sourceFile, program, cancellationToken);
@@ -174785,7 +174785,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
       }
       function annotateSetAccessor(changes, importAdder, sourceFile, setAccessorDeclaration, program, host, cancellationToken) {
         const param = firstOrUndefined(setAccessorDeclaration.parameters);
-        if (param && isIdentifier17(setAccessorDeclaration.name) && isIdentifier17(param.name)) {
+        if (param && isIdentifier18(setAccessorDeclaration.name) && isIdentifier18(param.name)) {
           let type = inferTypeForVariableFromUsage(setAccessorDeclaration.name, program, cancellationToken);
           if (type === program.getTypeChecker().getAnyType()) {
             type = inferTypeForVariableFromUsage(param.name, program, cancellationToken);
@@ -174801,7 +174801,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         const typeNode = getTypeNodeIfAccessible(type, declaration, program, host);
         if (typeNode) {
           if (isInJSFile(sourceFile) && declaration.kind !== 172) {
-            const parent2 = isVariableDeclaration16(declaration) ? tryCast(declaration.parent.parent, isVariableStatement9) : declaration;
+            const parent2 = isVariableDeclaration17(declaration) ? tryCast(declaration.parent.parent, isVariableStatement10) : declaration;
             if (!parent2) {
               return;
             }
@@ -174844,7 +174844,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         }
         const inferences = mapDefined(parameterInferences, (inference) => {
           const param = inference.declaration;
-          if (param.initializer || getJSDocType(param) || !isIdentifier17(param.name)) {
+          if (param.initializer || getJSDocType(param) || !isIdentifier18(param.name)) {
             return;
           }
           const typeNode = inference.type && getTypeNodeIfAccessible(inference.type, param, program, host);
@@ -174905,7 +174905,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         }
       }
       function getReferences(token, program, cancellationToken) {
-        return mapDefined(ts_FindAllReferences_exports.getReferenceEntriesForNode(-1, token, program, program.getSourceFiles(), cancellationToken), (entry) => entry.kind !== ts_FindAllReferences_exports.EntryKind.Span ? tryCast(entry.node, isIdentifier17) : void 0);
+        return mapDefined(ts_FindAllReferences_exports.getReferenceEntriesForNode(-1, token, program, program.getSourceFiles(), cancellationToken), (entry) => entry.kind !== ts_FindAllReferences_exports.EntryKind.Span ? tryCast(entry.node, isIdentifier18) : void 0);
       }
       function inferTypeForVariableFromUsage(token, program, cancellationToken) {
         const references2 = getReferences(token, program, cancellationToken);
@@ -174915,7 +174915,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         const references2 = getFunctionReferences(func, sourceFile, program, cancellationToken);
         return references2 && inferTypeFromReferences(program, references2, cancellationToken).parameters(func) || func.parameters.map((p) => ({
           declaration: p,
-          type: isIdentifier17(p.name) ? inferTypeForVariableFromUsage(p.name, program, cancellationToken) : program.getTypeChecker().getAnyType()
+          type: isIdentifier18(p.name) ? inferTypeForVariableFromUsage(p.name, program, cancellationToken) : program.getTypeChecker().getAnyType()
         }));
       }
       function getFunctionReferences(containingFunction, sourceFile, program, cancellationToken) {
@@ -174927,7 +174927,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           case 220:
           case 219:
             const parent2 = containingFunction.parent;
-            searchToken = (isVariableDeclaration16(parent2) || isPropertyDeclaration5(parent2)) && isIdentifier17(parent2.name) ? parent2.name : containingFunction.name;
+            searchToken = (isVariableDeclaration17(parent2) || isPropertyDeclaration5(parent2)) && isIdentifier18(parent2.name) ? parent2.name : containingFunction.name;
             break;
           case 263:
           case 175:
@@ -175034,7 +175034,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
                 types16.push(checker.getBaseTypeOfLiteralType(call.argumentTypes[parameterIndex]));
               }
             }
-            if (isIdentifier17(parameter.name)) {
+            if (isIdentifier18(parameter.name)) {
               const inferred = inferTypesFromReferencesSingle(getReferences(parameter.name, program, cancellationToken));
               types16.push(...isRest ? mapDefined(inferred, checker.getElementTypeOfArrayType) : inferred);
             }
@@ -175279,7 +175279,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           }
         }
         function inferTypeFromPropertyAssignment(assignment, usage) {
-          const nodeWithRealType = isVariableDeclaration16(assignment.parent.parent) ? assignment.parent.parent : assignment.parent;
+          const nodeWithRealType = isVariableDeclaration17(assignment.parent.parent) ? assignment.parent.parent : assignment.parent;
           addCandidateThisType(usage, checker.getTypeAtLocation(nodeWithRealType));
         }
         function inferTypeFromPropertyDeclaration(declaration, usage) {
@@ -175812,7 +175812,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
               } else {
                 Debug.assertNode(accessor, isSetAccessorDeclaration6, "The counterpart to a getter should be a setter");
                 const parameter = getSetAccessorValueParameter(accessor);
-                const parameterName2 = parameter && isIdentifier17(parameter.name) ? idText(parameter.name) : void 0;
+                const parameterName2 = parameter && isIdentifier18(parameter.name) ? idText(parameter.name) : void 0;
                 addClassElement(factory.createSetAccessorDeclaration(
                   modifiers,
                   createName(declarationName2),
@@ -175881,7 +175881,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           return !!(context.program.getCompilerOptions().noImplicitOverride && declaration && hasAbstractModifier(declaration));
         }
         function createName(node) {
-          if (isIdentifier17(node) && node.escapedText === "constructor") {
+          if (isIdentifier18(node) && node.escapedText === "constructor") {
             return factory.createComputedPropertyName(factory.createStringLiteral(
               idText(node),
               quotePreference === 0
@@ -176002,7 +176002,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         ) : void 0;
         const asteriskToken = signatureDeclaration.asteriskToken;
         if (isFunctionExpression12(signatureDeclaration)) {
-          return factory.updateFunctionExpression(signatureDeclaration, modifiers, signatureDeclaration.asteriskToken, tryCast(name, isIdentifier17), typeParameters, parameters2, type, body ?? signatureDeclaration.body);
+          return factory.updateFunctionExpression(signatureDeclaration, modifiers, signatureDeclaration.asteriskToken, tryCast(name, isIdentifier18), typeParameters, parameters2, type, body ?? signatureDeclaration.body);
         }
         if (isArrowFunction12(signatureDeclaration)) {
           return factory.updateArrowFunction(signatureDeclaration, modifiers, typeParameters, parameters2, type, signatureDeclaration.equalsGreaterThanToken, body ?? signatureDeclaration.body);
@@ -176011,7 +176011,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           return factory.updateMethodDeclaration(signatureDeclaration, modifiers, asteriskToken, name ?? factory.createIdentifier(""), questionToken, typeParameters, parameters2, type, body);
         }
         if (isFunctionDeclaration9(signatureDeclaration)) {
-          return factory.updateFunctionDeclaration(signatureDeclaration, modifiers, signatureDeclaration.asteriskToken, tryCast(name, isIdentifier17), typeParameters, parameters2, type, body ?? signatureDeclaration.body);
+          return factory.updateFunctionDeclaration(signatureDeclaration, modifiers, signatureDeclaration.asteriskToken, tryCast(name, isIdentifier18), typeParameters, parameters2, type, body ?? signatureDeclaration.body);
         }
         return void 0;
       }
@@ -176023,7 +176023,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         const isJs = isInJSFile(contextNode);
         const { typeArguments, arguments: args, parent: parent2 } = call;
         const contextualType = isJs ? void 0 : checker.getContextualType(call);
-        const names = map(args, (arg) => isIdentifier17(arg) ? arg.text : isPropertyAccessExpression16(arg) && isIdentifier17(arg.name) ? arg.name.text : void 0);
+        const names = map(args, (arg) => isIdentifier18(arg) ? arg.text : isPropertyAccessExpression17(arg) && isIdentifier18(arg.name) ? arg.name.text : void 0);
         const instanceTypes = isJs ? [] : map(args, (arg) => checker.getTypeAtLocation(arg));
         const { argumentTypeNodes, argumentTypeParameters } = getArgumentTypesAndTypeParameters(
           checker,
@@ -176085,7 +176085,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
               ) : type
             );
           case 263:
-            Debug.assert(typeof name === "string" || isIdentifier17(name), "Unexpected name");
+            Debug.assert(typeof name === "string" || isIdentifier18(name), "Unexpected name");
             return factory.createFunctionDeclaration(
               modifiers,
               asteriskToken,
@@ -176395,7 +176395,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           return;
         }
         const compilerOptions = compilerOptionsProperty.initializer;
-        if (!isObjectLiteralExpression11(compilerOptions)) {
+        if (!isObjectLiteralExpression12(compilerOptions)) {
           return;
         }
         for (const [optionName, optionValue] of options) {
@@ -176414,7 +176414,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         return factory.createPropertyAssignment(factory.createStringLiteral(name), initializer);
       }
       function findJsonProperty(obj, name) {
-        return find(obj.properties, (p) => isPropertyAssignment12(p) && !!p.name && isStringLiteral7(p.name) && p.name.text === name);
+        return find(obj.properties, (p) => isPropertyAssignment13(p) && !!p.name && isStringLiteral7(p.name) && p.name.text === name);
       }
       function tryGetAutoImportableReferenceFromTypeNode(importTypeNode, scriptTarget) {
         let symbols;
@@ -176510,17 +176510,17 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         return changeTracker.getChanges();
       }
       function isConvertibleName(name) {
-        return isIdentifier17(name) || isStringLiteral7(name);
+        return isIdentifier18(name) || isStringLiteral7(name);
       }
       function isAcceptedDeclaration(node) {
-        return isParameterPropertyDeclaration(node, node.parent) || isPropertyDeclaration5(node) || isPropertyAssignment12(node);
+        return isParameterPropertyDeclaration(node, node.parent) || isPropertyDeclaration5(node) || isPropertyAssignment13(node);
       }
       function createPropertyName(name, originalName) {
-        return isIdentifier17(originalName) ? factory.createIdentifier(name) : factory.createStringLiteral(name);
+        return isIdentifier18(originalName) ? factory.createIdentifier(name) : factory.createStringLiteral(name);
       }
       function createAccessorAccessExpression(fieldName, isStatic2, container) {
         const leftHead = isStatic2 ? container.name : factory.createThis();
-        return isIdentifier17(fieldName) ? factory.createPropertyAccessExpression(leftHead, fieldName) : factory.createElementAccessExpression(leftHead, factory.createStringLiteralFromNode(fieldName));
+        return isIdentifier18(fieldName) ? factory.createPropertyAccessExpression(leftHead, fieldName) : factory.createElementAccessExpression(leftHead, factory.createStringLiteralFromNode(fieldName));
       }
       function prepareModifierFlagsForAccessor(modifierFlags) {
         modifierFlags &= ~8;
@@ -176641,14 +176641,14 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
       function updateFieldDeclaration(changeTracker, file, declaration, type, fieldName, modifiers) {
         if (isPropertyDeclaration5(declaration)) {
           updatePropertyDeclaration(changeTracker, file, declaration, type, fieldName, modifiers);
-        } else if (isPropertyAssignment12(declaration)) {
+        } else if (isPropertyAssignment13(declaration)) {
           updatePropertyAssignmentDeclaration(changeTracker, file, declaration, fieldName);
         } else {
-          changeTracker.replaceNode(file, declaration, factory.updateParameterDeclaration(declaration, modifiers, declaration.dotDotDotToken, cast(fieldName, isIdentifier17), declaration.questionToken, declaration.type, declaration.initializer));
+          changeTracker.replaceNode(file, declaration, factory.updateParameterDeclaration(declaration, modifiers, declaration.dotDotDotToken, cast(fieldName, isIdentifier18), declaration.questionToken, declaration.type, declaration.initializer));
         }
       }
       function insertAccessor(changeTracker, file, accessor, declaration, container) {
-        isParameterPropertyDeclaration(declaration, declaration.parent) ? changeTracker.insertMemberAtStart(file, container, accessor) : isPropertyAssignment12(declaration) ? changeTracker.insertNodeAfterComma(file, declaration, accessor) : changeTracker.insertNodeAfter(file, declaration, accessor);
+        isParameterPropertyDeclaration(declaration, declaration.parent) ? changeTracker.insertMemberAtStart(file, container, accessor) : isPropertyAssignment13(declaration) ? changeTracker.insertNodeAfterComma(file, declaration, accessor) : changeTracker.insertNodeAfter(file, declaration, accessor);
       }
       function updateReadonlyPropertyInitializerStatementConstructor(changeTracker, file, constructor, fieldName, originalName) {
         if (!constructor.body) return;
@@ -176656,7 +176656,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           if (isElementAccessExpression12(node) && node.expression.kind === 110 && isStringLiteral7(node.argumentExpression) && node.argumentExpression.text === originalName && isWriteAccess(node)) {
             changeTracker.replaceNode(file, node.argumentExpression, factory.createStringLiteral(fieldName));
           }
-          if (isPropertyAccessExpression16(node) && node.expression.kind === 110 && node.name.text === originalName && isWriteAccess(node)) {
+          if (isPropertyAccessExpression17(node) && node.expression.kind === 110 && node.name.text === originalName && isWriteAccess(node)) {
             changeTracker.replaceNode(file, node.name, factory.createIdentifier(fieldName));
           }
           if (!isFunctionLike3(node) && !isClassLike(node)) {
@@ -176814,7 +176814,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
       });
       function getInfo17(sourceFile, pos) {
         const token = getTokenAtPosition(sourceFile, pos);
-        if (isIdentifier17(token) && isPropertyDeclaration5(token.parent)) {
+        if (isIdentifier18(token) && isPropertyDeclaration5(token.parent)) {
           const type = getEffectiveTypeAnnotationNode(token.parent);
           if (type) {
             return { type, prop: token.parent, isJs: isInJSFile(token.parent) };
@@ -176977,9 +176977,9 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         )) {
           Debug.failBadSyntaxKind(parent2);
         }
-        const decl = cast(parent2.parent, isVariableDeclaration16);
+        const decl = cast(parent2.parent, isVariableDeclaration17);
         const quotePreference = getQuotePreference(sourceFile, preferences);
-        const defaultImportName = tryCast(decl.name, isIdentifier17);
+        const defaultImportName = tryCast(decl.name, isIdentifier18);
         const namedImports = isObjectBindingPattern10(decl.name) ? tryCreateNamedImportsFromObjectBindingPattern(decl.name) : void 0;
         if (defaultImportName || namedImports) {
           const moduleSpecifier = first(parent2.arguments);
@@ -176987,7 +176987,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
             allowSyntheticDefaults: getAllowSyntheticDefaultImports(program.getCompilerOptions()),
             defaultImportName,
             namedImports,
-            statement: cast(decl.parent.parent, isVariableStatement9),
+            statement: cast(decl.parent.parent, isVariableStatement10),
             moduleSpecifier: isNoSubstitutionTemplateLiteral4(moduleSpecifier) ? factory.createStringLiteral(
               moduleSpecifier.text,
               quotePreference === 0
@@ -176999,13 +176999,13 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
       function tryCreateNamedImportsFromObjectBindingPattern(node) {
         const importSpecifiers = [];
         for (const element of node.elements) {
-          if (!isIdentifier17(element.name) || element.initializer) {
+          if (!isIdentifier18(element.name) || element.initializer) {
             return void 0;
           }
           importSpecifiers.push(factory.createImportSpecifier(
             /*isTypeOnly*/
             false,
-            tryCast(element.propertyName, isIdentifier17),
+            tryCast(element.propertyName, isIdentifier18),
             element.name
           ));
         }
@@ -177032,7 +177032,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
       });
       function getInfo19(sourceFile, pos) {
         const name = getTokenAtPosition(sourceFile, pos);
-        if (!isIdentifier17(name)) return void 0;
+        if (!isIdentifier18(name)) return void 0;
         const { parent: parent2 } = name;
         if (isImportEqualsDeclaration3(parent2) && isExternalModuleReference3(parent2.moduleReference)) {
           return { importNode: parent2, name, moduleSpecifier: parent2.moduleReference.expression };
@@ -177068,7 +177068,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         }
       });
       function makeChange10(changeTracker, sourceFile, span) {
-        const numericLiteral = tryCast(getTokenAtPosition(sourceFile, span.start), isNumericLiteral8);
+        const numericLiteral = tryCast(getTokenAtPosition(sourceFile, span.start), isNumericLiteral9);
         if (!numericLiteral) {
           return;
         }
@@ -177129,9 +177129,9 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         const lessThanToken = getTokenAtPosition(sourceFile, pos);
         const firstJsxElementOrOpenElement = lessThanToken.parent;
         let binaryExpr = firstJsxElementOrOpenElement.parent;
-        if (!isBinaryExpression11(binaryExpr)) {
+        if (!isBinaryExpression12(binaryExpr)) {
           binaryExpr = binaryExpr.parent;
-          if (!isBinaryExpression11(binaryExpr)) return void 0;
+          if (!isBinaryExpression12(binaryExpr)) return void 0;
         }
         if (!nodeIsMissing(binaryExpr.operatorToken)) return void 0;
         return binaryExpr;
@@ -177144,12 +177144,12 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         const children = [];
         let current = node;
         while (true) {
-          if (isBinaryExpression11(current) && nodeIsMissing(current.operatorToken) && current.operatorToken.kind === 28) {
+          if (isBinaryExpression12(current) && nodeIsMissing(current.operatorToken) && current.operatorToken.kind === 28) {
             children.push(current.left);
             if (isJsxChild(current.right)) {
               children.push(current.right);
               return children;
-            } else if (isBinaryExpression11(current.right)) {
+            } else if (isBinaryExpression12(current.right)) {
               current = current.right;
               continue;
             } else return void 0;
@@ -177210,7 +177210,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         const mappedTypeParameter = factory.createTypeParameterDeclaration(
           /*modifiers*/
           void 0,
-          cast(parameter.name, isIdentifier17),
+          cast(parameter.name, isIdentifier18),
           parameter.type
         );
         const mappedIntersectionType = factory.createMappedTypeNode(
@@ -177286,7 +177286,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
             /*stopAtCallExpressions*/
             false
           );
-          if (isIdentifier17(leftMostExpression)) {
+          if (isIdentifier18(leftMostExpression)) {
             const precedingToken = findPrecedingToken(awaitExpression.parent.pos, sourceFile);
             if (precedingToken && precedingToken.kind !== 105) {
               expressionToReplace = awaitExpression.parent;
@@ -177388,7 +177388,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         const checker = program.getTypeChecker();
         const symbol = checker.getSymbolAtLocation(getTokenAtPosition(sourceFile, pos));
         if (symbol === void 0) return;
-        const declaration = tryCast((_a2 = symbol == null ? void 0 : symbol.valueDeclaration) == null ? void 0 : _a2.parent, isVariableDeclarationList9);
+        const declaration = tryCast((_a2 = symbol == null ? void 0 : symbol.valueDeclaration) == null ? void 0 : _a2.parent, isVariableDeclarationList10);
         if (declaration === void 0) return;
         const constToken = findChildOfKind(declaration, 87, sourceFile);
         if (constToken === void 0) return;
@@ -177426,7 +177426,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
       });
       function getInfo22(sourceFile, pos, _) {
         const node = getTokenAtPosition(sourceFile, pos);
-        return node.kind === 27 && node.parent && (isObjectLiteralExpression11(node.parent) || isArrayLiteralExpression8(node.parent)) ? { node } : void 0;
+        return node.kind === 27 && node.parent && (isObjectLiteralExpression12(node.parent) || isArrayLiteralExpression8(node.parent)) ? { node } : void 0;
       }
       function doChange41(changes, sourceFile, { node }) {
         const newNode = factory.createToken(
@@ -177456,7 +177456,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
       });
       function makeChange13(changes, sourceFile, span, program, seen) {
         const node = getTokenAtPosition(sourceFile, span.start);
-        if (!isIdentifier17(node) || !isCallExpression18(node.parent) || node.parent.expression !== node || node.parent.arguments.length !== 0) return;
+        if (!isIdentifier18(node) || !isCallExpression18(node.parent) || node.parent.expression !== node || node.parent.arguments.length !== 0) return;
         const checker = program.getTypeChecker();
         const symbol = checker.getSymbolAtLocation(node);
         const decl = symbol == null ? void 0 : symbol.valueDeclaration;
@@ -177495,7 +177495,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         if (isInJSFile(node)) {
           if (isParenthesizedExpression13(node.parent)) {
             const jsDocType = (_a2 = getJSDocTypeTag(node.parent)) == null ? void 0 : _a2.typeExpression.type;
-            if (jsDocType && isTypeReferenceNode3(jsDocType) && isIdentifier17(jsDocType.typeName) && idText(jsDocType.typeName) === "Promise") {
+            if (jsDocType && isTypeReferenceNode3(jsDocType) && isIdentifier18(jsDocType.typeName) && idText(jsDocType.typeName) === "Promise") {
               return jsDocType.typeArguments;
             }
           }
@@ -177683,7 +177683,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         const compilerOptions = program.getCompilerOptions();
         const checker = program.getTypeChecker();
         const incompleteCompletionsCache = preferences.allowIncompleteCompletions ? (_a2 = host.getIncompleteCompletionsCache) == null ? void 0 : _a2.call(host) : void 0;
-        if (incompleteCompletionsCache && completionKind === 3 && previousToken && isIdentifier17(previousToken)) {
+        if (incompleteCompletionsCache && completionKind === 3 && previousToken && isIdentifier18(previousToken)) {
           const incompleteContinuation = continuePreviousIncompleteResponse(incompleteCompletionsCache, sourceFile, previousToken, program, host, preferences, cancellationToken, position2);
           if (incompleteContinuation) {
             return incompleteContinuation;
@@ -177861,7 +177861,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           if (getJSDocParameterTags(param).length) {
             return void 0;
           }
-          if (isIdentifier17(param.name)) {
+          if (isIdentifier18(param.name)) {
             const tabstopCounter = { tabstop: 1 };
             const paramName = param.name.text;
             let displayText = getJSDocParamAnnotation(
@@ -178012,7 +178012,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           ];
         }
         function elementWorker(path22, element, counter) {
-          if (!element.propertyName && isIdentifier17(element.name) || isIdentifier17(element.name)) {
+          if (!element.propertyName && isIdentifier18(element.name) || isIdentifier18(element.name)) {
             const propertyName2 = element.propertyName ? tryGetTextOfPropertyName(element.propertyName) : element.name.text;
             if (!propertyName2) {
               return void 0;
@@ -178393,7 +178393,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
             return void 0;
           case 197:
             const exp = typeNodeToExpression(typeNode.type, languageVersion, quotePreference);
-            return exp && (isIdentifier17(exp) ? exp : factory.createParenthesizedExpression(exp));
+            return exp && (isIdentifier18(exp) ? exp : factory.createParenthesizedExpression(exp));
           case 187:
             return entityNameToExpression(typeNode.exprName, languageVersion, quotePreference);
           case 206:
@@ -178402,7 +178402,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         return void 0;
       }
       function entityNameToExpression(entityName, languageVersion, quotePreference) {
-        if (isIdentifier17(entityName)) {
+        if (isIdentifier18(entityName)) {
           return entityName;
         }
         const unescapedName = unescapeLeadingUnderscores(entityName.right.escapedText);
@@ -178562,7 +178562,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           hasAction = true;
         }
         if (completionKind === 0 && contextToken && ((_a2 = findPrecedingToken(contextToken.pos, sourceFile, contextToken)) == null ? void 0 : _a2.kind) !== 28) {
-          if (isMethodDeclaration8(contextToken.parent.parent) || isGetAccessorDeclaration6(contextToken.parent.parent) || isSetAccessorDeclaration6(contextToken.parent.parent) || isSpreadAssignment8(contextToken.parent) || ((_b = findAncestor(contextToken.parent, isPropertyAssignment12)) == null ? void 0 : _b.getLastToken(sourceFile)) === contextToken || isShorthandPropertyAssignment10(contextToken.parent) && getLineAndCharacterOfPosition(sourceFile, contextToken.getEnd()).line !== getLineAndCharacterOfPosition(sourceFile, position2).line) {
+          if (isMethodDeclaration8(contextToken.parent.parent) || isGetAccessorDeclaration6(contextToken.parent.parent) || isSetAccessorDeclaration6(contextToken.parent.parent) || isSpreadAssignment8(contextToken.parent) || ((_b = findAncestor(contextToken.parent, isPropertyAssignment13)) == null ? void 0 : _b.getLastToken(sourceFile)) === contextToken || isShorthandPropertyAssignment10(contextToken.parent) && getLineAndCharacterOfPosition(sourceFile, contextToken.getEnd()).line !== getLineAndCharacterOfPosition(sourceFile, position2).line) {
             source = "ObjectLiteralMemberWithComma/";
             hasAction = true;
           }
@@ -178837,7 +178837,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         if (isModifier(node)) {
           return node.kind;
         }
-        if (isIdentifier17(node)) {
+        if (isIdentifier18(node)) {
           const originalKeywordKind = identifierToKeywordKind(node);
           if (originalKeywordKind && isModifierKind(originalKeywordKind)) {
             return originalKeywordKind;
@@ -179285,7 +179285,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           if (location2.parent && isExportAssignment4(location2.parent)) {
             return true;
           }
-          if (closestSymbolDeclaration && tryCast(closestSymbolDeclaration, isVariableDeclaration16)) {
+          if (closestSymbolDeclaration && tryCast(closestSymbolDeclaration, isVariableDeclaration17)) {
             if (symbol.valueDeclaration === closestSymbolDeclaration) {
               return false;
             }
@@ -179613,7 +179613,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           host,
           program,
           formatContext,
-          previousToken && isIdentifier17(previousToken) ? previousToken.getStart(sourceFile) : position2,
+          previousToken && isIdentifier18(previousToken) ? previousToken.getStart(sourceFile) : position2,
           preferences,
           cancellationToken
         );
@@ -179665,7 +179665,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
             return isJsxExpression2(parent2) && !isJsxElement2(parent2.parent) && !isJsxFragment(parent2.parent) ? checker.getContextualTypeForJsxAttribute(parent2.parent) : void 0;
           default:
             const argInfo = ts_SignatureHelp_exports.getArgumentInfoForCompletions(previousToken, position2, sourceFile, checker);
-            return argInfo ? checker.getContextualTypeForArgumentAtIndex(argInfo.invocation, argInfo.argumentIndex) : isEqualityOperatorKind(previousToken.kind) && isBinaryExpression11(parent2) && isEqualityOperatorKind(parent2.operatorToken.kind) ? (
+            return argInfo ? checker.getContextualTypeForArgumentAtIndex(argInfo.invocation, argInfo.argumentIndex) : isEqualityOperatorKind(previousToken.kind) && isBinaryExpression12(parent2) && isEqualityOperatorKind(parent2.operatorToken.kind) ? (
               // completion at `x ===/**/` should be for the right side
               checker.getTypeAtLocation(parent2.left)
             ) : checker.getContextualType(
@@ -179924,7 +179924,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         }
         log("getCompletionData: Semantic work: " + (timestamp3() - semanticStart));
         const contextualType = previousToken && getContextualType(previousToken, position2, sourceFile, typeChecker);
-        const isLiteralExpected = !tryCast(previousToken, isStringLiteralLike13) && !isJsxIdentifierExpected;
+        const isLiteralExpected = !tryCast(previousToken, isStringLiteralLike14) && !isJsxIdentifierExpected;
         const literals = !isLiteralExpected ? [] : mapDefined(
           contextualType && (contextualType.isUnion() ? contextualType.types : [contextualType]),
           (t) => t.isLiteral() && !(t.flags & 1024) ? t.value : void 0
@@ -179987,7 +179987,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           const isImportType = isLiteralImportTypeNode(node);
           const isTypeLocation = isImportType && !node.isTypeOf || isPartOfTypeNode(node.parent) || isPossiblyTypeArgumentPosition(contextToken, sourceFile, typeChecker);
           const isRhsOfImportDeclaration = isInRightSideOfInternalImportEqualsDeclaration(node);
-          if (isEntityName(node) || isImportType || isPropertyAccessExpression16(node)) {
+          if (isEntityName(node) || isImportType || isPropertyAccessExpression17(node)) {
             const isNamespaceName = isModuleDeclaration(node.parent);
             if (isNamespaceName) {
               isNewIdentifierLocation = true;
@@ -180190,7 +180190,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           }
         }
         function getLeftMostName(e) {
-          return isIdentifier17(e) ? e : isPropertyAccessExpression16(e) ? getLeftMostName(e.expression) : void 0;
+          return isIdentifier18(e) ? e : isPropertyAccessExpression17(e) ? getLeftMostName(e.expression) : void 0;
         }
         function tryGetGlobalSymbols() {
           const result3 = tryGetObjectTypeLiteralInTypeArgumentCompletionSymbols() || tryGetObjectLikeCompletionSymbols() || tryGetImportCompletionSymbols() || tryGetImportOrExportClauseCompletionSymbols() || tryGetImportAttributesCompletionSymbols() || tryGetLocalNamedExportCompletionSymbols() || tryGetConstructorCompletion() || tryGetClassLikeCompletionSymbols() || tryGetJsxCompletionSymbols() || (getGlobalCompletions(), 1);
@@ -180328,7 +180328,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           }
           flags |= 1;
           const isAfterTypeOnlyImportSpecifierModifier = previousToken === contextToken && importStatementCompletion;
-          const lowerCaseTokenText = isAfterTypeOnlyImportSpecifierModifier ? "" : previousToken && isIdentifier17(previousToken) ? previousToken.text.toLowerCase() : "";
+          const lowerCaseTokenText = isAfterTypeOnlyImportSpecifierModifier ? "" : previousToken && isIdentifier18(previousToken) ? previousToken.text.toLowerCase() : "";
           const moduleSpecifierCache = (_a2 = host.getModuleSpecifierCache) == null ? void 0 : _a2.call(host);
           const exportInfo = getExportInfoMap(sourceFile, host, program, preferences, cancellationToken);
           const packageJsonAutoImportProvider = (_b = host.getPackageJsonAutoImportProvider) == null ? void 0 : _b.call(host);
@@ -180395,7 +180395,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
             return isImportable(
               info.isFromPackageJson ? packageJsonAutoImportProvider : program,
               sourceFile,
-              tryCast(info.moduleSymbol.valueDeclaration, isSourceFile6),
+              tryCast(info.moduleSymbol.valueDeclaration, isSourceFile7),
               info.moduleSymbol,
               preferences,
               packageJsonFilter,
@@ -180744,7 +180744,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           if (!namedExports) {
             return 0;
           }
-          const localsContainer = findAncestor(namedExports, or(isSourceFile6, isModuleDeclaration));
+          const localsContainer = findAncestor(namedExports, or(isSourceFile7, isModuleDeclaration));
           completionKind = 5;
           isNewIdentifierLocation = false;
           (_a2 = localsContainer.locals) == null ? void 0 : _a2.forEach((symbol, name) => {
@@ -180938,7 +180938,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
               }
               const ancestorVariableDeclaration = findAncestor(
                 contextToken2.parent,
-                isVariableDeclaration16
+                isVariableDeclaration17
               );
               if (ancestorVariableDeclaration && isInDifferentLineThanContextToken(contextToken2, position2)) {
                 return false;
@@ -180964,7 +180964,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
             return false;
           }
           if (isConstructorParameterCompletion(contextToken2)) {
-            if (!isIdentifier17(contextToken2) || isParameterPropertyModifier(keywordForNode(contextToken2)) || isCurrentlyEditingNode(contextToken2)) {
+            if (!isIdentifier18(contextToken2) || isParameterPropertyModifier(keywordForNode(contextToken2)) || isCurrentlyEditingNode(contextToken2)) {
               return false;
             }
           }
@@ -181159,36 +181159,36 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
             case 19:
             // const x = { |
             case 28:
-              if (isObjectLiteralExpression11(parent2) || isObjectBindingPattern10(parent2)) {
+              if (isObjectLiteralExpression12(parent2) || isObjectBindingPattern10(parent2)) {
                 return parent2;
               }
               break;
             case 42:
-              return isMethodDeclaration8(parent2) ? tryCast(parent2.parent, isObjectLiteralExpression11) : void 0;
+              return isMethodDeclaration8(parent2) ? tryCast(parent2.parent, isObjectLiteralExpression12) : void 0;
             case 134:
-              return tryCast(parent2.parent, isObjectLiteralExpression11);
+              return tryCast(parent2.parent, isObjectLiteralExpression12);
             case 80:
               if (contextToken.text === "async" && isShorthandPropertyAssignment10(contextToken.parent)) {
                 return contextToken.parent.parent;
               } else {
-                if (isObjectLiteralExpression11(contextToken.parent.parent) && (isSpreadAssignment8(contextToken.parent) || isShorthandPropertyAssignment10(contextToken.parent) && getLineAndCharacterOfPosition(sourceFile, contextToken.getEnd()).line !== getLineAndCharacterOfPosition(sourceFile, position2).line)) {
+                if (isObjectLiteralExpression12(contextToken.parent.parent) && (isSpreadAssignment8(contextToken.parent) || isShorthandPropertyAssignment10(contextToken.parent) && getLineAndCharacterOfPosition(sourceFile, contextToken.getEnd()).line !== getLineAndCharacterOfPosition(sourceFile, position2).line)) {
                   return contextToken.parent.parent;
                 }
-                const ancestorNode2 = findAncestor(parent2, isPropertyAssignment12);
-                if ((ancestorNode2 == null ? void 0 : ancestorNode2.getLastToken(sourceFile)) === contextToken && isObjectLiteralExpression11(ancestorNode2.parent)) {
+                const ancestorNode2 = findAncestor(parent2, isPropertyAssignment13);
+                if ((ancestorNode2 == null ? void 0 : ancestorNode2.getLastToken(sourceFile)) === contextToken && isObjectLiteralExpression12(ancestorNode2.parent)) {
                   return ancestorNode2.parent;
                 }
               }
               break;
             default:
-              if (((_a2 = parent2.parent) == null ? void 0 : _a2.parent) && (isMethodDeclaration8(parent2.parent) || isGetAccessorDeclaration6(parent2.parent) || isSetAccessorDeclaration6(parent2.parent)) && isObjectLiteralExpression11(parent2.parent.parent)) {
+              if (((_a2 = parent2.parent) == null ? void 0 : _a2.parent) && (isMethodDeclaration8(parent2.parent) || isGetAccessorDeclaration6(parent2.parent) || isSetAccessorDeclaration6(parent2.parent)) && isObjectLiteralExpression12(parent2.parent.parent)) {
                 return parent2.parent.parent;
               }
-              if (isSpreadAssignment8(parent2) && isObjectLiteralExpression11(parent2.parent)) {
+              if (isSpreadAssignment8(parent2) && isObjectLiteralExpression12(parent2.parent)) {
                 return parent2.parent;
               }
-              const ancestorNode = findAncestor(parent2, isPropertyAssignment12);
-              if (contextToken.kind !== 59 && (ancestorNode == null ? void 0 : ancestorNode.getLastToken(sourceFile)) === contextToken && isObjectLiteralExpression11(ancestorNode.parent)) {
+              const ancestorNode = findAncestor(parent2, isPropertyAssignment13);
+              if (contextToken.kind !== 59 && (ancestorNode == null ? void 0 : ancestorNode.getLastToken(sourceFile)) === contextToken && isObjectLiteralExpression12(ancestorNode.parent)) {
                 return ancestorNode.parent;
               }
           }
@@ -181355,7 +181355,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         return kind === 134 || kind === 135 || kind === 160 || kind === 130 || kind === 152 || kind === 156 || !isContextualKeyword(kind) && !isClassMemberCompletionKeyword(kind);
       }
       function keywordForNode(node) {
-        return isIdentifier17(node) ? identifierToKeywordKind(node) ?? 0 : node.kind;
+        return isIdentifier18(node) ? identifierToKeywordKind(node) ?? 0 : node.kind;
       }
       function getContextualKeywords(contextToken, position2) {
         const entries = [];
@@ -181412,7 +181412,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           case 353:
             return tryCast(location2.parent, isObjectTypeDeclaration);
           case 1:
-            const cls = tryCast(lastOrUndefined(cast(location2.parent, isSourceFile6).statements), isObjectTypeDeclaration);
+            const cls = tryCast(lastOrUndefined(cast(location2.parent, isSourceFile7).statements), isObjectTypeDeclaration);
             if (cls && !findChildOfKind(cls, 20, sourceFile)) {
               return cls;
             }
@@ -181436,7 +181436,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           }
         }
         if (!contextToken) return void 0;
-        if (location2.kind === 137 || isIdentifier17(contextToken) && isPropertyDeclaration5(contextToken.parent) && isClassLike(location2)) {
+        if (location2.kind === 137 || isIdentifier18(contextToken) && isPropertyDeclaration5(contextToken.parent) && isClassLike(location2)) {
           return findAncestor(contextToken, isClassLike);
         }
         switch (contextToken.kind) {
@@ -181456,7 +181456,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
                 return location2;
               }
               const isValidKeyword = isClassLike(contextToken.parent.parent) ? isClassMemberCompletionKeyword : isInterfaceOrTypeLiteralCompletionKeyword;
-              return isValidKeyword(contextToken.kind) || contextToken.kind === 42 || isIdentifier17(contextToken) && isValidKeyword(
+              return isValidKeyword(contextToken.kind) || contextToken.kind === 42 || isIdentifier18(contextToken) && isValidKeyword(
                 identifierToKeywordKind(contextToken) ?? 0
                 /* Unknown */
               ) ? contextToken.parent.parent : void 0;
@@ -181514,9 +181514,9 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           case "#":
             return !!contextToken && isPrivateIdentifier2(contextToken) && !!getContainingClass(contextToken);
           case "<":
-            return !!contextToken && contextToken.kind === 30 && (!isBinaryExpression11(contextToken.parent) || binaryExpressionMayBeOpenTag(contextToken.parent));
+            return !!contextToken && contextToken.kind === 30 && (!isBinaryExpression12(contextToken.parent) || binaryExpressionMayBeOpenTag(contextToken.parent));
           case "/":
-            return !!contextToken && (isStringLiteralLike13(contextToken) ? !!tryGetImportFromModuleSpecifier(contextToken) : contextToken.kind === 44 && isJsxClosingElement(contextToken.parent));
+            return !!contextToken && (isStringLiteralLike14(contextToken) ? !!tryGetImportFromModuleSpecifier(contextToken) : contextToken.kind === 44 && isJsxClosingElement(contextToken.parent));
           case " ":
             return !!contextToken && isImportKeyword(contextToken) && contextToken.parent.kind === 308;
           default:
@@ -181571,7 +181571,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           return type;
         }
         const parent2 = walkUpParenthesizedExpressions(node.parent);
-        if (isBinaryExpression11(parent2) && parent2.operatorToken.kind === 64 && node === parent2.left) {
+        if (isBinaryExpression12(parent2) && parent2.operatorToken.kind === 64 && node === parent2.left) {
           return typeChecker.getTypeAtLocation(parent2);
         }
         if (isExpression3(parent2)) {
@@ -181596,7 +181596,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           const parent2 = contextToken.parent;
           if (isImportEqualsDeclaration3(parent2)) {
             const lastToken = parent2.getLastToken(sourceFile);
-            if (isIdentifier17(contextToken) && lastToken !== contextToken) {
+            if (isIdentifier18(contextToken) && lastToken !== contextToken) {
               keywordCompletion = 161;
               isKeywordOnlyCompletion = true;
               return void 0;
@@ -181626,7 +181626,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
             keywordCompletion = 161;
             return void 0;
           }
-          if (isImportKeyword(contextToken) && isSourceFile6(parent2)) {
+          if (isImportKeyword(contextToken) && isSourceFile7(parent2)) {
             keywordCompletion = 156;
             return contextToken;
           }
@@ -181685,13 +181685,13 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
       function isModuleSpecifierMissingOrEmpty(specifier) {
         var _a2;
         if (nodeIsMissing(specifier)) return true;
-        return !((_a2 = tryCast(isExternalModuleReference3(specifier) ? specifier.expression : specifier, isStringLiteralLike13)) == null ? void 0 : _a2.text);
+        return !((_a2 = tryCast(isExternalModuleReference3(specifier) ? specifier.expression : specifier, isStringLiteralLike14)) == null ? void 0 : _a2.text);
       }
       function getClosestSymbolDeclaration(contextToken, location2) {
         if (!contextToken) return;
         let closestDeclaration = findAncestor(contextToken, (node) => isFunctionBlock(node) || isArrowFunctionBody(node) || isBindingPattern2(node) ? "quit" : (isParameter6(node) || isTypeParameterDeclaration(node)) && !isIndexSignatureDeclaration(node.parent));
         if (!closestDeclaration) {
-          closestDeclaration = findAncestor(location2, (node) => isFunctionBlock(node) || isArrowFunctionBody(node) || isBindingPattern2(node) ? "quit" : isVariableDeclaration16(node));
+          closestDeclaration = findAncestor(location2, (node) => isFunctionBlock(node) || isArrowFunctionBody(node) || isBindingPattern2(node) ? "quit" : isVariableDeclaration17(node));
         }
         return closestDeclaration;
       }
@@ -181798,7 +181798,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           return entries && convertPathCompletions(entries);
         }
         if (isInString(sourceFile, position2, contextToken)) {
-          if (!contextToken || !isStringLiteralLike13(contextToken)) return void 0;
+          if (!contextToken || !isStringLiteralLike14(contextToken)) return void 0;
           const entries = getStringLiteralCompletionEntries(sourceFile, contextToken, position2, program, host, preferences);
           return convertStringLiteralCompletions(entries, contextToken, sourceFile, host, program, log, options, preferences, position2, includeSymbol);
         }
@@ -181885,7 +181885,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         }
       }
       function getStringLiteralCompletionDetails(name, sourceFile, position2, contextToken, program, host, cancellationToken, preferences) {
-        if (!contextToken || !isStringLiteralLike13(contextToken)) return void 0;
+        if (!contextToken || !isStringLiteralLike14(contextToken)) return void 0;
         const completions = getStringLiteralCompletionEntries(sourceFile, contextToken, position2, program, host, preferences);
         return completions && stringLiteralCompletionDetails(name, contextToken, completions, sourceFile, program.getTypeChecker(), cancellationToken);
       }
@@ -181963,7 +181963,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
             return fromUnionableLiteralType(grandParent);
           }
           case 304:
-            if (isObjectLiteralExpression11(parent2.parent) && parent2.name === node) {
+            if (isObjectLiteralExpression12(parent2.parent) && parent2.name === node) {
               return stringLiteralCompletionsForObjectLiteral(typeChecker, parent2.parent);
             }
             return fromContextualType() || fromContextualType(
@@ -182160,7 +182160,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
       }
       function getStringLiteralCompletionsFromModuleNamesWorker(sourceFile, node, program, host, preferences) {
         const literalValue2 = normalizeSlashes(node.text);
-        const mode = isStringLiteralLike13(node) ? program.getModeForUsageLocation(sourceFile, node) : void 0;
+        const mode = isStringLiteralLike14(node) ? program.getModeForUsageLocation(sourceFile, node) : void 0;
         const scriptPath = sourceFile.path;
         const scriptDirectory = getDirectoryPath(scriptPath);
         const compilerOptions = program.getCompilerOptions();
@@ -182825,7 +182825,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         return fragment.includes(directorySeparator);
       }
       function isRequireCallArgument(node) {
-        return isCallExpression18(node.parent) && firstOrUndefined(node.parent.arguments) === node && isIdentifier17(node.parent.expression) && node.parent.expression.escapedText === "require";
+        return isCallExpression18(node.parent) && firstOrUndefined(node.parent.arguments) === node && isIdentifier18(node.parent.expression) && node.parent.expression.escapedText === "require";
       }
       var ts_FindAllReferences_exports = {};
       __export2(ts_FindAllReferences_exports, {
@@ -183229,7 +183229,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           const grandparent = parent2.parent;
           if (symbol.exportSymbol) {
             if (parent2.kind === 212) {
-              return ((_a2 = symbol.declarations) == null ? void 0 : _a2.some((d) => d === parent2)) && isBinaryExpression11(grandparent) ? getSpecialPropertyExport(
+              return ((_a2 = symbol.declarations) == null ? void 0 : _a2.some((d) => d === parent2)) && isBinaryExpression12(grandparent) ? getSpecialPropertyExport(
                 grandparent,
                 /*useLhsSymbol*/
                 false
@@ -183263,13 +183263,13 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
               return getExportAssignmentExport(parent2);
             } else if (isExportAssignment4(grandparent)) {
               return getExportAssignmentExport(grandparent);
-            } else if (isBinaryExpression11(parent2)) {
+            } else if (isBinaryExpression12(parent2)) {
               return getSpecialPropertyExport(
                 parent2,
                 /*useLhsSymbol*/
                 true
               );
-            } else if (isBinaryExpression11(grandparent)) {
+            } else if (isBinaryExpression12(grandparent)) {
               return getSpecialPropertyExport(
                 grandparent,
                 /*useLhsSymbol*/
@@ -183339,17 +183339,17 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         const decl = Debug.checkDefined(importedSymbol.valueDeclaration);
         if (isExportAssignment4(decl)) {
           return (_a2 = tryCast(decl.expression, canHaveSymbol)) == null ? void 0 : _a2.symbol;
-        } else if (isBinaryExpression11(decl)) {
+        } else if (isBinaryExpression12(decl)) {
           return (_b = tryCast(decl.right, canHaveSymbol)) == null ? void 0 : _b.symbol;
-        } else if (isSourceFile6(decl)) {
+        } else if (isSourceFile7(decl)) {
           return decl.symbol;
         }
         return void 0;
       }
       function getExportNode(parent2, node) {
-        const declaration = isVariableDeclaration16(parent2) ? parent2 : isBindingElement8(parent2) ? walkUpBindingElementsAndPatterns(parent2) : void 0;
+        const declaration = isVariableDeclaration17(parent2) ? parent2 : isBindingElement8(parent2) ? walkUpBindingElementsAndPatterns(parent2) : void 0;
         if (declaration) {
-          return parent2.name !== node ? void 0 : isCatchClause2(declaration.parent) ? void 0 : isVariableStatement9(declaration.parent.parent) ? declaration.parent.parent : void 0;
+          return parent2.name !== node ? void 0 : isCatchClause2(declaration.parent) ? void 0 : isVariableStatement10(declaration.parent.parent) ? declaration.parent.parent : void 0;
         } else {
           return parent2;
         }
@@ -183382,9 +183382,9 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           for (const declaration of symbol.declarations) {
             if (isExportSpecifier(declaration) && !declaration.propertyName && !declaration.parent.parent.moduleSpecifier) {
               return checker.getExportSpecifierLocalTargetSymbol(declaration) || symbol;
-            } else if (isPropertyAccessExpression16(declaration) && isModuleExportsAccessExpression(declaration.expression) && !isPrivateIdentifier2(declaration.name)) {
+            } else if (isPropertyAccessExpression17(declaration) && isModuleExportsAccessExpression(declaration.expression) && !isPrivateIdentifier2(declaration.name)) {
               return checker.getSymbolAtLocation(declaration);
-            } else if (isShorthandPropertyAssignment10(declaration) && isBinaryExpression11(declaration.parent.parent) && getAssignmentDeclarationKind(declaration.parent.parent) === 2) {
+            } else if (isShorthandPropertyAssignment10(declaration) && isBinaryExpression12(declaration.parent.parent) && getAssignmentDeclarationKind(declaration.parent.parent) === 2) {
               return checker.getExportSpecifierLocalTargetSymbol(declaration.name);
             }
           }
@@ -183448,7 +183448,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         if (!node.parent) return void 0;
         if (!isDeclaration(node.parent) && !isExportAssignment4(node.parent)) {
           if (isInJSFile(node)) {
-            const binaryExpression = isBinaryExpression11(node.parent) ? node.parent : isAccessExpression(node.parent) && isBinaryExpression11(node.parent.parent) && node.parent.parent.left === node.parent ? node.parent.parent : void 0;
+            const binaryExpression = isBinaryExpression12(node.parent) ? node.parent : isAccessExpression(node.parent) && isBinaryExpression12(node.parent.parent) && node.parent.parent.left === node.parent ? node.parent.parent : void 0;
             if (binaryExpression && getAssignmentDeclarationKind(binaryExpression) !== 0) {
               return getContextNode(binaryExpression);
             }
@@ -183457,7 +183457,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
             return node.parent.parent;
           } else if (isJsxSelfClosingElement2(node.parent) || isLabeledStatement3(node.parent) || isBreakOrContinueStatement(node.parent)) {
             return node.parent;
-          } else if (isStringLiteralLike13(node)) {
+          } else if (isStringLiteralLike14(node)) {
             const validImport = tryGetImportFromModuleSpecifier(node);
             if (validImport) {
               const declOrStatement = findAncestor(validImport, (node2) => isDeclaration(node2) || isStatement3(node2) || isJSDocTag(node2));
@@ -183483,7 +183483,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         if (!node) return void 0;
         switch (node.kind) {
           case 261:
-            return !isVariableDeclarationList9(node.parent) || node.parent.declarations.length !== 1 ? node : isVariableStatement9(node.parent.parent) ? node.parent.parent : isForInOrOfStatement(node.parent.parent) ? getContextNode(node.parent.parent) : node.parent;
+            return !isVariableDeclarationList10(node.parent) || node.parent.declarations.length !== 1 ? node : isVariableStatement10(node.parent.parent) ? node.parent.parent : isForInOrOfStatement(node.parent.parent) ? getContextNode(node.parent.parent) : node.parent;
           case 209:
             return getContextNode(node.parent.parent);
           case 277:
@@ -183505,7 +183505,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           case 304:
           case 305:
             return isArrayLiteralOrObjectLiteralDestructuringPattern(node.parent) ? getContextNode(
-              findAncestor(node.parent, (node2) => isBinaryExpression11(node2) || isForInOrOfStatement(node2))
+              findAncestor(node.parent, (node2) => isBinaryExpression12(node2) || isForInOrOfStatement(node2))
             ) : node;
           case 256:
             return {
@@ -183743,7 +183743,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         }
       }
       function getPrefixAndSuffixText(entry, originalNode, checker, quotePreference) {
-        if (entry.kind !== 0 && (isIdentifier17(originalNode) || isStringLiteralLike13(originalNode))) {
+        if (entry.kind !== 0 && (isIdentifier18(originalNode) || isStringLiteralLike14(originalNode))) {
           const { node, kind } = entry;
           const parent2 = node.parent;
           const name = originalNode.text;
@@ -183759,7 +183759,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
             }
             if (isShorthandAssignment) {
               const grandParent = parent2.parent;
-              if (isObjectLiteralExpression11(grandParent) && isBinaryExpression11(grandParent.parent) && isModuleExportsAccessExpression(grandParent.parent.left)) {
+              if (isObjectLiteralExpression12(grandParent) && isBinaryExpression12(grandParent.parent) && isModuleExportsAccessExpression(grandParent.parent.left)) {
                 return prefixColon;
               }
               return suffixColon;
@@ -183773,7 +183773,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
             return originalNode === entry.node || checker.getSymbolAtLocation(originalNode) === checker.getSymbolAtLocation(entry.node) ? { prefixText: name + " as " } : { suffixText: " as " + name };
           }
         }
-        if (entry.kind !== 0 && isNumericLiteral8(entry.node) && isAccessExpression(entry.node.parent)) {
+        if (entry.kind !== 0 && isNumericLiteral9(entry.node) && isAccessExpression(entry.node.parent)) {
           const quote2 = getQuoteFromPreference(quotePreference);
           return { prefixText: quote2, suffixText: quote2 };
         }
@@ -183845,7 +183845,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
       function getTextSpan(node, sourceFile, endNode2) {
         let start = node.getStart(sourceFile);
         let end = (endNode2 || node).getEnd();
-        if (isStringLiteralLike13(node) && end - start > 2) {
+        if (isStringLiteralLike14(node) && end - start > 2) {
           Debug.assert(endNode2 === void 0);
           start += 1;
           end -= 1;
@@ -183866,7 +183866,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         var _a2;
         if (!target) return false;
         const source = getDeclarationFromName(node) || (node.kind === 90 ? node.parent : isLiteralComputedPropertyDeclarationName(node) ? node.parent.parent : node.kind === 137 && isConstructorDeclaration4(node.parent) ? node.parent.parent : void 0);
-        const commonjsSource = source && isBinaryExpression11(source) ? source.left : void 0;
+        const commonjsSource = source && isBinaryExpression12(source) ? source.left : void 0;
         return !!(source && ((_a2 = target.declarations) == null ? void 0 : _a2.some((d) => d === source || d === commonjsSource)));
       }
       function declarationIsWriteAccess(decl) {
@@ -183923,7 +183923,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         function getReferencedSymbolsForNode(position2, node, program, sourceFiles, cancellationToken, options = {}, sourceFilesSet = new Set(sourceFiles.map((f) => f.fileName))) {
           var _a2, _b;
           node = getAdjustedNode2(node, options);
-          if (isSourceFile6(node)) {
+          if (isSourceFile7(node)) {
             const resolvedRef = ts_GoToDefinition_exports.getReferenceAtPosition(node, position2, program);
             if (!(resolvedRef == null ? void 0 : resolvedRef.file)) {
               return void 0;
@@ -183957,7 +183957,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           const checker = program.getTypeChecker();
           const symbol = checker.getSymbolAtLocation(isConstructorDeclaration4(node) && node.parent.name || node);
           if (!symbol) {
-            if (!options.implementations && isStringLiteralLike13(node)) {
+            if (!options.implementations && isStringLiteralLike14(node)) {
               if (isModuleSpecifierLike(node)) {
                 const fileIncludeReasons = program.getFileIncludeReasons();
                 const referencedFileName = (_b = (_a2 = program.getResolvedModuleFromModuleSpecifier(node)) == null ? void 0 : _a2.resolvedModule) == null ? void 0 : _b.resolvedFileName;
@@ -184046,7 +184046,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           return void 0;
         }
         function getReferencedSymbolsForModuleIfDeclaredBySourceFile(symbol, program, sourceFiles, cancellationToken, options, sourceFilesSet) {
-          const moduleSourceFile = symbol.flags & 1536 && symbol.declarations && find(symbol.declarations, isSourceFile6);
+          const moduleSourceFile = symbol.flags & 1536 && symbol.declarations && find(symbol.declarations, isSourceFile7);
           if (!moduleSourceFile) return void 0;
           const exportEquals = symbol.exports.get(
             "export="
@@ -184157,7 +184157,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
             for (const decl of exported.declarations) {
               const sourceFile = decl.getSourceFile();
               if (sourceFilesSet.has(sourceFile.fileName)) {
-                const node = isBinaryExpression11(decl) && isPropertyAccessExpression16(decl.left) ? decl.left.expression : isExportAssignment4(decl) ? Debug.checkDefined(findChildOfKind(decl, 95, sourceFile)) : getNameOfDeclaration(decl) || decl;
+                const node = isBinaryExpression12(decl) && isPropertyAccessExpression17(decl.left) ? decl.left.expression : isExportAssignment4(decl) ? Debug.checkDefined(findChildOfKind(decl, 95, sourceFile)) : getNameOfDeclaration(decl) || decl;
                 references2.push(nodeEntry(node));
               }
             }
@@ -184259,7 +184259,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
               search,
               state,
               /*addReferencesHere*/
-              !(isSourceFile6(scope) && !contains(state.sourceFiles, scope))
+              !(isSourceFile7(scope) && !contains(state.sourceFiles, scope))
             );
           } else {
             for (const sourceFile of state.sourceFiles) {
@@ -184304,7 +184304,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         })(SpecialSearchKind || (SpecialSearchKind = {}));
         function getNonModuleSymbolOfMergedModuleSymbol(symbol) {
           if (!(symbol.flags & (1536 | 33554432))) return void 0;
-          const decl = symbol.declarations && find(symbol.declarations, (d) => !isSourceFile6(d) && !isModuleDeclaration(d));
+          const decl = symbol.declarations && find(symbol.declarations, (d) => !isSourceFile7(d) && !isModuleDeclaration(d));
           return decl && decl.symbol;
         }
         class State2 {
@@ -184429,7 +184429,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
             cb(importLocation);
           }
           for (const singleReference of singleReferences) {
-            if (isIdentifier17(singleReference) && isImportTypeNode(singleReference.parent)) {
+            if (isIdentifier18(singleReference) && isImportTypeNode(singleReference.parent)) {
               cb(singleReference);
             }
           }
@@ -184437,7 +184437,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
             for (const node of getPossibleSymbolReferenceNodes(indirectUser, isDefaultExport ? "default" : exportName)) {
               const symbol = checker.getSymbolAtLocation(node);
               const hasExportAssignmentDeclaration = some(symbol == null ? void 0 : symbol.declarations, (d) => tryCast(d, isExportAssignment4) ? true : false);
-              if (isIdentifier17(node) && !isImportOrExportSpecifier(node.parent) && (symbol === exportSymbol || hasExportAssignmentDeclaration)) {
+              if (isIdentifier18(node) && !isImportOrExportSpecifier(node.parent) && (symbol === exportSymbol || hasExportAssignmentDeclaration)) {
                 cb(node);
               }
             }
@@ -184447,7 +184447,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         function shouldAddSingleReference(singleRef, state) {
           if (!hasMatchingMeaning(singleRef, state)) return false;
           if (state.options.use !== 2) return true;
-          if (!isIdentifier17(singleRef) && !isImportOrExportSpecifier(singleRef.parent)) return false;
+          if (!isIdentifier18(singleRef) && !isImportOrExportSpecifier(singleRef.parent)) return false;
           return !(isImportOrExportSpecifier(singleRef.parent) && moduleExportNameIsDefault(singleRef));
         }
         function searchForImportedSymbol(symbol, state) {
@@ -184527,7 +184527,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           const symbol = isParameterPropertyDeclaration(definition.parent, definition.parent.parent) ? first(checker.getSymbolsOfParameterPropertyDeclaration(definition.parent, definition.text)) : checker.getSymbolAtLocation(definition);
           if (!symbol) return void 0;
           for (const token of getPossibleSymbolReferenceNodes(sourceFile, symbol.name, searchContainer)) {
-            if (!isIdentifier17(token) || token === definition || token.escapedText !== definition.escapedText) continue;
+            if (!isIdentifier18(token) || token === definition || token.escapedText !== definition.escapedText) continue;
             const referenceSymbol = checker.getSymbolAtLocation(token);
             if (referenceSymbol === symbol || checker.getShorthandAssignmentValueSymbol(token.parent) === symbol || isExportSpecifier(token.parent) && getLocalSymbolForExportSpecifier(token, referenceSymbol, token.parent, checker) === symbol) {
               const res = cb(token);
@@ -184560,11 +184560,11 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         }
         Core2.getTopMostDeclarationNamesInFile = getTopMostDeclarationNamesInFile;
         function someSignatureUsage(signature, sourceFiles, checker, cb) {
-          if (!signature.name || !isIdentifier17(signature.name)) return false;
+          if (!signature.name || !isIdentifier18(signature.name)) return false;
           const symbol = Debug.checkDefined(checker.getSymbolAtLocation(signature.name));
           for (const sourceFile of sourceFiles) {
             for (const name of getPossibleSymbolReferenceNodes(sourceFile, symbol.name)) {
-              if (!isIdentifier17(name) || name === signature.name || name.escapedText !== signature.name.escapedText) continue;
+              if (!isIdentifier18(name) || name === signature.name || name.escapedText !== signature.name.escapedText) continue;
               const called = climbPastPropertyAccess(name);
               const call = isCallExpression18(called.parent) && called.parent.expression === called ? called.parent : void 0;
               const referenceSymbol = checker.getSymbolAtLocation(name);
@@ -184974,7 +184974,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           }
         }
         function getContainingNodeIfInHeritageClause(node) {
-          return isIdentifier17(node) || isPropertyAccessExpression16(node) ? getContainingNodeIfInHeritageClause(node.parent) : isExpressionWithTypeArguments(node) ? tryCast(node.parent.parent, or(isClassLike, isInterfaceDeclaration)) : void 0;
+          return isIdentifier18(node) || isPropertyAccessExpression17(node) ? getContainingNodeIfInHeritageClause(node.parent) : isExpressionWithTypeArguments(node) ? tryCast(node.parent.parent, or(isClassLike, isInterfaceDeclaration)) : void 0;
         }
         function isImplementationExpression(node) {
           switch (node.kind) {
@@ -185077,7 +185077,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
               searchSpaceNode = searchSpaceNode.parent;
               break;
             case 308:
-              if (isExternalModule(searchSpaceNode) || isParameterName(thisOrSuperKeyword)) {
+              if (isExternalModule2(searchSpaceNode) || isParameterName(thisOrSuperKeyword)) {
                 return void 0;
               }
             // falls through
@@ -185091,7 +185091,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           }
           const references2 = flatMap(searchSpaceNode.kind === 308 ? sourceFiles : [searchSpaceNode.getSourceFile()], (sourceFile) => {
             cancellationToken.throwIfCancellationRequested();
-            return getPossibleSymbolReferenceNodes(sourceFile, "this", isSourceFile6(searchSpaceNode) ? sourceFile : searchSpaceNode).filter((node) => {
+            return getPossibleSymbolReferenceNodes(sourceFile, "this", isSourceFile7(searchSpaceNode) ? sourceFile : searchSpaceNode).filter((node) => {
               if (!isThis(node)) {
                 return false;
               }
@@ -185115,7 +185115,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
                 case 211:
                   return container.parent && canHaveSymbol(container.parent) && searchSpaceNode.symbol === container.parent.symbol && isStatic(container) === !!staticFlag;
                 case 308:
-                  return container.kind === 308 && !isExternalModule(container) && !isParameterName(node);
+                  return container.kind === 308 && !isExternalModule2(container) && !isParameterName(node);
               }
             });
           }).map((n) => nodeEntry(n));
@@ -185130,7 +185130,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           const references2 = flatMap(sourceFiles, (sourceFile) => {
             cancellationToken.throwIfCancellationRequested();
             return mapDefined(getPossibleSymbolReferenceNodes(sourceFile, node.text), (ref) => {
-              if (isStringLiteralLike13(ref) && ref.text === node.text) {
+              if (isStringLiteralLike14(ref) && ref.text === node.text) {
                 if (type) {
                   const refType = getContextualTypeFromParentOrAncestorTypeNode(ref, checker);
                   if (type !== checker.getStringType() && (type === refType || isStringLiteralPropertyReference(ref, checker))) {
@@ -185432,7 +185432,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         }
         const { parent: parent2 } = node;
         const typeChecker = program.getTypeChecker();
-        if (node.kind === 164 || isIdentifier17(node) && isJSDocOverrideTag(parent2) && parent2.tagName === node) {
+        if (node.kind === 164 || isIdentifier18(node) && isJSDocOverrideTag(parent2) && parent2.tagName === node) {
           const def = getDefinitionFromOverriddenMember(typeChecker, node);
           if (def !== void 0 || node.kind !== 164) {
             return def || emptyArray;
@@ -185753,7 +185753,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
       }
       function tryGetReturnTypeOfFunction(symbol, type, checker) {
         if (type.symbol === symbol || // At `const f = () => {}`, the symbol is `f` and the type symbol is at `() => {}`
-        symbol.valueDeclaration && type.symbol && isVariableDeclaration16(symbol.valueDeclaration) && symbol.valueDeclaration.initializer === type.symbol.valueDeclaration) {
+        symbol.valueDeclaration && type.symbol && isVariableDeclaration17(symbol.valueDeclaration) && symbol.valueDeclaration.initializer === type.symbol.valueDeclaration) {
           const sigs = type.getCallSignatures();
           if (sigs.length === 1) return checker.getReturnTypeOfSignature(first(sigs));
         }
@@ -186029,7 +186029,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           if (isTypeNode4(node) && !isExpressionWithTypeArguments(node)) {
             return;
           }
-          if (preferences.includeInlayVariableTypeHints && isVariableDeclaration16(node)) {
+          if (preferences.includeInlayVariableTypeHints && isVariableDeclaration17(node)) {
             visitVariableLikeDeclaration(node);
           } else if (preferences.includeInlayPropertyDeclarationTypeHints && isPropertyDeclaration5(node)) {
             visitVariableLikeDeclaration(node);
@@ -186097,7 +186097,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           return type.symbol && type.symbol.flags & 1536;
         }
         function visitVariableLikeDeclaration(decl) {
-          if (decl.initializer === void 0 && !(isPropertyDeclaration5(decl) && !(checker.getTypeAtLocation(decl).flags & 1)) || isBindingPattern2(decl.name) || isVariableDeclaration16(decl) && !isHintableDeclaration(decl)) {
+          if (decl.initializer === void 0 && !(isPropertyDeclaration5(decl) && !(checker.getTypeAtLocation(decl).flags & 1)) || isBindingPattern2(decl.name) || isVariableDeclaration17(decl) && !isHintableDeclaration(decl)) {
             return;
           }
           const effectiveTypeAnnotation = getEffectiveTypeAnnotationNode(decl);
@@ -186164,10 +186164,10 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           }
         }
         function identifierOrAccessExpressionPostfixMatchesParameterName(expr, parameterName2) {
-          if (isIdentifier17(expr)) {
+          if (isIdentifier18(expr)) {
             return expr.text === parameterName2;
           }
-          if (isPropertyAccessExpression16(expr)) {
+          if (isPropertyAccessExpression17(expr)) {
             return expr.name.text === parameterName2;
           }
           return false;
@@ -186187,7 +186187,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           switch (node.kind) {
             case 225: {
               const operand = node.operand;
-              return isLiteralExpression2(operand) || isIdentifier17(operand) && isInfinityOrNaNString(operand.escapedText);
+              return isLiteralExpression2(operand) || isIdentifier18(operand) && isInfinityOrNaNString(operand.escapedText);
             }
             case 112:
             case 97:
@@ -186362,7 +186362,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
             }
             switch (node2.kind) {
               case 80:
-                Debug.assertNode(node2, isIdentifier17);
+                Debug.assertNode(node2, isIdentifier18);
                 const identifierText = idText(node2);
                 const name = node2.symbol && node2.symbol.declarations && node2.symbol.declarations.length && getNameOfDeclaration(node2.symbol.declarations[0]);
                 if (name) {
@@ -186769,9 +186769,9 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           return name === "undefined";
         }
         function isHintableDeclaration(node) {
-          if ((isPartOfParameterDeclaration(node) || isVariableDeclaration16(node) && isVarConst(node)) && node.initializer) {
+          if ((isPartOfParameterDeclaration(node) || isVariableDeclaration17(node) && isVarConst(node)) && node.initializer) {
             const initializer = skipParentheses(node.initializer);
-            return !(isHintableLiteral(initializer) || isNewExpression13(initializer) || isObjectLiteralExpression11(initializer) || isAssertionExpression(initializer));
+            return !(isHintableLiteral(initializer) || isNewExpression13(initializer) || isObjectLiteralExpression12(initializer) || isAssertionExpression(initializer));
           }
           return true;
         }
@@ -187077,7 +187077,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         };
       }
       function getJSDocParameterNameCompletions(tag) {
-        if (!isIdentifier17(tag.name)) {
+        if (!isIdentifier18(tag.name)) {
           return emptyArray;
         }
         const nameThusFar = tag.name.text;
@@ -187085,9 +187085,9 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         const fn = jsdoc.parent;
         if (!isFunctionLike3(fn)) return [];
         return mapDefined(fn.parameters, (param) => {
-          if (!isIdentifier17(param.name)) return void 0;
+          if (!isIdentifier18(param.name)) return void 0;
           const name = param.name.text;
-          if (jsdoc.tags.some((t) => t !== tag && isJSDocParameterTag(t) && isIdentifier17(t.name) && t.name.escapedText === name) || nameThusFar !== void 0 && !startsWith(name, nameThusFar)) {
+          if (jsdoc.tags.some((t) => t !== tag && isJSDocParameterTag(t) && isIdentifier18(t.name) && t.name.escapedText === name) || nameThusFar !== void 0 && !startsWith(name, nameThusFar)) {
             return void 0;
           }
           return { name, kind: "parameter", kindModifiers: "", sortText: ts_Completions_exports.SortText.LocationPriority };
@@ -187350,7 +187350,7 @@ ${content}
         for (const location2 of focusLocations) {
           const scope = findAncestor(
             getTokenAtPosition(originalFile, location2.start),
-            (block) => or(isBlock7, isSourceFile6)(block) && some(block.statements, (origStmt) => changes.some((newStmt) => matchNode(newStmt, origStmt)))
+            (block) => or(isBlock7, isSourceFile7)(block) && some(block.statements, (origStmt) => changes.some((newStmt) => matchNode(newStmt, origStmt)))
           );
           if (scope) {
             const start = scope.statements.find((stmt) => changes.some((node) => matchNode(node, stmt)));
@@ -187660,7 +187660,7 @@ ${content}
         }
       }
       function getExternalModuleName2(specifier) {
-        return specifier !== void 0 && isStringLiteralLike13(specifier) ? specifier.text : void 0;
+        return specifier !== void 0 && isStringLiteralLike14(specifier) ? specifier.text : void 0;
       }
       function getCategorizedImports(importGroup) {
         let importWithoutClause;
@@ -187699,7 +187699,7 @@ ${content}
             let attrs = decl.attributes.token + " ";
             for (const x of toSorted(decl.attributes.elements, (x2, y) => compareStringsCaseSensitive(x2.name.text, y.name.text))) {
               attrs += x.name.text + ":";
-              attrs += isStringLiteralLike13(x.value) ? `"${x.value.text}"` : x.value.getText() + " ";
+              attrs += isStringLiteralLike14(x.value) ? `"${x.value.text}"` : x.value.getText() + " ";
             }
             return attrs;
           }
@@ -188127,10 +188127,10 @@ ${content}
           var _a2;
           if (depthRemaining === 0) return;
           cancellationToken.throwIfCancellationRequested();
-          if (isDeclaration(n2) || isVariableStatement9(n2) || isReturnStatement8(n2) || isCallOrNewExpression(n2) || n2.kind === 1) {
+          if (isDeclaration(n2) || isVariableStatement10(n2) || isReturnStatement8(n2) || isCallOrNewExpression(n2) || n2.kind === 1) {
             addOutliningForLeadingCommentsForNode(n2, sourceFile, cancellationToken, out);
           }
-          if (isFunctionLike3(n2) && isBinaryExpression11(n2.parent) && isPropertyAccessExpression16(n2.parent.left)) {
+          if (isFunctionLike3(n2) && isBinaryExpression12(n2.parent) && isPropertyAccessExpression17(n2.parent.left)) {
             addOutliningForLeadingCommentsForNode(n2.parent.left, sourceFile, cancellationToken, out);
           }
           if (isBlock7(n2) || isModuleBlock(n2)) {
@@ -188522,7 +188522,7 @@ ${content}
       function getRenameInfoForNode(node, typeChecker, sourceFile, program, preferences) {
         const symbol = typeChecker.getSymbolAtLocation(node);
         if (!symbol) {
-          if (isStringLiteralLike13(node)) {
+          if (isStringLiteralLike14(node)) {
             const type = getContextualTypeFromParentOrAncestorTypeNode(node, typeChecker);
             if (type && (type.flags & 128 || type.flags & 1048576 && every(type.types, (type2) => !!(type2.flags & 128)))) {
               return getRenameInfoSuccess(node.text, node.text, "string", "", node, sourceFile);
@@ -188538,10 +188538,10 @@ ${content}
         if (declarations.some((declaration) => isDefinedInLibraryFile(program, declaration))) {
           return getRenameInfoError(Diagnostics.You_cannot_rename_elements_that_are_defined_in_the_standard_TypeScript_library);
         }
-        if (isIdentifier17(node) && node.escapedText === "default" && symbol.parent && symbol.parent.flags & 1536) {
+        if (isIdentifier18(node) && node.escapedText === "default" && symbol.parent && symbol.parent.flags & 1536) {
           return void 0;
         }
-        if (isStringLiteralLike13(node) && tryGetImportFromModuleSpecifier(node)) {
+        if (isStringLiteralLike14(node) && tryGetImportFromModuleSpecifier(node)) {
           return preferences.allowRenameOfImportPath ? getRenameInfoForModule(node, sourceFile, symbol) : void 0;
         }
         const wouldRenameNodeModules = wouldRenameInOtherNodeModules(sourceFile, symbol, typeChecker, preferences);
@@ -188606,7 +188606,7 @@ ${content}
         if (!isExternalModuleNameRelative(node.text)) {
           return getRenameInfoError(Diagnostics.You_cannot_rename_a_module_via_a_global_import);
         }
-        const moduleSourceFile = moduleSymbol.declarations && find(moduleSymbol.declarations, isSourceFile6);
+        const moduleSourceFile = moduleSymbol.declarations && find(moduleSymbol.declarations, isSourceFile7);
         if (!moduleSourceFile) return void 0;
         const withoutIndex = endsWith(node.text, "/index") || endsWith(node.text, "/index.js") ? void 0 : tryRemoveSuffix(removeFileExtension(moduleSourceFile.fileName), "/index");
         const fileName = withoutIndex === void 0 ? moduleSourceFile.fileName : withoutIndex;
@@ -188640,7 +188640,7 @@ ${content}
       function createTriggerSpanForNode(node, sourceFile) {
         let start = node.getStart(sourceFile);
         let width = node.getWidth(sourceFile);
-        if (isStringLiteralLike13(node)) {
+        if (isStringLiteralLike14(node)) {
           start += 1;
           width -= 2;
         }
@@ -188698,7 +188698,7 @@ ${content}
           }
           case 1: {
             const { called } = invocation;
-            if (onlyUseSyntacticOwners && !containsPrecedingToken(startingToken, sourceFile, isIdentifier17(called) ? called.parent : called)) {
+            if (onlyUseSyntacticOwners && !containsPrecedingToken(startingToken, sourceFile, isIdentifier18(called) ? called.parent : called)) {
               return void 0;
             }
             const candidates = getPossibleGenericSignatures(called, argumentCount, checker);
@@ -188731,7 +188731,7 @@ ${content}
       function createJSSignatureHelpItems(argumentInfo, program, cancellationToken) {
         if (argumentInfo.invocation.kind === 2) return void 0;
         const expression = getExpressionFromInvocation(argumentInfo.invocation);
-        const name = isPropertyAccessExpression16(expression) ? expression.name.text : void 0;
+        const name = isPropertyAccessExpression17(expression) ? expression.name.text : void 0;
         const typeChecker = program.getTypeChecker();
         return name === void 0 ? void 0 : firstDefined(program.getSourceFiles(), (sourceFile) => firstDefined(sourceFile.getNamedDeclarations().get(name), (declaration) => {
           const type = declaration.symbol && typeChecker.getTypeOfSymbolAtLocation(declaration.symbol, declaration);
@@ -188857,10 +188857,10 @@ ${content}
         return tryGetParameterInfo(node, position2, sourceFile, checker) || getImmediatelyContainingArgumentInfo(node, position2, sourceFile, checker);
       }
       function getHighestBinary(b) {
-        return isBinaryExpression11(b.parent) ? getHighestBinary(b.parent) : b;
+        return isBinaryExpression12(b.parent) ? getHighestBinary(b.parent) : b;
       }
       function countBinaryExpressionParameters(b) {
-        return isBinaryExpression11(b.left) ? countBinaryExpressionParameters(b.left) + 1 : 2;
+        return isBinaryExpression12(b.left) ? countBinaryExpressionParameters(b.left) + 1 : 2;
       }
       function tryGetParameterInfo(startingToken, position2, sourceFile, checker) {
         const node = getAdjustedNode(startingToken);
@@ -189020,7 +189020,7 @@ ${content}
         return createTextSpan(applicableSpanStart, applicableSpanEnd - applicableSpanStart);
       }
       function getContainingArgumentInfo(node, position2, sourceFile, checker, isManuallyInvoked) {
-        for (let n = node; !isSourceFile6(n) && (isManuallyInvoked || !isBlock7(n)); n = n.parent) {
+        for (let n = node; !isSourceFile7(n) && (isManuallyInvoked || !isBlock7(n)); n = n.parent) {
           Debug.assert(rangeContainsRange(n.parent, n), "Not a subspan", () => `Child: ${Debug.formatSyntaxKind(n.kind)}, parent: ${Debug.formatSyntaxKind(n.parent.kind)}`);
           const argumentInfo = getImmediatelyContainingArgumentOrContextualParameterInfo(n, position2, sourceFile, checker);
           if (argumentInfo) {
@@ -189240,7 +189240,7 @@ ${content}
                 if (isFunctionBody(node) && isFunctionLikeDeclaration(parentNode) && !positionsAreOnSameLine(node.getStart(sourceFile), node.getEnd(), sourceFile)) {
                   pushSelectionRange(node.getStart(sourceFile), node.getEnd());
                 }
-                if (isBlock7(node) || isTemplateSpan(node) || isTemplateHead(node) || isTemplateTail(node) || prevNode && isTemplateHead(prevNode) || isVariableDeclarationList9(node) && isVariableStatement9(parentNode) || isSyntaxList(node) && isVariableDeclarationList9(parentNode) || isVariableDeclaration16(node) && isSyntaxList(parentNode) && children.length === 1 || isJSDocTypeExpression(node) || isJSDocSignature(node) || isJSDocTypeLiteral(node)) {
+                if (isBlock7(node) || isTemplateSpan(node) || isTemplateHead(node) || isTemplateTail(node) || prevNode && isTemplateHead(prevNode) || isVariableDeclarationList10(node) && isVariableStatement10(parentNode) || isSyntaxList(node) && isVariableDeclarationList10(parentNode) || isVariableDeclaration17(node) && isSyntaxList(parentNode) && children.length === 1 || isJSDocTypeExpression(node) || isJSDocSignature(node) || isJSDocTypeLiteral(node)) {
                   parentNode = node;
                   break;
                 }
@@ -189307,7 +189307,7 @@ ${content}
       var isImport2 = or(isImportDeclaration9, isImportEqualsDeclaration3);
       function getSelectionChildren(node) {
         var _a2;
-        if (isSourceFile6(node)) {
+        if (isSourceFile7(node)) {
           return groupChildren(node.getChildAt(0).getChildren(), isImport2);
         }
         if (isMappedTypeNode(node)) {
@@ -190085,7 +190085,7 @@ ${content}
                 }
                 if (isTransientSymbol(symbol) && symbol.links.target && isTransientSymbol(symbol.links.target) && symbol.links.target.links.tupleLabelDeclaration) {
                   const labelDecl = symbol.links.target.links.tupleLabelDeclaration;
-                  Debug.assertNode(labelDecl.name, isIdentifier17);
+                  Debug.assertNode(labelDecl.name, isIdentifier18);
                   displayParts.push(spacePart());
                   displayParts.push(punctuationPart(
                     21
@@ -190134,11 +190134,11 @@ ${content}
             }
           }
         }
-        if (documentation.length === 0 && isIdentifier17(location2) && symbol.valueDeclaration && isBindingElement8(symbol.valueDeclaration)) {
+        if (documentation.length === 0 && isIdentifier18(location2) && symbol.valueDeclaration && isBindingElement8(symbol.valueDeclaration)) {
           const declaration = symbol.valueDeclaration;
           const parent2 = declaration.parent;
           const name = declaration.propertyName || declaration.name;
-          if (isIdentifier17(name) && isObjectBindingPattern10(parent2)) {
+          if (isIdentifier18(name) && isObjectBindingPattern10(parent2)) {
             const propertyName2 = getTextOfIdentifierOrLiteral(name);
             const objectType = typeChecker.getTypeAtLocation(parent2);
             documentation = firstDefined(objectType.isUnion() ? objectType.types : [objectType], (t) => {
@@ -190836,7 +190836,7 @@ ${content}
         getOptionsForInsertNodeBefore(before, inserted, blankLineBetween) {
           if (isStatement3(before) || isClassElement(before)) {
             return { suffix: blankLineBetween ? this.newLineCharacter + this.newLineCharacter : this.newLineCharacter };
-          } else if (isVariableDeclaration16(before)) {
+          } else if (isVariableDeclaration17(before)) {
             return { suffix: ", " };
           } else if (isParameter6(before)) {
             return isParameter6(inserted) ? { suffix: ", " } : {};
@@ -190928,8 +190928,8 @@ ${content}
           if (isFirstInsertion) {
             this.classesWithNodesInsertedAtStart.set(getNodeId(node), { node, sourceFile });
           }
-          const insertTrailingComma = isObjectLiteralExpression11(node) && (!isJsonSourceFile(sourceFile) || !isEmpty);
-          const insertLeadingComma = isObjectLiteralExpression11(node) && isJsonSourceFile(sourceFile) && isEmpty && !isFirstInsertion;
+          const insertTrailingComma = isObjectLiteralExpression12(node) && (!isJsonSourceFile(sourceFile) || !isEmpty);
+          const insertLeadingComma = isObjectLiteralExpression12(node) && isJsonSourceFile(sourceFile) && isEmpty && !isFirstInsertion;
           return {
             indentation,
             prefix: (insertLeadingComma ? "," : "") + this.newLineCharacter,
@@ -191181,7 +191181,7 @@ ${options.prefix}` : "\n" : options.prefix
           case 342: {
             const oldParam = oldTag;
             const newParam = newTag;
-            return isIdentifier17(oldParam.name) && isIdentifier17(newParam.name) && oldParam.name.escapedText === newParam.name.escapedText ? factory.createJSDocParameterTag(
+            return isIdentifier18(oldParam.name) && isIdentifier18(newParam.name) && oldParam.name.escapedText === newParam.name.escapedText ? factory.createJSDocParameterTag(
               /*tagName*/
               void 0,
               newParam.name,
@@ -191254,7 +191254,7 @@ ${options.prefix}` : "\n" : options.prefix
         return [open11 == null ? void 0 : open11.end, close == null ? void 0 : close.end];
       }
       function getMembersOrProperties(node) {
-        return isObjectLiteralExpression11(node) ? node.properties : node.members;
+        return isObjectLiteralExpression12(node) ? node.properties : node.members;
       }
       var changesToText;
       ((changesToText2) => {
@@ -194026,7 +194026,7 @@ ${options.prefix}` : "\n" : options.prefix
         return positionIsASICandidate(context.currentTokenSpan.end, context.currentTokenParent, context.sourceFile);
       }
       function isNotPropertyAccessOnIntegerLiteral(context) {
-        return !isPropertyAccessExpression16(context.contextNode) || !isNumericLiteral8(context.contextNode.expression) || context.contextNode.expression.getText().includes(".");
+        return !isPropertyAccessExpression17(context.contextNode) || !isNumericLiteral9(context.contextNode.expression) || context.contextNode.expression.getText().includes(".");
       }
       function getFormatContext(options, host) {
         return { options, getRules: getRulesMap(), host };
@@ -195737,7 +195737,7 @@ ${options.prefix}` : "\n" : options.prefix
           forEachChild5(enclosingNode, function checkNameResolution(node) {
             var _a2;
             if (shouldProvidePasteEdits) return;
-            if (isIdentifier17(node) && rangeContainsPosition(range2, node.getStart(sourceFile))) {
+            if (isIdentifier18(node) && rangeContainsPosition(range2, node.getStart(sourceFile))) {
               const resolvedSymbol = checker.resolveName(
                 node.text,
                 node,
@@ -195825,7 +195825,7 @@ ${options.prefix}` : "\n" : options.prefix
               );
               if (!enclosingNode) return;
               forEachChild5(enclosingNode, function importUnresolvedIdentifiers(node) {
-                const isImportCandidate = isIdentifier17(node) && rangeContainsPosition(range2, node.getStart(updatedFile)) && !(updatedProgram == null ? void 0 : updatedProgram.getTypeChecker().resolveName(
+                const isImportCandidate = isIdentifier18(node) && rangeContainsPosition(range2, node.getStart(updatedFile)) && !(updatedProgram == null ? void 0 : updatedProgram.getTypeChecker().resolveName(
                   node.text,
                   node,
                   -1,
@@ -195863,8 +195863,8 @@ ${options.prefix}` : "\n" : options.prefix
         const startToken = getTokenAtPosition(sourceFile, pos);
         const endToken = findTokenOnLeftOfPosition(sourceFile, pos) ?? getTokenAtPosition(sourceFile, end);
         return {
-          pos: isIdentifier17(startToken) && pos <= startToken.getStart(sourceFile) ? startToken.getFullStart() : pos,
-          end: isIdentifier17(endToken) && end === endToken.getEnd() ? ts_textChanges_exports.getAdjustedEndPosition(sourceFile, endToken, {}) : end
+          pos: isIdentifier18(startToken) && pos <= startToken.getStart(sourceFile) ? startToken.getFullStart() : pos,
+          end: isIdentifier18(endToken) && end === endToken.getEnd() ? ts_textChanges_exports.getAdjustedEndPosition(sourceFile, endToken, {}) : end
         };
       }
       var ts_exports2 = {};
@@ -195959,7 +195959,7 @@ ${options.prefix}` : "\n" : options.prefix
         NodeBuilderFlags: () => NodeBuilderFlags,
         NodeCheckFlags: () => NodeCheckFlags,
         NodeFactoryFlags: () => NodeFactoryFlags,
-        NodeFlags: () => NodeFlags15,
+        NodeFlags: () => NodeFlags16,
         NodeResolutionFeatures: () => NodeResolutionFeatures,
         ObjectFlags: () => ObjectFlags,
         OperationCanceledException: () => OperationCanceledException,
@@ -196007,7 +196007,7 @@ ${options.prefix}` : "\n" : options.prefix
         SymbolDisplayPartKind: () => SymbolDisplayPartKind,
         SymbolFlags: () => SymbolFlags,
         SymbolFormatFlags: () => SymbolFormatFlags,
-        SyntaxKind: () => SyntaxKind15,
+        SyntaxKind: () => SyntaxKind16,
         Ternary: () => Ternary,
         ThrottledCancellationToken: () => ThrottledCancellationToken,
         TokenClass: () => TokenClass,
@@ -197027,7 +197027,7 @@ ${options.prefix}` : "\n" : options.prefix
         isAwaitExpression: () => isAwaitExpression5,
         isAwaitKeyword: () => isAwaitKeyword,
         isBigIntLiteral: () => isBigIntLiteral2,
-        isBinaryExpression: () => isBinaryExpression11,
+        isBinaryExpression: () => isBinaryExpression12,
         isBinaryLogicalOperator: () => isBinaryLogicalOperator,
         isBinaryOperatorToken: () => isBinaryOperatorToken,
         isBindableObjectDefinePropertyCall: () => isBindableObjectDefinePropertyCall,
@@ -197166,7 +197166,7 @@ ${options.prefix}` : "\n" : options.prefix
         isExpressionStatement: () => isExpressionStatement9,
         isExpressionWithTypeArguments: () => isExpressionWithTypeArguments,
         isExpressionWithTypeArgumentsInClassExtendsClause: () => isExpressionWithTypeArgumentsInClassExtendsClause,
-        isExternalModule: () => isExternalModule,
+        isExternalModule: () => isExternalModule2,
         isExternalModuleAugmentation: () => isExternalModuleAugmentation,
         isExternalModuleImportEqualsDeclaration: () => isExternalModuleImportEqualsDeclaration,
         isExternalModuleIndicator: () => isExternalModuleIndicator,
@@ -197209,7 +197209,7 @@ ${options.prefix}` : "\n" : options.prefix
         isHeritageClause: () => isHeritageClause,
         isHoistedFunction: () => isHoistedFunction,
         isHoistedVariableStatement: () => isHoistedVariableStatement,
-        isIdentifier: () => isIdentifier17,
+        isIdentifier: () => isIdentifier18,
         isIdentifierANonContextualKeyword: () => isIdentifierANonContextualKeyword,
         isIdentifierName: () => isIdentifierName,
         isIdentifierOrThisTypeNode: () => isIdentifierOrThisTypeNode,
@@ -197435,7 +197435,7 @@ ${options.prefix}` : "\n" : options.prefix
         isNotEmittedStatement: () => isNotEmittedStatement,
         isNullishCoalesce: () => isNullishCoalesce,
         isNumber: () => isNumber2,
-        isNumericLiteral: () => isNumericLiteral8,
+        isNumericLiteral: () => isNumericLiteral9,
         isNumericLiteralName: () => isNumericLiteralName,
         isObjectBindingElementWithoutPropertyName: () => isObjectBindingElementWithoutPropertyName,
         isObjectBindingOrAssignmentElement: () => isObjectBindingOrAssignmentElement,
@@ -197443,7 +197443,7 @@ ${options.prefix}` : "\n" : options.prefix
         isObjectBindingPattern: () => isObjectBindingPattern10,
         isObjectLiteralElement: () => isObjectLiteralElement,
         isObjectLiteralElementLike: () => isObjectLiteralElementLike,
-        isObjectLiteralExpression: () => isObjectLiteralExpression11,
+        isObjectLiteralExpression: () => isObjectLiteralExpression12,
         isObjectLiteralMethod: () => isObjectLiteralMethod,
         isObjectLiteralOrClassExpressionMethodOrAccessor: () => isObjectLiteralOrClassExpressionMethodOrAccessor,
         isObjectTypeDeclaration: () => isObjectTypeDeclaration,
@@ -197485,10 +197485,10 @@ ${options.prefix}` : "\n" : options.prefix
         isPrologueDirective: () => isPrologueDirective,
         isPropertyAccessChain: () => isPropertyAccessChain,
         isPropertyAccessEntityNameExpression: () => isPropertyAccessEntityNameExpression,
-        isPropertyAccessExpression: () => isPropertyAccessExpression16,
+        isPropertyAccessExpression: () => isPropertyAccessExpression17,
         isPropertyAccessOrQualifiedName: () => isPropertyAccessOrQualifiedName,
         isPropertyAccessOrQualifiedNameOrImportTypeNode: () => isPropertyAccessOrQualifiedNameOrImportTypeNode,
-        isPropertyAssignment: () => isPropertyAssignment12,
+        isPropertyAssignment: () => isPropertyAssignment13,
         isPropertyDeclaration: () => isPropertyDeclaration5,
         isPropertyName: () => isPropertyName,
         isPropertyNameLiteral: () => isPropertyNameLiteral,
@@ -197537,7 +197537,7 @@ ${options.prefix}` : "\n" : options.prefix
         isSingleOrDoubleQuote: () => isSingleOrDoubleQuote,
         isSolutionConfig: () => isSolutionConfig,
         isSourceElement: () => isSourceElement,
-        isSourceFile: () => isSourceFile6,
+        isSourceFile: () => isSourceFile7,
         isSourceFileFromLibrary: () => isSourceFileFromLibrary,
         isSourceFileJS: () => isSourceFileJS,
         isSourceFileNotJson: () => isSourceFileNotJson,
@@ -197556,7 +197556,7 @@ ${options.prefix}` : "\n" : options.prefix
         isStringAndEmptyAnonymousObjectIntersection: () => isStringAndEmptyAnonymousObjectIntersection,
         isStringDoubleQuoted: () => isStringDoubleQuoted,
         isStringLiteral: () => isStringLiteral7,
-        isStringLiteralLike: () => isStringLiteralLike13,
+        isStringLiteralLike: () => isStringLiteralLike14,
         isStringLiteralOrJsxExpression: () => isStringLiteralOrJsxExpression,
         isStringLiteralOrTemplate: () => isStringLiteralOrTemplate,
         isStringOrNumericLiteralLike: () => isStringOrNumericLiteralLike,
@@ -197638,13 +197638,13 @@ ${options.prefix}` : "\n" : options.prefix
         isVarConst: () => isVarConst,
         isVarConstLike: () => isVarConstLike,
         isVarUsing: () => isVarUsing,
-        isVariableDeclaration: () => isVariableDeclaration16,
+        isVariableDeclaration: () => isVariableDeclaration17,
         isVariableDeclarationInVariableStatement: () => isVariableDeclarationInVariableStatement,
         isVariableDeclarationInitializedToBareOrAccessedRequire: () => isVariableDeclarationInitializedToBareOrAccessedRequire,
         isVariableDeclarationInitializedToRequire: () => isVariableDeclarationInitializedToRequire,
-        isVariableDeclarationList: () => isVariableDeclarationList9,
+        isVariableDeclarationList: () => isVariableDeclarationList10,
         isVariableLike: () => isVariableLike,
-        isVariableStatement: () => isVariableStatement9,
+        isVariableStatement: () => isVariableStatement10,
         isVoidExpression: () => isVoidExpression,
         isWatchSet: () => isWatchSet,
         isWhileStatement: () => isWhileStatement2,
@@ -208350,7 +208350,7 @@ Project '${project.projectName}' (${ProjectKind[project.projectKind]}) ${counter
             const ls = project.getLanguageService();
             const program = ls.getProgram();
             const initialNode = getTouchingPropertyName(program.getSourceFile(file), position2);
-            if ((isStringLiteralLike13(initialNode) || isIdentifier17(initialNode)) && isAccessExpression(initialNode.parent)) {
+            if ((isStringLiteralLike14(initialNode) || isIdentifier18(initialNode)) && isAccessExpression(initialNode.parent)) {
               return forEachNameInAccessChainWalkingLeft(initialNode, (nameInChain) => {
                 var _a22;
                 if (nameInChain === initialNode) return void 0;
@@ -211072,9 +211072,9 @@ Additional information: BADCLIENT: Bad error code, ${badCode} not found in range
         };
       }
     })({ get exports() {
-      return ts19;
+      return ts20;
     }, set exports(v) {
-      ts19 = v;
+      ts20 = v;
       if (typeof module !== "undefined" && module.exports) {
         module.exports = v;
       }
@@ -212355,7 +212355,7 @@ function variableOf(node) {
     current = current.parent;
   return current && ts3.isVariableDeclaration(current) ? current : void 0;
 }
-var ts3, FLOW_LIMITS, StaticModules;
+var ts3, FLOW_LIMITS, BROWSER_LOCATION_EVALUATION_NAMES, StaticModules;
 var init_modules = __esm({
   "build/src/source/modules.js"() {
     "use strict";
@@ -212372,6 +212372,17 @@ var init_modules = __esm({
       traceSteps: 24,
       aliasSteps: 64
     });
+    BROWSER_LOCATION_EVALUATION_NAMES = /* @__PURE__ */ new Set([
+      "eval",
+      "Function",
+      "execScript",
+      "setTimeout",
+      "setInterval",
+      "runInContext",
+      "runInThisContext",
+      "runInNewContext",
+      "compileFunction"
+    ]);
     StaticModules = class {
       tick;
       limits;
@@ -212395,6 +212406,8 @@ var init_modules = __esm({
       references = /* @__PURE__ */ new Map();
       nativeBoundaryNodes = [];
       constructorBoundaryNodes = [];
+      /** Evaluation can alter a lexical receiver without explicit object references. */
+      browserLocationBoundaryNodes = [];
       newExpressions = [];
       /** Writes retained by the existing charged walk for narrow instance-field evidence. */
       instanceFieldWrites = [];
@@ -212445,6 +212458,9 @@ var init_modules = __esm({
       }
       get indexComplete() {
         return this.proofsReady;
+      }
+      isLocalExportBinding(symbol) {
+        return this.localExportBindings.has(symbol);
       }
       ownerOf(node) {
         return this.owners.get(node) ?? node.getSourceFile();
@@ -212536,6 +212552,8 @@ var init_modules = __esm({
           }
           this.indexedAstNodes += 1;
           this.owners.set(node, owner);
+          if ((ts3.isIdentifier(node) || ts3.isStringLiteralLike(node)) && BROWSER_LOCATION_EVALUATION_NAMES.has(node.text) || ts3.isComputedPropertyName(node) && ts3.isBindingElement(node.parent))
+            this.browserLocationBoundaryNodes.push(node);
           if (ts3.isClassDeclaration(node) && ts3.isSourceFile(node.parent))
             this.classes.add(node);
           if (ts3.isImportDeclaration(node)) {
@@ -212634,8 +212652,10 @@ var init_modules = __esm({
             if (node.text === "require")
               this.loaderReferences.push(node);
           }
-          if (ts3.isWithStatement(node))
+          if (ts3.isWithStatement(node)) {
             this.opaqueClassScopeFiles.add(node.getSourceFile());
+            this.browserLocationBoundaryNodes.push(node);
+          }
           if (node.kind === ts3.SyntaxKind.ThisKeyword || node.kind === ts3.SyntaxKind.SuperKeyword) {
             let parent = node.parent;
             let classRecorded = false;
@@ -218070,6 +218090,106 @@ var init_archive_role = __esm({
   }
 });
 
+// build/src/source/browser-location-role.js
+function directBrowserLocationReceiver(node) {
+  const target = node.left;
+  if (!ts14.isPropertyAccessExpression(target) || !ts14.isIdentifier(target.expression) || target.expression.text !== "window")
+    return void 0;
+  return target.name.text === "location" ? target.expression : void 0;
+}
+function mergeBrowserLocationRoles(left, right) {
+  if (!left && !right)
+    return void 0;
+  if (!left || !right || left === "unknown_receiver" || right === "unknown_receiver")
+    return "unknown_receiver";
+  return left === "global_browser_shape" || right === "global_browser_shape" ? "global_browser_shape" : "closed_local_object";
+}
+var ts14, BrowserLocationRoleModel;
+var init_browser_location_role = __esm({
+  "build/src/source/browser-location-role.js"() {
+    "use strict";
+    ts14 = __toESM(require_typescript(), 1);
+    BrowserLocationRoleModel = class {
+      modules;
+      tick;
+      scopeComplete;
+      maxDepth;
+      closed = /* @__PURE__ */ new Map();
+      constructor(modules, tick, scopeComplete, maxDepth) {
+        this.modules = modules;
+        this.tick = tick;
+        this.scopeComplete = scopeComplete;
+        this.maxDepth = maxDepth;
+      }
+      role(node) {
+        const root = directBrowserLocationReceiver(node);
+        if (!root)
+          return void 0;
+        if (!this.scopeComplete || !this.modules.indexComplete || !this.tick())
+          return "unknown_receiver";
+        const symbol = this.modules.symbol(root);
+        if (!symbol?.declarations?.length)
+          return "global_browser_shape";
+        if (!this.closed.has(symbol))
+          this.closed.set(symbol, this.closedBinding(symbol));
+        return this.closed.get(symbol) ? "closed_local_object" : "unknown_receiver";
+      }
+      closedBinding(symbol) {
+        if (symbol.declarations?.length !== 1 || this.modules.mutated.has(symbol) || this.modules.isLocalExportBinding(symbol))
+          return false;
+        const declaration = symbol.declarations[0];
+        if (!ts14.isVariableDeclaration(declaration) || !ts14.isIdentifier(declaration.name) || !ts14.isVariableDeclarationList(declaration.parent) || !(declaration.parent.flags & ts14.NodeFlags.Const) || !declaration.initializer || !ts14.isObjectLiteralExpression(declaration.initializer))
+          return false;
+        const statement = declaration.parent.parent;
+        if (ts14.isVariableStatement(statement) && statement.modifiers?.some((modifier) => modifier.kind === ts14.SyntaxKind.ExportKeyword))
+          return false;
+        if (ts14.isSourceFile(this.modules.ownerOf(declaration)) && !ts14.isExternalModule(declaration.getSourceFile()))
+          return false;
+        if (this.modules.browserLocationBoundaryNodes.length || this.modules.constructorBoundaryNodes.length || this.modules.archiveIntrinsicBoundaryNodes.length)
+          return false;
+        if (!this.dataLiteral(declaration.initializer, 0))
+          return false;
+        const references2 = this.modules.references.get(symbol);
+        if (!references2?.length)
+          return false;
+        for (const reference2 of references2) {
+          if (!this.tick())
+            return false;
+          if (reference2 === declaration.name)
+            continue;
+          const target = reference2.parent;
+          if (!ts14.isPropertyAccessExpression(target) || target.expression !== reference2)
+            return false;
+          const assignment = target.parent;
+          if (!ts14.isBinaryExpression(assignment) || assignment.left !== target || assignment.operatorToken.kind !== ts14.SyntaxKind.EqualsToken || directBrowserLocationReceiver(assignment) !== reference2)
+            return false;
+        }
+        return true;
+      }
+      dataLiteral(node, depth) {
+        if (!this.tick() || depth > this.maxDepth)
+          return false;
+        if (ts14.isStringLiteralLike(node) || ts14.isNumericLiteral(node) || [ts14.SyntaxKind.TrueKeyword, ts14.SyntaxKind.FalseKeyword, ts14.SyntaxKind.NullKeyword].includes(node.kind))
+          return true;
+        if (!ts14.isObjectLiteralExpression(node))
+          return false;
+        const names = /* @__PURE__ */ new Set();
+        for (const property of node.properties) {
+          if (!this.tick() || !ts14.isPropertyAssignment(property) || !(ts14.isIdentifier(property.name) || ts14.isStringLiteralLike(property.name)))
+            return false;
+          const name = property.name.text;
+          if (names.has(name) || ["__proto__", "prototype", "constructor"].includes(name))
+            return false;
+          names.add(name);
+          if (!this.dataLiteral(property.initializer, depth + 1))
+            return false;
+        }
+        return depth > 0 || names.has("location");
+      }
+    };
+  }
+});
+
 // build/src/source/dataflow.js
 function joinResponse(left, right) {
   return left && right && left.identity === right.identity ? { identity: left.identity, mime: left.mime === right.mime ? left.mime : "unknown", valid: left.valid && right.valid, contained: left.contained || right.contained } : void 0;
@@ -218183,10 +218303,10 @@ function evidence(value, node) {
   } : void 0;
 }
 function evaluationShapedCallee(callee, constructor = false) {
-  if (ts14.isIdentifier(callee))
+  if (ts15.isIdentifier(callee))
     return callee.text === "Function" || !constructor && callee.text === "eval";
-  if ((ts14.isPropertyAccessExpression(callee) || !constructor && ts14.isElementAccessExpression(callee)) && ts14.isIdentifier(callee.expression) && callee.expression.text === "window") {
-    const name = ts14.isPropertyAccessExpression(callee) ? callee.name.text : ts14.isStringLiteral(callee.argumentExpression) || ts14.isNoSubstitutionTemplateLiteral(callee.argumentExpression) ? callee.argumentExpression.text : void 0;
+  if ((ts15.isPropertyAccessExpression(callee) || !constructor && ts15.isElementAccessExpression(callee)) && ts15.isIdentifier(callee.expression) && callee.expression.text === "window") {
+    const name = ts15.isPropertyAccessExpression(callee) ? callee.name.text : ts15.isStringLiteral(callee.argumentExpression) || ts15.isNoSubstitutionTemplateLiteral(callee.argumentExpression) ? callee.argumentExpression.text : void 0;
     return name === "Function" || !constructor && name === "eval";
   }
   return false;
@@ -218206,7 +218326,7 @@ function isAssignmentOperator(kind) {
   return ASSIGNMENT_OPERATORS.has(kind);
 }
 function isSimpleAssignment(kind) {
-  return kind === ts14.SyntaxKind.EqualsToken;
+  return kind === ts15.SyntaxKind.EqualsToken;
 }
 function sourceRootForName(name) {
   switch (name) {
@@ -218264,25 +218384,25 @@ function rootProperty(root, property) {
 function propertyName(node) {
   if (!node)
     return void 0;
-  if (ts14.isIdentifier(node) || ts14.isPrivateIdentifier(node))
+  if (ts15.isIdentifier(node) || ts15.isPrivateIdentifier(node))
     return node.text;
-  if (ts14.isStringLiteral(node) || ts14.isNoSubstitutionTemplateLiteral(node) || ts14.isNumericLiteral(node))
+  if (ts15.isStringLiteral(node) || ts15.isNoSubstitutionTemplateLiteral(node) || ts15.isNumericLiteral(node))
     return node.text;
   return void 0;
 }
 function staticMemberPath(expression) {
-  if (ts14.isIdentifier(expression))
+  if (ts15.isIdentifier(expression))
     return [expression.text];
-  if (ts14.isPropertyAccessExpression(expression))
+  if (ts15.isPropertyAccessExpression(expression))
     return [...staticMemberPath(expression.expression), expression.name.text];
-  if (ts14.isElementAccessExpression(expression)) {
+  if (ts15.isElementAccessExpression(expression)) {
     const property = propertyName(expression.argumentExpression);
     return property === void 0 ? [] : [...staticMemberPath(expression.expression), property];
   }
   return [];
 }
 function isFunctionLike2(node) {
-  return ts14.isFunctionDeclaration(node) || ts14.isMethodDeclaration(node) || ts14.isFunctionExpression(node) || ts14.isArrowFunction(node) || ts14.isGetAccessorDeclaration(node) || ts14.isSetAccessorDeclaration(node) || ts14.isConstructorDeclaration(node);
+  return ts15.isFunctionDeclaration(node) || ts15.isMethodDeclaration(node) || ts15.isFunctionExpression(node) || ts15.isArrowFunction(node) || ts15.isGetAccessorDeclaration(node) || ts15.isSetAccessorDeclaration(node) || ts15.isConstructorDeclaration(node);
 }
 function joinValues(left, right) {
   const sharedQueryContent = left.queryContent === right.queryContent ? left.queryContent : void 0;
@@ -218425,13 +218545,13 @@ function functionBody(functionLike) {
   return body;
 }
 function isBindingPattern(node) {
-  return ts14.isObjectBindingPattern(node) || ts14.isArrayBindingPattern(node);
+  return ts15.isObjectBindingPattern(node) || ts15.isArrayBindingPattern(node);
 }
 function isAssignmentPattern(node) {
-  return ts14.isObjectLiteralExpression(node) || ts14.isArrayLiteralExpression(node);
+  return ts15.isObjectLiteralExpression(node) || ts15.isArrayLiteralExpression(node);
 }
 function isSupportedBindingTarget(node) {
-  return ts14.isIdentifier(node) || ts14.isObjectBindingPattern(node) || ts14.isArrayBindingPattern(node) || ts14.isObjectLiteralExpression(node) || ts14.isArrayLiteralExpression(node);
+  return ts15.isIdentifier(node) || ts15.isObjectBindingPattern(node) || ts15.isArrayBindingPattern(node) || ts15.isObjectLiteralExpression(node) || ts15.isArrayLiteralExpression(node);
 }
 function observedGapLocation(node, files) {
   try {
@@ -218566,11 +218686,11 @@ function findSnapshotInputFlows(files, limits = FLOW_LIMITS, parseErrorCount = 0
     archiveUnsupportedUses: session.archiveModel.unsupportedUses
   } };
 }
-var ts14, SAFE, UNKNOWN, TAINTED, UNKNOWN_INPUT, SQL_FIXED_TEXT_CHARACTERS, ASSIGNMENT_OPERATORS, FlowEnv, FlowSession, DataflowAnalyzer;
+var ts15, SAFE, UNKNOWN, TAINTED, UNKNOWN_INPUT, SQL_FIXED_TEXT_CHARACTERS, ASSIGNMENT_OPERATORS, FlowEnv, FlowSession, DataflowAnalyzer;
 var init_dataflow = __esm({
   "build/src/source/dataflow.js"() {
     "use strict";
-    ts14 = __toESM(require_typescript(), 1);
+    ts15 = __toESM(require_typescript(), 1);
     init_static_context();
     init_analysis_gaps();
     init_modules();
@@ -218586,28 +218706,29 @@ var init_dataflow = __esm({
     init_mongo_role();
     init_filesystem_role();
     init_archive_role();
+    init_browser_location_role();
     SAFE = { kind: "safe" };
     UNKNOWN = { kind: "unknown" };
     TAINTED = { kind: "tainted" };
     UNKNOWN_INPUT = { kind: "unknown", inputRelated: true };
     SQL_FIXED_TEXT_CHARACTERS = 2048;
     ASSIGNMENT_OPERATORS = /* @__PURE__ */ new Set([
-      ts14.SyntaxKind.EqualsToken,
-      ts14.SyntaxKind.PlusEqualsToken,
-      ts14.SyntaxKind.MinusEqualsToken,
-      ts14.SyntaxKind.AsteriskEqualsToken,
-      ts14.SyntaxKind.AsteriskAsteriskEqualsToken,
-      ts14.SyntaxKind.SlashEqualsToken,
-      ts14.SyntaxKind.PercentEqualsToken,
-      ts14.SyntaxKind.LessThanLessThanEqualsToken,
-      ts14.SyntaxKind.GreaterThanGreaterThanEqualsToken,
-      ts14.SyntaxKind.GreaterThanGreaterThanGreaterThanEqualsToken,
-      ts14.SyntaxKind.AmpersandEqualsToken,
-      ts14.SyntaxKind.BarEqualsToken,
-      ts14.SyntaxKind.CaretEqualsToken,
-      ts14.SyntaxKind.BarBarEqualsToken,
-      ts14.SyntaxKind.AmpersandAmpersandEqualsToken,
-      ts14.SyntaxKind.QuestionQuestionEqualsToken
+      ts15.SyntaxKind.EqualsToken,
+      ts15.SyntaxKind.PlusEqualsToken,
+      ts15.SyntaxKind.MinusEqualsToken,
+      ts15.SyntaxKind.AsteriskEqualsToken,
+      ts15.SyntaxKind.AsteriskAsteriskEqualsToken,
+      ts15.SyntaxKind.SlashEqualsToken,
+      ts15.SyntaxKind.PercentEqualsToken,
+      ts15.SyntaxKind.LessThanLessThanEqualsToken,
+      ts15.SyntaxKind.GreaterThanGreaterThanEqualsToken,
+      ts15.SyntaxKind.GreaterThanGreaterThanGreaterThanEqualsToken,
+      ts15.SyntaxKind.AmpersandEqualsToken,
+      ts15.SyntaxKind.BarEqualsToken,
+      ts15.SyntaxKind.CaretEqualsToken,
+      ts15.SyntaxKind.BarBarEqualsToken,
+      ts15.SyntaxKind.AmpersandAmpersandEqualsToken,
+      ts15.SyntaxKind.QuestionQuestionEqualsToken
     ]);
     FlowEnv = class _FlowEnv {
       scopes;
@@ -218769,6 +218890,7 @@ var init_dataflow = __esm({
       archiveModel;
       expressModel;
       koaModel;
+      browserLocationModel;
       active = /* @__PURE__ */ new Set();
       cache = /* @__PURE__ */ new Map();
       localForkCalls = /* @__PURE__ */ new WeakMap();
@@ -218835,6 +218957,7 @@ var init_dataflow = __esm({
         this.archiveModel = new ArchiveRoleModel(this.modules, metadata, () => this.tick(), (reason, node) => this.gap(reason, node), roleProofScopeComplete, limits.aliasSteps);
         this.expressModel = new ExpressRoleModel(this.modules, () => this.tick(), this.indexComplete);
         this.koaModel = new KoaRoleModel(this.modules, () => this.tick(), this.indexComplete);
+        this.browserLocationModel = new BrowserLocationRoleModel(this.modules, () => this.tick(), roleProofScopeComplete, limits.aliasSteps);
         this.modules.finishIndex(this.indexComplete);
         this.phase = "flow";
       }
@@ -218886,7 +219009,7 @@ var init_dataflow = __esm({
           if (!this.tick())
             return void 0;
           const captured = env.captured(symbol);
-          if (symbol.declarations?.some((declaration) => ts14.isVariableDeclaration(declaration) && declaration.initializer && declaration.getSourceFile() === target.getSourceFile() && declaration.initializer.pos <= target.pos && declaration.initializer.end >= target.end))
+          if (symbol.declarations?.some((declaration) => ts15.isVariableDeclaration(declaration) && declaration.initializer && declaration.getSourceFile() === target.getSourceFile() && declaration.initializer.pos <= target.pos && declaration.initializer.end >= target.end))
             return void 0;
           if (!captured && sourceRootForName(symbol.name))
             this.incomplete("module_export_unsupported");
@@ -218901,7 +219024,7 @@ var init_dataflow = __esm({
         const visit = (node) => {
           if (!this.tick())
             return;
-          if (ts14.isIdentifier(node)) {
+          if (ts15.isIdentifier(node)) {
             const symbol = this.modules.symbol(node);
             if (symbol && !symbol.declarations?.some((declaration) => declaration.getSourceFile() === target.getSourceFile() && declaration.pos >= target.pos && declaration.end <= target.end)) {
               const value2 = env.captured(symbol);
@@ -218919,7 +219042,7 @@ var init_dataflow = __esm({
         if (!this.modules.indexComplete)
           return;
         const assignment = target.parent;
-        if (!ts14.isBinaryExpression(assignment) || assignment.right !== target || !ts14.isPropertyAccessExpression(assignment.left) || assignment.left.expression.kind !== ts14.SyntaxKind.ThisKeyword)
+        if (!ts15.isBinaryExpression(assignment) || assignment.right !== target || !ts15.isPropertyAccessExpression(assignment.left) || assignment.left.expression.kind !== ts15.SyntaxKind.ThisKeyword)
           return;
         let shape = this.closureShapes.get(target);
         if (!shape) {
@@ -218951,7 +219074,7 @@ var init_dataflow = __esm({
           this.incomplete("module_export_unsupported");
           return void 0;
         }
-        if (target.parameters.slice(args.length).some((parameter) => ts14.isIdentifier(parameter.name) && !!sourceRootForName(parameter.name.text)))
+        if (target.parameters.slice(args.length).some((parameter) => ts15.isIdentifier(parameter.name) && !!sourceRootForName(parameter.name.text)))
           this.incomplete("module_export_unsupported");
         const identity = `new:${target.getSourceFile().fileName}:${target.pos}`;
         if (this.active.has(identity) || this.active.size >= this.limits.callDepth || this.summaryWork >= this.limits.summaryWork) {
@@ -219006,7 +219129,7 @@ var init_dataflow = __esm({
           this.functionContextsPartial += 1;
       }
       invoke(call, args, receiver, declaredContext = false, capability, inheritedContext) {
-        const localFork = ts14.isIdentifier(call.expression) && (call.expression.text === "fork" || PROCESS_METHODS.has(call.expression.text));
+        const localFork = ts15.isIdentifier(call.expression) && (call.expression.text === "fork" || PROCESS_METHODS.has(call.expression.text));
         let proof = localFork ? this.localForkCalls.get(call) : void 0;
         if (localFork && !proof) {
           proof = { complete: true };
@@ -219254,7 +219377,7 @@ var init_dataflow = __esm({
         return { ...withoutUrlProof(value), sqlScalarUnavailable: true, httpTargetUnavailable: true };
       }
       sqlReturned(target, value) {
-        const asyncOrGenerator = target.modifiers?.some((m) => m.kind === ts14.SyntaxKind.AsyncKeyword) || "asteriskToken" in target && !!target.asteriskToken;
+        const asyncOrGenerator = target.modifiers?.some((m) => m.kind === ts15.SyntaxKind.AsyncKeyword) || "asteriskToken" in target && !!target.asteriskToken;
         return asyncOrGenerator ? { ...value, sqlFixedText: void 0, sqlConfig: void 0, sqlArray: void 0, sqlScalarUnavailable: true, httpTargetUnavailable: true } : value;
       }
       run(files) {
@@ -219321,7 +219444,7 @@ var init_dataflow = __esm({
       capabilityValue(expression, env) {
         if (!this.session?.modules.indexComplete)
           return UNKNOWN;
-        if (ts14.isIdentifier(expression)) {
+        if (ts15.isIdentifier(expression)) {
           const value = env.has(expression.text) ? env.resolve(expression.text) : UNKNOWN;
           return value.callable?.valid === false ? {
             ...UNKNOWN,
@@ -219329,9 +219452,9 @@ var init_dataflow = __esm({
             opaqueClosure: { ...combineValues([...value.callable.captures.values(), ...value.boundaryInput ? [value.boundaryInput] : []]), traceTruncated: true }
           } : value;
         }
-        if (expression.kind === ts14.SyntaxKind.ThisKeyword)
+        if (expression.kind === ts15.SyntaxKind.ThisKeyword)
           return this.constructedReceiver ?? UNKNOWN;
-        if (ts14.isPropertyAccessExpression(expression)) {
+        if (ts15.isPropertyAccessExpression(expression)) {
           const receiver = this.capabilityValue(expression.expression, env);
           if (receiver.constructed) {
             if (!receiver.constructed.valid)
@@ -219347,9 +219470,9 @@ var init_dataflow = __esm({
           }
           return receiver.properties?.get(expression.name.text) ?? UNKNOWN;
         }
-        if (ts14.isCallExpression(expression))
+        if (ts15.isCallExpression(expression))
           return this.callableActuals.get(expression)?.env === env ? this.callableActuals.get(expression).value ?? UNKNOWN : UNKNOWN;
-        if (ts14.isParenthesizedExpression(expression) || ts14.isAsExpression(expression) || ts14.isNonNullExpression(expression))
+        if (ts15.isParenthesizedExpression(expression) || ts15.isAsExpression(expression) || ts15.isNonNullExpression(expression))
           return this.capabilityValue(expression.expression, env);
         return UNKNOWN;
       }
@@ -219402,7 +219525,7 @@ var init_dataflow = __esm({
         this.receiver = receiver;
         this.declared = declared || !!this.staticContext;
         const env = new FlowEnv();
-        if (!actuals && !capability && ts14.isArrowFunction(functionLike))
+        if (!actuals && !capability && ts15.isArrowFunction(functionLike))
           this.session?.declaredOwnedRoot(functionLike);
         this.constructedReceiver = capability?.lexicalThis;
         for (const [symbol, value] of capability?.captures ?? [])
@@ -219420,7 +219543,7 @@ var init_dataflow = __esm({
             this.declareBinding(parameter.name, { ...UNKNOWN, mongoDb: mongoEntry }, env, true);
           else if (expressEntry)
             this.declareBinding(parameter.name, index === expressEntry.request ? rootValue("request") : index === expressEntry.response ? { ...UNKNOWN, expressResponse: { identity: {}, mime: "default", valid: true } } : UNKNOWN, env, true);
-          else if (index === 1 && ts14.isIdentifier(parameter.name) && /^(res|response)$/.test(parameter.name.text) && functionLike.parameters[0] && ts14.isIdentifier(functionLike.parameters[0].name) && /^(req|request)$/.test(functionLike.parameters[0].name.text)) {
+          else if (index === 1 && ts15.isIdentifier(parameter.name) && /^(res|response)$/.test(parameter.name.text) && functionLike.parameters[0] && ts15.isIdentifier(functionLike.parameters[0].name) && /^(req|request)$/.test(functionLike.parameters[0].name.text)) {
             this.declareBinding(parameter.name, { ...UNKNOWN, expressResponse: { identity: {}, mime: "default", valid: true } }, env, true);
           } else
             this.declareParameter(parameter, env);
@@ -219428,7 +219551,7 @@ var init_dataflow = __esm({
         const body = functionBody(functionLike);
         if (!body)
           return UNKNOWN;
-        if (ts14.isBlock(body))
+        if (ts15.isBlock(body))
           this.analyzeStatement(body, env);
         else {
           this.analyzeExpression(body, env);
@@ -219452,16 +219575,16 @@ var init_dataflow = __esm({
         return this.constructedReceiver;
       }
       declareParameter(parameter, env) {
-        if (ts14.isIdentifier(parameter.name)) {
+        if (ts15.isIdentifier(parameter.name)) {
           const root = sourceRootForName(parameter.name.text);
           this.declareBinding(parameter.name, withContext(root ? rootValue(root) : UNKNOWN, this.staticContext), env, true);
           return;
         }
-        if (ts14.isObjectBindingPattern(parameter.name)) {
+        if (ts15.isObjectBindingPattern(parameter.name)) {
           for (const element of parameter.name.elements) {
-            if (ts14.isOmittedExpression(element))
+            if (ts15.isOmittedExpression(element))
               continue;
-            const key2 = propertyName(element.propertyName) ?? (ts14.isIdentifier(element.name) ? element.name.text : void 0);
+            const key2 = propertyName(element.propertyName) ?? (ts15.isIdentifier(element.name) ? element.name.text : void 0);
             const root = key2 ? sourceRootForName(key2) : void 0;
             const value = element.dotDotDotToken ? UNKNOWN : root ? rootValue(root) : UNKNOWN;
             this.declareBinding(element.name, value, env, true);
@@ -219471,7 +219594,7 @@ var init_dataflow = __esm({
         this.declareBinding(parameter.name, UNKNOWN, env, true);
       }
       declareBinding(name, value, env, blockScoped) {
-        if (ts14.isIdentifier(name)) {
+        if (ts15.isIdentifier(name)) {
           if (value.archiveRole && this.session) {
             if (this.session.archiveModel.bindingMutated(name)) {
               value.archiveRole.state.valid = false;
@@ -219488,16 +219611,16 @@ var init_dataflow = __esm({
             if (shape)
               value = { ...value, sequenceContent: { ...shape, value: { ...value }, filename: filenamePart(value) ?? UNKNOWN } };
           }
-          if (value.sqlArray && ts14.isParameter(name.parent) && this.session?.sqlModel.arrayParameter(name) !== true)
+          if (value.sqlArray && ts15.isParameter(name.parent) && this.session?.sqlModel.arrayParameter(name) !== true)
             value = { ...value, sqlArray: { ...value.sqlArray, closed: false } };
           env.declare(name.text, value, blockScoped, this.session?.modules.symbol(name));
           return;
         }
-        if (ts14.isObjectBindingPattern(name)) {
+        if (ts15.isObjectBindingPattern(name)) {
           for (const element of name.elements) {
-            if (ts14.isOmittedExpression(element))
+            if (ts15.isOmittedExpression(element))
               continue;
-            const key2 = propertyName(element.propertyName) ?? (ts14.isIdentifier(element.name) ? element.name.text : void 0);
+            const key2 = propertyName(element.propertyName) ?? (ts15.isIdentifier(element.name) ? element.name.text : void 0);
             let elementValue = element.dotDotDotToken ? value : key2 === void 0 ? UNKNOWN : projectValue(value, key2);
             if (value.koaRequest && isInputRelated(elementValue))
               elementValue = traced(elementValue, element.name, "source");
@@ -219507,52 +219630,52 @@ var init_dataflow = __esm({
         }
         for (let index = 0; index < name.elements.length; index += 1) {
           const element = name.elements[index];
-          if (ts14.isOmittedExpression(element))
+          if (ts15.isOmittedExpression(element))
             continue;
           const elementValue = element.dotDotDotToken ? value : projectValue(value, String(index));
           this.declareBinding(element.name, elementValue, env, blockScoped);
         }
       }
       assignBinding(name, value, env) {
-        if (ts14.isIdentifier(name)) {
+        if (ts15.isIdentifier(name)) {
           env.assign(name.text, value);
           return;
         }
-        if (ts14.isObjectBindingPattern(name)) {
+        if (ts15.isObjectBindingPattern(name)) {
           for (const element of name.elements) {
-            const key2 = propertyName(element.propertyName) ?? (ts14.isIdentifier(element.name) ? element.name.text : void 0);
+            const key2 = propertyName(element.propertyName) ?? (ts15.isIdentifier(element.name) ? element.name.text : void 0);
             this.assignBinding(element.name, element.dotDotDotToken ? value : key2 === void 0 ? UNKNOWN : projectValue(value, key2), env);
           }
           return;
         }
-        if (ts14.isArrayBindingPattern(name)) {
+        if (ts15.isArrayBindingPattern(name)) {
           for (let index = 0; index < name.elements.length; index += 1) {
             const element = name.elements[index];
-            if (ts14.isOmittedExpression(element))
+            if (ts15.isOmittedExpression(element))
               continue;
             this.assignBinding(element.name, element.dotDotDotToken ? value : projectValue(value, String(index)), env);
           }
           return;
         }
-        if (ts14.isObjectLiteralExpression(name)) {
+        if (ts15.isObjectLiteralExpression(name)) {
           for (const element of name.properties) {
-            if (ts14.isSpreadAssignment(element)) {
+            if (ts15.isSpreadAssignment(element)) {
               if (isSupportedBindingTarget(element.expression))
                 this.assignBinding(element.expression, value, env);
-            } else if (ts14.isPropertyAssignment(element)) {
+            } else if (ts15.isPropertyAssignment(element)) {
               const key2 = propertyName(element.name);
               if (key2 !== void 0 && isSupportedBindingTarget(element.initializer))
                 this.assignBinding(element.initializer, projectValue(value, key2), env);
-            } else if (ts14.isShorthandPropertyAssignment(element)) {
+            } else if (ts15.isShorthandPropertyAssignment(element)) {
               this.assignBinding(element.name, projectValue(value, element.name.text), env);
             }
           }
           return;
         }
         for (const [index, element] of name.elements.entries()) {
-          if (ts14.isOmittedExpression(element))
+          if (ts15.isOmittedExpression(element))
             continue;
-          if (ts14.isSpreadElement(element)) {
+          if (ts15.isSpreadElement(element)) {
             if (isSupportedBindingTarget(element.expression))
               this.assignBinding(element.expression, value, env);
           } else if (isSupportedBindingTarget(element)) {
@@ -219562,11 +219685,11 @@ var init_dataflow = __esm({
       }
       analyzeStatements(statements2, env) {
         for (const statement of statements2) {
-          if (ts14.isVariableStatement(statement)) {
-            const blockScoped = (statement.declarationList.flags & ts14.NodeFlags.BlockScoped) !== 0;
+          if (ts15.isVariableStatement(statement)) {
+            const blockScoped = (statement.declarationList.flags & ts15.NodeFlags.BlockScoped) !== 0;
             for (const declaration of statement.declarationList.declarations)
               this.declareBinding(declaration.name, UNKNOWN, env, blockScoped);
-          } else if (ts14.isFunctionDeclaration(statement) && statement.name)
+          } else if (ts15.isFunctionDeclaration(statement) && statement.name)
             env.declare(statement.name.text, UNKNOWN, true, this.session?.modules.symbol(statement.name));
         }
         for (const statement of statements2) {
@@ -219580,21 +219703,21 @@ var init_dataflow = __esm({
           return;
         if (isFunctionLike2(statement))
           return;
-        if (ts14.isVariableStatement(statement)) {
+        if (ts15.isVariableStatement(statement)) {
           this.analyzeVariableList(statement.declarationList, env);
           return;
         }
-        if (ts14.isExpressionStatement(statement)) {
+        if (ts15.isExpressionStatement(statement)) {
           this.analyzeExpression(statement.expression, env);
           return;
         }
-        if (ts14.isBlock(statement)) {
+        if (ts15.isBlock(statement)) {
           env.push();
           this.analyzeStatements(statement.statements, env);
           env.pop();
           return;
         }
-        if (ts14.isIfStatement(statement)) {
+        if (ts15.isIfStatement(statement)) {
           if (this.constructorGuards?.has(statement))
             return;
           this.analyzeExpression(statement.expression, env);
@@ -219611,11 +219734,11 @@ var init_dataflow = __esm({
           env.merge(branches);
           return;
         }
-        if (ts14.isForStatement(statement)) {
+        if (ts15.isForStatement(statement)) {
           const loop = env.clone();
           loop.push();
           if (statement.initializer) {
-            if (ts14.isVariableDeclarationList(statement.initializer))
+            if (ts15.isVariableDeclarationList(statement.initializer))
               this.analyzeVariableList(statement.initializer, loop);
             else
               this.analyzeExpression(statement.initializer, loop);
@@ -219629,23 +219752,23 @@ var init_dataflow = __esm({
           env.merge([loop, env.clone()]);
           return;
         }
-        if (ts14.isForInStatement(statement) || ts14.isForOfStatement(statement)) {
+        if (ts15.isForInStatement(statement) || ts15.isForOfStatement(statement)) {
           const loop = env.clone();
           loop.push();
           this.analyzeExpression(statement.expression, loop);
           const iterable = this.evalExpression(statement.expression, loop);
-          if (ts14.isVariableDeclarationList(statement.initializer)) {
-            const blockScoped = (statement.initializer.flags & ts14.NodeFlags.BlockScoped) !== 0;
+          if (ts15.isVariableDeclarationList(statement.initializer)) {
+            const blockScoped = (statement.initializer.flags & ts15.NodeFlags.BlockScoped) !== 0;
             for (const declaration of statement.initializer.declarations) {
-              const elementValue = ts14.isForOfStatement(statement) ? projectValue(iterable, "*") : iterable.archiveRole ? UNKNOWN : projectValue(iterable, "*");
+              const elementValue = ts15.isForOfStatement(statement) ? projectValue(iterable, "*") : iterable.archiveRole ? UNKNOWN : projectValue(iterable, "*");
               if (declaration.initializer)
                 this.analyzeExpression(declaration.initializer, loop);
               this.declareBinding(declaration.name, elementValue, loop, blockScoped);
             }
           } else {
             this.analyzeAssignmentTarget(statement.initializer, loop);
-            const elementValue = ts14.isForOfStatement(statement) ? projectValue(iterable, "*") : iterable.archiveRole ? UNKNOWN : projectValue(iterable, "*");
-            if (ts14.isIdentifier(statement.initializer))
+            const elementValue = ts15.isForOfStatement(statement) ? projectValue(iterable, "*") : iterable.archiveRole ? UNKNOWN : projectValue(iterable, "*");
+            if (ts15.isIdentifier(statement.initializer))
               loop.assign(statement.initializer.text, elementValue);
             else if (isAssignmentPattern(statement.initializer) || isBindingPattern(statement.initializer)) {
               this.assignBinding(statement.initializer, elementValue, loop);
@@ -219658,22 +219781,22 @@ var init_dataflow = __esm({
           env.merge([loop, env.clone()]);
           return;
         }
-        if (ts14.isWhileStatement(statement) || ts14.isDoStatement(statement)) {
-          if (ts14.isWhileStatement(statement))
+        if (ts15.isWhileStatement(statement) || ts15.isDoStatement(statement)) {
+          if (ts15.isWhileStatement(statement))
             this.analyzeExpression(statement.expression, env);
           const body = env.clone();
           this.analyzeStatement(statement.statement, body);
-          if (ts14.isDoStatement(statement))
+          if (ts15.isDoStatement(statement))
             this.analyzeExpression(statement.expression, body);
           env.merge([body, env.clone()]);
           return;
         }
-        if (ts14.isSwitchStatement(statement)) {
+        if (ts15.isSwitchStatement(statement)) {
           this.analyzeExpression(statement.expression, env);
           const branches = [env.clone()];
           for (const clause of statement.caseBlock.clauses) {
             const branch = env.clone();
-            if (ts14.isCaseClause(clause))
+            if (ts15.isCaseClause(clause))
               this.analyzeExpression(clause.expression, branch);
             this.analyzeStatements(clause.statements, branch);
             branches.push(branch);
@@ -219681,7 +219804,7 @@ var init_dataflow = __esm({
           env.merge(branches);
           return;
         }
-        if (ts14.isTryStatement(statement)) {
+        if (ts15.isTryStatement(statement)) {
           const returnsBeforeTry = this.returns.length;
           const tryEnv = env.clone();
           this.analyzeBlockLike(statement.tryBlock, tryEnv);
@@ -219718,26 +219841,26 @@ var init_dataflow = __esm({
           }
           return;
         }
-        if (ts14.isReturnStatement(statement) || ts14.isThrowStatement(statement)) {
+        if (ts15.isReturnStatement(statement) || ts15.isThrowStatement(statement)) {
           if (statement.expression)
             this.analyzeExpression(statement.expression, env);
-          if (ts14.isReturnStatement(statement))
+          if (ts15.isReturnStatement(statement))
             this.returns.push(statement.expression ? traced(this.evalExpression(statement.expression, env), statement, "return") : SAFE);
           env.terminated = true;
           return;
         }
-        if (ts14.isWithStatement(statement)) {
+        if (ts15.isWithStatement(statement)) {
           this.analyzeExpression(statement.expression, env);
           this.analyzeStatement(statement.statement, env);
           return;
         }
-        if (ts14.isLabeledStatement(statement)) {
+        if (ts15.isLabeledStatement(statement)) {
           this.analyzeStatement(statement.statement, env);
           return;
         }
-        if (ts14.isClassDeclaration(statement)) {
+        if (ts15.isClassDeclaration(statement)) {
           for (const member3 of statement.members) {
-            if (ts14.isPropertyDeclaration(member3) && member3.initializer)
+            if (ts15.isPropertyDeclaration(member3) && member3.initializer)
               this.analyzeExpression(member3.initializer, env);
           }
           return;
@@ -219745,9 +219868,9 @@ var init_dataflow = __esm({
         statement.forEachChild((child) => {
           if (isFunctionLike2(child))
             return;
-          if (ts14.isStatement(child))
+          if (ts15.isStatement(child))
             this.analyzeStatement(child, env);
-          else if (ts14.isExpression(child))
+          else if (ts15.isExpression(child))
             this.analyzeExpression(child, env);
         });
       }
@@ -219755,12 +219878,12 @@ var init_dataflow = __esm({
         this.analyzeStatement(block, env);
       }
       analyzeVariableList(list, env) {
-        const blockScoped = (list.flags & ts14.NodeFlags.BlockScoped) !== 0;
+        const blockScoped = (list.flags & ts15.NodeFlags.BlockScoped) !== 0;
         for (const declaration of list.declarations) {
           if (declaration.initializer)
             this.analyzeExpression(declaration.initializer, env);
           const value = declaration.initializer ? this.evalExpression(declaration.initializer, env) : UNKNOWN;
-          if (ts14.isIdentifier(declaration.name)) {
+          if (ts15.isIdentifier(declaration.name)) {
             this.declareBinding(declaration.name, value, env, blockScoped);
           } else {
             this.declareBinding(declaration.name, value, env, blockScoped);
@@ -219772,37 +219895,37 @@ var init_dataflow = __esm({
           return;
         if (isFunctionLike2(expression))
           return;
-        if (ts14.isBinaryExpression(expression) && isAssignmentOperator(expression.operatorToken.kind)) {
+        if (ts15.isBinaryExpression(expression) && isAssignmentOperator(expression.operatorToken.kind)) {
           this.analyzeExpression(expression.right, env);
           this.analyzeAssignmentTarget(expression.left, env);
           const right = this.evalExpression(expression.right, env);
-          if (this.constructedReceiver?.constructed && ts14.isPropertyAccessExpression(expression.left) && expression.left.expression.kind === ts14.SyntaxKind.ThisKeyword && expression.operatorToken.kind === ts14.SyntaxKind.EqualsToken && this.constructedReceiver.constructed.shape.ownArrows.has(expression.left.name.text)) {
+          if (this.constructedReceiver?.constructed && ts15.isPropertyAccessExpression(expression.left) && expression.left.expression.kind === ts15.SyntaxKind.ThisKeyword && expression.operatorToken.kind === ts15.SyntaxKind.EqualsToken && this.constructedReceiver.constructed.shape.ownArrows.has(expression.left.name.text)) {
             this.constructedReceiver.constructed.slots.set(expression.left.name.text, right);
             return;
           }
           if (isSimpleAssignment(expression.operatorToken.kind)) {
             this.recordAssignment(expression, right);
-            if (ts14.isIdentifier(expression.left) || isAssignmentPattern(expression.left) || isBindingPattern(expression.left)) {
+            if (ts15.isIdentifier(expression.left) || isAssignmentPattern(expression.left) || isBindingPattern(expression.left)) {
               this.assignBinding(expression.left, right, env);
             } else {
               this.assignMemberPath(expression.left, right, env);
             }
           } else {
-            const prior = ts14.isIdentifier(expression.left) ? env.resolve(expression.left.text) : UNKNOWN;
+            const prior = ts15.isIdentifier(expression.left) ? env.resolve(expression.left.text) : UNKNOWN;
             const value = combineValues([prior, right]);
             this.recordAssignment(expression, value);
-            if (ts14.isIdentifier(expression.left))
+            if (ts15.isIdentifier(expression.left))
               env.assign(expression.left.text, value);
             else
               this.assignMemberPath(expression.left, value, env);
           }
           return;
         }
-        if (ts14.isCallExpression(expression)) {
+        if (ts15.isCallExpression(expression)) {
           this.analyzeExpression(expression.expression, env);
           const callee = expression.expression;
           const selectedCallable = this.capabilityValue(callee, env);
-          const response = ts14.isPropertyAccessExpression(callee) || ts14.isElementAccessExpression(callee) ? this.evalExpression(callee.expression, env) : void 0;
+          const response = ts15.isPropertyAccessExpression(callee) || ts15.isElementAccessExpression(callee) ? this.evalExpression(callee.expression, env) : void 0;
           const responseState = response?.expressResponse;
           const processBinding = this.session?.processModel.binding(expression);
           const filesystemStream = this.session?.filesystemModel.stream(expression);
@@ -219825,7 +219948,7 @@ var init_dataflow = __esm({
           if (orderedActuals)
             this.evaluationActuals.set(expression, { env, values: args });
           const cell = response?.sequenceContent;
-          const arrayMutation = cell && ts14.isPropertyAccessExpression(callee) && ["push", "unshift"].includes(callee.name.text);
+          const arrayMutation = cell && ts15.isPropertyAccessExpression(callee) && ["push", "unshift"].includes(callee.name.text);
           if (arrayMutation) {
             const appended = combineValues(args.map(consumedInput));
             const parts = args.map(filenamePart).filter((value) => !!value);
@@ -219838,7 +219961,7 @@ var init_dataflow = __esm({
               this.session?.gap("module_export_unsupported", expression);
             }
           }
-          const event = response?.filesystemStream && ts14.isPropertyAccessExpression(callee) && callee.name.text === "on" && expression.arguments.length === 2 && ts14.isStringLiteralLike(expression.arguments[0]) ? expression.arguments[0].text : void 0;
+          const event = response?.filesystemStream && ts15.isPropertyAccessExpression(callee) && callee.name.text === "on" && expression.arguments.length === 2 && ts15.isStringLiteralLike(expression.arguments[0]) ? expression.arguments[0].text : void 0;
           const eventCallback = args[1]?.callable;
           const filesystemEvent = (event === "data" || event === "end") && response?.filesystemStream?.valid && eventCallback;
           if (filesystemEvent) {
@@ -219852,17 +219975,17 @@ var init_dataflow = __esm({
               this.session?.callback({ ...eventCallback, staticContext: contexts(eventCallback.staticContext, context) }, expression, [input]);
             } else
               this.session?.callback({ ...eventCallback, staticContext: contexts(eventCallback.staticContext, context) }, expression, []);
-          } else if (response?.filesystemStream && ts14.isPropertyAccessExpression(callee) && callee.name.text === "on") {
+          } else if (response?.filesystemStream && ts15.isPropertyAccessExpression(callee) && callee.name.text === "on") {
             this.session.filesystemModel.unsupportedUses++;
             this.session?.gap("module_export_unsupported", expression);
           }
-          if (ts14.isPropertyAccessExpression(callee) && ts14.isIdentifier(callee.expression) && ["append", "set"].includes(callee.name.text)) {
+          if (ts15.isPropertyAccessExpression(callee) && ts15.isIdentifier(callee.expression) && ["append", "set"].includes(callee.name.text)) {
             const receiver = env.resolve(callee.expression.text);
             if (receiver.queryContent) {
               receiver.queryContent.value = queryContent(withHttpUnavailable(combineValues([receiver.queryContent.value, ...args]), [receiver]));
             }
           }
-          if (responseState?.valid && ts14.isPropertyAccessExpression(callee)) {
+          if (responseState?.valid && ts15.isPropertyAccessExpression(callee)) {
             this.updateResponseMime(callee.name.text, expression.arguments, responseState);
             if (responseState.contained && responseState.mime !== "html")
               responseState.mime = "unknown";
@@ -219875,7 +219998,7 @@ var init_dataflow = __esm({
             role.state.valid = false;
             this.session?.gap("module_export_unsupported", expression);
           }
-          const archiveMethod = ts14.isPropertyAccessExpression(callee) ? callee.name.text : ts14.isElementAccessExpression(callee) ? propertyName(callee.argumentExpression) : void 0;
+          const archiveMethod = ts15.isPropertyAccessExpression(callee) ? callee.name.text : ts15.isElementAccessExpression(callee) ? propertyName(callee.argumentExpression) : void 0;
           if (response?.archiveRole && !(response.archiveRole.stage === "entry" && archiveMethod === "stream" && expression.arguments.length === 0)) {
             response.archiveRole.state.valid = false;
             this.session?.archiveModel.unsupported(expression);
@@ -219928,7 +220051,7 @@ var init_dataflow = __esm({
               else if (value.opaqueClosure)
                 this.session?.gap("module_export_unsupported", expression);
             }
-            if (responseState?.valid && ts14.isPropertyAccessExpression(callee) && !["send", "json", "status", "type", "contentType", "set", "header", "setHeader", "append", "removeHeader"].includes(callee.name.text))
+            if (responseState?.valid && ts15.isPropertyAccessExpression(callee) && !["send", "json", "status", "type", "contentType", "set", "header", "setHeader", "append", "removeHeader"].includes(callee.name.text))
               responseState.mime = "unknown";
           }
           const argumentFlows = [];
@@ -219937,7 +220060,7 @@ var init_dataflow = __esm({
             if (isInputRelated(value))
               argumentFlows.push({ index, certainty: !this.declared && value.kind === "tainted" ? "tainted" : "unknown", staticFlow: evidence(value, expression), fixedDestination: !this.declared && fixedQueryDestination(value.urlFragments) });
           }
-          const responseMethod = ts14.isPropertyAccessExpression(callee) ? callee.name.text : void 0;
+          const responseMethod = ts15.isPropertyAccessExpression(callee) ? callee.name.text : void 0;
           const htmlResponse = responseState?.valid && expression.arguments.length === 1 && (responseMethod === "send" || responseMethod === "json") && (responseState.mime === "html" || responseState.mime === "unknown" || responseMethod === "send" && responseState.mime === "default" && !args[0]?.expressObjectBody) ? "express" : void 0;
           const htmlResponseMime = htmlResponse && responseState?.mime !== "non_html" ? responseState?.mime : void 0;
           const httpRole = this.httpRole(expression, args[0]);
@@ -219984,7 +220107,7 @@ var init_dataflow = __esm({
             });
           return;
         }
-        if (ts14.isNewExpression(expression)) {
+        if (ts15.isNewExpression(expression)) {
           this.analyzeExpression(expression.expression, env);
           const callee = expression.expression;
           if (evaluationShapedCallee(callee, true)) {
@@ -220028,31 +220151,31 @@ var init_dataflow = __esm({
           }
           return;
         }
-        if (ts14.isPrefixUnaryExpression(expression)) {
+        if (ts15.isPrefixUnaryExpression(expression)) {
           this.analyzeExpression(expression.operand, env);
-          if (expression.operator === ts14.SyntaxKind.PlusPlusToken || expression.operator === ts14.SyntaxKind.MinusMinusToken) {
-            if (ts14.isIdentifier(expression.operand))
+          if (expression.operator === ts15.SyntaxKind.PlusPlusToken || expression.operator === ts15.SyntaxKind.MinusMinusToken) {
+            if (ts15.isIdentifier(expression.operand))
               env.assign(expression.operand.text, UNKNOWN);
             else if (env.resolve(staticMemberPath(expression.operand)[0] ?? "").koaRequest)
               this.assignMemberPath(expression.operand, UNKNOWN, env);
           }
           return;
         }
-        if (ts14.isPostfixUnaryExpression(expression)) {
+        if (ts15.isPostfixUnaryExpression(expression)) {
           this.analyzeExpression(expression.operand, env);
-          if (ts14.isIdentifier(expression.operand))
+          if (ts15.isIdentifier(expression.operand))
             env.assign(expression.operand.text, UNKNOWN);
           else if (env.resolve(staticMemberPath(expression.operand)[0] ?? "").koaRequest)
             this.assignMemberPath(expression.operand, UNKNOWN, env);
           return;
         }
-        if (ts14.isDeleteExpression(expression)) {
+        if (ts15.isDeleteExpression(expression)) {
           this.analyzeExpression(expression.expression, env);
           if (env.resolve(staticMemberPath(expression.expression)[0] ?? "").koaRequest)
             this.assignMemberPath(expression.expression, UNKNOWN, env);
           return;
         }
-        if (ts14.isConditionalExpression(expression)) {
+        if (ts15.isConditionalExpression(expression)) {
           this.analyzeExpression(expression.condition, env);
           const whenTrue = env.clone();
           this.analyzeExpression(expression.whenTrue, whenTrue);
@@ -220064,10 +220187,10 @@ var init_dataflow = __esm({
           env.merge([whenTrue, whenFalse]);
           return;
         }
-        if (ts14.isBinaryExpression(expression) && [
-          ts14.SyntaxKind.AmpersandAmpersandToken,
-          ts14.SyntaxKind.BarBarToken,
-          ts14.SyntaxKind.QuestionQuestionToken
+        if (ts15.isBinaryExpression(expression) && [
+          ts15.SyntaxKind.AmpersandAmpersandToken,
+          ts15.SyntaxKind.BarBarToken,
+          ts15.SyntaxKind.QuestionQuestionToken
         ].includes(expression.operatorToken.kind)) {
           this.analyzeExpression(expression.left, env);
           const right = env.clone();
@@ -220075,35 +220198,35 @@ var init_dataflow = __esm({
           env.merge([right, env.clone()]);
           return;
         }
-        if (ts14.isJsxElement(expression)) {
+        if (ts15.isJsxElement(expression)) {
           this.analyzeJsxAttributes(expression.openingElement.attributes, env);
           for (const child of expression.children) {
-            if (ts14.isJsxExpression(child) && child.expression)
+            if (ts15.isJsxExpression(child) && child.expression)
               this.analyzeExpression(child.expression, env);
-            else if (ts14.isJsxElement(child) || ts14.isJsxSelfClosingElement(child))
+            else if (ts15.isJsxElement(child) || ts15.isJsxSelfClosingElement(child))
               this.analyzeExpression(child, env);
           }
           return;
         }
-        if (ts14.isJsxSelfClosingElement(expression)) {
+        if (ts15.isJsxSelfClosingElement(expression)) {
           this.analyzeJsxAttributes(expression.attributes, env);
           return;
         }
-        if (ts14.isObjectLiteralExpression(expression)) {
+        if (ts15.isObjectLiteralExpression(expression)) {
           const values = /* @__PURE__ */ new Map(), keys6 = /* @__PURE__ */ new Map();
           for (const property of expression.properties) {
-            if (ts14.isPropertyAssignment(property)) {
-              if (ts14.isComputedPropertyName(property.name)) {
+            if (ts15.isPropertyAssignment(property)) {
+              if (ts15.isComputedPropertyName(property.name)) {
                 this.analyzeExpression(property.name.expression, env);
                 keys6.set(property, this.evalExpression(property.name.expression, env));
               }
               this.analyzeExpression(property.initializer, env);
               values.set(property, this.evalExpression(property.initializer, env));
-            } else if (ts14.isShorthandPropertyAssignment(property)) {
+            } else if (ts15.isShorthandPropertyAssignment(property)) {
               if (property.objectAssignmentInitializer)
                 this.analyzeExpression(property.objectAssignmentInitializer, env);
               values.set(property, env.resolve(property.name.text));
-            } else if (ts14.isSpreadAssignment(property)) {
+            } else if (ts15.isSpreadAssignment(property)) {
               this.analyzeExpression(property.expression, env);
               values.set(property, this.evalExpression(property.expression, env));
             }
@@ -220111,10 +220234,10 @@ var init_dataflow = __esm({
           this.objectActuals.set(expression, { env, values, keys: keys6 });
           return;
         }
-        if (ts14.isArrayLiteralExpression(expression)) {
+        if (ts15.isArrayLiteralExpression(expression)) {
           const values = /* @__PURE__ */ new Map();
           for (const element of expression.elements) {
-            if (!ts14.isOmittedExpression(element)) {
+            if (!ts15.isOmittedExpression(element)) {
               this.analyzeExpression(element, env);
               values.set(element, this.evalExpression(element, env));
             }
@@ -220122,27 +220245,27 @@ var init_dataflow = __esm({
           this.arrayActuals.set(expression, { env, values });
           return;
         }
-        if (ts14.isPropertyAccessExpression(expression)) {
+        if (ts15.isPropertyAccessExpression(expression)) {
           this.analyzeExpression(expression.expression, env);
           return;
         }
-        if (ts14.isElementAccessExpression(expression)) {
+        if (ts15.isElementAccessExpression(expression)) {
           this.analyzeExpression(expression.expression, env);
           if (expression.argumentExpression)
             this.analyzeExpression(expression.argumentExpression, env);
           return;
         }
-        if (ts14.isTemplateExpression(expression)) {
+        if (ts15.isTemplateExpression(expression)) {
           for (const span of expression.templateSpans)
             this.analyzeExpression(span.expression, env);
           return;
         }
-        if (ts14.isTaggedTemplateExpression(expression)) {
+        if (ts15.isTaggedTemplateExpression(expression)) {
           this.analyzeExpression(expression.tag, env);
           this.analyzeExpression(expression.template, env);
           return;
         }
-        if (ts14.isParenthesizedExpression(expression) || ts14.isAsExpression(expression) || ts14.isTypeAssertionExpression(expression) || ts14.isNonNullExpression(expression) || ts14.isAwaitExpression(expression) || ts14.isYieldExpression(expression)) {
+        if (ts15.isParenthesizedExpression(expression) || ts15.isAsExpression(expression) || ts15.isTypeAssertionExpression(expression) || ts15.isNonNullExpression(expression) || ts15.isAwaitExpression(expression) || ts15.isYieldExpression(expression)) {
           if (expression.expression)
             this.analyzeExpression(expression.expression, env);
           return;
@@ -220150,25 +220273,25 @@ var init_dataflow = __esm({
         expression.forEachChild((child) => {
           if (isFunctionLike2(child))
             return;
-          if (ts14.isExpression(child))
+          if (ts15.isExpression(child))
             this.analyzeExpression(child, env);
         });
       }
       analyzeAssignmentTarget(target, env) {
-        if (ts14.isIdentifier(target))
+        if (ts15.isIdentifier(target))
           return;
         if (isAssignmentPattern(target)) {
           target.forEachChild((child) => {
-            if (ts14.isExpression(child))
+            if (ts15.isExpression(child))
               this.analyzeExpression(child, env);
           });
           return;
         }
-        if (ts14.isPropertyAccessExpression(target)) {
+        if (ts15.isPropertyAccessExpression(target)) {
           this.analyzeExpression(target.expression, env);
           return;
         }
-        if (ts14.isElementAccessExpression(target)) {
+        if (ts15.isElementAccessExpression(target)) {
           this.analyzeExpression(target.expression, env);
           if (target.argumentExpression)
             this.analyzeExpression(target.argumentExpression, env);
@@ -220176,19 +220299,19 @@ var init_dataflow = __esm({
       }
       analyzeJsxAttributes(attributes, env) {
         for (const attribute of attributes.properties) {
-          if (ts14.isJsxSpreadAttribute(attribute)) {
+          if (ts15.isJsxSpreadAttribute(attribute)) {
             this.analyzeExpression(attribute.expression, env);
             continue;
           }
-          if (!ts14.isJsxAttribute(attribute))
+          if (!ts15.isJsxAttribute(attribute))
             continue;
           const initializer = attribute.initializer;
-          if (!initializer || ts14.isStringLiteral(initializer))
+          if (!initializer || ts15.isStringLiteral(initializer))
             continue;
-          if (!ts14.isJsxExpression(initializer) || !initializer.expression)
+          if (!ts15.isJsxExpression(initializer) || !initializer.expression)
             continue;
           this.analyzeExpression(initializer.expression, env);
-          if (ts14.isIdentifier(attribute.name) && attribute.name.text.toLowerCase() === "dangerouslysetinnerhtml") {
+          if (ts15.isIdentifier(attribute.name) && attribute.name.text.toLowerCase() === "dangerouslysetinnerhtml") {
             const value = this.evalExpression(initializer.expression, env);
             if (isInputRelated(value)) {
               this.uses.push({
@@ -220206,8 +220329,15 @@ var init_dataflow = __esm({
           env.assignProperty(path2, withoutUrlProof(value));
       }
       recordAssignment(node, value) {
-        if (isInputRelated(value))
-          this.uses.push({ node, kind: "assignment", argumentFlows: [{ index: 0, certainty: !this.declared && value.kind === "tainted" ? "tainted" : "unknown", staticFlow: evidence(value, node) }] });
+        if (isInputRelated(value)) {
+          const browserLocationRole = directBrowserLocationReceiver(node) ? this.declared || this.staticContext || value.staticContext ? "unknown_receiver" : this.session?.browserLocationModel.role(node) ?? "unknown_receiver" : void 0;
+          this.uses.push({
+            node,
+            kind: "assignment",
+            ...browserLocationRole ? { browserLocationRole } : {},
+            argumentFlows: [{ index: 0, certainty: !this.declared && value.kind === "tainted" ? "tainted" : "unknown", staticFlow: evidence(value, node) }]
+          });
+        }
       }
       httpRole(call, value) {
         const model = this.session?.httpModel;
@@ -220289,7 +220419,7 @@ var init_dataflow = __esm({
         }
         const text3 = config?.text ?? args[0];
         const values = config?.values ?? args[1];
-        const shape = config ? config.closed && call.arguments.length === 1 : call.arguments.length >= 1 && call.arguments.length <= 2 && text3 && !text3.sqlScalarUnavailable && !args[0]?.properties && !ts14.isObjectLiteralExpression(call.arguments[0]) && !(args.length === 2 && (args[1].sqlCallback || model.callbackArgument(call.arguments[1])));
+        const shape = config ? config.closed && call.arguments.length === 1 : call.arguments.length >= 1 && call.arguments.length <= 2 && text3 && !text3.sqlScalarUnavailable && !args[0]?.properties && !ts15.isObjectLiteralExpression(call.arguments[0]) && !(args.length === 2 && (args[1].sqlCallback || model.callbackArgument(call.arguments[1])));
         if (model.dispatch(call) && shape && text3 && !text3.sqlScalarUnavailable) {
           if (isInputRelated(text3))
             return { bound: true, inputRelated: true, outcome: "statement_input", certainty: text3.kind === "tainted" ? "tainted" : "unknown", staticFlow: evidence(text3, call) };
@@ -220360,7 +220490,7 @@ var init_dataflow = __esm({
           }
           let selected;
           for (const property of object12.node.properties) {
-            if (!(ts14.isPropertyAssignment(property) || ts14.isShorthandPropertyAssignment(property)))
+            if (!(ts15.isPropertyAssignment(property) || ts15.isShorthandPropertyAssignment(property)))
               return candidate(value, "unknown_role");
             const key2 = propertyName(property.name);
             if (!key2)
@@ -220368,7 +220498,7 @@ var init_dataflow = __esm({
             const field = current(value.properties.get(key2) ?? UNKNOWN);
             if (!isInputRelated(field))
               continue;
-            const result3 = key2 === "$where" ? candidate(field, "where_input") : key2.startsWith("$") ? candidate(field, "unknown_role") : inspect(field, ts14.isPropertyAssignment(property) ? property.initializer : property.name, depth + 1);
+            const result3 = key2 === "$where" ? candidate(field, "where_input") : key2.startsWith("$") ? candidate(field, "unknown_role") : inspect(field, ts15.isPropertyAssignment(property) ? property.initializer : property.name, depth + 1);
             if (result3?.outcome === "where_input")
               return result3;
             if (result3)
@@ -220380,7 +220510,7 @@ var init_dataflow = __esm({
       }
       /** Literal same-response MIME state only; no header values are retained in reports. */
       updateResponseMime(method, args, state) {
-        const literal = (value) => value && ts14.isStringLiteralLike(value) ? value.text.trim().toLowerCase() : void 0;
+        const literal = (value) => value && ts15.isStringLiteralLike(value) ? value.text.trim().toLowerCase() : void 0;
         const mime = (value, extension2 = false) => {
           const text3 = literal(value)?.split(";", 1)[0].trim();
           if (text3 === "text/html" || extension2 && text3 === "html")
@@ -220411,13 +220541,13 @@ var init_dataflow = __esm({
             state.mime = method === "append" ? "unknown" : mime(args[1]);
           return;
         }
-        if ((method === "set" || method === "header") && args.length === 1 && ts14.isObjectLiteralExpression(args[0])) {
+        if ((method === "set" || method === "header") && args.length === 1 && ts15.isObjectLiteralExpression(args[0])) {
           for (const property of args[0].properties) {
             if (this.session && !this.session.tick()) {
               state.mime = "unknown";
               return;
             }
-            if (!ts14.isPropertyAssignment(property) || ts14.isComputedPropertyName(property.name)) {
+            if (!ts15.isPropertyAssignment(property) || ts15.isComputedPropertyName(property.name)) {
               state.mime = "unknown";
               return;
             }
@@ -220430,29 +220560,29 @@ var init_dataflow = __esm({
       }
       /** Closed literal HTML headers only. No inferred MIME type for a plain Response body. */
       isHtmlResponse(node) {
-        if (!ts14.isIdentifier(node.expression) || node.arguments?.length !== 2)
+        if (!ts15.isIdentifier(node.expression) || node.arguments?.length !== 2)
           return false;
         const symbol = this.session?.modules.symbol(node.expression);
         const declaration = symbol?.declarations?.length === 1 ? symbol.declarations[0] : void 0;
-        const nextImport = declaration && ts14.isImportSpecifier(declaration) && !declaration.isTypeOnly && !declaration.parent.parent.isTypeOnly && (declaration.propertyName ?? declaration.name).text === "NextResponse" && ts14.isImportDeclaration(declaration.parent.parent.parent) && ts14.isStringLiteral(declaration.parent.parent.parent.moduleSpecifier) && declaration.parent.parent.parent.moduleSpecifier.text === "next/server";
+        const nextImport = declaration && ts15.isImportSpecifier(declaration) && !declaration.isTypeOnly && !declaration.parent.parent.isTypeOnly && (declaration.propertyName ?? declaration.name).text === "NextResponse" && ts15.isImportDeclaration(declaration.parent.parent.parent) && ts15.isStringLiteral(declaration.parent.parent.parent.moduleSpecifier) && declaration.parent.parent.parent.moduleSpecifier.text === "next/server";
         if (!(node.expression.text === "Response" && !symbol) && !nextImport)
           return false;
         const options = node.arguments[1];
-        if (!ts14.isObjectLiteralExpression(options))
+        if (!ts15.isObjectLiteralExpression(options))
           return false;
         let headers;
         const optionNames = /* @__PURE__ */ new Set();
         for (const property of options.properties) {
           if (this.session && !this.session.tick())
             return false;
-          if (!ts14.isPropertyAssignment(property) || ts14.isComputedPropertyName(property.name))
+          if (!ts15.isPropertyAssignment(property) || ts15.isComputedPropertyName(property.name))
             return false;
           const name = propertyName(property.name);
           if (!name || optionNames.has(name))
             return false;
           optionNames.add(name);
           if (name === "headers") {
-            if (!ts14.isObjectLiteralExpression(property.initializer))
+            if (!ts15.isObjectLiteralExpression(property.initializer))
               return false;
             headers = property.initializer;
           }
@@ -220464,10 +220594,10 @@ var init_dataflow = __esm({
         for (const property of headers.properties) {
           if (this.session && !this.session.tick())
             return false;
-          if (!ts14.isPropertyAssignment(property) || ts14.isComputedPropertyName(property.name))
+          if (!ts15.isPropertyAssignment(property) || ts15.isComputedPropertyName(property.name))
             return false;
           const name = propertyName(property.name)?.toLowerCase();
-          if (!name || names.has(name) || !ts14.isStringLiteralLike(property.initializer))
+          if (!name || names.has(name) || !ts15.isStringLiteralLike(property.initializer))
             return false;
           names.add(name);
           if (name === "content-type")
@@ -220478,7 +220608,7 @@ var init_dataflow = __esm({
       evalExpression(expression, env) {
         if (this.session && !this.session.tick())
           return UNKNOWN;
-        if (ts14.isIdentifier(expression)) {
+        if (ts15.isIdentifier(expression)) {
           if (!env.has(expression.text) && this.session?.sqlModel.callbackArgument(expression))
             return { ...UNKNOWN, sqlCallback: true };
           if (!env.has(expression.text) && this.session?.modules.symbol(expression))
@@ -220487,23 +220617,23 @@ var init_dataflow = __esm({
           const value = current.properties && this.session?.sqlModel.dataIdentifierUnavailable(expression) ? { ...current, sqlDataUnavailable: true } : current;
           return value.kind === "root" && !value.trace?.some((item) => item.role === "source") ? traced(value, expression, "source") : value;
         }
-        if (ts14.isStringLiteral(expression) || ts14.isNoSubstitutionTemplateLiteral(expression))
+        if (ts15.isStringLiteral(expression) || ts15.isNoSubstitutionTemplateLiteral(expression))
           return literalValue(expression.text);
-        if (ts14.isNumericLiteral(expression) || ts14.isBigIntLiteral(expression) || ts14.isRegularExpressionLiteral(expression))
+        if (ts15.isNumericLiteral(expression) || ts15.isBigIntLiteral(expression) || ts15.isRegularExpressionLiteral(expression))
           return SAFE;
-        if (expression.kind === ts14.SyntaxKind.TrueKeyword || expression.kind === ts14.SyntaxKind.FalseKeyword || expression.kind === ts14.SyntaxKind.NullKeyword || expression.kind === ts14.SyntaxKind.UndefinedKeyword)
+        if (expression.kind === ts15.SyntaxKind.TrueKeyword || expression.kind === ts15.SyntaxKind.FalseKeyword || expression.kind === ts15.SyntaxKind.NullKeyword || expression.kind === ts15.SyntaxKind.UndefinedKeyword)
           return SAFE;
-        if (ts14.isAwaitExpression(expression)) {
+        if (ts15.isAwaitExpression(expression)) {
           const value = this.evalExpression(expression.expression, env);
           return value.archiveRole?.stage === "promise" && value.archiveRole.state.valid ? { ...value, archiveRole: { ...value.archiveRole, stage: "directory" } } : value;
         }
-        if (ts14.isParenthesizedExpression(expression) || ts14.isAsExpression(expression) || ts14.isTypeAssertionExpression(expression) || ts14.isNonNullExpression(expression))
+        if (ts15.isParenthesizedExpression(expression) || ts15.isAsExpression(expression) || ts15.isTypeAssertionExpression(expression) || ts15.isNonNullExpression(expression))
           return this.evalExpression(expression.expression, env);
-        if (ts14.isYieldExpression(expression))
+        if (ts15.isYieldExpression(expression))
           return expression.expression ? this.evalExpression(expression.expression, env) : UNKNOWN;
-        if (expression.kind === ts14.SyntaxKind.ThisKeyword)
+        if (expression.kind === ts15.SyntaxKind.ThisKeyword)
           return this.constructedReceiver ?? UNKNOWN;
-        if (ts14.isPropertyAccessExpression(expression)) {
+        if (ts15.isPropertyAccessExpression(expression)) {
           const receiver = this.evalExpression(expression.expression, env);
           if (receiver.archiveRole?.state.valid && receiver.archiveRole.stage === "entry" && expression.name.text === "path") {
             this.session.archiveModel.entryPaths++;
@@ -220516,7 +220646,7 @@ var init_dataflow = __esm({
             this.session?.gap("module_export_unsupported", expression);
           return receiver.koaRequest && isInputRelated(projected) && !projected.trace?.some((step2) => step2.role === "source") ? traced(projected, expression, "source") : projected;
         }
-        if (ts14.isElementAccessExpression(expression)) {
+        if (ts15.isElementAccessExpression(expression)) {
           const key2 = propertyName(expression.argumentExpression);
           const base = this.evalExpression(expression.expression, env);
           if (base.archiveRole?.state.valid && base.archiveRole.stage === "entry" && key2 === "path") {
@@ -220533,13 +220663,13 @@ var init_dataflow = __esm({
           const value = isInputRelated(base) || isInputRelated(keyValue) ? inheritTrace(base.kind === "tainted" ? TAINTED : UNKNOWN_INPUT, [base, keyValue]) : UNKNOWN;
           return { ...value, sqlDataUnavailable: base.sqlDataUnavailable || keyValue.sqlDataUnavailable, httpTargetUnavailable: httpUnavailable([base, keyValue]) };
         }
-        if (ts14.isArrayLiteralExpression(expression)) {
+        if (ts15.isArrayLiteralExpression(expression)) {
           const observed = this.arrayActuals.get(expression);
           const actuals = observed?.env === env ? observed : void 0;
           const properties = /* @__PURE__ */ new Map();
           const values = [];
           expression.elements.forEach((element, index) => {
-            if (ts14.isOmittedExpression(element))
+            if (ts15.isOmittedExpression(element))
               return;
             const value = actuals?.values.get(element) ?? this.evalExpression(element, env);
             properties.set(String(index), withoutUrlProof(value));
@@ -220557,7 +220687,7 @@ var init_dataflow = __esm({
             ...this.session?.sqlModel ? { sqlArray: { node: expression, closed: this.session.sqlModel.closedArray(expression) && !combined.sqlDataUnavailable, count: expression.elements.length } } : {}
           };
         }
-        if (ts14.isObjectLiteralExpression(expression)) {
+        if (ts15.isObjectLiteralExpression(expression)) {
           const observed = this.objectActuals.get(expression);
           const actuals = observed?.env === env ? observed : void 0;
           const properties = /* @__PURE__ */ new Map();
@@ -220566,7 +220696,7 @@ var init_dataflow = __esm({
           let sqlText;
           let sqlValues;
           let nosqlWhere;
-          const dataUnavailable = expression.properties.some((p) => !(ts14.isPropertyAssignment(p) || ts14.isShorthandPropertyAssignment(p)) || ts14.isComputedPropertyName(p.name) || ["toPostgres", "toString", "__proto__"].includes(propertyName(p.name) ?? ""));
+          const dataUnavailable = expression.properties.some((p) => !(ts15.isPropertyAssignment(p) || ts15.isShorthandPropertyAssignment(p)) || ts15.isComputedPropertyName(p.name) || ["toPostgres", "toString", "__proto__"].includes(propertyName(p.name) ?? ""));
           const sqlSnapshot = (value) => ({ kind: value.kind, root: value.root, inputRelated: value.inputRelated, trace: value.trace?.map((s) => ({ role: s.role, location: { ...s.location } })), traceTruncated: value.traceTruncated, traceSourceKind: value.traceSourceKind, httpTargetUnavailable: currentQuery(value).httpTargetUnavailable, urlFragments: value.urlFragments?.map((p) => ({ ...p })), sqlScalarUnavailable: value.sqlScalarUnavailable, sqlFixedText: value.sqlFixedText ? { ...value.sqlFixedText } : void 0, sqlCallback: value.sqlCallback, sqlDataUnavailable: value.sqlDataUnavailable, sqlArray: value.sqlArray ? { ...value.sqlArray } : void 0 });
           const captureTarget = (value) => {
             const current = currentQuery(value);
@@ -220582,10 +220712,10 @@ var init_dataflow = __esm({
             };
           };
           for (const property of expression.properties) {
-            if (ts14.isPropertyAssignment(property)) {
+            if (ts15.isPropertyAssignment(property)) {
               const key2 = propertyName(property.name);
               const value = actuals?.values.get(property) ?? this.evalExpression(property.initializer, env);
-              if (ts14.isComputedPropertyName(property.name))
+              if (ts15.isComputedPropertyName(property.name))
                 values.push(actuals?.keys.get(property) ?? this.evalExpression(property.name.expression, env));
               if (key2 === "url")
                 captureTarget(value);
@@ -220598,7 +220728,7 @@ var init_dataflow = __esm({
               values.push(value);
               if (key2 !== void 0)
                 properties.set(key2, withoutUrlProof(value));
-            } else if (ts14.isShorthandPropertyAssignment(property)) {
+            } else if (ts15.isShorthandPropertyAssignment(property)) {
               const value = actuals?.values.get(property) ?? env.resolve(property.name.text);
               if (property.name.text === "url")
                 captureTarget(value.kind === "root" && !value.trace?.length ? traced(value, property.name, "source") : value);
@@ -220608,7 +220738,7 @@ var init_dataflow = __esm({
                 sqlValues = sqlSnapshot(value);
               values.push(value);
               properties.set(property.name.text, withoutUrlProof(value));
-            } else if (ts14.isSpreadAssignment(property)) {
+            } else if (ts15.isSpreadAssignment(property)) {
               const value = actuals?.values.get(property) ?? this.evalExpression(property.expression, env);
               values.push(value);
               if (value.nosqlObject?.modified)
@@ -220628,7 +220758,7 @@ var init_dataflow = __esm({
             expressObjectBody: true,
             properties,
             nosqlWhere,
-            nosqlObject: { node: expression, value: combined, modified: false, closed: expression.properties.every((property) => (ts14.isPropertyAssignment(property) || ts14.isShorthandPropertyAssignment(property)) && !ts14.isComputedPropertyName(property.name) && !["__proto__"].includes(propertyName(property.name) ?? "")) },
+            nosqlObject: { node: expression, value: combined, modified: false, closed: expression.properties.every((property) => (ts15.isPropertyAssignment(property) || ts15.isShorthandPropertyAssignment(property)) && !ts15.isComputedPropertyName(property.name) && !["__proto__"].includes(propertyName(property.name) ?? "")) },
             sqlDataUnavailable: combined.sqlDataUnavailable || dataUnavailable,
             ...sqlText ? { sqlConfig: { node: expression, closed: this.session?.sqlModel.closedConfig(expression) === true, text: sqlText, values: sqlValues } } : {},
             ...target ? { httpConfig: {
@@ -220640,32 +220770,32 @@ var init_dataflow = __esm({
             } } : {}
           };
         }
-        if (ts14.isTemplateExpression(expression)) {
+        if (ts15.isTemplateExpression(expression)) {
           return concatValues([literalValue(expression.head.text), ...expression.templateSpans.flatMap((span) => [this.evalExpression(span.expression, env), literalValue(span.literal.text)])]);
         }
-        if (ts14.isNoSubstitutionTemplateLiteral(expression))
+        if (ts15.isNoSubstitutionTemplateLiteral(expression))
           return SAFE;
-        if (ts14.isConditionalExpression(expression)) {
+        if (ts15.isConditionalExpression(expression)) {
           const observed = this.conditionalActuals.get(expression);
           return observed?.env === env ? observed.value : joinValues(this.evalExpression(expression.whenTrue, env), this.evalExpression(expression.whenFalse, env));
         }
-        if (ts14.isBinaryExpression(expression)) {
+        if (ts15.isBinaryExpression(expression)) {
           if (isAssignmentOperator(expression.operatorToken.kind)) {
             if (isSimpleAssignment(expression.operatorToken.kind))
               return this.evalExpression(expression.right, env);
-            return combineValues([ts14.isIdentifier(expression.left) ? env.resolve(expression.left.text) : UNKNOWN, this.evalExpression(expression.right, env)]);
+            return combineValues([ts15.isIdentifier(expression.left) ? env.resolve(expression.left.text) : UNKNOWN, this.evalExpression(expression.right, env)]);
           }
-          if (expression.operatorToken.kind === ts14.SyntaxKind.PlusToken)
+          if (expression.operatorToken.kind === ts15.SyntaxKind.PlusToken)
             return concatValues([this.evalExpression(expression.left, env), this.evalExpression(expression.right, env)]);
           if ([
-            ts14.SyntaxKind.AmpersandAmpersandToken,
-            ts14.SyntaxKind.BarBarToken,
-            ts14.SyntaxKind.QuestionQuestionToken
+            ts15.SyntaxKind.AmpersandAmpersandToken,
+            ts15.SyntaxKind.BarBarToken,
+            ts15.SyntaxKind.QuestionQuestionToken
           ].includes(expression.operatorToken.kind))
             return joinValues(this.evalExpression(expression.left, env), this.evalExpression(expression.right, env));
           return UNKNOWN;
         }
-        if (ts14.isCallExpression(expression)) {
+        if (ts15.isCallExpression(expression)) {
           const applied = this.callableActuals.get(expression);
           if (applied?.env === env)
             return applied.value ?? UNKNOWN;
@@ -220678,9 +220808,9 @@ var init_dataflow = __esm({
             }
             return returned.sqlArray && this.session?.sqlModel.returnedArrayUse(expression) !== true ? { ...returned, sqlArray: { ...returned.sqlArray, closed: false } } : returned;
           }
-          const receiver = ts14.isPropertyAccessExpression(expression.expression) ? this.evalExpression(expression.expression.expression, env) : void 0;
-          const method = ts14.isPropertyAccessExpression(expression.expression) ? expression.expression.name.text : void 0;
-          if (ts14.isIdentifier(expression.expression) && expression.expression.text === "URLSearchParams") {
+          const receiver = ts15.isPropertyAccessExpression(expression.expression) ? this.evalExpression(expression.expression.expression, env) : void 0;
+          const method = ts15.isPropertyAccessExpression(expression.expression) ? expression.expression.name.text : void 0;
+          if (ts15.isIdentifier(expression.expression) && expression.expression.text === "URLSearchParams") {
             return withHttpUnavailable(args.some(isInputRelated) ? inheritTrace(rootValue("searchParams"), args) : args.every((value) => value.kind === "safe") ? SAFE : UNKNOWN, args);
           }
           if (method === "toString" && receiver?.queryContent && args.length === 0) {
@@ -220710,13 +220840,13 @@ var init_dataflow = __esm({
             return { ...traced(combineValues(args), expression, "call"), kind: "unknown", inputRelated: true, traceTruncated: true, httpTargetUnavailable: httpUnavailable(receiver ? [receiver, ...args] : args) };
           return withHttpUnavailable(UNKNOWN, receiver ? [receiver, ...args] : args);
         }
-        if (ts14.isNewExpression(expression)) {
+        if (ts15.isNewExpression(expression)) {
           const constructed = this.constructedActuals.get(expression);
           if (constructed?.env === env)
             return constructed.value;
           const observed = this.evaluationActuals.get(expression);
           const values = observed?.env === env ? observed.values : (expression.arguments ?? []).map((argument) => this.evalExpression(argument, env));
-          if (ts14.isIdentifier(expression.expression) && expression.expression.text === "URLSearchParams" && this.session && !this.session.modules.symbol(expression.expression)) {
+          if (ts15.isIdentifier(expression.expression) && expression.expression.text === "URLSearchParams" && this.session && !this.session.modules.symbol(expression.expression)) {
             const content = queryContent(combineValues(values));
             return {
               ...inheritTrace(isInputRelated(content) ? rootValue("searchParams") : SAFE, values),
@@ -220725,24 +220855,24 @@ var init_dataflow = __esm({
               nativeQuery: this.session.queryModel.supports(expression)
             };
           }
-          if (ts14.isIdentifier(expression.expression) && expression.expression.text === "URLSearchParams") {
+          if (ts15.isIdentifier(expression.expression) && expression.expression.text === "URLSearchParams") {
             return withHttpUnavailable(values.some(isInputRelated) ? inheritTrace(rootValue("searchParams"), values) : values.every((value) => value.kind === "safe") ? SAFE : UNKNOWN, values);
           }
           return withHttpUnavailable(values.some(isInputRelated) ? UNKNOWN_INPUT : UNKNOWN, values);
         }
-        if (ts14.isPrefixUnaryExpression(expression) || ts14.isPostfixUnaryExpression(expression))
+        if (ts15.isPrefixUnaryExpression(expression) || ts15.isPostfixUnaryExpression(expression))
           return UNKNOWN;
-        if (ts14.isSpreadElement(expression))
+        if (ts15.isSpreadElement(expression))
           return this.evalExpression(expression.expression, env);
-        if (ts14.isArrowFunction(expression)) {
+        if (ts15.isArrowFunction(expression)) {
           if (!this.session?.modules.indexComplete)
             return { ...SAFE, sqlCallback: true };
           const callable = this.session?.closure(expression, env, this.constructedReceiver, this.staticContext);
           return { ...SAFE, staticContext: this.staticContext, sqlCallback: true, callable, ...!callable && this.session ? { opaqueClosure: this.session.opaqueCaptures(expression, env) } : {} };
         }
-        if (ts14.isFunctionExpression(expression))
+        if (ts15.isFunctionExpression(expression))
           return { ...SAFE, sqlCallback: true };
-        if (ts14.isClassExpression(expression))
+        if (ts15.isClassExpression(expression))
           return SAFE;
         return UNKNOWN;
       }
@@ -220753,23 +220883,23 @@ var init_dataflow = __esm({
 // build/src/source/ast.js
 function scriptKind(path2) {
   if (/\.tsx$/i.test(path2))
-    return ts15.ScriptKind.TSX;
+    return ts16.ScriptKind.TSX;
   if (/\.jsx$/i.test(path2))
-    return ts15.ScriptKind.JSX;
+    return ts16.ScriptKind.JSX;
   if (/\.(?:ts|mts|cts)$/i.test(path2))
-    return ts15.ScriptKind.TS;
-  return ts15.ScriptKind.JS;
+    return ts16.ScriptKind.TS;
+  return ts16.ScriptKind.JS;
 }
 function withoutComments(source) {
-  const scanner = ts15.createScanner(ts15.ScriptTarget.Latest, false, ts15.LanguageVariant.Standard, source);
+  const scanner = ts16.createScanner(ts16.ScriptTarget.Latest, false, ts16.LanguageVariant.Standard, source);
   let token = scanner.scan();
   let cursor = 0;
   let output = "";
-  while (token !== ts15.SyntaxKind.EndOfFileToken) {
+  while (token !== ts16.SyntaxKind.EndOfFileToken) {
     const start = scanner.getTokenPos();
     const end = scanner.getTextPos();
     output += source.slice(cursor, start);
-    if (token === ts15.SyntaxKind.SingleLineCommentTrivia || token === ts15.SyntaxKind.MultiLineCommentTrivia) {
+    if (token === ts16.SyntaxKind.SingleLineCommentTrivia || token === ts16.SyntaxKind.MultiLineCommentTrivia) {
       output += source.slice(start, end).replace(/[^\n\r]/g, " ");
     } else {
       output += source.slice(start, end);
@@ -220803,35 +220933,35 @@ function findingFromObservation(observation) {
   };
 }
 function callName(expression) {
-  if (ts15.isIdentifier(expression))
+  if (ts16.isIdentifier(expression))
     return expression.text;
-  if (ts15.isPropertyAccessExpression(expression))
+  if (ts16.isPropertyAccessExpression(expression))
     return `${callName(expression.expression)}.${expression.name.text}`;
-  if (ts15.isElementAccessExpression(expression)) {
+  if (ts16.isElementAccessExpression(expression)) {
     const property = staticMemberName(expression);
     return property === void 0 ? callName(expression.expression) : `${callName(expression.expression)}.${property}`;
   }
   return expressionName(expression);
 }
 function dynamicCodeShape(node) {
-  if (ts15.isCallExpression(node)) {
+  if (ts16.isCallExpression(node)) {
     const name = callName(node.expression);
     if (name === "eval" || name === "window.eval")
       return "eval";
     if (name === "Function" || name === "window.Function")
       return "function";
-  } else if (ts15.isNewExpression(node) && (ts15.isIdentifier(node.expression) && node.expression.text === "Function" || ts15.isPropertyAccessExpression(node.expression) && ts15.isIdentifier(node.expression.expression) && node.expression.expression.text === "window" && node.expression.name.text === "Function"))
+  } else if (ts16.isNewExpression(node) && (ts16.isIdentifier(node.expression) && node.expression.text === "Function" || ts16.isPropertyAccessExpression(node.expression) && ts16.isIdentifier(node.expression.expression) && node.expression.expression.text === "window" && node.expression.name.text === "Function"))
     return "function";
   return void 0;
 }
 function directDynamicCodeShape(node) {
-  if (!ts15.isCallExpression(node) && !ts15.isNewExpression(node))
+  if (!ts16.isCallExpression(node) && !ts16.isNewExpression(node))
     return void 0;
-  const callee = node.expression, call = ts15.isCallExpression(node);
+  const callee = node.expression, call = ts16.isCallExpression(node);
   let name;
-  if (ts15.isIdentifier(callee))
+  if (ts16.isIdentifier(callee))
     name = callee.text;
-  else if ((ts15.isPropertyAccessExpression(callee) || call && ts15.isElementAccessExpression(callee)) && ts15.isIdentifier(callee.expression) && callee.expression.text === "window")
+  else if ((ts16.isPropertyAccessExpression(callee) || call && ts16.isElementAccessExpression(callee)) && ts16.isIdentifier(callee.expression) && callee.expression.text === "window")
     name = staticMemberName(callee);
   return name === "Function" ? "function" : call && name === "eval" ? "eval" : void 0;
 }
@@ -220843,8 +220973,8 @@ function dynamicCodeObservation(astFile, node, use) {
   const flows = (use?.argumentFlows ?? []).filter((flow2) => relevant(flow2.index));
   const flow = flows.find((candidate) => candidate.certainty === "tainted") ?? flows.reduce((first, candidate) => !first || candidate.index < first.index ? candidate : first, void 0);
   const selected = flow?.certainty === "tainted" ? flows.filter((candidate) => candidate.certainty === "tainted").reduce((first, candidate) => candidate.index < first.index ? candidate : first) : flow;
-  const spread = args.some(ts15.isSpreadElement);
-  const literal = !!direct && !astFile.parseError && !spread && flows.length === 0 && args.every((arg, index) => !relevant(index) || ts15.isStringLiteral(arg) || ts15.isNoSubstitutionTemplateLiteral(arg));
+  const spread = args.some(ts16.isSpreadElement);
+  const literal = !!direct && !astFile.parseError && !spread && flows.length === 0 && args.every((arg, index) => !relevant(index) || ts16.isStringLiteral(arg) || ts16.isNoSubstitutionTemplateLiteral(arg));
   const base = {
     file: astFile.file,
     sourceFile: astFile.sourceFile,
@@ -220876,11 +221006,11 @@ function isSqlSink(name) {
   return SQL_SINK.test(name) || RAW_SQL_SINK.test(name);
 }
 function hasDangerousHtmlProp(expression) {
-  if (!expression || !ts15.isObjectLiteralExpression(expression))
+  if (!expression || !ts16.isObjectLiteralExpression(expression))
     return false;
   return expression.properties.some((property) => {
-    if (ts15.isPropertyAssignment(property) || ts15.isShorthandPropertyAssignment(property)) {
-      return staticMemberName(property.name) === "dangerouslySetInnerHTML" || ts15.isIdentifier(property.name) && property.name.text === "dangerouslySetInnerHTML";
+    if (ts16.isPropertyAssignment(property) || ts16.isShorthandPropertyAssignment(property)) {
+      return staticMemberName(property.name) === "dangerouslySetInnerHTML" || ts16.isIdentifier(property.name) && property.name.text === "dangerouslySetInnerHTML";
     }
     return false;
   });
@@ -220889,24 +221019,24 @@ function pushObservation(output, file, sourceFile, node, ruleId, title, descript
   output.push({ file, sourceFile, node, ruleId, title, description, severity, remediation, confidence });
 }
 function staticMemberName(expression) {
-  if (ts15.isPropertyAccessExpression(expression))
+  if (ts16.isPropertyAccessExpression(expression))
     return expression.name.text;
-  if (ts15.isElementAccessExpression(expression)) {
+  if (ts16.isElementAccessExpression(expression)) {
     const argument = expression.argumentExpression;
-    if (ts15.isStringLiteral(argument) || ts15.isNoSubstitutionTemplateLiteral(argument) || ts15.isNumericLiteral(argument))
+    if (ts16.isStringLiteral(argument) || ts16.isNoSubstitutionTemplateLiteral(argument) || ts16.isNumericLiteral(argument))
       return argument.text;
   }
   return void 0;
 }
 function memberPath(expression) {
-  if (ts15.isIdentifier(expression))
+  if (ts16.isIdentifier(expression))
     return [expression.text];
   const property = staticMemberName(expression);
   if (!property)
     return [];
-  if (ts15.isPropertyAccessExpression(expression))
+  if (ts16.isPropertyAccessExpression(expression))
     return [...memberPath(expression.expression), property];
-  if (ts15.isElementAccessExpression(expression))
+  if (ts16.isElementAccessExpression(expression))
     return [...memberPath(expression.expression), property];
   return [];
 }
@@ -220922,17 +221052,17 @@ function flowConfidence(use, index = 0) {
   return flow ? flow.certainty === "unknown" ? "low" : "medium" : void 0;
 }
 function dataOnlyOptions(node) {
-  if (!ts15.isObjectLiteralExpression(node))
+  if (!ts16.isObjectLiteralExpression(node))
     return false;
   return node.properties.every((property) => {
-    if (!ts15.isPropertyAssignment(property) || ts15.isComputedPropertyName(property.name))
+    if (!ts16.isPropertyAssignment(property) || ts16.isComputedPropertyName(property.name))
       return false;
-    const key2 = ts15.isIdentifier(property.name) || ts15.isStringLiteral(property.name) ? property.name.text : void 0;
+    const key2 = ts16.isIdentifier(property.name) || ts16.isStringLiteral(property.name) ? property.name.text : void 0;
     if (key2 === "method")
-      return ts15.isStringLiteral(property.initializer) && /^(GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)$/i.test(property.initializer.text);
-    if (key2 !== "headers" || !ts15.isObjectLiteralExpression(property.initializer))
+      return ts16.isStringLiteral(property.initializer) && /^(GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)$/i.test(property.initializer.text);
+    if (key2 !== "headers" || !ts16.isObjectLiteralExpression(property.initializer))
       return false;
-    return property.initializer.properties.every((header) => ts15.isPropertyAssignment(header) && !ts15.isComputedPropertyName(header.name) && (ts15.isIdentifier(header.name) || ts15.isStringLiteral(header.name)) && !/^(host|:authority)$/i.test(header.name.text) && ts15.isStringLiteral(header.initializer));
+    return property.initializer.properties.every((header) => ts16.isPropertyAssignment(header) && !ts16.isComputedPropertyName(header.name) && (ts16.isIdentifier(header.name) || ts16.isStringLiteral(header.name)) && !/^(host|:authority)$/i.test(header.name.text) && ts16.isStringLiteral(header.initializer));
   });
 }
 function destinationQualified(use, node) {
@@ -220943,23 +221073,26 @@ function observeFile(astFile, flowUses, files) {
   const { file, sourceFile } = astFile;
   const walk = (node) => {
     const observationStart = observations2.length;
-    if (ts15.isBinaryExpression(node)) {
+    if (ts16.isBinaryExpression(node)) {
       const use = flowUses.get(node);
       const confidence = use ? flowConfidence(use) : void 0;
       if (use?.kind === "assignment" && confidence && isHtmlAssignmentTarget(node.left)) {
         pushObservation(observations2, file, sourceFile, node, "ast:html-input-sink", "Request input reaches an HTML sink", "Untrusted request or URL input appears to flow into an HTML rendering sink.", "high", "Validate and contextually encode untrusted values before rendering them.", confidence);
       }
       if (use?.kind === "assignment" && confidence && isRedirectLocationTarget(node.left)) {
-        pushObservation(observations2, file, sourceFile, node, "ast:open-redirect", "Request input reaches a redirect location", "Untrusted request input appears to control a browser navigation target.", "medium", "Allowlist destination origins or paths before redirecting.", confidence);
+        if (use.browserLocationRole !== "closed_local_object") {
+          const unknown2 = use.browserLocationRole === "unknown_receiver";
+          pushObservation(observations2, file, sourceFile, node, "ast:open-redirect", "Request input reaches a redirect location", unknown2 ? "Input-related data reaches a location-shaped assignment; browser receiver identity is unresolved. Browser navigation and runtime execution require separate review." : "Untrusted request input appears to control a browser navigation target.", "medium", "Allowlist destination origins or paths before redirecting.", unknown2 ? "low" : confidence);
+        }
       }
     }
-    if (ts15.isJsxAttribute(node) && ts15.isIdentifier(node.name) && node.name.text.toLowerCase() === "dangerouslysetinnerhtml") {
+    if (ts16.isJsxAttribute(node) && ts16.isIdentifier(node.name) && node.name.text.toLowerCase() === "dangerouslysetinnerhtml") {
       const use = flowUses.get(node);
       if (use?.kind === "jsx" && flowConfidence(use)) {
         pushObservation(observations2, file, sourceFile, node, "ast:html-input-sink", "Request input reaches a React HTML sink", "Untrusted request or URL input appears in a dangerouslySetInnerHTML prop.", "high", "Avoid dangerouslySetInnerHTML or sanitize and contextually encode untrusted values before rendering them.", flowConfidence(use));
       }
     }
-    if (ts15.isCallExpression(node)) {
+    if (ts16.isCallExpression(node)) {
       const name = callName(node.expression);
       const use = flowUses.get(node);
       if (use?.archiveWrite) {
@@ -220991,7 +221124,7 @@ function observeFile(astFile, flowUses, files) {
       } else if ((name === "eval" || name === "window.eval" || name === "Function" || name === "window.Function") && node.arguments.length > 0) {
         observations2.push(dynamicCodeObservation(astFile, node, use));
       } else if (use?.htmlResponse === "express" && flowConfidence(use, 0)) {
-        const json3 = ts15.isPropertyAccessExpression(node.expression) && node.expression.name.text === "json";
+        const json3 = ts16.isPropertyAccessExpression(node.expression) && node.expression.name.text === "json";
         pushObservation(observations2, file, sourceFile, node, "ast:html-input-sink", json3 ? "Request input reaches JSON with HTML or unknown MIME; set application/json" : "Request input reaches res.send; encode HTML or set a non-HTML type", "Input reaches a response-shaped body whose MIME can render HTML. JSON serialization does not reset an existing Content-Type. Confirm the binding, headers and encoding before assessing exploitability.", "high", "For JSON data, explicitly set application/json before res.json; for HTML, contextually encode untrusted text. Review custom header changes.", use.htmlResponseMime === "unknown" ? "low" : flowConfidence(use, 0));
       } else if (use?.kind === "call" && HTML_SINK.test(name) && (use.argumentFlows?.length ?? 0) > 0) {
         const confidence = use.argumentFlows?.some((flow) => flow.certainty === "unknown") ? "low" : "medium";
@@ -221027,7 +221160,7 @@ function observeFile(astFile, flowUses, files) {
         pushObservation(observations2, file, sourceFile, node, "ast:dynamic-code", "Request input reaches a timer code argument", "Request input appears to reach a timer API that accepts executable code.", "high", "Pass a function reference and validate all inputs before scheduling work.", flowConfidence(use, 0));
       }
     }
-    if (ts15.isNewExpression(node)) {
+    if (ts16.isNewExpression(node)) {
       const observation = dynamicCodeObservation(astFile, node, flowUses.get(node));
       if (observation)
         observations2.push(observation);
@@ -221042,7 +221175,7 @@ function observeFile(astFile, flowUses, files) {
         if (observations2[index].kind !== "observation")
           observations2[index].staticContext = staticContext;
       }
-    ts15.forEachChild(node, walk);
+    ts16.forEachChild(node, walk);
   };
   walk(sourceFile);
   return observations2.map((observation) => {
@@ -221053,7 +221186,7 @@ function observeFile(astFile, flowUses, files) {
       return observation;
     if (use?.processRole && ["ast:shell-input-sink", "ast:process-executable"].includes(observation.ruleId))
       return observation;
-    const index = ts15.isCallExpression(observation.node) && callName(observation.node.expression) === "React.createElement" ? 1 : 0;
+    const index = ts16.isCallExpression(observation.node) && callName(observation.node.expression) === "React.createElement" ? 1 : 0;
     const staticFlow = observation.staticFlow ?? (observation.ruleId === "ast:nosql-input-sink" && use?.nosqlRole ? use.nosqlRole.staticFlow : observation.ruleId === "ast:sql-input-sink" && use?.sqlRole ? use.sqlRole.staticFlow : observation.ruleId === "ast:server-request" && use?.httpRole ? use.httpRole.staticFlow : use?.argumentFlows?.find((argument) => argument.index === index)?.staticFlow);
     return staticFlow ? { ...observation, staticFlow } : observation;
   });
@@ -221124,7 +221257,7 @@ function runBuiltinAst(snapshot4, hasOtherSecurityCheck2 = false, limits = FLOW_
   const astFiles = [];
   const skippedSensitive = snapshot4.files.filter((file) => file.sensitive && file.category === "code").length;
   for (const file of builtinAstFiles(snapshot4)) {
-    const sourceFile = ts15.createSourceFile(file.path, file.text, ts15.ScriptTarget.Latest, true, scriptKind(file.path));
+    const sourceFile = ts16.createSourceFile(file.path, file.text, ts16.ScriptTarget.Latest, true, scriptKind(file.path));
     astFiles.push({ file, sourceFile, parseError: parseDiagnostics(sourceFile).length > 0 });
   }
   if (astFiles.length === 0) {
@@ -221164,12 +221297,15 @@ function runBuiltinAst(snapshot4, hasOtherSecurityCheck2 = false, limits = FLOW_
     const staticContext = mergeStaticContexts(prior.staticContext, use.staticContext);
     const merged = { ...prior, staticContext, htmlResponse: prior.htmlResponse ?? use.htmlResponse, htmlResponseMime: prior.htmlResponseMime === "unknown" || use.htmlResponseMime === "unknown" ? "unknown" : prior.htmlResponseMime ?? use.htmlResponseMime, argumentFlows: [...argumentsByIndex.values()].sort((a, b) => a.index - b.index), localForkCall: prior.localForkCall && use.localForkCall ? { complete: prior.localForkCall.complete && use.localForkCall.complete } : void 0, localProcessCall: prior.localProcessCall && use.localProcessCall ? { complete: prior.localProcessCall.complete && use.localProcessCall.complete } : void 0, forkRole: prior.forkRole?.identity === "unresolved" || use.forkRole?.identity === "unresolved" ? { identity: "unresolved" } : prior.forkRole ?? use.forkRole, processRole: mergeProcessRoles(prior.processRole, use.processRole), sqlRole: mergeSqlRoles(prior.sqlRole, use.sqlRole), nosqlRole: mergeNoSqlRoles(prior.nosqlRole, use.nosqlRole), httpRole: mergeHttpRoles(prior.httpRole, use.httpRole) };
     const filesystemRoles = [prior.filesystemProcess, use.filesystemProcess].filter((role) => !!role);
+    merged.browserLocationRole = mergeBrowserLocationRoles(prior.browserLocationRole, use.browserLocationRole);
     const filesystemRank = { argv_shell_input: 4, argv_shell_unknown: 3, direct_argv_interpreter_unknown: 2, argv_only_shell_disabled: 0 };
     merged.filesystemProcess = filesystemRoles.reduce((selected, role) => !selected || filesystemRank[role.outcome] > filesystemRank[selected.outcome] ? role : selected, void 0);
     const archiveRoles = [prior.archiveWrite, use.archiveWrite].filter((role) => !!role);
     const archiveRank = { path_role_unknown: 3, path_input: 2, lexically_contained: 0 };
     merged.archiveWrite = archiveRoles.reduce((selected, role) => !selected || archiveRank[role.outcome] > archiveRank[selected.outcome] ? role : selected, void 0);
     if (staticContext) {
+      if (merged.browserLocationRole)
+        merged.browserLocationRole = "unknown_receiver";
       merged.argumentFlows = (merged.argumentFlows ?? []).map((flow) => ({ ...flow, certainty: "unknown", fixedDestination: false, staticFlow: flow.staticFlow ? { ...flow.staticFlow, truncated: true } : void 0 }));
       if (merged.nosqlRole)
         merged.nosqlRole = { ...merged.nosqlRole, certainty: "unknown", staticFlow: merged.nosqlRole.staticFlow ? { ...merged.nosqlRole.staticFlow, truncated: true } : void 0 };
@@ -221182,7 +221318,7 @@ function runBuiltinAst(snapshot4, hasOtherSecurityCheck2 = false, limits = FLOW_
     }
     flowUses.set(use.node, merged);
   }
-  const outboundUses = [...flowUses.values()].filter((use) => ts15.isCallExpression(use.node) && FETCH_SINK.test(callName(use.node.expression)) && flowConfidence(use, 0));
+  const outboundUses = [...flowUses.values()].filter((use) => ts16.isCallExpression(use.node) && FETCH_SINK.test(callName(use.node.expression)) && flowConfidence(use, 0));
   const outboundFixedDestinationSuppressed = outboundUses.filter((use) => destinationQualified(use, use.node)).length;
   const forkUses = [...flowUses.values()].filter((use) => use.forkRole);
   const forkInputUses = forkUses.filter((use) => flowConfidence(use, 0));
@@ -221223,6 +221359,7 @@ function runBuiltinAst(snapshot4, hasOtherSecurityCheck2 = false, limits = FLOW_
       "Axios request config role model separates a closed fixed INITIAL url field from payload-only input under the declared v1.13.2 API contract. Lexical imports/static require bindings and indexed snapshot validation do not authenticate runtime packages or external side effects. Defaults/interceptors/custom transport, alias/mutation, incomplete scope and opaque target roles retain low-confidence candidates; unknown is not safe. No body source is asserted to control URL authority.",
       "Closed local/relative CommonJS function constructors support actual allocation, own arrow methods, immutable binding-identity capture frames and bounded scalar return/callback transfer. Unmaterialized owned roots, mutation/escape, unsupported captures, cycles and identity failures retain partial coverage. These frames do not establish runtime entry reachability or general callable safety.",
       "Legacy MongoDB roles use only bounded collected nearest package/lock metadata and anchored 2.x contract evidence. A statically bound MongoClient.connect final callback supplies its second parameter as a declared Db; fixed-name Db.collection creates a collection capability. Missing/contradictory/3+ version evidence, opaque options and escaped/mutated capabilities remain unresolved/partial. Metadata JSON parsing is capped at 1 MiB per file and 256 files, charged to shared indexing work; no installed package, DB connection or target program is executed.",
+      "Direct window.location assignments exclude browser navigation only for a fresh function/module-private const object with an own data location slot and complete bounded proof within the collected static subset. Script-global, opaque, escaped and mutated bindings remain low-confidence candidates. Exact evaluator names in identifiers/static literals and computed destructuring keys veto exclusion; ambient callable identity and runtime realm closure are not certified. Unbound browser-shaped names do not prove runtime browser identity. Bracket spellings, nested href and standalone location retain their existing interpretation.",
       "MarsDB NoSQL role model recognizes declared Collection selector arguments of find/findOne/update/remove/count/ids. Update data and options are separate from the selector. Primitive-string exclusion covers only local const snapshots with a dominating terminating typeof guard and no alias/mutation/opaque intervening effects; repeated member reads remain candidates. Input in $where remains executable-selector input even when it is a string. Package identity, dispatch at runtime and exploitability remain unverified.",
       "pg SQL role model separates supported statement text from bound values under the declared pg JS API. Default dispatch and closed statement shape are required before a text-input claim. A fixed text/values exclusion is not runtime package identity, SQL syntax validity, database-side dynamic SQL safety or confirmed remediation. Unsupported identity, mutation, prototype, native, callback and opaque value/array roles remain unknown; generic SQL/input seed behavior is retained.",
       "Bare fork spelling is not classified as a shell API when every observed invocation resolves to an immutable local/relative function and its actual analysis completes. This is not function safety: nested native/SQL/HTTP/HTML sinks remain findings. Unresolved, mutable and incomplete analysis retain the legacy heuristic and partial gate.",
@@ -221283,19 +221420,20 @@ function runBuiltinAst(snapshot4, hasOtherSecurityCheck2 = false, limits = FLOW_
 function sameLimits(a, b) {
   return Object.entries(a).every(([key2, value]) => b[key2] === value);
 }
-var ts15, HTML_SINK, SQL_SINK, RAW_SQL_SINK, REDIRECT_SINK, FETCH_SINK, SHELL_SINK;
+var ts16, HTML_SINK, SQL_SINK, RAW_SQL_SINK, REDIRECT_SINK, FETCH_SINK, SHELL_SINK;
 var init_ast = __esm({
   "build/src/source/ast.js"() {
     "use strict";
     init_report_path();
     init_sql_role();
     init_nosql_role();
-    ts15 = __toESM(require_typescript(), 1);
+    ts16 = __toESM(require_typescript(), 1);
     init_dataflow();
     init_modules();
     init_http_role();
     init_static_context();
     init_process_role();
+    init_browser_location_role();
     HTML_SINK = /(?:\.innerHTML\b|\.outerHTML\b|\.insertAdjacentHTML\b|\bdocument\.write\b|\bdangerouslySetInnerHTML\b)/i;
     SQL_SINK = /(?:^|\.)(?:query|execute|raw|unsafe|sql)(?:$|\()/i;
     RAW_SQL_SINK = /(?:^|\.)\$?(?:queryRawUnsafe|executeRawUnsafe|queryRaw|executeRaw)$/i;
@@ -232057,7 +232195,7 @@ init_code_coverage();
 init_analysis_budget();
 init_collection_budget();
 init_snapshot_evidence();
-var ts17 = __toESM(require_typescript(), 1);
+var ts18 = __toESM(require_typescript(), 1);
 init_ast();
 import { types as utilTypes } from "node:util";
 import { createHash as createHash3 } from "node:crypto";
@@ -232467,7 +232605,7 @@ async function stageSnapshot(snapshot4) {
 }
 
 // build/src/source/framework.js
-var ts16 = __toESM(require_typescript(), 1);
+var ts17 = __toESM(require_typescript(), 1);
 import { posix as posix6 } from "node:path";
 var FRONTEND_EXTENSIONS = /\.(?:[cm]?[jt]sx?)$/i;
 var MIGRATION_PATH = /(?:^|\/)supabase\/migrations\/(?:[^/]+\/)*[^/]+\.sql$/i;
@@ -232479,12 +232617,12 @@ function isNextConfigPath(path2) {
 }
 function scriptKind2(path2) {
   if (/\.tsx$/i.test(path2))
-    return ts16.ScriptKind.TSX;
+    return ts17.ScriptKind.TSX;
   if (/\.jsx$/i.test(path2))
-    return ts16.ScriptKind.JSX;
+    return ts17.ScriptKind.JSX;
   if (/\.(?:ts|mts|cts)$/i.test(path2))
-    return ts16.ScriptKind.TS;
-  return ts16.ScriptKind.JS;
+    return ts17.ScriptKind.TS;
+  return ts17.ScriptKind.JS;
 }
 function parseError(sourceFile) {
   const diagnostics = sourceFile.parseDiagnostics;
@@ -232492,11 +232630,11 @@ function parseError(sourceFile) {
 }
 function hasUseClientDirective(sourceFile) {
   const first = sourceFile.statements[0];
-  return !!first && ts16.isExpressionStatement(first) && ts16.isStringLiteral(first.expression) && first.expression.text === "use client";
+  return !!first && ts17.isExpressionStatement(first) && ts17.isStringLiteral(first.expression) && first.expression.text === "use client";
 }
 function hasUseServerDirective(sourceFile) {
   const first = sourceFile.statements[0];
-  return !!first && ts16.isExpressionStatement(first) && ts16.isStringLiteral(first.expression) && first.expression.text === "use server";
+  return !!first && ts17.isExpressionStatement(first) && ts17.isStringLiteral(first.expression) && first.expression.text === "use server";
 }
 function isSecretPublicName(name) {
   if (!/^NEXT_PUBLIC_[A-Z0-9_]+$/i.test(name))
@@ -232534,11 +232672,11 @@ function initializerHasActualServerSecret(initializer) {
   const visit = (node) => {
     if (found)
       return;
-    if ((ts16.isStringLiteral(node) || ts16.isNoSubstitutionTemplateLiteral(node)) && isActualServerSecretLiteral(node.text)) {
+    if ((ts17.isStringLiteral(node) || ts17.isNoSubstitutionTemplateLiteral(node)) && isActualServerSecretLiteral(node.text)) {
       found = true;
       return;
     }
-    ts16.forEachChild(node, visit);
+    ts17.forEachChild(node, visit);
   };
   visit(initializer);
   return found;
@@ -232548,47 +232686,47 @@ function initializerHasPublicSupabaseKey(initializer) {
   const visit = (node) => {
     if (found)
       return;
-    if ((ts16.isStringLiteral(node) || ts16.isNoSubstitutionTemplateLiteral(node)) && isPublicSupabaseKeyLiteral(node.text)) {
+    if ((ts17.isStringLiteral(node) || ts17.isNoSubstitutionTemplateLiteral(node)) && isPublicSupabaseKeyLiteral(node.text)) {
       found = true;
       return;
     }
-    ts16.forEachChild(node, visit);
+    ts17.forEachChild(node, visit);
   };
   visit(initializer);
   return found;
 }
 function staticEnvName(node) {
-  if (!ts16.isPropertyAccessExpression(node) && !ts16.isElementAccessExpression(node))
+  if (!ts17.isPropertyAccessExpression(node) && !ts17.isElementAccessExpression(node))
     return void 0;
-  const property = ts16.isPropertyAccessExpression(node) ? node.name.text : ts16.isStringLiteral(node.argumentExpression) || ts16.isNoSubstitutionTemplateLiteral(node.argumentExpression) ? node.argumentExpression.text : void 0;
+  const property = ts17.isPropertyAccessExpression(node) ? node.name.text : ts17.isStringLiteral(node.argumentExpression) || ts17.isNoSubstitutionTemplateLiteral(node.argumentExpression) ? node.argumentExpression.text : void 0;
   if (property === void 0)
     return void 0;
   const receiver = node.expression;
-  if (!ts16.isPropertyAccessExpression(receiver) || !ts16.isIdentifier(receiver.expression) || receiver.expression.text !== "process" || receiver.name.text !== "env")
+  if (!ts17.isPropertyAccessExpression(receiver) || !ts17.isIdentifier(receiver.expression) || receiver.expression.text !== "process" || receiver.name.text !== "env")
     return void 0;
   return property;
 }
 function staticPropertyName(name) {
-  if (ts16.isIdentifier(name) || ts16.isStringLiteral(name) || ts16.isNoSubstitutionTemplateLiteral(name) || ts16.isNumericLiteral(name))
+  if (ts17.isIdentifier(name) || ts17.isStringLiteral(name) || ts17.isNoSubstitutionTemplateLiteral(name) || ts17.isNumericLiteral(name))
     return name.text;
   return void 0;
 }
 function importSpecifier(node) {
-  if (ts16.isImportDeclaration(node) || ts16.isExportDeclaration(node)) {
-    return node.moduleSpecifier && ts16.isStringLiteral(node.moduleSpecifier) ? node.moduleSpecifier.text : void 0;
+  if (ts17.isImportDeclaration(node) || ts17.isExportDeclaration(node)) {
+    return node.moduleSpecifier && ts17.isStringLiteral(node.moduleSpecifier) ? node.moduleSpecifier.text : void 0;
   }
-  if (ts16.isCallExpression(node)) {
+  if (ts17.isCallExpression(node)) {
     const expression = node.expression;
-    const isRequire = ts16.isIdentifier(expression) && expression.text === "require";
-    const isDynamicImport = expression.kind === ts16.SyntaxKind.ImportKeyword;
+    const isRequire = ts17.isIdentifier(expression) && expression.text === "require";
+    const isDynamicImport = expression.kind === ts17.SyntaxKind.ImportKeyword;
     const argument = node.arguments[0];
-    if ((isRequire || isDynamicImport) && argument && ts16.isStringLiteral(argument))
+    if ((isRequire || isDynamicImport) && argument && ts17.isStringLiteral(argument))
       return argument.text;
   }
   return void 0;
 }
 function analyzeFrontend(file) {
-  const sourceFile = ts16.createSourceFile(file.path, file.text, ts16.ScriptTarget.Latest, true, scriptKind2(file.path));
+  const sourceFile = ts17.createSourceFile(file.path, file.text, ts17.ScriptTarget.Latest, true, scriptKind2(file.path));
   const publicSecretDeclarations = [];
   const serverSecretLiterals = [];
   let reactImport = false;
@@ -232596,20 +232734,20 @@ function analyzeFrontend(file) {
   const relativeImports = [];
   const envConfigDeclarations = [];
   const visit = (node) => {
-    if (ts16.isVariableDeclaration(node) && ts16.isIdentifier(node.name) && node.initializer && isSecretPublicName(node.name.text)) {
+    if (ts17.isVariableDeclaration(node) && ts17.isIdentifier(node.name) && node.initializer && isSecretPublicName(node.name.text)) {
       publicSecretDeclarations.push(node);
     }
-    if (ts16.isStringLiteral(node) || ts16.isNoSubstitutionTemplateLiteral(node)) {
+    if (ts17.isStringLiteral(node) || ts17.isNoSubstitutionTemplateLiteral(node)) {
       if (isActualServerSecretLiteral(node.text)) {
         serverSecretLiterals.push(node);
       }
     }
-    if (ts16.isImportDeclaration(node) && ts16.isStringLiteral(node.moduleSpecifier) && /^react(?:\/|$)/i.test(node.moduleSpecifier.text)) {
+    if (ts17.isImportDeclaration(node) && ts17.isStringLiteral(node.moduleSpecifier) && /^react(?:\/|$)/i.test(node.moduleSpecifier.text)) {
       reactImport = true;
     }
-    if (ts16.isCallExpression(node) && ts16.isIdentifier(node.expression) && node.expression.text === "require") {
+    if (ts17.isCallExpression(node) && ts17.isIdentifier(node.expression) && node.expression.text === "require") {
       const first = node.arguments[0];
-      if (first && ts16.isStringLiteral(first) && /^react(?:\/|$)/i.test(first.text))
+      if (first && ts17.isStringLiteral(first) && /^react(?:\/|$)/i.test(first.text))
         reactImport = true;
     }
     if (staticEnvName(node))
@@ -232617,14 +232755,14 @@ function analyzeFrontend(file) {
     const imported = importSpecifier(node);
     if (imported?.startsWith("."))
       relativeImports.push(imported);
-    if (isNextConfigPath(file.path) && ts16.isPropertyAssignment(node)) {
+    if (isNextConfigPath(file.path) && ts17.isPropertyAssignment(node)) {
       const parent = node.parent.parent;
-      const isEnvObject = ts16.isPropertyAssignment(parent) && staticPropertyName(parent.name)?.toLowerCase() === "env" && parent.initializer === node.parent;
+      const isEnvObject = ts17.isPropertyAssignment(parent) && staticPropertyName(parent.name)?.toLowerCase() === "env" && parent.initializer === node.parent;
       if (isEnvObject) {
         envConfigDeclarations.push(node);
       }
     }
-    ts16.forEachChild(node, visit);
+    ts17.forEachChild(node, visit);
   };
   visit(sourceFile);
   return {
@@ -233139,7 +233277,7 @@ function frontendFindings(analysis, available, envSignals) {
   for (const candidate of clientEntry ? reachable : [analysis]) {
     for (const declaration of candidate.publicSecretDeclarations) {
       const actualSecret = !!declaration.initializer && initializerHasActualServerSecret(declaration.initializer);
-      const publicKey = isPublicKeyName(ts16.isIdentifier(declaration.name) ? declaration.name.text : "") || !!declaration.initializer && initializerHasPublicSupabaseKey(declaration.initializer);
+      const publicKey = isPublicKeyName(ts17.isIdentifier(declaration.name) ? declaration.name.text : "") || !!declaration.initializer && initializerHasPublicSupabaseKey(declaration.initializer);
       if (!actualSecret && publicKey)
         continue;
       push({
@@ -233707,16 +233845,16 @@ var SOURCE_CODE_EXTENSIONS = /\.(?:[cm]?[jt]sx?)$/i;
 var SOURCE_PYTHON_EXTENSION = /\.py$/i;
 var SOURCE_SQL_EXTENSION = /\.sql$/i;
 var SOURCE_LITERAL_TOKENS = /* @__PURE__ */ new Set([
-  ts17.SyntaxKind.StringLiteral,
-  ts17.SyntaxKind.NoSubstitutionTemplateLiteral,
-  ts17.SyntaxKind.NumericLiteral,
-  ts17.SyntaxKind.BigIntLiteral,
-  ts17.SyntaxKind.RegularExpressionLiteral,
-  ts17.SyntaxKind.TemplateHead,
-  ts17.SyntaxKind.TemplateMiddle,
-  ts17.SyntaxKind.TemplateTail,
-  ts17.SyntaxKind.JsxText,
-  ts17.SyntaxKind.JsxTextAllWhiteSpaces
+  ts18.SyntaxKind.StringLiteral,
+  ts18.SyntaxKind.NoSubstitutionTemplateLiteral,
+  ts18.SyntaxKind.NumericLiteral,
+  ts18.SyntaxKind.BigIntLiteral,
+  ts18.SyntaxKind.RegularExpressionLiteral,
+  ts18.SyntaxKind.TemplateHead,
+  ts18.SyntaxKind.TemplateMiddle,
+  ts18.SyntaxKind.TemplateTail,
+  ts18.SyntaxKind.JsxText,
+  ts18.SyntaxKind.JsxTextAllWhiteSpaces
 ]);
 function splitAnchorLines(text3) {
   const lines = [];
@@ -233782,15 +233920,15 @@ function compactAnchorTokens(text3) {
 }
 function scriptKindForSource(path2) {
   if (/\.tsx$/i.test(path2))
-    return ts17.ScriptKind.TSX;
+    return ts18.ScriptKind.TSX;
   if (/\.jsx$/i.test(path2))
-    return ts17.ScriptKind.JSX;
+    return ts18.ScriptKind.JSX;
   if (/\.(?:ts|mts|cts)$/i.test(path2))
-    return ts17.ScriptKind.TS;
-  return ts17.ScriptKind.JS;
+    return ts18.ScriptKind.TS;
+  return ts18.ScriptKind.JS;
 }
 function maskAstLiteralRanges(text3, path2) {
-  const sourceFile = ts17.createSourceFile(path2, text3, ts17.ScriptTarget.Latest, true, scriptKindForSource(path2));
+  const sourceFile = ts18.createSourceFile(path2, text3, ts18.ScriptTarget.Latest, true, scriptKindForSource(path2));
   const output = text3.split("");
   const blankRange = (start, end) => {
     for (let index = Math.max(0, start); index < Math.min(output.length, end); index += 1) {
@@ -233799,16 +233937,16 @@ function maskAstLiteralRanges(text3, path2) {
     }
   };
   const visit = (node) => {
-    if (ts17.isRegularExpressionLiteral(node) || ts17.isJsxText(node))
+    if (ts18.isRegularExpressionLiteral(node) || ts18.isJsxText(node))
       blankRange(node.getStart(sourceFile), node.getEnd());
-    ts17.forEachChild(node, visit);
+    ts18.forEachChild(node, visit);
   };
   visit(sourceFile);
   return output.join("");
 }
 function maskTypeScriptComments(text3, path2) {
   const output = maskAstLiteralRanges(text3, path2).split("");
-  const scanner = ts17.createScanner(ts17.ScriptTarget.Latest, false, /\.(?:tsx|jsx)$/i.test(path2) ? ts17.LanguageVariant.JSX : ts17.LanguageVariant.Standard, output.join(""));
+  const scanner = ts18.createScanner(ts18.ScriptTarget.Latest, false, /\.(?:tsx|jsx)$/i.test(path2) ? ts18.LanguageVariant.JSX : ts18.LanguageVariant.Standard, output.join(""));
   const blankRange = (start, end) => {
     for (let index = Math.max(0, start); index < Math.min(output.length, end); index += 1) {
       if (output[index] !== "\n" && output[index] !== "\r")
@@ -233816,8 +233954,8 @@ function maskTypeScriptComments(text3, path2) {
     }
   };
   let token = scanner.scan();
-  while (token !== ts17.SyntaxKind.EndOfFileToken) {
-    if (token === ts17.SyntaxKind.SingleLineCommentTrivia || token === ts17.SyntaxKind.MultiLineCommentTrivia) {
+  while (token !== ts18.SyntaxKind.EndOfFileToken) {
+    if (token === ts18.SyntaxKind.SingleLineCommentTrivia || token === ts18.SyntaxKind.MultiLineCommentTrivia) {
       blankRange(scanner.getTokenPos(), scanner.getTextPos());
     }
     token = scanner.scan();
@@ -233828,11 +233966,11 @@ function normalizedTypeScriptAnchorLine(prepared, path2, line) {
   const selected = anchorRegion(prepared, line);
   if (selected === void 0)
     return "<file>";
-  const scanner = ts17.createScanner(ts17.ScriptTarget.Latest, false, /\.(?:tsx|jsx)$/i.test(path2) ? ts17.LanguageVariant.JSX : ts17.LanguageVariant.Standard, selected);
+  const scanner = ts18.createScanner(ts18.ScriptTarget.Latest, false, /\.(?:tsx|jsx)$/i.test(path2) ? ts18.LanguageVariant.JSX : ts18.LanguageVariant.Standard, selected);
   const tokens = [];
   let token = scanner.scan();
-  while (token !== ts17.SyntaxKind.EndOfFileToken) {
-    if (token !== ts17.SyntaxKind.WhitespaceTrivia && token !== ts17.SyntaxKind.NewLineTrivia && token !== ts17.SyntaxKind.SingleLineCommentTrivia && token !== ts17.SyntaxKind.MultiLineCommentTrivia && token !== ts17.SyntaxKind.ConflictMarkerTrivia) {
+  while (token !== ts18.SyntaxKind.EndOfFileToken) {
+    if (token !== ts18.SyntaxKind.WhitespaceTrivia && token !== ts18.SyntaxKind.NewLineTrivia && token !== ts18.SyntaxKind.SingleLineCommentTrivia && token !== ts18.SyntaxKind.MultiLineCommentTrivia && token !== ts18.SyntaxKind.ConflictMarkerTrivia) {
       tokens.push(SOURCE_LITERAL_TOKENS.has(token) ? "<literal>" : redactAnchorToken(scanner.getTokenText()));
     }
     token = scanner.scan();
@@ -242804,7 +242942,7 @@ function analyzeCsp(values) {
 }
 
 // build/src/url-modules.js
-var ts18 = __toESM(require_typescript(), 1);
+var ts19 = __toESM(require_typescript(), 1);
 var MAX_MODULE_AST_NODES = 2e5;
 var MAX_MODULE_TEXT_LENGTH = 2 * 1024 * 1024;
 function scanModuleReferences(text3) {
@@ -242812,27 +242950,27 @@ function scanModuleReferences(text3) {
   if (text3.length > MAX_MODULE_TEXT_LENGTH)
     return { ...result3, incompleteReason: "ast_limit" };
   try {
-    const source = ts18.createSourceFile("remote-module.js", text3, ts18.ScriptTarget.Latest, false, ts18.ScriptKind.JS);
+    const source = ts19.createSourceFile("remote-module.js", text3, ts19.ScriptTarget.Latest, false, ts19.ScriptKind.JS);
     const diagnostics = source.parseDiagnostics;
     result3.parseDiagnostics = Array.isArray(diagnostics) ? diagnostics.length : 1;
     const pending = [source];
     let scheduled = 1;
     while (pending.length > 0) {
       const node = pending.pop();
-      if (ts18.isImportDeclaration(node) && ts18.isStringLiteral(node.moduleSpecifier)) {
+      if (ts19.isImportDeclaration(node) && ts19.isStringLiteral(node.moduleSpecifier)) {
         result3.staticReferences.push({ specifier: node.moduleSpecifier.text, kind: "import" });
-      } else if (ts18.isExportDeclaration(node) && node.moduleSpecifier && ts18.isStringLiteral(node.moduleSpecifier)) {
+      } else if (ts19.isExportDeclaration(node) && node.moduleSpecifier && ts19.isStringLiteral(node.moduleSpecifier)) {
         result3.staticReferences.push({ specifier: node.moduleSpecifier.text, kind: "export" });
-      } else if (ts18.isImportEqualsDeclaration(node) && ts18.isExternalModuleReference(node.moduleReference) && ts18.isStringLiteral(node.moduleReference.expression)) {
+      } else if (ts19.isImportEqualsDeclaration(node) && ts19.isExternalModuleReference(node.moduleReference) && ts19.isStringLiteral(node.moduleReference.expression)) {
         result3.staticReferences.push({ specifier: node.moduleReference.expression.text, kind: "import" });
-      } else if (ts18.isCallExpression(node) && node.expression.kind === ts18.SyntaxKind.ImportKeyword) {
+      } else if (ts19.isCallExpression(node) && node.expression.kind === ts19.SyntaxKind.ImportKeyword) {
         result3.dynamicImports += 1;
         const argument = node.arguments[0];
-        if (!argument || !ts18.isStringLiteral(argument))
+        if (!argument || !ts19.isStringLiteral(argument))
           result3.computedImports += 1;
       }
       const children = [];
-      ts18.forEachChild(node, (child) => {
+      ts19.forEachChild(node, (child) => {
         if (scheduled >= MAX_MODULE_AST_NODES) {
           result3.incompleteReason = "ast_limit";
           return true;
