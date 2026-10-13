@@ -1,5 +1,6 @@
 import { resolveAnalysisBudget } from './source/analysis-budget.js';
 import { collectionEvidence } from './source/collection-budget.js';
+import { sourceSnapshotEvidence } from './source/snapshot-evidence.js';
 import { createHash } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
@@ -386,7 +387,7 @@ function checkStatusForSnapshot(snapshot: SourceSnapshot): CheckResult["status"]
   return snapshot.complete ? "completed" : "partial";
 }
 
-function inventoryCheck(snapshot: SourceSnapshot, tools: ToolName[], nativeSelected = false): CheckResult {
+function inventoryCheck(snapshot: SourceSnapshot, tools: ToolName[], nativeSelected = false, outDir?: string): CheckResult {
   const issueCounts = new Map<string, number>();
   for (const entry of snapshot.issues) issueCounts.set(entry.code, (issueCounts.get(entry.code) ?? 0) + 1);
   const issueSummary = [...issueCounts.entries()].map(([code, count]) => `${code}:${count}`).join(", ");
@@ -404,6 +405,7 @@ function inventoryCheck(snapshot: SourceSnapshot, tools: ToolName[], nativeSelec
     id: "source.inventory",
     ...(snapshot.collectionBudget ? { collectionBudget: snapshot.collectionBudget } : {}),
     collectionEvidence: collectionEvidence(snapshot.issues),
+    sourceSnapshot: sourceSnapshotEvidence(snapshot, outDir),
     status: checkStatusForSnapshot(snapshot),
     findings: [],
     notes,
@@ -816,9 +818,9 @@ export async function runSource(options: SourceOptions): Promise<CheckResult[]> 
   } catch {
     return [errorCheck("source.inventory", "The source snapshot could not be collected.")];
   }
-  if (options.signal?.aborted) return [inventoryCheck(snapshot, tools, !!options.nativePreview), partialCheck('source.cancelled', 'Source scan was cancelled after collection.')];
+  if (options.signal?.aborted) return [inventoryCheck(snapshot, tools, !!options.nativePreview, options.outDir), partialCheck('source.cancelled', 'Source scan was cancelled after collection.')];
   const checks: CheckResult[] = [
-    inventoryCheck(snapshot, tools, !!options.nativePreview),
+    inventoryCheck(snapshot, tools, !!options.nativePreview, options.outDir),
     runBuiltinAst(snapshot, hasOtherSecurityCheck(snapshot, tools, !!options.nativePreview), analysisBudget.limits, analysisBudget),
     runFrameworkRules(snapshot),
   ];

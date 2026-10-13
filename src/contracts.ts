@@ -180,6 +180,8 @@ export interface CheckResult {
   analysisBudget?: AstAnalysisBudget;
   collectionBudget?: CollectionBudget;
   collectionEvidence?: CollectionEvidence;
+  /** Aggregate identity of the strings actually consumed from the collector, not tree provenance. */
+  sourceSnapshot?: SourceSnapshotEvidence;
   id: string;
   status: 'completed' | 'partial' | 'error' | 'not_applicable' | 'skipped';
   findings: Finding[];
@@ -191,6 +193,18 @@ export interface CheckResult {
   apiExecution?: ApiExecutionLedger;
   /** Bounded native differential metadata; not independent exploit verification. */
   dastExecution?: DastExecution;
+}
+
+export interface SourceSnapshotEvidence {
+  revision: 'source-snapshot-v1';
+  basis: 'collected_utf8_strings';
+  algorithm: 'sha256';
+  digest: string;
+  filesSelected: number;
+  bytesSelected: number;
+  complete: boolean;
+  /** Output specified inside or at the source root; v1 handoff conservatively refuses both. */
+  outputDirectoryExcluded: boolean;
 }
 export type ApiStateControlOutcome = 'unknown' | 'identity_passed' | 'identity_failed' | 'normal_passed' | 'normal_failed' | 'effect_observed' | 'denial_observed';
 export interface ApiStateEvidence {
@@ -411,6 +425,7 @@ export interface AgentReport {
     analysisBudget?: AstAnalysisBudget;
     collectionBudget?: CollectionBudget;
     collectionEvidence?: CollectionEvidence;
+    sourceSnapshot?: SourceSnapshotEvidence;
     analysisGaps?: AnalysisGaps;
     apiStateEvidence?: ApiStateEvidence;
     apiExecution?: ApiExecutionLedger;

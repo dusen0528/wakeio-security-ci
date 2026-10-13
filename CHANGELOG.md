@@ -6,6 +6,15 @@ Source and the checked-in Action are versioned 0.5.0. The latest published npm
 package remains 0.4.0; use a reviewed Git commit or build this checkout for the
 features below. This entry does not claim an npm 0.5.0 publication.
 
+- Add source-only, data-only `handoff create` and `handoff finish` commands.
+  Bind one check/finding and the current source to a complete aggregate of
+  scan-time collected UTF-8 strings, preserving a partial AST's original gate.
+  Write new private report copies and receipts; finish combines strict report
+  comparison with the full after gate, so unchanged high findings still fail.
+  Handoff does not scan, create/run argv, invoke a model or apply a patch.
+  `not_observed` is not a verified fix; independent controls remain not run.
+  See [local source handoff](docs/source-handoff.md).
+
 - Distinguish command, executable, argv and shell-selector roles for all six
   Node child_process execution APIs. Preserve unknown identity/options as
   review candidates or incomplete checks, use high `ast:process-executable`

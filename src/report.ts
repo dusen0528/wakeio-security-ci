@@ -4,6 +4,7 @@ import { sanitiseApiExecutionLedger, invalidApiExecutionLedger } from "./api-exe
 import { redactSecrets, safeRelativePath, safeHttpUrl } from './report-path.js';
 import { sanitiseAnalysisBudget } from './source/analysis-budget.js';
 import { sanitiseCollectionBudget, sanitiseCollectionEvidence } from './source/collection-budget.js';
+import { sanitiseSourceSnapshotEvidence } from './source/snapshot-evidence.js';
 import { sanitiseStaticContext } from './static-context.js';
 import { sanitiseApiStateEvidence } from './api-state-observer.js';
 import { projectReportSummary } from './report-summary.js';
@@ -275,6 +276,7 @@ function projectAgentReport(report: ScanReport, failOn: FailOn): AgentReport {
       ...(check.analysisBudget ? { analysisBudget: check.analysisBudget } : {}),
       ...(check.collectionBudget ? { collectionBudget: check.collectionBudget } : {}),
       ...(check.collectionEvidence ? { collectionEvidence: check.collectionEvidence } : {}),
+      ...(check.sourceSnapshot ? { sourceSnapshot: check.sourceSnapshot } : {}),
       ...(check.analysisGaps ? { analysisGaps: check.analysisGaps } : {}),
       ...(check.apiStateEvidence ? { apiStateEvidence: check.apiStateEvidence } : {}),
       ...(check.apiExecution ? { apiExecution: check.apiExecution } : {}),
@@ -433,6 +435,7 @@ export function toSarif(report: ScanReport): SarifLog {
           ...(safeReport.scope?.analysisBudget ? { analysisBudget: safeReport.scope.analysisBudget } : {}),
           ...(safeReport.scope?.collectionBudget ? { collectionBudget: safeReport.scope.collectionBudget } : {}),
           ...(safeReport.checks.some(check => check.collectionBudget || check.collectionEvidence) ? { collectionInventories: safeReport.checks.flatMap((check, checkIndex) => check.collectionBudget || check.collectionEvidence ? [{ checkIndex, checkId: check.id, ...(check.collectionBudget ? { collectionBudget: check.collectionBudget } : {}), ...(check.collectionEvidence ? { collectionEvidence: check.collectionEvidence } : {}) }] : []) } : {}),
+          ...(safeReport.checks.some(check => check.sourceSnapshot) ? { sourceSnapshots: safeReport.checks.flatMap((check, checkIndex) => check.sourceSnapshot ? [{ checkIndex, checkId: check.id, sourceSnapshot: check.sourceSnapshot }] : []) } : {}),
           ...(safeReport.checks.some(check => check.analysisBudget) ? { analysisBudgets: safeReport.checks.flatMap((check, checkIndex) => check.analysisBudget ? [{ checkIndex, checkId: check.id, analysisBudget: check.analysisBudget }] : []) } : {}),
           ...(safeReport.checks.some(check => check.apiExecution) ? {
             apiExecution: safeReport.checks.flatMap((check, checkIndex) => check.apiExecution
@@ -502,6 +505,7 @@ export function toMarkdown(report: ScanReport, failOn: FailOn = 'high'): string 
       if (check.analysisBudget) lines.push(`  - AST analysis budget: ${budgetText(check.analysisBudget)}`);
       if (check.collectionBudget) lines.push(`  - Collection budget: ${collectionBudgetText(check.collectionBudget)}`);
       if (check.collectionEvidence) lines.push(...markdownCollectionEvidence(check.collectionEvidence));
+      if (check.sourceSnapshot) lines.push(`  - Collected string snapshot ${check.sourceSnapshot.revision}: ${check.sourceSnapshot.digest}; ${check.sourceSnapshot.filesSelected} files, ${check.sourceSnapshot.bytesSelected} bytes; complete=${check.sourceSnapshot.complete}; output inside or at source root=${check.sourceSnapshot.outputDirectoryExcluded}. Aggregate input identity, not runtime or file-byte verification.`);
       for (const note of check.notes) {
         lines.push(`  - Note: ${markdownInline(note)}`);
       }
@@ -750,9 +754,15 @@ function sanitiseCheck(input: CheckResult): CheckResult {
   const analysisBudget = sanitiseAnalysisBudget(input?.analysisBudget);
   const budgetField = ownDataField(input, 'collectionBudget');
   const evidenceField = ownDataField(input, 'collectionEvidence');
+  const snapshotField = ownDataField(input, 'sourceSnapshot');
   const inventory = input?.id === 'source.inventory';
   const collectionBudget = inventory && budgetField.valid ? sanitiseCollectionBudget(budgetField.value) : undefined;
   const collectionEvidence = inventory && evidenceField.valid ? sanitiseCollectionEvidence(evidenceField.value) : undefined;
+  const sourceSnapshot = inventory && snapshotField.valid ? sanitiseSourceSnapshotEvidence(snapshotField.value) : undefined;
+  if (snapshotField.present && (!sourceSnapshot || !sourceSnapshot.complete || !collectionBudget
+    || sourceSnapshot.filesSelected > collectionBudget.limits.maxFiles || sourceSnapshot.bytesSelected > collectionBudget.limits.maxBytes
+    || input.metrics?.filesSelected !== sourceSnapshot.filesSelected || input.metrics?.bytesSelected !== sourceSnapshot.bytesSelected)
+    && status !== 'error') status = 'partial';
   if ((budgetField.present || evidenceField.present) && (!collectionBudget || !collectionEvidence) && status !== 'error') status = 'partial';
   if (collectionEvidence?.issues.some(issue => issue.code === 'root_error')) status = 'error';
   else if (collectionEvidence?.issues.some(issue => issue.code !== 'unsupported_file') && (status === 'completed' || status === 'not_applicable')) status = 'partial';
@@ -796,6 +806,7 @@ function sanitiseCheck(input: CheckResult): CheckResult {
     ...(analysisBudget ? { analysisBudget } : {}),
     ...(collectionBudget ? { collectionBudget } : {}),
     ...(collectionEvidence ? { collectionEvidence } : {}),
+    ...(sourceSnapshot ? { sourceSnapshot } : {}),
     ...(analysisGaps ? { analysisGaps } : {}),
     ...(apiStateEvidence ? { apiStateEvidence } : {}),
     ...(apiExecution ? { apiExecution } : {}),

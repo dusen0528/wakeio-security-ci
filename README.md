@@ -176,6 +176,24 @@ Findings are labeled as candidates, observations, or advisories. Missing tools, 
 
 `--fail-on none` disables finding-based failure only; it does not turn an incomplete scan into a pass. Reports omit raw source and secret values, but can contain project paths, package identifiers, and URLs. Set CI artifact visibility accordingly.
 
+## Local source handoff
+
+The reviewed 0.5.0 source preview can bind a source-only candidate to current
+collected source and prepare a private review/recheck packet. Published npm
+0.4.0 does not include handoff. Replace `FINDING_ID` and zero-based `CHECK_INDEX`
+with the selected agent-report entry; keep all report/packet paths outside source.
+
+```sh
+wakeio-security-ci handoff create --report /path/outside/your-app/before --source /path/to/your-app --finding FINDING_ID --check-index CHECK_INDEX --out /path/outside/your-app/review
+wakeio-security-ci handoff finish --handoff /path/outside/your-app/review --report /path/outside/your-app/after --source /path/to/your-app --out /path/outside/your-app/recheck
+```
+
+The user separately reruns the original scan with the same options to produce
+`after`. Handoff never scans, invokes a model, creates/runs argv or applies a
+patch. Finish checks comparison **and the full after gate**; unchanged high
+findings block and partial results stay exit `2`. `not_observed` is not a verified
+fix. See [the complete flow, snapshot binding and output locations](docs/source-handoff.md).
+
 ## Read-only API policy and comparison
 
 Before an authorized staging run, the current source checkout can check local configuration without contacting the target:
