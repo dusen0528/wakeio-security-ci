@@ -240301,7 +240301,7 @@ function parseInitArgs(argv) {
   const args = [...argv];
   if (args[0] === "init")
     args.shift();
-  const options = { source: ".", workflow: join7(".github", "workflows", "wakeio-security-ci.yml"), out: "wakeio-security-reports", tools: ["none"], help: false };
+  const options = { mode: "npm", source: ".", workflow: join7(".github", "workflows", "wakeio-security-ci.yml"), out: "wakeio-security-reports", tools: ["none"], help: false };
   const selected = /* @__PURE__ */ new Set();
   for (let index = 0; index < args.length; index += 1) {
     const argument = args[index];
@@ -240313,6 +240313,22 @@ function parseInitArgs(argv) {
       continue;
     }
     const selector = argument.split("=")[0];
+    if (selector === "--mode" || selector === "--action-ref") {
+      if (selected.has(selector))
+        throw new Error(`${selector} may only be specified once`);
+      selected.add(selector);
+      const inline = argument.indexOf("=");
+      const raw = inline >= 0 ? argument.slice(inline + 1) : args[++index];
+      if (!raw || raw.startsWith("--"))
+        throw new Error(`${selector} requires a value`);
+      if (selector === "--mode") {
+        if (raw !== "npm" && raw !== "action")
+          throw new Error("--mode must be npm or action");
+        options.mode = raw;
+      } else
+        options.actionRef = raw;
+      continue;
+    }
     if (["--source-max-files", "--source-max-bytes", "--analysis-profile"].includes(selector)) {
       if (selected.has(selector))
         throw new Error(`${selector} may only be specified once`);
@@ -240363,6 +240379,11 @@ function parseInitArgs(argv) {
     throw new Error("--workflow must be relative to --source");
   if (hasControl(options.workflow) || hasControl(options.out))
     throw new Error("--workflow and --out cannot contain control characters");
+  validateMode(options.mode, options.actionRef);
+  if (options.mode === "action") {
+    validateActionPath(options.out, true);
+    validateActionPath(options.workflow, false);
+  }
   return options;
 }
 function initUsage() {
@@ -240370,13 +240391,32 @@ function initUsage() {
     "Usage: wakeio-security-ci init [--source DIR] [--workflow .github/workflows/wakeio-security-ci.yml] [--out DIR] [--tools none]",
     "",
     "       [--source-max-files N] [--source-max-bytes N] [--analysis-profile default|extended] [--require-code-analysis]",
+    "       [--mode npm|action] [--action-ref FULL_40_HEX_COMMIT_SHA]",
     "",
     "Create a local CI workflow only when its destination does not exist; no file is overwritten.",
-    "The template runs the installed CLI with npx --no-install and uses pinned helper-action commits.",
+    "Default npm mode runs the installed CLI with npx --no-install and uses pinned helper-action commits.",
+    "Action mode requires an explicit reviewed Wakeio commit SHA, never installs the target, and writes fresh reports outside its fixed wakeio-source checkout.",
+    "Action --out is a plain relative report base, with a generated run/attempt suffix. Handoff currently supports tools none only.",
     ""
   ].join("\n");
 }
 function renderWorkflow(options) {
+  options = {
+    mode: options.mode,
+    actionRef: options.actionRef,
+    out: options.out,
+    tools: options.tools,
+    pythonFiles: options.pythonFiles,
+    requireCodeAnalysis: options.requireCodeAnalysis,
+    sourceMaxFiles: options.sourceMaxFiles,
+    sourceMaxBytes: options.sourceMaxBytes,
+    analysisProfile: options.analysisProfile
+  };
+  if (Array.isArray(options.tools))
+    options.tools = [...options.tools];
+  const mode = validateMode(options.mode, options.actionRef);
+  if (mode === "action")
+    return renderActionWorkflow(options);
   const files = options.sourceMaxFiles === void 0 ? "" : ` --source-max-files ${parseCollectionLimit(String(options.sourceMaxFiles), COLLECTION_MAX_FILES)}`;
   const bytes = options.sourceMaxBytes === void 0 ? "" : ` --source-max-bytes ${parseCollectionLimit(String(options.sourceMaxBytes), COLLECTION_MAX_BYTES)}`;
   const profile = options.analysisProfile === void 0 ? "" : ` --analysis-profile ${resolveAnalysisBudget(options.analysisProfile).requestedProfile}`;
@@ -240421,6 +240461,90 @@ ${pythonNote}        run: >-
         with:
           name: wakeio-security-reports
           path: ${yamlQuote(options.out)}
+          if-no-files-found: error
+`;
+}
+function validateMode(mode, reference2) {
+  if (mode !== void 0 && mode !== "npm" && mode !== "action")
+    throw new Error("--mode must be npm or action");
+  if (mode !== "action") {
+    if (reference2 !== void 0)
+      throw new Error("--action-ref requires --mode action");
+    return "npm";
+  }
+  if (typeof reference2 !== "string" || reference2.length !== 40 || /[^a-fA-F0-9]/.test(reference2))
+    throw new Error("Action mode requires --action-ref with a full 40-hex reviewed commit SHA");
+  return "action";
+}
+function validateActionPath(value, reports) {
+  if (typeof value !== "string" || !value || value.length > 240)
+    throw new Error("Action paths must be bounded plain relative paths");
+  const parts = value.split("/");
+  if (parts.length > 16 || parts.some((part) => !part || part === "." || part === ".." || /[^A-Za-z0-9._-]/.test(part) || reports && !/^[A-Za-z0-9]/.test(part)) || reports && parts[0].toLowerCase() === "wakeio-source")
+    throw new Error("Action paths must be plain relative paths outside wakeio-source without traversal, globs or expressions");
+}
+function renderActionWorkflow(options) {
+  validateActionPath(options.out, true);
+  if (!Array.isArray(options.tools) || options.tools.length > 4 || !options.tools.every((tool) => typeof tool === "string"))
+    throw new Error("Invalid Action tools");
+  const tools = parseTools(options.tools.length ? options.tools.join(",") : "none");
+  if (!Number.isSafeInteger(options.pythonFiles) || options.pythonFiles < 0 || options.pythonFiles > 2e4)
+    throw new Error("Invalid Python inventory count");
+  if (options.requireCodeAnalysis !== void 0 && typeof options.requireCodeAnalysis !== "boolean")
+    throw new Error("requireCodeAnalysis must be a boolean");
+  const output = options.out + "/${{ github.run_id }}-${{ github.run_attempt }}";
+  const artifactName = "wakeio-security-reports-${{ github.run_id }}-${{ github.run_attempt }}";
+  const inputs2 = [
+    "          source: wakeio-source",
+    `          tools: ${yamlQuote(tools.length ? tools.join(",") : "none")}`,
+    `          out: ${yamlQuote(output)}`
+  ];
+  if (options.requireCodeAnalysis !== void 0)
+    inputs2.push(`          require-code-analysis: '${options.requireCodeAnalysis}'`);
+  if (options.analysisProfile !== void 0)
+    inputs2.push(`          analysis-profile: ${resolveAnalysisBudget(options.analysisProfile).requestedProfile}`);
+  for (const [name, value, maximum] of [
+    ["source-max-files", options.sourceMaxFiles, COLLECTION_MAX_FILES],
+    ["source-max-bytes", options.sourceMaxBytes, COLLECTION_MAX_BYTES]
+  ]) {
+    if (value === void 0)
+      continue;
+    if (typeof value !== "number")
+      throw new Error(`${name} must be an integer`);
+    inputs2.push(`          ${name}: '${parseCollectionLimit(String(value), maximum)}'`);
+  }
+  return `name: wakeio-security-ci
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source as data
+        uses: actions/checkout@${CHECKOUT_SHA}
+        with:
+          persist-credentials: false
+          path: wakeio-source
+      # Reviewed prebuilt scanner only. No target dependency installation or lifecycle scripts.
+      # tools none supports local handoff; selecting external tools is a separate scan scope.
+      - name: Run pinned Wakeio Action
+        id: wakeio
+        uses: dusen0528/wakeio-security-ci@${options.actionRef.toLowerCase()}
+        with:
+${inputs2.join("\n")}
+      - name: Upload reports
+        if: always()
+        uses: actions/upload-artifact@${UPLOAD_ARTIFACT_SHA}
+        with:
+          name: ${artifactName}
+          path: ${yamlQuote(output)}
           if-no-files-found: error
 `;
 }
