@@ -8,7 +8,7 @@ import { types } from 'node:util';
 export type RecheckRoute = 'repeat_native_same_policy' | 'replay_native_finding_same_policy' | 'replay_api_finding_same_policy'
   | 'review_static_flow_or_budget' | 'review_check_diagnostics' | 'review_scope';
 
-export const ADVICE_PROJECTION_POLICY_VERSION = 6;
+export const ADVICE_PROJECTION_POLICY_VERSION = 7;
 
 const MAX_CHECKS = 24;
 const MAX_FINDINGS = 24;
@@ -130,6 +130,7 @@ function findingCard(finding: AgentReport['findings'][number], check: AgentRepor
     reachesFailOn: finding.reachesFailOn, verification: 'not_run' as const,
     recheckRoute: route,
     ...(flow ? { staticFlow: { roles: flow.steps.map(step => step.role),
+      ...(flow.sourceKind ? { sourceKind: flow.sourceKind } : {}),
       stepCount: flow.steps.length, truncated: flow.truncated } } : {}),
     ...(context ? { staticContext: { authority: context.authority,
       kinds: [...new Set(context.items.map(item => item.kind))], itemCount: context.items.length,

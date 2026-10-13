@@ -176,6 +176,8 @@ node build/src/cli.js scan \
 
 `--fail-on none`은 발견 결과에 따른 실패만 끄며 미완료 검사를 통과로 바꾸지 않습니다. 보고서는 원문 소스와 Secret 값을 제외하지만 프로젝트 경로·패키지 식별자·URL을 포함할 수 있으므로 CI artifact 공개 범위를 확인하세요.
 
+소스 프리뷰는 문서에 명시한 버전의 [파일명→process argv 흐름](docs/source-filesystem-flow.md)을 지원합니다. 파일명 callback과 공유 배열의 누적을 argv에 연결하며, 조건부 low-confidence 후보와 미완료 검사를 함께 남깁니다. 지원 범위와 공개 advisory 검증 결과는 링크 문서에서 확인할 수 있으며, 새 취약점 발견이나 수정 소스 전체의 안전 판정을 뜻하지 않습니다. 공개 npm은 아직 0.4.0입니다.
+
 ## 로컬 소스 handoff
 
 검토한 0.5.0 소스 프리뷰에서는 소스 candidate와 현재 수집한 소스를 연결해

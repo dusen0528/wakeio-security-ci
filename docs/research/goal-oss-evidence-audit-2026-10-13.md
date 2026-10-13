@@ -1,5 +1,7 @@
 # 실제 OSS 근거와 다음 확장 우선순위 (2026-10-13)
 
+정정: 아래 glob parent의 257→258 좌표는 브라우저 표시에서 얻은 값으로, 실제 archive는 270→271이다. Foreground-child 3.1.1은 보조 조사 원천이며 실제 parent/fix lock은 3.2.1을 resolve한다. [후속 독립 snapshot·oracle 근거](glob-advisory-evidence-2026-10-13.md)가 정확한 좌표·dependency 기준을 제공한다.
+
 ## 판단
 
 다음 단계는 **공개 보안 권고의 실제 취약 부모/수정 커밋을 독립 기준으로 먼저 동결하고, 전체 입력 흐름을 설명하는 지원 범위를 추가하는 것**을 추천한다. 가장 구체적인 후보는 glob CLI의 파일명 입력 → stream callback → 배열 누적 → foreground-child → shell argv 경로다. 기존 HTTP 입력/native child_process 모델에서 벗어나는 실제 운영 도구 사례이며, 단일 sink 이름을 추가한 합성 시험으로 끝낼 작업이 아니다.

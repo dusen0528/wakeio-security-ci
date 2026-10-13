@@ -72,6 +72,8 @@ export class StaticModules {
   readonly nativeBoundaryNodes: ts.Node[] = [];
   readonly constructorBoundaryNodes: ts.Identifier[] = [];
   readonly newExpressions: ts.NewExpression[] = [];
+  /** Writes retained by the existing charged walk for narrow instance-field evidence. */
+  readonly instanceFieldWrites: ts.Node[] = [];
   readonly importDeclarations: ts.ImportDeclaration[] = [];
   readonly exportDeclarations: ts.ExportDeclaration[] = [];
   readonly requireDeclarations: ts.VariableDeclaration[] = [];
@@ -269,11 +271,14 @@ export class StaticModules {
         else this.incomplete("function_limit");
       }
       if (ts.isCallExpression(node)) this.calls.push(node);
+      if (ts.isPropertyDeclaration(node) && node.initializer) this.instanceFieldWrites.push(node);
       if (ts.isBinaryExpression(node) && node.operatorToken.kind >= ts.SyntaxKind.FirstAssignment
-        && node.operatorToken.kind <= ts.SyntaxKind.LastAssignment) markWrite(node.left);
-      if (ts.isForInStatement(node) || ts.isForOfStatement(node)) markWrite(node.initializer);
+        && node.operatorToken.kind <= ts.SyntaxKind.LastAssignment) { this.instanceFieldWrites.push(node); markWrite(node.left); }
+      if (ts.isDeleteExpression(node)) this.instanceFieldWrites.push(node);
+      if (ts.isForInStatement(node) || ts.isForOfStatement(node)) { this.instanceFieldWrites.push(node); markWrite(node.initializer); }
       if ((ts.isPrefixUnaryExpression(node) || ts.isPostfixUnaryExpression(node))
         && (node.operator === ts.SyntaxKind.PlusPlusToken || node.operator === ts.SyntaxKind.MinusMinusToken)) {
+        this.instanceFieldWrites.push(node);
         markWrite(node.operand);
       }
       node.forEachChild((child) => visit(child, isFlowFunction(node) ? node : owner));
@@ -374,14 +379,26 @@ export class StaticModules {
       }
       if (ts.isIdentifier(node)) {
         const symbol = this.symbol(node);
-        if (symbol && !this.mutated.has(symbol) && symbol.declarations?.length === 1) {
-          node = symbol.declarations[0];
+        const declaration = symbol && this.singleRuntimeDeclaration(symbol);
+        if (symbol && !this.mutated.has(symbol) && declaration) {
+          node = declaration;
           continue;
         }
       }
       return undefined;
     }
     return undefined;
+  }
+
+  private singleRuntimeDeclaration(symbol: ts.Symbol): ts.Declaration | undefined {
+    const declarations = symbol.declarations ?? [];
+    if (declarations.length === 1) return declarations[0];
+    let implementation: ts.FunctionDeclaration | undefined;
+    for (const declaration of declarations) {
+      if (!this.tick() || !ts.isFunctionDeclaration(declaration) || !declaration.name || this.symbol(declaration.name) !== symbol) return undefined;
+      if (declaration.body) { if (implementation) return undefined; implementation = declaration; }
+    }
+    return implementation;
   }
 
   // Pure ESM remains independent of the closed CommonJS object proof.
@@ -401,7 +418,9 @@ export class StaticModules {
       }
       const exported = modifiers?.some((modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword)
         && !modifiers?.some((modifier) => modifier.kind === ts.SyntaxKind.DefaultKeyword);
-      if (exported && ts.isFunctionDeclaration(statement)) put(statement.name?.text, statement);
+      // Erased signatures do not create competing runtime exports. One actual
+      // body remains required; duplicate bodies still take the ambiguity path.
+      if (exported && ts.isFunctionDeclaration(statement) && statement.body) put(statement.name?.text, statement);
       if (exported && ts.isVariableStatement(statement)) {
         for (const declaration of statement.declarationList.declarations) {
           if (!this.tick()) break;
@@ -412,9 +431,10 @@ export class StaticModules {
         && ts.isNamedExports(statement.exportClause)) {
         for (const specifier of statement.exportClause.elements) {
           if (!this.tick()) break;
+          if (statement.isTypeOnly || specifier.isTypeOnly) continue;
           const local = this.checker.getExportSpecifierLocalTargetSymbol(specifier);
           if (local) this.localExportBindings.add(local);
-          put(specifier.name.text, local?.declarations?.[0]);
+          put(specifier.name.text, local ? this.singleRuntimeDeclaration(local) : undefined);
         }
       }
     }
@@ -1684,7 +1704,12 @@ export class StaticModules {
         || ts.isImportEqualsDeclaration(declaration) && declaration.isTypeOnly) continue;
       declarations.push(declaration);
     }
-    if (declarations.length !== 1) return { kind: "unsupported" };
+    if (declarations.length !== 1) {
+      const implementations = declarations.filter((declaration): declaration is ts.FunctionDeclaration => ts.isFunctionDeclaration(declaration) && !!declaration.body);
+      if (implementations.length !== 1 || declarations.some(declaration => !ts.isFunctionDeclaration(declaration)
+        || !declaration.name || this.symbol(declaration.name) !== symbol)) return { kind: 'unsupported' };
+      declarations.splice(0, declarations.length, implementations[0]);
+    }
     if (symbol.declarations?.length !== 1 && !ts.isFunctionDeclaration(declarations[0])) return { kind: 'unsupported' };
     const unproved = this.mutated.has(symbol);
     const declaration = declarations[0];

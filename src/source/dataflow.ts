@@ -14,6 +14,7 @@ import { NoSqlRoleModel, type NoSqlRoleUse } from './nosql-role.js';
 import { analyzeClosureShape, analyzeConstructedShape, type ClosureShape, type ConstructorShape, type ShapeResult } from './closure-shape.js';
 import { MongoRoleModel, type MongoDbRole, type MongoCollectionRole } from './mongo-role.js';
 import type { CollectedFile } from './types.js';
+import { FilesystemRoleModel, type FilesystemStreamRole } from './filesystem-role.js';
 
 /** A source-to-sink use found by the bounded, same-function analysis. */
 export interface InputFlowUse {
@@ -30,6 +31,7 @@ export interface InputFlowUse {
   nosqlRole?: NoSqlRoleUse;
   forkRole?: ForkRoleUse;
   processRole?: ProcessRoleUse;
+  filesystemProcess?: { outcome: 'argv_shell_input' | 'argv_shell_unknown' | 'direct_argv_interpreter_unknown' | 'argv_only_shell_disabled'; staticFlow?: StaticFlow };
   /** Scan-local monotonic actual-analysis proof; never general callable safety. */
   localForkCall?: { complete: boolean };
   localProcessCall?: { complete: boolean };
@@ -70,6 +72,11 @@ function containResponse(value: FlowValue): void {
 }
 
 interface FlowValue {
+  traceSourceKind?: 'filesystem_filename';
+  filesystemStream?: FilesystemStreamRole;
+  /** Separate filename subset prevents mixed HTTP traces from being tagged as filenames. */
+  filesystemContent?: FlowValue;
+  sequenceContent?: { value: FlowValue; filename: FlowValue; node: ts.Node; closed: boolean; valid: boolean };
   staticContext?: StaticCandidateContext;
   /** Unknown return alternatives only; never seeded into a hypothesized body. */
   boundaryInput?: FlowValue;
@@ -105,16 +112,17 @@ interface FlowValue {
   sqlConfig?: { node: ts.ObjectLiteralExpression; closed: boolean; text: FlowValue; values?: FlowValue };
   httpConfig?: { node: ts.ObjectLiteralExpression; closed: boolean; fixedInitialUrl: boolean; encodedQueryInitialUrl: boolean; target: FlowValue };
 }
-type QueryContent = Pick<FlowValue, 'kind' | 'root' | 'inputRelated' | 'trace' | 'traceTruncated' | 'httpTargetUnavailable'>;
+type QueryContent = Pick<FlowValue, 'kind' | 'root' | 'inputRelated' | 'trace' | 'traceTruncated' | 'traceSourceKind' | 'httpTargetUnavailable'>;
 function queryContent(value: FlowValue): QueryContent {
   const current = currentQuery(value);
-  return { kind: current.kind, root: current.root, inputRelated: current.inputRelated, trace: current.trace, traceTruncated: current.traceTruncated, httpTargetUnavailable: current.httpTargetUnavailable };
+  return { kind: current.kind, root: current.root, inputRelated: current.inputRelated, trace: current.trace, traceTruncated: current.traceTruncated, traceSourceKind: current.traceSourceKind, httpTargetUnavailable: current.httpTargetUnavailable };
 }
 function currentQuery(value: FlowValue): FlowValue {
   if (!value.queryContent) return value;
   const content = value.queryContent.value;
   return { ...value, kind: isInputRelated(content) ? 'root' : content.kind, root: isInputRelated(content) ? 'searchParams' : undefined,
     inputRelated: content.inputRelated, trace: content.trace, traceTruncated: content.traceTruncated,
+    traceSourceKind: content.traceSourceKind,
     httpTargetUnavailable: value.httpTargetUnavailable || content.httpTargetUnavailable };
 }
 
@@ -148,7 +156,7 @@ function inheritTrace(value: FlowValue, values: readonly FlowValue[]): FlowValue
   const evidence = values.find((candidate) => candidate.kind === "tainted" && candidate.trace?.length)
     ?? values.find((candidate) => isInputRelated(candidate) && candidate.trace?.length);
   const staticContext = contexts(value.staticContext, ...values.map(item => item.staticContext));
-  return { ...value, ...(evidence ? { trace: evidence.trace, traceTruncated: evidence.traceTruncated } : {}), ...(staticContext ? { staticContext } : {}) };
+  return { ...value, ...(evidence ? { trace: evidence.trace, traceTruncated: evidence.traceTruncated, traceSourceKind: evidence.traceSourceKind } : {}), ...(staticContext ? { staticContext } : {}) };
 }
 
 function contexts(...values: Array<StaticCandidateContext | undefined>): StaticCandidateContext | undefined {
@@ -163,7 +171,18 @@ function withContext(value: FlowValue, context?: StaticCandidateContext): FlowVa
   return staticContext ? { ...value, staticContext } : value;
 }
 function consumedInput(value: FlowValue): FlowValue {
+  if (value.sequenceContent) {
+    const sequence = value.sequenceContent;
+    value = { ...combineValues([{ ...value, sequenceContent: undefined }, sequence.value]), sequenceContent: sequence,
+      filesystemContent: sequence.filename };
+  }
   return value.boundaryInput ? inheritTrace(combineValues([value, value.boundaryInput]), [value, value.boundaryInput]) : value;
+}
+function filenamePart(value: FlowValue): FlowValue | undefined {
+  const part = value.sequenceContent?.filename ?? value.filesystemContent;
+  if (part && isInputRelated(part)) return part;
+  return value.traceSourceKind === 'filesystem_filename' && isInputRelated(value)
+    ? { ...value, sequenceContent: undefined, filesystemContent: undefined } : undefined;
 }
 function invalidateMongo(role: MongoDbRole | MongoCollectionRole | undefined, reason: 'opaque' | 'write'): void {
   if (!role) return;
@@ -174,7 +193,8 @@ function invalidateMongo(role: MongoDbRole | MongoCollectionRole | undefined, re
 function evidence(value: FlowValue, node: ts.Node): StaticFlow | undefined {
   if (!value.trace?.some((item) => item.role === "source")) return undefined;
   const output = traced(value, node, "sink");
-  return output.trace?.length ? { kind: "static_flow", steps: output.trace, truncated: !!value.staticContext || (output.traceTruncated ?? false) } : undefined;
+  return output.trace?.length ? { kind: "static_flow", steps: output.trace,
+    ...(output.traceSourceKind ? { sourceKind: output.traceSourceKind } : {}), truncated: !!value.staticContext || (output.traceTruncated ?? false) } : undefined;
 }
 
 function evaluationShapedCallee(callee: ts.Expression, constructor = false): boolean {
@@ -361,7 +381,11 @@ function joinValues(left: FlowValue, right: FlowValue): FlowValue {
     const db = left.mongoDb ?? right.mongoDb, collection = left.mongoCollection ?? right.mongoCollection;
     const mongoDb = left.mongoDb === right.mongoDb ? left.mongoDb : db ? { ...db, valid: false, invalidReason: 'ambiguous' as const } : undefined;
     const mongoCollection = left.mongoCollection === right.mongoCollection ? left.mongoCollection : collection ? { ...collection, valid: false, invalidReason: 'ambiguous' as const } : undefined;
-    return { ...result, expressResponse: joinResponse(left.expressResponse, right.expressResponse), nosqlObject: left.nosqlObject === right.nosqlObject ? left.nosqlObject : undefined, nosqlUnknown, nosqlWhere, mongoDb, mongoCollection, expressObjectBody: left.expressObjectBody === true && right.expressObjectBody === true, ...(properties ? { properties } : {}), sqlFixedText, sqlArray, sqlConfig, sqlScalarUnavailable:left.sqlScalarUnavailable || right.sqlScalarUnavailable, sqlCallback:left.sqlCallback || right.sqlCallback, sqlDataUnavailable:left.sqlDataUnavailable || right.sqlDataUnavailable, httpTargetUnavailable:httpUnavailable([left,right]), urlFragments, nativeQuery: left.nativeQuery === true && right.nativeQuery === true, queryContent: sharedQueryContent, httpConfig };
+    const sequenceContent = left.sequenceContent === right.sequenceContent ? left.sequenceContent : undefined;
+    const filesystemStream = left.filesystemStream === right.filesystemStream ? left.filesystemStream : undefined;
+    const filenameValues = [filenamePart(left), filenamePart(right)].filter((value): value is FlowValue => !!value);
+    const filesystemContent = filenameValues.length ? combineValues(filenameValues) : undefined;
+    return { ...result, sequenceContent, filesystemStream, filesystemContent, expressResponse: joinResponse(left.expressResponse, right.expressResponse), nosqlObject: left.nosqlObject === right.nosqlObject ? left.nosqlObject : undefined, nosqlUnknown, nosqlWhere, mongoDb, mongoCollection, expressObjectBody: left.expressObjectBody === true && right.expressObjectBody === true, ...(properties ? { properties } : {}), sqlFixedText, sqlArray, sqlConfig, sqlScalarUnavailable:left.sqlScalarUnavailable || right.sqlScalarUnavailable, sqlCallback:left.sqlCallback || right.sqlCallback, sqlDataUnavailable:left.sqlDataUnavailable || right.sqlDataUnavailable, httpTargetUnavailable:httpUnavailable([left,right]), urlFragments, nativeQuery: left.nativeQuery === true && right.nativeQuery === true, queryContent: sharedQueryContent, httpConfig };
   };
   if (left.kind === right.kind && (left.kind !== "root" || left.root === right.root)) {
     if (left.kind === "root") return withProperties(left);
@@ -578,7 +602,7 @@ export function observedGapLocation(node: ts.Node, files: ReadonlyMap<string, ts
 interface FunctionSummary { returned: FlowValue; }
 // Mutable content must not be reused through a cached return or skipped side effect.
 function hasMutableQuery(value: FlowValue, seen = new Set<FlowValue>(), depth = 0): boolean {
-  if (value.staticContext || value.boundaryInput || value.expressResponse || value.queryContent || value.nosqlObject || value.nosqlUnknown || value.callable || value.constructed || value.mongoDb || value.mongoCollection || seen.has(value) || depth > 16 || seen.size > 128) return true;
+  if (value.sequenceContent || value.filesystemStream || value.staticContext || value.boundaryInput || value.expressResponse || value.queryContent || value.nosqlObject || value.nosqlUnknown || value.callable || value.constructed || value.mongoDb || value.mongoCollection || seen.has(value) || depth > 16 || seen.size > 128) return true;
   seen.add(value);
   return [...value.properties?.values() ?? []].some((item) => hasMutableQuery(item, seen, depth + 1));
 }
@@ -606,6 +630,7 @@ class FlowSession {
   readonly mongoModel: MongoRoleModel;
   readonly forkModel: ForkRoleModel;
   readonly processModel: ProcessRoleModel;
+  readonly filesystemModel: FilesystemRoleModel;
   readonly expressModel: ExpressRoleModel;
   readonly active = new Set<string>();
   readonly cache = new Map<string, FunctionSummary>();
@@ -652,6 +677,7 @@ class FlowSession {
     this.mongoModel = new MongoRoleModel(this.modules, metadata, () => this.tick(), (reason, node) => this.gap(reason, node), roleProofScopeComplete, this.indexComplete);
     this.forkModel = new ForkRoleModel(this.modules, () => this.tick(), roleProofScopeComplete, this.indexComplete);
     this.processModel = new ProcessRoleModel(this.modules, () => this.tick(), roleProofScopeComplete, this.indexComplete);
+    this.filesystemModel = new FilesystemRoleModel(this.modules, metadata, () => this.tick(), (reason, node) => this.gap(reason, node), roleProofScopeComplete, limits.aliasSteps);
     this.expressModel = new ExpressRoleModel(this.modules, () => this.tick(), this.indexComplete);
     this.modules.finishIndex(this.indexComplete);
     this.phase = 'flow';
@@ -758,7 +784,7 @@ class FlowSession {
     return staticContext ? { ...returned, boundaryInput: this.returnInput(args) } : returned;
   }
 
-  callback(value: FlowValue['callable'], registration?: ts.CallExpression): void {
+  callback(value: FlowValue['callable'], registration?: ts.CallExpression, actuals?: readonly FlowValue[]): void {
     if (!value || !this.modules.indexComplete) return;
     const identity = `callback:${value.target.getSourceFile().fileName}:${value.target.pos}:${value.identity}`;
     if (this.active.size >= this.limits.callDepth || this.summaryWork >= this.limits.summaryWork) { this.incomplete(this.active.size >= this.limits.callDepth ? 'depth_limit' : 'summary_limit'); return; }
@@ -767,7 +793,7 @@ class FlowSession {
     const analyzer = new DataflowAnalyzer(value.target.getSourceFile(), this);
     const staticContext = value.staticContext && registration ? contexts(value.staticContext, conditionalContext('declared_callback_entry', registration, value.target)) : value.staticContext;
     if (staticContext) this.gap('module_export_unsupported', registration);
-    analyzer.analyzeFunction(value.target, undefined, undefined, !!staticContext, { ...value, staticContext });
+    analyzer.analyzeFunction(value.target, actuals, undefined, !!staticContext, { ...value, staticContext });
     this.uses.push(...analyzer.output()); this.active.delete(identity);
     if (before === this.incompleteEvents) this.functionContextsCompleted += 1; else this.functionContextsPartial += 1;
   }
@@ -855,6 +881,8 @@ class FlowSession {
       if (!this.tick() || seen.has(value)) return;
       if (depth > this.limits.callDepth) { this.gap('alias_limit'); return; }
       seen.add(value);
+      if (value.sequenceContent) value.sequenceContent.closed = value.sequenceContent.valid = false;
+      if (value.filesystemStream) value.filesystemStream.valid = false;
       invalidateMongo(value.mongoDb, 'opaque'); invalidateMongo(value.mongoCollection, 'opaque');
       if (value.constructed) { value.constructed.valid = false; value.constructed.staticContext = contexts(value.constructed.staticContext, staticContext); for (const slot of value.constructed.slots.values()) visit(slot, depth + 1); }
       if (value.callable) { value.callable.valid = false; value.callable.staticContext = contexts(value.callable.staticContext, staticContext); for (const captured of value.callable.captures.values()) visit(captured, depth + 1); if (value.callable.lexicalThis) visit(value.callable.lexicalThis, depth + 1); }
@@ -873,11 +901,13 @@ class FlowSession {
     const known = seen.get(value); if (known) return known;
     const current = currentQuery(value);
     const result: FlowValue = withContext({ kind: isInputRelated(current) ? current.kind : 'unknown', root: current.root,
-      inputRelated: current.inputRelated, trace: current.trace, traceTruncated: current.traceTruncated,
+      inputRelated: current.inputRelated, trace: current.trace, traceTruncated: current.traceTruncated, traceSourceKind: current.traceSourceKind,
       sqlScalarUnavailable: true, httpTargetUnavailable: true, sqlDataUnavailable: true }, staticContext);
     seen.set(value, result);
     if (result.staticContext?.truncated) this.gap('module_export_unsupported');
     const project = (child: FlowValue) => this.conditionalValue(child, staticContext, depth + 1, seen);
+    if (value.filesystemContent) result.filesystemContent = project(value.filesystemContent);
+    if (value.sequenceContent) result.sequenceContent = value.sequenceContent;
     if (value.properties) result.properties = new Map([...value.properties].map(([name, child]) => [name, project(child)]));
     if (value.nosqlWhere) result.nosqlWhere = { node: value.nosqlWhere.node, value: project(value.nosqlWhere.value) };
     if (value.nosqlUnknown) result.nosqlUnknown = project(value.nosqlUnknown);
@@ -907,7 +937,8 @@ class FlowSession {
 
   private declaredValue(value: FlowValue): FlowValue {
     const current = currentQuery(value);
-    return isInputRelated(current) ? {kind:'unknown',inputRelated:true,trace:current.trace,traceTruncated:current.traceTruncated,
+    return isInputRelated(current) ? {kind:'unknown',inputRelated:true,trace:current.trace,traceTruncated:current.traceTruncated,traceSourceKind:current.traceSourceKind,
+      filesystemContent:current.filesystemContent,sequenceContent:current.sequenceContent,
       sqlScalarUnavailable:true,httpTargetUnavailable:true,sqlDataUnavailable:current.sqlDataUnavailable} : UNKNOWN;
   }
 
@@ -1098,6 +1129,14 @@ class DataflowAnalyzer {
 
   private declareBinding(name: ts.BindingName, value: FlowValue, env: FlowEnv, blockScoped: boolean): void {
     if (ts.isIdentifier(name)) {
+      if (value.filesystemStream) {
+        const symbol = this.session?.modules.symbol(name);
+        if (symbol && (this.session?.modules.mutated.has(symbol) || this.session?.modules.mutatedMembers.has(symbol))) value.filesystemStream.valid = false;
+      }
+      if (!value.sequenceContent && this.session) {
+        const shape = this.session.filesystemModel.accumulator(name);
+        if (shape) value = { ...value, sequenceContent: { ...shape, value: { ...value }, filename: filenamePart(value) ?? UNKNOWN } };
+      }
       if (value.sqlArray && ts.isParameter(name.parent) && this.session?.sqlModel.arrayParameter(name) !== true) value = { ...value, sqlArray:{ ...value.sqlArray, closed:false } };
       env.declare(name.text, value, blockScoped, this.session?.modules.symbol(name));
       return;
@@ -1392,10 +1431,12 @@ class DataflowAnalyzer {
       // Body interpretation happens when send/json runs, after argument evaluation.
       const responseState = response?.expressResponse;
       const processBinding = this.session?.processModel.binding(expression);
+      const filesystemStream = this.session?.filesystemModel.stream(expression);
+      const filesystemWrapper = this.session?.filesystemModel.wrapper(expression);
       this.session?.mongoModel.observe(expression);
       const mongoCollection = this.session?.mongoModel.collection(expression, response?.mongoDb);
       // Preserve operand order in this syntax-shaped lane: later writes cannot replace earlier actual evidence.
-      const orderedActuals = !!processBinding || evaluationShapedCallee(callee) || this.session?.nosqlModel.bound(expression) === true || !!selectedCallable.callable || !!selectedCallable.opaqueClosure
+      const orderedActuals = !!processBinding || !!filesystemWrapper || evaluationShapedCallee(callee) || this.session?.nosqlModel.bound(expression) === true || !!selectedCallable.callable || !!selectedCallable.opaqueClosure
         || this.session?.mongoModel.selector(expression, response?.mongoCollection) === true || this.session?.modules.localCallable(expression) === true || this.session?.modules.resolveCjsFunctionCall(expression)?.kind === 'resolved'
         || !!this.session?.modules.discoverCjsBody(expression);
       const args = orderedActuals ? expression.arguments.map(argument => {
@@ -1406,6 +1447,38 @@ class DataflowAnalyzer {
         return expression.arguments.map(argument => this.evalExpression(argument, env));
       })();
       if (orderedActuals) this.evaluationActuals.set(expression, { env, values: args });
+      const cell = response?.sequenceContent;
+      const arrayMutation = cell && ts.isPropertyAccessExpression(callee) && ['push', 'unshift'].includes(callee.name.text);
+      if (arrayMutation) {
+        const appended = combineValues(args.map(consumedInput));
+        const parts = args.map(filenamePart).filter((value): value is FlowValue => !!value);
+        cell.value = combineValues([cell.value, appended]);
+        if (parts.length || isInputRelated(cell.filename)) {
+          const context = conditionalContext('conditional_array_accumulator', expression, cell.node);
+          cell.filename = traced(withContext(combineValues([cell.filename, ...parts]), context), expression, 'intermediate');
+          cell.value = withContext(cell.value, context);
+          this.session!.filesystemModel.accumulatorWrites++;
+          this.session?.gap('module_export_unsupported', expression);
+        }
+      }
+      const event = response?.filesystemStream && ts.isPropertyAccessExpression(callee) && callee.name.text === 'on'
+        && expression.arguments.length === 2 && ts.isStringLiteralLike(expression.arguments[0]) ? expression.arguments[0].text : undefined;
+      const eventCallback = args[1]?.callable;
+      const filesystemEvent = (event === 'data' || event === 'end') && response?.filesystemStream?.valid && eventCallback;
+      if (filesystemEvent) {
+        const stream = response!.filesystemStream!;
+        const context = contexts(conditionalContext('declared_filesystem_stream_origin', stream.origin, stream.provider),
+          conditionalContext('declared_stream_callback_schedule', expression, eventCallback!.target));
+        this.session?.gap('module_export_unsupported', expression);
+        if (event === 'data') {
+          this.session!.filesystemModel.filenameCallbacks++;
+          const parameter = eventCallback!.target.parameters[0];
+          const input = parameter ? traced(withContext({ ...UNKNOWN_INPUT, traceSourceKind: 'filesystem_filename' }, context), parameter.name, 'source') : UNKNOWN;
+          this.session?.callback({ ...eventCallback!, staticContext: contexts(eventCallback!.staticContext, context) }, expression, [input]);
+        } else this.session?.callback({ ...eventCallback!, staticContext: contexts(eventCallback!.staticContext, context) }, expression, []);
+      } else if (response?.filesystemStream && ts.isPropertyAccessExpression(callee) && callee.name.text === 'on') {
+        this.session!.filesystemModel.unsupportedUses++; this.session?.gap('module_export_unsupported', expression);
+      }
       if (ts.isPropertyAccessExpression(callee) && ts.isIdentifier(callee.expression) && ['append', 'set'].includes(callee.name.text)) {
         const receiver = env.resolve(callee.expression.text);
         if (receiver.queryContent) {
@@ -1424,12 +1497,16 @@ class DataflowAnalyzer {
       }
       const callable = selectedCallable.callable;
       if (selectedCallable.opaqueClosure) this.session?.gap('module_export_unsupported', expression);
-      const applied = mongoCollection ? { ...UNKNOWN, mongoCollection } : selectedCallable.opaqueClosure ? traced({ ...selectedCallable.opaqueClosure, traceTruncated: true }, expression, 'call')
+      const applied = filesystemStream ? { ...UNKNOWN, filesystemStream }
+        : arrayMutation ? cell.closed && cell.valid ? SAFE : UNKNOWN // Only qualified arrays have a length return; opaque methods remain unknown.
+        : filesystemEvent ? { ...UNKNOWN, filesystemStream: response!.filesystemStream }
+        : mongoCollection ? { ...UNKNOWN, mongoCollection } : selectedCallable.opaqueClosure ? traced({ ...selectedCallable.opaqueClosure, traceTruncated: true }, expression, 'call')
         : this.session?.invoke(expression, args,this.receiver,this.declared,callable,this.staticContext);
-      const invoked = applied?.kind === 'unknown' && !applied.inputRelated && !applied.constructed && !applied.callable && !applied.mongoCollection && !applied.mongoDb && args.some(isInputRelated)
+      const invoked = !arrayMutation && !filesystemStream && !filesystemEvent
+        && applied?.kind === 'unknown' && !applied.inputRelated && !applied.constructed && !applied.callable && !applied.mongoCollection && !applied.mongoDb && args.some(isInputRelated)
         ? { ...traced(inheritTrace(UNKNOWN_INPUT, args), expression, 'call'), traceTruncated: true, httpTargetUnavailable: httpUnavailable([applied, ...args]) } : applied;
       if (invoked || selectedCallable.opaqueClosure) this.callableActuals.set(expression, { env, value: invoked });
-      if (invoked === undefined) {
+      if (invoked === undefined && !filesystemWrapper?.qualified) {
         // An opaque consumer may change headers; never reuse a stale non-HTML
         // exclusion after the response capability escapes to that consumer.
         for (const value of args) if (value.expressResponse) value.expressResponse.mime = "unknown";
@@ -1438,6 +1515,8 @@ class DataflowAnalyzer {
           const invalidate = (value: FlowValue, depth = 0): void => {
             if (seen.has(value) || depth > 8 || !this.session?.tick()) return;
             seen.add(value);
+            if (value.sequenceContent) value.sequenceContent.valid = value.sequenceContent.closed = false;
+            if (value.filesystemStream) value.filesystemStream.valid = false;
             if (value.nosqlObject) {
               value.nosqlObject.value = combineValues([value.nosqlObject.value, ...args]);
               value.nosqlObject.modified = true;
@@ -1473,9 +1552,18 @@ class DataflowAnalyzer {
       const nosqlRole = this.nosqlRole(expression, args[0] ? consumedInput(args[0]) : undefined, response?.mongoCollection);
       const forkRole = this.session?.forkModel.role(expression);
       const processRole = processBinding ? this.processRole(expression, args, processBinding) : undefined;
-      if (argumentFlows.length > 0 || httpRole || sqlRole || nosqlRole || forkRole || processRole) this.uses.push({ node: expression, kind: "call", argumentFlows,
-        staticContext: contexts(this.staticContext, selectedCallable.staticContext, response?.staticContext, ...args.map(value => value.staticContext)),
-        localCall: this.session?.modules.localCallable(expression), ...(htmlResponse ? { htmlResponse, htmlResponseMime } : {}), ...(httpRole ? { httpRole } : {}), ...(sqlRole ? { sqlRole } : {}), ...(nosqlRole ? { nosqlRole } : {}), ...(forkRole ? { forkRole } : {}), ...(processRole ? { processRole } : {}), localForkCall: this.session?.localForkCalls.get(expression), localProcessCall: this.session?.localForkCalls.get(expression) });
+      const filename = args[1] ? filenamePart(args[1]) : undefined;
+      const filesystemProcess = filename && filesystemWrapper ? {
+        outcome: filesystemWrapper.shell === 'enabled' ? 'argv_shell_input' as const
+          : filesystemWrapper.shell === 'disabled' && filesystemWrapper.interpreter ? 'direct_argv_interpreter_unknown' as const
+          : filesystemWrapper.shell === 'disabled' && args[1]?.sequenceContent?.closed && args[1].sequenceContent.valid ? 'argv_only_shell_disabled' as const : 'argv_shell_unknown' as const,
+        staticFlow: evidence(filename, expression),
+      } : undefined;
+      const filesystemContext = filesystemProcess ? contexts(filename?.staticContext, conditionalContext('declared_process_wrapper', expression)) : undefined;
+      if (filesystemProcess) this.session?.gap('module_export_unsupported', expression);
+      if (argumentFlows.length > 0 || httpRole || sqlRole || nosqlRole || forkRole || processRole || filesystemProcess) this.uses.push({ node: expression, kind: "call", argumentFlows,
+        staticContext: contexts(this.staticContext, filesystemContext, selectedCallable.staticContext, response?.staticContext, ...args.map(value => value.staticContext)),
+        localCall: this.session?.modules.localCallable(expression), ...(htmlResponse ? { htmlResponse, htmlResponseMime } : {}), ...(httpRole ? { httpRole } : {}), ...(sqlRole ? { sqlRole } : {}), ...(nosqlRole ? { nosqlRole } : {}), ...(forkRole ? { forkRole } : {}), ...(processRole ? { processRole } : {}), ...(filesystemProcess ? { filesystemProcess } : {}), localForkCall: this.session?.localForkCalls.get(expression), localProcessCall: this.session?.localForkCalls.get(expression) });
       return;
     }
     if (ts.isNewExpression(expression)) {
@@ -1874,7 +1962,7 @@ class DataflowAnalyzer {
     if (ts.isIdentifier(expression)) {
       if (!env.has(expression.text) && this.session?.sqlModel.callbackArgument(expression)) return { ...UNKNOWN, sqlCallback:true };
       if (!env.has(expression.text) && this.session?.modules.symbol(expression)) return UNKNOWN;
-      const current = currentQuery(env.resolve(expression.text));
+      const current = consumedInput(currentQuery(env.resolve(expression.text)));
       const value = current.properties && this.session?.sqlModel.dataIdentifierUnavailable(expression) ? {...current,sqlDataUnavailable:true} : current;
       return value.kind === "root" && !value.trace?.some(item => item.role === "source") ? traced(value, expression, "source") : value;
     }
@@ -1916,7 +2004,10 @@ class DataflowAnalyzer {
       });
       for (const value of values) containResponse(value);
       const combined = combineValues(values);
-      return { ...combined, expressObjectBody: true, properties, ...(this.session?.sqlModel ? { sqlArray:{ node:expression,closed:this.session.sqlModel.closedArray(expression) && !combined.sqlDataUnavailable,count:expression.elements.length } } : {}) };
+      const filenameValues = values.map(filenamePart).filter((value): value is FlowValue => !!value);
+      return { ...combined, expressObjectBody: true, properties,
+        ...(filenameValues.length ? { filesystemContent: combineValues(filenameValues) } : {}),
+        ...(this.session?.sqlModel ? { sqlArray:{ node:expression,closed:this.session.sqlModel.closedArray(expression) && !combined.sqlDataUnavailable,count:expression.elements.length } } : {}) };
     }
     if (ts.isObjectLiteralExpression(expression)) {
       const observed = this.objectActuals.get(expression);
@@ -1927,12 +2018,12 @@ class DataflowAnalyzer {
       let nosqlWhere: FlowValue['nosqlWhere'];
       const dataUnavailable=expression.properties.some(p=>!(ts.isPropertyAssignment(p) || ts.isShorthandPropertyAssignment(p))
         || ts.isComputedPropertyName(p.name) || ['toPostgres','toString','__proto__'].includes(propertyName(p.name) ?? ''));
-      const sqlSnapshot=(value:FlowValue):FlowValue=>({kind:value.kind,root:value.root,inputRelated:value.inputRelated,trace:value.trace?.map(s=>({role:s.role,location:{...s.location}})),traceTruncated:value.traceTruncated,httpTargetUnavailable:currentQuery(value).httpTargetUnavailable,urlFragments:value.urlFragments?.map(p=>({...p})),sqlScalarUnavailable:value.sqlScalarUnavailable,sqlFixedText:value.sqlFixedText ? {...value.sqlFixedText} : undefined,sqlCallback:value.sqlCallback,sqlDataUnavailable:value.sqlDataUnavailable,sqlArray:value.sqlArray ? {...value.sqlArray} : undefined});
+      const sqlSnapshot=(value:FlowValue):FlowValue=>({kind:value.kind,root:value.root,inputRelated:value.inputRelated,trace:value.trace?.map(s=>({role:s.role,location:{...s.location}})),traceTruncated:value.traceTruncated,traceSourceKind:value.traceSourceKind,httpTargetUnavailable:currentQuery(value).httpTargetUnavailable,urlFragments:value.urlFragments?.map(p=>({...p})),sqlScalarUnavailable:value.sqlScalarUnavailable,sqlFixedText:value.sqlFixedText ? {...value.sqlFixedText} : undefined,sqlCallback:value.sqlCallback,sqlDataUnavailable:value.sqlDataUnavailable,sqlArray:value.sqlArray ? {...value.sqlArray} : undefined});
       const captureTarget = (value: FlowValue): void => {
         const current = currentQuery(value);
         // Immutable construction-time snapshot; no object/alias/query identity.
         target = { kind: current.kind, root: current.root, inputRelated: current.inputRelated,
-          trace: current.trace?.map(s => ({ role: s.role, location: { ...s.location } })), traceTruncated: current.traceTruncated,
+          trace: current.trace?.map(s => ({ role: s.role, location: { ...s.location } })), traceTruncated: current.traceTruncated, traceSourceKind: current.traceSourceKind,
           urlFragments: current.urlFragments?.map(p => ({ ...p })), httpTargetUnavailable: current.httpTargetUnavailable };
       };
       for (const property of expression.properties) {
@@ -2110,5 +2201,8 @@ export function findSnapshotInputFlows(files: readonly ts.SourceFile[], limits: 
     maxNodeVisits: limits.nodeVisits, maxFunctions: limits.functions, maxSummaryWork: limits.summaryWork,
     maxCallDepth: limits.callDepth, maxModuleEdges: limits.moduleEdges, maxAliasSteps: limits.aliasSteps, maxTraceSteps: FLOW_LIMITS.traceSteps,
     analysisIncomplete: session.reasons.size > 0, incompleteReasons: [...session.reasons].sort().join(","),
+    filesystemStreamModel: 'glob-stream-filename-v1', filesystemStreamsRecognized: session.filesystemModel.streamsRecognized,
+    filesystemFilenameCallbacks: session.filesystemModel.filenameCallbacks, filesystemAccumulatorWrites: session.filesystemModel.accumulatorWrites,
+    filesystemUnsupportedUses: session.filesystemModel.unsupportedUses,
   }};
 }

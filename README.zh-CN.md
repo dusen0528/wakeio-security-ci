@@ -162,6 +162,8 @@ jobs:
 
 `--fail-on none` 只关闭由 finding 触发的失败。未完成检查和 setup failure 仍然返回 exit `2`。exit `0` 不代表整个服务安全，也不代表认证流程完整。
 
+源码预览版支持文档中指定版本的[文件名到 process argv 流程](docs/source-filesystem-flow.md)，将文件名 callback 和共享数组累积连接到 argv，并保留有条件的 low-confidence 候选与未完成检查。支持范围和公开 advisory 的验证记录见链接文档。这不代表发现了新漏洞或整个修复源码已安全。公开 npm 仍为 0.4.0。
+
 ## 本地 source handoff
 
 经审查的 0.5.0 源码预览版可以将 source candidate 与当前收集的源码绑定，

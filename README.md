@@ -176,6 +176,8 @@ Findings are labeled as candidates, observations, or advisories. Missing tools, 
 
 `--fail-on none` disables finding-based failure only; it does not turn an incomplete scan into a pass. Reports omit raw source and secret values, but can contain project paths, package identifiers, and URLs. Set CI artifact visibility accordingly.
 
+The source preview supports [bounded filesystem filename flow](docs/source-filesystem-flow.md) for the documented exact versions, connecting filename callbacks and shared accumulation to process argv. Findings preserve low-confidence conditional evidence and incomplete checks. The linked scope and validation record explains the known-advisory replay; it does not establish a new vulnerability or whole-fixed-source safety. Published npm remains 0.4.0.
+
 ## Local source handoff
 
 The reviewed 0.5.0 source preview can bind a source-only candidate to current

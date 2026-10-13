@@ -154,6 +154,31 @@ scan adjudication from Action/process status. Existing report outputs remain
 available under their existing names. Setup failure may leave old files or
 report paths that do not exist; output paths alone do not prove success.
 
+## Filesystem filename source-kind contract
+
+The source-preview ruleset `2026-10-13.3` adds optional
+`Finding.staticFlow.sourceKind: filesystem_filename`, preserved as
+`agent.findings[].evidence.staticFlow.sourceKind` and in Markdown/SARIF.
+It labels the selected observed filename origin, not HTTP input, runtime
+attacker control or every possible source. Legacy absence remains unknown;
+malformed metadata must not become a fabricated filename origin.
+
+Four additional bounded conditional-context kinds describe the declared
+filesystem stream, callback schedule, accumulator and process wrapper:
+`declared_filesystem_stream_origin`, `declared_stream_callback_schedule`,
+`conditional_array_accumulator`, and `declared_process_wrapper`. Positions and
+observed local targets stay in sanitised local reports. No uncollected wrapper
+position is invented as a local flow hop. Filename candidates remain low
+confidence with truncated static evidence, verification not run and remediation
+not verified. Changed context keeps strict comparison unverified.
+
+The [filesystem flow contract](source-filesystem-flow.md) explains the rule,
+uses/counters and remaining assumptions. The fixed public advisory source may
+still contain unsafe opt-in and interpreter paths; an absent candidate is not a
+verified fix. The feature is implemented in the source preview; source-validation
+results and the separately recorded package-consumer boundary are in the linked
+validation record.
+
 ## Finding evidence and consumer requirements
 
 Each finding links its `findingId`, `checkIndex`, `checkId`, and `ruleId` to the
