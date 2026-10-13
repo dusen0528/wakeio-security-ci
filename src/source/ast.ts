@@ -9,6 +9,7 @@ import { FLOW_LIMITS, type FlowLimits } from "./modules.js";
 import type { CollectedFile, SourceSnapshot } from "./types.js";
 import { mergeHttpRoles } from './http-role.js';
 import { mergeStaticContexts } from '../static-context.js';
+import { mergeProcessRoles, PROCESS_METHODS } from './process-role.js';
 
 interface AstFile {
   file: CollectedFile;
@@ -256,6 +257,24 @@ function observeFile(astFile: AstFile, flowUses: ReadonlyMap<ts.Node, InputFlowU
           use.forkRole.identity === 'native' ? 'Input reaches a Node fork module path' : 'Input reaches an unresolved fork-shaped call',
           use.forkRole.identity === 'native' ? 'Input-related data reaches the modulePath argument of a statically bound Node fork API. Runtime identity, module execution and path escape are unverified.' : 'Known input reaches the first argument of an exact-load fork-shaped binding whose native identity is unresolved. Module execution and path escape are unverified.',
           'high', 'Review module selection and restrict executable module paths. argv and execution options require separate review.', use.forkRole.identity === 'native' ? confidence : 'low');
+      } else if (use?.processRole) {
+        const role = use.processRole;
+        if (role.inputRelated && !['argv_only_fixed_executable', 'no_input'].includes(role.outcome)) {
+          const executable = role.executable === true;
+          const unknown = role.outcome === 'unknown_role' || role.certainty !== 'tainted';
+          const title = role.outcome === 'shell_executable_input' ? 'Input reaches a shell executable option'
+            : unknown ? 'Input reaches an unresolved process argument role'
+            : executable ? 'Input reaches a Node process executable' : role.outcome === 'argv_shell_input' ? 'Input reaches process arguments interpreted by a shell' : 'Input reaches a Node shell command';
+          const description = role.outcome === 'shell_executable_input'
+            ? 'Input reaches the shell option and may select a shell executable if the value is a string. Runtime type, native identity and execution are unverified.'
+            : unknown ? 'Observed input reaches a declared process API-shaped call with unresolved command, executable, argv or options roles. This does not establish shell interpretation; runtime identity and execution are unverified.'
+            : executable ? 'Input-related data reaches the executable argument of a statically bound Node process API with direct execution. Executable selection, runtime identity and execution require review; this is not a shell-metacharacter claim.'
+            : role.outcome === 'argv_shell_input' ? 'Input-related data reaches argv that the declared Node API combines with its command under enabled shell options. Runtime identity, command interpretation and exploitability are unverified.'
+            : 'Input-related data reaches the command argument of a statically bound Node API with shell interpretation. Runtime identity, execution and exploitability are unverified.';
+          pushObservation(observations, file, sourceFile, node, executable ? 'ast:process-executable' : 'ast:shell-input-sink', title, description,
+            executable ? 'high' : 'critical', 'Keep executable and shell selection independent of input; use fixed argument arrays with shell disabled and review program-specific flags, interpreter operands and execution options.', unknown ? 'low' : 'medium');
+          observations.at(-1)!.staticFlow = role.staticFlow;
+        }
       } else if ((name === "eval" || name === "window.eval" || name === "Function" || name === "window.Function") && node.arguments.length > 0) {
         observations.push(dynamicCodeObservation(astFile, node, use)!);
       } else if (use?.htmlResponse === "express" && flowConfidence(use, 0)) {
@@ -304,7 +323,8 @@ function observeFile(astFile: AstFile, flowUses: ReadonlyMap<ts.Node, InputFlowU
         }
       } else if (use?.kind === "call" && FETCH_SINK.test(name) && flowConfidence(use, 0) && !destinationQualified(use, node)) {
         pushObservation(observations, file, sourceFile, node, "ast:server-request", "Request input reaches an outbound request", "Request input appears to control an outbound URL or request target.", "high", "Use an origin and path allowlist before making server side requests.", flowConfidence(use, 0));
-      } else if (use?.kind === "call" && SHELL_SINK.test(name) && !(name === "fork" && use.localForkCall?.complete === true) && flowConfidence(use, 0)) {
+      } else if (use?.kind === "call" && SHELL_SINK.test(name) && !(name === "fork" && use.localForkCall?.complete === true)
+        && !(PROCESS_METHODS.has(name) && use.localProcessCall?.complete === true) && flowConfidence(use, 0)) {
         pushObservation(observations, file, sourceFile, node, "ast:shell-input-sink", "Request input reaches a shell call", "Request input appears to control a process or shell command argument.", "critical", "Avoid shell execution; use fixed argument arrays and strict allowlists when a process is required.", flowConfidence(use, 0));
       } else if (use?.kind === "call" && /^setTimeout$/i.test(name) && flowConfidence(use, 0)) {
         pushObservation(observations, file, sourceFile, node, "ast:dynamic-code", "Request input reaches a timer code argument", "Request input appears to reach a timer API that accepts executable code.", "high", "Pass a function reference and validate all inputs before scheduling work.", flowConfidence(use, 0));
@@ -331,6 +351,8 @@ function observeFile(astFile: AstFile, flowUses: ReadonlyMap<ts.Node, InputFlowU
     // Dynamic code selects its actual relevant operand; timers still use the generic arg0 trace.
     if (observation.ruleId === 'ast:dynamic-code' && dynamicCodeShape(observation.node)) return observation;
     const use = flowUses.get(observation.node);
+    // A process operand with absent evidence must never borrow argument zero's trace.
+    if (use?.processRole && ['ast:shell-input-sink', 'ast:process-executable'].includes(observation.ruleId)) return observation;
     const index = ts.isCallExpression(observation.node) && callName(observation.node.expression) === "React.createElement" ? 1 : 0;
     const staticFlow = observation.staticFlow ?? (observation.ruleId === 'ast:nosql-input-sink' && use?.nosqlRole ? use.nosqlRole.staticFlow : observation.ruleId === 'ast:sql-input-sink' && use?.sqlRole ? use.sqlRole.staticFlow : observation.ruleId === 'ast:server-request' && use?.httpRole
       ? use.httpRole.staticFlow : use?.argumentFlows?.find((argument) => argument.index === index)?.staticFlow);
@@ -440,12 +462,13 @@ export function runBuiltinAst(snapshot: SourceSnapshot, hasOtherSecurityCheck = 
       }
     }
     const staticContext = mergeStaticContexts(prior.staticContext, use.staticContext);
-    const merged: InputFlowUse = { ...prior, staticContext, htmlResponse: prior.htmlResponse ?? use.htmlResponse, htmlResponseMime: prior.htmlResponseMime === "unknown" || use.htmlResponseMime === "unknown" ? "unknown" : prior.htmlResponseMime ?? use.htmlResponseMime, argumentFlows: [...argumentsByIndex.values()].sort((a, b) => a.index - b.index), localForkCall: prior.localForkCall && use.localForkCall ? {complete:prior.localForkCall.complete && use.localForkCall.complete} : undefined, forkRole: prior.forkRole?.identity === 'unresolved' || use.forkRole?.identity === 'unresolved' ? {identity:'unresolved' as const} : prior.forkRole ?? use.forkRole, sqlRole:mergeSqlRoles(prior.sqlRole,use.sqlRole), nosqlRole:mergeNoSqlRoles(prior.nosqlRole,use.nosqlRole), httpRole: mergeHttpRoles(prior.httpRole, use.httpRole) };
+    const merged: InputFlowUse = { ...prior, staticContext, htmlResponse: prior.htmlResponse ?? use.htmlResponse, htmlResponseMime: prior.htmlResponseMime === "unknown" || use.htmlResponseMime === "unknown" ? "unknown" : prior.htmlResponseMime ?? use.htmlResponseMime, argumentFlows: [...argumentsByIndex.values()].sort((a, b) => a.index - b.index), localForkCall: prior.localForkCall && use.localForkCall ? {complete:prior.localForkCall.complete && use.localForkCall.complete} : undefined, localProcessCall: prior.localProcessCall && use.localProcessCall ? {complete:prior.localProcessCall.complete && use.localProcessCall.complete} : undefined, forkRole: prior.forkRole?.identity === 'unresolved' || use.forkRole?.identity === 'unresolved' ? {identity:'unresolved' as const} : prior.forkRole ?? use.forkRole, processRole: mergeProcessRoles(prior.processRole, use.processRole), sqlRole:mergeSqlRoles(prior.sqlRole,use.sqlRole), nosqlRole:mergeNoSqlRoles(prior.nosqlRole,use.nosqlRole), httpRole: mergeHttpRoles(prior.httpRole, use.httpRole) };
     if (staticContext) {
       merged.argumentFlows = (merged.argumentFlows ?? []).map(flow => ({ ...flow, certainty: 'unknown' as const, fixedDestination: false, staticFlow: flow.staticFlow ? { ...flow.staticFlow, truncated: true } : undefined }));
       if (merged.nosqlRole) merged.nosqlRole = { ...merged.nosqlRole, certainty: 'unknown', staticFlow: merged.nosqlRole.staticFlow ? { ...merged.nosqlRole.staticFlow, truncated: true } : undefined };
       if (merged.sqlRole) merged.sqlRole = { ...merged.sqlRole, certainty: 'unknown', staticFlow: merged.sqlRole.staticFlow ? { ...merged.sqlRole.staticFlow, truncated: true } : undefined };
       if (merged.httpRole) merged.httpRole = { ...merged.httpRole, certainty: 'unknown', staticFlow: merged.httpRole.staticFlow ? { ...merged.httpRole.staticFlow, truncated: true } : undefined };
+      if (merged.processRole) merged.processRole = { ...merged.processRole, certainty: 'unknown', staticFlow: merged.processRole.staticFlow ? { ...merged.processRole.staticFlow, truncated: true } : undefined };
     }
     flowUses.set(use.node, merged);
   }
@@ -453,6 +476,8 @@ export function runBuiltinAst(snapshot: SourceSnapshot, hasOtherSecurityCheck = 
   const outboundFixedDestinationSuppressed = outboundUses.filter((use) => destinationQualified(use, use.node as ts.CallExpression)).length;
   const forkUses = [...flowUses.values()].filter(use => use.forkRole);
   const forkInputUses = forkUses.filter(use => flowConfidence(use, 0));
+  const processUses = [...flowUses.values()].filter(use => use.processRole);
+  const processInputUses = processUses.filter(use => use.processRole!.inputRelated);
   const nosqlUses = [...flowUses.values()].filter(use => use.nosqlRole);
   const nosqlInputUses = nosqlUses.filter(use => use.nosqlRole!.inputRelated);
   const sqlUses=[...flowUses.values()].filter(use=>use.sqlRole);
@@ -489,6 +514,7 @@ export function runBuiltinAst(snapshot: SourceSnapshot, hasOtherSecurityCheck = 
       'pg SQL role model separates supported statement text from bound values under the declared pg JS API. Default dispatch and closed statement shape are required before a text-input claim. A fixed text/values exclusion is not runtime package identity, SQL syntax validity, database-side dynamic SQL safety or confirmed remediation. Unsupported identity, mutation, prototype, native, callback and opaque value/array roles remain unknown; generic SQL/input seed behavior is retained.',
       'Bare fork spelling is not classified as a shell API when every observed invocation resolves to an immutable local/relative function and its actual analysis completes. This is not function safety: nested native/SQL/HTTP/HTML sinks remain findings. Unresolved, mutable and incomplete analysis retain the legacy heuristic and partial gate.',
       'Node fork role model recognizes declared lexical child_process bindings and only the modulePath argument. Fixed modulePath does not establish whole-call safety: argv, execPath, execArgv, cwd and env are unmodeled. Mutable/escaped/incomplete identity retains low candidates; socket dispatch and guards are not newly modeled.',
+      'Node process role model separates command, executable, argv and shell-option input for six exact-load child_process APIs. exec/execSync normalize non-string shell options to enabled; an empty shell string disables shell interpretation. The four direct APIs default to no shell. Fixed executable plus input argv under proven direct execution excludes only shell interpretation: program-option injection, explicit interpreter operands, argv0, cwd, env, PATH and whole-process safety remain unmodeled. Mutable/escaped bindings or options, opaque overloads, spreads/getters and incomplete proof retain unresolved input candidates. Dynamic shell-field input may select a shell executable if it is a string; runtime type/execution are unverified. Completed local process-shaped bodies suppress only the name heuristic, preserving nested findings.',
       `Budget model: one charged common indexing walk with index ${limits.indexWork ?? FLOW_LIMITS.indexWork} and flow ${limits.flowWork ?? FLOW_LIMITS.flowWork} work, plus ${limits.nodeVisits} aggregate cap. nodeVisits is total index+flow; legacy overrides remain aggregate caps. Parsed files are not fully analyzed files. Partial indexing disables immutable callee/native destination proof; known root counts do not imply complete global inventory. AST observation/render and TS parse/bind work are outside these counters.`,
       "Parser/binder and collector limits remain separate from deterministic flow-work budgets; this is not hostile-code CPU/memory isolation.",
       ...analysis.reasons.map((reason) => `Supported static analysis was incomplete: ${reason}.`),
@@ -496,6 +522,9 @@ export function runBuiltinAst(snapshot: SourceSnapshot, hasOtherSecurityCheck = 
     ],
     metrics: { filesAnalyzed: astFiles.length, filesParsed: astFiles.length, filesParseValid: astFiles.length - parseErrorCount, parseErrorCount, findingCount: findings.length, ...analysis.metrics, rootInventoryComplete: analysis.metrics.indexComplete === true && parseErrorCount === 0, outboundDestinationModel: "literal-http-query-native-params-v1", outboundFixedDestinationSuppressed, outboundQueryQualifiedUses: outboundUses.filter((use) => use.argumentFlows?.find((argument) => argument.index === 0)?.fixedDestination).length,
       forkRoleModel:'node-child-process-fork-v1', forkRoleRecognizedUses:forkUses.length, forkModulePathInputUses:forkInputUses.filter(use=>use.forkRole!.identity==='native').length, forkUnresolvedInputUses:forkInputUses.filter(use=>use.forkRole!.identity==='unresolved').length,
+      processRoleModel:'node-child-process-operands-v1', processRoleRecognizedUses:processUses.length, processCommandInputUses:processInputUses.filter(use=>['command_input','argv_shell_input'].includes(use.processRole!.outcome)).length,
+      processExecutableInputUses:processInputUses.filter(use=>['executable_input','shell_executable_input'].includes(use.processRole!.outcome)).length, processArgvOnlyExcluded:processInputUses.filter(use=>use.processRole!.outcome==='argv_only_fixed_executable').length,
+      processUnresolvedInputUses:processInputUses.filter(use=>use.processRole!.outcome==='unknown_role' || use.processRole!.certainty==='unknown').length,
       nosqlRoleModel: 'marsdb-mongodb2-selector-v1', nosqlRoleBoundUses: nosqlUses.length, nosqlSelectorInputUses: nosqlInputUses.filter(use => use.nosqlRole!.outcome === 'selector_input').length, nosqlWhereInputUses: nosqlInputUses.filter(use => use.nosqlRole!.outcome === 'where_input').length, nosqlStringSelectorExcluded: nosqlInputUses.filter(use => use.nosqlRole!.outcome === 'string_selector').length, nosqlRoleUnknownUses: nosqlInputUses.filter(use => use.nosqlRole!.outcome === 'unknown_role').length,
       sqlRoleModel:'pg-query-config-v1', sqlRoleBoundUses:sqlUses.filter(u=>u.sqlRole!.bound).length, sqlStatementInputUses:sqlInputUses.filter(u=>u.sqlRole!.outcome==='statement_input').length, sqlValuesOnlyExcluded:sqlInputUses.filter(u=>u.sqlRole!.outcome==='values_only_fixed_text').length, sqlRoleUnknownUses:sqlInputUses.filter(u=>u.sqlRole!.outcome==='unknown_role').length,
       outboundRoleModel: 'axios-request-config-query-v2', roleProofScopeComplete,

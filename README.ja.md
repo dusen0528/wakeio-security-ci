@@ -20,6 +20,8 @@ GitHub のソースは **0.5.0**、npm で公開済みの最新版は **0.4.0** 
 
 ソース検査には JS/TS の組み込み検査と、別途用意した Gitleaks、OSV-Scanner、Trivy、Bandit を選択できます。外部エンジンは自動的に信頼したり、常に準備済みだと仮定したりしません。まず `--tools none` で組み込み検査だけを実行できます。
 
+ソース preview は [6つの Node process API](docs/process-role.md) の command・executable・argv・shell フィールドを区別します。default/false argv の除外は Node のシェル解釈だけを対象とし、プログラムオプションの安全性や実行を検証しません。この ruleset 変更は npm 公開を意味しません。
+
 ## 最短で試す
 
 Node.js 22 以上を用意し、対象プロジェクトとは別のディレクトリに checkout します。
