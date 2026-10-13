@@ -8,6 +8,8 @@ import { resolveDastOrigin, startEgressGate, type EgressGate } from "./dast-egre
 import { selectOpenApiLiveOperations, OpenApiPolicyError } from "./openapi.js";
 import { superviseWorker } from "./schemathesis.js";
 import { safeUrl, UrlNetworkError } from "./url-network.js";
+import { runSchemathesisAuthenticated } from './schemathesis-auth-run.js';
+import { types } from 'node:util';
 
 /**
  * Opt-in Schemathesis generation against an explicitly consented origin.
@@ -36,6 +38,8 @@ export interface SchemathesisLiveOptions {
   maxTotalBytes?: number;
   seed?: number;
   signal?: AbortSignal;
+  authPolicy?: unknown;
+  env?: NodeJS.ProcessEnv;
 }
 
 type LiveFailure = { rule: "not_a_server_error" | "response_schema_conformance"; kind: "server_error" | "malformed_json" | "schema_violation" | "unclassified"; keyword?: string };
@@ -154,6 +158,15 @@ async function workerScript(): Promise<string | undefined> {
 }
 
 export async function runSchemathesisLive(options: SchemathesisLiveOptions): Promise<CheckResult[]> {
+  // Do not evaluate a caller accessor to decide whether authenticated mode applies.
+  if (options && typeof options === 'object') {
+    if (types.isProxy(options)) return runSchemathesisAuthenticated(options);
+    const prototype = Object.getPrototypeOf(options);
+    if (prototype !== Object.prototype && prototype !== null) return runSchemathesisAuthenticated(options);
+    if (Object.getOwnPropertyDescriptor(options,'authPolicy') || prototype === Object.prototype && Object.getOwnPropertyDescriptor(prototype,'authPolicy')) {
+      return runSchemathesisAuthenticated(options);
+    }
+  }
   if (!record(options) || options.consent !== true) return errorCheck("consent_required", "Active API testing requires explicit consent; no requests were made.");
   let maxRequests: number, timeoutMs: number, maxBodyBytes: number, maxTotalBytes: number, seed: number;
   try {

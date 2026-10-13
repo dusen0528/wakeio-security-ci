@@ -8,6 +8,8 @@ export * from "./api.js";
 export * from "./openapi.js";
 export * from "./dast-egress.js";
 export * from "./schemathesis-live.js";
+export { SCHEMATHESIS_AUTH_REVISION, parseSchemathesisAuthPolicy, sanitiseSchemathesisAuth } from './schemathesis-auth.js';
+export type { SchemathesisAuthPolicy, SchemathesisAuthAssertion, SchemathesisAuthEvidence, SchemathesisAuthRecord, SchemathesisAuthStop } from './schemathesis-auth.js';
 export * from "./nuclei.js";
 export * from "./scan-scope.js";
 export * from "./doctor.js";

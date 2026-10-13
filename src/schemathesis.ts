@@ -88,7 +88,7 @@ export function localCodeWorker(executable: string, args: readonly string[]): Co
 }
 /** Run a trusted worker in its own POSIX process group with a capped stdout and no stderr retention. */
 export function superviseWorker(executable: string, args: readonly string[], input: string, signal: AbortSignal,
-  outputCap = OUTPUT_CAP): Promise<{ exitCode: number; stdout: string }> {
+  outputCap = OUTPUT_CAP, retainBoundedPrefix = false): Promise<{ exitCode: number; stdout: string }> {
     return new Promise((done, reject) => {
       if (signal.aborted) { reject(new Error("cancelled")); return; }
       if (process.platform === "win32") { reject(new Error("process_groups_unavailable")); return; }
@@ -123,7 +123,7 @@ export function superviseWorker(executable: string, args: readonly string[], inp
         signal.removeEventListener("abort", terminate);
         if (unavailable) { reject(new Error("worker_unavailable")); return; }
         done({ exitCode: overflow ? -1 : code ?? -1,
-          stdout: overflow ? "" : Buffer.concat(chunks).toString("utf8") });
+          stdout: overflow && !retainBoundedPrefix ? "" : Buffer.concat(chunks).toString("utf8") });
       });
       child.stdin.end(input);
     });

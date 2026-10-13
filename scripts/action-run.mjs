@@ -226,6 +226,7 @@ async function dastMain(env) {
     }
     if (plan.apiBase) {
       args.push('--openapi', value(env.WAKEIO_OPENAPI), '--api-base', plan.apiBase);
+      addValueOption(args, '--schemathesis-auth-policy', env.WAKEIO_SCHEMATHESIS_AUTH_POLICY);
       addRepeatedOption(args, '--operation', env.WAKEIO_OPERATIONS);
       addValueOption(args, '--api-max-requests', env.WAKEIO_API_MAX_REQUESTS);
       addValueOption(args, '--seed', env.WAKEIO_SEED);
@@ -319,6 +320,7 @@ async function dastPolicy(env) {
     allowed.add(origin);
   }
   if (allowed.size === 0) return refuse('allowed-origins is required');
+  if (value(env.WAKEIO_SCHEMATHESIS_AUTH_POLICY) && !value(env.WAKEIO_OPENAPI)) return refuse('schemathesis-auth-policy requires openapi');
   const engines = value(env.WAKEIO_ENGINES).split(',').map((item) => item.trim()).filter(Boolean);
   if (engines.some((engine) => engine !== 'nuclei') || new Set(engines).size !== engines.length) return refuse('engines must be nuclei or empty');
   const plan = {};
