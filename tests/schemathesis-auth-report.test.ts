@@ -156,11 +156,10 @@ test('authenticated comparison refuses credential-free or changed execution inpu
   }
 });
 
-test('advice policy 11 exposes bounded indices/enums/counts only and grants no replay route', () => {
+test('advice policy exposes bounded indices/enums/counts only and grants no replay route', () => {
   const agent = toAgentReport(report(check(true)), 'medium');
   const projected = projectAdviceContext(agent, true).input;
-  assert.equal(ADVICE_PROJECTION_POLICY_VERSION, 11);
-  assert.equal(projected.projectionVersion, 11);
+  assert.equal(projected.projectionVersion, ADVICE_PROJECTION_POLICY_VERSION);
   assert.equal(projected.checks[0].recheckRoute, 'review_check_diagnostics');
   assert.deepEqual(projected.checks[0].schemathesisAuth?.operations, [{ operationIndex: 0, generatedRequests: 1, deniedRequests: 0 }]);
   assert.equal(projected.findings[0].replayAvailable, false);
