@@ -1,0 +1,109 @@
+name: owned-api-write-action-self-test
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  owned-write-action:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: fixed
+            candidate: fixed
+            consent: 'true'
+            expected: '0'
+            after: '0'
+          - name: ineffective
+            candidate: ineffective
+            consent: 'true'
+            expected: '1'
+            after: '1'
+          - name: all-deny
+            candidate: all-deny
+            consent: 'true'
+            expected: '2'
+            after: '2'
+          - name: refusal
+            candidate: fixed
+            consent: 'false'
+            expected: '2'
+            after: unknown
+    steps:
+      - name: Check out the Action implementation
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          path: wakeio-security-ci
+          persist-credentials: false
+      # No npm/build/target fixture startup: this tests the checked-in bundle
+      # through the same actual composite Action that a consumer invokes.
+      - name: Run owned write-state Action
+        id: pilot
+        continue-on-error: true
+        uses: ./wakeio-security-ci/actions/api-write-state
+        with:
+          candidate: ${{ matrix.candidate }}
+          active-consent: ${{ matrix.consent }}
+          timeout-ms: '30000'
+          out: owned-api-write-${{ matrix.name }}
+      - name: Assert the original gates, delivery and Action outcome
+        if: always()
+        env:
+          CASE: ${{ matrix.name }}
+          EXPECTED: ${{ matrix.expected }}
+          EXPECTED_AFTER: ${{ matrix.after }}
+          OUTCOME: ${{ steps.pilot.outcome }}
+          EXIT_CODE: ${{ steps.pilot.outputs.exit-code }}
+          BEFORE_CODE: ${{ steps.pilot.outputs.before-exit-code }}
+          AFTER_CODE: ${{ steps.pilot.outputs.after-exit-code }}
+          VERIFY_CODE: ${{ steps.pilot.outputs.verification-exit-code }}
+          DELIVERY: ${{ steps.pilot.outputs.delivery-status }}
+          COMMAND_STATUS: ${{ steps.pilot.outputs.command-status }}
+          REPORT_DIR: ${{ steps.pilot.outputs.report-dir }}
+          RECEIPT: ${{ steps.pilot.outputs.receipt }}
+          OUT_DIR: owned-api-write-${{ matrix.name }}
+        shell: bash
+        run: |
+          node --input-type=module - <<'NODE'
+          import assert from 'node:assert/strict';
+          import { existsSync, readFileSync } from 'node:fs';
+          const e = process.env;
+          assert.equal(e.EXIT_CODE, e.EXPECTED);
+          assert.equal(e.OUTCOME, e.EXPECTED === '0' ? 'success' : 'failure');
+          assert.equal(e.VERIFY_CODE, e.EXPECTED);
+          assert.equal(e.AFTER_CODE, e.EXPECTED_AFTER);
+          if (e.CASE === 'refusal') {
+            assert.equal(e.BEFORE_CODE, 'unknown');
+            assert.equal(e.COMMAND_STATUS, 'refused');
+            assert.equal(e.DELIVERY, 'unknown');
+            assert.equal(e.REPORT_DIR, '');
+            assert.equal(e.RECEIPT, '');
+            assert.equal(existsSync(e.OUT_DIR), false, 'refused Action created a fixture/output');
+          } else {
+            assert.equal(e.BEFORE_CODE, '1', 'original vulnerable baseline was suppressed');
+            assert.equal(e.COMMAND_STATUS, 'completed');
+            assert.equal(e.DELIVERY, 'delivered', 'a partial gate can still have acknowledged delivery');
+            assert.ok(e.REPORT_DIR);
+            const r = JSON.parse(readFileSync(e.RECEIPT, 'utf8'));
+            assert.equal(r.finalExitCode, Number(e.EXPECTED));
+            assert.equal(r.childExitCode, Number(e.EXPECTED));
+            assert.equal(r.childCleanupConfirmed, true);
+            assert.equal(r.acknowledgement, 'current_child_and_publication_verified');
+            assert.equal(r.provesFinalActionExit, false);
+            assert.equal(r.apiReexecuted, false);
+          }
+          NODE
+      - name: Upload only owned redacted reports and publication receipts
+        if: always() && matrix.consent == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: owned-api-write-${{ matrix.name }}
+          path: owned-api-write-${{ matrix.name }}
+          if-no-files-found: error
