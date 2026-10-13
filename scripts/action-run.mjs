@@ -61,6 +61,11 @@ async function main() {
   const out = value(env.WAKEIO_OUT) || 'wakeio-security-reports';
   const requestedTools = value(env.WAKEIO_TOOLS) || 'gitleaks,osv,trivy';
   const sourceMode = Boolean(source);
+  const requireCodeAnalysis = env.WAKEIO_REQUIRE_CODE_ANALYSIS ?? 'false';
+  if (!['true', 'false'].includes(requireCodeAnalysis) || requireCodeAnalysis === 'true' && !sourceMode) {
+    process.stderr.write('wakeio-security-ci: require-code-analysis must be true or false; true requires source.\n');
+    process.exitCode = 2; return;
+  }
   const analysisProfile = env.WAKEIO_ANALYSIS_PROFILE === undefined ? 'default' : env.WAKEIO_ANALYSIS_PROFILE;
   if (!['default', 'extended'].includes(analysisProfile) || (!sourceMode && analysisProfile !== 'default')) {
     process.stderr.write('wakeio-security-ci: analysis-profile must be default or extended; extended requires source.\n');
@@ -116,6 +121,7 @@ async function main() {
 
     const args = [cliEntry, 'scan'];
     if (source) args.push('--source', source, '--analysis-profile', analysisProfile, ...collectionArgs);
+    if (requireCodeAnalysis === 'true') args.push('--require-code-analysis');
     if (url) args.push('--url', url);
     if (apiPolicy) args.push('--api-policy', apiPolicy);
     args.push('--out', out, '--tools', tools, '--fail-on', value(env.WAKEIO_FAIL_ON) || 'high');
@@ -220,6 +226,7 @@ async function dastMain(env) {
     }
     if (plan.apiBase) {
       args.push('--openapi', value(env.WAKEIO_OPENAPI), '--api-base', plan.apiBase);
+      addValueOption(args, '--schemathesis-auth-policy', env.WAKEIO_SCHEMATHESIS_AUTH_POLICY);
       addRepeatedOption(args, '--operation', env.WAKEIO_OPERATIONS);
       addValueOption(args, '--api-max-requests', env.WAKEIO_API_MAX_REQUESTS);
       addValueOption(args, '--seed', env.WAKEIO_SEED);
@@ -313,6 +320,7 @@ async function dastPolicy(env) {
     allowed.add(origin);
   }
   if (allowed.size === 0) return refuse('allowed-origins is required');
+  if (value(env.WAKEIO_SCHEMATHESIS_AUTH_POLICY) && !value(env.WAKEIO_OPENAPI)) return refuse('schemathesis-auth-policy requires openapi');
   const engines = value(env.WAKEIO_ENGINES).split(',').map((item) => item.trim()).filter(Boolean);
   if (engines.some((engine) => engine !== 'nuclei') || new Set(engines).size !== engines.length) return refuse('engines must be nuclei or empty');
   const plan = {};

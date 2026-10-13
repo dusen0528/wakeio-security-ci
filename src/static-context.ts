@@ -6,6 +6,7 @@ export const STATIC_CONTEXT_LIMIT = 8;
 export const STATIC_CONTEXT_KINDS: readonly StaticCandidateContext['items'][number]['kind'][] = Object.freeze([
   'unresolved_cjs_dispatch', 'constructor_continuation', 'declared_callback_entry', 'unqualified_mongo_origin',
   'declared_filesystem_stream_origin', 'declared_stream_callback_schedule', 'conditional_array_accumulator', 'declared_process_wrapper',
+  'declared_package_api',
 ]);
 
 function dataObject(input: unknown, required: readonly string[], optional: readonly string[] = []): input is Record<string, unknown> {

@@ -9,7 +9,10 @@ const SETUP_NODE_SHA = "49933ea5288caeca8642d1e84afbd3f7d6820020";
 const UPLOAD_ARTIFACT_SHA = "ea165f8d65b6e75b540449e92b4886f43607fa02";
 const STABLE_SYSTEM_ALIASES = new Set(["/tmp", "/var"]);
 
-interface InitOptions {
+export interface InitOptions {
+  mode: 'npm' | 'action';
+  actionRef?: string;
+  requireCodeAnalysis?: boolean;
   sourceMaxFiles?: number;
   sourceMaxBytes?: number;
   analysisProfile?: 'default' | 'extended';
@@ -22,9 +25,8 @@ interface InitOptions {
 
 /**
  * Generate a reviewable local CI template without modifying an existing
- * file. The generated workflow invokes the installed npm CLI with
- * `npx --no-install`; it does not invent a registry package or unread config
- * file. Native scanner setup remains an explicit follow-up choice.
+ * file. The legacy npm mode uses a declared target dependency; explicit Action
+ * mode uses a reviewed prebuilt Action without installing the target project.
  */
 export async function initMain(argv: readonly string[] = process.argv.slice(2)): Promise<number> {
   let options: InitOptions;
@@ -80,11 +82,27 @@ export async function initMain(argv: readonly string[] = process.argv.slice(2)):
 export function parseInitArgs(argv: readonly string[]): InitOptions {
   const args = [...argv];
   if (args[0] === "init") args.shift();
-  const options: InitOptions = { source: ".", workflow: join(".github", "workflows", "wakeio-security-ci.yml"), out: "wakeio-security-reports", tools: ["none"], help: false };
+  const options: InitOptions = { mode: 'npm', source: ".", workflow: join(".github", "workflows", "wakeio-security-ci.yml"), out: "wakeio-security-reports", tools: ["none"], help: false };
   const selected = new Set<string>();
   for (let index = 0; index < args.length; index += 1) {
     const argument = args[index];
+    if (argument === '--require-code-analysis') {
+      if (selected.has(argument)) throw new Error('--require-code-analysis may only be specified once');
+      selected.add(argument); options.requireCodeAnalysis = true; continue;
+    }
     const selector = argument.split('=')[0];
+    if (selector === '--mode' || selector === '--action-ref') {
+      if (selected.has(selector)) throw new Error(`${selector} may only be specified once`);
+      selected.add(selector);
+      const inline = argument.indexOf('=');
+      const raw = inline >= 0 ? argument.slice(inline + 1) : args[++index];
+      if (!raw || raw.startsWith('--')) throw new Error(`${selector} requires a value`);
+      if (selector === '--mode') {
+        if (raw !== 'npm' && raw !== 'action') throw new Error('--mode must be npm or action');
+        options.mode = raw;
+      } else options.actionRef = raw;
+      continue;
+    }
     if (['--source-max-files', '--source-max-bytes', '--analysis-profile'].includes(selector)) {
       if (selected.has(selector)) throw new Error(`${selector} may only be specified once`);
       selected.add(selector);
@@ -120,6 +138,11 @@ export function parseInitArgs(argv: readonly string[]): InitOptions {
   }
   if (isAbsolute(options.workflow)) throw new Error("--workflow must be relative to --source");
   if (hasControl(options.workflow) || hasControl(options.out)) throw new Error("--workflow and --out cannot contain control characters");
+  validateMode(options.mode, options.actionRef);
+  if (options.mode === 'action') {
+    validateActionPath(options.out, true);
+    validateActionPath(options.workflow, false);
+  }
   return options;
 }
 
@@ -127,19 +150,52 @@ export function initUsage(): string {
   return [
     "Usage: wakeio-security-ci init [--source DIR] [--workflow .github/workflows/wakeio-security-ci.yml] [--out DIR] [--tools none]",
     "",
-    "       [--source-max-files N] [--source-max-bytes N] [--analysis-profile default|extended]",
+    "       [--source-max-files N] [--source-max-bytes N] [--analysis-profile default|extended] [--require-code-analysis]",
+    "       [--mode npm|action] [--action-ref FULL_40_HEX_COMMIT_SHA]",
     "",
     "Create a local CI workflow only when its destination does not exist; no file is overwritten.",
-    "The template runs the installed CLI with npx --no-install and uses pinned helper-action commits.",
+    "Default npm mode runs the installed CLI with npx --no-install and uses pinned helper-action commits.",
+    "Action mode requires an explicit reviewed Wakeio commit SHA, never installs the target, and writes fresh reports outside its fixed wakeio-source checkout.",
+    "Action --out is a plain relative report base, with a generated run/attempt suffix. Handoff currently supports tools none only.",
     "",
   ].join("\n");
 }
 
-export function renderWorkflow(options: { out: string; tools: string[]; pythonFiles: number; sourceMaxFiles?: number; sourceMaxBytes?: number; analysisProfile?: 'default' | 'extended' }): string {
+export interface WorkflowOptions {
+  mode?: 'npm' | 'action';
+  actionRef?: string;
+  out: string;
+  tools: string[];
+  pythonFiles: number;
+  requireCodeAnalysis?: boolean;
+  sourceMaxFiles?: number;
+  sourceMaxBytes?: number;
+  analysisProfile?: 'default' | 'extended';
+}
+
+export function renderWorkflow(options: WorkflowOptions): string {
+  // Capture known fields once. Caller accessors must not replace validated
+  // values between validation and YAML rendering; this is not caller isolation.
+  options = {
+    mode: options.mode,
+    actionRef: options.actionRef,
+    out: options.out,
+    tools: options.tools,
+    pythonFiles: options.pythonFiles,
+    requireCodeAnalysis: options.requireCodeAnalysis,
+    sourceMaxFiles: options.sourceMaxFiles,
+    sourceMaxBytes: options.sourceMaxBytes,
+    analysisProfile: options.analysisProfile,
+  };
+  if (Array.isArray(options.tools)) options.tools = [...options.tools];
   // Validate again because renderWorkflow is also exported for programmatic use.
+  const mode = validateMode(options.mode, options.actionRef);
+  if (mode === 'action') return renderActionWorkflow(options);
   const files = options.sourceMaxFiles === undefined ? '' : ` --source-max-files ${parseCollectionLimit(String(options.sourceMaxFiles), COLLECTION_MAX_FILES)}`;
   const bytes = options.sourceMaxBytes === undefined ? '' : ` --source-max-bytes ${parseCollectionLimit(String(options.sourceMaxBytes), COLLECTION_MAX_BYTES)}`;
   const profile = options.analysisProfile === undefined ? '' : ` --analysis-profile ${resolveAnalysisBudget(options.analysisProfile).requestedProfile}`;
+  if (options.requireCodeAnalysis !== undefined && typeof options.requireCodeAnalysis !== 'boolean') throw new Error('requireCodeAnalysis must be a boolean');
+  const codePolicy = options.requireCodeAnalysis ? ' --require-code-analysis' : '';
   const toolValue = options.tools.length > 0 ? options.tools.join(",") : "none";
   const pythonNote = options.pythonFiles > 0
     ? `      # Static inventory detected ${options.pythonFiles} Python file${options.pythonFiles === 1 ? "" : "s"}; add a separately prepared Bandit executable before enabling --tools bandit.\n`
@@ -172,13 +228,90 @@ jobs:
         run: npm ci --ignore-scripts --no-audit --fund=false
       - name: Run installed Wakeio CLI
 ${pythonNote}        run: >-
-          npx --no-install wakeio-security-ci scan --source . --project-id "$GITHUB_REPOSITORY" --tools ${toolValue}${files}${bytes}${profile} --out ${shellQuote(options.out)}
+          npx --no-install wakeio-security-ci scan --source . --project-id "$GITHUB_REPOSITORY" --tools ${toolValue}${codePolicy}${files}${bytes}${profile} --out ${shellQuote(options.out)}
       - name: Upload reports
         if: always()
         uses: actions/upload-artifact@${UPLOAD_ARTIFACT_SHA}
         with:
           name: wakeio-security-reports
           path: ${yamlQuote(options.out)}
+          if-no-files-found: error
+`;
+}
+
+function validateMode(mode: unknown, reference: unknown): 'npm' | 'action' {
+  if (mode !== undefined && mode !== 'npm' && mode !== 'action') throw new Error('--mode must be npm or action');
+  if (mode !== 'action') {
+    if (reference !== undefined) throw new Error('--action-ref requires --mode action');
+    return 'npm';
+  }
+  if (typeof reference !== 'string' || reference.length !== 40 || /[^a-fA-F0-9]/.test(reference)) throw new Error('Action mode requires --action-ref with a full 40-hex reviewed commit SHA');
+  return 'action';
+}
+
+function validateActionPath(value: unknown, reports: boolean): asserts value is string {
+  if (typeof value !== 'string' || !value || value.length > 240) throw new Error('Action paths must be bounded plain relative paths');
+  const parts = value.split('/');
+  if (parts.length > 16 || parts.some(part => !part || part === '.' || part === '..'
+    || /[^A-Za-z0-9._-]/.test(part) || reports && !/^[A-Za-z0-9]/.test(part))
+    || reports && parts[0].toLowerCase() === 'wakeio-source') throw new Error('Action paths must be plain relative paths outside wakeio-source without traversal, globs or expressions');
+}
+
+function renderActionWorkflow(options: WorkflowOptions): string {
+  validateActionPath(options.out, true);
+  if (!Array.isArray(options.tools) || options.tools.length > 4 || !options.tools.every(tool => typeof tool === 'string')) throw new Error('Invalid Action tools');
+  const tools = parseTools(options.tools.length ? options.tools.join(',') : 'none');
+  if (!Number.isSafeInteger(options.pythonFiles) || options.pythonFiles < 0 || options.pythonFiles > 20_000) throw new Error('Invalid Python inventory count');
+  if (options.requireCodeAnalysis !== undefined && typeof options.requireCodeAnalysis !== 'boolean') throw new Error('requireCodeAnalysis must be a boolean');
+  const output = options.out + '/${{ github.run_id }}-${{ github.run_attempt }}';
+  const artifactName = 'wakeio-security-reports-${{ github.run_id }}-${{ github.run_attempt }}';
+  const inputs = [
+    '          source: wakeio-source',
+    `          tools: ${yamlQuote(tools.length ? tools.join(',') : 'none')}`,
+    `          out: ${yamlQuote(output)}`,
+  ];
+  if (options.requireCodeAnalysis !== undefined) inputs.push(`          require-code-analysis: '${options.requireCodeAnalysis}'`);
+  if (options.analysisProfile !== undefined) inputs.push(`          analysis-profile: ${resolveAnalysisBudget(options.analysisProfile).requestedProfile}`);
+  for (const [name, value, maximum] of [
+    ['source-max-files', options.sourceMaxFiles, COLLECTION_MAX_FILES],
+    ['source-max-bytes', options.sourceMaxBytes, COLLECTION_MAX_BYTES],
+  ] as const) {
+    if (value === undefined) continue;
+    if (typeof value !== 'number') throw new Error(`${name} must be an integer`);
+    inputs.push(`          ${name}: '${parseCollectionLimit(String(value), maximum)}'`);
+  }
+  return `name: wakeio-security-ci
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source as data
+        uses: actions/checkout@${CHECKOUT_SHA}
+        with:
+          persist-credentials: false
+          path: wakeio-source
+      # Reviewed prebuilt scanner only. No target dependency installation or lifecycle scripts.
+      # tools none supports local handoff; selecting external tools is a separate scan scope.
+      - name: Run pinned Wakeio Action
+        id: wakeio
+        uses: dusen0528/wakeio-security-ci@${options.actionRef!.toLowerCase()}
+        with:
+${inputs.join('\n')}
+      - name: Upload reports
+        if: always()
+        uses: actions/upload-artifact@${UPLOAD_ARTIFACT_SHA}
+        with:
+          name: ${artifactName}
+          path: ${yamlQuote(output)}
           if-no-files-found: error
 `;
 }

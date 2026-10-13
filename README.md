@@ -20,6 +20,12 @@ normal-behavior controls; inconsistent repeats remain inconclusive.
 
 The separate [owned PATCH state pilot](docs/api-write-state.md) checks actual persisted writes and normal owner controls on fixed synthetic loopback fixtures. Its SDK, CLI and dedicated Action require explicit consent, preserve the original phase gates, and do not accept an external API target.
 
+
+The [collected-code coverage contract](docs/source-code-coverage.md) separates file collection from completed language analysis. Opt into `--require-code-analysis` to gate uncovered collected code; this does not add a language analyzer or establish whole-project coverage.
+
+
+The explicit [authenticated POST JSON numeric SQL profile](docs/native-dast-post-json.md) adds a fixed body field and a distinct benign-value control to the consented differential contract. It uses a separate v4 policy; GET policies retain their scope.
+
 ## What it checks
 
 | Scope | What Wakeio can observe | Boundary to keep in mind |
@@ -27,7 +33,7 @@ The separate [owned PATCH state pilot](docs/api-write-state.md) checks actual pe
 | Source code | Bounded JS/TS AST candidates where request input reaches SQL, HTML, process, outbound-request, or redirect sinks; dynamic evaluation; selected credential shapes; selected Next/React and Supabase migration candidates | Same-function and bounded local-flow analysis. No general cross-function, cross-file, type-aware, runtime, build, or live database proof |
 | Public URL | Explicit pages, same-origin static JavaScript modules, transport, security headers, CSP, cookies, CORS, mixed content, source-map/debug/version clues, DOM and secret-shaped candidates | Explicit bounded GET requests only. No browser execution, login, endpoint discovery, API fuzzing, payment flow, or automatic site crawl |
 | Read-only API policy | Identity checks and owner/other-account/anonymous cases for a declared resource identity and distinct protected-data canary | GET requests defined by the policy. No writes, automatic login, endpoint discovery, or general fuzzing |
-| Active DAST preview (opt-in) | Schemathesis-generated GET inputs for explicitly selected OpenAPI operations (5xx and response-schema violations); signed Nuclei HTTP GET/HEAD templates from `misconfiguration`/`exposures` | Requires `--active-consent`. One validated origin through a loopback egress gate; no writes, credentials, redirects, OAST, raw/unsafe templates, or crawling |
+| Active DAST preview (opt-in) | Schemathesis-generated GET inputs for explicitly selected OpenAPI operations (5xx and response-schema violations); signed Nuclei HTTP GET/HEAD templates from `misconfiguration`/`exposures` | Requires `--active-consent`. One validated origin through a loopback egress gate; no writes, redirects, OAST, raw/unsafe templates, or crawling; credentials only in the explicit [Schemathesis auth-control profile](docs/schemathesis-auth-controls.md) |
 | Before/after reports | Logical project identity, semantic source anchors, changed findings, unchanged findings, and `not_observed`/`unverified` states | A missing later finding is never treated as proof that a fix is complete |
 
 Source and URL scopes can be combined in one report. The API policy is opt-in and reads credentials from named environment variables; token and canary values are not written to reports. See the [API policy example](examples/api-authorization-policy.json) and [API guide](docs/preview-0.4-api.md).
@@ -92,7 +98,7 @@ Static HTML references use the first HTML document base without expanding the al
 
 ## GitHub Actions
 
-The example below uses the public Action from `main`. Pin Wakeio to a reviewed commit SHA in an operational workflow. This example selects built-in checks explicitly, preserves reports when the scan finds a failure, and keeps the surrounding actions on their current pinned SHAs.
+Use a reviewed full commit SHA and keep reports outside the target checkout. This example uses the preexisting reviewed scanner at `575dbff63c6adc36e327487a2a9a2ead8337b4f0`, selects built-in checks, and uploads reports after scan failure.
 
 ```yaml
 name: wakeio-security-ci
@@ -106,32 +112,42 @@ permissions:
   contents: read
 
 jobs:
-  scan:
+  security:
     runs-on: ubuntu-latest
     steps:
-      - name: Check out application
+      - name: Check out source as data
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
-
-      - name: Run Wakeio Security CI
-        uses: dusen0528/wakeio-security-ci@main
+          path: wakeio-source
+      - name: Run pinned Wakeio Action
+        id: wakeio
+        uses: dusen0528/wakeio-security-ci@575dbff63c6adc36e327487a2a9a2ead8337b4f0
         with:
-          source: .
+          source: wakeio-source
           tools: none
-          out: wakeio-security-reports
-          fail-on: high
-
+          out: "wakeio-security-reports/${{ github.run_id }}-${{ github.run_attempt }}"
       - name: Upload reports
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: wakeio-security-ci-reports
-          path: wakeio-security-reports
+          name: wakeio-security-reports-${{ github.run_id }}-${{ github.run_attempt }}
+          path: "wakeio-security-reports/${{ github.run_id }}-${{ github.run_attempt }}"
           if-no-files-found: error
 ```
 
-Copy-ready version: [`examples/github-action.yml`](examples/github-action.yml). `@main` is convenient for trying the preview. For a production workflow, pin `dusen0528/wakeio-security-ci` to a reviewed commit and review updates deliberately; keep helper actions pinned to reviewed SHAs as well. The Action provisions Node.js 22, never runs scripts from the scanned project, writes a Job Summary, and leaves `report.md`, `report.json`, `report.sarif`, `agent-report.json`, and `action-status.json` in the output directory.
+Copy-ready version: [`examples/github-action.yml`](examples/github-action.yml). The Action provisions Node.js 22, reads target source without installing or running target scripts, writes a Job Summary, and leaves `report.md`, `report.json`, `report.sarif`, `agent-report.json`, and `action-status.json` in the fresh output directory. Artifact upload success does not change the scan gate.
+
+With the newer source CLI, generate this layout explicitly:
+
+```sh
+node /path/to/wakeio-security-ci/build/src/cli.js init \
+  --source /path/to/your-app --mode action \
+  --action-ref 575dbff63c6adc36e327487a2a9a2ead8337b4f0 \
+  --tools none --out wakeio-security-reports
+```
+
+The new init flags are added after that scanner commit and are not available in published npm 0.4.0. Default `init` remains npm mode. The [CI artifact-to-handoff guide](docs/init-action-onboarding.md) explains downloading a specific run/attempt, recovering the actual checkout commit, using a compatible CLI, and comparing after reports. Source-analysis limits remain unchanged.
 
 ## Optional engines
 
@@ -338,7 +354,7 @@ In GitHub Actions, use the separate `dast` Action so passive workflows can never
     operations: /items/{id}
 ```
 
-Reports record executed requests, requests refused by the budget, egress refusals, the seed and schema digest (Schemathesis), and template counts, exclusions and the `templates-checksum.txt` digest (Nuclei). Response bodies, generated values, extracted values, proxy credentials and template text are not retained. `wakeio-security-ci doctor --dast` reports engine readiness without running anything. Authentication, write operations, stateful workflows, browser-driven checks and crawling are not part of the external Schemathesis/Nuclei preview. Native numeric v2 and optional single-quoted v3 authentication use the separate policies described above.
+Reports record executed requests, requests refused by the budget, egress refusals, the seed and schema digest (Schemathesis), and template counts, exclusions and the `templates-checksum.txt` digest (Nuclei). Response bodies, generated values, extracted values, proxy credentials and template text are not retained. `wakeio-security-ci doctor --dast` reports engine readiness without running anything. The default external mode remains credential-free. The explicit [Schemathesis GET auth-control policy](docs/schemathesis-auth-controls.md) adds a single Authorization snapshot, anonymous/normal controls and principal checks through a Node TLS-aware gate. It does not add authentication to Nuclei. Write operations, stateful workflows, browser-driven checks and crawling remain outside this scope. Native numeric v2 and optional single-quoted v3 authentication use the separate policies described above.
 
 Source and DAST scan steps forward SIGINT/SIGTERM to the active setup, policy-plan or scan process. A bounded grace period lets the CLI save partial evidence before cleanup of its owned process group. Cancellation writes non-success Action status and exit 2 even if a child exits 0; unchanged older reports are not counted as current evidence. The separate DAST preflight exits without a scan receipt and disables engine preparation when cancelled. The egress gate closes outstanding target requests on cancellation, explicit close or engine disconnect and awaits its HTTP/CONNECT connections. SIGKILL, crashes and independently detached processes remain outside this graceful-cancellation guarantee.
 

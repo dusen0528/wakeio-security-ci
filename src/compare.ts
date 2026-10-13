@@ -1,3 +1,4 @@
+import { CODE_COVERAGE_ID, parseCodeCoverage, coverageIncomplete, codeCoverageConsistent } from './source/code-coverage.js';
 import { sanitiseAnalysisBudget, sameAnalysisBudget } from './source/analysis-budget.js';
 import { sanitiseCollectionBudget, sanitiseCollectionEvidence, sameCollectionBudget } from './source/collection-budget.js';
 import { sanitiseSourceSnapshotEvidence } from './source/snapshot-evidence.js';
@@ -5,6 +6,7 @@ import { parseApiWriteStateEvidence } from './api-write-observer.js';
 import { types as utilTypes } from 'node:util';
 import { sanitiseStaticContext } from './static-context.js';
 import { sanitizeDastExecution, isDastObservedEvidence, isLegacyDastExecution } from './dast-execution.js';
+import { SCHEMATHESIS_AUTH_REVISION, sanitiseSchemathesisAuth } from './schemathesis-auth.js';
 import type { Finding, ScanProvenance, ScanReport, Severity } from './contracts.js';
 import { exitCode, sanitiseReport, writeArtifacts } from './report.js';
 import { readJsonInput } from './json-input.js';
@@ -45,6 +47,21 @@ export function parseScanReport(input: unknown): ScanReport {
       || !['completed', 'partial', 'error', 'skipped', 'not_applicable'].includes(check.status)
       || !Array.isArray(check.findings) || !Array.isArray(check.notes) || !check.notes.every(text)) return invalid();
     if (check.analysisBudget !== undefined && !sanitiseAnalysisBudget(check.analysisBudget)) return invalid();
+    const codeField = collectionField(check, 'codeCoverage');
+    const authRequired = collectionField(check, 'schemathesisAuthRequired');
+    const authField = collectionField(check, 'schemathesisAuth');
+    const auth = authField.valid ? sanitiseSchemathesisAuth(authField.value) : undefined;
+    if (authRequired.present || authField.present) {
+      if (check.id !== 'api.schemathesis' || !authRequired.valid || authRequired.value !== true
+        || authField.present && (!authField.valid || !auth)
+        || !auth && ['completed', 'not_applicable'].includes(check.status)
+        || auth && (check.metrics?.requestCount !== auth.requests.attempted
+          || auth.status !== 'completed' && ['completed', 'not_applicable'].includes(check.status))) return invalid();
+    }
+    const codeCoverage = codeField.valid ? parseCodeCoverage(codeField.value) : undefined;
+    if (codeField.present && (!codeField.valid || !codeCoverage || check.id !== CODE_COVERAGE_ID)
+      || check.id === CODE_COVERAGE_ID && (!codeCoverage || !codeCoverageConsistent(codeCoverage, input.checks)
+        || coverageIncomplete(codeCoverage) && ['completed', 'not_applicable'].includes(check.status) || check.status === 'not_applicable' || check.findings.length > 0)) return invalid();
     const collectionBudget = collectionField(check, 'collectionBudget');
     const collectionEvidence = collectionField(check, 'collectionEvidence');
     const snapshotField = collectionField(check, 'sourceSnapshot');
@@ -98,14 +115,20 @@ export function parseScanReport(input: unknown): ScanReport {
         || finding.staticFlow !== undefined && finding.staticFlow.truncated !== true)) return invalid();
       if (finding.comparisonKey !== undefined
         && (!text(finding.comparisonKey) || !/^[a-f0-9]{64}$/.test(finding.comparisonKey))) return invalid();
-      if (finding.staticFlow?.sourceKind !== undefined && finding.staticFlow.sourceKind !== 'filesystem_filename') return invalid();
+      if (finding.staticFlow?.sourceKind !== undefined && !['filesystem_filename', 'archive_entry_path'].includes(finding.staticFlow.sourceKind)) return invalid();
       for (const key of ['path', 'url']) if (finding.location[key] !== undefined && !text(finding.location[key])) return invalid();
       for (const key of ['line', 'column']) if (finding.location[key] !== undefined
         && (!Number.isSafeInteger(finding.location[key]) || finding.location[key] < 1)) return invalid();
     }
   }
   if (input.scope !== undefined && !validScope(input.scope)) return invalid();
+  const coverage = input.checks.find((check: any) => check.id === CODE_COVERAGE_ID)?.codeCoverage;
+  if (input.scope?.codeAnalysisPolicy && (!coverage || coverage.requireCodeAnalysis !== true)) return invalid();
   const safe = sanitiseReport(input as ScanReport);
+  for (const check of input.checks) {
+    if ((collectionField(check, 'schemathesisAuthRequired').present || collectionField(check, 'schemathesisAuth').present)
+      && check.status === 'completed' && safe.checks.find(next => next.id === check.id)?.status !== 'completed') return invalid();
+  }
   if (new Set(safe.checks.map((check) => check.id)).size !== safe.checks.length) return invalid();
   return safe;
 }
@@ -158,6 +181,26 @@ export function compareReports(beforeInput: ScanReport, afterInput: ScanReport):
     const oldWrite = before.checks.find(check => check.id === id)?.apiWriteStateEvidence;
     const newWrite = after.checks.find(check => check.id === id)?.apiWriteStateEvidence;
     if ((oldWrite || newWrite) && JSON.stringify(oldWrite) !== JSON.stringify(newWrite)) reasons.push('Owned write evidence, execution plan or persisted-state scope changed or is missing; independent observer comparison is required.');
+  }
+  const oldCoverage = before.checks.find(check => check.id === CODE_COVERAGE_ID)?.codeCoverage;
+  const newCoverage = after.checks.find(check => check.id === CODE_COVERAGE_ID)?.codeCoverage;
+  if ((oldCoverage || newCoverage) && (!oldCoverage || !newCoverage || oldCoverage.accounting !== 'exact' || newCoverage.accounting !== 'exact' || oldCoverage.requireCodeAnalysis !== newCoverage.requireCodeAnalysis)) reasons.push('Code-analysis policy or coverage accounting changed, is missing or is unknown.');
+  if (JSON.stringify(before.scope?.codeAnalysisPolicy) !== JSON.stringify(after.scope?.codeAnalysisPolicy)) reasons.push('Required code-analysis scope policy changed or is missing.');
+  if (JSON.stringify(before.scope?.schemathesisAuthPolicy) !== JSON.stringify(after.scope?.schemathesisAuthPolicy)) reasons.push('Required Schemathesis authentication scope policy changed or is missing.');
+  const oldAuthCheck = before.checks.find(check => check.id === 'api.schemathesis');
+  const newAuthCheck = after.checks.find(check => check.id === 'api.schemathesis');
+  if (oldAuthCheck?.schemathesisAuthRequired || newAuthCheck?.schemathesisAuthRequired) {
+    const oldAuth = oldAuthCheck?.schemathesisAuth, newAuth = newAuthCheck?.schemathesisAuth;
+    if (!oldAuthCheck?.schemathesisAuthRequired || !newAuthCheck?.schemathesisAuthRequired || !oldAuth || !newAuth
+      || oldAuth.status !== 'completed' || newAuth.status !== 'completed'
+      || oldAuth.profileRevision !== newAuth.profileRevision || oldAuth.policySha256 !== newAuth.policySha256
+      || oldAuth.schemaSha256 !== newAuth.schemaSha256 || oldAuth.workerSha256 !== newAuth.workerSha256
+      || oldAuth.seed !== newAuth.seed || oldAuth.engineVersion !== newAuth.engineVersion
+      || ['maxRequests', 'timeoutMs', 'maxBodyBytes', 'maxTotalBytes'].some(key => oldAuth.limits[key as keyof typeof oldAuth.limits] !== newAuth.limits[key as keyof typeof newAuth.limits])
+      || JSON.stringify(oldAuth.operations.map(op => op.operation)) !== JSON.stringify(newAuth.operations.map(op => op.operation))
+      || ['python', 'hypothesis', 'jsonschema', 'requests'].some(key => oldAuth.runtime?.[key as keyof NonNullable<typeof oldAuth.runtime>] !== newAuth.runtime?.[key as keyof NonNullable<typeof newAuth.runtime>])) {
+      reasons.push('Schemathesis authentication policy, schema, worker, operation selection, seed, limits or runtime changed, is missing or incomplete.');
+    }
   }
   if (!before.scope || !after.scope) reasons.push('Declared scan scope is missing; older reports cannot establish comparable scope.');
   else {
@@ -222,7 +265,7 @@ export function compareReports(beforeInput: ScanReport, afterInput: ScanReport):
     const previousOrigin = oldIndex.findings.get(id)?.finding.staticFlow?.sourceKind;
     const nextOrigin = currentIndex.findings.get(id)?.finding.staticFlow?.sourceKind;
     if ((previousOrigin || nextOrigin) && previousOrigin !== nextOrigin) {
-      reasons.push('Static filename source origin changed or is missing; this cannot establish disappearance or a fix.');
+      reasons.push('Static input source origin changed or is missing; this cannot establish disappearance or a fix.');
       break;
     }
     if ((previous || next) && JSON.stringify(previous) !== JSON.stringify(next)) {
@@ -266,6 +309,21 @@ function validScope(scope: unknown): boolean {
   if (scope.analysisBudget !== undefined && !sanitiseAnalysisBudget(scope.analysisBudget)) return false;
   const budget = collectionField(scope, 'collectionBudget');
   if (!budget.valid || budget.present && !sanitiseCollectionBudget(budget.value)) return false;
+  const policy = collectionField(scope, 'codeAnalysisPolicy');
+  const auth = collectionField(scope, 'schemathesisAuthPolicy');
+  if (auth.present) {
+    if (!auth.valid || !record(auth.value) || utilTypes.isProxy(auth.value) || Object.keys(auth.value).length !== 3) return false;
+    const revision = collectionField(auth.value, 'profileRevision'), policyHash = collectionField(auth.value, 'policySha256'), schemaHash = collectionField(auth.value, 'schemaSha256');
+    if (!revision.valid || revision.value !== SCHEMATHESIS_AUTH_REVISION || !policyHash.valid || !schemaHash.valid
+      || typeof policyHash.value !== 'string' || !/^[a-f0-9]{64}$/.test(policyHash.value)
+      || typeof schemaHash.value !== 'string' || !/^[a-f0-9]{64}$/.test(schemaHash.value)) return false;
+  }
+  if (!policy.valid) return false;
+  if (policy.present) {
+    if (!record(policy.value) || utilTypes.isProxy(policy.value)) return false;
+    const revision = collectionField(policy.value, 'revision'), required = collectionField(policy.value, 'requireCodeAnalysis');
+    if (Object.keys(policy.value).length !== 2 || !revision.valid || revision.value !== 'code-coverage-v1' || !required.valid || required.value !== true) return false;
+  }
   const provenance = scope.provenance;
   if (provenance === undefined) return true;
   if (!record(provenance)) return false;

@@ -22,8 +22,8 @@ def main():
     if len(raw) > LIVE_INPUT_CAP:
         raise ValueError()
     job = json.loads(raw)
-    if type(job) is dict and job.get("version") == 2:
-        return live(job)
+    if type(job) is dict and job.get("version") in (2, 3):
+        return live(job, job.get("version") == 3)
     if len(raw) > 16384:
         raise ValueError()
     keys = {"version", "environment", "fixture", "operations", "maxRequests", "timeoutMs",
@@ -152,16 +152,18 @@ def main():
                         "werkzeug": importlib.metadata.version("werkzeug")}, "records": records}
 
 
-def live(job):
+def live(job, authenticated=False):
     """Protocol v2: generated GET cases against an explicit origin through the Node egress gate.
     The gate owns origin pinning and wire budgets; this worker can only reach the gate's port."""
     import re
     keys = {"version", "mode", "proxy", "baseUrl", "schema", "operations", "maxRequests", "timeoutMs",
             "maxBodyBytes", "maxTotalBytes", "seed"}
-    if set(job) != keys or job["mode"] != "live" or type(job["schema"]) is not dict:
+    if set(job) != keys or job["mode"] != ("live-auth" if authenticated else "live") or type(job["schema"]) is not dict:
         raise ValueError()
     proxy = re.fullmatch(r"http://wakeio:[A-Za-z0-9_-]{16,64}@127\.0\.0\.1:([0-9]{1,5})", job["proxy"] or "")
     if proxy is None or not re.fullmatch(r"https?://[^/?#@\s]+/", job["baseUrl"] or ""):
+        raise ValueError()
+    if authenticated and job["baseUrl"] != "http://wakeio-schemathesis.invalid/":
         raise ValueError()
     for key, cap in (("maxRequests", 64), ("timeoutMs", 120000), ("maxBodyBytes", 2097152),
                      ("maxTotalBytes", 10485760), ("seed", 2147483647)):
@@ -201,13 +203,25 @@ def live(job):
 
     session = requests.Session()
     session.trust_env = False
+    session.auth = None
     session.proxies = {"http": job["proxy"], "https": job["proxy"]}
     schema = schemathesis.openapi.from_dict(job["schema"])
+    if authenticated:
+        schema.config.generation.update(with_security_parameters=False)
     deadline = time.monotonic() + job["timeoutMs"] / 1000
     state = {"count": 0, "total": 0, "reason": "complete", "transportErrors": 0}
     records = []
     per_operation = max(1, job["maxRequests"] // len(operations))
     summary = []
+    runtime = {"python": platform.python_version(), "hypothesis": importlib.metadata.version("hypothesis"),
+               "jsonschema": importlib.metadata.version("jsonschema"), "requests": importlib.metadata.version("requests")}
+    worker_hash = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
+    def emit(event):
+        sys.stdout.write(json.dumps(event, separators=(",", ":")) + "\n")
+        sys.stdout.flush()
+    if authenticated:
+        emit({"version": 3, "event": "metadata", "workerSha256": worker_hash,
+              "engineVersion": importlib.metadata.version("schemathesis"), "runtime": runtime})
 
     class StopRun(Exception):
         pass
@@ -225,6 +239,10 @@ def live(job):
         return {"rule": "response_schema_conformance", "kind": "unclassified"}
 
     def check(case, label, counter):
+        # Hypothesis may reproduce an escaping exception even without shrink.
+        # Never repeat HTTP after a stopped authenticated attempt.
+        if authenticated and state["reason"] != "complete":
+            raise StopRun()
         remaining = deadline - time.monotonic()
         if remaining <= 0:
             state["reason"] = "timeout"
@@ -235,6 +253,8 @@ def live(job):
         state["count"] += 1
         counter["requests"] += 1
         try:
+            if authenticated:
+                session.cookies.clear()
             response = case.call(base_url=job["baseUrl"], session=session, allow_redirects=False,
                                  timeout=min(remaining, 30))
         except requests.RequestException:
@@ -262,12 +282,20 @@ def live(job):
         for failure in failures:
             if failure not in unique:
                 unique.append(failure)
+        headers = case.headers or {}
+        if authenticated:
+            headers = {key: value for key, value in headers.items() if key.lower() not in ("authorization", "cookie", "proxy-authorization")}
         fingerprint = hashlib.sha256(json.dumps(
-            {"path": case.path_parameters or {}, "query": case.query or {}, "headers": case.headers or {}},
+            {"path": case.path_parameters or {}, "query": case.query or {}, "headers": headers},
             sort_keys=True, separators=(",", ":"), default=str).encode()).hexdigest()
         records.append({"operation": label, "ordinal": len(records) + 1, "status": response.status_code,
                         "check": "response_contract" if unique else "passed",
                         "inputFingerprint": fingerprint, "failures": unique[:4]})
+        if authenticated:
+            emit({"version": 3, "event": "record", "record": records[-1]})
+            if response.status_code in (401, 403):
+                state["reason"] = "transport_error"
+                raise StopRun()
 
     try:
         for item in operations:
@@ -285,14 +313,13 @@ def live(job):
             generate()
     except StopRun:
         pass
-    return {"version": 2, "status": "completed" if state["reason"] == "complete" else "partial",
+    result = {"version": 2, "status": "completed" if state["reason"] == "complete" else "partial",
             "reason": state["reason"], "requestCount": state["count"], "bytesInspected": state["total"],
             "transportErrors": state["transportErrors"], "operations": summary,
-            "workerSha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+            "workerSha256": worker_hash,
             "engineVersion": importlib.metadata.version("schemathesis"),
-            "runtime": {"python": platform.python_version(), "hypothesis": importlib.metadata.version("hypothesis"),
-                        "jsonschema": importlib.metadata.version("jsonschema"),
-                        "requests": importlib.metadata.version("requests")}, "records": records}
+            "runtime": runtime, "records": records}
+    return {"version": 3, "event": "final", "result": result} if authenticated else result
 
 
 if __name__ == "__main__":
@@ -300,4 +327,4 @@ if __name__ == "__main__":
         result = main()
     except Exception:
         result = {"version": 1, "status": "error", "reason": "worker_error"}
-    sys.stdout.write(json.dumps(result, separators=(",", ":")))
+    sys.stdout.write(json.dumps(result, separators=(",", ":")) + "\n")

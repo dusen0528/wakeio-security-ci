@@ -2,11 +2,19 @@
 
 ## Unreleased
 
-- Add the agent-dast contracts (internal, not yet exported or wired to the CLI):
-  the `wakeio.worker-result/v1` worker stdout contract with a 2 KB cap and
-  identity binding, and a `run.db` store on Node's built-in `node:sqlite`
-  with cross-worker finding de-duplication and a fixed-shape round summary.
-  agent-dast needs Node >= 22.5; other modes keep the current Node floor.
+- Add an experimental `wakeio-security-ci/agent-dast` SDK with a bounded
+  worker-result contract and RunStore v2. Completion requires the declared
+  plan, retained task observations and trusted runner ledger to agree;
+  deduplication preserves auth/location context, severity and evidence refs.
+  Populated prototype v1 and WAL inputs are refused without inventing trusted
+  evidence. Store runtime support is Node 22.13+ in 22.x, 23.4+ in 23.x, or 24+;
+  other modes retain their Node floor. This adds no worker executor or CLI.
+  See [store contract](docs/agent-dast-store.md).
+- Add an explicit authenticated numeric POST JSON differential policy v4 with
+  one bounded body field, distinct benign-value controls, twelve fixed logical
+  steps and no automatic POST retry. Existing GET policies retain their scope;
+  response candidates do not verify exploits or fixes. See [POST JSON contract](docs/native-dast-post-json.md).
+
 - Close outstanding DAST target requests on cancellation, gate close or engine
   disconnect, and await HTTP/CONNECT connection cleanup while retaining tunnel caps.
 - Forward Action SIGINT/SIGTERM through setup, native policy preflight and scan
@@ -19,6 +27,11 @@
 Source and the checked-in Action are versioned 0.5.0. The latest published npm
 package remains 0.4.0; use a reviewed Git commit or build this checkout for the
 features below. This entry does not claim an npm 0.5.0 publication.
+
+- Always report collected-code language/provider coverage and add explicit
+  `--require-code-analysis` gating for uncovered, incomplete or unknown code
+  analysis. Default scan gates remain compatible; collection is not analysis
+  completion or whole-project coverage. See [scope contract](docs/source-code-coverage.md).
 
 - Add an explicitly consented owned PATCH state pilot through SDK, CLI and a
   dedicated composite Action. A fixed actor/resource matrix and independent

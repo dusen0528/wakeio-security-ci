@@ -45,6 +45,7 @@ interface Inventory {
 }
 
 interface DoctorOptions {
+  requireCodeAnalysis?: boolean;
   sourceMaxFiles?: number;
   sourceMaxBytes?: number;
   analysisProfile?: 'default' | 'extended';
@@ -127,6 +128,7 @@ export async function doctorMain(argv: readonly string[] = process.argv.slice(2)
     source: source,
     execution: { targetCode: "none", network: "none", packageManager: "none" },
     inventory,
+    requireCodeAnalysis: options.requireCodeAnalysis === true,
     inventoryBasis: 'metadata_estimate_not_collector_coverage' as const,
     collectionBudget: resolveCollectionBudget({ maxFiles: options.sourceMaxFiles, maxBytes: options.sourceMaxBytes }),
     tools: toolStatuses,
@@ -155,6 +157,10 @@ export function parseDoctorArgs(argv: readonly string[]): DoctorOptions {
   const selected = new Set<string>();
   for (let index = 0; index < args.length; index += 1) {
     const argument = args[index];
+    if (argument === '--require-code-analysis') {
+      if (selected.has(argument)) throw new Error('--require-code-analysis may only be specified once');
+      selected.add(argument); options.requireCodeAnalysis = true; continue;
+    }
     const selector = argument.split('=')[0];
     if (['--source-max-files', '--source-max-bytes', '--analysis-profile'].includes(selector)) {
       if (selected.has(selector)) throw new Error(`${selector} may only be specified once`);
@@ -253,7 +259,7 @@ export function parseTools(value: string): string[] {
 export function doctorUsage(): string {
   return [
     "Usage: wakeio-security-ci doctor [--source DIR] [--tools gitleaks,osv,trivy,bandit|none] [--json] [--strict]",
-    "                              [--source-max-files N] [--source-max-bytes N] [--analysis-profile default|extended]",
+    "                              [--source-max-files N] [--source-max-bytes N] [--analysis-profile default|extended] [--require-code-analysis]",
     "                              [--dast [--nuclei PATH] [--nuclei-templates DIR] [--schemathesis-python PATH]]",
     "",
     "Read-only inventory: no target code, package scripts, scanner, or network request is executed.",
@@ -337,7 +343,7 @@ async function findExecutable(command: string): Promise<string | undefined> {
 }
 
 function nextCommand(source: string, tools: string[], options: DoctorOptions): string {
-  const choices = `${options.sourceMaxFiles === undefined ? "" : ` --source-max-files ${options.sourceMaxFiles}`}${options.sourceMaxBytes === undefined ? "" : ` --source-max-bytes ${options.sourceMaxBytes}`}${options.analysisProfile === undefined ? "" : ` --analysis-profile ${options.analysisProfile}`}`;
+  const choices = `${options.requireCodeAnalysis ? " --require-code-analysis" : ""}${options.sourceMaxFiles === undefined ? "" : ` --source-max-files ${options.sourceMaxFiles}`}${options.sourceMaxBytes === undefined ? "" : ` --source-max-bytes ${options.sourceMaxBytes}`}${options.analysisProfile === undefined ? "" : ` --analysis-profile ${options.analysisProfile}`}`;
   return `npx --no-install wakeio-security-ci scan --source ${shellQuote(source)} --tools ${shellQuote(tools.length > 0 ? tools.join(",") : "none")} --out wakeio-security-reports${choices}`;
 }
 
