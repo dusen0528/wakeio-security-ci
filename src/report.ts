@@ -541,6 +541,10 @@ export function toMarkdown(report: ScanReport, failOn: FailOn = 'high'): string 
           lines.push(`  - SQL probe outcome: ${e.probeOutcome}. An observed probe with incomplete identity controls remains a low-confidence candidate; it grants no replay authority.`);
         }
       }
+      if (check.dastExecution?.version === 4) {
+        const e = check.dastExecution;
+        lines.push(`  - JSON POST profile revision: ${e.profileRevision}; method: ${e.method}; normal field-effect controls: round1=${e.normalControls.round1}, round2=${e.normalControls.round2}. Single POST attempt per phase, no redirects or retries. These controls are scanner evidence, not independent SQL execution proof.`);
+      }
       if (check.apiStateEvidence) {
         const e = check.apiStateEvidence;
         lines.push(`  - Owned synthetic resource evidence (${e.phase}): execution=${e.execution}, effect=${e.effect}, normal=${e.normal}, verification=${e.verification}, cleanup=${e.cleanup}.`,
@@ -869,7 +873,7 @@ function sanitiseCheck(input: CheckResult): CheckResult {
     id: safeId(input?.id, 'check'),
     status,
     findings: findings.map((finding) => ({ ...finding, id: findingIdentity(safeId(input?.id, 'check'), finding,
-      dastExecution?.profile === 'single-quoted' ? dastExecution.profileRevision : undefined) })),
+      dastExecution && (dastExecution.profile === 'single-quoted' || dastExecution.version === 4) ? dastExecution.profileRevision : undefined) })),
     notes,
     ...(Object.keys(metrics).length > 0 ? { metrics } : {}),
     ...(analysisBudget ? { analysisBudget } : {}),
@@ -979,8 +983,8 @@ function findingIdentity(checkId: string, finding: Finding, profileRevision?: st
     finding.location.path ?? null, finding.location.url ?? null,
     finding.location.line ?? null, finding.location.column ?? null,
   ];
-  // Only a sanitized, count-bound single-quoted execution supplies this
-  // discriminator. Preserve the original numeric payload byte-for-byte.
+  // Only sanitized newer transport/profile evidence supplies this discriminator.
+  // Preserve the original GET numeric identity byte-for-byte.
   if (profileRevision !== undefined) identity.push('native-dast-profile', profileRevision);
   return createHash('sha256').update(JSON.stringify(identity)).digest('hex');
 }

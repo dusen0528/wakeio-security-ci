@@ -1,5 +1,5 @@
 import type { DastExecution } from './dast-execution.js';
-export type { DastExecution } from './dast-execution.js';
+export type { DastExecution, DastExecutionV4, DastJsonExecutionStep, DastJsonStepReason } from './dast-execution.js';
 export type Severity = 'info' | 'low' | 'medium' | 'high' | 'critical';
 export type Mode = 'source' | 'url' | 'both' | 'api' | 'combined';
 export type ToolName = 'gitleaks' | 'osv' | 'trivy' | 'bandit';
