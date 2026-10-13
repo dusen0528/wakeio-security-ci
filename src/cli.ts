@@ -33,6 +33,7 @@ const SEVERITY_VALUES = new Set(["critical", "high", "medium", "low", "info", "n
 const TOOL_VALUES = new Set<ToolName>(["gitleaks", "osv", "trivy", "bandit"]);
 
 export interface CliOptions {
+  requireCodeAnalysis?: boolean;
   analysisProfile?: SourceOptions['analysisProfile'];
   source?: string;
   sourceMaxFiles?: number;
@@ -107,6 +108,7 @@ Options:
   --tools none                 Run built-in source checks only
   --source-max-files N         Collected-file cap 1..10000 (source only; default: 1000)
   --source-max-bytes N         Total-byte cap 1..134217728 (source only; default: 26214400)
+  --require-code-analysis     Require completed analysis for every collected code input (source only)
   --analysis-profile PROFILE   default|extended AST workload (source only; default: default)
   --fail-on LEVEL              critical|high|medium|low|info|none (default: high)
   --api-policy FILE            Explicit read-only API authorization policy JSON
@@ -244,7 +246,11 @@ export function parseCliArgs(argv: readonly string[]): CliOptions | { help: true
       return undefined;
     };
     let value: string | undefined;
-    if ((value = valueFlag("--source")) !== undefined) options.source = value;
+    if (arg === "--require-code-analysis") {
+      if (seen.has(arg)) throw new CliUsageError(`${arg} may only be specified once`);
+      seen.add(arg); options.requireCodeAnalysis = true;
+    }
+    else if ((value = valueFlag("--source")) !== undefined) options.source = value;
     else if ((value = valueFlag("--source-max-files")) !== undefined) options.sourceMaxFiles = parseSourceLimit("--source-max-files", value, COLLECTION_MAX_FILES);
     else if ((value = valueFlag("--source-max-bytes")) !== undefined) options.sourceMaxBytes = parseSourceLimit("--source-max-bytes", value, COLLECTION_MAX_BYTES);
     else if ((value = valueFlag("--url")) !== undefined) options.url = value;
@@ -376,6 +382,7 @@ export function parseCliArgs(argv: readonly string[]): CliOptions | { help: true
   if (options.osvOffline && !options.source) throw new CliUsageError("--osv-offline requires source mode");
   if ((options.sourceMaxFiles !== undefined || options.sourceMaxBytes !== undefined) && !options.source) throw new CliUsageError('--source-max-files and --source-max-bytes require source mode');
   if (options.analysisProfile !== undefined && !options.source) throw new CliUsageError('--analysis-profile requires source mode');
+  if (options.requireCodeAnalysis && !options.source) throw new CliUsageError('--require-code-analysis requires source mode');
   if (options.nativePreview && !options.source) throw new CliUsageError('--opengrep-core requires source mode');
   return options;
 }
@@ -569,6 +576,7 @@ async function declaredScope(options: CliOptions, apiPolicy: ApiPolicy | undefin
     sourceMaxFiles: options.sourceMaxFiles,
     sourceMaxBytes: options.sourceMaxBytes,
     analysisProfile: options.analysisProfile,
+    requireCodeAnalysis: options.requireCodeAnalysis,
     url: options.url,
     projectId: options.projectId,
     tools: options.source ? options.tools : [],
@@ -654,6 +662,7 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
       maxFiles: parsed.sourceMaxFiles,
       maxBytes: parsed.sourceMaxBytes,
       analysisProfile: parsed.analysisProfile,
+      requireCodeAnalysis: parsed.requireCodeAnalysis,
       tools: parsed.tools,
       toolPaths: parsed.toolPaths,
       timeoutMs: parsed.timeoutMs,

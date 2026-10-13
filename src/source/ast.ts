@@ -431,11 +431,14 @@ function* parseFileEvidence(files: readonly AstFile[]): Iterable<ParseFileEviden
   }
 }
 
+export function builtinAstFiles(snapshot: SourceSnapshot) {
+  return snapshot.files.filter(file => file.category === "code" && !file.sensitive && /\.(?:[cm]?[jt]sx?)$/i.test(file.path));
+}
+
 export function runBuiltinAst(snapshot: SourceSnapshot, hasOtherSecurityCheck = false, limits: FlowLimits = FLOW_LIMITS, analysisBudget?: AstAnalysisBudget): CheckResult {
   const astFiles: AstFile[] = [];
   const skippedSensitive = snapshot.files.filter((file) => file.sensitive && file.category === "code").length;
-  for (const file of snapshot.files) {
-    if (file.category !== "code" || file.sensitive || !/\.(?:[cm]?[jt]sx?)$/i.test(file.path)) continue;
+  for (const file of builtinAstFiles(snapshot)) {
     const sourceFile = ts.createSourceFile(file.path, file.text, ts.ScriptTarget.Latest, true, scriptKind(file.path));
     astFiles.push({ file, sourceFile, parseError: parseDiagnostics(sourceFile).length > 0 });
   }

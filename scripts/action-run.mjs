@@ -61,6 +61,11 @@ async function main() {
   const out = value(env.WAKEIO_OUT) || 'wakeio-security-reports';
   const requestedTools = value(env.WAKEIO_TOOLS) || 'gitleaks,osv,trivy';
   const sourceMode = Boolean(source);
+  const requireCodeAnalysis = env.WAKEIO_REQUIRE_CODE_ANALYSIS ?? 'false';
+  if (!['true', 'false'].includes(requireCodeAnalysis) || requireCodeAnalysis === 'true' && !sourceMode) {
+    process.stderr.write('wakeio-security-ci: require-code-analysis must be true or false; true requires source.\n');
+    process.exitCode = 2; return;
+  }
   const analysisProfile = env.WAKEIO_ANALYSIS_PROFILE === undefined ? 'default' : env.WAKEIO_ANALYSIS_PROFILE;
   if (!['default', 'extended'].includes(analysisProfile) || (!sourceMode && analysisProfile !== 'default')) {
     process.stderr.write('wakeio-security-ci: analysis-profile must be default or extended; extended requires source.\n');
@@ -116,6 +121,7 @@ async function main() {
 
     const args = [cliEntry, 'scan'];
     if (source) args.push('--source', source, '--analysis-profile', analysisProfile, ...collectionArgs);
+    if (requireCodeAnalysis === 'true') args.push('--require-code-analysis');
     if (url) args.push('--url', url);
     if (apiPolicy) args.push('--api-policy', apiPolicy);
     args.push('--out', out, '--tools', tools, '--fail-on', value(env.WAKEIO_FAIL_ON) || 'high');

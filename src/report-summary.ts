@@ -58,6 +58,7 @@ export function projectReportSummary(report: ScanReport, gate: ScanGate): Report
   const reason = summary?.accounting === 'exact' ? summary.rows.find(row => row.eventsObserved! > 0)?.reason : undefined;
   const inventories = report.checks.filter(check => check.id === 'source.inventory');
   const inventory = inventories.length === 1 ? inventories[0] : undefined;
+  const code = report.checks.find(check => check.id === 'source.code-coverage');
   const collectionBudget = inventory?.collectionBudget ?? report.scope?.collectionBudget;
   const collectionBudgetConsistency = inventory?.collectionBudget && report.scope?.collectionBudget
     ? sameCollectionBudget(inventory.collectionBudget, report.scope.collectionBudget) ? 'consistent' : 'inconsistent'
@@ -69,6 +70,7 @@ export function projectReportSummary(report: ScanReport, gate: ScanGate): Report
     ? { kind: collectionReason ? collectionReview(collectionReason) : gap?.nextReview ?? (reason ? nextGapReview(reason) : 'review_check_diagnostics'), checkIndex: first.checkIndex, checkId: first.checkId,
       ...(collectionReason ? { collectionReason } : {}),
       ...(gap?.location ? { location: { ...gap.location } } : {}) }
+    : code?.codeCoverage && (code.codeCoverage.accounting === 'unknown' || code.codeCoverage.totals.uncovered! > 0) ? { kind: 'review_check_diagnostics', checkIndex: report.checks.indexOf(code), checkId: code.id }
     : exclusion ? { kind: 'review_source_file_policy', collectionReason: exclusion.code, checkIndex: report.checks.indexOf(inventory!), checkId: inventory!.id }
     : { kind: gate.outcome === 'incomplete' ? 'review_check_diagnostics'
       : findings > 0 ? 'review_finding_evidence' : 'review_scope_limitations' };
@@ -81,6 +83,7 @@ export function projectReportSummary(report: ScanReport, gate: ScanGate): Report
       completedChecks, incompleteChecks: incompleteCount, notApplicableChecks },
     incompleteChecks: incomplete, omittedIncompleteChecks: incompleteCount - incomplete.length,
     scope: { mode: report.mode,
+      ...(report.checks.find(check => check.id === 'source.code-coverage')?.codeCoverage ? { codeCoverage: structuredClone(report.checks.find(check => check.id === 'source.code-coverage')!.codeCoverage!) } : {}),
       ...(report.scope ? { fingerprint: report.scope.fingerprint, ruleset: report.scope.ruleset, ...(report.scope.analysisBudget ? { analysisProfile: report.scope.analysisBudget.effectiveProfile, analysisBudgetRevision: report.scope.analysisBudget.revision } : {}) } : {}),
       ...(collectionBudget ? { collectionBudget: structuredClone(collectionBudget) } : {}),
       ...(inventory || report.scope?.collectionBudget ? { collectionBudgetConsistency } : {}),

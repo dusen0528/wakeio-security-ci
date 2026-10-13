@@ -1,3 +1,4 @@
+import { CODE_COVERAGE_ID, parseCodeCoverage, coverageIncomplete, codeCoverageConsistent } from './source/code-coverage.js';
 import { sanitiseAnalysisBudget, sameAnalysisBudget } from './source/analysis-budget.js';
 import { sanitiseCollectionBudget, sanitiseCollectionEvidence, sameCollectionBudget } from './source/collection-budget.js';
 import { sanitiseSourceSnapshotEvidence } from './source/snapshot-evidence.js';
@@ -45,6 +46,11 @@ export function parseScanReport(input: unknown): ScanReport {
       || !['completed', 'partial', 'error', 'skipped', 'not_applicable'].includes(check.status)
       || !Array.isArray(check.findings) || !Array.isArray(check.notes) || !check.notes.every(text)) return invalid();
     if (check.analysisBudget !== undefined && !sanitiseAnalysisBudget(check.analysisBudget)) return invalid();
+    const codeField = collectionField(check, 'codeCoverage');
+    const codeCoverage = codeField.valid ? parseCodeCoverage(codeField.value) : undefined;
+    if (codeField.present && (!codeField.valid || !codeCoverage || check.id !== CODE_COVERAGE_ID)
+      || check.id === CODE_COVERAGE_ID && (!codeCoverage || !codeCoverageConsistent(codeCoverage, input.checks)
+        || coverageIncomplete(codeCoverage) && ['completed', 'not_applicable'].includes(check.status) || check.status === 'not_applicable' || check.findings.length > 0)) return invalid();
     const collectionBudget = collectionField(check, 'collectionBudget');
     const collectionEvidence = collectionField(check, 'collectionEvidence');
     const snapshotField = collectionField(check, 'sourceSnapshot');
@@ -105,6 +111,8 @@ export function parseScanReport(input: unknown): ScanReport {
     }
   }
   if (input.scope !== undefined && !validScope(input.scope)) return invalid();
+  const coverage = input.checks.find((check: any) => check.id === CODE_COVERAGE_ID)?.codeCoverage;
+  if (input.scope?.codeAnalysisPolicy && (!coverage || coverage.requireCodeAnalysis !== true)) return invalid();
   const safe = sanitiseReport(input as ScanReport);
   if (new Set(safe.checks.map((check) => check.id)).size !== safe.checks.length) return invalid();
   return safe;
@@ -159,6 +167,10 @@ export function compareReports(beforeInput: ScanReport, afterInput: ScanReport):
     const newWrite = after.checks.find(check => check.id === id)?.apiWriteStateEvidence;
     if ((oldWrite || newWrite) && JSON.stringify(oldWrite) !== JSON.stringify(newWrite)) reasons.push('Owned write evidence, execution plan or persisted-state scope changed or is missing; independent observer comparison is required.');
   }
+  const oldCoverage = before.checks.find(check => check.id === CODE_COVERAGE_ID)?.codeCoverage;
+  const newCoverage = after.checks.find(check => check.id === CODE_COVERAGE_ID)?.codeCoverage;
+  if ((oldCoverage || newCoverage) && (!oldCoverage || !newCoverage || oldCoverage.accounting !== 'exact' || newCoverage.accounting !== 'exact' || oldCoverage.requireCodeAnalysis !== newCoverage.requireCodeAnalysis)) reasons.push('Code-analysis policy or coverage accounting changed, is missing or is unknown.');
+  if (JSON.stringify(before.scope?.codeAnalysisPolicy) !== JSON.stringify(after.scope?.codeAnalysisPolicy)) reasons.push('Required code-analysis scope policy changed or is missing.');
   if (!before.scope || !after.scope) reasons.push('Declared scan scope is missing; older reports cannot establish comparable scope.');
   else {
     if (before.scope.projectId !== after.scope.projectId) {
@@ -266,6 +278,13 @@ function validScope(scope: unknown): boolean {
   if (scope.analysisBudget !== undefined && !sanitiseAnalysisBudget(scope.analysisBudget)) return false;
   const budget = collectionField(scope, 'collectionBudget');
   if (!budget.valid || budget.present && !sanitiseCollectionBudget(budget.value)) return false;
+  const policy = collectionField(scope, 'codeAnalysisPolicy');
+  if (!policy.valid) return false;
+  if (policy.present) {
+    if (!record(policy.value) || utilTypes.isProxy(policy.value)) return false;
+    const revision = collectionField(policy.value, 'revision'), required = collectionField(policy.value, 'requireCodeAnalysis');
+    if (Object.keys(policy.value).length !== 2 || !revision.valid || revision.value !== 'code-coverage-v1' || !required.valid || required.value !== true) return false;
+  }
   const provenance = scope.provenance;
   if (provenance === undefined) return true;
   if (!record(provenance)) return false;

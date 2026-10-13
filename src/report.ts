@@ -1,3 +1,4 @@
+import { CODE_COVERAGE_ID, parseCodeCoverage, unknownCodeCoverage, coverageIncomplete, codeCoverageConsistent } from './source/code-coverage.js';
 import { sanitizeDastExecution, isDastObservedEvidence, hasDastIdentityControls, isLegacyDastExecution } from './dast-execution.js';
 import { types as utilTypes } from "node:util";
 import { sanitiseApiExecutionLedger, invalidApiExecutionLedger } from "./api-execution.js";
@@ -20,6 +21,7 @@ import type {
   ApiExecutionLedger,
   ApiRequestPlanStep,
   CheckResult,
+  CodeCoverage,
   CollectionBudget,
   CollectionEvidence,
   FailOn,
@@ -171,6 +173,11 @@ export function evaluateGate(report: ScanReport, failOn: FailOn = 'high'): ScanG
   return evaluateSanitisedGate(sanitiseReport(report), failOn);
 }
 
+function applicableChecks(checks: readonly CheckResult[]): readonly CheckResult[] {
+  // Keep legacy reports readable; new informational coverage must never add applicability.
+  return checks.some(check => check.id === CODE_COVERAGE_ID) ? checks.filter(check => check.id !== CODE_COVERAGE_ID && check.id !== 'source.inventory') : checks;
+}
+
 function evaluateSanitisedGate(report: ScanReport, failOn: FailOn): ScanGate {
   const checks = report.checks;
   const threshold = SEVERITIES.includes(failOn as Severity) ? SEVERITY_RANK[failOn as Severity] : undefined;
@@ -179,7 +186,7 @@ function evaluateSanitisedGate(report: ScanReport, failOn: FailOn): ScanGate {
   const blockingFindingIds: string[] = [];
   if (!validThreshold) reasons.push({ code: 'invalid_fail_on' });
   if (checks.length === 0) reasons.push({ code: 'no_checks' });
-  else if (checks.every((check) => check.status === 'not_applicable')) {
+  else if (applicableChecks(checks).every((check) => check.status === 'not_applicable')) {
     reasons.push({ code: 'no_applicable_checks' });
   }
   for (const check of checks) {
@@ -263,7 +270,7 @@ function projectAgentReport(report: ScanReport, failOn: FailOn): AgentReport {
       error: count('error'),
       skipped: count('skipped'),
       notApplicable: count('not_applicable'),
-      complete: report.checks.some((check) => check.status === 'completed')
+      complete: applicableChecks(report.checks).some((check) => check.status === 'completed')
         && report.checks.every((check) => check.status === 'completed' || check.status === 'not_applicable'),
       basis: 'declared_check_statuses',
     },
@@ -278,6 +285,7 @@ function projectAgentReport(report: ScanReport, failOn: FailOn): AgentReport {
       ...(check.collectionBudget ? { collectionBudget: check.collectionBudget } : {}),
       ...(check.collectionEvidence ? { collectionEvidence: check.collectionEvidence } : {}),
       ...(check.sourceSnapshot ? { sourceSnapshot: check.sourceSnapshot } : {}),
+      ...(check.codeCoverage ? { codeCoverage: check.codeCoverage } : {}),
       ...(check.analysisGaps ? { analysisGaps: check.analysisGaps } : {}),
       ...(check.apiStateEvidence ? { apiStateEvidence: check.apiStateEvidence } : {}),
       ...(check.apiWriteStateEvidence ? { apiWriteStateEvidence: check.apiWriteStateEvidence } : {}),
@@ -398,11 +406,12 @@ export function toSarif(report: ScanReport): SarifLog {
   );
   const noWork =
     safeReport.checks.length === 0 ||
-    safeReport.checks.every((check) => check.status === 'not_applicable');
+    applicableChecks(safeReport.checks).every((check) => check.status === 'not_applicable');
 
   const invocationProperties: Record<string, unknown> = {
     mode: safeReport.mode,
     category: `wakeio-security-ci/${safeReport.mode}`,
+    ...(safeReport.checks.some(check => check.codeCoverage) ? { codeCoverages: safeReport.checks.filter(check => check.codeCoverage).map(check => ({ checkId: check.id, codeCoverage: check.codeCoverage })) } : {}),
     statuses: Object.fromEntries(
       safeReport.checks.map((check) => [safeId(check.id, 'check'), check.status]),
     ),
@@ -508,6 +517,7 @@ export function toMarkdown(report: ScanReport, failOn: FailOn = 'high'): string 
   } else {
     for (const check of safeReport.checks) {
       lines.push(`- **${markdownInline(check.id)}**: ${markdownInline(check.status)}`);
+      if (check.codeCoverage) lines.push(...markdownCodeCoverage(check.codeCoverage));
       if (check.analysisBudget) lines.push(`  - AST analysis budget: ${budgetText(check.analysisBudget)}`);
       if (check.collectionBudget) lines.push(`  - Collection budget: ${collectionBudgetText(check.collectionBudget)}`);
       if (check.collectionEvidence) lines.push(...markdownCollectionEvidence(check.collectionEvidence));
@@ -641,6 +651,7 @@ function markdownSummary(summary: ReportSummary): string[] {
     }
   }
   if (summary.omittedIncompleteChecks) lines.push(`- ${summary.omittedIncompleteChecks} incomplete checks omitted from this summary; see Checks.`);
+  if (summary.scope.codeCoverage) lines.push(...markdownCodeCoverage(summary.scope.codeCoverage));
   if (summary.scope.analysisProfile) lines.push(`- AST workload selection: ${summary.scope.analysisProfile} (${summary.scope.analysisBudgetRevision}).`);
   if (summary.scope.collectionBudget) lines.push(`- Collection workload selection: ${collectionBudgetText(summary.scope.collectionBudget)}`);
   if (summary.scope.collectionBudgetConsistency) lines.push(`- Collection budget identity against declared scope: ${summary.scope.collectionBudgetConsistency}. This identity does not change the scan execution gate.`);
@@ -660,6 +671,12 @@ function markdownGapReasons(summary: AnalysisGapReasonSummary | undefined): stri
   return ['', 'Recorded reason observations (weighted events, not unique sites or coverage). Dropped observations lack retained location items.', '',
     '| Reason | Observed | Dropped |', '| --- | ---: | ---: |',
     ...summary.rows.map(row => `| ${markdownInline(row.reason)} | ${row.eventsObserved} | ${row.eventsDropped} |`), ''];
+}
+
+function markdownCodeCoverage(c: CodeCoverage): string[] {
+  return [`  - Code coverage: ${c.basis}; accounting=${c.accounting}; required=${c.requireCodeAnalysis}; collection complete=${c.collectionComplete}.`,
+    `  - Collected=${c.totals.collected ?? 'unknown'}, eligible=${c.totals.eligible ?? 'unknown'}, completed=${c.totals.completed ?? 'unknown'}, uncovered=${c.totals.uncovered ?? 'unknown'}. Eligible is selected input support, not execution; completed is bounded adapter completion, not vulnerability completeness.`,
+    ...c.languages.map(row => `  - ${row.language}: collected=${row.collected}, eligible=${row.eligible}, completed=${row.completed}, uncovered=${row.uncovered}; ${row.providers.map(p => `${p.provider} selected=${p.selected}, status=${p.status}, eligible=${p.eligible}, completed=${p.completed}`).join('; ')}.`)];
 }
 
 function collectionBudgetText(budget: CollectionBudget): string {
@@ -723,13 +740,29 @@ interface SarifLocation {
 }
 
 export function sanitiseReport(report: ScanReport): ScanReport {
+  const checks = sanitiseChecks(report?.checks);
+  const policy = ownDataField(report?.scope, 'codeAnalysisPolicy');
+  const strict = policy.valid && validCodeAnalysisPolicy(policy.value);
+  if (policy.present && (!strict || !checks.some(check => check.id === CODE_COVERAGE_ID))) {
+    const existing = checks.find(check => check.id === CODE_COVERAGE_ID);
+    if (existing) { existing.codeCoverage = unknownCodeCoverage(strict); existing.status = 'partial'; }
+    else checks.push({ id: CODE_COVERAGE_ID, status: 'partial', findings: [], notes: ['Required code-analysis coverage evidence is missing or invalid.'], codeCoverage: unknownCodeCoverage(strict) });
+  }
+  for (const check of checks.filter(c => c.id === CODE_COVERAGE_ID)) {
+    if (!check.codeCoverage || checks.filter(c => c.id === CODE_COVERAGE_ID).length !== 1
+      || strict && !check.codeCoverage.requireCodeAnalysis || policy.present && check.codeCoverage.requireCodeAnalysis && !strict
+      || !codeCoverageConsistent(check.codeCoverage, checks)) {
+      check.codeCoverage = unknownCodeCoverage(strict || check.codeCoverage?.requireCodeAnalysis === true);
+      if (check.status !== 'error') check.status = 'partial';
+    }
+  }
   return {
     schemaVersion: REPORT_SCHEMA_VERSION,
     toolVersion: safeId(report?.toolVersion, REPORT_TOOL_VERSION),
     mode: validMode(report?.mode),
     startedAt: timestamp(report?.startedAt),
     finishedAt: timestamp(report?.finishedAt),
-    checks: sanitiseChecks(report?.checks),
+    checks,
     ...safeScope(report?.scope),
   };
 }
@@ -749,6 +782,11 @@ function sanitiseChecks(input: CheckResult[] | undefined): CheckResult[] {
 
 function sanitiseCheck(input: CheckResult): CheckResult {
   let status = STATUSES.includes(input?.status) ? input.status : 'error';
+  const codeField = ownDataField(input, 'codeCoverage');
+  const needsCodeCoverage = codeField.present || input?.id === CODE_COVERAGE_ID;
+  const parsedCode = codeField.valid ? parseCodeCoverage(codeField.value) : undefined;
+  const codeCoverage = needsCodeCoverage ? parsedCode ?? unknownCodeCoverage() : undefined;
+  if (needsCodeCoverage && (input?.id !== CODE_COVERAGE_ID || !parsedCode || coverageIncomplete(codeCoverage!) || status === 'not_applicable' || input.findings?.length > 0) && status !== 'error') status = 'partial';
   const executionDescriptor = input && typeof input === 'object' && !utilTypes.isProxy(input)
     ? Object.getOwnPropertyDescriptor(input, 'apiExecution') : undefined;
   let apiExecution = executionDescriptor ? sanitiseApiExecutionLedger('value' in executionDescriptor ? executionDescriptor.value : undefined) : undefined;
@@ -838,6 +876,7 @@ function sanitiseCheck(input: CheckResult): CheckResult {
     ...(collectionBudget ? { collectionBudget } : {}),
     ...(collectionEvidence ? { collectionEvidence } : {}),
     ...(sourceSnapshot ? { sourceSnapshot } : {}),
+    ...(codeCoverage ? { codeCoverage } : {}),
     ...(analysisGaps ? { analysisGaps } : {}),
     ...(apiStateEvidence ? { apiStateEvidence } : {}),
     ...(apiWriteStateEvidence ? { apiWriteStateEvidence } : {}),
@@ -846,8 +885,16 @@ function sanitiseCheck(input: CheckResult): CheckResult {
   };
 }
 
+function validCodeAnalysisPolicy(value: unknown): boolean {
+  if (!value || typeof value !== 'object' || utilTypes.isProxy(value)) return false;
+  const revision = ownDataField(value, 'revision'), required = ownDataField(value, 'requireCodeAnalysis');
+  return Object.keys(value).length === 2 && revision.valid && revision.value === 'code-coverage-v1' && required.valid && required.value === true;
+}
+
 function safeScope(scope: ScanReport['scope']): { scope?: ScanReport['scope'] } {
   if (!scope || !/^[a-f0-9]{64}$/.test(scope.fingerprint) || !/^[A-Za-z0-9._-]{1,80}$/.test(scope.ruleset)) return {};
+  const policy = ownDataField(scope, 'codeAnalysisPolicy');
+  if (policy.present && (!policy.valid || !validCodeAnalysisPolicy(policy.value))) return {};
   const projectId = scope.projectId && /^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$/.test(scope.projectId)
     ? scope.projectId
     : undefined;
@@ -860,6 +907,7 @@ function safeScope(scope: ScanReport['scope']): { scope?: ScanReport['scope'] } 
   return {
     scope: {
       fingerprint: scope.fingerprint,
+      ...(policy.present ? { codeAnalysisPolicy: { revision: 'code-coverage-v1' as const, requireCodeAnalysis: true as const } } : {}),
       ...(analysisBudget ? { analysisBudget } : {}),
       ...(collectionBudget ? { collectionBudget } : {}),
       ruleset: scope.ruleset,
