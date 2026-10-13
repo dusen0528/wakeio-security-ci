@@ -1,3 +1,4 @@
+import { parseCodeCoverage } from './source/code-coverage.js';
 import { sanitiseCollectionBudget, sanitiseCollectionEvidence } from './source/collection-budget.js';
 import type { AgentReport } from './contracts.js';
 import { redactSecrets, safeHttpUrl } from './report-path.js';
@@ -8,7 +9,7 @@ import { types } from 'node:util';
 export type RecheckRoute = 'repeat_native_same_policy' | 'replay_native_finding_same_policy' | 'replay_api_finding_same_policy'
   | 'review_static_flow_or_budget' | 'review_check_diagnostics' | 'review_scope';
 
-export const ADVICE_PROJECTION_POLICY_VERSION = 7;
+export const ADVICE_PROJECTION_POLICY_VERSION = 8;
 
 const MAX_CHECKS = 24;
 const MAX_FINDINGS = 24;
@@ -37,6 +38,7 @@ function nativeExecutionEligible(check: AgentReport['checks'][number], nativeChe
 }
 
 function checkRoute(check: AgentReport['checks'][number], mode: AgentReport['mode'], nativeCheckCount: number): RecheckRoute {
+  if (check.checkId === 'source.code-coverage') return 'review_check_diagnostics';
   if (check.checkId === 'source.inventory' && (sanitiseCollectionBudget(check.collectionBudget) || sanitiseCollectionEvidence(check.collectionEvidence))) return 'review_static_flow_or_budget';
   if (check.status !== 'completed') return check.analysisGaps || check.analysisBudget
     ? 'review_static_flow_or_budget' : 'review_check_diagnostics';
@@ -48,6 +50,7 @@ function checkRoute(check: AgentReport['checks'][number], mode: AgentReport['mod
 function checkCard(check: AgentReport['checks'][number], mode: AgentReport['mode'], nativeCheckCount: number) {
   const dast = check.checkId === 'url.sql-boolean' ? sanitizeDastExecution(check.dastExecution) : undefined;
   const api = check.checkId === 'api.authorization' ? check.apiExecution : undefined;
+  const codeCoverage = check.checkId === 'source.code-coverage' ? parseCodeCoverage(check.codeCoverage) : undefined;
   const gaps = check.analysisGaps;
   const collectionBudget = check.checkId === 'source.inventory' ? sanitiseCollectionBudget(check.collectionBudget) : undefined;
   const collectionEvidence = check.checkId === 'source.inventory' ? sanitiseCollectionEvidence(check.collectionEvidence) : undefined;
@@ -55,6 +58,7 @@ function checkCard(check: AgentReport['checks'][number], mode: AgentReport['mode
     referenceId: `check:${check.checkIndex}`, checkIndex: check.checkIndex,
     checkId: boundedText(check.checkId, 100), status: check.status,
     ...(collectionBudget ? { collectionBudget } : {}),
+    ...(codeCoverage ? { codeCoverage } : {}),
     ...(collectionEvidence ? { collectionEvidence } : {}),
     findingRows: check.findingIds.length, recheckRoute: checkRoute(check, mode, nativeCheckCount),
     engine: dast ? 'native_sql_boolean' as const : api ? 'api_authorization' as const

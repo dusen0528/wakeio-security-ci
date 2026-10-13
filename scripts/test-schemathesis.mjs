@@ -68,8 +68,23 @@ try {
     join(root, 'build/tests/nuclei.test.js'));
   receipt.dastAction = validateTestEvents(events,
     ['DAST Action runs Schemathesis from the bundled layout for a same-repository pull request',
-      'DAST Action runs pinned Nuclei through the bundled layout'],
+      'DAST Action runs pinned Nuclei through the bundled layout',
+      'dast Action cancellation forwards SIGTERM and retains fresh partial evidence even when the child exits zero',
+      'source Action cancellation forwards SIGINT and retains fresh partial evidence even when the child exits zero',
+      'DAST Action cancellation bounds ignored/repeated signals and kills the owned child process group',
+      'dast Action cancellation during tool setup prevents scan launch and removes its temporary tools',
+      'dast Action cancellation during native policy preflight prevents scan launch',
+      'dast-preflight Action cancellation during native policy preflight prevents scan launch',
+      'Action cancellation while a successful receipt is being written corrects status and outputs before exit'],
     join(root, 'build/tests/dast-action.test.js'));
+  receipt.dastTeardown = validateTestEvents(events,
+    ['egress gate abort closes the target while streaming',
+      'egress gate close closes the target while streaming',
+      'egress gate client disconnect closes the target while streaming',
+      'egress gate already-aborted startup never forwards a target request',
+      'egress gate incomplete upstream body remains one transport failure',
+      'egress gate CONNECT abort awaits both tunnel sockets'],
+    join(root, 'build/tests/dast-egress.test.js'));
   receipt.testEventsSha256 = createHash('sha256').update(bytes).digest('hex');
   receipt.testFiles = files.map(file => ({ path: file, sha256: createHash('sha256').update(readFileSync(file)).digest('hex') }));
   receipt.sourceAfter = sourceSnapshot(root);

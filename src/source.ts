@@ -1,3 +1,5 @@
+import { codeCoverageCheck, collectedCodeMetrics } from './source/code-coverage.js';
+import { types as utilTypes } from 'node:util';
 import { resolveAnalysisBudget } from './source/analysis-budget.js';
 import { collectionEvidence } from './source/collection-budget.js';
 import { sourceSnapshotEvidence } from './source/snapshot-evidence.js';
@@ -413,6 +415,8 @@ function inventoryCheck(snapshot: SourceSnapshot, tools: ToolName[], nativeSelec
       requestedTools: tools.length ? tools.join(",") : "none",
       nativePreviewSelected: nativeSelected,
       filesSelected: snapshot.files.length,
+      codeFilesSelected: snapshot.files.filter(file => file.category === "code").length,
+      ...collectedCodeMetrics(snapshot),
       bytesSelected: snapshot.totalBytes,
       ignoredFiles: snapshot.ignoredFiles,
       issueCount: snapshot.issues.length,
@@ -802,23 +806,35 @@ async function runTool(tool: ToolName, snapshot: SourceSnapshot, stageDir: strin
 
 /** Runs bounded built-in and selected native source scanners. */
 export async function runSource(options: SourceOptions): Promise<CheckResult[]> {
+  let tools: ToolName[] = [];
+  const safeOptions = options && typeof options === 'object' && !utilTypes.isProxy(options);
+  const requirement = safeOptions ? Object.getOwnPropertyDescriptor(options, 'requireCodeAnalysis') : undefined;
+  const required = requirement && 'value' in requirement && requirement.value === true;
+  const finish = (checks: CheckResult[], snapshot?: SourceSnapshot): CheckResult[] => {
+    checks.push(codeCoverageCheck(snapshot, checks, { tools, nativePreview: safeOptions ? options.nativePreview : undefined, requireCodeAnalysis: !!required }));
+    return snapshot ? addSourceComparisonKeys(checks, snapshot) : checks;
+  };
+  if (!safeOptions) return finish([errorCheck('source.options', 'Source options must be a non-callable, non-proxy object.')]);
+  if (requirement && (!('value' in requirement) || requirement.value !== undefined && typeof requirement.value !== 'boolean')
+    || safeOptions && !requirement && 'requireCodeAnalysis' in options
+    || options && utilTypes.isProxy(options)) return finish([errorCheck('source.options', 'requireCodeAnalysis must be an own boolean data property.')]);
   let analysisBudget;
   try { analysisBudget = resolveAnalysisBudget(options?.analysisProfile); }
-  catch { return [errorCheck('source.options', 'Analysis profile must be default or extended.')]; }
+  catch { return finish([errorCheck('source.options', 'Analysis profile must be default or extended.')]); }
   if (!options || typeof options.root !== "string" || options.root.trim().length === 0) {
-    return [errorCheck("source.inventory", "A source directory is required.")];
+    return finish([errorCheck("source.inventory", "A source directory is required.")]);
   }
-  if (options.signal !== undefined && !(options.signal instanceof AbortSignal)) return [errorCheck('source.cancelled', 'Source cancellation signal must be an AbortSignal.')];
-  if (options.signal?.aborted) return [partialCheck(options.nativePreview ? 'source.opengrep.preview' : 'source.cancelled', 'Source scan was cancelled before collection; no child was started.')];
-  const tools = requestedTools(options);
+  if (options.signal !== undefined && !(options.signal instanceof AbortSignal)) return finish([errorCheck('source.cancelled', 'Source cancellation signal must be an AbortSignal.')]);
+  if (options.signal?.aborted) return finish([partialCheck(options.nativePreview ? 'source.opengrep.preview' : 'source.cancelled', 'Source scan was cancelled before collection; no child was started.')]);
+  tools = requestedTools(options);
   const timeoutMs = normalizeTimeout(options.timeoutMs);
   let snapshot: SourceSnapshot;
   try {
     snapshot = await collectSource(options);
   } catch {
-    return [errorCheck("source.inventory", "The source snapshot could not be collected.")];
+    return finish([errorCheck("source.inventory", "The source snapshot could not be collected.")]);
   }
-  if (options.signal?.aborted) return [inventoryCheck(snapshot, tools, !!options.nativePreview, options.outDir), partialCheck('source.cancelled', 'Source scan was cancelled after collection.')];
+  if (options.signal?.aborted) return finish([inventoryCheck(snapshot, tools, !!options.nativePreview, options.outDir), partialCheck('source.cancelled', 'Source scan was cancelled after collection.')], snapshot);
   const checks: CheckResult[] = [
     inventoryCheck(snapshot, tools, !!options.nativePreview, options.outDir),
     runBuiltinAst(snapshot, hasOtherSecurityCheck(snapshot, tools, !!options.nativePreview), analysisBudget.limits, analysisBudget),
@@ -826,7 +842,7 @@ export async function runSource(options: SourceOptions): Promise<CheckResult[]> 
   ];
   // Native owns a separate code-only stage and cleanup, including --tools none.
   if (options.nativePreview) checks.push(await runNativePreview(snapshot, options));
-  if (options.signal?.aborted) { checks.push(partialCheck('source.cancelled', 'Source scan was cancelled; later stages were not started.')); return addSourceComparisonKeys(checks, snapshot); }
+  if (options.signal?.aborted) { checks.push(partialCheck('source.cancelled', 'Source scan was cancelled; later stages were not started.')); return finish(checks, snapshot); }
   if (tools.length === 0 || snapshot.files.length === 0 || snapshot.rootError) {
     if (snapshot.files.length === 0 && !snapshot.rootError) {
       checks.push(...tools.map((tool) => {
@@ -840,7 +856,7 @@ export async function runSource(options: SourceOptions): Promise<CheckResult[]> 
       }
     }
     if (snapshot.rootError) checks.push(...tools.map((tool) => errorCheck(`source.${tool}`, `The source root could not be scanned by ${tool}.`)));
-    return addSourceComparisonKeys(checks, snapshot);
+    return finish(checks, snapshot);
   }
   let staged: Awaited<ReturnType<typeof stageSnapshot>>;
   try {
@@ -848,7 +864,7 @@ export async function runSource(options: SourceOptions): Promise<CheckResult[]> 
     await mkdir(join(dirname(staged.dir), "home"), { recursive: true, mode: 0o700 });
   } catch {
     checks.push(...tools.map((tool) => errorCheck(`source.${tool}`, `The bounded snapshot could not be staged for ${tool}.`)));
-    return addSourceComparisonKeys(checks, snapshot);
+    return finish(checks, snapshot);
   }
   let trivyStaged: Awaited<ReturnType<typeof stageSnapshot>> | undefined;
   let trivySnapshot: SourceSnapshot | undefined;
@@ -920,5 +936,5 @@ export async function runSource(options: SourceOptions): Promise<CheckResult[]> 
     try { await trivyStaged?.cleanup(); } catch { /* best effort cleanup */ }
     try { await staged.cleanup(); } catch { /* best effort cleanup */ }
   }
-  return addSourceComparisonKeys(checks, snapshot);
+  return finish(checks, snapshot);
 }

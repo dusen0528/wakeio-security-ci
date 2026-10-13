@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { createServer, request, type IncomingMessage, type Server } from "node:http";
 import { createServer as createNetServer, type AddressInfo, type Socket } from "node:net";
 import { gzipSync } from "node:zlib";
+import { setTimeout as delay } from "node:timers/promises";
 import { resolveDastOrigin, startEgressGate, type EgressPolicy } from "../src/dast-egress.js";
 
 interface Seen { method: string; path: string; encoding: string | undefined; host: string | undefined }
@@ -164,3 +165,146 @@ test("DAST origin validation reuses URL-network policy before any connection", a
   const ok = await resolveDastOrigin("http://127.0.0.1:9/", true, signal);
   assert.deepEqual(ok.address, { address: "127.0.0.1", family: 4 });
 });
+
+async function within<T>(promise: Promise<T>, message: string): Promise<T> {
+  let timer: NodeJS.Timeout | undefined;
+  try {
+    return await Promise.race([promise, new Promise<never>((_resolve, reject) => {
+      timer = setTimeout(() => reject(new Error(message)), 1000);
+    })]);
+  } finally { clearTimeout(timer); }
+}
+
+for (const mode of ["abort", "close", "client disconnect"] as const) {
+  for (const streaming of [true, false]) {
+    test(`egress gate ${mode} closes the target while ${streaming ? "streaming" : "waiting for headers"}`, { timeout: 5000 }, async () => {
+      let received!: () => void, disconnected!: () => void;
+      const targetReceived = new Promise<void>((resolve) => { received = resolve; });
+      const targetDisconnected = new Promise<void>((resolve) => { disconnected = resolve; });
+      let writes: NodeJS.Timeout | undefined;
+      const fixture = await target((_req, res) => {
+        res.once("close", () => { clearInterval(writes); disconnected(); });
+        if (streaming) {
+          res.writeHead(200, { "content-type": "text/plain" });
+          res.write("x");
+          // Activity must not extend the run after cancellation or close.
+          writes = setInterval(() => res.write("x"), 10);
+        }
+        received();
+      });
+      const { gate, controller } = await gateFor(fixture.port, { maxSingleBodyBytes: 1_000_000, maxTotalBytes: 1_000_000 });
+      const proxy = new URL(gate.proxyUrl);
+      const client = request({ host: proxy.hostname, port: proxy.port, path: `http://127.0.0.1:${fixture.port}/`, agent: false,
+        headers: { "proxy-authorization": `Basic ${Buffer.from(`${proxy.username}:${proxy.password}`).toString("base64")}` } });
+      client.on("error", () => { /* teardown deliberately interrupts this response */ });
+      client.end();
+      try {
+        await within(targetReceived, "target request never started");
+        if (streaming) {
+          const deadline = Date.now() + 1000;
+          while (gate.counters.responseBytes === 0 && Date.now() < deadline) await delay(5);
+          assert.ok(gate.counters.responseBytes > 0, "the gate buffered response bytes before teardown");
+        }
+        if (mode === "abort") controller.abort();
+        else if (mode === "close") await gate.close();
+        else client.destroy();
+        await within(targetDisconnected, "target connection survived teardown");
+        const firstClose = gate.close();
+        assert.equal(gate.close(), firstClose, "close is idempotent while cleanup is pending");
+        await firstClose;
+        const bytesAtClose = gate.counters.responseBytes;
+        await delay(30);
+        assert.equal(gate.counters.responseBytes, bytesAtClose, "no response data is collected after close resolves");
+        assert.equal(gate.counters.forwarded, 1);
+        assert.equal(gate.counters.upstreamErrors, 0, "intentional cleanup is not a target transport failure");
+      } finally {
+        client.destroy();
+        clearInterval(writes);
+        fixture.server.closeAllConnections();
+        await gate.close();
+        await new Promise<void>((resolve) => fixture.server.close(() => resolve()));
+      }
+    });
+  }
+}
+
+test("egress gate already-aborted startup never forwards a target request", async () => {
+  const fixture = await target((_req, res) => res.end("unexpected"));
+  const controller = new AbortController();
+  controller.abort();
+  const { gate } = await gateFor(fixture.port, { signal: controller.signal });
+  try {
+    await assert.rejects(viaProxy(gate.proxyUrl, `http://127.0.0.1:${fixture.port}/`));
+    assert.equal(fixture.seen.length, 0);
+    assert.equal(gate.counters.forwarded, 0);
+  } finally { await gate.close(); fixture.server.close(); }
+});
+
+test("egress gate incomplete upstream body remains one transport failure", async () => {
+  const fixture = await target((req, res) => {
+    res.writeHead(200, { "content-length": "100" });
+    res.write("x");
+    setTimeout(() => req.socket.destroy(), 20);
+  });
+  const { gate } = await gateFor(fixture.port);
+  try {
+    await assert.rejects(viaProxy(gate.proxyUrl, `http://127.0.0.1:${fixture.port}/`));
+    assert.equal(gate.counters.upstreamErrors, 1);
+    assert.equal(gate.counters.forwarded, 1);
+  } finally { await gate.close(); fixture.server.close(); }
+});
+
+for (const mode of ["abort", "close", "client disconnect"] as const) {
+  test(`egress gate CONNECT ${mode} awaits both tunnel sockets`, { timeout: 5000 }, async () => {
+    let disconnected!: () => void;
+    const targetDisconnected = new Promise<void>((resolve) => { disconnected = resolve; });
+    let peer: Socket | undefined, writes: NodeJS.Timeout | undefined;
+    // Synthetic opaque tunnel bytes exercise cleanup without an external host or TLS bypass.
+    const server = createNetServer((socket) => {
+      peer = socket;
+      socket.on("error", () => {});
+      socket.once("close", () => { clearInterval(writes); disconnected(); });
+      socket.write("x");
+      writes = setInterval(() => socket.write("x"), 10);
+    });
+    await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+    const address = server.address();
+    const port = typeof address === "object" && address ? address.port : 0;
+    const controller = new AbortController();
+    const resolved = await resolveDastOrigin(`https://127.0.0.1:${port}/`, true, controller.signal);
+    const gate = await startEgressGate({ ...resolved, methods: new Set(["GET"]), maxRequests: 1,
+      maxSingleBodyBytes: 1024, maxTotalBytes: 4096, signal: controller.signal, deadlineAt: Date.now() + 10_000 });
+    const proxy = new URL(gate.proxyUrl);
+    const client = request({ host: proxy.hostname, port: proxy.port, method: "CONNECT", path: `127.0.0.1:${port}`, agent: false,
+      headers: { "proxy-authorization": `Basic ${Buffer.from(`${proxy.username}:${proxy.password}`).toString("base64")}` } });
+    client.on("error", () => {});
+    let tunnel: Socket | undefined;
+    const connected = new Promise<void>((resolve) => client.once("connect", (response, socket, head) => {
+      assert.equal(response.statusCode, 200);
+      tunnel = socket;
+      socket.on("error", () => {});
+      socket.resume();
+      if (head.length) resolve();
+      else socket.once("data", () => resolve());
+    }));
+    client.end();
+    try {
+      await within(connected, "CONNECT tunnel never relayed target bytes");
+      assert.ok(gate.counters.responseBytes > 0);
+      if (mode === "abort") controller.abort();
+      else if (mode === "close") await gate.close();
+      else tunnel!.destroy();
+      await within(targetDisconnected, "target tunnel survived teardown");
+      await gate.close();
+      const bytes = gate.counters.responseBytes;
+      await delay(30);
+      assert.equal(gate.counters.responseBytes, bytes);
+      assert.equal(gate.counters.tunnels, 1);
+      assert.equal(gate.counters.upstreamErrors, 0);
+    } finally {
+      client.destroy(); tunnel?.destroy(); peer?.destroy(); clearInterval(writes);
+      await gate.close();
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
+  });
+}

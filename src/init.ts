@@ -10,6 +10,7 @@ const UPLOAD_ARTIFACT_SHA = "ea165f8d65b6e75b540449e92b4886f43607fa02";
 const STABLE_SYSTEM_ALIASES = new Set(["/tmp", "/var"]);
 
 interface InitOptions {
+  requireCodeAnalysis?: boolean;
   sourceMaxFiles?: number;
   sourceMaxBytes?: number;
   analysisProfile?: 'default' | 'extended';
@@ -84,6 +85,10 @@ export function parseInitArgs(argv: readonly string[]): InitOptions {
   const selected = new Set<string>();
   for (let index = 0; index < args.length; index += 1) {
     const argument = args[index];
+    if (argument === '--require-code-analysis') {
+      if (selected.has(argument)) throw new Error('--require-code-analysis may only be specified once');
+      selected.add(argument); options.requireCodeAnalysis = true; continue;
+    }
     const selector = argument.split('=')[0];
     if (['--source-max-files', '--source-max-bytes', '--analysis-profile'].includes(selector)) {
       if (selected.has(selector)) throw new Error(`${selector} may only be specified once`);
@@ -127,7 +132,7 @@ export function initUsage(): string {
   return [
     "Usage: wakeio-security-ci init [--source DIR] [--workflow .github/workflows/wakeio-security-ci.yml] [--out DIR] [--tools none]",
     "",
-    "       [--source-max-files N] [--source-max-bytes N] [--analysis-profile default|extended]",
+    "       [--source-max-files N] [--source-max-bytes N] [--analysis-profile default|extended] [--require-code-analysis]",
     "",
     "Create a local CI workflow only when its destination does not exist; no file is overwritten.",
     "The template runs the installed CLI with npx --no-install and uses pinned helper-action commits.",
@@ -135,11 +140,13 @@ export function initUsage(): string {
   ].join("\n");
 }
 
-export function renderWorkflow(options: { out: string; tools: string[]; pythonFiles: number; sourceMaxFiles?: number; sourceMaxBytes?: number; analysisProfile?: 'default' | 'extended' }): string {
+export function renderWorkflow(options: { out: string; tools: string[]; pythonFiles: number; requireCodeAnalysis?: boolean; sourceMaxFiles?: number; sourceMaxBytes?: number; analysisProfile?: 'default' | 'extended' }): string {
   // Validate again because renderWorkflow is also exported for programmatic use.
   const files = options.sourceMaxFiles === undefined ? '' : ` --source-max-files ${parseCollectionLimit(String(options.sourceMaxFiles), COLLECTION_MAX_FILES)}`;
   const bytes = options.sourceMaxBytes === undefined ? '' : ` --source-max-bytes ${parseCollectionLimit(String(options.sourceMaxBytes), COLLECTION_MAX_BYTES)}`;
   const profile = options.analysisProfile === undefined ? '' : ` --analysis-profile ${resolveAnalysisBudget(options.analysisProfile).requestedProfile}`;
+  if (options.requireCodeAnalysis !== undefined && typeof options.requireCodeAnalysis !== 'boolean') throw new Error('requireCodeAnalysis must be a boolean');
+  const codePolicy = options.requireCodeAnalysis ? ' --require-code-analysis' : '';
   const toolValue = options.tools.length > 0 ? options.tools.join(",") : "none";
   const pythonNote = options.pythonFiles > 0
     ? `      # Static inventory detected ${options.pythonFiles} Python file${options.pythonFiles === 1 ? "" : "s"}; add a separately prepared Bandit executable before enabling --tools bandit.\n`
@@ -172,7 +179,7 @@ jobs:
         run: npm ci --ignore-scripts --no-audit --fund=false
       - name: Run installed Wakeio CLI
 ${pythonNote}        run: >-
-          npx --no-install wakeio-security-ci scan --source . --project-id "$GITHUB_REPOSITORY" --tools ${toolValue}${files}${bytes}${profile} --out ${shellQuote(options.out)}
+          npx --no-install wakeio-security-ci scan --source . --project-id "$GITHUB_REPOSITORY" --tools ${toolValue}${codePolicy}${files}${bytes}${profile} --out ${shellQuote(options.out)}
       - name: Upload reports
         if: always()
         uses: actions/upload-artifact@${UPLOAD_ARTIFACT_SHA}

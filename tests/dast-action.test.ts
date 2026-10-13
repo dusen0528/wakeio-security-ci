@@ -316,3 +316,337 @@ test("DAST Action runs native policy from its bundle and refuses invalid policy 
     assert.equal(partial.code, 2, partial.stderr); assert.match(partial.stderr, /DAST refused/); assert.equal(hits, 8);
   } finally { await new Promise<void>(done => target.close(() => done())); await rm(top, { recursive: true, force: true }); }
 });
+
+async function syntheticAction(top: string, scan: string, installer = 'process.stdout.write("{}");') {
+  const action = join(top, "action");
+  await mkdir(join(action, "scripts"), { recursive: true });
+  await mkdir(join(action, "dist-action"));
+  await copyFile(join(root, "scripts/action-run.mjs"), join(action, "scripts/action-run.mjs"));
+  await writeFile(join(action, "dist-action/wakeio-security-ci.mjs"), scan);
+  await writeFile(join(action, "scripts/install-tools.mjs"), installer);
+  return action;
+}
+
+for (const mode of ["dast", "dast-preflight"] as const) {
+  test(`${mode} Action cancellation during native policy preflight prevents scan launch`, { timeout: 12000 }, async () => {
+    const top = await mkdtemp(join(tmpdir(), "wakeio-native-plan-cancel-"));
+    let running: ReturnType<typeof controlledAction> | undefined;
+    let plannerPid: number | undefined;
+    try {
+      const action = await syntheticAction(top, `
+import { writeFileSync } from 'node:fs';
+if (process.argv[2] !== 'plan') {
+  writeFileSync('unexpected-scan', 'started');
+  process.exit(0);
+}
+process.on('SIGTERM', () => {
+  writeFileSync('received-signal', 'SIGTERM');
+  process.stdout.write(JSON.stringify({ kind: 'native-dast-plan', status: 'ready', origin: 'http://owned.example.test' }));
+  process.exit(0);
+});
+writeFileSync('ready', String(process.pid));
+setInterval(() => {}, 1000);
+`, `import { writeFileSync } from 'node:fs'; writeFileSync('unexpected-setup', 'started');`);
+      const paths = await workspaceFor(top);
+      if (mode === "dast") await seedSuccess(paths);
+      const env = { ...syntheticEnv(action, paths, "dast"), WAKEIO_MODE: mode,
+        WAKEIO_OPENAPI: "", WAKEIO_DAST_POLICY: "native.json" };
+      running = controlledAction(action, env, paths.workspace);
+      plannerPid = Number(await waitForFile(join(paths.workspace, "ready")));
+      assert.ok(running.child.kill("SIGTERM"));
+      const result = await running.finished;
+      assert.equal(result.code, 2, result.stderr);
+      assert.equal(result.signal, null);
+      assert.equal(await readFile(join(paths.workspace, "received-signal"), "utf8"), "SIGTERM");
+      for (const file of ["unexpected-scan", "unexpected-setup"]) {
+        await assert.rejects(readFile(join(paths.workspace, file)), { code: "ENOENT" });
+      }
+      const values = outputs(await readFile(paths.output, "utf8"));
+      const statusFile = join(paths.workspace, "reports/action-status.json");
+      if (mode === "dast") {
+        const status = JSON.parse(await readFile(statusFile, "utf8"));
+        assert.equal(status.exitCode, 2);
+        assert.equal(status.setupStatus, "failure");
+        assert.equal(status.scanStatus, "not-run");
+        assert.equal(status.cancellationSignal, "SIGTERM");
+        assert.equal(values["exit-code"], "2");
+        assert.equal(values["report-agent"], "");
+      } else {
+        assert.equal(values["prepare-schemathesis"], "false");
+        await assert.rejects(readFile(statusFile), { code: "ENOENT" });
+      }
+    } finally {
+      running?.child.kill("SIGKILL");
+      if (plannerPid) { try { process.kill(plannerPid, "SIGKILL"); } catch { /* already reaped */ } }
+      await running?.finished.catch(() => undefined);
+      await rm(top, { recursive: true, force: true });
+    }
+  });
+}
+
+const delay = (ms: number) => new Promise<void>((done) => setTimeout(done, ms));
+
+async function waitForFile(path: string) {
+  const deadline = Date.now() + 5000;
+  while (Date.now() < deadline) {
+    const text = await readFile(path, "utf8").catch(() => "");
+    if (text) return text;
+    await delay(10);
+  }
+  throw new Error(`synthetic child did not become ready: ${path}`);
+}
+
+function controlledAction(action: string, env: NodeJS.ProcessEnv, cwd: string) {
+  const child = spawn(process.execPath, [join(action, "scripts/action-run.mjs")], { env, cwd, stdio: ["ignore", "pipe", "pipe"] });
+  let stderr = "";
+  child.stderr!.setEncoding("utf8").on("data", (chunk) => { stderr += chunk; });
+  child.stdout!.resume();
+  const finished = new Promise<{ code: number | null; signal: NodeJS.Signals | null; stderr: string }>((done, reject) => {
+    const timeout = setTimeout(() => { child.kill("SIGKILL"); reject(new Error("Action cancellation exceeded its shutdown bound")); }, 8000);
+    child.once("error", (error) => { clearTimeout(timeout); reject(error); });
+    child.once("close", (code, signal) => { clearTimeout(timeout); done({ code, signal, stderr }); });
+  });
+  return { child, finished };
+}
+
+async function seedSuccess(paths: Awaited<ReturnType<typeof workspaceFor>>) {
+  const directory = join(paths.workspace, "reports");
+  await mkdir(directory);
+  const report = JSON.stringify({ checks: [{ id: "old.success", status: "completed", findings: [{}] }] });
+  await writeFile(join(directory, "report.json"), report);
+  await writeFile(join(directory, "agent-report.json"), JSON.stringify({ schemaVersion: "1.0.0", reportArtifact: {
+    name: "report.json", algorithm: "sha256", digest: createHash("sha256").update(report).digest("hex"),
+  } }));
+  await writeFile(join(directory, "action-status.json"), JSON.stringify({ setupStatus: "success", scanStatus: "success", exitCode: 0 }));
+  await writeFile(paths.output, `exit-code=0\nsetup-status=success\nscan-status=success\nreport-agent=${directory}/agent-report.json\n`);
+}
+
+function syntheticEnv(action: string, paths: Awaited<ReturnType<typeof workspaceFor>>, mode: "dast" | "source"): NodeJS.ProcessEnv {
+  return {
+    PATH: process.env.PATH, WAKEIO_ACTION_PATH: action, GITHUB_WORKSPACE: paths.workspace,
+    GITHUB_OUTPUT: paths.output, GITHUB_STEP_SUMMARY: paths.summary, WAKEIO_OUT: "reports",
+    ...(mode === "source" ? { WAKEIO_SOURCE: ".", WAKEIO_TOOLS: "none" } : {
+      WAKEIO_MODE: "dast", GITHUB_EVENT_NAME: "push", WAKEIO_ACTIVE_CONSENT: "true",
+      WAKEIO_ALLOWED_ORIGINS: "http://owned.example.test", WAKEIO_OPENAPI: "openapi.json",
+      WAKEIO_API_BASE: "http://owned.example.test", WAKEIO_OPERATIONS: "/items",
+    }),
+  };
+}
+
+// These scripts never scan or contact the synthetic origin. They exercise the
+// wrapper's process lifecycle independently of a real engine or Python setup.
+const cooperativeScan = `
+import { writeFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+let stopping = false;
+for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, () => {
+  if (stopping) return;
+  stopping = true;
+  writeFileSync('forwarded-signal', signal);
+  setTimeout(() => {
+    const report = JSON.stringify({ checks: [
+      { id: 'completed.stage', status: 'completed', findings: [{}] },
+      { id: 'scan.cancelled', status: 'partial', findings: [] },
+    ] });
+    writeFileSync('reports/report.json', report);
+    writeFileSync('reports/agent-report.json', JSON.stringify({ schemaVersion: '1.0.0', reportArtifact: {
+      name: 'report.json', algorithm: 'sha256', digest: createHash('sha256').update(report).digest('hex'),
+    } }));
+    process.exit(0);
+  }, 100);
+});
+writeFileSync('ready', String(process.pid));
+setInterval(() => {}, 1000);
+`;
+
+for (const mode of ["dast", "source"] as const) {
+  for (const signal of ["SIGINT", "SIGTERM"] as const) {
+    test(`${mode} Action cancellation forwards ${signal} and retains fresh partial evidence even when the child exits zero`, { timeout: 12000 }, async () => {
+      const top = await mkdtemp(join(tmpdir(), "wakeio-action-cancel-"));
+      let running: ReturnType<typeof controlledAction> | undefined;
+      try {
+        const action = await syntheticAction(top, cooperativeScan);
+        const paths = await workspaceFor(top);
+        await seedSuccess(paths);
+        running = controlledAction(action, syntheticEnv(action, paths, mode), paths.workspace);
+        await waitForFile(join(paths.workspace, "ready"));
+        assert.ok(running.child.kill(signal));
+        const result = await running.finished;
+        assert.equal(result.code, 2, result.stderr);
+        assert.equal(result.signal, null, "the wrapper finalized normally rather than being killed");
+        assert.equal(await readFile(join(paths.workspace, "forwarded-signal"), "utf8"), signal);
+        const values = outputs(await readFile(paths.output, "utf8"));
+        assert.equal(values["exit-code"], "2");
+        assert.equal(values["setup-status"], "success");
+        assert.equal(values["scan-status"], "incomplete");
+        assert.equal(values["finding-count"], "1");
+        assert.equal(values["incomplete-count"], "1");
+        assert.equal(values["report-agent"], join(paths.workspace, "reports/agent-report.json"));
+        const status = JSON.parse(await readFile(join(paths.workspace, "reports/action-status.json"), "utf8"));
+        assert.equal(status.exitCode, 2);
+        assert.equal(status.scanStatus, "incomplete");
+        assert.equal(status.cancellationSignal, signal);
+        assert.equal(status.incompleteCount, 1);
+        const summary = await readFile(paths.summary, "utf8");
+        assert.match(summary, /Scan: \*\*incomplete\*\* \(exit code 2\)/);
+        assert.match(summary, /scan\.cancelled: partial/);
+      } finally {
+        running?.child.kill("SIGKILL");
+        await running?.finished.catch(() => undefined);
+        await rm(top, { recursive: true, force: true });
+      }
+    });
+  }
+}
+
+test("DAST Action cancellation bounds ignored/repeated signals and kills the owned child process group", { timeout: 12000, skip: process.platform === "win32" }, async () => {
+  const top = await mkdtemp(join(tmpdir(), "wakeio-action-kill-"));
+  let running: ReturnType<typeof controlledAction> | undefined;
+  let ownedPid: number | undefined;
+  try {
+    const action = await syntheticAction(top, `
+import { spawn } from 'node:child_process';
+import { writeFileSync, appendFileSync } from 'node:fs';
+for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, () => {});
+const child = spawn(process.execPath, ['--input-type=module', '-e', ${JSON.stringify(`
+  import { writeFileSync, appendFileSync } from 'node:fs';
+  for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, () => {});
+  setInterval(() => appendFileSync('descendant-heartbeat', '.'), 10);
+  writeFileSync('descendant-ready', String(process.pid));
+`)}], { stdio: 'inherit' });
+setInterval(() => appendFileSync('child-heartbeat', '.'), 10);
+writeFileSync('ready', String(process.pid));
+`);
+    const paths = await workspaceFor(top);
+    await seedSuccess(paths);
+    running = controlledAction(action, syntheticEnv(action, paths, "dast"), paths.workspace);
+    ownedPid = Number(await waitForFile(join(paths.workspace, "ready")));
+    await waitForFile(join(paths.workspace, "descendant-ready"));
+    await waitForFile(join(paths.workspace, "child-heartbeat"));
+    await waitForFile(join(paths.workspace, "descendant-heartbeat"));
+    const started = Date.now();
+    assert.ok(running.child.kill("SIGTERM"));
+    await delay(50);
+    assert.ok(running.child.kill("SIGINT"));
+    assert.ok(running.child.kill("SIGTERM"));
+    const result = await running.finished;
+    assert.equal(result.code, 2, result.stderr);
+    assert.equal(result.signal, null);
+    assert.ok(Date.now() - started < 5000, "uncooperative child cannot extend cancellation indefinitely");
+    const values = outputs(await readFile(paths.output, "utf8"));
+    assert.equal(values["exit-code"], "2");
+    assert.equal(values["scan-status"], "incomplete");
+    assert.equal(values["report-agent"], "", "stale digest-matched success is not exposed");
+    assert.equal(values["finding-count"], "0");
+    const status = JSON.parse(await readFile(join(paths.workspace, "reports/action-status.json"), "utf8"));
+    assert.equal(status.exitCode, 2);
+    assert.equal(status.cancellationSignal, "SIGTERM", "repeated signals do not replace the original cancellation");
+    for (const name of ["child-heartbeat", "descendant-heartbeat"]) {
+      const before = await readFile(join(paths.workspace, name), "utf8");
+      await delay(100);
+      assert.equal(await readFile(join(paths.workspace, name), "utf8"), before, `${name} stopped before receipts were finalized`);
+    }
+    assert.match(await readFile(join(paths.workspace, "reports/report.json"), "utf8"), /old.success/, "old report is preserved but never counted as this run");
+  } finally {
+    running?.child.kill("SIGKILL");
+    if (ownedPid) { try { process.kill(-ownedPid, "SIGKILL"); } catch { /* already reaped */ } }
+    await running?.finished.catch(() => undefined);
+    await rm(top, { recursive: true, force: true });
+  }
+});
+
+for (const mode of ["source", "dast"] as const) {
+  test(`${mode} Action cancellation during tool setup prevents scan launch and removes its temporary tools`, { timeout: 12000 }, async () => {
+    const top = await mkdtemp(join(tmpdir(), "wakeio-action-setup-cancel-"));
+    let running: ReturnType<typeof controlledAction> | undefined;
+    let installerPid: number | undefined;
+    try {
+      const action = await syntheticAction(top, `import { writeFileSync } from 'node:fs'; writeFileSync('unexpected-scan', 'started');`, `
+import { writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+const workspace = process.env.GITHUB_WORKSPACE;
+for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, () => {
+  process.stdout.write(JSON.stringify({ paths: { nuclei: '/unused' }, metadata: {} }));
+  process.exit(0);
+});
+writeFileSync(join(workspace, 'tools-root'), process.argv[process.argv.indexOf('--dir') + 1]);
+writeFileSync(join(workspace, 'ready'), String(process.pid));
+setInterval(() => {}, 1000);
+`);
+      const paths = await workspaceFor(top);
+      await seedSuccess(paths);
+      const env = syntheticEnv(action, paths, mode);
+      if (mode === "dast") {
+        await mkdir(join(paths.workspace, "templates"));
+        const manifest = "owned-template.yaml:abc\n";
+        await writeFile(join(paths.workspace, "templates/templates-checksum.txt"), manifest);
+        Object.assign(env, { WAKEIO_ENGINES: "nuclei", WAKEIO_URL: "http://owned.example.test",
+          WAKEIO_NUCLEI_TEMPLATES: "templates", WAKEIO_NUCLEI_TEMPLATES_SHA256: createHash("sha256").update(manifest).digest("hex") });
+      }
+      running = controlledAction(action, env, paths.workspace);
+      installerPid = Number(await waitForFile(join(paths.workspace, "ready")));
+      const toolsRoot = await waitForFile(join(paths.workspace, "tools-root"));
+      assert.ok(running.child.kill("SIGTERM"));
+      const result = await running.finished;
+      assert.equal(result.code, 2, result.stderr);
+      assert.equal(result.signal, null);
+      const values = outputs(await readFile(paths.output, "utf8"));
+      assert.equal(values["exit-code"], "2");
+      assert.equal(values["setup-status"], "failure");
+      assert.equal(values["scan-status"], "not-run");
+      assert.equal(values["report-agent"], "");
+      const status = JSON.parse(await readFile(join(paths.workspace, "reports/action-status.json"), "utf8"));
+      assert.equal(status.exitCode, 2);
+      assert.equal(status.cancellationSignal, "SIGTERM");
+      await assert.rejects(readFile(join(paths.workspace, "unexpected-scan")), { code: "ENOENT" });
+      await assert.rejects(readdir(toolsRoot), { code: "ENOENT" });
+    } finally {
+      running?.child.kill("SIGKILL");
+      if (installerPid) { try { process.kill(installerPid, "SIGKILL"); } catch { /* already reaped */ } }
+      await running?.finished.catch(() => undefined);
+      await rm(top, { recursive: true, force: true });
+    }
+  });
+}
+
+test("Action cancellation while a successful receipt is being written corrects status and outputs before exit", { timeout: 12000 }, async () => {
+  const top = await mkdtemp(join(tmpdir(), "wakeio-action-finalize-cancel-"));
+  try {
+    const action = await syntheticAction(top, `
+import { writeFileSync } from 'node:fs';
+writeFileSync('reports/report.json', JSON.stringify({ checks: [{ id: 'new.success', status: 'completed', findings: [] }] }));
+`);
+    const paths = await workspaceFor(top);
+    await seedSuccess(paths);
+    const preload = join(top, "cancel-after-status.mjs");
+    await writeFile(preload, `
+import fs from 'node:fs';
+import { syncBuiltinESMExports } from 'node:module';
+if (process.argv[1].endsWith('action-run.mjs')) {
+  const write = fs.promises.writeFile;
+  fs.promises.writeFile = async (...args) => {
+    const result = await write(...args);
+    if (String(args[0]).endsWith('action-status.json') && String(args[1]).includes('"exitCode": 0')) {
+      process.kill(process.pid, 'SIGTERM');
+      await new Promise((done) => setTimeout(done, 25));
+    }
+    return result;
+  };
+  syncBuiltinESMExports();
+}
+`);
+    const result = await launch(join(action, "scripts/action-run.mjs"), {
+      ...syntheticEnv(action, paths, "dast"), NODE_OPTIONS: `--import=${preload}`,
+    }, paths.workspace);
+    assert.equal(result.code, 2, result.stderr);
+    const status = JSON.parse(await readFile(join(paths.workspace, "reports/action-status.json"), "utf8"));
+    assert.equal(status.exitCode, 2);
+    assert.equal(status.scanStatus, "incomplete");
+    assert.equal(status.cancellationSignal, "SIGTERM");
+    const values = outputs(await readFile(paths.output, "utf8"));
+    assert.equal(values["exit-code"], "2");
+    assert.equal(values["scan-status"], "incomplete");
+  } finally {
+    await rm(top, { recursive: true, force: true });
+  }
+});

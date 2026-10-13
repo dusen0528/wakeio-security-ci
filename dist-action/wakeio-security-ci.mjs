@@ -2460,16 +2460,16 @@ var require_typescript = __commonJS({
         return -1;
       }
       function countWhere(array, predicate) {
-        let count = 0;
+        let count2 = 0;
         if (array !== void 0) {
           for (let i = 0; i < array.length; i++) {
             const v = array[i];
             if (predicate(v, i)) {
-              count++;
+              count2++;
             }
           }
         }
-        return count;
+        return count2;
       }
       function filter(array, f) {
         if (array !== void 0) {
@@ -3022,12 +3022,12 @@ var require_typescript = __commonJS({
         }
         return ~low;
       }
-      function reduceLeft(array, f, initial, start, count) {
+      function reduceLeft(array, f, initial, start, count2) {
         if (array && array.length > 0) {
           const size = array.length;
           if (size > 0) {
             let pos = start === void 0 || start < 0 ? 0 : start;
-            const end = count === void 0 || pos + count > size - 1 ? size - 1 : pos + count;
+            const end = count2 === void 0 || pos + count2 > size - 1 ? size - 1 : pos + count2;
             let result3;
             if (arguments.length <= 2) {
               result3 = array[pos];
@@ -3079,9 +3079,9 @@ var require_typescript = __commonJS({
         }
         return values;
       }
-      function arrayOf(count, f) {
-        const result3 = new Array(count);
-        for (let i = 0; i < count; i++) {
+      function arrayOf(count2, f) {
+        const result3 = new Array(count2);
+        for (let i = 0; i < count2; i++) {
           result3[i] = f(i);
         }
         return result3;
@@ -5196,8 +5196,8 @@ ${lanes.join("\n")}
       var durations = /* @__PURE__ */ new Map();
       function mark(markName) {
         if (enabled) {
-          const count = counts2.get(markName) ?? 0;
-          counts2.set(markName, count + 1);
+          const count2 = counts2.get(markName) ?? 0;
+          counts2.set(markName, count2 + 1);
           marks.set(markName, timestamp2());
           performanceImpl == null ? void 0 : performanceImpl.mark(markName);
           if (typeof onProfilerEvent === "function") {
@@ -12708,20 +12708,20 @@ ${lanes.join("\n")}
           tokenValue = text2.substring(start2, pos);
           return isOctal;
         }
-        function scanExactNumberOfHexDigits(count, canHaveSeparators) {
+        function scanExactNumberOfHexDigits(count2, canHaveSeparators) {
           const valueString = scanHexDigits(
             /*minCount*/
-            count,
+            count2,
             /*scanAsManyAsPossible*/
             false,
             canHaveSeparators
           );
           return valueString ? parseInt(valueString, 16) : -1;
         }
-        function scanMinimumNumberOfHexDigits(count, canHaveSeparators) {
+        function scanMinimumNumberOfHexDigits(count2, canHaveSeparators) {
           return scanHexDigits(
             /*minCount*/
-            count,
+            count2,
             /*scanAsManyAsPossible*/
             true,
             canHaveSeparators
@@ -31547,13 +31547,13 @@ ${lanes.join("\n")}
             [expression]
           );
         }
-        function createReadHelper(iteratorRecord, count) {
+        function createReadHelper(iteratorRecord, count2) {
           context.requestEmitHelper(readHelper);
           return factory2.createCallExpression(
             getUnscopedHelperName("__read"),
             /*typeArguments*/
             void 0,
-            count !== void 0 ? [iteratorRecord, factory2.createNumericLiteral(count + "")] : [iteratorRecord]
+            count2 !== void 0 ? [iteratorRecord, factory2.createNumericLiteral(count2 + "")] : [iteratorRecord]
           );
         }
         function createGeneratorHelper(body) {
@@ -53863,11 +53863,11 @@ ${lanes.join("\n")}
         return comparePaths(a, b, ignoreCase) === 0;
       }
       function countPathComponents(path2) {
-        let count = 0;
+        let count2 = 0;
         for (let i = startsWith(path2, "./") ? 2 : 0; i < path2.length; i++) {
-          if (path2.charCodeAt(i) === 47) count++;
+          if (path2.charCodeAt(i) === 47) count2++;
         }
-        return count;
+        return count2;
       }
       function comparePathsByRedirectAndNumberOfDirectorySeparators(a, b) {
         return compareBooleans(b.isRedirect, a.isRedirect) || compareNumberOfDirectorySeparators(a.path, b.path);
@@ -60442,7 +60442,7 @@ ${lanes.join("\n")}
                   deepCloneOrReuseNode
                 )), node);
               }
-              function deepCloneOrReuseNodes(nodes, visitor, test, start, count) {
+              function deepCloneOrReuseNodes(nodes, visitor, test, start, count2) {
                 if (nodes && nodes.length === 0) {
                   return setTextRange(factory.createNodeArray(
                     /*elements*/
@@ -60450,7 +60450,7 @@ ${lanes.join("\n")}
                     nodes.hasTrailingComma
                   ), nodes);
                 }
-                return visitNodes2(nodes, visitor, test, start, count);
+                return visitNodes2(nodes, visitor, test, start, count2);
               }
             }
             function createTypeNodeFromObjectType(type2) {
@@ -64407,10 +64407,10 @@ ${lanes.join("\n")}
               if (t.flags & 512 || !expandingEnum && t.flags | 1056) {
                 const baseType = t.flags & 512 ? booleanType : getBaseTypeOfEnumLikeType(t);
                 if (baseType.flags & 1048576) {
-                  const count = baseType.types.length;
-                  if (i + count <= types12.length && getRegularTypeOfLiteralType(types12[i + count - 1]) === getRegularTypeOfLiteralType(baseType.types[count - 1])) {
+                  const count2 = baseType.types.length;
+                  if (i + count2 <= types12.length && getRegularTypeOfLiteralType(types12[i + count2 - 1]) === getRegularTypeOfLiteralType(baseType.types[count2 - 1])) {
                     result3.push(baseType);
-                    i += count - 1;
+                    i += count2 - 1;
                     continue;
                   }
                 }
@@ -69376,18 +69376,18 @@ ${lanes.join("\n")}
             let i = 0;
             while (i < length2) {
               const startId = types12[i].id;
-              let count = 1;
-              while (i + count < length2 && types12[i + count].id === startId + count) {
-                count++;
+              let count2 = 1;
+              while (i + count2 < length2 && types12[i + count2].id === startId + count2) {
+                count2++;
               }
               if (result3.length) {
                 result3 += ",";
               }
               result3 += startId;
-              if (count > 1) {
-                result3 += ":" + count;
+              if (count2 > 1) {
+                result3 += ":" + count2;
               }
-              i += count;
+              i += count2;
             }
           }
           return result3;
@@ -70667,7 +70667,7 @@ ${lanes.join("\n")}
           const hasEmptyObject = hasObjectTypes && some(types12, (t) => !!(t.flags & 524288) && !isGenericMappedType(t) && isEmptyResolvedType(resolveStructuredTypeMembers(t)));
           const len = types12.length;
           let i = len;
-          let count = 0;
+          let count2 = 0;
           while (i > 0) {
             i--;
             const source = types12[i];
@@ -70682,15 +70682,15 @@ ${lanes.join("\n")}
               const keyPropertyType = keyProperty && getRegularTypeOfLiteralType(getTypeOfSymbol(keyProperty));
               for (const target of types12) {
                 if (source !== target) {
-                  if (count === 1e5) {
-                    const estimatedCount = count / (len - i) * len;
+                  if (count2 === 1e5) {
+                    const estimatedCount = count2 / (len - i) * len;
                     if (estimatedCount > 1e6) {
                       (_a2 = tracing) == null ? void 0 : _a2.instant(tracing.Phase.CheckTypes, "removeSubtypes_DepthLimit", { typeIds: types12.map((t) => t.id) });
                       error2(currentNode, Diagnostics.Expression_produces_a_union_type_that_is_too_complex_to_represent);
                       return void 0;
                     }
                   }
-                  count++;
+                  count2++;
                   if (keyProperty && target.flags & (524288 | 2097152 | 58982400)) {
                     const t = getTypeOfPropertyOfType(target, keyProperty.escapedName);
                     if (t && isUnitType(t) && getRegularTypeOfLiteralType(t) !== keyPropertyType) {
@@ -71191,9 +71191,9 @@ ${lanes.join("\n")}
           return true;
         }
         function getCrossProductIntersections(types12, flags) {
-          const count = getCrossProductUnionSize(types12);
+          const count2 = getCrossProductUnionSize(types12);
           const intersections = [];
-          for (let i = 0; i < count; i++) {
+          for (let i = 0; i < count2; i++) {
             const constituents = types12.slice();
             let n = i;
             for (let j = types12.length - 1; j >= 0; j--) {
@@ -77060,14 +77060,14 @@ ${lanes.join("\n")}
               return some(type.types, (t) => isDeeplyNestedType(t, stack, depth, maxDepth));
             }
             const identity2 = getRecursionIdentity(type);
-            let count = 0;
+            let count2 = 0;
             let lastTypeId = 0;
             for (let i = 0; i < depth; i++) {
               const t = stack[i];
               if (hasMatchingRecursionIdentity(t, identity2)) {
                 if (t.id >= lastTypeId) {
-                  count++;
-                  if (count >= maxDepth) {
+                  count2++;
+                  if (count2 >= maxDepth) {
                     return true;
                   }
                 }
@@ -78527,8 +78527,8 @@ ${lanes.join("\n")}
             ];
           }
           function inferFromTypeArguments(sourceTypes, targetTypes, variances) {
-            const count = sourceTypes.length < targetTypes.length ? sourceTypes.length : targetTypes.length;
-            for (let i = 0; i < count; i++) {
+            const count2 = sourceTypes.length < targetTypes.length ? sourceTypes.length : targetTypes.length;
+            for (let i = 0; i < count2; i++) {
               if (i < variances.length && (variances[i] & 7) === 2) {
                 inferFromContravariantTypes(sourceTypes[i], targetTypes[i]);
               } else {
@@ -79272,7 +79272,7 @@ ${lanes.join("\n")}
         }
         function mapTypesByKeyProperty(types12, name) {
           const map2 = /* @__PURE__ */ new Map();
-          let count = 0;
+          let count2 = 0;
           for (const type of types12) {
             if (type.flags & (524288 | 2097152 | 58982400)) {
               const discriminant = getTypeOfPropertyOfType(type, name);
@@ -79291,11 +79291,11 @@ ${lanes.join("\n")}
                     duplicate = true;
                   }
                 });
-                if (!duplicate) count++;
+                if (!duplicate) count2++;
               }
             }
           }
-          return count >= 10 && count * 2 >= types12.length ? map2 : void 0;
+          return count2 >= 10 && count2 * 2 >= types12.length ? map2 : void 0;
         }
         function getKeyPropertyName(unionType) {
           const types12 = unionType.types;
@@ -101911,7 +101911,7 @@ ${lanes.join("\n")}
         Debug.assertNode(visitedNode, test);
         return visitedNode;
       }
-      function visitNodes2(nodes, visitor, test, start, count) {
+      function visitNodes2(nodes, visitor, test, start, count2) {
         if (nodes === void 0) {
           return nodes;
         }
@@ -101919,20 +101919,20 @@ ${lanes.join("\n")}
         if (start === void 0 || start < 0) {
           start = 0;
         }
-        if (count === void 0 || count > length2 - start) {
-          count = length2 - start;
+        if (count2 === void 0 || count2 > length2 - start) {
+          count2 = length2 - start;
         }
         let hasTrailingComma;
         let pos = -1;
         let end = -1;
-        if (start > 0 || count < length2) {
-          hasTrailingComma = nodes.hasTrailingComma && start + count === length2;
+        if (start > 0 || count2 < length2) {
+          hasTrailingComma = nodes.hasTrailingComma && start + count2 === length2;
         } else {
           pos = nodes.pos;
           end = nodes.end;
           hasTrailingComma = nodes.hasTrailingComma;
         }
-        const updated = visitArrayWorker(nodes, visitor, test, start, count);
+        const updated = visitArrayWorker(nodes, visitor, test, start, count2);
         if (updated !== nodes) {
           const updatedArray = factory.createNodeArray(updated, hasTrailingComma);
           setTextRangePosEnd(updatedArray, pos, end);
@@ -101940,7 +101940,7 @@ ${lanes.join("\n")}
         }
         return nodes;
       }
-      function visitArray(nodes, visitor, test, start, count) {
+      function visitArray(nodes, visitor, test, start, count2) {
         if (nodes === void 0) {
           return nodes;
         }
@@ -101948,18 +101948,18 @@ ${lanes.join("\n")}
         if (start === void 0 || start < 0) {
           start = 0;
         }
-        if (count === void 0 || count > length2 - start) {
-          count = length2 - start;
+        if (count2 === void 0 || count2 > length2 - start) {
+          count2 = length2 - start;
         }
-        return visitArrayWorker(nodes, visitor, test, start, count);
+        return visitArrayWorker(nodes, visitor, test, start, count2);
       }
-      function visitArrayWorker(nodes, visitor, test, start, count) {
+      function visitArrayWorker(nodes, visitor, test, start, count2) {
         let updated;
         const length2 = nodes.length;
-        if (start > 0 || count < length2) {
+        if (start > 0 || count2 < length2) {
           updated = [];
         }
-        for (let i = 0; i < count; i++) {
+        for (let i = 0; i < count2; i++) {
           const node = nodes[i + start];
           const visited = node !== void 0 ? visitor ? visitor(node) : node : void 0;
           if (updated !== void 0 || visited === void 0 || visited !== node) {
@@ -133335,7 +133335,7 @@ ${lanes.join("\n")}
               break;
           }
         }
-        function emitList(parentNode, children, format, parenthesizerRule, start, count) {
+        function emitList(parentNode, children, format, parenthesizerRule, start, count2) {
           emitNodeList(
             emit,
             parentNode,
@@ -133343,18 +133343,18 @@ ${lanes.join("\n")}
             format | (parentNode && getEmitFlags(parentNode) & 2 ? 65536 : 0),
             parenthesizerRule,
             start,
-            count
+            count2
           );
         }
-        function emitExpressionList(parentNode, children, format, parenthesizerRule, start, count) {
-          emitNodeList(emitExpression, parentNode, children, format, parenthesizerRule, start, count);
+        function emitExpressionList(parentNode, children, format, parenthesizerRule, start, count2) {
+          emitNodeList(emitExpression, parentNode, children, format, parenthesizerRule, start, count2);
         }
-        function emitNodeList(emit2, parentNode, children, format, parenthesizerRule, start = 0, count = children ? children.length - start : 0) {
+        function emitNodeList(emit2, parentNode, children, format, parenthesizerRule, start = 0, count2 = children ? children.length - start : 0) {
           const isUndefined = children === void 0;
           if (isUndefined && format & 16384) {
             return;
           }
-          const isEmpty = children === void 0 || start >= children.length || count === 0;
+          const isEmpty = children === void 0 || start >= children.length || count2 === 0;
           if (isEmpty && format & 32768) {
             onBeforeEmitNodeArray == null ? void 0 : onBeforeEmitNodeArray(children);
             onAfterEmitNodeArray == null ? void 0 : onAfterEmitNodeArray(children);
@@ -133378,7 +133378,7 @@ ${lanes.join("\n")}
               writeSpace();
             }
           } else {
-            emitNodeListItems(emit2, parentNode, children, format, parenthesizerRule, start, count, children.hasTrailingComma, children);
+            emitNodeListItems(emit2, parentNode, children, format, parenthesizerRule, start, count2, children.hasTrailingComma, children);
           }
           onAfterEmitNodeArray == null ? void 0 : onAfterEmitNodeArray(children);
           if (format & 15360) {
@@ -133388,7 +133388,7 @@ ${lanes.join("\n")}
             writePunctuation(getClosingBracket(format));
           }
         }
-        function emitNodeListItems(emit2, parentNode, children, format, parenthesizerRule, start, count, hasTrailingComma, childrenTextRange) {
+        function emitNodeListItems(emit2, parentNode, children, format, parenthesizerRule, start, count2, hasTrailingComma, childrenTextRange) {
           const mayEmitInterveningComments = (format & 262144) === 0;
           let shouldEmitInterveningComments = mayEmitInterveningComments;
           const leadingLineTerminatorCount = getLeadingLineTerminatorCount(parentNode, children[start], format);
@@ -133404,7 +133404,7 @@ ${lanes.join("\n")}
           const emitListItem = getEmitListItem(emit2, parenthesizerRule);
           let previousSibling;
           let shouldDecreaseIndentAfterEmit = false;
-          for (let i = 0; i < count; i++) {
+          for (let i = 0; i < count2; i++) {
             const child = children[start + i];
             if (format & 32) {
               writeLine();
@@ -133469,7 +133469,7 @@ ${lanes.join("\n")}
           if (format & 128) {
             decreaseIndent();
           }
-          const closingLineTerminatorCount = getClosingLineTerminatorCount(parentNode, children[start + count - 1], format, childrenTextRange);
+          const closingLineTerminatorCount = getClosingLineTerminatorCount(parentNode, children[start + count2 - 1], format, childrenTextRange);
           if (closingLineTerminatorCount) {
             writeLine(closingLineTerminatorCount);
           } else if (format & (2097152 | 256)) {
@@ -133519,8 +133519,8 @@ ${lanes.join("\n")}
             writer.write(s);
           }
         }
-        function writeLine(count = 1) {
-          for (let i = 0; i < count; i++) {
+        function writeLine(count2 = 1) {
+          for (let i = 0; i < count2; i++) {
             writer.writeLine(i > 0);
           }
         }
@@ -134049,10 +134049,10 @@ ${lanes.join("\n")}
             }
           }
           while (true) {
-            const count = tempFlags2 & 268435455;
+            const count2 = tempFlags2 & 268435455;
             tempFlags2++;
-            if (count !== 8 && count !== 13) {
-              const name = count < 26 ? "_" + String.fromCharCode(97 + count) : "_" + (count - 26);
+            if (count2 !== 8 && count2 !== 13) {
+              const name = count2 < 26 ? "_" + String.fromCharCode(97 + count2) : "_" + (count2 - 26);
               const fullName = formatGeneratedName(privateName, prefix, name, suffix);
               if (isUniqueName(fullName, privateName)) {
                 if (privateName) {
@@ -146792,7 +146792,7 @@ ${lanes.join("\n")}
               reportCountStatistic("Lines of " + key2, value);
             }
           } else {
-            reportCountStatistic("Lines", reduceLeftIterator(lineCounts.values(), (sum, count) => sum + count, 0));
+            reportCountStatistic("Lines", reduceLeftIterator(lineCounts.values(), (sum, count2) => sum + count2, 0));
           }
           reportCountStatistic("Identifiers", program.getIdentifierCount());
           reportCountStatistic("Symbols", program.getSymbolCount());
@@ -146897,11 +146897,11 @@ ${lanes.join("\n")}
           statistics.push(s);
           if (aggregate) solutionPerformance == null ? void 0 : solutionPerformance.addAggregateStatistic(s);
         }
-        function reportCountStatistic(name, count) {
+        function reportCountStatistic(name, count2) {
           reportStatisticalValue(
             {
               name,
-              value: count,
+              value: count2,
               type: 1
               /* count */
             },
@@ -147402,8 +147402,8 @@ ${lanes.join("\n")}
                 nonlocalNode ? visitNodesWithoutCopyingPositions : void 0
               );
             }
-            function visitNodesWithoutCopyingPositions(nodes, visitor, test, start, count) {
-              let result3 = visitNodes2(nodes, visitor, test, start, count);
+            function visitNodesWithoutCopyingPositions(nodes, visitor, test, start, count2) {
+              let result3 = visitNodes2(nodes, visitor, test, start, count2);
               if (result3) {
                 if (result3.pos !== -1 || result3.end !== -1) {
                   if (result3 === nodes) {
@@ -150297,9 +150297,9 @@ ${lanes.join("\n")}
       function getSnapshotText(snap) {
         return snap.getText(0, snap.getLength());
       }
-      function repeatString(str, count) {
+      function repeatString(str, count2) {
         let result3 = "";
-        for (let i = 0; i < count; i++) {
+        for (let i = 0; i < count2; i++) {
           result3 += str;
         }
         return result3;
@@ -188756,13 +188756,13 @@ ${content}
           if (candidates[i] === resolvedSignature) {
             selectedItemIndex = itemsSeen;
             if (item.length > 1) {
-              let count = 0;
+              let count2 = 0;
               for (const i2 of item) {
                 if (i2.isVariadic || i2.parameters.length >= argumentCount) {
-                  selectedItemIndex = itemsSeen + count;
+                  selectedItemIndex = itemsSeen + count2;
                   break;
                 }
-                count++;
+                count2++;
               }
             }
           }
@@ -191063,8 +191063,8 @@ ${options.prefix}` : "\n" : options.prefix
         setTextRangePosEnd(newNode, getPos2(node), getEnd(node));
         return newNode;
       }
-      function assignPositionsToNodeArray(nodes, visitor, test, start, count) {
-        const visited = visitNodes2(nodes, visitor, test, start, count);
+      function assignPositionsToNodeArray(nodes, visitor, test, start, count2) {
+        const visited = visitNodes2(nodes, visitor, test, start, count2);
         if (!visited) {
           return visited;
         }
@@ -210853,7 +210853,7 @@ function sanitiseCollectionEvidence(input) {
   const rows = Object.getOwnPropertyDescriptors(input.issues);
   if (Reflect.ownKeys(rows).length !== input.issues.length + 1 || !Object.hasOwn(rows.length, "value") || Array.from({ length: input.issues.length }, (_, index) => rows[String(index)]).some((row) => !row || !Object.hasOwn(row, "value")))
     return void 0;
-  let count = 0, previous = -1;
+  let count2 = 0, previous = -1;
   const issues = [];
   for (let rowIndex = 0; rowIndex < input.issues.length; rowIndex++) {
     const item = rows[String(rowIndex)].value;
@@ -210862,13 +210862,13 @@ function sanitiseCollectionEvidence(input) {
     const index = COLLECTION_ISSUE_CODES.indexOf(item.code);
     if (index <= previous || !Number.isSafeInteger(item.count) || Number(item.count) <= 0)
       return void 0;
-    count += Number(item.count);
-    if (!Number.isSafeInteger(count))
+    count2 += Number(item.count);
+    if (!Number.isSafeInteger(count2))
       return void 0;
     previous = index;
     issues.push({ code: COLLECTION_ISSUE_CODES[index], count: Number(item.count) });
   }
-  return count === input.issueCount ? { revision: "collection-v1", issueCount: count, issues } : void 0;
+  return count2 === input.issueCount ? { revision: "collection-v1", issueCount: count2, issues } : void 0;
 }
 
 // build/src/source/analysis-budget.js
@@ -210901,58 +210901,90 @@ import { createHash as createHash18 } from "node:crypto";
 import { fileURLToPath as fileURLToPath3 } from "node:url";
 import { dirname as dirname12, isAbsolute as isAbsolute11, resolve as resolve16 } from "node:path";
 
-// build/src/source/snapshot-evidence.js
-import { createHash } from "node:crypto";
-import { isAbsolute, relative, resolve } from "node:path";
+// build/src/json-snapshot.js
 import { types as types2 } from "node:util";
-function sourceSnapshotEvidence(snapshot2, outDir) {
-  const hash = createHash("sha256");
-  hash.update(JSON.stringify(["source-snapshot-v1", snapshot2.collectionBudget ?? null]));
-  for (const file of [...snapshot2.files].sort((a, b) => a.path < b.path ? -1 : a.path > b.path ? 1 : 0)) {
-    hash.update(JSON.stringify([file.path, file.category, file.sensitive, file.bytes, file.text]));
-  }
-  const output = outDir === void 0 ? void 0 : relative(resolve(snapshot2.root), resolve(outDir));
-  return {
-    revision: "source-snapshot-v1",
-    basis: "collected_utf8_strings",
-    algorithm: "sha256",
-    digest: hash.digest("hex"),
-    filesSelected: snapshot2.files.length,
-    bytesSelected: snapshot2.totalBytes,
-    complete: snapshot2.complete && !snapshot2.rootError && !!sanitiseCollectionBudget(snapshot2.collectionBudget),
-    outputDirectoryExcluded: output !== void 0 && (output === "" || output !== ".." && !output.startsWith("../") && !output.startsWith("..\\") && !isAbsolute(output))
+var JSON_MAX_INPUT_BYTES = 1024 * 1024;
+var JSON_MAX_INPUT_NODES = 2e4;
+var JSON_MAX_DEPTH = 40;
+function fail() {
+  throw new TypeError("invalid_bounded_json");
+}
+function snapshotJsonData(input, invalid4 = fail, limit2 = fail) {
+  let nodes = 0, bytes = 0;
+  const active = /* @__PURE__ */ new Set();
+  const count2 = (value) => {
+    bytes += Buffer.byteLength(value, "utf8");
+    if (bytes > JSON_MAX_INPUT_BYTES)
+      limit2();
   };
-}
-function sanitiseSourceSnapshotEvidence(input) {
-  if (!input || typeof input !== "object" || types2.isProxy(input) || Array.isArray(input))
-    return void 0;
-  const descriptors = Object.getOwnPropertyDescriptors(input);
-  const keys3 = ["revision", "basis", "algorithm", "digest", "filesSelected", "bytesSelected", "complete", "outputDirectoryExcluded"];
-  if (Reflect.ownKeys(descriptors).length !== keys3.length || !keys3.every((key2) => descriptors[key2]?.enumerable && Object.hasOwn(descriptors[key2], "value")))
-    return void 0;
-  const value = input;
-  if (value.revision !== "source-snapshot-v1" || value.basis !== "collected_utf8_strings" || value.algorithm !== "sha256" || typeof value.digest !== "string" || !/^[a-f0-9]{64}$/.test(value.digest) || !Number.isSafeInteger(value.filesSelected) || Number(value.filesSelected) < 0 || Number(value.filesSelected) > COLLECTION_MAX_FILES || !Number.isSafeInteger(value.bytesSelected) || Number(value.bytesSelected) < 0 || Number(value.bytesSelected) > COLLECTION_MAX_BYTES || typeof value.complete !== "boolean" || typeof value.outputDirectoryExcluded !== "boolean")
-    return void 0;
-  return {
-    revision: "source-snapshot-v1",
-    basis: "collected_utf8_strings",
-    algorithm: "sha256",
-    digest: value.digest,
-    filesSelected: Number(value.filesSelected),
-    bytesSelected: Number(value.bytesSelected),
-    complete: value.complete,
-    outputDirectoryExcluded: value.outputDirectoryExcluded
+  const string = (value) => {
+    if (value.length > JSON_MAX_INPUT_BYTES)
+      limit2();
+    count2(JSON.stringify(value));
   };
+  const copy = (value, depth) => {
+    if (++nodes > JSON_MAX_INPUT_NODES || depth > JSON_MAX_DEPTH)
+      limit2();
+    if (value === null || typeof value === "boolean") {
+      count2(String(value));
+      return value;
+    }
+    if (typeof value === "string") {
+      string(value);
+      return value;
+    }
+    if (typeof value === "number") {
+      if (!Number.isFinite(value))
+        invalid4();
+      count2(String(value));
+      return value;
+    }
+    if (typeof value !== "object" || types2.isProxy(value) || active.has(value))
+      invalid4();
+    const array = Array.isArray(value);
+    const prototype = Object.getPrototypeOf(value);
+    if (array ? prototype !== Array.prototype : prototype !== Object.prototype && prototype !== null)
+      invalid4();
+    if (Object.getOwnPropertySymbols(value).length !== 0)
+      invalid4();
+    const descriptors = Object.getOwnPropertyDescriptors(value);
+    const names = Object.keys(descriptors);
+    if (names.length > JSON_MAX_INPUT_NODES - nodes)
+      limit2();
+    active.add(value);
+    count2("{}");
+    if (array) {
+      if (value.length > JSON_MAX_INPUT_NODES - nodes || names.length !== value.length + 1)
+        invalid4();
+      const result4 = [];
+      for (let i = 0; i < value.length; i++) {
+        const descriptor = descriptors[String(i)];
+        if (!descriptor || !descriptor.enumerable || !("value" in descriptor))
+          invalid4();
+        if (i > 0)
+          count2(",");
+        result4.push(copy(descriptor.value, depth + 1));
+      }
+      active.delete(value);
+      return result4;
+    }
+    const result3 = /* @__PURE__ */ Object.create(null);
+    for (let i = 0; i < names.length; i++) {
+      const name = names[i];
+      const descriptor = descriptors[name];
+      if (!descriptor.enumerable || !("value" in descriptor))
+        invalid4();
+      if (i > 0)
+        count2(",");
+      string(name);
+      count2(":");
+      result3[name] = copy(descriptor.value, depth + 1);
+    }
+    active.delete(value);
+    return result3;
+  };
+  return copy(input, 0);
 }
-function sameSourceSnapshot(left, right) {
-  return !!left && !!right && JSON.stringify(left) === JSON.stringify(right);
-}
-
-// build/src/source.js
-var ts15 = __toESM(require_typescript(), 1);
-import { createHash as createHash3 } from "node:crypto";
-import { mkdir as mkdir3, writeFile as writeFile3 } from "node:fs/promises";
-import { dirname as dirname5, join as join5 } from "node:path";
 
 // build/src/report-path.js
 import { posix } from "node:path";
@@ -212039,9 +212071,9 @@ var AnalysisGapRecorder = class {
   markUnknown() {
     this.exact = false;
   }
-  record(reason, phase2, location2, count = 1, diagnosticCode) {
-    if (!safeCount(count) || count === 0) {
-      if (count !== 0)
+  record(reason, phase2, location2, count2 = 1, diagnosticCode) {
+    if (!safeCount(count2) || count2 === 0) {
+      if (count2 !== 0)
         this.exact = false;
       return;
     }
@@ -212049,7 +212081,7 @@ var AnalysisGapRecorder = class {
       this.exact = false;
       return;
     }
-    const observed = add(this.observed, count);
+    const observed = add(this.observed, count2);
     if (observed === void 0) {
       this.exact = false;
       return;
@@ -212057,7 +212089,7 @@ var AnalysisGapRecorder = class {
     this.observed = observed;
     const r = reason;
     const index = REASONS.indexOf(r);
-    const reasonObserved = add(this.reasonObserved[index], count);
+    const reasonObserved = add(this.reasonObserved[index], count2);
     if (reasonObserved === void 0) {
       this.exact = false;
       return;
@@ -212071,7 +212103,7 @@ var AnalysisGapRecorder = class {
       reason: r,
       phase: phase2,
       extent: site ? "site" : "check",
-      observations: count,
+      observations: count2,
       ...site ? { location: { ...location2 } } : {},
       ...parseSite && safeCount(diagnosticCode) && diagnosticCode > 0 ? { diagnosticCode } : {},
       nextReview: nextGapReview(r)
@@ -212079,7 +212111,7 @@ var AnalysisGapRecorder = class {
     const key2 = keyOf(item);
     const prior = this.byKey.get(key2);
     if (prior) {
-      const sum = add(prior.observations, count);
+      const sum = add(prior.observations, count2);
       if (sum === void 0)
         this.exact = false;
       else
@@ -212088,12 +212120,12 @@ var AnalysisGapRecorder = class {
       this.items.push(item);
       this.byKey.set(key2, item);
     } else {
-      const sum = add(this.dropped, count);
+      const sum = add(this.dropped, count2);
       if (sum === void 0)
         this.exact = false;
       else
         this.dropped = sum;
-      const reasonDropped = add(this.reasonDropped[index], count);
+      const reasonDropped = add(this.reasonDropped[index], count2);
       if (reasonDropped === void 0)
         this.exact = false;
       else
@@ -213127,14 +213159,14 @@ var StaticModules = class {
     this.constructorIntrinsics = true;
     return true;
   }
-  importedFile(file, specifier, count) {
+  importedFile(file, specifier, count2) {
     if (!specifier.startsWith("./") && !specifier.startsWith("../"))
       return { kind: "external" };
     const path2 = posix2.normalize(posix2.join(posix2.dirname(file.fileName), specifier));
     if (path2 === ".." || path2.startsWith("../") || path2.startsWith("/") || path2.includes("\\"))
       return { kind: "unsupported" };
     const edge = `${file.fileName}\0${specifier}`;
-    if (count) {
+    if (count2) {
       this.moduleEdges.add(edge);
       if (this.moduleEdges.size > this.limits.moduleEdges)
         return { kind: "module_budget" };
@@ -213179,8 +213211,8 @@ var StaticModules = class {
       return { kind: "ambiguous" };
     return { kind: "file", file: matched[0], directory: directoryLookup };
   }
-  imported(file, specifier, name, count, unproved = false) {
-    const result3 = this.importedFile(file, specifier, count);
+  imported(file, specifier, name, count2, unproved = false) {
+    const result3 = this.importedFile(file, specifier, count2);
     if (result3.kind !== "file")
       return result3;
     const group = this.objectExports.get(result3.file);
@@ -214345,7 +214377,7 @@ var StaticModules = class {
     const group = this.methodReceivers.get(target);
     return this.indexComplete && this.objectScopeComplete && this.objectValidationComplete && group?.valid && this.singletonEligibility.get(group) === "closed" ? group.receiver : void 0;
   }
-  objectCall(call, count) {
+  objectCall(call, count2) {
     const expression = call.expression;
     if (!ts3.isPropertyAccessExpression(expression))
       return { kind: "unsupported" };
@@ -214359,14 +214391,14 @@ var StaticModules = class {
     const load = declaration.initializer;
     if (!ts3.isCallExpression(load) || !ts3.isIdentifier(load.expression) || load.expression.text !== "require" || !this.objectGlobal(load.expression) || load.arguments.length !== 1 || !ts3.isStringLiteralLike(load.arguments[0]))
       return { kind: "unsupported" };
-    const result3 = this.importedFile(call.getSourceFile(), load.arguments[0].text, count);
+    const result3 = this.importedFile(call.getSourceFile(), load.arguments[0].text, count2);
     if (result3.kind !== "file")
       return result3;
     const group = this.objectExports.get(result3.file);
     const target = this.objectCalls.get(call);
     const keysMatch = ts3.isIdentifier(expression.expression) ? group?.methods.get("")?.get(expression.name.text) === target : ts3.isPropertyAccessExpression(expression.expression) && group?.methods.get(expression.expression.name.text)?.get(expression.name.text) === target;
     const mode = group?.singletonProof ? this.singletonEligibility.get(group) : group?.valid ? "closed" : "rejected";
-    return this.objectScopeComplete && this.objectValidationComplete && (!count || this.proofsReady) && !this.mutated.has(symbol) && !this.beforeInitialization(call, declaration) && group && mode !== "rejected" && mode !== void 0 && target && keysMatch && target.getSourceFile() === result3.file ? { kind: mode === "conditional" ? "declared" : "resolved", target, ...group.receiver ? { receiver: group.receiver } : {} } : { kind: "export_unsupported" };
+    return this.objectScopeComplete && this.objectValidationComplete && (!count2 || this.proofsReady) && !this.mutated.has(symbol) && !this.beforeInitialization(call, declaration) && group && mode !== "rejected" && mode !== void 0 && target && keysMatch && target.getSourceFile() === result3.file ? { kind: mode === "conditional" ? "declared" : "resolved", target, ...group.receiver ? { receiver: group.receiver } : {} } : { kind: "export_unsupported" };
   }
   beforeInitialization(call, declaration) {
     return call.pos < declaration.pos && this.ownerOf(call) === this.ownerOf(declaration);
@@ -214460,10 +214492,10 @@ var StaticModules = class {
         }
     }
   }
-  resolveCall(call, count = true, receiver) {
-    if (count && !this.proofsReady)
+  resolveCall(call, count2 = true, receiver) {
+    if (count2 && !this.proofsReady)
       return { kind: "unsupported" };
-    if (count && !this.tick())
+    if (count2 && !this.tick())
       return { kind: "unsupported" };
     if (ts3.isPropertyAccessExpression(call.expression) && call.expression.expression.kind === ts3.SyntaxKind.ThisKeyword) {
       const owner = this.ownerOf(call);
@@ -214476,7 +214508,7 @@ var StaticModules = class {
     }
     if (!ts3.isIdentifier(call.expression)) {
       const target2 = this.localClassCalls.get(call);
-      return target2 ? { kind: "resolved", target: target2 } : this.objectCall(call, count);
+      return target2 ? { kind: "resolved", target: target2 } : this.objectCall(call, count2);
     }
     const symbol = this.symbol(call.expression);
     if (!symbol)
@@ -214503,13 +214535,13 @@ var StaticModules = class {
       const importDeclaration = declaration.parent.parent.parent;
       if (!ts3.isImportDeclaration(importDeclaration) || !ts3.isStringLiteral(importDeclaration.moduleSpecifier) || declaration.isTypeOnly || importDeclaration.importClause?.isTypeOnly)
         return { kind: "unsupported" };
-      return this.imported(call.getSourceFile(), importDeclaration.moduleSpecifier.text, (declaration.propertyName ?? declaration.name).text, count, unproved);
+      return this.imported(call.getSourceFile(), importDeclaration.moduleSpecifier.text, (declaration.propertyName ?? declaration.name).text, count2, unproved);
     }
     if (ts3.isBindingElement(declaration)) {
       const variable = variableOf(declaration);
       const initializer = variable?.initializer;
       if (variable && (variable.parent.flags & ts3.NodeFlags.Const) !== 0 && initializer && ts3.isCallExpression(initializer) && ts3.isIdentifier(initializer.expression) && initializer.expression.text === "require" && this.cjsGlobal(initializer.expression) && initializer.arguments.length === 1 && ts3.isStringLiteral(initializer.arguments[0])) {
-        return this.imported(call.getSourceFile(), initializer.arguments[0].text, nameOf(declaration.propertyName) ?? (ts3.isIdentifier(declaration.name) ? declaration.name.text : ""), count, unproved || !ts3.isObjectBindingPattern(declaration.parent) || declaration.parent !== variable.name || declaration.dotDotDotToken !== void 0 || declaration.initializer !== void 0 || !ts3.isIdentifier(declaration.name) || declaration.propertyName !== void 0 && !ts3.isIdentifier(declaration.propertyName) || this.beforeInitialization(call, variable));
+        return this.imported(call.getSourceFile(), initializer.arguments[0].text, nameOf(declaration.propertyName) ?? (ts3.isIdentifier(declaration.name) ? declaration.name.text : ""), count2, unproved || !ts3.isObjectBindingPattern(declaration.parent) || declaration.parent !== variable.name || declaration.dotDotDotToken !== void 0 || declaration.initializer !== void 0 || !ts3.isIdentifier(declaration.name) || declaration.propertyName !== void 0 && !ts3.isIdentifier(declaration.propertyName) || this.beforeInitialization(call, variable));
       }
     }
     if (unproved)
@@ -219830,12 +219862,13 @@ function* parseFileEvidence(files) {
     yield { location: { path: path2, line: position2.line + 1, column: position2.character + 1 }, diagnosticCode: selected.code };
   }
 }
+function builtinAstFiles(snapshot2) {
+  return snapshot2.files.filter((file) => file.category === "code" && !file.sensitive && /\.(?:[cm]?[jt]sx?)$/i.test(file.path));
+}
 function runBuiltinAst(snapshot2, hasOtherSecurityCheck2 = false, limits = FLOW_LIMITS, analysisBudget) {
   const astFiles = [];
   const skippedSensitive = snapshot2.files.filter((file) => file.sensitive && file.category === "code").length;
-  for (const file of snapshot2.files) {
-    if (file.category !== "code" || file.sensitive || !/\.(?:[cm]?[jt]sx?)$/i.test(file.path))
-      continue;
+  for (const file of builtinAstFiles(snapshot2)) {
     const sourceFile = ts13.createSourceFile(file.path, file.text, ts13.ScriptTarget.Latest, true, scriptKind(file.path));
     astFiles.push({ file, sourceFile, parseError: parseDiagnostics(sourceFile).length > 0 });
   }
@@ -219992,11 +220025,1633 @@ function sameLimits(a, b) {
   return Object.entries(a).every(([key2, value]) => b[key2] === value);
 }
 
-// build/src/source/collector.js
-import { constants } from "node:fs";
-import { access, lstat, mkdir, mkdtemp, open, readdir, rm, writeFile } from "node:fs/promises";
+// build/src/source/python.js
+import { dirname as dirname2, isAbsolute as isAbsolute2, join as join2, relative, resolve as resolve2 } from "node:path";
+
+// build/src/source/process.js
+import { spawn, execFileSync } from "node:child_process";
+import { access, constants, lstat } from "node:fs/promises";
+import { dirname, isAbsolute, join, resolve } from "node:path";
+var DEFAULT_TOOL_TIMEOUT_MS = 12e4;
+var MAX_TOOL_TIMEOUT_MS = 6e5;
+var MAX_PROCESS_OUTPUT_BYTES = 8 * 1024 * 1024;
+function safeTimeout(value) {
+  if (!Number.isSafeInteger(value) || value <= 0)
+    return DEFAULT_TOOL_TIMEOUT_MS;
+  return Math.min(value, MAX_TOOL_TIMEOUT_MS);
+}
+function minimalEnvironment(home, additions, authentication, codexHome) {
+  const nodeBin = dirname(process.execPath);
+  const path2 = [nodeBin, "/usr/local/bin", "/opt/homebrew/bin", "/usr/bin", "/bin", "/usr/sbin", "/sbin"].filter((entry, index, all) => all.indexOf(entry) === index).join(":");
+  const allowedAdditions = Object.entries(additions ?? {}).filter(([key2, value]) => key2 === "OSV_SCANNER_LOCAL_DB_CACHE_DIRECTORY" && typeof value === "string" && value.length > 0);
+  const auth = authentication && ["CODEX_API_KEY", "ANTHROPIC_API_KEY"].includes(authentication.variable) && typeof authentication.value === "string" && authentication.value.length > 0 && authentication.value.length <= 16384 ? { [authentication.variable]: authentication.value } : {};
+  return {
+    PATH: path2,
+    HOME: home ?? "/tmp",
+    LC_ALL: "C",
+    LANG: "C",
+    TMPDIR: "/tmp",
+    ...Object.fromEntries(allowedAdditions),
+    ...codexHome && isAbsolute(codexHome) ? { CODEX_HOME: codexHome } : {},
+    ...auth
+  };
+}
+function runProcess(executable3, args, options) {
+  if (options.supervision === "native-offline")
+    return runStrictProcess(executable3, args, options);
+  if (options.supervision === "agent")
+    return runAgentProcess(executable3, args, options);
+  if (options.signal?.aborted)
+    return Promise.resolve({ exitCode: null, signal: null, stdout: "", stderr: "", timedOut: false, outputLimitExceeded: false, cancelled: true });
+  const timeoutMs = safeTimeout(options.timeoutMs);
+  const maxOutputBytes = Number.isSafeInteger(options.maxOutputBytes) && (options.maxOutputBytes ?? 0) > 0 ? Math.min(options.maxOutputBytes, MAX_PROCESS_OUTPUT_BYTES) : MAX_PROCESS_OUTPUT_BYTES;
+  return new Promise((resolveResult) => {
+    let child;
+    try {
+      child = spawn(executable3, [...args], {
+        cwd: options.cwd,
+        env: minimalEnvironment(options.home, options.environment, options.authentication, options.codexHome),
+        shell: false,
+        detached: process.platform !== "win32",
+        windowsHide: true,
+        stdio: [options.input === void 0 ? "ignore" : "pipe", "pipe", "pipe"]
+      });
+    } catch {
+      resolveResult({ exitCode: null, signal: null, stdout: "", stderr: "", timedOut: false, outputLimitExceeded: false, spawnError: "scanner could not be started" });
+      return;
+    }
+    let stdout = "";
+    let stderr = "";
+    let settled = false;
+    let timedOut = false;
+    let outputLimitExceeded = false;
+    let outputBytes = 0;
+    let timer;
+    let killTimer;
+    let settleTimer;
+    const signalProcessGroup = (signal) => {
+      try {
+        if (process.platform !== "win32" && child.pid) {
+          try {
+            process.kill(-child.pid, signal);
+          } catch {
+            child.kill(signal);
+          }
+        } else
+          child.kill(signal);
+      } catch {
+      }
+    };
+    const stop = () => {
+      signalProcessGroup("SIGTERM");
+      killTimer = setTimeout(() => signalProcessGroup("SIGKILL"), 250);
+      killTimer.unref();
+      settleTimer = setTimeout(() => finish({ exitCode: null, signal: "SIGKILL", stdout, stderr, timedOut, outputLimitExceeded }), 2e3);
+      settleTimer.unref();
+    };
+    const finish = (result3) => {
+      if (settled)
+        return;
+      settled = true;
+      if (timer)
+        clearTimeout(timer);
+      if (killTimer)
+        clearTimeout(killTimer);
+      if (settleTimer)
+        clearTimeout(settleTimer);
+      options.signal?.removeEventListener("abort", onAbort);
+      resolveResult({ ...result3, ...options.signal?.aborted ? { cancelled: true } : {} });
+    };
+    const append = (target, chunk) => {
+      if (settled)
+        return;
+      if (outputBytes + chunk.byteLength > maxOutputBytes) {
+        outputLimitExceeded = true;
+        stop();
+        return;
+      }
+      outputBytes += chunk.byteLength;
+      const text2 = chunk.toString("utf8");
+      if (target === "stdout")
+        stdout += text2;
+      else
+        stderr += text2;
+    };
+    child.stdout?.on("data", (chunk) => append("stdout", chunk));
+    child.stderr?.on("data", (chunk) => append("stderr", chunk));
+    child.once("error", () => {
+      finish({ exitCode: null, signal: null, stdout, stderr: "", timedOut, outputLimitExceeded, spawnError: "scanner could not be started" });
+    });
+    child.once("close", (exitCode2, signal) => {
+      finish({ exitCode: exitCode2, signal, stdout, stderr, timedOut, outputLimitExceeded });
+    });
+    const onAbort = () => stop();
+    options.signal?.addEventListener("abort", onAbort, { once: true });
+    if (options.signal?.aborted)
+      onAbort();
+    timer = setTimeout(() => {
+      timedOut = true;
+      stop();
+    }, timeoutMs);
+    timer.unref();
+    child.stdin?.on("error", () => {
+    });
+    if (options.input !== void 0)
+      child.stdin?.end(options.input);
+  });
+}
+function runAgentProcess(executable3, args, options) {
+  const empty = { exitCode: null, signal: null, stdout: "", stderr: "", timedOut: false, outputLimitExceeded: false };
+  if (options.signal?.aborted)
+    return Promise.resolve({
+      ...empty,
+      cancelled: true,
+      stopReason: "cancelled",
+      cleanupState: "not_started",
+      cleanupConfirmed: true,
+      closeConfirmed: true
+    });
+  if (!["darwin", "linux"].includes(process.platform) || !options.home || options.environment || options.authentication && options.codexHome)
+    return Promise.resolve({
+      ...empty,
+      spawnError: "invalid agent process profile",
+      stopReason: "spawn_error",
+      cleanupState: "not_started",
+      cleanupConfirmed: true,
+      closeConfirmed: true
+    });
+  const timeoutMs = safeTimeout(options.timeoutMs);
+  const maxOutputBytes = Math.min(options.maxOutputBytes ?? MAX_PROCESS_OUTPUT_BYTES, MAX_PROCESS_OUTPUT_BYTES);
+  if (!Number.isSafeInteger(maxOutputBytes) || maxOutputBytes < 1)
+    return Promise.resolve({
+      ...empty,
+      spawnError: "invalid output budget",
+      stopReason: "spawn_error",
+      cleanupState: "not_started",
+      cleanupConfirmed: true,
+      closeConfirmed: true
+    });
+  let child;
+  try {
+    child = spawn(executable3, [...args], {
+      cwd: options.cwd,
+      shell: false,
+      detached: true,
+      windowsHide: true,
+      env: minimalEnvironment(options.home, void 0, options.authentication, options.codexHome),
+      stdio: [options.input === void 0 ? "ignore" : "pipe", "pipe", "pipe"]
+    });
+  } catch {
+    return Promise.resolve({
+      ...empty,
+      spawnError: "agent could not be started",
+      stopReason: "spawn_error",
+      cleanupState: "not_started",
+      cleanupConfirmed: true,
+      closeConfirmed: true
+    });
+  }
+  return new Promise((resolveResult) => {
+    const stdout = [], stderr = [];
+    let bytes = 0, exitCode2 = null, exitSignal = null;
+    let exited = false, closed = false, finished = false, stopping = false;
+    let reason;
+    let deadlineTimer, killTimer;
+    let settleTimer, pollTimer;
+    const groupState = () => child.pid ? observeOwnedGroup(child.pid) : "not_started";
+    const send = (signal) => {
+      if (child.pid) {
+        try {
+          process.kill(-child.pid, signal);
+        } catch {
+        }
+      }
+    };
+    const finish = () => {
+      if (finished)
+        return;
+      finished = true;
+      clearTimeout(deadlineTimer);
+      clearTimeout(killTimer);
+      clearTimeout(settleTimer);
+      clearInterval(pollTimer);
+      options.signal?.removeEventListener("abort", onAbort);
+      const cleanupState = groupState();
+      const cleanupConfirmed = ["terminated", "terminated_zombies", "not_started"].includes(cleanupState) && closed;
+      child.stdout?.destroy();
+      child.stderr?.destroy();
+      child.unref();
+      resolveResult({
+        exitCode: exitCode2,
+        signal: exitSignal,
+        stdout: Buffer.concat(stdout).toString("utf8"),
+        stderr: Buffer.concat(stderr).toString("utf8"),
+        timedOut: reason === "timeout",
+        outputLimitExceeded: reason === "output_limit",
+        cancelled: reason === "cancelled",
+        ...reason ? { stopReason: reason } : {},
+        exited,
+        closeConfirmed: closed,
+        cleanupState,
+        cleanupConfirmed
+      });
+    };
+    const check = () => {
+      if (closed && ["terminated", "terminated_zombies", "not_started"].includes(groupState()))
+        finish();
+    };
+    const stop = (why) => {
+      if (why && !reason)
+        reason = why;
+      if (stopping)
+        return;
+      stopping = true;
+      send("SIGTERM");
+      killTimer = setTimeout(() => send("SIGKILL"), 250);
+      pollTimer = setInterval(check, 100);
+      settleTimer = setTimeout(finish, 2e3);
+      check();
+    };
+    const onAbort = () => stop("cancelled");
+    const append = (target, chunk) => {
+      if (finished || stopping && reason)
+        return;
+      bytes += chunk.byteLength;
+      if (bytes > maxOutputBytes) {
+        stop("output_limit");
+        return;
+      }
+      target.push(chunk);
+    };
+    child.stdout?.on("data", (chunk) => append(stdout, chunk));
+    child.stderr?.on("data", (chunk) => append(stderr, chunk));
+    child.once("error", () => {
+      reason = "spawn_error";
+      exited = true;
+      closed = true;
+      stop("spawn_error");
+    });
+    child.once("exit", (code, signal) => {
+      exitCode2 = code;
+      exitSignal = signal;
+      exited = true;
+      stop();
+    });
+    child.once("close", () => {
+      closed = true;
+      stop();
+      check();
+    });
+    options.signal?.addEventListener("abort", onAbort, { once: true });
+    if (options.signal?.aborted)
+      onAbort();
+    deadlineTimer = setTimeout(() => stop("timeout"), timeoutMs);
+    child.stdin?.on("error", () => {
+    });
+    if (options.input !== void 0)
+      child.stdin?.end(options.input);
+  });
+}
+var STRICT_PS_ENV = { PATH: "/usr/bin:/bin:/usr/sbin:/sbin", LANG: "C", LC_ALL: "C" };
+var STRICT_RSS_CAP = 512 * 1024 * 1024;
+function strictRows() {
+  const output = execFileSync("/bin/ps", ["-eo", "pid=,pgid=,rss=,stat="], {
+    env: STRICT_PS_ENV,
+    encoding: "utf8",
+    timeout: 250,
+    maxBuffer: 2 * 1024 * 1024,
+    stdio: ["ignore", "pipe", "pipe"]
+  });
+  return parseStrictRows(output);
+}
+function parseStrictRows(output) {
+  if (!output.trim())
+    throw new Error("empty ps observation");
+  const rows = output.trim().split("\n").map((line) => {
+    const fields = line.trim().split(/\s+/);
+    if (fields.length !== 4 || !fields.slice(0, 3).every((part) => /^\d+$/.test(part)))
+      throw new Error("ps protocol");
+    if (!/^[?HIDRSTUWZXtKP][<NLSsl+>EVWXA]*$/.test(fields[3]))
+      throw new Error("ps state");
+    const [pid, pgid, rss] = fields.slice(0, 3).map(Number);
+    if (![pid, pgid, rss].every(Number.isSafeInteger))
+      throw new Error("ps range");
+    return { pid, pgid, rss, state: fields[3] };
+  });
+  return rows;
+}
+function observeOwnedGroup(pid) {
+  if (!Number.isSafeInteger(pid) || pid < 1)
+    return "unknown";
+  try {
+    process.kill(-pid, 0);
+  } catch (error) {
+    const code = error.code;
+    if (code === "ESRCH")
+      return "terminated";
+    return "unknown";
+  }
+  try {
+    const members = strictRows().filter((row) => row.pgid === pid);
+    if (members.length === 0)
+      return "terminated";
+    if (members.some((row) => row.state.startsWith("?")))
+      return "unknown";
+    return members.every((row) => row.state.startsWith("Z")) ? "terminated_zombies" : "running";
+  } catch {
+    return "unknown";
+  }
+}
+async function runStrictProcess(executable3, args, options) {
+  const empty = { exitCode: null, signal: null, stdout: "", stderr: "", timedOut: false, outputLimitExceeded: false };
+  if (options.signal?.aborted)
+    return { ...empty, cancelled: true, stopReason: "cancelled", exited: false, closeConfirmed: false, cleanupState: "not_started", cleanupConfirmed: true };
+  if (!["darwin", "linux"].includes(process.platform) || !options.home || !options.tmpdir || options.authentication || options.environment || options.input !== void 0) {
+    return { ...empty, spawnError: "invalid strict process profile", stopReason: "spawn_error", cleanupState: "not_started", cleanupConfirmed: true };
+  }
+  const started = Date.now();
+  const timeoutMs = Math.min(safeTimeout(options.timeoutMs), 1e4);
+  const maxOutputBytes = Math.min(options.maxOutputBytes ?? MAX_PROCESS_OUTPUT_BYTES, MAX_PROCESS_OUTPUT_BYTES);
+  if (!Number.isSafeInteger(maxOutputBytes) || maxOutputBytes < 1)
+    return { ...empty, spawnError: "invalid output budget", stopReason: "spawn_error" };
+  const rss = { assessment: "unassessed", samples: 0, failedSamples: 0, peakBytes: 0, capBytes: STRICT_RSS_CAP };
+  let child;
+  try {
+    child = spawn(executable3, [...args], {
+      cwd: options.cwd,
+      shell: false,
+      detached: true,
+      env: { ...STRICT_PS_ENV, HOME: options.home, TMPDIR: options.tmpdir },
+      stdio: ["ignore", "pipe", "pipe"]
+    });
+  } catch {
+    return { ...empty, spawnError: "scanner could not be started", stopReason: "spawn_error", cleanupState: "not_started", cleanupConfirmed: true, rss };
+  }
+  let exitCode2 = null, exitSignal = null;
+  let exited = false, closed = false, finished = false, stopping = false;
+  let reason, outputBytes = 0, spawnError;
+  const stdout = [], stderr = [];
+  let deadlineTimer, sampleTimer;
+  let escalationTimer, settlementTimer;
+  const signalGroup = (signal) => {
+    if (!child.pid)
+      return;
+    try {
+      process.kill(-child.pid, signal);
+    } catch {
+    }
+  };
+  return new Promise((resolveResult) => {
+    const finish = () => {
+      if (finished)
+        return;
+      finished = true;
+      clearTimeout(deadlineTimer);
+      clearInterval(sampleTimer);
+      clearTimeout(escalationTimer);
+      clearTimeout(settlementTimer);
+      options.signal?.removeEventListener("abort", onAbort);
+      const cleanupState = child.pid ? observeOwnedGroup(child.pid) : "not_started";
+      const cleanupConfirmed = ["terminated", "terminated_zombies", "not_started"].includes(cleanupState) && (closed || !child.pid);
+      rss.assessment = rss.samples > 0 && rss.failedSamples === 0 ? "measured" : "unassessed";
+      if (!reason && rss.assessment !== "measured")
+        reason = "observer_unknown";
+      if (!closed && child.pid && !reason)
+        reason = "close_unknown";
+      child.stdout?.destroy();
+      child.stderr?.destroy();
+      child.unref();
+      resolveResult({
+        exitCode: exitCode2,
+        signal: exitSignal,
+        stdout: Buffer.concat(stdout).toString("utf8"),
+        stderr: Buffer.concat(stderr).toString("utf8"),
+        timedOut: reason === "timeout",
+        outputLimitExceeded: reason === "output_limit",
+        cancelled: reason === "cancelled",
+        ...reason ? { stopReason: reason } : {},
+        ...spawnError ? { spawnError } : {},
+        exited,
+        closeConfirmed: closed,
+        cleanupState,
+        cleanupConfirmed,
+        rss
+      });
+    };
+    const maybeFinish = () => {
+      if (!closed || !child.pid) {
+        if (closed)
+          finish();
+        return;
+      }
+      const state = observeOwnedGroup(child.pid);
+      if (state === "terminated" || state === "terminated_zombies")
+        finish();
+    };
+    const stop = (value) => {
+      if (value)
+        reason ??= value;
+      if (stopping || finished)
+        return;
+      stopping = true;
+      signalGroup("SIGTERM");
+      escalationTimer = setTimeout(() => {
+        signalGroup("SIGKILL");
+        maybeFinish();
+      }, 250);
+      settlementTimer = setTimeout(() => {
+        signalGroup("SIGKILL");
+        finish();
+      }, 2e3);
+    };
+    const onAbort = () => stop("cancelled");
+    const sample = () => {
+      if (finished || exited || !child.pid)
+        return;
+      try {
+        const members = strictRows().filter((row) => row.pgid === child.pid && !row.state.startsWith("Z"));
+        if (members.some((row) => row.state.startsWith("?")))
+          throw new Error("owned state unknown");
+        if (members.length > 4096)
+          throw new Error("owned group cap");
+        if (members.length > 0) {
+          const bytes = members.reduce((total, row) => total + row.rss * 1024, 0);
+          if (!Number.isSafeInteger(bytes))
+            throw new Error("rss overflow");
+          rss.samples++;
+          rss.peakBytes = Math.max(rss.peakBytes, bytes);
+          if (bytes > rss.capBytes)
+            stop("rss_limit");
+        }
+      } catch {
+        rss.failedSamples++;
+        stop("observer_unknown");
+      }
+      if (!exited && Date.now() - started >= timeoutMs)
+        stop("timeout");
+    };
+    const collect = (chunk, output) => {
+      if (finished)
+        return;
+      const room = Math.max(0, maxOutputBytes - outputBytes);
+      if (room)
+        output.push(chunk.subarray(0, room));
+      outputBytes += chunk.length;
+      if (outputBytes > maxOutputBytes)
+        stop("output_limit");
+    };
+    child.stdout?.on("data", (chunk) => collect(chunk, stdout));
+    child.stderr?.on("data", (chunk) => collect(chunk, stderr));
+    child.once("error", () => {
+      spawnError = "scanner could not be started";
+      reason ??= "spawn_error";
+      stop("spawn_error");
+    });
+    child.once("exit", (code, signal) => {
+      exited = true;
+      exitCode2 = code;
+      exitSignal = signal;
+      stop();
+    });
+    child.once("close", () => {
+      closed = true;
+      stop();
+      maybeFinish();
+    });
+    options.signal?.addEventListener("abort", onAbort, { once: true });
+    deadlineTimer = setTimeout(() => stop("timeout"), timeoutMs);
+    sampleTimer = setInterval(() => {
+      sample();
+      if (exited)
+        maybeFinish();
+    }, 100);
+    sample();
+    if (options.signal?.aborted)
+      onAbort();
+  });
+}
+function executableCandidates(command) {
+  if (isAbsolute(command) || command.includes("/") || command.includes("\\"))
+    return [resolve(command)];
+  const pathEntries = [
+    dirname(process.execPath),
+    "/usr/local/bin",
+    "/opt/homebrew/bin",
+    "/usr/bin",
+    "/bin",
+    "/usr/sbin",
+    "/sbin",
+    ...(process.env.PATH ?? "").split(":").filter(Boolean)
+  ];
+  return pathEntries.filter((entry, index, all) => all.indexOf(entry) === index).map((entry) => join(entry, command));
+}
+async function findExecutable(command) {
+  if (!command || command.includes("\0"))
+    return void 0;
+  for (const candidate of executableCandidates(command)) {
+    try {
+      const stat2 = await lstat(candidate);
+      if (!stat2.isFile())
+        continue;
+      await access(candidate, constants.X_OK);
+      return candidate;
+    } catch {
+    }
+  }
+  return void 0;
+}
+
+// build/src/source/python.js
+var MAX_LINE = 1e7;
+function objectValue(value) {
+  return value !== null && typeof value === "object" && !Array.isArray(value) ? value : void 0;
+}
+function requiredObject(value, field) {
+  const object9 = objectValue(value);
+  if (!object9)
+    throw new Error(`Bandit output has an invalid ${field} record`);
+  return object9;
+}
+function requiredArray(value, key2) {
+  const child = value[key2];
+  if (!Array.isArray(child))
+    throw new Error(`Bandit output has an invalid ${key2} field`);
+  return child;
+}
+function requiredString(value, key2) {
+  const child = value[key2];
+  if (typeof child !== "string" || child.length === 0)
+    throw new Error(`Bandit output has an invalid ${key2} field`);
+  return child;
+}
+function nonNegativeInt(value, field) {
+  if (typeof value !== "number" || !Number.isSafeInteger(value) || value < 0 || value > MAX_LINE) {
+    throw new Error(`Bandit output has an invalid ${field} field`);
+  }
+  return value;
+}
+function positiveInt(value, field) {
+  const result3 = nonNegativeInt(value, field);
+  if (result3 < 1)
+    throw new Error(`Bandit output has an invalid ${field} field`);
+  return result3;
+}
+function pathFromBandit(value, stageDir, allowed) {
+  if (typeof value !== "string" || value.length === 0)
+    return void 0;
+  const candidate = value.replaceAll("\\", "/");
+  const absoluteCandidate = isAbsolute2(candidate) ? resolve2(candidate) : resolve2(stageDir, candidate);
+  const stage = resolve2(stageDir);
+  const relativePath = relative(stage, absoluteCandidate).replaceAll("\\", "/");
+  if (relativePath && relativePath !== "." && !relativePath.startsWith("../") && relativePath !== ".." && !isAbsolute2(relativePath) && allowed.has(relativePath)) {
+    return relativePath;
+  }
+  const normalized = candidate.replace(/^\.\//, "");
+  return allowed.has(normalized) ? normalized : void 0;
+}
+function parseJson(text2) {
+  const trimmed = text2.trim();
+  if (!trimmed)
+    throw new Error("Bandit produced no JSON output");
+  let parsed;
+  try {
+    parsed = JSON.parse(trimmed);
+  } catch {
+    throw new Error("Bandit produced malformed JSON output");
+  }
+  return requiredObject(parsed, "root");
+}
+function severityFrom(value) {
+  if (typeof value !== "string")
+    throw new Error("Bandit output has an invalid issue severity");
+  switch (value.trim().toUpperCase()) {
+    case "HIGH":
+      return "high";
+    case "MEDIUM":
+      return "medium";
+    case "LOW":
+      return "low";
+    case "UNDEFINED":
+      return "info";
+    default:
+      throw new Error("Bandit output has an unsupported issue severity");
+  }
+}
+function confidenceFrom(value) {
+  if (typeof value !== "string")
+    throw new Error("Bandit output has an invalid issue confidence");
+  switch (value.trim().toUpperCase()) {
+    case "HIGH":
+      return "high";
+    case "MEDIUM":
+      return "medium";
+    case "LOW":
+      return "low";
+    case "UNDEFINED":
+      return "low";
+    default:
+      throw new Error("Bandit output has an unsupported issue confidence");
+  }
+}
+function banditTestId(value) {
+  if (typeof value !== "string" || value.length === 0)
+    throw new Error("Bandit output has an invalid test id");
+  const id = value;
+  if (!/^B\d{3}$/.test(id))
+    throw new Error("Bandit output has an unsupported test id");
+  return id;
+}
+var BANDIT_GUIDANCE = {
+  B404: {
+    title: "Python subprocess module requires review",
+    description: "Bandit identified an import of subprocess. The import is not itself a shell injection, but calls using it should use fixed argument arrays and avoid shell interpretation.",
+    remediation: "Review subprocess call sites and use shell=False with fixed executables and validated arguments.",
+    reference: "https://bandit.readthedocs.io/en/latest/blacklists/blacklist_imports.html"
+  },
+  B301: {
+    title: "Unsafe Python deserialization",
+    description: "Bandit identified a pickle or related deserialization call that can construct unsafe objects from untrusted data.",
+    remediation: "Do not deserialize untrusted data with pickle or equivalent object loaders; use a constrained data format or an explicit allowlist.",
+    reference: "https://bandit.readthedocs.io/en/latest/blacklists/blacklist_calls.html"
+  },
+  B307: {
+    title: "Dynamic Python evaluation",
+    description: "Bandit identified eval(), which can execute attacker-controlled Python expressions.",
+    remediation: "Replace eval() with a fixed operation or ast.literal_eval() when parsing a constrained literal format.",
+    reference: "https://bandit.readthedocs.io/en/latest/blacklists/blacklist_calls.html"
+  },
+  B501: {
+    title: "TLS certificate verification is disabled",
+    description: "Bandit identified a requests or httpx call that disables TLS certificate validation.",
+    remediation: "Keep certificate verification enabled and configure a trusted CA bundle when a private authority is required.",
+    reference: "https://bandit.readthedocs.io/en/latest/plugins/b501_request_with_no_cert_validation.html"
+  },
+  B506: {
+    title: "Unsafe YAML loading",
+    description: "Bandit identified yaml.load() or a related loader that may construct arbitrary Python objects from untrusted YAML.",
+    remediation: "Use a safe YAML loader such as yaml.safe_load() and validate the resulting data against the expected schema.",
+    reference: "https://bandit.readthedocs.io/en/latest/plugins/b506_yaml_load.html"
+  },
+  B602: {
+    title: "Subprocess call uses a shell",
+    description: "Bandit identified a subprocess call with shell=True, which can turn untrusted command data into shell syntax.",
+    remediation: "Use a fixed executable and argument array with shell=False, and validate any user-controlled arguments.",
+    reference: "https://bandit.readthedocs.io/en/latest/plugins/b602_subprocess_popen_with_shell_equals_true.html"
+  },
+  B603: {
+    title: "Subprocess call requires argument validation",
+    description: "Bandit identified a subprocess call without shell=True. The call avoids shell parsing but still needs fixed executables and validated arguments.",
+    remediation: "Use an absolute or controlled executable and validate every argument that can be influenced by input.",
+    reference: "https://bandit.readthedocs.io/en/latest/plugins/b603_subprocess_without_shell_equals_true.html"
+  },
+  B607: {
+    title: "Subprocess executable path is partial",
+    description: "Bandit identified a process call whose executable path relies on PATH lookup instead of a fully qualified path.",
+    remediation: "Use a fully qualified executable path or a tightly controlled executable resolution policy.",
+    reference: "https://bandit.readthedocs.io/en/latest/plugins/b607_start_process_with_partial_path.html"
+  },
+  B608: {
+    title: "SQL expression is constructed from strings",
+    description: "Bandit identified string construction that resembles a SQL expression and may be vulnerable when values are interpolated.",
+    remediation: "Use parameterized queries for values and keep identifiers behind a strict allowlist.",
+    reference: "https://bandit.readthedocs.io/en/latest/plugins/b608_hardcoded_sql_expressions.html"
+  }
+};
+function guidanceFor(testId) {
+  return BANDIT_GUIDANCE[testId] ?? {
+    title: `Python security finding (${testId})`,
+    description: `Bandit identified ${testId} in the allowlisted Python snapshot. The scanner message and source snippet are intentionally omitted.`,
+    remediation: "Review the Bandit rule documentation and apply the documented secure alternative.",
+    reference: "https://bandit.readthedocs.io/en/latest/"
+  };
+}
+function sourceLineCount(text2) {
+  if (text2.length === 0)
+    return 1;
+  const lines = text2.split(/\r\n|\r|\n/);
+  return /(?:\r\n|\r|\n)$/.test(text2) ? Math.max(1, lines.length - 1) : lines.length;
+}
+function validateLineRange(value, maxLine, line) {
+  if (!Array.isArray(value) || value.length === 0 || value.some((entry) => typeof entry !== "number" || !Number.isSafeInteger(entry) || entry < 1 || entry > MAX_LINE || entry > maxLine)) {
+    throw new Error("Bandit output has an invalid line_range field");
+  }
+  if (line > maxLine)
+    throw new Error("Bandit output line_number is outside the selected Python file");
+  if (!value.includes(line))
+    throw new Error("Bandit output line_number is outside line_range");
+}
+function metricForFile(metrics, file, stageDir, allowed) {
+  for (const [key2, value] of Object.entries(metrics)) {
+    if (key2 === "_totals")
+      continue;
+    if (pathFromBandit(key2, stageDir, allowed) !== file.path)
+      continue;
+    return requiredObject(value, "per-file metrics");
+  }
+  return void 0;
+}
+function validateMetrics(metrics, files, stageDir, allowed) {
+  const totals = requiredObject(metrics._totals, "metrics totals");
+  nonNegativeInt(totals.loc, "metrics totals loc");
+  const matched = /* @__PURE__ */ new Set();
+  for (const file of files) {
+    const metric = metricForFile(metrics, file, stageDir, allowed);
+    if (!metric)
+      continue;
+    nonNegativeInt(metric.loc, "per-file metrics loc");
+    matched.add(file.path);
+  }
+  return matched.size;
+}
+function pythonFiles(snapshot2) {
+  return snapshot2.files.filter((file) => file.category === "code" && /\.py$/i.test(file.path));
+}
+function parseBanditOutput(text2, stageDir, files) {
+  const top = parseJson(text2);
+  const errors = requiredArray(top, "errors");
+  const results = requiredArray(top, "results");
+  const metrics = requiredObject(top.metrics, "metrics");
+  const generatedAt = requiredString(top, "generated_at");
+  if (!Number.isFinite(Date.parse(generatedAt)))
+    throw new Error("Bandit output has an invalid generated_at field");
+  const allowed = new Set(files.map((file) => file.path));
+  for (const entry of errors) {
+    const error = requiredObject(entry, "error");
+    const errorPath = pathFromBandit(error.filename, stageDir, allowed);
+    if (!errorPath)
+      throw new Error("Bandit output has an unmapped error filename");
+    requiredString(error, "reason");
+  }
+  const filesReported = validateMetrics(metrics, files, stageDir, allowed);
+  const findings = [];
+  for (const entry of results) {
+    const result3 = requiredObject(entry, "result");
+    const path2 = pathFromBandit(result3.filename, stageDir, allowed);
+    if (!path2)
+      throw new Error("Bandit output has an unmapped result filename");
+    const line = positiveInt(result3.line_number, "line_number");
+    const source = files.find((file) => file.path === path2);
+    if (!source)
+      throw new Error("Bandit output result filename is not in the selected Python files");
+    validateLineRange(result3.line_range, sourceLineCount(source.text), line);
+    const testId = banditTestId(result3.test_id);
+    requiredString(result3, "code");
+    requiredString(result3, "issue_text");
+    requiredString(result3, "test_name");
+    const severity = severityFrom(result3.issue_severity);
+    const confidence = confidenceFrom(result3.issue_confidence);
+    const guidance = guidanceFor(testId);
+    findings.push({
+      ruleId: `bandit:${testId}`,
+      title: guidance.title,
+      description: guidance.description,
+      severity,
+      confidence,
+      kind: "candidate",
+      location: { path: path2, line },
+      remediation: guidance.remediation,
+      references: [guidance.reference]
+    });
+  }
+  const metricsIncomplete = filesReported !== files.length;
+  return {
+    findings,
+    status: errors.length > 0 || metricsIncomplete ? "partial" : "completed",
+    notes: [
+      `Bandit parsed ${findings.length} finding${findings.length === 1 ? "" : "s"} across ${filesReported} of ${files.length} allowlisted Python file${files.length === 1 ? "" : "s"}.`,
+      "Bandit was run with inline #nosec suppressions ignored; source snippets and scanner text are omitted.",
+      ...errors.length > 0 ? [`Bandit reported ${errors.length} file scan error${errors.length === 1 ? "" : "s"}; Python coverage is incomplete.`] : [],
+      ...metricsIncomplete ? ["Bandit did not report per-file metrics for every selected Python file; coverage is incomplete."] : []
+    ],
+    metrics: { filesAnalyzed: filesReported, filesRequested: files.length, findingCount: findings.length, errorCount: errors.length }
+  };
+}
+function processFailure(result3, timeoutMs) {
+  if (result3.cancelled)
+    return "Bandit was cancelled; coverage is incomplete.";
+  if (result3.spawnError)
+    return "Bandit could not be started.";
+  if (result3.timedOut)
+    return `Bandit exceeded the ${timeoutMs} ms scanner timeout.`;
+  if (result3.outputLimitExceeded)
+    return "Bandit exceeded the scanner output limit.";
+  if (result3.exitCode !== null && result3.exitCode > 1)
+    return `Bandit exited with code ${result3.exitCode}.`;
+  if (result3.signal)
+    return `Bandit was terminated by ${result3.signal}.`;
+  if (result3.exitCode === null)
+    return "Bandit returned no exit status.";
+  return void 0;
+}
+function errorCheck(message) {
+  return { id: "source.bandit", status: "error", findings: [], notes: [message] };
+}
+async function runBandit(context) {
+  const files = pythonFiles(context.snapshot);
+  if (files.length === 0) {
+    return { id: "source.bandit", status: "not_applicable", findings: [], notes: ["No allowlisted Python files were available for Bandit."], metrics: { files: 0 } };
+  }
+  if (!context.toolPath)
+    return { id: "source.bandit", status: "partial", findings: [], notes: ["Bandit executable was not found; Python SAST coverage is unavailable."], metrics: { files: files.length } };
+  const args = ["-f", "json", "--ignore-nosec", "--", ...files.map((file) => join2(context.stageDir, ...file.path.split("/")))];
+  const result3 = await runProcess(context.toolPath, args, {
+    cwd: context.stageDir,
+    timeoutMs: context.timeoutMs,
+    home: join2(dirname2(context.stageDir), "home"),
+    signal: context.signal
+  });
+  const failure3 = processFailure(result3, context.timeoutMs);
+  if (failure3)
+    return errorCheck(failure3);
+  try {
+    const parsed = parseBanditOutput(result3.stdout, context.stageDir, files);
+    if (result3.exitCode === 1 && parsed.findings.length === 0 && parsed.status === "completed") {
+      return errorCheck("Bandit exited with a finding status but returned an empty report.");
+    }
+    if (!context.snapshot.complete && parsed.status === "completed") {
+      parsed.status = "partial";
+      parsed.notes = [...parsed.notes, "The collected Python snapshot was incomplete; Bandit coverage may be incomplete."];
+      parsed.metrics = { ...parsed.metrics ?? {}, snapshotComplete: false };
+    }
+    return {
+      id: "source.bandit",
+      status: parsed.status ?? "completed",
+      findings: parsed.findings,
+      notes: parsed.notes,
+      ...parsed.metrics ? { metrics: parsed.metrics } : {}
+    };
+  } catch {
+    return errorCheck("Bandit returned an invalid or incomplete JSON report.");
+  }
+}
+
+// build/src/source/opengrep.js
+import { createHash } from "node:crypto";
+import { constants as constants2 } from "node:fs";
+import { access as access2, lstat as lstat2, mkdir, mkdtemp, open, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { dirname, isAbsolute as isAbsolute2, join, relative as relative2, resolve as resolve2, sep } from "node:path";
+import { dirname as dirname3, isAbsolute as isAbsolute3, join as join3, relative as relative2, resolve as resolve3, sep } from "node:path";
+
+// build/src/source/opengrep-rules.js
+var OPENGREP_PROFILE = "native-preview-v1";
+var OPENGREP_VERSION = "1.30.0";
+var OPENGREP_SHA256 = "9d101457981b1dea39013cf61cabbf896cefbb7e664c19efdb21ee8be4a598de";
+var OPENGREP_SIZE = 173348760;
+var OWN_RULES_SHA256 = "596df423168083551b64ccc74806353b04f031889bd3d06ec8bbd6afe48b32c1";
+var OWN_RULE_IDS = ["wakeio.w06.sql.js-ts.v1", "wakeio.w06.command.js-ts.v1", "wakeio.w06.sql.python.v1", "wakeio.w06.command.python.v1"];
+var OWN_RULES = "# SPDX-License-Identifier: Apache-2.0\n# Copyright 2026 Wakeio Security CI contributors\n# Original experimental patterns; no downloaded registry/security rule content.\nrules:\n  - id: wakeio.w06.sql.js-ts.v1\n    languages: [javascript, typescript]\n    mode: taint\n    message: Request-shaped input reaches a selected injection argument; candidate requires independent review.\n    severity: ERROR\n    metadata:\n      license: Apache-2.0\n      confidence: LOW\n      cwe: CWE-89\n      experiment: W06-owned-prototype-v1\n      verification: not_run\n    pattern-sources:\n      - patterns:\n          - pattern-either:\n              - pattern: $REQ.query\n              - pattern: $REQ.body\n              - pattern: $REQ.params\n          - metavariable-regex:\n              metavariable: $REQ\n              regex: '^(req|request)$'\n        exact: true\n    pattern-sinks:\n      - patterns:\n          - pattern-either:\n              - pattern: $DB.query($SQL, ...)\n              - pattern: $DB.execute($SQL, ...)\n          - focus-metavariable: $SQL\n  - id: wakeio.w06.command.js-ts.v1\n    languages: [javascript, typescript]\n    mode: taint\n    message: Request-shaped input reaches a selected injection argument; candidate requires independent review.\n    severity: ERROR\n    metadata:\n      license: Apache-2.0\n      confidence: LOW\n      cwe: CWE-78\n      experiment: W06-owned-prototype-v1\n      verification: not_run\n    pattern-sources:\n      - patterns:\n          - pattern-either:\n              - pattern: $REQ.query\n              - pattern: $REQ.body\n              - pattern: $REQ.params\n          - metavariable-regex:\n              metavariable: $REQ\n              regex: '^(req|request)$'\n        exact: true\n    pattern-sinks:\n      - patterns:\n          - pattern-either:\n              - pattern: exec($CMD, ...)\n              - pattern: execSync($CMD, ...)\n              - pattern: $CP.exec($CMD, ...)\n              - pattern: $CP.execSync($CMD, ...)\n          - focus-metavariable: $CMD\n  - id: wakeio.w06.sql.python.v1\n    languages: [python]\n    mode: taint\n    message: Request-shaped input reaches a selected injection argument; candidate requires independent review.\n    severity: ERROR\n    metadata:\n      license: Apache-2.0\n      confidence: LOW\n      cwe: CWE-89\n      experiment: W06-owned-prototype-v1\n      verification: not_run\n    pattern-sources:\n      - pattern-either:\n          - pattern: request.args.get(...)\n          - pattern: request.args[$KEY]\n          - pattern: request.form.get(...)\n          - pattern: request.form[$KEY]\n          - pattern: request.json[$KEY]\n        exact: true\n    pattern-sinks:\n      - patterns:\n          - pattern-either:\n              - pattern: $DB.execute($SQL, ...)\n          - focus-metavariable: $SQL\n  - id: wakeio.w06.command.python.v1\n    languages: [python]\n    mode: taint\n    message: Request-shaped input reaches a selected injection argument; candidate requires independent review.\n    severity: ERROR\n    metadata:\n      license: Apache-2.0\n      confidence: LOW\n      cwe: CWE-78\n      experiment: W06-owned-prototype-v1\n      verification: not_run\n    pattern-sources:\n      - pattern-either:\n          - pattern: request.args.get(...)\n          - pattern: request.args[$KEY]\n          - pattern: request.form.get(...)\n          - pattern: request.form[$KEY]\n          - pattern: request.json[$KEY]\n        exact: true\n    pattern-sinks:\n      - patterns:\n          - pattern-either:\n              - pattern: subprocess.run($CMD, ..., shell=True, ...)\n              - pattern: subprocess.call($CMD, ..., shell=True, ...)\n              - pattern: subprocess.Popen($CMD, ..., shell=True, ...)\n              - pattern: subprocess.check_output($CMD, ..., shell=True, ...)\n              - pattern: subprocess.check_call($CMD, ..., shell=True, ...)\n              - pattern: os.system($CMD)\n              - pattern: os.popen($CMD, ...)\n          - focus-metavariable: $CMD\n";
+
+// build/src/source/opengrep.js
+var NATIVE_CHECK_ID = "source.opengrep.preview";
+var NATIVE_DENY_POLICY = "(version 1)\n(allow default)\n(deny network*)\n";
+var MAX_JSON_BYTES = 8 * 1024 * 1024;
+var NOTE = "Experimental native candidate positions only; binding identity, exploitability and complete dataflow edges are not verified.";
+var object4 = (value) => !!value && typeof value === "object" && !Array.isArray(value);
+var exactKeys3 = (value, allowed) => Object.keys(value).every((key2) => allowed.includes(key2));
+var digest = (bytes) => createHash("sha256").update(bytes).digest("hex");
+var nativeFiles = (snapshot2) => snapshot2.files.filter((file) => file.category === "code" && !file.sensitive && /\.(?:[cm]?[jt]sx?|py)$/i.test(file.path));
+function nativeJson(text2) {
+  if (Buffer.byteLength(text2) > MAX_JSON_BYTES)
+    throw new Error("output budget");
+  let cursor = 0, nodes = 0;
+  const space = () => {
+    while (/\s/.test(text2[cursor] ?? "") && cursor < text2.length)
+      cursor++;
+  };
+  const string = () => {
+    if (text2[cursor] !== '"')
+      throw new Error("string");
+    const start = cursor++;
+    while (cursor < text2.length) {
+      if (text2[cursor] === "\\") {
+        cursor += 2;
+        continue;
+      }
+      if (text2[cursor++] === '"')
+        return JSON.parse(text2.slice(start, cursor));
+    }
+    throw new Error("unterminated");
+  };
+  const value = (depth) => {
+    if (++nodes > 2e5 || depth > 64)
+      throw new Error("json budget");
+    space();
+    if (text2[cursor] === "{") {
+      cursor++;
+      space();
+      const keys3 = /* @__PURE__ */ new Set();
+      if (text2[cursor] === "}") {
+        cursor++;
+        return;
+      }
+      while (true) {
+        space();
+        const key2 = string();
+        if (keys3.has(key2))
+          throw new Error("duplicate");
+        keys3.add(key2);
+        space();
+        if (text2[cursor++] !== ":")
+          throw new Error("colon");
+        value(depth + 1);
+        space();
+        const next = text2[cursor++];
+        if (next === "}")
+          return;
+        if (next !== ",")
+          throw new Error("object");
+      }
+    }
+    if (text2[cursor] === "[") {
+      cursor++;
+      space();
+      if (text2[cursor] === "]") {
+        cursor++;
+        return;
+      }
+      while (true) {
+        value(depth + 1);
+        space();
+        const next = text2[cursor++];
+        if (next === "]")
+          return;
+        if (next !== ",")
+          throw new Error("array");
+      }
+    }
+    if (text2[cursor] === '"') {
+      string();
+      return;
+    }
+    const match = /^(?:true|false|null|-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?)/.exec(text2.slice(cursor));
+    if (!match)
+      throw new Error("primitive");
+    if (!Number.isFinite(Number(match[0])) && !["true", "false", "null"].includes(match[0]))
+      throw new Error("nonfinite");
+    cursor += match[0].length;
+  };
+  value(0);
+  space();
+  if (cursor !== text2.length)
+    throw new Error("trailing");
+  return JSON.parse(text2);
+}
+function fileFor(path2, stage, files) {
+  if (typeof path2 !== "string" || !path2 || path2.includes("\0") || path2.includes("\\"))
+    return void 0;
+  const absolute = isAbsolute3(path2) ? resolve3(path2) : resolve3(stage, path2);
+  const local = relative2(resolve3(stage), absolute).split(sep).join("/");
+  if (local === ".." || local.startsWith("../") || isAbsolute3(local))
+    return void 0;
+  return files.get(local);
+}
+function point(raw, file, cache) {
+  if (!object4(raw) || !exactKeys3(raw, ["line", "col", "offset"]) || !["line", "col", "offset"].every((key2) => Number.isSafeInteger(raw[key2])) || raw.line < 1 || raw.col < 1 || raw.offset < 0)
+    throw new Error("position");
+  let prepared = cache.get(file.path);
+  if (!prepared) {
+    const bytes2 = Buffer.from(file.text, "utf8"), starts2 = [0];
+    for (let index = 0; index < bytes2.length; index++)
+      if (bytes2[index] === 10)
+        starts2.push(index + 1);
+    prepared = { bytes: bytes2, starts: starts2, points: /* @__PURE__ */ new Map() };
+    cache.set(file.path, prepared);
+  }
+  const { bytes, starts } = prepared, offset = raw.offset, line = raw.line;
+  if (offset > bytes.length || offset < bytes.length && (bytes[offset] & 192) === 128)
+    throw new Error("byte boundary");
+  const lineStart = starts[line - 1];
+  if (lineStart === void 0 || offset < lineStart || line < starts.length && offset >= starts[line] || raw.col !== offset - lineStart + 1)
+    throw new Error("byte column");
+  let normal = prepared.points.get(offset);
+  if (!normal) {
+    normal = { offset, line, column: bytes.subarray(lineStart, offset).toString("utf8").length + 1 };
+    prepared.points.set(offset, normal);
+  }
+  return normal;
+}
+function range(raw, stage, files, cache) {
+  if (!object4(raw) || !exactKeys3(raw, ["path", "start", "end"]))
+    throw new Error("location");
+  const file = fileFor(raw.path, stage, files);
+  if (!file)
+    throw new Error("outside");
+  const start = point(raw.start, file, cache), end = point(raw.end, file, cache);
+  if (end.offset <= start.offset)
+    throw new Error("empty range");
+  return { file, start, end };
+}
+function nativeTrace(raw, sink, stage, files, cache) {
+  if (!object4(raw) || !exactKeys3(raw, ["taint_source", "taint_sink", "intermediate_vars"]) || !Array.isArray(raw.intermediate_vars))
+    throw new Error("trace schema");
+  const steps = [];
+  const add2 = (role, loc, content) => {
+    const item = range(loc, stage, files, cache);
+    if (item.file.path !== sink.file.path)
+      throw new Error("intrafile trace");
+    if (typeof content !== "string" || Buffer.from(item.file.text).subarray(item.start.offset, item.end.offset).toString("utf8") !== content)
+      throw new Error("trace bytes");
+    steps.push({ role, location: { path: item.file.path, line: item.start.line, column: item.start.column } });
+    return item;
+  };
+  const cliLoc = (role, value) => {
+    if (!Array.isArray(value) || value.length !== 2 || value[0] !== "CliLoc" || !Array.isArray(value[1]) || value[1].length !== 2)
+      throw new Error("trace variant");
+    return add2(role, value[1][0], value[1][1]);
+  };
+  cliLoc("source", raw.taint_source);
+  if (raw.intermediate_vars.length > 1e4)
+    throw new Error("trace budget");
+  for (const item of raw.intermediate_vars) {
+    if (!object4(item) || !exactKeys3(item, ["location", "content"]))
+      throw new Error("intermediate");
+    add2("intermediate", item.location, item.content);
+  }
+  const last = cliLoc("sink", raw.taint_sink);
+  if (last.file.path !== sink.file.path || last.start.offset !== sink.start.offset || last.end.offset !== sink.end.offset)
+    throw new Error("trace sink mismatch");
+  return { kind: "static_flow", steps: steps.length > 24 ? [...steps.slice(0, 23), steps.at(-1)] : steps, truncated: true };
+}
+function parseNativeOutput(stdout, exitCode2, stage, inputFiles) {
+  const findings = [], reasons = /* @__PURE__ */ new Set();
+  const files = new Map(inputFiles.map((file) => [file.path, file]));
+  const positionCache = /* @__PURE__ */ new Map();
+  let ignored = 0, invalid4 = 0, errors = 0, skipped = 0, scanned = 0;
+  const metrics = () => ({
+    profile: OPENGREP_PROFILE,
+    filesDeclared: inputFiles.length,
+    filesScanned: scanned,
+    nativeErrors: errors,
+    skippedRules: skipped,
+    ignoredFindings: ignored,
+    invalidFindings: invalid4,
+    engineExit: exitCode2 ?? "unknown",
+    incompleteReasons: [...reasons].sort().join(","),
+    rulePackSha256: OWN_RULES_SHA256
+  });
+  let parsed;
+  try {
+    parsed = nativeJson(stdout);
+  } catch {
+    return { id: NATIVE_CHECK_ID, status: "error", findings, notes: ["Native preview returned invalid bounded JSON."], metrics: { ...metrics(), incompleteReasons: "invalid_json" } };
+  }
+  if (!object4(parsed) || parsed.version !== OPENGREP_VERSION || !Array.isArray(parsed.results)) {
+    return { id: NATIVE_CHECK_ID, status: "error", findings, notes: ["Native preview protocol or version did not match the selected profile."], metrics: { ...metrics(), incompleteReasons: "invalid_protocol" } };
+  }
+  if (!Array.isArray(parsed.errors)) {
+    reasons.add("invalid_protocol");
+    parsed.errors = [];
+  }
+  if (!Array.isArray(parsed.skipped_rules)) {
+    reasons.add("invalid_protocol");
+    parsed.skipped_rules = [];
+  }
+  if (!Array.isArray(parsed.interfile_languages_used)) {
+    reasons.add("invalid_protocol");
+    parsed.interfile_languages_used = [];
+  }
+  if (!object4(parsed.paths)) {
+    reasons.add("invalid_protocol");
+    parsed.paths = {};
+  }
+  const paths = parsed.paths;
+  if (!Array.isArray(paths.scanned)) {
+    reasons.add("invalid_protocol");
+    paths.scanned = [];
+  }
+  if (!exactKeys3(parsed, ["version", "results", "errors", "paths", "skipped_rules", "interfile_languages_used"]))
+    reasons.add("unknown_schema");
+  if (!exactKeys3(paths, ["scanned", "skipped"]))
+    reasons.add("unknown_paths");
+  errors = parsed.errors.length;
+  skipped = parsed.skipped_rules.length;
+  if (errors)
+    reasons.add("native_errors");
+  if (skipped)
+    reasons.add("skipped_rules");
+  if (parsed.interfile_languages_used.length)
+    reasons.add("unexpected_interfile");
+  if (paths.skipped !== void 0 && (!Array.isArray(paths.skipped) || paths.skipped.length))
+    reasons.add("skipped_files");
+  const seen = /* @__PURE__ */ new Set();
+  for (const path2 of paths.scanned) {
+    const file = fileFor(path2, stage, files);
+    if (!file || seen.has(file.path))
+      reasons.add("coverage_mismatch");
+    else
+      seen.add(file.path);
+  }
+  scanned = seen.size;
+  if (seen.size !== files.size)
+    reasons.add("coverage_mismatch");
+  if (parsed.results.length > 1e4)
+    reasons.add("finding_limit");
+  for (const raw of parsed.results.slice(0, 1e4)) {
+    try {
+      if (!object4(raw) || typeof raw.check_id !== "string" || !OWN_RULE_IDS.includes(raw.check_id) || !object4(raw.extra))
+        throw new Error("finding");
+      const loc = range({ path: raw.path, start: raw.start, end: raw.end }, stage, files, positionCache);
+      const extra = raw.extra;
+      if (!exactKeys3(raw, ["check_id", "path", "start", "end", "extra"]) || !exactKeys3(extra, ["metavars", "message", "metadata", "severity", "fingerprint", "lines", "is_ignored", "validation_state", "dataflow_trace", "engine_kind"]))
+        reasons.add("unknown_finding_schema");
+      const isPython = raw.check_id.includes(".python.");
+      if (isPython !== /\.py$/i.test(loc.file.path))
+        throw new Error("language mismatch");
+      if (extra.is_ignored !== false) {
+        ignored++;
+        reasons.add("ignored_finding");
+      }
+      if (extra.severity !== "ERROR" || extra.validation_state !== "NO_VALIDATOR" || extra.engine_kind !== "OSS" || !object4(extra.metadata))
+        reasons.add("finding_state");
+      let staticFlow;
+      if (extra.dataflow_trace !== void 0 && extra.dataflow_trace !== null) {
+        try {
+          staticFlow = nativeTrace(extra.dataflow_trace, loc, stage, files, positionCache);
+        } catch {
+          reasons.add("invalid_trace");
+        }
+      }
+      const sql = raw.check_id.includes(".sql.");
+      findings.push({
+        ruleId: raw.check_id,
+        title: sql ? "Request-shaped input in SQL argument" : "Request-shaped input in command argument",
+        description: "The selected native rule reported a static input candidate. Binding identity and runtime exploitability require independent review.",
+        severity: "high",
+        confidence: "low",
+        kind: "candidate",
+        location: { path: loc.file.path, line: loc.start.line, column: loc.start.column },
+        remediation: sql ? "Review the SQL statement argument and use parameter binding; verify the risky, fixed and normal paths independently." : "Review shell interpretation and prefer an explicit executable with separate arguments; verify the risky, fixed and normal paths independently.",
+        references: [sql ? "https://cwe.mitre.org/data/definitions/89.html" : "https://cwe.mitre.org/data/definitions/78.html"],
+        ...staticFlow ? { staticFlow } : {}
+      });
+    } catch {
+      invalid4++;
+      reasons.add("invalid_finding");
+    }
+  }
+  if (![0, 1].includes(exitCode2) || exitCode2 === 0 && parsed.results.length > 0 || exitCode2 === 1 && parsed.results.length === 0)
+    reasons.add("exit_mismatch");
+  return {
+    id: NATIVE_CHECK_ID,
+    status: reasons.size ? "partial" : "completed",
+    findings,
+    notes: [NOTE, ...reasons.size ? ["Native preview completion is unverified; inspect incompleteReasons and retained candidates."] : []],
+    metrics: metrics()
+  };
+}
+function nativeCheckFromProcess(result3, stage, files, snapshotComplete) {
+  const check = parseNativeOutput(result3.stdout, result3.exitCode, stage, files);
+  const reasons = new Set(String(check.metrics?.incompleteReasons ?? "").split(",").filter(Boolean));
+  if (result3.spawnError)
+    reasons.add("spawn_error");
+  if (result3.signal !== null)
+    reasons.add("process_signal");
+  if (result3.stopReason)
+    reasons.add(result3.stopReason);
+  if (result3.timedOut)
+    reasons.add("timeout");
+  if (result3.outputLimitExceeded)
+    reasons.add("output_limit");
+  if (result3.cancelled)
+    reasons.add("cancelled");
+  if (result3.exited !== true || result3.closeConfirmed !== true)
+    reasons.add("close_unknown");
+  if (result3.cleanupConfirmed !== true || !["terminated", "terminated_zombies"].includes(result3.cleanupState ?? "unknown"))
+    reasons.add("cleanup_unknown");
+  if (result3.rss?.assessment !== "measured" || !Number.isSafeInteger(result3.rss.samples) || result3.rss.samples < 1 || result3.rss.failedSamples !== 0 || !Number.isSafeInteger(result3.rss.peakBytes) || result3.rss.peakBytes < 0 || result3.rss.capBytes !== 512 * 1024 * 1024)
+    reasons.add("rss_unassessed");
+  if (result3.rss && result3.rss.peakBytes > 512 * 1024 * 1024)
+    reasons.add("rss_limit");
+  if (!snapshotComplete)
+    reasons.add("snapshot_incomplete");
+  if (reasons.size && check.status === "completed")
+    check.status = "partial";
+  if (!result3.spawnError && (result3.timedOut || result3.cancelled || result3.outputLimitExceeded || result3.stopReason === "observer_unknown" || result3.stopReason === "rss_limit"))
+    check.status = "partial";
+  check.metrics = {
+    ...check.metrics,
+    incompleteReasons: [...reasons].sort().join(","),
+    closeConfirmed: result3.closeConfirmed === true,
+    cleanupConfirmed: result3.cleanupConfirmed === true,
+    cleanupState: result3.cleanupState ?? "unknown",
+    rssAssessment: result3.rss?.assessment ?? "unassessed",
+    rssSamples: result3.rss?.samples ?? 0,
+    rssPeakBytes: result3.rss?.peakBytes ?? 0,
+    snapshotComplete
+  };
+  if (reasons.size && !check.notes.some((note) => note.includes("completion is unverified")))
+    check.notes.push("Native preview completion is unverified; inspect incompleteReasons and retained candidates.");
+  return check;
+}
+function nativeSandboxCommand(policyPath, executable3, args) {
+  if (!isAbsolute3(policyPath) || !isAbsolute3(executable3))
+    throw new Error("absolute native paths required");
+  return { executable: "/usr/bin/sandbox-exec", args: ["-f", policyPath, executable3, ...args] };
+}
+async function hashRegular(path2, expectedSize) {
+  const handle = await open(path2, constants2.O_RDONLY | constants2.O_NOFOLLOW | constants2.O_NONBLOCK);
+  try {
+    const before = await handle.stat();
+    if (!before.isFile() || before.size !== expectedSize)
+      throw new Error("identity size");
+    const hash = createHash("sha256"), buffer = Buffer.alloc(64 * 1024);
+    let position2 = 0;
+    while (position2 <= expectedSize) {
+      const result3 = await handle.read(buffer, 0, Math.min(buffer.length, expectedSize + 1 - position2), position2);
+      if (!result3.bytesRead)
+        break;
+      hash.update(buffer.subarray(0, result3.bytesRead));
+      position2 += result3.bytesRead;
+    }
+    const after = await handle.stat();
+    if (position2 !== expectedSize || before.ino !== after.ino || before.size !== after.size || before.mtimeMs !== after.mtimeMs || before.ctimeMs !== after.ctimeMs)
+      throw new Error("changed file");
+    return hash.digest("hex");
+  } finally {
+    await handle.close();
+  }
+}
+async function inventoryMatches(stage, files) {
+  const expected = new Map(files.map((file) => [file.path, file]));
+  let count2 = 0;
+  const walk = async (directory2) => {
+    for (const entry of await readdir(directory2, { withFileTypes: true })) {
+      const path2 = join3(directory2, entry.name), stat2 = await lstat2(path2);
+      if (stat2.isSymbolicLink())
+        throw new Error("stage link");
+      if (stat2.isDirectory()) {
+        await walk(path2);
+        continue;
+      }
+      const local = relative2(stage, path2).split(sep).join("/"), file = expected.get(local);
+      if (!file || !stat2.isFile() || ++count2 > files.length || stat2.nlink !== 1 || await hashRegular(path2, file.bytes) !== digest(file.text))
+        throw new Error("stage identity");
+    }
+  };
+  try {
+    await walk(stage);
+    return count2 === files.length;
+  } catch {
+    return false;
+  }
+}
+async function verifyNativePostRun(check, stage, files, pack, policy, executable3) {
+  let stable = false;
+  try {
+    stable = await inventoryMatches(stage, files) && await hashRegular(pack, Buffer.byteLength(OWN_RULES)) === OWN_RULES_SHA256 && await hashRegular(policy, Buffer.byteLength(NATIVE_DENY_POLICY)) === digest(NATIVE_DENY_POLICY) && await hashRegular(executable3, OPENGREP_SIZE) === OPENGREP_SHA256;
+  } catch {
+  }
+  if (!stable) {
+    check.status = "partial";
+    check.metrics = {
+      ...check.metrics,
+      identityUnchanged: false,
+      incompleteReasons: [check.metrics?.incompleteReasons, "identity_changed"].filter(Boolean).join(",")
+    };
+    check.notes.push("Post-run native input or engine identity could not be verified.");
+  } else
+    check.metrics = { ...check.metrics, identityUnchanged: true, engineSha256: OPENGREP_SHA256 };
+}
+async function runNativePreview(snapshot2, options) {
+  const files = nativeFiles(snapshot2);
+  const failed = (reason, status = "error") => ({
+    id: NATIVE_CHECK_ID,
+    status,
+    findings: [],
+    notes: ["Selected native preview could not be verified."],
+    metrics: { profile: OPENGREP_PROFILE, filesDeclared: files.length, incompleteReasons: reason }
+  });
+  if (options.signal?.aborted)
+    return failed("cancelled", "partial");
+  const executable3 = options.nativePreview?.executable;
+  if (typeof executable3 !== "string" || !isAbsolute3(executable3) || executable3.includes("\0"))
+    return failed("invalid_executable_path");
+  if (process.platform !== "darwin" || process.arch !== "arm64")
+    return failed("unsupported_platform");
+  if (!snapshot2.complete && snapshot2.rootError)
+    return failed("snapshot_incomplete", "partial");
+  if (files.length === 0)
+    return { id: NATIVE_CHECK_ID, status: "not_applicable", findings: [], notes: ["No collected JS/TS/Python code file was available for the selected native preview."], metrics: { filesDeclared: 0, profile: OPENGREP_PROFILE } };
+  let top, check;
+  try {
+    if (await hashRegular(executable3, OPENGREP_SIZE) !== OPENGREP_SHA256 || digest(OWN_RULES) !== OWN_RULES_SHA256)
+      return failed("identity_mismatch");
+    await access2(executable3, constants2.X_OK);
+    if (!(await lstat2("/usr/bin/sandbox-exec")).isFile())
+      return failed("network_boundary_unavailable");
+    top = await mkdtemp(join3(tmpdir(), "wakeio-native-"));
+    const stage = join3(top, "snapshot"), home = join3(top, "home"), temporary = join3(top, "tmp");
+    for (const path2 of [stage, home, temporary])
+      await mkdir(path2, { mode: 448 });
+    for (const file of files) {
+      const path2 = join3(stage, file.path);
+      await mkdir(dirname3(path2), { recursive: true, mode: 448 });
+      await writeFile(path2, file.text, { flag: "wx", mode: 384 });
+    }
+    const pack = join3(top, "owned-rules.yaml"), policy = join3(top, "deny-network.sb");
+    await writeFile(pack, OWN_RULES, { mode: 384, flag: "wx" });
+    await writeFile(policy, NATIVE_DENY_POLICY, { mode: 384, flag: "wx" });
+    if (!await inventoryMatches(stage, files))
+      throw new Error("stage identity");
+    const args = [
+      "scan",
+      "--experimental",
+      "--disable-version-check",
+      "--json",
+      "--error",
+      "--strict",
+      "--no-autofix",
+      "--disable-nosem",
+      "--no-rewrite-rule-ids",
+      "--no-git-ignore",
+      "--taint-intrafile",
+      "--jobs",
+      "1",
+      "--max-memory",
+      "256",
+      "--timeout",
+      "2",
+      "--timeout-threshold",
+      "1",
+      "--project-root",
+      stage,
+      "--config",
+      pack,
+      stage
+    ];
+    const command = nativeSandboxCommand(policy, executable3, args);
+    const result3 = await runProcess(command.executable, command.args, {
+      cwd: stage,
+      home,
+      tmpdir: temporary,
+      timeoutMs: Math.min(options.timeoutMs ?? 1e4, 1e4),
+      maxOutputBytes: MAX_JSON_BYTES,
+      supervision: "native-offline",
+      signal: options.signal
+    });
+    check = nativeCheckFromProcess(result3, stage, files, snapshot2.complete);
+    await verifyNativePostRun(check, stage, files, pack, policy, executable3);
+  } catch {
+    if (!check)
+      check = failed("native_execution_error");
+    else {
+      check.status = "partial";
+      check.metrics = { ...check.metrics, incompleteReasons: [check.metrics?.incompleteReasons, "native_execution_error"].filter(Boolean).join(",") };
+    }
+  } finally {
+    if (top) {
+      try {
+        await rm(top, { recursive: true, force: true });
+        if (check)
+          check.metrics = { ...check.metrics, stageCleanupConfirmed: true };
+      } catch {
+        check ??= failed("stage_cleanup_unknown", "partial");
+        check.status = "partial";
+        check.metrics = { ...check.metrics, stageCleanupConfirmed: false, incompleteReasons: [check.metrics?.incompleteReasons, "stage_cleanup_unknown"].filter(Boolean).join(",") };
+      }
+    }
+  }
+  return check ?? failed("native_execution_error");
+}
+
+// build/src/source/code-coverage.js
+var CODE_COVERAGE_ID = "source.code-coverage";
+var CODE_LANGUAGES = ["javascript", "typescript", "python", "c", "cpp", "csharp", "go", "java", "kotlin", "php", "ruby", "rust", "shell", "swift", "vue"];
+var PROVIDERS = ["builtin_ast", "bandit", "opengrep_native"];
+var IDS = { builtin_ast: "source.builtin-ast", bandit: "source.bandit", opengrep_native: "source.opengrep.preview" };
+var EXTENSIONS = { ".js": "javascript", ".jsx": "javascript", ".mjs": "javascript", ".ts": "typescript", ".tsx": "typescript", ".mts": "typescript", ".cts": "typescript", ".py": "python", ".c": "c", ".h": "c", ".cc": "cpp", ".cpp": "cpp", ".hh": "cpp", ".hpp": "cpp", ".cs": "csharp", ".go": "go", ".java": "java", ".kt": "kotlin", ".php": "php", ".rb": "ruby", ".rs": "rust", ".sh": "shell", ".swift": "swift", ".vue": "vue" };
+var count = (v) => Number.isSafeInteger(v) && Number(v) >= 0 && Number(v) <= 1e4;
+var exact = (v, keys3) => !!v && typeof v === "object" && !Array.isArray(v) && Object.keys(v).length === keys3.length && keys3.every((k) => Object.hasOwn(v, k));
+var emptyCounts = () => ({ collected: null, eligible: null, completed: null, uncovered: null });
+var supports = (p, l) => p === "bandit" ? l === "python" : l === "javascript" || l === "typescript" || p === "opengrep_native" && l === "python";
+function collectedCodeMetrics(snapshot2) {
+  const result3 = Object.fromEntries(CODE_LANGUAGES.map((language) => [`codeFiles_${language}`, 0]));
+  for (const file of snapshot2.files.filter((f) => f.category === "code")) {
+    const language = EXTENSIONS[file.path.toLowerCase().slice(file.path.lastIndexOf("."))];
+    if (language)
+      result3[`codeFiles_${language}`]++;
+  }
+  return result3;
+}
+function unknownCodeCoverage(required = false) {
+  return { version: 1, basis: "collected_code_inputs", requireCodeAnalysis: required, collectionComplete: false, accounting: "unknown", languages: [], totals: emptyCounts() };
+}
+function codeCoverageCheck(snapshot2, checks, options) {
+  const required = options.requireCodeAnalysis === true;
+  if (!snapshot2)
+    return coverageCheck(unknownCodeCoverage(required));
+  const files = snapshot2.files.filter((f) => f.category === "code");
+  if (files.some((f) => !EXTENSIONS[f.path.toLowerCase().slice(f.path.lastIndexOf("."))]))
+    return coverageCheck(unknownCodeCoverage(required));
+  const selected = { builtin_ast: true, bandit: options.tools.includes("bandit"), opengrep_native: !!options.nativePreview };
+  const inputSets = { builtin_ast: builtinAstFiles(snapshot2), bandit: pythonFiles(snapshot2), opengrep_native: nativeFiles(snapshot2) };
+  const inputs2 = (p) => inputSets[p];
+  const statuses = Object.fromEntries(PROVIDERS.map((p) => [p, checks.find((c) => c.id === IDS[p])?.status ?? "unknown"]));
+  const completed2 = (p) => {
+    const check = checks.find((c) => c.id === IDS[p]), n = inputs2(p).length;
+    if (!selected[p] || check?.status !== "completed" || n === 0)
+      return false;
+    if (p === "builtin_ast")
+      return check.metrics?.filesAnalyzed === n && check.metrics?.filesParseValid === n;
+    if (p === "bandit")
+      return check.metrics?.filesRequested === n && check.metrics?.filesAnalyzed === n && check.metrics?.errorCount === 0;
+    return check.metrics?.filesDeclared === n && check.metrics?.filesScanned === n && check.metrics?.identityUnchanged === true && check.metrics?.closeConfirmed === true && check.metrics?.stageCleanupConfirmed === true;
+  };
+  const languages = CODE_LANGUAGES.flatMap((language) => {
+    const collected = files.filter((f) => EXTENSIONS[f.path.toLowerCase().slice(f.path.lastIndexOf("."))] === language).length;
+    if (!collected)
+      return [];
+    const perProvider = (provider) => inputs2(provider).filter((f) => EXTENSIONS[f.path.toLowerCase().slice(f.path.lastIndexOf("."))] === language);
+    const providers = PROVIDERS.map((provider) => ({
+      provider,
+      selected: selected[provider],
+      status: selected[provider] ? statuses[provider] : "not_selected",
+      eligible: selected[provider] ? perProvider(provider).length : 0,
+      completed: selected[provider] && completed2(provider) ? perProvider(provider).length : 0
+    }));
+    const eligible = new Set(PROVIDERS.flatMap((p) => selected[p] ? perProvider(p).map((f) => f.path) : [])).size;
+    const done = new Set(PROVIDERS.flatMap((p) => selected[p] && completed2(p) ? perProvider(p).map((f) => f.path) : [])).size;
+    return [{ language, collected, eligible, completed: done, uncovered: collected - done, providers }];
+  });
+  const totals = { collected: files.length, eligible: 0, completed: 0, uncovered: 0 };
+  for (const row of languages) {
+    totals.eligible += row.eligible;
+    totals.completed += row.completed;
+    totals.uncovered += row.uncovered;
+  }
+  return coverageCheck({ version: 1, basis: "collected_code_inputs", requireCodeAnalysis: required, collectionComplete: snapshot2.complete, accounting: "exact", languages, totals });
+}
+function coverageCheck(codeCoverage) {
+  return {
+    id: CODE_COVERAGE_ID,
+    status: coverageIncomplete(codeCoverage) ? "partial" : "completed",
+    findings: [],
+    codeCoverage,
+    notes: [
+      "Code coverage counts describe collected code inputs only, not vulnerability completeness or whole-project safety.",
+      "Eligible means selected provider input support, not submitted or executed. Completed requires a validated complete code-analysis result; partial providers contribute zero completed files.",
+      "Secrets, advisory, configuration and framework checks do not establish code-analysis completion."
+    ]
+  };
+}
+function coverageIncomplete(v) {
+  return v.accounting !== "exact" || v.requireCodeAnalysis && (!v.collectionComplete || !v.totals.collected || v.totals.uncovered !== 0);
+}
+function parseCodeCoverage(input) {
+  let v;
+  try {
+    v = snapshotJsonData(input);
+  } catch {
+    return void 0;
+  }
+  if (!exact(v, ["version", "basis", "requireCodeAnalysis", "collectionComplete", "accounting", "languages", "totals"]) || v.version !== 1 || v.basis !== "collected_code_inputs" || typeof v.requireCodeAnalysis !== "boolean" || typeof v.collectionComplete !== "boolean" || !Array.isArray(v.languages) || v.languages.length > CODE_LANGUAGES.length || !exact(v.totals, ["collected", "eligible", "completed", "uncovered"]))
+    return void 0;
+  if (v.accounting === "unknown")
+    return v.collectionComplete === false && v.languages.length === 0 && Object.values(v.totals).every((n) => n === null) ? structuredClone(v) : void 0;
+  if (v.accounting !== "exact")
+    return void 0;
+  let previous = -1;
+  const sums = { collected: 0, eligible: 0, completed: 0, uncovered: 0 };
+  const providerIdentity = /* @__PURE__ */ new Map();
+  for (const raw of v.languages) {
+    if (!exact(raw, ["language", "collected", "eligible", "completed", "uncovered", "providers"]) || !CODE_LANGUAGES.includes(raw.language) || !Array.isArray(raw.providers) || raw.providers.length !== 3)
+      return void 0;
+    const order = CODE_LANGUAGES.indexOf(raw.language);
+    if (order <= previous)
+      return void 0;
+    previous = order;
+    if (!count(raw.collected) || raw.collected === 0 || !count(raw.eligible) || !count(raw.completed) || !count(raw.uncovered) || raw.completed > raw.eligible || raw.eligible > raw.collected || raw.uncovered !== raw.collected - raw.completed)
+      return void 0;
+    let eligible = 0, done = 0;
+    for (let i = 0; i < PROVIDERS.length; i++) {
+      const p = raw.providers[i];
+      if (!exact(p, ["provider", "selected", "status", "eligible", "completed"]) || p.provider !== PROVIDERS[i] || typeof p.selected !== "boolean" || !count(p.eligible) || !count(p.completed) || p.completed > p.eligible || p.eligible > raw.collected)
+        return void 0;
+      if (!p.selected ? p.status !== "not_selected" || p.eligible !== 0 || p.completed !== 0 : typeof p.status !== "string" || !["completed", "partial", "error", "not_applicable", "skipped", "unknown"].includes(p.status))
+        return void 0;
+      if ((!supports(PROVIDERS[i], raw.language) || p.status === "not_applicable") && (p.eligible !== 0 || p.completed !== 0) || p.status !== "completed" && p.completed !== 0 || p.completed !== 0 && p.completed !== p.eligible)
+        return void 0;
+      const identity = JSON.stringify([p.selected, p.status]);
+      if (providerIdentity.has(String(p.provider)) && providerIdentity.get(String(p.provider)) !== identity)
+        return void 0;
+      providerIdentity.set(String(p.provider), identity);
+      eligible = Math.max(eligible, p.eligible);
+      done = Math.max(done, p.completed);
+    }
+    if (eligible !== raw.eligible || done !== raw.completed)
+      return void 0;
+    for (const key2 of ["collected", "eligible", "completed", "uncovered"]) {
+      const n = raw[key2];
+      if (!count(n))
+        return void 0;
+      sums[key2] += n;
+    }
+  }
+  const totals = v.totals;
+  if (Object.entries(sums).some(([key2, n]) => !count(n) || totals[key2] !== n))
+    return void 0;
+  return structuredClone(v);
+}
+function codeCoverageConsistent(v, checks) {
+  if (v.accounting === "unknown")
+    return true;
+  const inventory = checks.filter((c) => c.id === "source.inventory");
+  if (inventory.length !== 1 || !count(inventory[0].metrics?.filesSelected) || inventory[0].metrics?.codeFilesSelected !== v.totals.collected || inventory[0].metrics?.complete !== v.collectionComplete || Number(inventory[0].metrics?.filesSelected) < v.totals.collected)
+    return false;
+  for (const language of CODE_LANGUAGES) {
+    if (inventory[0].metrics?.[`codeFiles_${language}`] !== (v.languages.find((row) => row.language === language)?.collected ?? 0))
+      return false;
+  }
+  const requested = inventory[0].metrics?.requestedTools;
+  const nativeSelected = inventory[0].metrics?.nativePreviewSelected;
+  if (typeof requested !== "string" || typeof nativeSelected !== "boolean")
+    return false;
+  for (const provider of PROVIDERS) {
+    const rows = v.languages.map((row) => row.providers.find((p) => p.provider === provider));
+    if (!rows.length)
+      continue;
+    const identity = rows[0], expectedSelected = provider === "builtin_ast" || (provider === "bandit" ? requested.split(",").includes("bandit") : nativeSelected);
+    if (identity.selected !== expectedSelected)
+      return false;
+    const actual = checks.filter((c) => c.id === IDS[provider]);
+    if (identity.selected && (actual.length !== 1 || actual[0].status !== identity.status) || !identity.selected && actual.length !== 0)
+      return false;
+    const eligible = rows.reduce((sum, row) => sum + row.eligible, 0), done = rows.reduce((sum, row) => sum + row.completed, 0);
+    const m = actual[0]?.metrics;
+    const inputCount = provider === "builtin_ast" ? m?.filesAnalyzed : provider === "bandit" ? m?.filesRequested ?? m?.files : m?.filesDeclared;
+    if (identity.selected && inputCount !== void 0 && (!count(inputCount) || inputCount !== eligible))
+      return false;
+    if (done > 0) {
+      if (provider === "builtin_ast" ? m?.filesAnalyzed !== eligible || m?.filesParseValid !== eligible : provider === "bandit" ? m?.filesRequested !== eligible || m?.filesAnalyzed !== eligible || m?.errorCount !== 0 : m?.filesDeclared !== eligible || m?.filesScanned !== eligible || m?.identityUnchanged !== true || m?.closeConfirmed !== true || m?.stageCleanupConfirmed !== true)
+        return false;
+      if (done !== eligible)
+        return false;
+    }
+  }
+  return true;
+}
+
+// build/src/source.js
+import { types as utilTypes } from "node:util";
+
+// build/src/source/snapshot-evidence.js
+import { createHash as createHash2 } from "node:crypto";
+import { isAbsolute as isAbsolute4, relative as relative3, resolve as resolve4 } from "node:path";
+import { types as types4 } from "node:util";
+function sourceSnapshotEvidence(snapshot2, outDir) {
+  const hash = createHash2("sha256");
+  hash.update(JSON.stringify(["source-snapshot-v1", snapshot2.collectionBudget ?? null]));
+  for (const file of [...snapshot2.files].sort((a, b) => a.path < b.path ? -1 : a.path > b.path ? 1 : 0)) {
+    hash.update(JSON.stringify([file.path, file.category, file.sensitive, file.bytes, file.text]));
+  }
+  const output = outDir === void 0 ? void 0 : relative3(resolve4(snapshot2.root), resolve4(outDir));
+  return {
+    revision: "source-snapshot-v1",
+    basis: "collected_utf8_strings",
+    algorithm: "sha256",
+    digest: hash.digest("hex"),
+    filesSelected: snapshot2.files.length,
+    bytesSelected: snapshot2.totalBytes,
+    complete: snapshot2.complete && !snapshot2.rootError && !!sanitiseCollectionBudget(snapshot2.collectionBudget),
+    outputDirectoryExcluded: output !== void 0 && (output === "" || output !== ".." && !output.startsWith("../") && !output.startsWith("..\\") && !isAbsolute4(output))
+  };
+}
+function sanitiseSourceSnapshotEvidence(input) {
+  if (!input || typeof input !== "object" || types4.isProxy(input) || Array.isArray(input))
+    return void 0;
+  const descriptors = Object.getOwnPropertyDescriptors(input);
+  const keys3 = ["revision", "basis", "algorithm", "digest", "filesSelected", "bytesSelected", "complete", "outputDirectoryExcluded"];
+  if (Reflect.ownKeys(descriptors).length !== keys3.length || !keys3.every((key2) => descriptors[key2]?.enumerable && Object.hasOwn(descriptors[key2], "value")))
+    return void 0;
+  const value = input;
+  if (value.revision !== "source-snapshot-v1" || value.basis !== "collected_utf8_strings" || value.algorithm !== "sha256" || typeof value.digest !== "string" || !/^[a-f0-9]{64}$/.test(value.digest) || !Number.isSafeInteger(value.filesSelected) || Number(value.filesSelected) < 0 || Number(value.filesSelected) > COLLECTION_MAX_FILES || !Number.isSafeInteger(value.bytesSelected) || Number(value.bytesSelected) < 0 || Number(value.bytesSelected) > COLLECTION_MAX_BYTES || typeof value.complete !== "boolean" || typeof value.outputDirectoryExcluded !== "boolean")
+    return void 0;
+  return {
+    revision: "source-snapshot-v1",
+    basis: "collected_utf8_strings",
+    algorithm: "sha256",
+    digest: value.digest,
+    filesSelected: Number(value.filesSelected),
+    bytesSelected: Number(value.bytesSelected),
+    complete: value.complete,
+    outputDirectoryExcluded: value.outputDirectoryExcluded
+  };
+}
+function sameSourceSnapshot(left, right) {
+  return !!left && !!right && JSON.stringify(left) === JSON.stringify(right);
+}
+
+// build/src/source.js
+var ts15 = __toESM(require_typescript(), 1);
+import { createHash as createHash3 } from "node:crypto";
+import { mkdir as mkdir3, writeFile as writeFile3 } from "node:fs/promises";
+import { dirname as dirname5, join as join5 } from "node:path";
+
+// build/src/source/collector.js
+import { constants as constants3 } from "node:fs";
+import { access as access3, lstat as lstat3, mkdir as mkdir2, mkdtemp as mkdtemp2, open as open2, readdir as readdir2, rm as rm2, writeFile as writeFile2 } from "node:fs/promises";
+import { tmpdir as tmpdir2 } from "node:os";
+import { dirname as dirname4, isAbsolute as isAbsolute5, join as join4, relative as relative4, resolve as resolve5, sep as sep2 } from "node:path";
 var MAX_MAX_FILE_BYTES = 8 * 1024 * 1024;
 var IGNORED_DIRECTORIES = /* @__PURE__ */ new Set([
   ".git",
@@ -220134,8 +221789,8 @@ function issue(code, path2) {
   return { code, path: path2 || "." };
 }
 function safeRelativePath2(root, fullPath) {
-  const value = relative2(root, fullPath).replaceAll(sep, "/");
-  if (!value || value === "." || value.startsWith("../") || value === ".." || isAbsolute2(value))
+  const value = relative4(root, fullPath).replaceAll(sep2, "/");
+  if (!value || value === "." || value.startsWith("../") || value === ".." || isAbsolute5(value))
     return void 0;
   const pieces = value.split("/");
   if (pieces.some((piece) => piece === "" || piece === "." || piece === ".."))
@@ -220184,8 +221839,8 @@ function sameFile(before, after) {
 async function readRegularFile(fullPath, expected, maxFileBytes) {
   let handle;
   try {
-    const noFollow = constants.O_NOFOLLOW ?? 0;
-    handle = await open(fullPath, constants.O_RDONLY | noFollow);
+    const noFollow = constants3.O_NOFOLLOW ?? 0;
+    handle = await open2(fullPath, constants3.O_RDONLY | noFollow);
     const opened = await handle.stat();
     if (opened.isSymbolicLink() || !opened.isFile() || opened.nlink > 1 || !sameFile(expected, opened)) {
       return { issue: issue("changed_file", "") };
@@ -220212,14 +221867,14 @@ async function readRegularFile(fullPath, expected, maxFileBytes) {
 function outputPathRelative(root, outDir) {
   if (!outDir)
     return void 0;
-  const output = resolve2(outDir);
+  const output = resolve5(outDir);
   const candidate = safeRelativePath2(root, output);
   if (candidate)
     return candidate;
   return void 0;
 }
 async function collectSource(options) {
-  const root = resolve2(options.root);
+  const root = resolve5(options.root);
   const collectionBudget = resolveCollectionBudget(options);
   const limits = collectionBudget.limits;
   const issues = [];
@@ -220233,7 +221888,7 @@ async function collectSource(options) {
   const outputRelative = outputPathRelative(root, options.outDir);
   let rootStat;
   try {
-    rootStat = await lstat(root);
+    rootStat = await lstat3(root);
   } catch {
     issues.push(issue("root_error", "."));
     rootError = "source root cannot be read";
@@ -220256,7 +221911,7 @@ async function collectSource(options) {
     }
     let entries;
     try {
-      entries = await readdir(directory2, { withFileTypes: true, encoding: "utf8" });
+      entries = await readdir2(directory2, { withFileTypes: true, encoding: "utf8" });
     } catch {
       issues.push(issue("read_error", safeRelativePath2(root, directory2) ?? "."));
       return;
@@ -220268,7 +221923,7 @@ async function collectSource(options) {
         issues.push(issue("file_limit", safeRelativePath2(root, directory2) ?? "."));
         return;
       }
-      const fullPath = join(directory2, entry.name);
+      const fullPath = join4(directory2, entry.name);
       const path2 = safeRelativePath2(root, fullPath);
       if (!path2) {
         issues.push(issue("path_error", "."));
@@ -220285,7 +221940,7 @@ async function collectSource(options) {
         }
         let directoryStat;
         try {
-          directoryStat = await lstat(fullPath);
+          directoryStat = await lstat3(fullPath);
         } catch {
           issues.push(issue("read_error", path2));
           continue;
@@ -220311,7 +221966,7 @@ async function collectSource(options) {
       }
       let stat2;
       try {
-        stat2 = await lstat(fullPath);
+        stat2 = await lstat3(fullPath);
       } catch {
         issues.push(issue("read_error", path2));
         continue;
@@ -220362,23 +222017,23 @@ async function collectSource(options) {
   return { root, files, issues, ignoredFiles, totalBytes, complete, collectionBudget, ...rootError ? { rootError } : {} };
 }
 async function stageSnapshot(snapshot2) {
-  const parent = await mkdtemp(join(tmpdir(), "wakeio-security-ci-"));
-  const dir = join(parent, "snapshot");
-  await mkdir(dir, { recursive: true, mode: 448 });
+  const parent = await mkdtemp2(join4(tmpdir2(), "wakeio-security-ci-"));
+  const dir = join4(parent, "snapshot");
+  await mkdir2(dir, { recursive: true, mode: 448 });
   try {
     for (const file of snapshot2.files) {
-      const destination = join(dir, ...file.path.split("/"));
-      await mkdir(dirname(destination), { recursive: true, mode: 448 });
-      await writeFile(destination, file.text, { encoding: "utf8", mode: 384, flag: "wx" });
+      const destination = join4(dir, ...file.path.split("/"));
+      await mkdir2(dirname4(destination), { recursive: true, mode: 448 });
+      await writeFile2(destination, file.text, { encoding: "utf8", mode: 384, flag: "wx" });
     }
   } catch (error) {
-    await rm(parent, { recursive: true, force: true });
+    await rm2(parent, { recursive: true, force: true });
     throw error;
   }
   return {
     dir,
     cleanup: async () => {
-      await rm(parent, { recursive: true, force: true });
+      await rm2(parent, { recursive: true, force: true });
     }
   };
 }
@@ -221155,11 +222810,11 @@ function runFrameworkRules(snapshot2) {
 }
 
 // build/src/source/parsers.js
-import { isAbsolute as isAbsolute3, relative as relative3, resolve as resolve3 } from "node:path";
+import { isAbsolute as isAbsolute6, relative as relative5, resolve as resolve6 } from "node:path";
 function own(object9, key2) {
   return Object.prototype.hasOwnProperty.call(object9, key2) ? object9[key2] : void 0;
 }
-function objectValue(value) {
+function objectValue2(value) {
   return value !== null && typeof value === "object" && !Array.isArray(value) ? value : void 0;
 }
 function cleanText(value, fallback, max = 240) {
@@ -221173,7 +222828,7 @@ function cleanRuleId(value, fallback) {
   const safe = candidate.replace(/[^A-Za-z0-9_.:/-]/g, "_");
   return safe || fallback;
 }
-function positiveInt(value) {
+function positiveInt2(value) {
   if (typeof value === "number" && Number.isSafeInteger(value) && value >= 1 && value <= 1e7)
     return value;
   if (typeof value === "string" && /^\d{1,8}$/.test(value)) {
@@ -221183,7 +222838,7 @@ function positiveInt(value) {
   }
   return void 0;
 }
-function severityFrom(value, fallback = "medium") {
+function severityFrom2(value, fallback = "medium") {
   if (typeof value === "string") {
     const normalized = value.trim().toLowerCase();
     if (normalized.includes("critical") || normalized === "blocker")
@@ -221198,7 +222853,7 @@ function severityFrom(value, fallback = "medium") {
       return "info";
     const numeric = Number(normalized);
     if (Number.isFinite(numeric))
-      return severityFrom(numeric, fallback);
+      return severityFrom2(numeric, fallback);
   }
   if (typeof value === "number" && Number.isFinite(value)) {
     if (value >= 9)
@@ -221219,7 +222874,7 @@ function referencesFrom(value) {
   const references2 = value.map((entry) => {
     if (typeof entry === "string")
       return entry.trim();
-    const object9 = objectValue(entry);
+    const object9 = objectValue2(entry);
     if (!object9 || typeof object9.url !== "string" || object9.url.length === 0)
       throw new Error("scanner output has an invalid reference");
     return object9.url.trim();
@@ -221230,10 +222885,10 @@ function pathFromScanner(value, stageDir, allowed) {
   if (typeof value !== "string" || value.length === 0)
     return void 0;
   const candidate = value.replaceAll("\\", "/");
-  const absoluteCandidate = isAbsolute3(candidate) ? resolve3(candidate) : resolve3(stageDir, candidate);
-  const stage = resolve3(stageDir);
-  const relativePath = relative3(stage, absoluteCandidate).replaceAll("\\", "/");
-  if (relativePath && relativePath !== "." && !relativePath.startsWith("../") && relativePath !== ".." && !isAbsolute3(relativePath) && allowed.has(relativePath))
+  const absoluteCandidate = isAbsolute6(candidate) ? resolve6(candidate) : resolve6(stageDir, candidate);
+  const stage = resolve6(stageDir);
+  const relativePath = relative5(stage, absoluteCandidate).replaceAll("\\", "/");
+  if (relativePath && relativePath !== "." && !relativePath.startsWith("../") && relativePath !== ".." && !isAbsolute6(relativePath) && allowed.has(relativePath))
     return relativePath;
   const normalized = candidate.replace(/^\.\//, "");
   return allowed.has(normalized) ? normalized : void 0;
@@ -221255,7 +222910,7 @@ function makeFinding(input) {
     ...input.references ? { references: input.references } : {}
   };
 }
-function parseJson(text2, tool) {
+function parseJson2(text2, tool) {
   const trimmed = text2.trim();
   if (!trimmed)
     throw new Error(`${tool} produced no JSON output`);
@@ -221265,14 +222920,14 @@ function parseJson(text2, tool) {
     throw new Error(`${tool} produced malformed JSON output`);
   }
 }
-function requiredArray(value, key2, tool) {
+function requiredArray2(value, key2, tool) {
   const child = own(value, key2);
   if (!Array.isArray(child))
     throw new Error(`${tool} output has an invalid ${key2} field`);
   return child;
 }
-function requiredObject(value, field, tool) {
-  const object9 = objectValue(value);
+function requiredObject2(value, field, tool) {
+  const object9 = objectValue2(value);
   if (!object9)
     throw new Error(`${tool} output has an invalid ${field} record`);
   return object9;
@@ -221283,14 +222938,14 @@ function requiredPositiveInt(value, key2, tool) {
     throw new Error(`${tool} output has an invalid ${key2} field`);
   return child;
 }
-function requiredString(value, key2, tool) {
+function requiredString2(value, key2, tool) {
   const child = own(value, key2);
   if (typeof child !== "string" || child.length === 0)
     throw new Error(`${tool} output has an invalid ${key2} field`);
   return child;
 }
 function parseGitleaksOutput(text2, stageDir, files) {
-  const parsed = parseJson(text2, "Gitleaks");
+  const parsed = parseJson2(text2, "Gitleaks");
   if (!Array.isArray(parsed))
     throw new Error("Gitleaks output must be a JSON array");
   const entries = parsed;
@@ -221298,15 +222953,15 @@ function parseGitleaksOutput(text2, stageDir, files) {
   const findings = [];
   let unknownLocations = 0;
   for (const entry of entries) {
-    const object9 = requiredObject(entry, "finding", "Gitleaks");
-    const ruleId = cleanRuleId(requiredString(object9, "RuleID", "Gitleaks"), "gitleaks.secret");
-    const filePath = requiredString(object9, "File", "Gitleaks");
+    const object9 = requiredObject2(entry, "finding", "Gitleaks");
+    const ruleId = cleanRuleId(requiredString2(object9, "RuleID", "Gitleaks"), "gitleaks.secret");
+    const filePath = requiredString2(object9, "File", "Gitleaks");
     const path2 = pathFromScanner(filePath, stageDir, allowed);
     if (!path2)
       unknownLocations += 1;
     const line = requiredPositiveInt(object9, "StartLine", "Gitleaks");
     const column = requiredPositiveInt(object9, "StartColumn", "Gitleaks");
-    const title = cleanText(requiredString(object9, "Description", "Gitleaks"), `Secret detected by Gitleaks (${ruleId})`);
+    const title = cleanText(requiredString2(object9, "Description", "Gitleaks"), `Secret detected by Gitleaks (${ruleId})`);
     const severity = /private[-_ ]?key|password|token|secret|credential|aws|github|slack/i.test(`${ruleId} ${title}`) ? "high" : "medium";
     findings.push(makeFinding({
       ruleId,
@@ -221331,29 +222986,29 @@ function parseGitleaksOutput(text2, stageDir, files) {
   };
 }
 function vulnerabilitySeverity(vulnerability, group) {
-  const databaseSpecific = objectValue(own(vulnerability, "database_specific"));
+  const databaseSpecific = objectValue2(own(vulnerability, "database_specific"));
   const directSeverity = own(databaseSpecific ?? {}, "severity");
   if (directSeverity !== void 0) {
     if (typeof directSeverity !== "string" && typeof directSeverity !== "number")
       throw new Error("OSV-Scanner output has an invalid database severity");
-    return severityFrom(directSeverity);
+    return severityFrom2(directSeverity);
   }
   const groupSeverity = own(group ?? {}, "max_severity");
   if (groupSeverity !== void 0) {
     if (typeof groupSeverity !== "string" && typeof groupSeverity !== "number")
       throw new Error("OSV-Scanner output has an invalid group severity");
-    return severityFrom(groupSeverity);
+    return severityFrom2(groupSeverity);
   }
   const severities2 = own(vulnerability, "severity");
   if (Array.isArray(severities2)) {
     for (const item of severities2) {
-      const severity = objectValue(item);
+      const severity = objectValue2(item);
       if (!severity)
         throw new Error("OSV-Scanner output has an invalid severity record");
       const score = own(severity, "score");
       if (typeof score !== "string")
         throw new Error("OSV-Scanner output has an invalid severity score");
-      const mapped = severityFrom(score, "info");
+      const mapped = severityFrom2(score, "info");
       if (mapped !== "info")
         return mapped;
     }
@@ -221362,7 +223017,7 @@ function vulnerabilitySeverity(vulnerability, group) {
   if (typeof cvss === "string") {
     const scoreMatch = cvss.match(/(?:^|\/|:)\s*(\d+(?:\.\d+)?)/);
     if (scoreMatch)
-      return severityFrom(Number(scoreMatch[1]));
+      return severityFrom2(Number(scoreMatch[1]));
   }
   return "medium";
 }
@@ -221399,21 +223054,21 @@ function fixedVersions(vulnerability) {
     throw new Error("OSV-Scanner output has an invalid affected field");
   const versions = [];
   for (const affectedEntry of affected) {
-    const affectedObject = requiredObject(affectedEntry, "affected", "OSV-Scanner");
+    const affectedObject = requiredObject2(affectedEntry, "affected", "OSV-Scanner");
     const ranges = own(affectedObject, "ranges");
     if (ranges === void 0)
       continue;
     if (!Array.isArray(ranges))
       throw new Error("OSV-Scanner output has an invalid ranges field");
     for (const rangeEntry of ranges) {
-      const range2 = requiredObject(rangeEntry, "range", "OSV-Scanner");
+      const range2 = requiredObject2(rangeEntry, "range", "OSV-Scanner");
       const events = own(range2, "events");
       if (events === void 0)
         continue;
       if (!Array.isArray(events))
         throw new Error("OSV-Scanner output has an invalid events field");
       for (const eventEntry of events) {
-        const event = requiredObject(eventEntry, "event", "OSV-Scanner");
+        const event = requiredObject2(eventEntry, "event", "OSV-Scanner");
         const fixed = own(event, "fixed");
         if (fixed !== void 0) {
           if (typeof fixed !== "string" || fixed.length === 0)
@@ -221426,37 +223081,37 @@ function fixedVersions(vulnerability) {
   return [...new Set(versions)].slice(0, 8);
 }
 function parseOsvOutput(text2, stageDir, files) {
-  const parsed = parseJson(text2, "OSV-Scanner");
-  const top = requiredObject(parsed, "root", "OSV-Scanner");
-  const results = requiredArray(top, "results", "OSV-Scanner");
+  const parsed = parseJson2(text2, "OSV-Scanner");
+  const top = requiredObject2(parsed, "root", "OSV-Scanner");
+  const results = requiredArray2(top, "results", "OSV-Scanner");
   if (results.length === 0)
     throw new Error("OSV-Scanner output has no source result records");
   const allowed = new Set(files.map((file) => file.path));
   const findings = [];
   let packageCount = 0;
   for (const resultEntry of results) {
-    const result3 = requiredObject(resultEntry, "result", "OSV-Scanner");
-    const source = requiredObject(own(result3, "source"), "source", "OSV-Scanner");
-    const sourcePath = requiredString(source, "path", "OSV-Scanner");
+    const result3 = requiredObject2(resultEntry, "result", "OSV-Scanner");
+    const source = requiredObject2(own(result3, "source"), "source", "OSV-Scanner");
+    const sourcePath = requiredString2(source, "path", "OSV-Scanner");
     const path2 = pathFromScanner(sourcePath, stageDir, allowed);
-    const packages = requiredArray(result3, "packages", "OSV-Scanner");
+    const packages = requiredArray2(result3, "packages", "OSV-Scanner");
     if (packages.length === 0)
       throw new Error("OSV-Scanner output has no parsed package records");
     packageCount += packages.length;
     for (const packageEntry of packages) {
-      const packageObject = requiredObject(packageEntry, "package result", "OSV-Scanner");
-      const packageIdentity = requiredObject(own(packageObject, "package"), "package identity", "OSV-Scanner");
-      const packageName2 = requiredString(packageIdentity, "name", "OSV-Scanner");
-      const ecosystem = requiredString(packageIdentity, "ecosystem", "OSV-Scanner");
-      const packageVersion = requiredString(packageIdentity, "version", "OSV-Scanner");
-      const vulnerabilities = own(packageObject, "vulnerabilities") === void 0 ? [] : requiredArray(packageObject, "vulnerabilities", "OSV-Scanner");
+      const packageObject = requiredObject2(packageEntry, "package result", "OSV-Scanner");
+      const packageIdentity = requiredObject2(own(packageObject, "package"), "package identity", "OSV-Scanner");
+      const packageName2 = requiredString2(packageIdentity, "name", "OSV-Scanner");
+      const ecosystem = requiredString2(packageIdentity, "ecosystem", "OSV-Scanner");
+      const packageVersion = requiredString2(packageIdentity, "version", "OSV-Scanner");
+      const vulnerabilities = own(packageObject, "vulnerabilities") === void 0 ? [] : requiredArray2(packageObject, "vulnerabilities", "OSV-Scanner");
       const groupsValue = own(packageObject, "groups");
       if (groupsValue !== void 0 && !Array.isArray(groupsValue))
         throw new Error("OSV-Scanner output has an invalid groups field");
       const groups = groupsValue ?? [];
       const groupById = /* @__PURE__ */ new Map();
       for (const groupEntry of groups) {
-        const group = requiredObject(groupEntry, "group", "OSV-Scanner");
+        const group = requiredObject2(groupEntry, "group", "OSV-Scanner");
         for (const id of ["ids", "aliases"]) {
           const values = own(group, id);
           if (values === void 0)
@@ -221468,10 +223123,10 @@ function parseOsvOutput(text2, stageDir, files) {
         }
       }
       for (const vulnerabilityEntry of vulnerabilities) {
-        const vulnerability = requiredObject(vulnerabilityEntry, "vulnerability", "OSV-Scanner");
-        const vulnerabilityId = requiredString(vulnerability, "id", "OSV-Scanner");
+        const vulnerability = requiredObject2(vulnerabilityEntry, "vulnerability", "OSV-Scanner");
+        const vulnerabilityId = requiredString2(vulnerability, "id", "OSV-Scanner");
         const databaseSpecific = own(vulnerability, "database_specific");
-        if (databaseSpecific !== void 0 && !objectValue(databaseSpecific))
+        if (databaseSpecific !== void 0 && !objectValue2(databaseSpecific))
           throw new Error("OSV-Scanner output has an invalid database_specific field");
         const severityField = own(vulnerability, "severity");
         if (severityField !== void 0 && !Array.isArray(severityField))
@@ -221481,8 +223136,8 @@ function parseOsvOutput(text2, stageDir, files) {
           if (!Array.isArray(referencesField))
             throw new Error("OSV-Scanner output has an invalid references field");
           for (const reference2 of referencesField) {
-            const referenceObject = requiredObject(reference2, "reference", "OSV-Scanner");
-            requiredString(referenceObject, "url", "OSV-Scanner");
+            const referenceObject = requiredObject2(reference2, "reference", "OSV-Scanner");
+            requiredString2(referenceObject, "url", "OSV-Scanner");
           }
         }
         const ids = vulnerabilityIds(vulnerability, void 0);
@@ -221512,15 +223167,15 @@ function parseOsvOutput(text2, stageDir, files) {
   };
 }
 function trivyResults(parsed) {
-  const top = requiredObject(parsed, "root", "Trivy");
+  const top = requiredObject2(parsed, "root", "Trivy");
   const schema2 = own(top, "SchemaVersion");
   if (schema2 !== 2)
     throw new Error("Trivy output has an unsupported SchemaVersion field");
   const resultsValue = own(top, "Results");
   if (resultsValue === void 0) {
-    requiredString(requiredObject(own(top, "Trivy"), "Trivy metadata", "Trivy"), "Version", "Trivy");
+    requiredString2(requiredObject2(own(top, "Trivy"), "Trivy metadata", "Trivy"), "Version", "Trivy");
     for (const key2 of ["ReportID", "CreatedAt", "ArtifactName", "ArtifactType"])
-      requiredString(top, key2, "Trivy");
+      requiredString2(top, key2, "Trivy");
     return { results: [], notApplicable: true };
   }
   if (!Array.isArray(resultsValue))
@@ -221528,14 +223183,14 @@ function trivyResults(parsed) {
   return { results: resultsValue, notApplicable: false };
 }
 function parseTrivyOutput(text2, stageDir, files) {
-  const parsed = parseJson(text2, "Trivy");
+  const parsed = parseJson2(text2, "Trivy");
   const allowed = new Set(files.map((file) => file.path));
   const findings = [];
   let misconfigurationCount = 0;
   const envelope = trivyResults(parsed);
   for (const resultEntry of envelope.results) {
-    const result3 = requiredObject(resultEntry, "result", "Trivy");
-    const target = requiredString(result3, "Target", "Trivy");
+    const result3 = requiredObject2(resultEntry, "result", "Trivy");
+    const target = requiredString2(result3, "Target", "Trivy");
     const path2 = pathFromScanner(target, stageDir, allowed);
     const entriesValue = own(result3, "Misconfigurations");
     if (entriesValue !== null && !Array.isArray(entriesValue))
@@ -221543,21 +223198,21 @@ function parseTrivyOutput(text2, stageDir, files) {
     const entries = entriesValue ?? [];
     let failedCount = 0;
     for (const entry of entries) {
-      const misconfiguration = requiredObject(entry, "misconfiguration", "Trivy");
-      const status = requiredString(misconfiguration, "Status", "Trivy").toUpperCase();
+      const misconfiguration = requiredObject2(entry, "misconfiguration", "Trivy");
+      const status = requiredString2(misconfiguration, "Status", "Trivy").toUpperCase();
       if (status === "PASS")
         continue;
       if (status !== "FAIL")
         throw new Error("Trivy output has an unknown Misconfiguration status");
       failedCount += 1;
-      const id = cleanRuleId(requiredString(misconfiguration, "ID", "Trivy"), "trivy.misconfiguration");
-      const cause = objectValue(own(misconfiguration, "CauseMetadata"));
+      const id = cleanRuleId(requiredString2(misconfiguration, "ID", "Trivy"), "trivy.misconfiguration");
+      const cause = objectValue2(own(misconfiguration, "CauseMetadata"));
       if (own(misconfiguration, "CauseMetadata") !== void 0 && !cause)
         throw new Error("Trivy output has an invalid CauseMetadata field");
-      const startLine = positiveInt(own(cause ?? {}, "StartLine") ?? own(cause ?? {}, "startLine"));
-      const startColumn = positiveInt(own(cause ?? {}, "StartColumn") ?? own(cause ?? {}, "startColumn"));
-      const title = cleanText(requiredString(misconfiguration, "Title", "Trivy"), `Trivy misconfiguration ${id}`);
-      const severityField = requiredString(misconfiguration, "Severity", "Trivy");
+      const startLine = positiveInt2(own(cause ?? {}, "StartLine") ?? own(cause ?? {}, "startLine"));
+      const startColumn = positiveInt2(own(cause ?? {}, "StartColumn") ?? own(cause ?? {}, "startColumn"));
+      const title = cleanText(requiredString2(misconfiguration, "Title", "Trivy"), `Trivy misconfiguration ${id}`);
+      const severityField = requiredString2(misconfiguration, "Severity", "Trivy");
       const referencesField = own(misconfiguration, "References");
       if (referencesField !== void 0 && !Array.isArray(referencesField))
         throw new Error("Trivy output has an invalid References field");
@@ -221565,7 +223220,7 @@ function parseTrivyOutput(text2, stageDir, files) {
         ruleId: `trivy:${id}`,
         title,
         description: `Trivy identified a configuration issue using rule ${id}.`,
-        severity: severityFrom(severityField, "medium"),
+        severity: severityFrom2(severityField, "medium"),
         confidence: "high",
         kind: "advisory",
         path: path2,
@@ -221585,1393 +223240,6 @@ function parseTrivyOutput(text2, stageDir, files) {
     metrics: { misconfigurationCount, findingCount: findings.length },
     ...envelope.notApplicable ? { status: "not_applicable" } : {}
   };
-}
-
-// build/src/source/process.js
-import { spawn, execFileSync } from "node:child_process";
-import { access as access2, constants as constants2, lstat as lstat2 } from "node:fs/promises";
-import { dirname as dirname2, isAbsolute as isAbsolute4, join as join2, resolve as resolve4 } from "node:path";
-var DEFAULT_TOOL_TIMEOUT_MS = 12e4;
-var MAX_TOOL_TIMEOUT_MS = 6e5;
-var MAX_PROCESS_OUTPUT_BYTES = 8 * 1024 * 1024;
-function safeTimeout(value) {
-  if (!Number.isSafeInteger(value) || value <= 0)
-    return DEFAULT_TOOL_TIMEOUT_MS;
-  return Math.min(value, MAX_TOOL_TIMEOUT_MS);
-}
-function minimalEnvironment(home, additions, authentication, codexHome) {
-  const nodeBin = dirname2(process.execPath);
-  const path2 = [nodeBin, "/usr/local/bin", "/opt/homebrew/bin", "/usr/bin", "/bin", "/usr/sbin", "/sbin"].filter((entry, index, all) => all.indexOf(entry) === index).join(":");
-  const allowedAdditions = Object.entries(additions ?? {}).filter(([key2, value]) => key2 === "OSV_SCANNER_LOCAL_DB_CACHE_DIRECTORY" && typeof value === "string" && value.length > 0);
-  const auth = authentication && ["CODEX_API_KEY", "ANTHROPIC_API_KEY"].includes(authentication.variable) && typeof authentication.value === "string" && authentication.value.length > 0 && authentication.value.length <= 16384 ? { [authentication.variable]: authentication.value } : {};
-  return {
-    PATH: path2,
-    HOME: home ?? "/tmp",
-    LC_ALL: "C",
-    LANG: "C",
-    TMPDIR: "/tmp",
-    ...Object.fromEntries(allowedAdditions),
-    ...codexHome && isAbsolute4(codexHome) ? { CODEX_HOME: codexHome } : {},
-    ...auth
-  };
-}
-function runProcess(executable3, args, options) {
-  if (options.supervision === "native-offline")
-    return runStrictProcess(executable3, args, options);
-  if (options.supervision === "agent")
-    return runAgentProcess(executable3, args, options);
-  if (options.signal?.aborted)
-    return Promise.resolve({ exitCode: null, signal: null, stdout: "", stderr: "", timedOut: false, outputLimitExceeded: false, cancelled: true });
-  const timeoutMs = safeTimeout(options.timeoutMs);
-  const maxOutputBytes = Number.isSafeInteger(options.maxOutputBytes) && (options.maxOutputBytes ?? 0) > 0 ? Math.min(options.maxOutputBytes, MAX_PROCESS_OUTPUT_BYTES) : MAX_PROCESS_OUTPUT_BYTES;
-  return new Promise((resolveResult) => {
-    let child;
-    try {
-      child = spawn(executable3, [...args], {
-        cwd: options.cwd,
-        env: minimalEnvironment(options.home, options.environment, options.authentication, options.codexHome),
-        shell: false,
-        detached: process.platform !== "win32",
-        windowsHide: true,
-        stdio: [options.input === void 0 ? "ignore" : "pipe", "pipe", "pipe"]
-      });
-    } catch {
-      resolveResult({ exitCode: null, signal: null, stdout: "", stderr: "", timedOut: false, outputLimitExceeded: false, spawnError: "scanner could not be started" });
-      return;
-    }
-    let stdout = "";
-    let stderr = "";
-    let settled = false;
-    let timedOut = false;
-    let outputLimitExceeded = false;
-    let outputBytes = 0;
-    let timer;
-    let killTimer;
-    let settleTimer;
-    const signalProcessGroup = (signal) => {
-      try {
-        if (process.platform !== "win32" && child.pid) {
-          try {
-            process.kill(-child.pid, signal);
-          } catch {
-            child.kill(signal);
-          }
-        } else
-          child.kill(signal);
-      } catch {
-      }
-    };
-    const stop = () => {
-      signalProcessGroup("SIGTERM");
-      killTimer = setTimeout(() => signalProcessGroup("SIGKILL"), 250);
-      killTimer.unref();
-      settleTimer = setTimeout(() => finish({ exitCode: null, signal: "SIGKILL", stdout, stderr, timedOut, outputLimitExceeded }), 2e3);
-      settleTimer.unref();
-    };
-    const finish = (result3) => {
-      if (settled)
-        return;
-      settled = true;
-      if (timer)
-        clearTimeout(timer);
-      if (killTimer)
-        clearTimeout(killTimer);
-      if (settleTimer)
-        clearTimeout(settleTimer);
-      options.signal?.removeEventListener("abort", onAbort);
-      resolveResult({ ...result3, ...options.signal?.aborted ? { cancelled: true } : {} });
-    };
-    const append = (target, chunk) => {
-      if (settled)
-        return;
-      if (outputBytes + chunk.byteLength > maxOutputBytes) {
-        outputLimitExceeded = true;
-        stop();
-        return;
-      }
-      outputBytes += chunk.byteLength;
-      const text2 = chunk.toString("utf8");
-      if (target === "stdout")
-        stdout += text2;
-      else
-        stderr += text2;
-    };
-    child.stdout?.on("data", (chunk) => append("stdout", chunk));
-    child.stderr?.on("data", (chunk) => append("stderr", chunk));
-    child.once("error", () => {
-      finish({ exitCode: null, signal: null, stdout, stderr: "", timedOut, outputLimitExceeded, spawnError: "scanner could not be started" });
-    });
-    child.once("close", (exitCode2, signal) => {
-      finish({ exitCode: exitCode2, signal, stdout, stderr, timedOut, outputLimitExceeded });
-    });
-    const onAbort = () => stop();
-    options.signal?.addEventListener("abort", onAbort, { once: true });
-    if (options.signal?.aborted)
-      onAbort();
-    timer = setTimeout(() => {
-      timedOut = true;
-      stop();
-    }, timeoutMs);
-    timer.unref();
-    child.stdin?.on("error", () => {
-    });
-    if (options.input !== void 0)
-      child.stdin?.end(options.input);
-  });
-}
-function runAgentProcess(executable3, args, options) {
-  const empty = { exitCode: null, signal: null, stdout: "", stderr: "", timedOut: false, outputLimitExceeded: false };
-  if (options.signal?.aborted)
-    return Promise.resolve({
-      ...empty,
-      cancelled: true,
-      stopReason: "cancelled",
-      cleanupState: "not_started",
-      cleanupConfirmed: true,
-      closeConfirmed: true
-    });
-  if (!["darwin", "linux"].includes(process.platform) || !options.home || options.environment || options.authentication && options.codexHome)
-    return Promise.resolve({
-      ...empty,
-      spawnError: "invalid agent process profile",
-      stopReason: "spawn_error",
-      cleanupState: "not_started",
-      cleanupConfirmed: true,
-      closeConfirmed: true
-    });
-  const timeoutMs = safeTimeout(options.timeoutMs);
-  const maxOutputBytes = Math.min(options.maxOutputBytes ?? MAX_PROCESS_OUTPUT_BYTES, MAX_PROCESS_OUTPUT_BYTES);
-  if (!Number.isSafeInteger(maxOutputBytes) || maxOutputBytes < 1)
-    return Promise.resolve({
-      ...empty,
-      spawnError: "invalid output budget",
-      stopReason: "spawn_error",
-      cleanupState: "not_started",
-      cleanupConfirmed: true,
-      closeConfirmed: true
-    });
-  let child;
-  try {
-    child = spawn(executable3, [...args], {
-      cwd: options.cwd,
-      shell: false,
-      detached: true,
-      windowsHide: true,
-      env: minimalEnvironment(options.home, void 0, options.authentication, options.codexHome),
-      stdio: [options.input === void 0 ? "ignore" : "pipe", "pipe", "pipe"]
-    });
-  } catch {
-    return Promise.resolve({
-      ...empty,
-      spawnError: "agent could not be started",
-      stopReason: "spawn_error",
-      cleanupState: "not_started",
-      cleanupConfirmed: true,
-      closeConfirmed: true
-    });
-  }
-  return new Promise((resolveResult) => {
-    const stdout = [], stderr = [];
-    let bytes = 0, exitCode2 = null, exitSignal = null;
-    let exited = false, closed = false, finished = false, stopping = false;
-    let reason;
-    let deadlineTimer, killTimer;
-    let settleTimer, pollTimer;
-    const groupState = () => child.pid ? observeOwnedGroup(child.pid) : "not_started";
-    const send = (signal) => {
-      if (child.pid) {
-        try {
-          process.kill(-child.pid, signal);
-        } catch {
-        }
-      }
-    };
-    const finish = () => {
-      if (finished)
-        return;
-      finished = true;
-      clearTimeout(deadlineTimer);
-      clearTimeout(killTimer);
-      clearTimeout(settleTimer);
-      clearInterval(pollTimer);
-      options.signal?.removeEventListener("abort", onAbort);
-      const cleanupState = groupState();
-      const cleanupConfirmed = ["terminated", "terminated_zombies", "not_started"].includes(cleanupState) && closed;
-      child.stdout?.destroy();
-      child.stderr?.destroy();
-      child.unref();
-      resolveResult({
-        exitCode: exitCode2,
-        signal: exitSignal,
-        stdout: Buffer.concat(stdout).toString("utf8"),
-        stderr: Buffer.concat(stderr).toString("utf8"),
-        timedOut: reason === "timeout",
-        outputLimitExceeded: reason === "output_limit",
-        cancelled: reason === "cancelled",
-        ...reason ? { stopReason: reason } : {},
-        exited,
-        closeConfirmed: closed,
-        cleanupState,
-        cleanupConfirmed
-      });
-    };
-    const check = () => {
-      if (closed && ["terminated", "terminated_zombies", "not_started"].includes(groupState()))
-        finish();
-    };
-    const stop = (why) => {
-      if (why && !reason)
-        reason = why;
-      if (stopping)
-        return;
-      stopping = true;
-      send("SIGTERM");
-      killTimer = setTimeout(() => send("SIGKILL"), 250);
-      pollTimer = setInterval(check, 100);
-      settleTimer = setTimeout(finish, 2e3);
-      check();
-    };
-    const onAbort = () => stop("cancelled");
-    const append = (target, chunk) => {
-      if (finished || stopping && reason)
-        return;
-      bytes += chunk.byteLength;
-      if (bytes > maxOutputBytes) {
-        stop("output_limit");
-        return;
-      }
-      target.push(chunk);
-    };
-    child.stdout?.on("data", (chunk) => append(stdout, chunk));
-    child.stderr?.on("data", (chunk) => append(stderr, chunk));
-    child.once("error", () => {
-      reason = "spawn_error";
-      exited = true;
-      closed = true;
-      stop("spawn_error");
-    });
-    child.once("exit", (code, signal) => {
-      exitCode2 = code;
-      exitSignal = signal;
-      exited = true;
-      stop();
-    });
-    child.once("close", () => {
-      closed = true;
-      stop();
-      check();
-    });
-    options.signal?.addEventListener("abort", onAbort, { once: true });
-    if (options.signal?.aborted)
-      onAbort();
-    deadlineTimer = setTimeout(() => stop("timeout"), timeoutMs);
-    child.stdin?.on("error", () => {
-    });
-    if (options.input !== void 0)
-      child.stdin?.end(options.input);
-  });
-}
-var STRICT_PS_ENV = { PATH: "/usr/bin:/bin:/usr/sbin:/sbin", LANG: "C", LC_ALL: "C" };
-var STRICT_RSS_CAP = 512 * 1024 * 1024;
-function strictRows() {
-  const output = execFileSync("/bin/ps", ["-eo", "pid=,pgid=,rss=,stat="], {
-    env: STRICT_PS_ENV,
-    encoding: "utf8",
-    timeout: 250,
-    maxBuffer: 2 * 1024 * 1024,
-    stdio: ["ignore", "pipe", "pipe"]
-  });
-  return parseStrictRows(output);
-}
-function parseStrictRows(output) {
-  if (!output.trim())
-    throw new Error("empty ps observation");
-  const rows = output.trim().split("\n").map((line) => {
-    const fields = line.trim().split(/\s+/);
-    if (fields.length !== 4 || !fields.slice(0, 3).every((part) => /^\d+$/.test(part)))
-      throw new Error("ps protocol");
-    if (!/^[?HIDRSTUWZXtKP][<NLSsl+>EVWXA]*$/.test(fields[3]))
-      throw new Error("ps state");
-    const [pid, pgid, rss] = fields.slice(0, 3).map(Number);
-    if (![pid, pgid, rss].every(Number.isSafeInteger))
-      throw new Error("ps range");
-    return { pid, pgid, rss, state: fields[3] };
-  });
-  return rows;
-}
-function observeOwnedGroup(pid) {
-  if (!Number.isSafeInteger(pid) || pid < 1)
-    return "unknown";
-  try {
-    process.kill(-pid, 0);
-  } catch (error) {
-    const code = error.code;
-    if (code === "ESRCH")
-      return "terminated";
-    return "unknown";
-  }
-  try {
-    const members = strictRows().filter((row) => row.pgid === pid);
-    if (members.length === 0)
-      return "terminated";
-    if (members.some((row) => row.state.startsWith("?")))
-      return "unknown";
-    return members.every((row) => row.state.startsWith("Z")) ? "terminated_zombies" : "running";
-  } catch {
-    return "unknown";
-  }
-}
-async function runStrictProcess(executable3, args, options) {
-  const empty = { exitCode: null, signal: null, stdout: "", stderr: "", timedOut: false, outputLimitExceeded: false };
-  if (options.signal?.aborted)
-    return { ...empty, cancelled: true, stopReason: "cancelled", exited: false, closeConfirmed: false, cleanupState: "not_started", cleanupConfirmed: true };
-  if (!["darwin", "linux"].includes(process.platform) || !options.home || !options.tmpdir || options.authentication || options.environment || options.input !== void 0) {
-    return { ...empty, spawnError: "invalid strict process profile", stopReason: "spawn_error", cleanupState: "not_started", cleanupConfirmed: true };
-  }
-  const started = Date.now();
-  const timeoutMs = Math.min(safeTimeout(options.timeoutMs), 1e4);
-  const maxOutputBytes = Math.min(options.maxOutputBytes ?? MAX_PROCESS_OUTPUT_BYTES, MAX_PROCESS_OUTPUT_BYTES);
-  if (!Number.isSafeInteger(maxOutputBytes) || maxOutputBytes < 1)
-    return { ...empty, spawnError: "invalid output budget", stopReason: "spawn_error" };
-  const rss = { assessment: "unassessed", samples: 0, failedSamples: 0, peakBytes: 0, capBytes: STRICT_RSS_CAP };
-  let child;
-  try {
-    child = spawn(executable3, [...args], {
-      cwd: options.cwd,
-      shell: false,
-      detached: true,
-      env: { ...STRICT_PS_ENV, HOME: options.home, TMPDIR: options.tmpdir },
-      stdio: ["ignore", "pipe", "pipe"]
-    });
-  } catch {
-    return { ...empty, spawnError: "scanner could not be started", stopReason: "spawn_error", cleanupState: "not_started", cleanupConfirmed: true, rss };
-  }
-  let exitCode2 = null, exitSignal = null;
-  let exited = false, closed = false, finished = false, stopping = false;
-  let reason, outputBytes = 0, spawnError;
-  const stdout = [], stderr = [];
-  let deadlineTimer, sampleTimer;
-  let escalationTimer, settlementTimer;
-  const signalGroup = (signal) => {
-    if (!child.pid)
-      return;
-    try {
-      process.kill(-child.pid, signal);
-    } catch {
-    }
-  };
-  return new Promise((resolveResult) => {
-    const finish = () => {
-      if (finished)
-        return;
-      finished = true;
-      clearTimeout(deadlineTimer);
-      clearInterval(sampleTimer);
-      clearTimeout(escalationTimer);
-      clearTimeout(settlementTimer);
-      options.signal?.removeEventListener("abort", onAbort);
-      const cleanupState = child.pid ? observeOwnedGroup(child.pid) : "not_started";
-      const cleanupConfirmed = ["terminated", "terminated_zombies", "not_started"].includes(cleanupState) && (closed || !child.pid);
-      rss.assessment = rss.samples > 0 && rss.failedSamples === 0 ? "measured" : "unassessed";
-      if (!reason && rss.assessment !== "measured")
-        reason = "observer_unknown";
-      if (!closed && child.pid && !reason)
-        reason = "close_unknown";
-      child.stdout?.destroy();
-      child.stderr?.destroy();
-      child.unref();
-      resolveResult({
-        exitCode: exitCode2,
-        signal: exitSignal,
-        stdout: Buffer.concat(stdout).toString("utf8"),
-        stderr: Buffer.concat(stderr).toString("utf8"),
-        timedOut: reason === "timeout",
-        outputLimitExceeded: reason === "output_limit",
-        cancelled: reason === "cancelled",
-        ...reason ? { stopReason: reason } : {},
-        ...spawnError ? { spawnError } : {},
-        exited,
-        closeConfirmed: closed,
-        cleanupState,
-        cleanupConfirmed,
-        rss
-      });
-    };
-    const maybeFinish = () => {
-      if (!closed || !child.pid) {
-        if (closed)
-          finish();
-        return;
-      }
-      const state = observeOwnedGroup(child.pid);
-      if (state === "terminated" || state === "terminated_zombies")
-        finish();
-    };
-    const stop = (value) => {
-      if (value)
-        reason ??= value;
-      if (stopping || finished)
-        return;
-      stopping = true;
-      signalGroup("SIGTERM");
-      escalationTimer = setTimeout(() => {
-        signalGroup("SIGKILL");
-        maybeFinish();
-      }, 250);
-      settlementTimer = setTimeout(() => {
-        signalGroup("SIGKILL");
-        finish();
-      }, 2e3);
-    };
-    const onAbort = () => stop("cancelled");
-    const sample = () => {
-      if (finished || exited || !child.pid)
-        return;
-      try {
-        const members = strictRows().filter((row) => row.pgid === child.pid && !row.state.startsWith("Z"));
-        if (members.some((row) => row.state.startsWith("?")))
-          throw new Error("owned state unknown");
-        if (members.length > 4096)
-          throw new Error("owned group cap");
-        if (members.length > 0) {
-          const bytes = members.reduce((total, row) => total + row.rss * 1024, 0);
-          if (!Number.isSafeInteger(bytes))
-            throw new Error("rss overflow");
-          rss.samples++;
-          rss.peakBytes = Math.max(rss.peakBytes, bytes);
-          if (bytes > rss.capBytes)
-            stop("rss_limit");
-        }
-      } catch {
-        rss.failedSamples++;
-        stop("observer_unknown");
-      }
-      if (!exited && Date.now() - started >= timeoutMs)
-        stop("timeout");
-    };
-    const collect = (chunk, output) => {
-      if (finished)
-        return;
-      const room = Math.max(0, maxOutputBytes - outputBytes);
-      if (room)
-        output.push(chunk.subarray(0, room));
-      outputBytes += chunk.length;
-      if (outputBytes > maxOutputBytes)
-        stop("output_limit");
-    };
-    child.stdout?.on("data", (chunk) => collect(chunk, stdout));
-    child.stderr?.on("data", (chunk) => collect(chunk, stderr));
-    child.once("error", () => {
-      spawnError = "scanner could not be started";
-      reason ??= "spawn_error";
-      stop("spawn_error");
-    });
-    child.once("exit", (code, signal) => {
-      exited = true;
-      exitCode2 = code;
-      exitSignal = signal;
-      stop();
-    });
-    child.once("close", () => {
-      closed = true;
-      stop();
-      maybeFinish();
-    });
-    options.signal?.addEventListener("abort", onAbort, { once: true });
-    deadlineTimer = setTimeout(() => stop("timeout"), timeoutMs);
-    sampleTimer = setInterval(() => {
-      sample();
-      if (exited)
-        maybeFinish();
-    }, 100);
-    sample();
-    if (options.signal?.aborted)
-      onAbort();
-  });
-}
-function executableCandidates(command) {
-  if (isAbsolute4(command) || command.includes("/") || command.includes("\\"))
-    return [resolve4(command)];
-  const pathEntries = [
-    dirname2(process.execPath),
-    "/usr/local/bin",
-    "/opt/homebrew/bin",
-    "/usr/bin",
-    "/bin",
-    "/usr/sbin",
-    "/sbin",
-    ...(process.env.PATH ?? "").split(":").filter(Boolean)
-  ];
-  return pathEntries.filter((entry, index, all) => all.indexOf(entry) === index).map((entry) => join2(entry, command));
-}
-async function findExecutable(command) {
-  if (!command || command.includes("\0"))
-    return void 0;
-  for (const candidate of executableCandidates(command)) {
-    try {
-      const stat2 = await lstat2(candidate);
-      if (!stat2.isFile())
-        continue;
-      await access2(candidate, constants2.X_OK);
-      return candidate;
-    } catch {
-    }
-  }
-  return void 0;
-}
-
-// build/src/source/python.js
-import { dirname as dirname3, isAbsolute as isAbsolute5, join as join3, relative as relative4, resolve as resolve5 } from "node:path";
-var MAX_LINE = 1e7;
-function objectValue2(value) {
-  return value !== null && typeof value === "object" && !Array.isArray(value) ? value : void 0;
-}
-function requiredObject2(value, field) {
-  const object9 = objectValue2(value);
-  if (!object9)
-    throw new Error(`Bandit output has an invalid ${field} record`);
-  return object9;
-}
-function requiredArray2(value, key2) {
-  const child = value[key2];
-  if (!Array.isArray(child))
-    throw new Error(`Bandit output has an invalid ${key2} field`);
-  return child;
-}
-function requiredString2(value, key2) {
-  const child = value[key2];
-  if (typeof child !== "string" || child.length === 0)
-    throw new Error(`Bandit output has an invalid ${key2} field`);
-  return child;
-}
-function nonNegativeInt(value, field) {
-  if (typeof value !== "number" || !Number.isSafeInteger(value) || value < 0 || value > MAX_LINE) {
-    throw new Error(`Bandit output has an invalid ${field} field`);
-  }
-  return value;
-}
-function positiveInt2(value, field) {
-  const result3 = nonNegativeInt(value, field);
-  if (result3 < 1)
-    throw new Error(`Bandit output has an invalid ${field} field`);
-  return result3;
-}
-function pathFromBandit(value, stageDir, allowed) {
-  if (typeof value !== "string" || value.length === 0)
-    return void 0;
-  const candidate = value.replaceAll("\\", "/");
-  const absoluteCandidate = isAbsolute5(candidate) ? resolve5(candidate) : resolve5(stageDir, candidate);
-  const stage = resolve5(stageDir);
-  const relativePath = relative4(stage, absoluteCandidate).replaceAll("\\", "/");
-  if (relativePath && relativePath !== "." && !relativePath.startsWith("../") && relativePath !== ".." && !isAbsolute5(relativePath) && allowed.has(relativePath)) {
-    return relativePath;
-  }
-  const normalized = candidate.replace(/^\.\//, "");
-  return allowed.has(normalized) ? normalized : void 0;
-}
-function parseJson2(text2) {
-  const trimmed = text2.trim();
-  if (!trimmed)
-    throw new Error("Bandit produced no JSON output");
-  let parsed;
-  try {
-    parsed = JSON.parse(trimmed);
-  } catch {
-    throw new Error("Bandit produced malformed JSON output");
-  }
-  return requiredObject2(parsed, "root");
-}
-function severityFrom2(value) {
-  if (typeof value !== "string")
-    throw new Error("Bandit output has an invalid issue severity");
-  switch (value.trim().toUpperCase()) {
-    case "HIGH":
-      return "high";
-    case "MEDIUM":
-      return "medium";
-    case "LOW":
-      return "low";
-    case "UNDEFINED":
-      return "info";
-    default:
-      throw new Error("Bandit output has an unsupported issue severity");
-  }
-}
-function confidenceFrom(value) {
-  if (typeof value !== "string")
-    throw new Error("Bandit output has an invalid issue confidence");
-  switch (value.trim().toUpperCase()) {
-    case "HIGH":
-      return "high";
-    case "MEDIUM":
-      return "medium";
-    case "LOW":
-      return "low";
-    case "UNDEFINED":
-      return "low";
-    default:
-      throw new Error("Bandit output has an unsupported issue confidence");
-  }
-}
-function banditTestId(value) {
-  if (typeof value !== "string" || value.length === 0)
-    throw new Error("Bandit output has an invalid test id");
-  const id = value;
-  if (!/^B\d{3}$/.test(id))
-    throw new Error("Bandit output has an unsupported test id");
-  return id;
-}
-var BANDIT_GUIDANCE = {
-  B404: {
-    title: "Python subprocess module requires review",
-    description: "Bandit identified an import of subprocess. The import is not itself a shell injection, but calls using it should use fixed argument arrays and avoid shell interpretation.",
-    remediation: "Review subprocess call sites and use shell=False with fixed executables and validated arguments.",
-    reference: "https://bandit.readthedocs.io/en/latest/blacklists/blacklist_imports.html"
-  },
-  B301: {
-    title: "Unsafe Python deserialization",
-    description: "Bandit identified a pickle or related deserialization call that can construct unsafe objects from untrusted data.",
-    remediation: "Do not deserialize untrusted data with pickle or equivalent object loaders; use a constrained data format or an explicit allowlist.",
-    reference: "https://bandit.readthedocs.io/en/latest/blacklists/blacklist_calls.html"
-  },
-  B307: {
-    title: "Dynamic Python evaluation",
-    description: "Bandit identified eval(), which can execute attacker-controlled Python expressions.",
-    remediation: "Replace eval() with a fixed operation or ast.literal_eval() when parsing a constrained literal format.",
-    reference: "https://bandit.readthedocs.io/en/latest/blacklists/blacklist_calls.html"
-  },
-  B501: {
-    title: "TLS certificate verification is disabled",
-    description: "Bandit identified a requests or httpx call that disables TLS certificate validation.",
-    remediation: "Keep certificate verification enabled and configure a trusted CA bundle when a private authority is required.",
-    reference: "https://bandit.readthedocs.io/en/latest/plugins/b501_request_with_no_cert_validation.html"
-  },
-  B506: {
-    title: "Unsafe YAML loading",
-    description: "Bandit identified yaml.load() or a related loader that may construct arbitrary Python objects from untrusted YAML.",
-    remediation: "Use a safe YAML loader such as yaml.safe_load() and validate the resulting data against the expected schema.",
-    reference: "https://bandit.readthedocs.io/en/latest/plugins/b506_yaml_load.html"
-  },
-  B602: {
-    title: "Subprocess call uses a shell",
-    description: "Bandit identified a subprocess call with shell=True, which can turn untrusted command data into shell syntax.",
-    remediation: "Use a fixed executable and argument array with shell=False, and validate any user-controlled arguments.",
-    reference: "https://bandit.readthedocs.io/en/latest/plugins/b602_subprocess_popen_with_shell_equals_true.html"
-  },
-  B603: {
-    title: "Subprocess call requires argument validation",
-    description: "Bandit identified a subprocess call without shell=True. The call avoids shell parsing but still needs fixed executables and validated arguments.",
-    remediation: "Use an absolute or controlled executable and validate every argument that can be influenced by input.",
-    reference: "https://bandit.readthedocs.io/en/latest/plugins/b603_subprocess_without_shell_equals_true.html"
-  },
-  B607: {
-    title: "Subprocess executable path is partial",
-    description: "Bandit identified a process call whose executable path relies on PATH lookup instead of a fully qualified path.",
-    remediation: "Use a fully qualified executable path or a tightly controlled executable resolution policy.",
-    reference: "https://bandit.readthedocs.io/en/latest/plugins/b607_start_process_with_partial_path.html"
-  },
-  B608: {
-    title: "SQL expression is constructed from strings",
-    description: "Bandit identified string construction that resembles a SQL expression and may be vulnerable when values are interpolated.",
-    remediation: "Use parameterized queries for values and keep identifiers behind a strict allowlist.",
-    reference: "https://bandit.readthedocs.io/en/latest/plugins/b608_hardcoded_sql_expressions.html"
-  }
-};
-function guidanceFor(testId) {
-  return BANDIT_GUIDANCE[testId] ?? {
-    title: `Python security finding (${testId})`,
-    description: `Bandit identified ${testId} in the allowlisted Python snapshot. The scanner message and source snippet are intentionally omitted.`,
-    remediation: "Review the Bandit rule documentation and apply the documented secure alternative.",
-    reference: "https://bandit.readthedocs.io/en/latest/"
-  };
-}
-function sourceLineCount(text2) {
-  if (text2.length === 0)
-    return 1;
-  const lines = text2.split(/\r\n|\r|\n/);
-  return /(?:\r\n|\r|\n)$/.test(text2) ? Math.max(1, lines.length - 1) : lines.length;
-}
-function validateLineRange(value, maxLine, line) {
-  if (!Array.isArray(value) || value.length === 0 || value.some((entry) => typeof entry !== "number" || !Number.isSafeInteger(entry) || entry < 1 || entry > MAX_LINE || entry > maxLine)) {
-    throw new Error("Bandit output has an invalid line_range field");
-  }
-  if (line > maxLine)
-    throw new Error("Bandit output line_number is outside the selected Python file");
-  if (!value.includes(line))
-    throw new Error("Bandit output line_number is outside line_range");
-}
-function metricForFile(metrics, file, stageDir, allowed) {
-  for (const [key2, value] of Object.entries(metrics)) {
-    if (key2 === "_totals")
-      continue;
-    if (pathFromBandit(key2, stageDir, allowed) !== file.path)
-      continue;
-    return requiredObject2(value, "per-file metrics");
-  }
-  return void 0;
-}
-function validateMetrics(metrics, files, stageDir, allowed) {
-  const totals = requiredObject2(metrics._totals, "metrics totals");
-  nonNegativeInt(totals.loc, "metrics totals loc");
-  const matched = /* @__PURE__ */ new Set();
-  for (const file of files) {
-    const metric = metricForFile(metrics, file, stageDir, allowed);
-    if (!metric)
-      continue;
-    nonNegativeInt(metric.loc, "per-file metrics loc");
-    matched.add(file.path);
-  }
-  return matched.size;
-}
-function pythonFiles(snapshot2) {
-  return snapshot2.files.filter((file) => file.category === "code" && /\.py$/i.test(file.path));
-}
-function parseBanditOutput(text2, stageDir, files) {
-  const top = parseJson2(text2);
-  const errors = requiredArray2(top, "errors");
-  const results = requiredArray2(top, "results");
-  const metrics = requiredObject2(top.metrics, "metrics");
-  const generatedAt = requiredString2(top, "generated_at");
-  if (!Number.isFinite(Date.parse(generatedAt)))
-    throw new Error("Bandit output has an invalid generated_at field");
-  const allowed = new Set(files.map((file) => file.path));
-  for (const entry of errors) {
-    const error = requiredObject2(entry, "error");
-    const errorPath = pathFromBandit(error.filename, stageDir, allowed);
-    if (!errorPath)
-      throw new Error("Bandit output has an unmapped error filename");
-    requiredString2(error, "reason");
-  }
-  const filesReported = validateMetrics(metrics, files, stageDir, allowed);
-  const findings = [];
-  for (const entry of results) {
-    const result3 = requiredObject2(entry, "result");
-    const path2 = pathFromBandit(result3.filename, stageDir, allowed);
-    if (!path2)
-      throw new Error("Bandit output has an unmapped result filename");
-    const line = positiveInt2(result3.line_number, "line_number");
-    const source = files.find((file) => file.path === path2);
-    if (!source)
-      throw new Error("Bandit output result filename is not in the selected Python files");
-    validateLineRange(result3.line_range, sourceLineCount(source.text), line);
-    const testId = banditTestId(result3.test_id);
-    requiredString2(result3, "code");
-    requiredString2(result3, "issue_text");
-    requiredString2(result3, "test_name");
-    const severity = severityFrom2(result3.issue_severity);
-    const confidence = confidenceFrom(result3.issue_confidence);
-    const guidance = guidanceFor(testId);
-    findings.push({
-      ruleId: `bandit:${testId}`,
-      title: guidance.title,
-      description: guidance.description,
-      severity,
-      confidence,
-      kind: "candidate",
-      location: { path: path2, line },
-      remediation: guidance.remediation,
-      references: [guidance.reference]
-    });
-  }
-  const metricsIncomplete = filesReported !== files.length;
-  return {
-    findings,
-    status: errors.length > 0 || metricsIncomplete ? "partial" : "completed",
-    notes: [
-      `Bandit parsed ${findings.length} finding${findings.length === 1 ? "" : "s"} across ${filesReported} of ${files.length} allowlisted Python file${files.length === 1 ? "" : "s"}.`,
-      "Bandit was run with inline #nosec suppressions ignored; source snippets and scanner text are omitted.",
-      ...errors.length > 0 ? [`Bandit reported ${errors.length} file scan error${errors.length === 1 ? "" : "s"}; Python coverage is incomplete.`] : [],
-      ...metricsIncomplete ? ["Bandit did not report per-file metrics for every selected Python file; coverage is incomplete."] : []
-    ],
-    metrics: { filesAnalyzed: filesReported, filesRequested: files.length, findingCount: findings.length, errorCount: errors.length }
-  };
-}
-function processFailure(result3, timeoutMs) {
-  if (result3.cancelled)
-    return "Bandit was cancelled; coverage is incomplete.";
-  if (result3.spawnError)
-    return "Bandit could not be started.";
-  if (result3.timedOut)
-    return `Bandit exceeded the ${timeoutMs} ms scanner timeout.`;
-  if (result3.outputLimitExceeded)
-    return "Bandit exceeded the scanner output limit.";
-  if (result3.exitCode !== null && result3.exitCode > 1)
-    return `Bandit exited with code ${result3.exitCode}.`;
-  if (result3.signal)
-    return `Bandit was terminated by ${result3.signal}.`;
-  if (result3.exitCode === null)
-    return "Bandit returned no exit status.";
-  return void 0;
-}
-function errorCheck(message) {
-  return { id: "source.bandit", status: "error", findings: [], notes: [message] };
-}
-async function runBandit(context) {
-  const files = pythonFiles(context.snapshot);
-  if (files.length === 0) {
-    return { id: "source.bandit", status: "not_applicable", findings: [], notes: ["No allowlisted Python files were available for Bandit."], metrics: { files: 0 } };
-  }
-  if (!context.toolPath)
-    return { id: "source.bandit", status: "partial", findings: [], notes: ["Bandit executable was not found; Python SAST coverage is unavailable."], metrics: { files: files.length } };
-  const args = ["-f", "json", "--ignore-nosec", "--", ...files.map((file) => join3(context.stageDir, ...file.path.split("/")))];
-  const result3 = await runProcess(context.toolPath, args, {
-    cwd: context.stageDir,
-    timeoutMs: context.timeoutMs,
-    home: join3(dirname3(context.stageDir), "home"),
-    signal: context.signal
-  });
-  const failure3 = processFailure(result3, context.timeoutMs);
-  if (failure3)
-    return errorCheck(failure3);
-  try {
-    const parsed = parseBanditOutput(result3.stdout, context.stageDir, files);
-    if (result3.exitCode === 1 && parsed.findings.length === 0 && parsed.status === "completed") {
-      return errorCheck("Bandit exited with a finding status but returned an empty report.");
-    }
-    if (!context.snapshot.complete && parsed.status === "completed") {
-      parsed.status = "partial";
-      parsed.notes = [...parsed.notes, "The collected Python snapshot was incomplete; Bandit coverage may be incomplete."];
-      parsed.metrics = { ...parsed.metrics ?? {}, snapshotComplete: false };
-    }
-    return {
-      id: "source.bandit",
-      status: parsed.status ?? "completed",
-      findings: parsed.findings,
-      notes: parsed.notes,
-      ...parsed.metrics ? { metrics: parsed.metrics } : {}
-    };
-  } catch {
-    return errorCheck("Bandit returned an invalid or incomplete JSON report.");
-  }
-}
-
-// build/src/source/opengrep.js
-import { createHash as createHash2 } from "node:crypto";
-import { constants as constants3 } from "node:fs";
-import { access as access3, lstat as lstat3, mkdir as mkdir2, mkdtemp as mkdtemp2, open as open2, readdir as readdir2, rm as rm2, writeFile as writeFile2 } from "node:fs/promises";
-import { tmpdir as tmpdir2 } from "node:os";
-import { dirname as dirname4, isAbsolute as isAbsolute6, join as join4, relative as relative5, resolve as resolve6, sep as sep2 } from "node:path";
-
-// build/src/source/opengrep-rules.js
-var OPENGREP_PROFILE = "native-preview-v1";
-var OPENGREP_VERSION = "1.30.0";
-var OPENGREP_SHA256 = "9d101457981b1dea39013cf61cabbf896cefbb7e664c19efdb21ee8be4a598de";
-var OPENGREP_SIZE = 173348760;
-var OWN_RULES_SHA256 = "596df423168083551b64ccc74806353b04f031889bd3d06ec8bbd6afe48b32c1";
-var OWN_RULE_IDS = ["wakeio.w06.sql.js-ts.v1", "wakeio.w06.command.js-ts.v1", "wakeio.w06.sql.python.v1", "wakeio.w06.command.python.v1"];
-var OWN_RULES = "# SPDX-License-Identifier: Apache-2.0\n# Copyright 2026 Wakeio Security CI contributors\n# Original experimental patterns; no downloaded registry/security rule content.\nrules:\n  - id: wakeio.w06.sql.js-ts.v1\n    languages: [javascript, typescript]\n    mode: taint\n    message: Request-shaped input reaches a selected injection argument; candidate requires independent review.\n    severity: ERROR\n    metadata:\n      license: Apache-2.0\n      confidence: LOW\n      cwe: CWE-89\n      experiment: W06-owned-prototype-v1\n      verification: not_run\n    pattern-sources:\n      - patterns:\n          - pattern-either:\n              - pattern: $REQ.query\n              - pattern: $REQ.body\n              - pattern: $REQ.params\n          - metavariable-regex:\n              metavariable: $REQ\n              regex: '^(req|request)$'\n        exact: true\n    pattern-sinks:\n      - patterns:\n          - pattern-either:\n              - pattern: $DB.query($SQL, ...)\n              - pattern: $DB.execute($SQL, ...)\n          - focus-metavariable: $SQL\n  - id: wakeio.w06.command.js-ts.v1\n    languages: [javascript, typescript]\n    mode: taint\n    message: Request-shaped input reaches a selected injection argument; candidate requires independent review.\n    severity: ERROR\n    metadata:\n      license: Apache-2.0\n      confidence: LOW\n      cwe: CWE-78\n      experiment: W06-owned-prototype-v1\n      verification: not_run\n    pattern-sources:\n      - patterns:\n          - pattern-either:\n              - pattern: $REQ.query\n              - pattern: $REQ.body\n              - pattern: $REQ.params\n          - metavariable-regex:\n              metavariable: $REQ\n              regex: '^(req|request)$'\n        exact: true\n    pattern-sinks:\n      - patterns:\n          - pattern-either:\n              - pattern: exec($CMD, ...)\n              - pattern: execSync($CMD, ...)\n              - pattern: $CP.exec($CMD, ...)\n              - pattern: $CP.execSync($CMD, ...)\n          - focus-metavariable: $CMD\n  - id: wakeio.w06.sql.python.v1\n    languages: [python]\n    mode: taint\n    message: Request-shaped input reaches a selected injection argument; candidate requires independent review.\n    severity: ERROR\n    metadata:\n      license: Apache-2.0\n      confidence: LOW\n      cwe: CWE-89\n      experiment: W06-owned-prototype-v1\n      verification: not_run\n    pattern-sources:\n      - pattern-either:\n          - pattern: request.args.get(...)\n          - pattern: request.args[$KEY]\n          - pattern: request.form.get(...)\n          - pattern: request.form[$KEY]\n          - pattern: request.json[$KEY]\n        exact: true\n    pattern-sinks:\n      - patterns:\n          - pattern-either:\n              - pattern: $DB.execute($SQL, ...)\n          - focus-metavariable: $SQL\n  - id: wakeio.w06.command.python.v1\n    languages: [python]\n    mode: taint\n    message: Request-shaped input reaches a selected injection argument; candidate requires independent review.\n    severity: ERROR\n    metadata:\n      license: Apache-2.0\n      confidence: LOW\n      cwe: CWE-78\n      experiment: W06-owned-prototype-v1\n      verification: not_run\n    pattern-sources:\n      - pattern-either:\n          - pattern: request.args.get(...)\n          - pattern: request.args[$KEY]\n          - pattern: request.form.get(...)\n          - pattern: request.form[$KEY]\n          - pattern: request.json[$KEY]\n        exact: true\n    pattern-sinks:\n      - patterns:\n          - pattern-either:\n              - pattern: subprocess.run($CMD, ..., shell=True, ...)\n              - pattern: subprocess.call($CMD, ..., shell=True, ...)\n              - pattern: subprocess.Popen($CMD, ..., shell=True, ...)\n              - pattern: subprocess.check_output($CMD, ..., shell=True, ...)\n              - pattern: subprocess.check_call($CMD, ..., shell=True, ...)\n              - pattern: os.system($CMD)\n              - pattern: os.popen($CMD, ...)\n          - focus-metavariable: $CMD\n";
-
-// build/src/source/opengrep.js
-var NATIVE_CHECK_ID = "source.opengrep.preview";
-var NATIVE_DENY_POLICY = "(version 1)\n(allow default)\n(deny network*)\n";
-var MAX_JSON_BYTES = 8 * 1024 * 1024;
-var NOTE = "Experimental native candidate positions only; binding identity, exploitability and complete dataflow edges are not verified.";
-var object4 = (value) => !!value && typeof value === "object" && !Array.isArray(value);
-var exactKeys3 = (value, allowed) => Object.keys(value).every((key2) => allowed.includes(key2));
-var digest = (bytes) => createHash2("sha256").update(bytes).digest("hex");
-var nativeFiles = (snapshot2) => snapshot2.files.filter((file) => file.category === "code" && !file.sensitive && /\.(?:[cm]?[jt]sx?|py)$/i.test(file.path));
-function nativeJson(text2) {
-  if (Buffer.byteLength(text2) > MAX_JSON_BYTES)
-    throw new Error("output budget");
-  let cursor = 0, nodes = 0;
-  const space = () => {
-    while (/\s/.test(text2[cursor] ?? "") && cursor < text2.length)
-      cursor++;
-  };
-  const string = () => {
-    if (text2[cursor] !== '"')
-      throw new Error("string");
-    const start = cursor++;
-    while (cursor < text2.length) {
-      if (text2[cursor] === "\\") {
-        cursor += 2;
-        continue;
-      }
-      if (text2[cursor++] === '"')
-        return JSON.parse(text2.slice(start, cursor));
-    }
-    throw new Error("unterminated");
-  };
-  const value = (depth) => {
-    if (++nodes > 2e5 || depth > 64)
-      throw new Error("json budget");
-    space();
-    if (text2[cursor] === "{") {
-      cursor++;
-      space();
-      const keys3 = /* @__PURE__ */ new Set();
-      if (text2[cursor] === "}") {
-        cursor++;
-        return;
-      }
-      while (true) {
-        space();
-        const key2 = string();
-        if (keys3.has(key2))
-          throw new Error("duplicate");
-        keys3.add(key2);
-        space();
-        if (text2[cursor++] !== ":")
-          throw new Error("colon");
-        value(depth + 1);
-        space();
-        const next = text2[cursor++];
-        if (next === "}")
-          return;
-        if (next !== ",")
-          throw new Error("object");
-      }
-    }
-    if (text2[cursor] === "[") {
-      cursor++;
-      space();
-      if (text2[cursor] === "]") {
-        cursor++;
-        return;
-      }
-      while (true) {
-        value(depth + 1);
-        space();
-        const next = text2[cursor++];
-        if (next === "]")
-          return;
-        if (next !== ",")
-          throw new Error("array");
-      }
-    }
-    if (text2[cursor] === '"') {
-      string();
-      return;
-    }
-    const match = /^(?:true|false|null|-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?)/.exec(text2.slice(cursor));
-    if (!match)
-      throw new Error("primitive");
-    if (!Number.isFinite(Number(match[0])) && !["true", "false", "null"].includes(match[0]))
-      throw new Error("nonfinite");
-    cursor += match[0].length;
-  };
-  value(0);
-  space();
-  if (cursor !== text2.length)
-    throw new Error("trailing");
-  return JSON.parse(text2);
-}
-function fileFor(path2, stage, files) {
-  if (typeof path2 !== "string" || !path2 || path2.includes("\0") || path2.includes("\\"))
-    return void 0;
-  const absolute = isAbsolute6(path2) ? resolve6(path2) : resolve6(stage, path2);
-  const local = relative5(resolve6(stage), absolute).split(sep2).join("/");
-  if (local === ".." || local.startsWith("../") || isAbsolute6(local))
-    return void 0;
-  return files.get(local);
-}
-function point(raw, file, cache) {
-  if (!object4(raw) || !exactKeys3(raw, ["line", "col", "offset"]) || !["line", "col", "offset"].every((key2) => Number.isSafeInteger(raw[key2])) || raw.line < 1 || raw.col < 1 || raw.offset < 0)
-    throw new Error("position");
-  let prepared = cache.get(file.path);
-  if (!prepared) {
-    const bytes2 = Buffer.from(file.text, "utf8"), starts2 = [0];
-    for (let index = 0; index < bytes2.length; index++)
-      if (bytes2[index] === 10)
-        starts2.push(index + 1);
-    prepared = { bytes: bytes2, starts: starts2, points: /* @__PURE__ */ new Map() };
-    cache.set(file.path, prepared);
-  }
-  const { bytes, starts } = prepared, offset = raw.offset, line = raw.line;
-  if (offset > bytes.length || offset < bytes.length && (bytes[offset] & 192) === 128)
-    throw new Error("byte boundary");
-  const lineStart = starts[line - 1];
-  if (lineStart === void 0 || offset < lineStart || line < starts.length && offset >= starts[line] || raw.col !== offset - lineStart + 1)
-    throw new Error("byte column");
-  let normal = prepared.points.get(offset);
-  if (!normal) {
-    normal = { offset, line, column: bytes.subarray(lineStart, offset).toString("utf8").length + 1 };
-    prepared.points.set(offset, normal);
-  }
-  return normal;
-}
-function range(raw, stage, files, cache) {
-  if (!object4(raw) || !exactKeys3(raw, ["path", "start", "end"]))
-    throw new Error("location");
-  const file = fileFor(raw.path, stage, files);
-  if (!file)
-    throw new Error("outside");
-  const start = point(raw.start, file, cache), end = point(raw.end, file, cache);
-  if (end.offset <= start.offset)
-    throw new Error("empty range");
-  return { file, start, end };
-}
-function nativeTrace(raw, sink, stage, files, cache) {
-  if (!object4(raw) || !exactKeys3(raw, ["taint_source", "taint_sink", "intermediate_vars"]) || !Array.isArray(raw.intermediate_vars))
-    throw new Error("trace schema");
-  const steps = [];
-  const add2 = (role, loc, content) => {
-    const item = range(loc, stage, files, cache);
-    if (item.file.path !== sink.file.path)
-      throw new Error("intrafile trace");
-    if (typeof content !== "string" || Buffer.from(item.file.text).subarray(item.start.offset, item.end.offset).toString("utf8") !== content)
-      throw new Error("trace bytes");
-    steps.push({ role, location: { path: item.file.path, line: item.start.line, column: item.start.column } });
-    return item;
-  };
-  const cliLoc = (role, value) => {
-    if (!Array.isArray(value) || value.length !== 2 || value[0] !== "CliLoc" || !Array.isArray(value[1]) || value[1].length !== 2)
-      throw new Error("trace variant");
-    return add2(role, value[1][0], value[1][1]);
-  };
-  cliLoc("source", raw.taint_source);
-  if (raw.intermediate_vars.length > 1e4)
-    throw new Error("trace budget");
-  for (const item of raw.intermediate_vars) {
-    if (!object4(item) || !exactKeys3(item, ["location", "content"]))
-      throw new Error("intermediate");
-    add2("intermediate", item.location, item.content);
-  }
-  const last = cliLoc("sink", raw.taint_sink);
-  if (last.file.path !== sink.file.path || last.start.offset !== sink.start.offset || last.end.offset !== sink.end.offset)
-    throw new Error("trace sink mismatch");
-  return { kind: "static_flow", steps: steps.length > 24 ? [...steps.slice(0, 23), steps.at(-1)] : steps, truncated: true };
-}
-function parseNativeOutput(stdout, exitCode2, stage, inputFiles) {
-  const findings = [], reasons = /* @__PURE__ */ new Set();
-  const files = new Map(inputFiles.map((file) => [file.path, file]));
-  const positionCache = /* @__PURE__ */ new Map();
-  let ignored = 0, invalid4 = 0, errors = 0, skipped = 0, scanned = 0;
-  const metrics = () => ({
-    profile: OPENGREP_PROFILE,
-    filesDeclared: inputFiles.length,
-    filesScanned: scanned,
-    nativeErrors: errors,
-    skippedRules: skipped,
-    ignoredFindings: ignored,
-    invalidFindings: invalid4,
-    engineExit: exitCode2 ?? "unknown",
-    incompleteReasons: [...reasons].sort().join(","),
-    rulePackSha256: OWN_RULES_SHA256
-  });
-  let parsed;
-  try {
-    parsed = nativeJson(stdout);
-  } catch {
-    return { id: NATIVE_CHECK_ID, status: "error", findings, notes: ["Native preview returned invalid bounded JSON."], metrics: { ...metrics(), incompleteReasons: "invalid_json" } };
-  }
-  if (!object4(parsed) || parsed.version !== OPENGREP_VERSION || !Array.isArray(parsed.results)) {
-    return { id: NATIVE_CHECK_ID, status: "error", findings, notes: ["Native preview protocol or version did not match the selected profile."], metrics: { ...metrics(), incompleteReasons: "invalid_protocol" } };
-  }
-  if (!Array.isArray(parsed.errors)) {
-    reasons.add("invalid_protocol");
-    parsed.errors = [];
-  }
-  if (!Array.isArray(parsed.skipped_rules)) {
-    reasons.add("invalid_protocol");
-    parsed.skipped_rules = [];
-  }
-  if (!Array.isArray(parsed.interfile_languages_used)) {
-    reasons.add("invalid_protocol");
-    parsed.interfile_languages_used = [];
-  }
-  if (!object4(parsed.paths)) {
-    reasons.add("invalid_protocol");
-    parsed.paths = {};
-  }
-  const paths = parsed.paths;
-  if (!Array.isArray(paths.scanned)) {
-    reasons.add("invalid_protocol");
-    paths.scanned = [];
-  }
-  if (!exactKeys3(parsed, ["version", "results", "errors", "paths", "skipped_rules", "interfile_languages_used"]))
-    reasons.add("unknown_schema");
-  if (!exactKeys3(paths, ["scanned", "skipped"]))
-    reasons.add("unknown_paths");
-  errors = parsed.errors.length;
-  skipped = parsed.skipped_rules.length;
-  if (errors)
-    reasons.add("native_errors");
-  if (skipped)
-    reasons.add("skipped_rules");
-  if (parsed.interfile_languages_used.length)
-    reasons.add("unexpected_interfile");
-  if (paths.skipped !== void 0 && (!Array.isArray(paths.skipped) || paths.skipped.length))
-    reasons.add("skipped_files");
-  const seen = /* @__PURE__ */ new Set();
-  for (const path2 of paths.scanned) {
-    const file = fileFor(path2, stage, files);
-    if (!file || seen.has(file.path))
-      reasons.add("coverage_mismatch");
-    else
-      seen.add(file.path);
-  }
-  scanned = seen.size;
-  if (seen.size !== files.size)
-    reasons.add("coverage_mismatch");
-  if (parsed.results.length > 1e4)
-    reasons.add("finding_limit");
-  for (const raw of parsed.results.slice(0, 1e4)) {
-    try {
-      if (!object4(raw) || typeof raw.check_id !== "string" || !OWN_RULE_IDS.includes(raw.check_id) || !object4(raw.extra))
-        throw new Error("finding");
-      const loc = range({ path: raw.path, start: raw.start, end: raw.end }, stage, files, positionCache);
-      const extra = raw.extra;
-      if (!exactKeys3(raw, ["check_id", "path", "start", "end", "extra"]) || !exactKeys3(extra, ["metavars", "message", "metadata", "severity", "fingerprint", "lines", "is_ignored", "validation_state", "dataflow_trace", "engine_kind"]))
-        reasons.add("unknown_finding_schema");
-      const isPython = raw.check_id.includes(".python.");
-      if (isPython !== /\.py$/i.test(loc.file.path))
-        throw new Error("language mismatch");
-      if (extra.is_ignored !== false) {
-        ignored++;
-        reasons.add("ignored_finding");
-      }
-      if (extra.severity !== "ERROR" || extra.validation_state !== "NO_VALIDATOR" || extra.engine_kind !== "OSS" || !object4(extra.metadata))
-        reasons.add("finding_state");
-      let staticFlow;
-      if (extra.dataflow_trace !== void 0 && extra.dataflow_trace !== null) {
-        try {
-          staticFlow = nativeTrace(extra.dataflow_trace, loc, stage, files, positionCache);
-        } catch {
-          reasons.add("invalid_trace");
-        }
-      }
-      const sql = raw.check_id.includes(".sql.");
-      findings.push({
-        ruleId: raw.check_id,
-        title: sql ? "Request-shaped input in SQL argument" : "Request-shaped input in command argument",
-        description: "The selected native rule reported a static input candidate. Binding identity and runtime exploitability require independent review.",
-        severity: "high",
-        confidence: "low",
-        kind: "candidate",
-        location: { path: loc.file.path, line: loc.start.line, column: loc.start.column },
-        remediation: sql ? "Review the SQL statement argument and use parameter binding; verify the risky, fixed and normal paths independently." : "Review shell interpretation and prefer an explicit executable with separate arguments; verify the risky, fixed and normal paths independently.",
-        references: [sql ? "https://cwe.mitre.org/data/definitions/89.html" : "https://cwe.mitre.org/data/definitions/78.html"],
-        ...staticFlow ? { staticFlow } : {}
-      });
-    } catch {
-      invalid4++;
-      reasons.add("invalid_finding");
-    }
-  }
-  if (![0, 1].includes(exitCode2) || exitCode2 === 0 && parsed.results.length > 0 || exitCode2 === 1 && parsed.results.length === 0)
-    reasons.add("exit_mismatch");
-  return {
-    id: NATIVE_CHECK_ID,
-    status: reasons.size ? "partial" : "completed",
-    findings,
-    notes: [NOTE, ...reasons.size ? ["Native preview completion is unverified; inspect incompleteReasons and retained candidates."] : []],
-    metrics: metrics()
-  };
-}
-function nativeCheckFromProcess(result3, stage, files, snapshotComplete) {
-  const check = parseNativeOutput(result3.stdout, result3.exitCode, stage, files);
-  const reasons = new Set(String(check.metrics?.incompleteReasons ?? "").split(",").filter(Boolean));
-  if (result3.spawnError)
-    reasons.add("spawn_error");
-  if (result3.signal !== null)
-    reasons.add("process_signal");
-  if (result3.stopReason)
-    reasons.add(result3.stopReason);
-  if (result3.timedOut)
-    reasons.add("timeout");
-  if (result3.outputLimitExceeded)
-    reasons.add("output_limit");
-  if (result3.cancelled)
-    reasons.add("cancelled");
-  if (result3.exited !== true || result3.closeConfirmed !== true)
-    reasons.add("close_unknown");
-  if (result3.cleanupConfirmed !== true || !["terminated", "terminated_zombies"].includes(result3.cleanupState ?? "unknown"))
-    reasons.add("cleanup_unknown");
-  if (result3.rss?.assessment !== "measured" || !Number.isSafeInteger(result3.rss.samples) || result3.rss.samples < 1 || result3.rss.failedSamples !== 0 || !Number.isSafeInteger(result3.rss.peakBytes) || result3.rss.peakBytes < 0 || result3.rss.capBytes !== 512 * 1024 * 1024)
-    reasons.add("rss_unassessed");
-  if (result3.rss && result3.rss.peakBytes > 512 * 1024 * 1024)
-    reasons.add("rss_limit");
-  if (!snapshotComplete)
-    reasons.add("snapshot_incomplete");
-  if (reasons.size && check.status === "completed")
-    check.status = "partial";
-  if (!result3.spawnError && (result3.timedOut || result3.cancelled || result3.outputLimitExceeded || result3.stopReason === "observer_unknown" || result3.stopReason === "rss_limit"))
-    check.status = "partial";
-  check.metrics = {
-    ...check.metrics,
-    incompleteReasons: [...reasons].sort().join(","),
-    closeConfirmed: result3.closeConfirmed === true,
-    cleanupConfirmed: result3.cleanupConfirmed === true,
-    cleanupState: result3.cleanupState ?? "unknown",
-    rssAssessment: result3.rss?.assessment ?? "unassessed",
-    rssSamples: result3.rss?.samples ?? 0,
-    rssPeakBytes: result3.rss?.peakBytes ?? 0,
-    snapshotComplete
-  };
-  if (reasons.size && !check.notes.some((note) => note.includes("completion is unverified")))
-    check.notes.push("Native preview completion is unverified; inspect incompleteReasons and retained candidates.");
-  return check;
-}
-function nativeSandboxCommand(policyPath, executable3, args) {
-  if (!isAbsolute6(policyPath) || !isAbsolute6(executable3))
-    throw new Error("absolute native paths required");
-  return { executable: "/usr/bin/sandbox-exec", args: ["-f", policyPath, executable3, ...args] };
-}
-async function hashRegular(path2, expectedSize) {
-  const handle = await open2(path2, constants3.O_RDONLY | constants3.O_NOFOLLOW | constants3.O_NONBLOCK);
-  try {
-    const before = await handle.stat();
-    if (!before.isFile() || before.size !== expectedSize)
-      throw new Error("identity size");
-    const hash = createHash2("sha256"), buffer = Buffer.alloc(64 * 1024);
-    let position2 = 0;
-    while (position2 <= expectedSize) {
-      const result3 = await handle.read(buffer, 0, Math.min(buffer.length, expectedSize + 1 - position2), position2);
-      if (!result3.bytesRead)
-        break;
-      hash.update(buffer.subarray(0, result3.bytesRead));
-      position2 += result3.bytesRead;
-    }
-    const after = await handle.stat();
-    if (position2 !== expectedSize || before.ino !== after.ino || before.size !== after.size || before.mtimeMs !== after.mtimeMs || before.ctimeMs !== after.ctimeMs)
-      throw new Error("changed file");
-    return hash.digest("hex");
-  } finally {
-    await handle.close();
-  }
-}
-async function inventoryMatches(stage, files) {
-  const expected = new Map(files.map((file) => [file.path, file]));
-  let count = 0;
-  const walk = async (directory2) => {
-    for (const entry of await readdir2(directory2, { withFileTypes: true })) {
-      const path2 = join4(directory2, entry.name), stat2 = await lstat3(path2);
-      if (stat2.isSymbolicLink())
-        throw new Error("stage link");
-      if (stat2.isDirectory()) {
-        await walk(path2);
-        continue;
-      }
-      const local = relative5(stage, path2).split(sep2).join("/"), file = expected.get(local);
-      if (!file || !stat2.isFile() || ++count > files.length || stat2.nlink !== 1 || await hashRegular(path2, file.bytes) !== digest(file.text))
-        throw new Error("stage identity");
-    }
-  };
-  try {
-    await walk(stage);
-    return count === files.length;
-  } catch {
-    return false;
-  }
-}
-async function verifyNativePostRun(check, stage, files, pack, policy, executable3) {
-  let stable = false;
-  try {
-    stable = await inventoryMatches(stage, files) && await hashRegular(pack, Buffer.byteLength(OWN_RULES)) === OWN_RULES_SHA256 && await hashRegular(policy, Buffer.byteLength(NATIVE_DENY_POLICY)) === digest(NATIVE_DENY_POLICY) && await hashRegular(executable3, OPENGREP_SIZE) === OPENGREP_SHA256;
-  } catch {
-  }
-  if (!stable) {
-    check.status = "partial";
-    check.metrics = {
-      ...check.metrics,
-      identityUnchanged: false,
-      incompleteReasons: [check.metrics?.incompleteReasons, "identity_changed"].filter(Boolean).join(",")
-    };
-    check.notes.push("Post-run native input or engine identity could not be verified.");
-  } else
-    check.metrics = { ...check.metrics, identityUnchanged: true, engineSha256: OPENGREP_SHA256 };
-}
-async function runNativePreview(snapshot2, options) {
-  const files = nativeFiles(snapshot2);
-  const failed = (reason, status = "error") => ({
-    id: NATIVE_CHECK_ID,
-    status,
-    findings: [],
-    notes: ["Selected native preview could not be verified."],
-    metrics: { profile: OPENGREP_PROFILE, filesDeclared: files.length, incompleteReasons: reason }
-  });
-  if (options.signal?.aborted)
-    return failed("cancelled", "partial");
-  const executable3 = options.nativePreview?.executable;
-  if (typeof executable3 !== "string" || !isAbsolute6(executable3) || executable3.includes("\0"))
-    return failed("invalid_executable_path");
-  if (process.platform !== "darwin" || process.arch !== "arm64")
-    return failed("unsupported_platform");
-  if (!snapshot2.complete && snapshot2.rootError)
-    return failed("snapshot_incomplete", "partial");
-  if (files.length === 0)
-    return { id: NATIVE_CHECK_ID, status: "not_applicable", findings: [], notes: ["No collected JS/TS/Python code file was available for the selected native preview."], metrics: { filesDeclared: 0, profile: OPENGREP_PROFILE } };
-  let top, check;
-  try {
-    if (await hashRegular(executable3, OPENGREP_SIZE) !== OPENGREP_SHA256 || digest(OWN_RULES) !== OWN_RULES_SHA256)
-      return failed("identity_mismatch");
-    await access3(executable3, constants3.X_OK);
-    if (!(await lstat3("/usr/bin/sandbox-exec")).isFile())
-      return failed("network_boundary_unavailable");
-    top = await mkdtemp2(join4(tmpdir2(), "wakeio-native-"));
-    const stage = join4(top, "snapshot"), home = join4(top, "home"), temporary = join4(top, "tmp");
-    for (const path2 of [stage, home, temporary])
-      await mkdir2(path2, { mode: 448 });
-    for (const file of files) {
-      const path2 = join4(stage, file.path);
-      await mkdir2(dirname4(path2), { recursive: true, mode: 448 });
-      await writeFile2(path2, file.text, { flag: "wx", mode: 384 });
-    }
-    const pack = join4(top, "owned-rules.yaml"), policy = join4(top, "deny-network.sb");
-    await writeFile2(pack, OWN_RULES, { mode: 384, flag: "wx" });
-    await writeFile2(policy, NATIVE_DENY_POLICY, { mode: 384, flag: "wx" });
-    if (!await inventoryMatches(stage, files))
-      throw new Error("stage identity");
-    const args = [
-      "scan",
-      "--experimental",
-      "--disable-version-check",
-      "--json",
-      "--error",
-      "--strict",
-      "--no-autofix",
-      "--disable-nosem",
-      "--no-rewrite-rule-ids",
-      "--no-git-ignore",
-      "--taint-intrafile",
-      "--jobs",
-      "1",
-      "--max-memory",
-      "256",
-      "--timeout",
-      "2",
-      "--timeout-threshold",
-      "1",
-      "--project-root",
-      stage,
-      "--config",
-      pack,
-      stage
-    ];
-    const command = nativeSandboxCommand(policy, executable3, args);
-    const result3 = await runProcess(command.executable, command.args, {
-      cwd: stage,
-      home,
-      tmpdir: temporary,
-      timeoutMs: Math.min(options.timeoutMs ?? 1e4, 1e4),
-      maxOutputBytes: MAX_JSON_BYTES,
-      supervision: "native-offline",
-      signal: options.signal
-    });
-    check = nativeCheckFromProcess(result3, stage, files, snapshot2.complete);
-    await verifyNativePostRun(check, stage, files, pack, policy, executable3);
-  } catch {
-    if (!check)
-      check = failed("native_execution_error");
-    else {
-      check.status = "partial";
-      check.metrics = { ...check.metrics, incompleteReasons: [check.metrics?.incompleteReasons, "native_execution_error"].filter(Boolean).join(",") };
-    }
-  } finally {
-    if (top) {
-      try {
-        await rm2(top, { recursive: true, force: true });
-        if (check)
-          check.metrics = { ...check.metrics, stageCleanupConfirmed: true };
-      } catch {
-        check ??= failed("stage_cleanup_unknown", "partial");
-        check.status = "partial";
-        check.metrics = { ...check.metrics, stageCleanupConfirmed: false, incompleteReasons: [check.metrics?.incompleteReasons, "stage_cleanup_unknown"].filter(Boolean).join(",") };
-      }
-    }
-  }
-  return check ?? failed("native_execution_error");
 }
 
 // build/src/source.js
@@ -223305,7 +223573,7 @@ function inventoryCheck(snapshot2, tools, nativeSelected = false, outDir) {
   const issueCounts = /* @__PURE__ */ new Map();
   for (const entry of snapshot2.issues)
     issueCounts.set(entry.code, (issueCounts.get(entry.code) ?? 0) + 1);
-  const issueSummary = [...issueCounts.entries()].map(([code, count]) => `${code}:${count}`).join(", ");
+  const issueSummary = [...issueCounts.entries()].map(([code, count2]) => `${code}:${count2}`).join(", ");
   const notes = [
     `Collected ${snapshot2.files.length} allowlisted file${snapshot2.files.length === 1 ? "" : "s"} (${snapshot2.totalBytes} bytes).`,
     ...snapshot2.ignoredFiles > 0 ? [`Ignored ${snapshot2.ignoredFiles} path${snapshot2.ignoredFiles === 1 ? "" : "s"} outside the static-analysis allowlist.`] : [],
@@ -223328,6 +223596,8 @@ function inventoryCheck(snapshot2, tools, nativeSelected = false, outDir) {
       requestedTools: tools.length ? tools.join(",") : "none",
       nativePreviewSelected: nativeSelected,
       filesSelected: snapshot2.files.length,
+      codeFilesSelected: snapshot2.files.filter((file) => file.category === "code").length,
+      ...collectedCodeMetrics(snapshot2),
       bytesSelected: snapshot2.totalBytes,
       ignoredFiles: snapshot2.ignoredFiles,
       issueCount: snapshot2.issues.length,
@@ -223687,29 +223957,41 @@ async function runTool(tool, snapshot2, stageDir, options, timeoutMs, blockedCon
   return runTrivy({ snapshot: snapshot2, stageDir, timeoutMs, toolPath: executable3, blockedConfigCount, signal: options.signal });
 }
 async function runSource(options) {
+  let tools = [];
+  const safeOptions = options && typeof options === "object" && !utilTypes.isProxy(options);
+  const requirement = safeOptions ? Object.getOwnPropertyDescriptor(options, "requireCodeAnalysis") : void 0;
+  const required = requirement && "value" in requirement && requirement.value === true;
+  const finish = (checks2, snapshot3) => {
+    checks2.push(codeCoverageCheck(snapshot3, checks2, { tools, nativePreview: safeOptions ? options.nativePreview : void 0, requireCodeAnalysis: !!required }));
+    return snapshot3 ? addSourceComparisonKeys(checks2, snapshot3) : checks2;
+  };
+  if (!safeOptions)
+    return finish([errorCheck2("source.options", "Source options must be a non-callable, non-proxy object.")]);
+  if (requirement && (!("value" in requirement) || requirement.value !== void 0 && typeof requirement.value !== "boolean") || safeOptions && !requirement && "requireCodeAnalysis" in options || options && utilTypes.isProxy(options))
+    return finish([errorCheck2("source.options", "requireCodeAnalysis must be an own boolean data property.")]);
   let analysisBudget;
   try {
     analysisBudget = resolveAnalysisBudget(options?.analysisProfile);
   } catch {
-    return [errorCheck2("source.options", "Analysis profile must be default or extended.")];
+    return finish([errorCheck2("source.options", "Analysis profile must be default or extended.")]);
   }
   if (!options || typeof options.root !== "string" || options.root.trim().length === 0) {
-    return [errorCheck2("source.inventory", "A source directory is required.")];
+    return finish([errorCheck2("source.inventory", "A source directory is required.")]);
   }
   if (options.signal !== void 0 && !(options.signal instanceof AbortSignal))
-    return [errorCheck2("source.cancelled", "Source cancellation signal must be an AbortSignal.")];
+    return finish([errorCheck2("source.cancelled", "Source cancellation signal must be an AbortSignal.")]);
   if (options.signal?.aborted)
-    return [partialCheck(options.nativePreview ? "source.opengrep.preview" : "source.cancelled", "Source scan was cancelled before collection; no child was started.")];
-  const tools = requestedTools(options);
+    return finish([partialCheck(options.nativePreview ? "source.opengrep.preview" : "source.cancelled", "Source scan was cancelled before collection; no child was started.")]);
+  tools = requestedTools(options);
   const timeoutMs = normalizeTimeout(options.timeoutMs);
   let snapshot2;
   try {
     snapshot2 = await collectSource(options);
   } catch {
-    return [errorCheck2("source.inventory", "The source snapshot could not be collected.")];
+    return finish([errorCheck2("source.inventory", "The source snapshot could not be collected.")]);
   }
   if (options.signal?.aborted)
-    return [inventoryCheck(snapshot2, tools, !!options.nativePreview, options.outDir), partialCheck("source.cancelled", "Source scan was cancelled after collection.")];
+    return finish([inventoryCheck(snapshot2, tools, !!options.nativePreview, options.outDir), partialCheck("source.cancelled", "Source scan was cancelled after collection.")], snapshot2);
   const checks = [
     inventoryCheck(snapshot2, tools, !!options.nativePreview, options.outDir),
     runBuiltinAst(snapshot2, hasOtherSecurityCheck(snapshot2, tools, !!options.nativePreview), analysisBudget.limits, analysisBudget),
@@ -223719,7 +224001,7 @@ async function runSource(options) {
     checks.push(await runNativePreview(snapshot2, options));
   if (options.signal?.aborted) {
     checks.push(partialCheck("source.cancelled", "Source scan was cancelled; later stages were not started."));
-    return addSourceComparisonKeys(checks, snapshot2);
+    return finish(checks, snapshot2);
   }
   if (tools.length === 0 || snapshot2.files.length === 0 || snapshot2.rootError) {
     if (snapshot2.files.length === 0 && !snapshot2.rootError) {
@@ -223738,7 +224020,7 @@ async function runSource(options) {
     }
     if (snapshot2.rootError)
       checks.push(...tools.map((tool) => errorCheck2(`source.${tool}`, `The source root could not be scanned by ${tool}.`)));
-    return addSourceComparisonKeys(checks, snapshot2);
+    return finish(checks, snapshot2);
   }
   let staged;
   try {
@@ -223746,7 +224028,7 @@ async function runSource(options) {
     await mkdir3(join5(dirname5(staged.dir), "home"), { recursive: true, mode: 448 });
   } catch {
     checks.push(...tools.map((tool) => errorCheck2(`source.${tool}`, `The bounded snapshot could not be staged for ${tool}.`)));
-    return addSourceComparisonKeys(checks, snapshot2);
+    return finish(checks, snapshot2);
   }
   let trivyStaged;
   let trivySnapshot;
@@ -223827,7 +224109,7 @@ async function runSource(options) {
     } catch {
     }
   }
-  return addSourceComparisonKeys(checks, snapshot2);
+  return finish(checks, snapshot2);
 }
 
 // node_modules/parse5/dist/common/unicode.js
@@ -224145,8 +224427,8 @@ var Preprocessor = class {
       this._err(ERR.noncharacterInInputStream);
     }
   }
-  retreat(count) {
-    this.pos -= count;
+  retreat(count2) {
+    this.pos -= count2;
     while (this.pos < this.lastGapPos) {
       this.lastGapPos = this.gapStack.pop();
       this.pos--;
@@ -225318,9 +225600,9 @@ var Tokenizer = class {
     this.consumedAfterSnapshot++;
     return this.preprocessor.advance();
   }
-  _advanceBy(count) {
-    this.consumedAfterSnapshot += count;
-    for (let i = 0; i < count; i++) {
+  _advanceBy(count2) {
+    this.consumedAfterSnapshot += count2;
+    for (let i = 0; i < count2; i++) {
       this.preprocessor.advance();
     }
   }
@@ -231714,7 +231996,7 @@ var UrlNetworkError = class extends Error {
     this.code = code;
   }
 };
-function fail(code, message = code) {
+function fail2(code, message = code) {
   throw new UrlNetworkError(code, message);
 }
 function hasControlCharacters(value) {
@@ -231728,7 +232010,7 @@ function hasControlCharacters(value) {
 var MAX_AUTHORIZATION_LENGTH = 8192;
 function validateAuthorization(value) {
   if (value.length === 0 || value.length > MAX_AUTHORIZATION_LENGTH || hasControlCharacters(value)) {
-    fail("invalid_authorization", "authorization value is empty, too long, or contains control characters");
+    fail2("invalid_authorization", "authorization value is empty, too long, or contains control characters");
   }
 }
 function rawAuthorityHost(raw) {
@@ -231752,20 +232034,20 @@ function rejectAmbiguousRawHost(raw) {
   if (!host)
     return;
   if (host.includes("%"))
-    fail("ambiguous_host", "hostname is ambiguous or invalid");
+    fail2("ambiguous_host", "hostname is ambiguous or invalid");
   const lower = host.toLowerCase();
   if (/^\d+$/.test(lower) || /^0x[0-9a-f]+$/i.test(lower))
-    fail("ambiguous_host", "hostname is ambiguous or invalid");
+    fail2("ambiguous_host", "hostname is ambiguous or invalid");
   const numericDotted = /^(?:0x[0-9a-f]+|\d+)(?:\.(?:0x[0-9a-f]+|\d+)){1,3}$/i.test(lower);
   if (numericDotted && (!/^\d+(?:\.\d+){3}$/.test(lower) || lower.includes("0x")))
-    fail("ambiguous_host", "hostname is ambiguous or invalid");
+    fail2("ambiguous_host", "hostname is ambiguous or invalid");
   if (/^[0-9.]+$/.test(lower)) {
     const parts = lower.split(".");
     if (parts.length !== 4 || parts.some((part) => !/^(?:0|[1-9]\d*)$/.test(part) || Number(part) > 255))
-      fail("ambiguous_host", "hostname is ambiguous or invalid");
+      fail2("ambiguous_host", "hostname is ambiguous or invalid");
   }
   if (/[\s\\]/.test(host))
-    fail("ambiguous_host", "hostname is ambiguous or invalid");
+    fail2("ambiguous_host", "hostname is ambiguous or invalid");
 }
 function isValidDnsName(hostname) {
   if (!hostname || hostname.length > 253 || hostname.endsWith(".") || hostname.includes(".."))
@@ -231776,28 +232058,28 @@ function isValidDnsName(hostname) {
 }
 function normalizeUrl(raw) {
   if (typeof raw !== "string" || raw.length === 0 || raw.length > MAX_URL_LENGTH || hasControlCharacters(raw)) {
-    fail("invalid_url", "URL is empty, too long, or contains control characters");
+    fail2("invalid_url", "URL is empty, too long, or contains control characters");
   }
   rejectAmbiguousRawHost(raw);
   let parsed;
   try {
     parsed = new URL(raw);
   } catch {
-    fail("invalid_url", "URL could not be parsed");
+    fail2("invalid_url", "URL could not be parsed");
   }
   if (parsed.protocol !== "http:" && parsed.protocol !== "https:")
-    fail("unsupported_scheme", "only HTTP and HTTPS are allowed");
+    fail2("unsupported_scheme", "only HTTP and HTTPS are allowed");
   if (parsed.username || parsed.password)
-    fail("userinfo_not_allowed", "URL userinfo is not allowed");
+    fail2("userinfo_not_allowed", "URL userinfo is not allowed");
   if (parsed.hash)
-    fail("fragment_not_allowed", "URL fragments are not allowed");
+    fail2("fragment_not_allowed", "URL fragments are not allowed");
   const hostname = parsed.hostname.replace(/^\[|\]$/g, "").toLowerCase();
   if (isIP(hostname) === 0 && !isValidDnsName(hostname))
-    fail("ambiguous_host", "hostname is ambiguous or invalid");
+    fail2("ambiguous_host", "hostname is ambiguous or invalid");
   if (isIP(hostname) === 6 && hostname.includes("%"))
-    fail("ambiguous_host", "IPv6 zone identifiers are not allowed");
+    fail2("ambiguous_host", "IPv6 zone identifiers are not allowed");
   if (parsed.port && (!/^\d+$/.test(parsed.port) || Number(parsed.port) < 1 || Number(parsed.port) > 65535)) {
-    fail("invalid_port", "port is invalid");
+    fail2("invalid_port", "port is invalid");
   }
   parsed.hostname = hostname;
   return {
@@ -231974,7 +232256,7 @@ function hostAlwaysForbidden(hostname) {
 }
 async function raceAbort(promise, signal, code = "timeout") {
   if (signal.aborted)
-    fail(code, "collection deadline exceeded");
+    fail2(code, "collection deadline exceeded");
   let onAbort;
   const cancellation = new Promise((_, reject) => {
     onAbort = () => reject(new UrlNetworkError(code, "collection deadline exceeded"));
@@ -231990,24 +232272,24 @@ async function raceAbort(promise, signal, code = "timeout") {
 async function lookupAddresses(hostname, signal, allowPrivate) {
   const lower = hostname.toLowerCase();
   if (hostAlwaysForbidden(lower))
-    fail("metadata_host", "metadata and internal hostnames are not allowed");
+    fail2("metadata_host", "metadata and internal hostnames are not allowed");
   let answers;
   try {
     answers = await raceAbort(nodeLookup(lower, { all: true, verbatim: true }), signal, "dns_timeout");
   } catch (error) {
     if (error instanceof UrlNetworkError)
       throw error;
-    fail("dns_error", "DNS lookup failed");
+    fail2("dns_error", "DNS lookup failed");
   }
   if (!Array.isArray(answers) || answers.length === 0)
-    fail("dns_empty", "hostname has no A/AAAA answers");
+    fail2("dns_empty", "hostname has no A/AAAA answers");
   if (answers.length > MAX_DNS_ANSWERS)
-    fail("dns_answer_limit", "hostname returned too many addresses");
+    fail2("dns_answer_limit", "hostname returned too many addresses");
   const seen = /* @__PURE__ */ new Set();
   const validated = [];
   for (const entry of answers) {
     if (!entry || entry.family !== 4 && entry.family !== 6 || typeof entry.address !== "string" || isIP(entry.address) !== entry.family) {
-      fail("dns_invalid", "DNS returned an invalid address");
+      fail2("dns_invalid", "DNS returned an invalid address");
     }
     const normalizedAddress = entry.address.toLowerCase().replace(/^\[|\]$/g, "");
     const key2 = `${entry.family}:${normalizedAddress}`;
@@ -232015,23 +232297,23 @@ async function lookupAddresses(hostname, signal, allowPrivate) {
       continue;
     seen.add(key2);
     if (isAlwaysForbiddenAddress(normalizedAddress) || !allowPrivate && isPrivateAddress(normalizedAddress)) {
-      fail("blocked_address", "hostname resolves to a blocked address");
+      fail2("blocked_address", "hostname resolves to a blocked address");
     }
     validated.push({ address: normalizedAddress, family: entry.family });
   }
   if (validated.length === 0)
-    fail("dns_empty", "hostname has no usable A/AAAA answers");
+    fail2("dns_empty", "hostname has no usable A/AAAA answers");
   return validated;
 }
 function validateStaticTarget(url, allowPrivate) {
   if (isIP(url.hostname) !== 0) {
     if (isAlwaysForbiddenAddress(url.hostname) || !allowPrivate && isPrivateAddress(url.hostname))
-      fail("blocked_address", "target address is not allowed");
+      fail2("blocked_address", "target address is not allowed");
   } else {
     if (!allowPrivate && (url.hostname === "localhost" || url.hostname.endsWith(".local")))
-      fail("private_hostname", "private hostname is not allowed");
+      fail2("private_hostname", "private hostname is not allowed");
     if (hostAlwaysForbidden(url.hostname))
-      fail("metadata_host", "metadata and internal hostnames are not allowed");
+      fail2("metadata_host", "metadata and internal hostnames are not allowed");
   }
 }
 async function resolveAddresses(url, signal, allowPrivate) {
@@ -232061,7 +232343,7 @@ function closeResponse(response) {
 }
 function consumeRequestBudget(budget) {
   if (budget.count >= budget.max)
-    fail("request_limit", "request budget exhausted");
+    fail2("request_limit", "request budget exhausted");
   budget.count += 1;
 }
 function sameAddress(left, right) {
@@ -232076,7 +232358,7 @@ function sameAddress(left, right) {
 }
 async function requestPinned(url, address, context) {
   if (context.signal.aborted || Date.now() >= context.deadlineAt)
-    fail("timeout", "collection deadline exceeded");
+    fail2("timeout", "collection deadline exceeded");
   if (context.authorization !== void 0)
     validateAuthorization(context.authorization);
   consumeRequestBudget(context.budget);
@@ -232174,7 +232456,7 @@ async function requestWithAddresses(url, addresses, context) {
   }
   if (lastError instanceof UrlNetworkError)
     throw lastError;
-  fail("request_error", "HTTP request failed");
+  fail2("request_error", "HTTP request failed");
 }
 function isRedirect(status) {
   return status === 301 || status === 302 || status === 303 || status === 307 || status === 308;
@@ -232242,7 +232524,7 @@ async function readResponseBody(response, signal, maxCompressedBytes, maxDecompr
   const declared = Number.parseInt(response.headers["content-length"] ?? "", 10);
   if (Number.isFinite(declared) && declared > maxCompressedBytes) {
     closeResponse(response);
-    fail("body_limit", "compressed body budget exceeded");
+    fail2("body_limit", "compressed body budget exceeded");
   }
   const chunks = [];
   let compressedBytes = 0;
@@ -232251,12 +232533,12 @@ async function readResponseBody(response, signal, maxCompressedBytes, maxDecompr
   try {
     for await (const chunk of response) {
       if (signal.aborted)
-        fail("timeout", "collection deadline exceeded");
+        fail2("timeout", "collection deadline exceeded");
       const value = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
       compressedBytes += value.byteLength;
       if (compressedBytes > maxCompressedBytes) {
         closeResponse(response);
-        fail("body_limit", "compressed body budget exceeded");
+        fail2("body_limit", "compressed body budget exceeded");
       }
       chunks.push(value);
     }
@@ -232264,8 +232546,8 @@ async function readResponseBody(response, signal, maxCompressedBytes, maxDecompr
     if (error instanceof UrlNetworkError)
       throw error;
     if (signal.aborted)
-      fail("timeout", "collection deadline exceeded");
-    fail("body_read_error", "response body could not be read");
+      fail2("timeout", "collection deadline exceeded");
+    fail2("body_read_error", "response body could not be read");
   } finally {
     signal.removeEventListener("abort", onAbort);
   }
@@ -232283,9 +232565,9 @@ async function fetchResource(start, context, allowedOrigin, maxCompressedBytes, 
   const redirects = [];
   for (let hop = 0; hop <= MAX_REDIRECTS; hop += 1) {
     if (context.signal.aborted || Date.now() >= context.deadlineAt)
-      fail("timeout", "collection deadline exceeded");
+      fail2("timeout", "collection deadline exceeded");
     if (current.origin !== allowedOrigin)
-      fail("cross_origin_redirect", "resource left the approved origin");
+      fail2("cross_origin_redirect", "resource left the approved origin");
     const addresses = await resolveAddresses(current, context.signal, context.allowPrivate);
     const hopContext = hop === 0 || context.authorization === void 0 ? context : { ...context, authorization: void 0 };
     const response = await requestWithAddresses(current, addresses, hopContext);
@@ -232293,24 +232575,24 @@ async function fetchResource(start, context, allowedOrigin, maxCompressedBytes, 
     if (isRedirect(response.statusCode ?? 0)) {
       if (context.rejectRedirects) {
         closeResponse(response);
-        fail("redirect_rejected", "redirects are not allowed for this request");
+        fail2("redirect_rejected", "redirects are not allowed for this request");
       }
       const location2 = locationHeader(headers);
       closeResponse(response);
       if (!location2)
-        fail("redirect_without_location", "redirect did not include a location");
+        fail2("redirect_without_location", "redirect did not include a location");
       if (hop >= MAX_REDIRECTS)
-        fail("redirect_limit", "redirect budget exhausted");
+        fail2("redirect_limit", "redirect budget exhausted");
       let next;
       try {
         next = normalizeUrl(new URL(location2, current.href).toString());
       } catch (error) {
         if (error instanceof UrlNetworkError)
           throw error;
-        fail("invalid_redirect", "redirect location is invalid");
+        fail2("invalid_redirect", "redirect location is invalid");
       }
       if (next.origin !== allowedOrigin)
-        fail("cross_origin_redirect", "redirect left the approved origin");
+        fail2("cross_origin_redirect", "redirect left the approved origin");
       redirects.push({ status: response.statusCode ?? 0, from: current, to: next });
       current = next;
       continue;
@@ -232326,7 +232608,7 @@ async function fetchResource(start, context, allowedOrigin, maxCompressedBytes, 
       redirects
     };
   }
-  fail("redirect_limit", "redirect budget exhausted");
+  fail2("redirect_limit", "redirect budget exhausted");
 }
 
 // build/src/url-observations.js
@@ -233862,91 +234144,6 @@ async function runUrl(options) {
   })];
 }
 
-// build/src/json-snapshot.js
-import { types as types4 } from "node:util";
-var JSON_MAX_INPUT_BYTES = 1024 * 1024;
-var JSON_MAX_INPUT_NODES = 2e4;
-var JSON_MAX_DEPTH = 40;
-function fail2() {
-  throw new TypeError("invalid_bounded_json");
-}
-function snapshotJsonData(input, invalid4 = fail2, limit2 = fail2) {
-  let nodes = 0, bytes = 0;
-  const active = /* @__PURE__ */ new Set();
-  const count = (value) => {
-    bytes += Buffer.byteLength(value, "utf8");
-    if (bytes > JSON_MAX_INPUT_BYTES)
-      limit2();
-  };
-  const string = (value) => {
-    if (value.length > JSON_MAX_INPUT_BYTES)
-      limit2();
-    count(JSON.stringify(value));
-  };
-  const copy = (value, depth) => {
-    if (++nodes > JSON_MAX_INPUT_NODES || depth > JSON_MAX_DEPTH)
-      limit2();
-    if (value === null || typeof value === "boolean") {
-      count(String(value));
-      return value;
-    }
-    if (typeof value === "string") {
-      string(value);
-      return value;
-    }
-    if (typeof value === "number") {
-      if (!Number.isFinite(value))
-        invalid4();
-      count(String(value));
-      return value;
-    }
-    if (typeof value !== "object" || types4.isProxy(value) || active.has(value))
-      invalid4();
-    const array = Array.isArray(value);
-    const prototype = Object.getPrototypeOf(value);
-    if (array ? prototype !== Array.prototype : prototype !== Object.prototype && prototype !== null)
-      invalid4();
-    if (Object.getOwnPropertySymbols(value).length !== 0)
-      invalid4();
-    const descriptors = Object.getOwnPropertyDescriptors(value);
-    const names = Object.keys(descriptors);
-    if (names.length > JSON_MAX_INPUT_NODES - nodes)
-      limit2();
-    active.add(value);
-    count("{}");
-    if (array) {
-      if (value.length > JSON_MAX_INPUT_NODES - nodes || names.length !== value.length + 1)
-        invalid4();
-      const result4 = [];
-      for (let i = 0; i < value.length; i++) {
-        const descriptor = descriptors[String(i)];
-        if (!descriptor || !descriptor.enumerable || !("value" in descriptor))
-          invalid4();
-        if (i > 0)
-          count(",");
-        result4.push(copy(descriptor.value, depth + 1));
-      }
-      active.delete(value);
-      return result4;
-    }
-    const result3 = /* @__PURE__ */ Object.create(null);
-    for (let i = 0; i < names.length; i++) {
-      const name = names[i];
-      const descriptor = descriptors[name];
-      if (!descriptor.enumerable || !("value" in descriptor))
-        invalid4();
-      if (i > 0)
-        count(",");
-      string(name);
-      count(":");
-      result3[name] = copy(descriptor.value, depth + 1);
-    }
-    active.delete(value);
-    return result3;
-  };
-  return copy(input, 0);
-}
-
 // build/src/dast-execution.js
 var PHASES = ["baseline-before", "true", "false", "baseline-after"];
 var REASONS2 = ["evaluated", "response_invalid", "network_policy", "transport_error", "request_budget", "body_budget", "cancelled", "deadline", "not_reached"];
@@ -234064,7 +234261,7 @@ function dastProbeOutcome(steps) {
   const probes = steps.filter((step2) => step2.phase === "true" || step2.phase === "false");
   return probes.every((step2) => step2.oracleMatch === probes[0].oracleMatch && ["baseline", "false"].includes(step2.oracleMatch)) ? "not_observed" : "inconclusive";
 }
-function exact(value, keys3) {
+function exact2(value, keys3) {
   return Object.keys(value).sort().join("\0") === [...keys3].sort().join("\0");
 }
 function sanitizeFixed(raw) {
@@ -234072,7 +234269,7 @@ function sanitizeFixed(raw) {
   const authenticated = raw.version === 2 || quoted && raw.authentication === "authorization";
   const plannedRequests = authenticated ? 10 : 8;
   const revision = quoted ? authenticated ? "sql-boolean-single-quoted-auth-v3" : "sql-boolean-single-quoted-v3" : "sql-boolean-numeric-auth-v2";
-  if (!quoted && raw.version !== 2 || quoted && !["none", "authorization"].includes(String(raw.authentication)) || !exact(raw, ["version", "policySha256", "profile", "profileRevision", "maxRequests", "timeoutMs", "allowPrivate", "status", "outcome", "plannedRequests", "steps", "counts", "stopReason", ...quoted ? ["authentication"] : [], ...authenticated ? ["identityControls", "probeOutcome"] : []]) || typeof raw.policySha256 !== "string" || !SHA256.test(raw.policySha256) || raw.profile !== (quoted ? "single-quoted" : "numeric") || raw.profileRevision !== revision || !Number.isSafeInteger(raw.maxRequests) || Number(raw.maxRequests) < 1 || Number(raw.maxRequests) > 64 || !Number.isSafeInteger(raw.timeoutMs) || Number(raw.timeoutMs) < 1 || Number(raw.timeoutMs) > 12e4 || typeof raw.allowPrivate !== "boolean" || !["complete", "partial"].includes(String(raw.status)) || !["observed", "not_observed", "inconclusive"].includes(String(raw.outcome)) || raw.plannedRequests !== plannedRequests || !Array.isArray(raw.steps) || raw.steps.length !== plannedRequests || !record3(raw.counts) || !exact(raw.counts, ["evaluated", "inconclusive", "notAttempted", "httpAttempts"]) || authenticated && (!record3(raw.identityControls) || !exact(raw.identityControls, ["before", "after"])))
+  if (!quoted && raw.version !== 2 || quoted && !["none", "authorization"].includes(String(raw.authentication)) || !exact2(raw, ["version", "policySha256", "profile", "profileRevision", "maxRequests", "timeoutMs", "allowPrivate", "status", "outcome", "plannedRequests", "steps", "counts", "stopReason", ...quoted ? ["authentication"] : [], ...authenticated ? ["identityControls", "probeOutcome"] : []]) || typeof raw.policySha256 !== "string" || !SHA256.test(raw.policySha256) || raw.profile !== (quoted ? "single-quoted" : "numeric") || raw.profileRevision !== revision || !Number.isSafeInteger(raw.maxRequests) || Number(raw.maxRequests) < 1 || Number(raw.maxRequests) > 64 || !Number.isSafeInteger(raw.timeoutMs) || Number(raw.timeoutMs) < 1 || Number(raw.timeoutMs) > 12e4 || typeof raw.allowPrivate !== "boolean" || !["complete", "partial"].includes(String(raw.status)) || !["observed", "not_observed", "inconclusive"].includes(String(raw.outcome)) || raw.plannedRequests !== plannedRequests || !Array.isArray(raw.steps) || raw.steps.length !== plannedRequests || !record3(raw.counts) || !exact2(raw.counts, ["evaluated", "inconclusive", "notAttempted", "httpAttempts"]) || authenticated && (!record3(raw.identityControls) || !exact2(raw.identityControls, ["before", "after"])))
     return null;
   const steps = [];
   let evaluated = 0, inconclusive = 0, notAttempted = 0, httpAttempts = 0, stopped = false;
@@ -234081,7 +234278,7 @@ function sanitizeFixed(raw) {
     const sqlIndex = ordinal - (authenticated ? 1 : 0);
     const phase2 = identity ? ordinal === 0 ? "identity-before" : "identity-after" : PHASES[sqlIndex % 4];
     const round = identity ? 0 : Math.floor(sqlIndex / 4) + 1;
-    if (!record3(value) || !exact(value, ["ordinal", "round", "phase", "outcome", "reason", "attemptStart", "httpAttempts", "httpStatus", "oracleMatch"]) || value.ordinal !== ordinal || value.round !== round || value.phase !== phase2 || !["evaluated", "inconclusive", "not_attempted"].includes(String(value.outcome)) || ![...REASONS2, ...identity ? ["identity_mismatch"] : []].includes(String(value.reason)) || !Number.isSafeInteger(value.attemptStart) || value.attemptStart !== httpAttempts || !Number.isSafeInteger(value.httpAttempts) || Number(value.httpAttempts) < 0 || Number(value.httpAttempts) > 32 || value.httpStatus !== null && (!Number.isSafeInteger(value.httpStatus) || Number(value.httpStatus) < 100 || Number(value.httpStatus) > 599) || !MATCHES.includes(value.oracleMatch) || identity && value.oracleMatch !== "unavailable")
+    if (!record3(value) || !exact2(value, ["ordinal", "round", "phase", "outcome", "reason", "attemptStart", "httpAttempts", "httpStatus", "oracleMatch"]) || value.ordinal !== ordinal || value.round !== round || value.phase !== phase2 || !["evaluated", "inconclusive", "not_attempted"].includes(String(value.outcome)) || ![...REASONS2, ...identity ? ["identity_mismatch"] : []].includes(String(value.reason)) || !Number.isSafeInteger(value.attemptStart) || value.attemptStart !== httpAttempts || !Number.isSafeInteger(value.httpAttempts) || Number(value.httpAttempts) < 0 || Number(value.httpAttempts) > 32 || value.httpStatus !== null && (!Number.isSafeInteger(value.httpStatus) || Number(value.httpStatus) < 100 || Number(value.httpStatus) > 599) || !MATCHES.includes(value.oracleMatch) || identity && value.oracleMatch !== "unavailable")
       return null;
     if (stopped && value.outcome !== "not_attempted")
       return null;
@@ -234197,7 +234394,7 @@ function isDastReplayableExecution(execution) {
 }
 
 // build/src/report.js
-import { types as utilTypes } from "node:util";
+import { types as utilTypes2 } from "node:util";
 
 // build/src/api-execution.js
 import { createHash as createHash4 } from "node:crypto";
@@ -234430,7 +234627,7 @@ function sanitiseApiExecutionLedger(input) {
     }
     const expectedCounts = counts(steps);
     object5(value.counts, Object.keys(expectedCounts));
-    if (Object.entries(expectedCounts).some(([key2, count]) => value.counts[key2] !== count))
+    if (Object.entries(expectedCounts).some(([key2, count2]) => value.counts[key2] !== count2))
       fail3();
     if (!Array.isArray(value.reasons) || value.reasons.length > 3 || new Set(value.reasons).size !== value.reasons.length || value.reasons.some((r) => !["legacy_policy", "run_incomplete", "incomplete_steps"].includes(r)))
       fail3();
@@ -234832,6 +235029,7 @@ function projectReportSummary(report, gate) {
   const reason = summary?.accounting === "exact" ? summary.rows.find((row) => row.eventsObserved > 0)?.reason : void 0;
   const inventories = report.checks.filter((check) => check.id === "source.inventory");
   const inventory = inventories.length === 1 ? inventories[0] : void 0;
+  const code = report.checks.find((check) => check.id === "source.code-coverage");
   const collectionBudget = inventory?.collectionBudget ?? report.scope?.collectionBudget;
   const collectionBudgetConsistency = inventory?.collectionBudget && report.scope?.collectionBudget ? sameCollectionBudget(inventory.collectionBudget, report.scope.collectionBudget) ? "consistent" : "inconsistent" : "unknown";
   const collectionReason = first?.collectionEvidence?.issues.find((issue2) => issue2.code === "root_error")?.code ?? first?.collectionEvidence?.issues.find((issue2) => issue2.code !== "unsupported_file")?.code;
@@ -234842,7 +235040,7 @@ function projectReportSummary(report, gate) {
     checkId: first.checkId,
     ...collectionReason ? { collectionReason } : {},
     ...gap?.location ? { location: { ...gap.location } } : {}
-  } : exclusion ? { kind: "review_source_file_policy", collectionReason: exclusion.code, checkIndex: report.checks.indexOf(inventory), checkId: inventory.id } : { kind: gate.outcome === "incomplete" ? "review_check_diagnostics" : findings > 0 ? "review_finding_evidence" : "review_scope_limitations" };
+  } : code?.codeCoverage && (code.codeCoverage.accounting === "unknown" || code.codeCoverage.totals.uncovered > 0) ? { kind: "review_check_diagnostics", checkIndex: report.checks.indexOf(code), checkId: code.id } : exclusion ? { kind: "review_source_file_policy", collectionReason: exclusion.code, checkIndex: report.checks.indexOf(inventory), checkId: inventory.id } : { kind: gate.outcome === "incomplete" ? "review_check_diagnostics" : findings > 0 ? "review_finding_evidence" : "review_scope_limitations" };
   return {
     version: 1,
     basis: "sanitised_report",
@@ -234865,6 +235063,7 @@ function projectReportSummary(report, gate) {
     omittedIncompleteChecks: incompleteCount - incomplete.length,
     scope: {
       mode: report.mode,
+      ...report.checks.find((check) => check.id === "source.code-coverage")?.codeCoverage ? { codeCoverage: structuredClone(report.checks.find((check) => check.id === "source.code-coverage").codeCoverage) } : {},
       ...report.scope ? { fingerprint: report.scope.fingerprint, ruleset: report.scope.ruleset, ...report.scope.analysisBudget ? { analysisProfile: report.scope.analysisBudget.effectiveProfile, analysisBudgetRevision: report.scope.analysisBudget.revision } : {} } : {},
       ...collectionBudget ? { collectionBudget: structuredClone(collectionBudget) } : {},
       ...inventory || report.scope?.collectionBudget ? { collectionBudgetConsistency } : {},
@@ -234977,6 +235176,9 @@ function exitCode(report, failOn) {
 function evaluateGate(report, failOn = "high") {
   return evaluateSanitisedGate(sanitiseReport(report), failOn);
 }
+function applicableChecks(checks) {
+  return checks.some((check) => check.id === CODE_COVERAGE_ID) ? checks.filter((check) => check.id !== CODE_COVERAGE_ID && check.id !== "source.inventory") : checks;
+}
 function evaluateSanitisedGate(report, failOn) {
   const checks = report.checks;
   const threshold = SEVERITIES.includes(failOn) ? SEVERITY_RANK[failOn] : void 0;
@@ -234987,7 +235189,7 @@ function evaluateSanitisedGate(report, failOn) {
     reasons.push({ code: "invalid_fail_on" });
   if (checks.length === 0)
     reasons.push({ code: "no_checks" });
-  else if (checks.every((check) => check.status === "not_applicable")) {
+  else if (applicableChecks(checks).every((check) => check.status === "not_applicable")) {
     reasons.push({ code: "no_applicable_checks" });
   }
   for (const check of checks) {
@@ -235022,7 +235224,7 @@ function serialiseReport(report) {
 function projectAgentReport(report, failOn) {
   const scanGate = evaluateSanitisedGate(report, failOn);
   const blocking = new Set(scanGate.blockingFindingIds);
-  const count = (status) => report.checks.filter((check) => check.status === status).length;
+  const count2 = (status) => report.checks.filter((check) => check.status === status).length;
   return {
     schemaVersion: "1.0.0",
     reportSchemaVersion: report.schemaVersion,
@@ -235056,12 +235258,12 @@ function projectAgentReport(report, failOn) {
     },
     coverage: {
       totalChecks: report.checks.length,
-      completed: count("completed"),
-      partial: count("partial"),
-      error: count("error"),
-      skipped: count("skipped"),
-      notApplicable: count("not_applicable"),
-      complete: report.checks.some((check) => check.status === "completed") && report.checks.every((check) => check.status === "completed" || check.status === "not_applicable"),
+      completed: count2("completed"),
+      partial: count2("partial"),
+      error: count2("error"),
+      skipped: count2("skipped"),
+      notApplicable: count2("not_applicable"),
+      complete: applicableChecks(report.checks).some((check) => check.status === "completed") && report.checks.every((check) => check.status === "completed" || check.status === "not_applicable"),
       basis: "declared_check_statuses"
     },
     checks: report.checks.map((check, checkIndex) => ({
@@ -235075,6 +235277,7 @@ function projectAgentReport(report, failOn) {
       ...check.collectionBudget ? { collectionBudget: check.collectionBudget } : {},
       ...check.collectionEvidence ? { collectionEvidence: check.collectionEvidence } : {},
       ...check.sourceSnapshot ? { sourceSnapshot: check.sourceSnapshot } : {},
+      ...check.codeCoverage ? { codeCoverage: check.codeCoverage } : {},
       ...check.analysisGaps ? { analysisGaps: check.analysisGaps } : {},
       ...check.apiStateEvidence ? { apiStateEvidence: check.apiStateEvidence } : {},
       ...check.apiWriteStateEvidence ? { apiWriteStateEvidence: check.apiWriteStateEvidence } : {},
@@ -235181,10 +235384,11 @@ function toSarif(report) {
     }
   }
   const incomplete = safeReport.checks.some((check) => check.status !== "completed" && check.status !== "not_applicable");
-  const noWork = safeReport.checks.length === 0 || safeReport.checks.every((check) => check.status === "not_applicable");
+  const noWork = safeReport.checks.length === 0 || applicableChecks(safeReport.checks).every((check) => check.status === "not_applicable");
   const invocationProperties = {
     mode: safeReport.mode,
     category: `wakeio-security-ci/${safeReport.mode}`,
+    ...safeReport.checks.some((check) => check.codeCoverage) ? { codeCoverages: safeReport.checks.filter((check) => check.codeCoverage).map((check) => ({ checkId: check.id, codeCoverage: check.codeCoverage })) } : {},
     statuses: Object.fromEntries(safeReport.checks.map((check) => [safeId(check.id, "check"), check.status]))
   };
   return {
@@ -235277,6 +235481,8 @@ function toMarkdown(report, failOn = "high") {
   } else {
     for (const check of safeReport.checks) {
       lines.push(`- **${markdownInline(check.id)}**: ${markdownInline(check.status)}`);
+      if (check.codeCoverage)
+        lines.push(...markdownCodeCoverage(check.codeCoverage));
       if (check.analysisBudget)
         lines.push(`  - AST analysis budget: ${budgetText(check.analysisBudget)}`);
       if (check.collectionBudget)
@@ -235372,7 +235578,7 @@ function toMarkdown(report, failOn = "high") {
   return lines.join("\n");
 }
 function markdownSummary(summary) {
-  const gate = summary.scanGate, count = summary.counts;
+  const gate = summary.scanGate, count2 = summary.counts;
   const interpretation = gate.outcome === "incomplete" ? "Declared work is incomplete; review the recorded diagnostics." : gate.outcome === "findings" ? "The selected severity threshold was reached; findings still require evidence review." : "Applicable declared checks completed; the selected threshold did not block this scan.";
   const lines = [
     "## First read",
@@ -235380,9 +235586,9 @@ function markdownSummary(summary) {
     `- Scan gate: ${gate.outcome}; exit ${gate.exitCode}; fail-on ${gate.failOn}.`,
     `- ${interpretation}`,
     `- Gate reason codes: ${gate.reasonCodes.join(", ") || "none"}.`,
-    `- Findings (rows): ${count.findings}; candidates (rows): ${count.candidates}. Blocking findings (unique IDs): ${count.blockingFindings}; blocking candidates (unique IDs): ${count.blockingCandidates}.`,
+    `- Findings (rows): ${count2.findings}; candidates (rows): ${count2.candidates}. Blocking findings (unique IDs): ${count2.blockingFindings}; blocking candidates (unique IDs): ${count2.blockingCandidates}.`,
     "- Candidate rows and blocking IDs overlap and use different units; do not add these counts.",
-    `- Declared checks: ${count.completedChecks} completed; ${count.incompleteChecks} incomplete; ${count.notApplicableChecks} not applicable.`
+    `- Declared checks: ${count2.completedChecks} completed; ${count2.incompleteChecks} incomplete; ${count2.notApplicableChecks} not applicable.`
   ];
   for (const check of summary.incompleteChecks) {
     lines.push(`- Incomplete check [${check.checkIndex}] ${markdownInline(check.checkId)}: ${check.status}.`);
@@ -235406,6 +235612,8 @@ function markdownSummary(summary) {
   }
   if (summary.omittedIncompleteChecks)
     lines.push(`- ${summary.omittedIncompleteChecks} incomplete checks omitted from this summary; see Checks.`);
+  if (summary.scope.codeCoverage)
+    lines.push(...markdownCodeCoverage(summary.scope.codeCoverage));
   if (summary.scope.analysisProfile)
     lines.push(`- AST workload selection: ${summary.scope.analysisProfile} (${summary.scope.analysisBudgetRevision}).`);
   if (summary.scope.collectionBudget)
@@ -235434,6 +235642,13 @@ function markdownGapReasons(summary) {
     ""
   ];
 }
+function markdownCodeCoverage(c) {
+  return [
+    `  - Code coverage: ${c.basis}; accounting=${c.accounting}; required=${c.requireCodeAnalysis}; collection complete=${c.collectionComplete}.`,
+    `  - Collected=${c.totals.collected ?? "unknown"}, eligible=${c.totals.eligible ?? "unknown"}, completed=${c.totals.completed ?? "unknown"}, uncovered=${c.totals.uncovered ?? "unknown"}. Eligible is selected input support, not execution; completed is bounded adapter completion, not vulnerability completeness.`,
+    ...c.languages.map((row) => `  - ${row.language}: collected=${row.collected}, eligible=${row.eligible}, completed=${row.completed}, uncovered=${row.uncovered}; ${row.providers.map((p) => `${p.provider} selected=${p.selected}, status=${p.status}, eligible=${p.eligible}, completed=${p.completed}`).join("; ")}.`)
+  ];
+}
 function collectionBudgetText(budget) {
   const limits = budget.limits;
   return `${budget.revision}; max files=${limits.maxFiles}, total bytes=${limits.maxBytes}, per-file bytes=${limits.maxFileBytes}, directory entries=${limits.maxEntries}. Declared selection limits, not coverage proof.`;
@@ -235448,13 +235663,31 @@ function markdownCollectionEvidence(evidence2) {
   ];
 }
 function sanitiseReport(report) {
+  const checks = sanitiseChecks(report?.checks);
+  const policy = ownDataField(report?.scope, "codeAnalysisPolicy");
+  const strict = policy.valid && validCodeAnalysisPolicy(policy.value);
+  if (policy.present && (!strict || !checks.some((check) => check.id === CODE_COVERAGE_ID))) {
+    const existing = checks.find((check) => check.id === CODE_COVERAGE_ID);
+    if (existing) {
+      existing.codeCoverage = unknownCodeCoverage(strict);
+      existing.status = "partial";
+    } else
+      checks.push({ id: CODE_COVERAGE_ID, status: "partial", findings: [], notes: ["Required code-analysis coverage evidence is missing or invalid."], codeCoverage: unknownCodeCoverage(strict) });
+  }
+  for (const check of checks.filter((c) => c.id === CODE_COVERAGE_ID)) {
+    if (!check.codeCoverage || checks.filter((c) => c.id === CODE_COVERAGE_ID).length !== 1 || strict && !check.codeCoverage.requireCodeAnalysis || policy.present && check.codeCoverage.requireCodeAnalysis && !strict || !codeCoverageConsistent(check.codeCoverage, checks)) {
+      check.codeCoverage = unknownCodeCoverage(strict || check.codeCoverage?.requireCodeAnalysis === true);
+      if (check.status !== "error")
+        check.status = "partial";
+    }
+  }
   return {
     schemaVersion: REPORT_SCHEMA_VERSION,
     toolVersion: safeId(report?.toolVersion, REPORT_TOOL_VERSION),
     mode: validMode(report?.mode),
     startedAt: timestamp(report?.startedAt),
     finishedAt: timestamp(report?.finishedAt),
-    checks: sanitiseChecks(report?.checks),
+    checks,
     ...safeScope(report?.scope)
   };
 }
@@ -235473,13 +235706,19 @@ function sanitiseChecks(input) {
 }
 function sanitiseCheck(input) {
   let status = STATUSES.includes(input?.status) ? input.status : "error";
-  const executionDescriptor = input && typeof input === "object" && !utilTypes.isProxy(input) ? Object.getOwnPropertyDescriptor(input, "apiExecution") : void 0;
+  const codeField = ownDataField(input, "codeCoverage");
+  const needsCodeCoverage = codeField.present || input?.id === CODE_COVERAGE_ID;
+  const parsedCode = codeField.valid ? parseCodeCoverage(codeField.value) : void 0;
+  const codeCoverage = needsCodeCoverage ? parsedCode ?? unknownCodeCoverage() : void 0;
+  if (needsCodeCoverage && (input?.id !== CODE_COVERAGE_ID || !parsedCode || coverageIncomplete(codeCoverage) || status === "not_applicable" || input.findings?.length > 0) && status !== "error")
+    status = "partial";
+  const executionDescriptor = input && typeof input === "object" && !utilTypes2.isProxy(input) ? Object.getOwnPropertyDescriptor(input, "apiExecution") : void 0;
   let apiExecution = executionDescriptor ? sanitiseApiExecutionLedger("value" in executionDescriptor ? executionDescriptor.value : void 0) : void 0;
   if (apiExecution && (input.id !== "api.authorization" || input.metrics?.requestCount !== void 0 && input.metrics.requestCount !== apiExecution.counts.httpAttempts))
     apiExecution = invalidApiExecutionLedger();
   if (apiExecution && (apiExecution.status !== "complete" || status === "not_applicable") && status !== "error")
     status = "partial";
-  const dastDescriptor = input && typeof input === "object" && !utilTypes.isProxy(input) ? Object.getOwnPropertyDescriptor(input, "dastExecution") : void 0;
+  const dastDescriptor = input && typeof input === "object" && !utilTypes2.isProxy(input) ? Object.getOwnPropertyDescriptor(input, "dastExecution") : void 0;
   let dastExecution = dastDescriptor ? sanitizeDastExecution("value" in dastDescriptor ? dastDescriptor.value : void 0) ?? void 0 : void 0;
   if (dastExecution && (input.id !== "url.sql-boolean" || input.metrics?.requestCount !== dastExecution.counts.httpAttempts))
     dastExecution = void 0;
@@ -235553,6 +235792,7 @@ function sanitiseCheck(input) {
     ...collectionBudget ? { collectionBudget } : {},
     ...collectionEvidence2 ? { collectionEvidence: collectionEvidence2 } : {},
     ...sourceSnapshot ? { sourceSnapshot } : {},
+    ...codeCoverage ? { codeCoverage } : {},
     ...analysisGaps ? { analysisGaps } : {},
     ...apiStateEvidence ? { apiStateEvidence } : {},
     ...apiWriteStateEvidence ? { apiWriteStateEvidence } : {},
@@ -235560,8 +235800,17 @@ function sanitiseCheck(input) {
     ...dastExecution ? { dastExecution } : {}
   };
 }
+function validCodeAnalysisPolicy(value) {
+  if (!value || typeof value !== "object" || utilTypes2.isProxy(value))
+    return false;
+  const revision = ownDataField(value, "revision"), required = ownDataField(value, "requireCodeAnalysis");
+  return Object.keys(value).length === 2 && revision.valid && revision.value === "code-coverage-v1" && required.valid && required.value === true;
+}
 function safeScope(scope) {
   if (!scope || !/^[a-f0-9]{64}$/.test(scope.fingerprint) || !/^[A-Za-z0-9._-]{1,80}$/.test(scope.ruleset))
+    return {};
+  const policy = ownDataField(scope, "codeAnalysisPolicy");
+  if (policy.present && (!policy.valid || !validCodeAnalysisPolicy(policy.value)))
     return {};
   const projectId = scope.projectId && /^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$/.test(scope.projectId) ? scope.projectId : void 0;
   const provenance = sanitiseProvenance(scope.provenance);
@@ -235573,6 +235822,7 @@ function safeScope(scope) {
   return {
     scope: {
       fingerprint: scope.fingerprint,
+      ...policy.present ? { codeAnalysisPolicy: { revision: "code-coverage-v1", requireCodeAnalysis: true } } : {},
       ...analysisBudget ? { analysisBudget } : {},
       ...collectionBudget ? { collectionBudget } : {},
       ruleset: scope.ruleset,
@@ -235584,7 +235834,7 @@ function safeScope(scope) {
 function ownDataField(input, key2) {
   if (!input || typeof input !== "object")
     return { present: false, valid: false };
-  if (utilTypes.isProxy(input))
+  if (utilTypes2.isProxy(input))
     return { present: true, valid: false };
   const descriptor = Object.getOwnPropertyDescriptor(input, key2);
   return descriptor ? { present: true, valid: "value" in descriptor, ..."value" in descriptor ? { value: descriptor.value } : {} } : { present: false, valid: false };
@@ -235651,7 +235901,7 @@ var POLICY_IDENTIFIER = /^[A-Za-z][A-Za-z0-9_-]{0,63}$/;
 var CONTROL_OUTCOMES = ["passed", "failed", "not_applicable"];
 var EVIDENCE_PHASES = ["identity-before", "owner-before", "deny", "owner-after", "identity-after"];
 function plainRecord(value) {
-  return value !== null && typeof value === "object" && !Array.isArray(value) && !utilTypes.isProxy(value);
+  return value !== null && typeof value === "object" && !Array.isArray(value) && !utilTypes2.isProxy(value);
 }
 function sanitiseFindingReplay(input) {
   if (!plainRecord(input) || input.kind !== "api-policy-case")
@@ -235738,7 +235988,7 @@ function sanitiseFindingProof(input, ledger2) {
   return { ...controlVerification ? { controlVerification } : {}, ...evidence2 ? { evidence: evidence2 } : {}, ...replay ? { replay } : {} };
 }
 function sanitiseFinding(input, proofLedger) {
-  if (input && typeof input === "object" && utilTypes.isProxy(input))
+  if (input && typeof input === "object" && utilTypes2.isProxy(input))
     return {
       ruleId: "wakeio-finding",
       title: "Security finding",
@@ -237170,7 +237420,7 @@ async function runApiPolicy(options) {
 }
 
 // build/src/compare.js
-import { types as utilTypes2 } from "node:util";
+import { types as utilTypes3 } from "node:util";
 
 // build/src/json-input.js
 import { constants as constants4 } from "node:fs";
@@ -237212,11 +237462,15 @@ function parseScanReport(input) {
   if (input.schemaVersion !== "1.0.0" || !text(input.toolVersion) || !input.toolVersion || !["source", "url", "both", "api", "combined"].includes(input.mode) || !text(input.startedAt) || !Number.isFinite(Date.parse(input.startedAt)) || !text(input.finishedAt) || !Number.isFinite(Date.parse(input.finishedAt)) || !Array.isArray(input.checks) || input.checks.length > 1e3)
     return invalid4();
   const checkIds = /* @__PURE__ */ new Set();
-  let count = 0;
+  let count2 = 0;
   for (const check of input.checks) {
     if (!record4(check) || !text(check.id) || !check.id || checkIds.has(check.id) || !["completed", "partial", "error", "skipped", "not_applicable"].includes(check.status) || !Array.isArray(check.findings) || !Array.isArray(check.notes) || !check.notes.every(text))
       return invalid4();
     if (check.analysisBudget !== void 0 && !sanitiseAnalysisBudget(check.analysisBudget))
+      return invalid4();
+    const codeField = collectionField(check, "codeCoverage");
+    const codeCoverage = codeField.valid ? parseCodeCoverage(codeField.value) : void 0;
+    if (codeField.present && (!codeField.valid || !codeCoverage || check.id !== CODE_COVERAGE_ID) || check.id === CODE_COVERAGE_ID && (!codeCoverage || !codeCoverageConsistent(codeCoverage, input.checks) || coverageIncomplete(codeCoverage) && ["completed", "not_applicable"].includes(check.status) || check.status === "not_applicable" || check.findings.length > 0))
       return invalid4();
     const collectionBudget = collectionField(check, "collectionBudget");
     const collectionEvidence2 = collectionField(check, "collectionEvidence");
@@ -237231,7 +237485,7 @@ function parseScanReport(input) {
     if (evidence2?.issues.some((issue2) => issue2.code === "root_error") && check.status !== "error" || evidence2?.issues.some((issue2) => issue2.code !== "unsupported_file") && ["completed", "not_applicable"].includes(check.status))
       return invalid4();
     const nativeField = collectionField(check, "dastExecution");
-    const nativeVersion = nativeField.valid && nativeField.value && typeof nativeField.value === "object" && !utilTypes2.isProxy(nativeField.value) ? Object.getOwnPropertyDescriptor(nativeField.value, "version") : void 0;
+    const nativeVersion = nativeField.valid && nativeField.value && typeof nativeField.value === "object" && !utilTypes3.isProxy(nativeField.value) ? Object.getOwnPropertyDescriptor(nativeField.value, "version") : void 0;
     const nativeV1 = nativeVersion && "value" in nativeVersion && nativeVersion.value === 1;
     if (nativeField.present && !nativeField.valid)
       return invalid4();
@@ -237246,11 +237500,11 @@ function parseScanReport(input) {
     const writeEvidence = collectionField(check, "apiWriteStateEvidence");
     if (writeEvidence.present && (!writeEvidence.valid || check.id !== "api.owned-write-state-oracle" || !parseApiWriteStateEvidence(writeEvidence.value)))
       return invalid4();
-    count += check.findings.length;
-    if (count > 5e4 || check.status === "not_applicable" && check.findings.length)
+    count2 += check.findings.length;
+    if (count2 > 5e4 || check.status === "not_applicable" && check.findings.length)
       return invalid4();
     for (const finding2 of check.findings) {
-      if (finding2 && typeof finding2 === "object" && utilTypes2.isProxy(finding2))
+      if (finding2 && typeof finding2 === "object" && utilTypes3.isProxy(finding2))
         return invalid4();
       if (!record4(finding2) || !text(finding2.ruleId) || !finding2.ruleId || !text(finding2.title) || !text(finding2.description) || !text(finding2.remediation) || !severities.includes(finding2.severity) || !["low", "medium", "high"].includes(finding2.confidence) || !["observation", "candidate", "advisory"].includes(finding2.kind) || !record4(finding2.location))
         return invalid4();
@@ -237273,6 +237527,9 @@ function parseScanReport(input) {
   }
   if (input.scope !== void 0 && !validScope(input.scope))
     return invalid4();
+  const coverage = input.checks.find((check) => check.id === CODE_COVERAGE_ID)?.codeCoverage;
+  if (input.scope?.codeAnalysisPolicy && (!coverage || coverage.requireCodeAnalysis !== true))
+    return invalid4();
   const safe = sanitiseReport(input);
   if (new Set(safe.checks.map((check) => check.id)).size !== safe.checks.length)
     return invalid4();
@@ -237290,17 +237547,17 @@ function indexed(report) {
     for (const finding2 of check.findings) {
       if (finding2.comparisonKey) {
         const key3 = `semantic:${check.id}:${finding2.comparisonKey}`;
-        const count2 = anchoredOccurrences.get(key3) ?? 0;
-        anchoredOccurrences.set(key3, count2 + 1);
-        if (count2 > 0)
+        const count3 = anchoredOccurrences.get(key3) ?? 0;
+        anchoredOccurrences.set(key3, count3 + 1);
+        if (count3 > 0)
           ambiguous.add(key3);
-        output.set(`${key3}:${count2}`, { checkId: check.id, finding: finding2, matchKey: key3 });
+        output.set(`${key3}:${count3}`, { checkId: check.id, finding: finding2, matchKey: key3 });
         continue;
       }
       const key2 = `legacy:${check.id}:${finding2.id}`;
-      const count = occurrences.get(key2) ?? 0;
-      occurrences.set(key2, count + 1);
-      output.set(`${key2}:${count}`, { checkId: check.id, finding: finding2, matchKey: key2 });
+      const count2 = occurrences.get(key2) ?? 0;
+      occurrences.set(key2, count2 + 1);
+      output.set(`${key2}:${count2}`, { checkId: check.id, finding: finding2, matchKey: key2 });
     }
   return { findings: output, ambiguous };
 }
@@ -237314,6 +237571,12 @@ function compareReports(beforeInput, afterInput) {
     if ((oldWrite || newWrite) && JSON.stringify(oldWrite) !== JSON.stringify(newWrite))
       reasons.push("Owned write evidence, execution plan or persisted-state scope changed or is missing; independent observer comparison is required.");
   }
+  const oldCoverage = before.checks.find((check) => check.id === CODE_COVERAGE_ID)?.codeCoverage;
+  const newCoverage = after.checks.find((check) => check.id === CODE_COVERAGE_ID)?.codeCoverage;
+  if ((oldCoverage || newCoverage) && (!oldCoverage || !newCoverage || oldCoverage.accounting !== "exact" || newCoverage.accounting !== "exact" || oldCoverage.requireCodeAnalysis !== newCoverage.requireCodeAnalysis))
+    reasons.push("Code-analysis policy or coverage accounting changed, is missing or is unknown.");
+  if (JSON.stringify(before.scope?.codeAnalysisPolicy) !== JSON.stringify(after.scope?.codeAnalysisPolicy))
+    reasons.push("Required code-analysis scope policy changed or is missing.");
   if (!before.scope || !after.scope)
     reasons.push("Declared scan scope is missing; older reports cannot establish comparable scope.");
   else {
@@ -237430,6 +237693,16 @@ function validScope(scope) {
   const budget = collectionField(scope, "collectionBudget");
   if (!budget.valid || budget.present && !sanitiseCollectionBudget(budget.value))
     return false;
+  const policy = collectionField(scope, "codeAnalysisPolicy");
+  if (!policy.valid)
+    return false;
+  if (policy.present) {
+    if (!record4(policy.value) || utilTypes3.isProxy(policy.value))
+      return false;
+    const revision = collectionField(policy.value, "revision"), required = collectionField(policy.value, "requireCodeAnalysis");
+    if (Object.keys(policy.value).length !== 2 || !revision.valid || revision.value !== "code-coverage-v1" || !required.valid || required.value !== true)
+      return false;
+  }
   const provenance = scope.provenance;
   if (provenance === void 0)
     return true;
@@ -237464,7 +237737,7 @@ function validScope(scope) {
   return true;
 }
 function collectionField(input, key2) {
-  if (utilTypes2.isProxy(input))
+  if (utilTypes3.isProxy(input))
     return { present: true, valid: false };
   const descriptor = Object.getOwnPropertyDescriptor(input, key2);
   return descriptor ? { present: true, valid: "value" in descriptor, ..."value" in descriptor ? { value: descriptor.value } : {} } : { present: false, valid: true };
@@ -237564,7 +237837,7 @@ async function writeComparison(result3, outDir) {
     "",
     "## Counts",
     "",
-    ...Object.entries(result3.summary).map(([state, count]) => `- ${state}: ${count}`),
+    ...Object.entries(result3.summary).map(([state, count2]) => `- ${state}: ${count2}`),
     "",
     "## Findings",
     "",
@@ -238576,6 +238849,7 @@ async function buildScanScope(inputs2) {
     // A project ID intentionally replaces an absolute checkout path. Without
     // it, retain the old conservative path identity for local comparisons.
     sourceRoot: projectId ? null : inputs2.source ? resolve8(inputs2.source) : null,
+    ...inputs2.source && inputs2.requireCodeAnalysis === true ? { codeAnalysisPolicy: { revision: "code-coverage-v1", requireCodeAnalysis: true } } : {},
     ...analysisBudget ? { analysisBudget } : {},
     ...collectionBudget ? { collectionBudget } : {},
     url: inputs2.url ?? null,
@@ -238602,6 +238876,7 @@ async function buildScanScope(inputs2) {
   return {
     fingerprint: fingerprint2,
     ruleset: inputs2.ruleset,
+    ...inputs2.source && inputs2.requireCodeAnalysis === true ? { codeAnalysisPolicy: { revision: "code-coverage-v1", requireCodeAnalysis: true } } : {},
     ...analysisBudget ? { analysisBudget } : {},
     ...collectionBudget ? { collectionBudget } : {},
     ...projectId ? { projectId } : {},
@@ -238682,6 +238957,7 @@ async function doctorMain(argv = process.argv.slice(2)) {
     source,
     execution: { targetCode: "none", network: "none", packageManager: "none" },
     inventory,
+    requireCodeAnalysis: options.requireCodeAnalysis === true,
     inventoryBasis: "metadata_estimate_not_collector_coverage",
     collectionBudget: resolveCollectionBudget({ maxFiles: options.sourceMaxFiles, maxBytes: options.sourceMaxBytes }),
     tools: toolStatuses,
@@ -238711,6 +238987,13 @@ function parseDoctorArgs(argv) {
   const selected = /* @__PURE__ */ new Set();
   for (let index = 0; index < args.length; index += 1) {
     const argument = args[index];
+    if (argument === "--require-code-analysis") {
+      if (selected.has(argument))
+        throw new Error("--require-code-analysis may only be specified once");
+      selected.add(argument);
+      options.requireCodeAnalysis = true;
+      continue;
+    }
     const selector = argument.split("=")[0];
     if (["--source-max-files", "--source-max-bytes", "--analysis-profile"].includes(selector)) {
       if (selected.has(selector))
@@ -238837,7 +239120,7 @@ function parseTools(value) {
 function doctorUsage() {
   return [
     "Usage: wakeio-security-ci doctor [--source DIR] [--tools gitleaks,osv,trivy,bandit|none] [--json] [--strict]",
-    "                              [--source-max-files N] [--source-max-bytes N] [--analysis-profile default|extended]",
+    "                              [--source-max-files N] [--source-max-bytes N] [--analysis-profile default|extended] [--require-code-analysis]",
     "                              [--dast [--nuclei PATH] [--nuclei-templates DIR] [--schemathesis-python PATH]]",
     "",
     "Read-only inventory: no target code, package scripts, scanner, or network request is executed.",
@@ -238939,7 +239222,7 @@ async function findExecutable2(command) {
   return findExecutable(command);
 }
 function nextCommand(source, tools, options) {
-  const choices = `${options.sourceMaxFiles === void 0 ? "" : ` --source-max-files ${options.sourceMaxFiles}`}${options.sourceMaxBytes === void 0 ? "" : ` --source-max-bytes ${options.sourceMaxBytes}`}${options.analysisProfile === void 0 ? "" : ` --analysis-profile ${options.analysisProfile}`}`;
+  const choices = `${options.requireCodeAnalysis ? " --require-code-analysis" : ""}${options.sourceMaxFiles === void 0 ? "" : ` --source-max-files ${options.sourceMaxFiles}`}${options.sourceMaxBytes === void 0 ? "" : ` --source-max-bytes ${options.sourceMaxBytes}`}${options.analysisProfile === void 0 ? "" : ` --analysis-profile ${options.analysisProfile}`}`;
   return `npx --no-install wakeio-security-ci scan --source ${shellQuote(source)} --tools ${shellQuote(tools.length > 0 ? tools.join(",") : "none")} --out wakeio-security-reports${choices}`;
 }
 function shellQuote(value) {
@@ -239044,6 +239327,13 @@ function parseInitArgs(argv) {
   const selected = /* @__PURE__ */ new Set();
   for (let index = 0; index < args.length; index += 1) {
     const argument = args[index];
+    if (argument === "--require-code-analysis") {
+      if (selected.has(argument))
+        throw new Error("--require-code-analysis may only be specified once");
+      selected.add(argument);
+      options.requireCodeAnalysis = true;
+      continue;
+    }
     const selector = argument.split("=")[0];
     if (["--source-max-files", "--source-max-bytes", "--analysis-profile"].includes(selector)) {
       if (selected.has(selector))
@@ -239101,7 +239391,7 @@ function initUsage() {
   return [
     "Usage: wakeio-security-ci init [--source DIR] [--workflow .github/workflows/wakeio-security-ci.yml] [--out DIR] [--tools none]",
     "",
-    "       [--source-max-files N] [--source-max-bytes N] [--analysis-profile default|extended]",
+    "       [--source-max-files N] [--source-max-bytes N] [--analysis-profile default|extended] [--require-code-analysis]",
     "",
     "Create a local CI workflow only when its destination does not exist; no file is overwritten.",
     "The template runs the installed CLI with npx --no-install and uses pinned helper-action commits.",
@@ -239112,6 +239402,9 @@ function renderWorkflow(options) {
   const files = options.sourceMaxFiles === void 0 ? "" : ` --source-max-files ${parseCollectionLimit(String(options.sourceMaxFiles), COLLECTION_MAX_FILES)}`;
   const bytes = options.sourceMaxBytes === void 0 ? "" : ` --source-max-bytes ${parseCollectionLimit(String(options.sourceMaxBytes), COLLECTION_MAX_BYTES)}`;
   const profile = options.analysisProfile === void 0 ? "" : ` --analysis-profile ${resolveAnalysisBudget(options.analysisProfile).requestedProfile}`;
+  if (options.requireCodeAnalysis !== void 0 && typeof options.requireCodeAnalysis !== "boolean")
+    throw new Error("requireCodeAnalysis must be a boolean");
+  const codePolicy = options.requireCodeAnalysis ? " --require-code-analysis" : "";
   const toolValue = options.tools.length > 0 ? options.tools.join(",") : "none";
   const pythonNote = options.pythonFiles > 0 ? `      # Static inventory detected ${options.pythonFiles} Python file${options.pythonFiles === 1 ? "" : "s"}; add a separately prepared Bandit executable before enabling --tools bandit.
 ` : "      # No Python files were detected by the bounded static inventory; Bandit is not applicable.\n";
@@ -239143,7 +239436,7 @@ jobs:
         run: npm ci --ignore-scripts --no-audit --fund=false
       - name: Run installed Wakeio CLI
 ${pythonNote}        run: >-
-          npx --no-install wakeio-security-ci scan --source . --project-id "$GITHUB_REPOSITORY" --tools ${toolValue}${files}${bytes}${profile} --out ${shellQuote2(options.out)}
+          npx --no-install wakeio-security-ci scan --source . --project-id "$GITHUB_REPOSITORY" --tools ${toolValue}${codePolicy}${files}${bytes}${profile} --out ${shellQuote2(options.out)}
       - name: Upload reports
         if: always()
         uses: actions/upload-artifact@${UPLOAD_ARTIFACT_SHA}
@@ -239823,7 +240116,7 @@ var digest3 = (data) => createHash12("sha256").update(data).digest("hex");
 var SHA = /^[a-f0-9]{64}$/;
 var inside2 = (root, path2) => path2 === root || path2.startsWith(root.endsWith(sep5) ? root : root + sep5);
 var object7 = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
-function exact2(v, keys3) {
+function exact3(v, keys3) {
   if (!object7(v) || Object.keys(v).length !== keys3.length || keys3.some((k) => !Object.hasOwn(v, k)))
     throw new Error("invalid");
 }
@@ -239834,18 +240127,18 @@ async function readBounded(path2, cap = 128 * 1024) {
     if (!before.isFile() || before.size > cap)
       throw new Error("invalid");
     const bytes = Buffer.alloc(before.size + 1);
-    let count = 0;
-    while (count < bytes.length) {
-      const read = await handle.read(bytes, count, bytes.length - count, count);
+    let count2 = 0;
+    while (count2 < bytes.length) {
+      const read = await handle.read(bytes, count2, bytes.length - count2, count2);
       if (!read.bytesRead)
         break;
-      count += read.bytesRead;
+      count2 += read.bytesRead;
     }
     const after = await handle.stat();
-    if (count !== before.size || after.size !== before.size || after.mtimeMs !== before.mtimeMs || after.ctimeMs !== before.ctimeMs)
+    if (count2 !== before.size || after.size !== before.size || after.mtimeMs !== before.mtimeMs || after.ctimeMs !== before.ctimeMs)
       throw new Error("invalid");
-    const text2 = bytes.subarray(0, count).toString("utf8");
-    if (!Buffer.from(text2).equals(bytes.subarray(0, count)) || text2.includes("\0"))
+    const text2 = bytes.subarray(0, count2).toString("utf8");
+    if (!Buffer.from(text2).equals(bytes.subarray(0, count2)) || text2.includes("\0"))
       throw new Error("invalid");
     return text2;
   } finally {
@@ -239858,8 +240151,8 @@ async function policyInput(options) {
   if (result3.exitCode !== 0 || result3.spawnError || result3.timedOut || result3.outputLimitExceeded)
     throw new Error("invalid");
   const p = JSON.parse(result3.stdout);
-  exact2(p, ["schema_version", "profile", "files", "instructions", "timeout_ms", "verification"]);
-  exact2(p.verification, ["image", "verifier", "verifier_sha256"]);
+  exact3(p, ["schema_version", "profile", "files", "instructions", "timeout_ms", "verification"]);
+  exact3(p.verification, ["image", "verifier", "verifier_sha256"]);
   if (p.schema_version !== 1 || p.profile !== "sql_injection" || typeof p.instructions !== "string" || !p.instructions.trim() || p.instructions.length > 4096 || !Number.isSafeInteger(p.timeout_ms) || Number(p.timeout_ms) < 1e3 || Number(p.timeout_ms) > 6e5 || !Array.isArray(p.files) || p.files.length < 1 || p.files.length > 8 || new Set(p.files).size !== p.files.length || p.files.some((f) => typeof f !== "string" || !/^[a-zA-Z0-9_-]+(?:\/[a-zA-Z0-9_-]+)*\.(?:py|js|ts|mjs|json)$/.test(f)) || typeof p.verification.image !== "string" || !/^sha256:[a-f0-9]{64}$/.test(p.verification.image) || typeof p.verification.verifier !== "string" || !p.verification.verifier || p.verification.verifier.length > 1024 || typeof p.verification.verifier_sha256 !== "string" || !SHA.test(p.verification.verifier_sha256))
     throw new Error("invalid");
   return { policy: p, hash: digest3(text2) };
@@ -239891,19 +240184,19 @@ async function workspace(path2, files) {
 }
 function verification(text2) {
   const v = JSON.parse(text2);
-  exact2(v, ["version", "inputFingerprint", "security", "normal"]);
+  exact3(v, ["version", "inputFingerprint", "security", "normal"]);
   if (v.version !== 1 || typeof v.inputFingerprint !== "string" || !SHA.test(v.inputFingerprint) || v.security !== "passed" && v.security !== "failed" || v.normal !== "passed" && v.normal !== "failed")
     throw new Error("invalid");
   return v;
 }
 function replacements(value, before) {
-  exact2(value, ["version", "replacements"]);
+  exact3(value, ["version", "replacements"]);
   if (value.version !== 1 || !Array.isArray(value.replacements) || value.replacements.length < 1 || value.replacements.length > before.size)
     throw new Error("invalid");
   const after = new Map(before), seen = /* @__PURE__ */ new Set();
   let total = 0;
   for (const r of value.replacements) {
-    exact2(r, ["path", "beforeSha256", "content"]);
+    exact3(r, ["path", "beforeSha256", "content"]);
     if (typeof r.path !== "string" || !before.has(r.path) || seen.has(r.path) || typeof r.beforeSha256 !== "string" || r.beforeSha256 !== digest3(before.get(r.path)) || typeof r.content !== "string" || r.content.includes("\0") || Buffer.byteLength(r.content) > 128 * 1024 || r.content === before.get(r.path))
       throw new Error("invalid");
     seen.add(r.path);
@@ -240060,7 +240353,7 @@ async function repairMain(args) {
     if (!completed(runtime) || runtime.exitCode !== 0)
       throw new Error("invalid");
     const actual = JSON.parse(runtime.stdout);
-    exact2(actual, ["python", "sqlite"]);
+    exact3(actual, ["python", "sqlite"]);
     if ([actual.python, actual.sqlite].some((v) => typeof v !== "string" || !/^\d+\.\d+\.\d+$/.test(v)))
       throw new Error("invalid");
     report.runtime = actual;
@@ -240393,7 +240686,7 @@ async function codexAdvice(command, authMode, directory2, deadline, prompt, sche
 
 // build/src/agent-advice-context.js
 import { types as types10 } from "node:util";
-var ADVICE_PROJECTION_POLICY_VERSION = 7;
+var ADVICE_PROJECTION_POLICY_VERSION = 8;
 var MAX_CHECKS = 24;
 var MAX_FINDINGS2 = 24;
 var MAX_BYTES2 = 32 * 1024;
@@ -240416,6 +240709,8 @@ function nativeExecutionEligible(check, nativeCheckCount) {
   return nativeCheckCount === 1 && check.checkId === NATIVE_CHECK && check.status === "completed" && !!execution && execution.status === "complete" && check.metrics?.requestCount === execution.counts.httpAttempts && execution.counts.evaluated === execution.plannedRequests && execution.counts.httpAttempts >= execution.plannedRequests && (!hasDastIdentityControls(execution) || execution.identityControls.before === "matched" && execution.identityControls.after === "matched");
 }
 function checkRoute(check, mode, nativeCheckCount) {
+  if (check.checkId === "source.code-coverage")
+    return "review_check_diagnostics";
   if (check.checkId === "source.inventory" && (sanitiseCollectionBudget(check.collectionBudget) || sanitiseCollectionEvidence(check.collectionEvidence)))
     return "review_static_flow_or_budget";
   if (check.status !== "completed")
@@ -240429,6 +240724,7 @@ function checkRoute(check, mode, nativeCheckCount) {
 function checkCard(check, mode, nativeCheckCount) {
   const dast = check.checkId === "url.sql-boolean" ? sanitizeDastExecution(check.dastExecution) : void 0;
   const api = check.checkId === "api.authorization" ? check.apiExecution : void 0;
+  const codeCoverage = check.checkId === "source.code-coverage" ? parseCodeCoverage(check.codeCoverage) : void 0;
   const gaps = check.analysisGaps;
   const collectionBudget = check.checkId === "source.inventory" ? sanitiseCollectionBudget(check.collectionBudget) : void 0;
   const collectionEvidence2 = check.checkId === "source.inventory" ? sanitiseCollectionEvidence(check.collectionEvidence) : void 0;
@@ -240438,6 +240734,7 @@ function checkCard(check, mode, nativeCheckCount) {
     checkId: boundedText(check.checkId, 100),
     status: check.status,
     ...collectionBudget ? { collectionBudget } : {},
+    ...codeCoverage ? { codeCoverage } : {},
     ...collectionEvidence2 ? { collectionEvidence: collectionEvidence2 } : {},
     findingRows: check.findingIds.length,
     recheckRoute: checkRoute(check, mode, nativeCheckCount),
@@ -240656,7 +240953,7 @@ Output: private agent-advice.json. Exit 0 advice produced; 2 incomplete/error.
 `;
 var digest4 = (data) => createHash14("sha256").update(data).digest("hex");
 var object8 = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
-var exact3 = (v, keys3) => object8(v) && Object.keys(v).length === keys3.length && keys3.every((key2) => Object.hasOwn(v, key2));
+var exact4 = (v, keys3) => object8(v) && Object.keys(v).length === keys3.length && keys3.every((key2) => Object.hasOwn(v, key2));
 function parse3(args) {
   const values = /* @__PURE__ */ new Map();
   let upload = false;
@@ -240690,17 +240987,17 @@ async function boundedFile(path2, cap) {
     if (!before.isFile() || before.size > cap)
       throw new Error("invalid_report");
     const bytes = Buffer.alloc(before.size + 1);
-    let count = 0;
-    while (count < bytes.length) {
-      const read = await handle.read(bytes, count, bytes.length - count, count);
+    let count2 = 0;
+    while (count2 < bytes.length) {
+      const read = await handle.read(bytes, count2, bytes.length - count2, count2);
       if (!read.bytesRead)
         break;
-      count += read.bytesRead;
+      count2 += read.bytesRead;
     }
     const after = await handle.stat();
-    if (count !== before.size || after.size !== before.size || after.mtimeMs !== before.mtimeMs || after.ctimeMs !== before.ctimeMs)
+    if (count2 !== before.size || after.size !== before.size || after.mtimeMs !== before.mtimeMs || after.ctimeMs !== before.ctimeMs)
       throw new Error("invalid_report");
-    return bytes.subarray(0, count);
+    return bytes.subarray(0, count2);
   } finally {
     await handle.close();
   }
@@ -240785,10 +241082,10 @@ function adviceSchema(references2, routes, clean) {
   } };
 }
 function validatedAdvice(value, referenceRoutes, clean) {
-  if (!exact3(value, ["version", "overview", "recommendations"]) || value.version !== 1 || typeof value.overview !== "string" || !value.overview.trim() || value.overview.length > 400 || !Array.isArray(value.recommendations) || value.recommendations.length < (clean ? 0 : 1) || value.recommendations.length > (clean ? 0 : 6))
+  if (!exact4(value, ["version", "overview", "recommendations"]) || value.version !== 1 || typeof value.overview !== "string" || !value.overview.trim() || value.overview.length > 400 || !Array.isArray(value.recommendations) || value.recommendations.length < (clean ? 0 : 1) || value.recommendations.length > (clean ? 0 : 6))
     throw new Error("agent_protocol_invalid");
   const recommendations = value.recommendations.map((raw) => {
-    if (!exact3(raw, ["referenceId", "recheckRoute", "priority", "reason", "nextStep", "recheck"]) || typeof raw.referenceId !== "string" || !referenceRoutes.has(raw.referenceId) || raw.recheckRoute !== referenceRoutes.get(raw.referenceId) || !Number.isInteger(raw.priority) || Number(raw.priority) < 1 || Number(raw.priority) > 3 || ["reason", "nextStep", "recheck"].some((key2) => typeof raw[key2] !== "string" || !raw[key2].trim() || raw[key2].length > 400))
+    if (!exact4(raw, ["referenceId", "recheckRoute", "priority", "reason", "nextStep", "recheck"]) || typeof raw.referenceId !== "string" || !referenceRoutes.has(raw.referenceId) || raw.recheckRoute !== referenceRoutes.get(raw.referenceId) || !Number.isInteger(raw.priority) || Number(raw.priority) < 1 || Number(raw.priority) > 3 || ["reason", "nextStep", "recheck"].some((key2) => typeof raw[key2] !== "string" || !raw[key2].trim() || raw[key2].length > 400))
       throw new Error("agent_protocol_invalid");
     return {
       referenceId: raw.referenceId,
@@ -241760,17 +242057,17 @@ async function boundedBytes(path2, cap = 4 * 1024 * 1024) {
     if (!before.isFile() || before.nlink !== 1 || before.size > cap)
       fail5("invalid_artifact");
     const bytes = Buffer.alloc(before.size + 1);
-    let count = 0;
-    while (count < bytes.length) {
-      const next = await handle.read(bytes, count, bytes.length - count, count);
+    let count2 = 0;
+    while (count2 < bytes.length) {
+      const next = await handle.read(bytes, count2, bytes.length - count2, count2);
       if (!next.bytesRead)
         break;
-      count += next.bytesRead;
+      count2 += next.bytesRead;
     }
     const after = await handle.stat();
-    if (count !== before.size || before.dev !== after.dev || before.ino !== after.ino || before.nlink !== after.nlink || before.size !== after.size || before.mtimeMs !== after.mtimeMs || before.ctimeMs !== after.ctimeMs)
+    if (count2 !== before.size || before.dev !== after.dev || before.ino !== after.ino || before.nlink !== after.nlink || before.size !== after.size || before.mtimeMs !== after.mtimeMs || before.ctimeMs !== after.ctimeMs)
       fail5("invalid_artifact");
-    return bytes.subarray(0, count);
+    return bytes.subarray(0, count2);
   } finally {
     await handle.close();
   }
@@ -241796,7 +242093,7 @@ async function pair(path2, names = ["report.json", "agent-report.json"]) {
 }
 function supported(input) {
   const report = input.report;
-  if (report.mode !== "source" || report.toolVersion !== REPORT_TOOL_VERSION || report.scope?.ruleset !== RULESET_VERSION || report.checks.length !== fixedChecks.length || !fixedChecks.every((id) => report.checks.filter((check) => check.id === id).length === 1))
+  if (report.mode !== "source" || report.toolVersion !== REPORT_TOOL_VERSION || report.scope?.ruleset !== RULESET_VERSION || ![fixedChecks.length, fixedChecks.length + 1].includes(report.checks.length) || !fixedChecks.every((id) => report.checks.filter((check) => check.id === id).length === 1) || report.checks.length === fixedChecks.length + 1 && report.checks.filter((check) => check.id === "source.code-coverage").length !== 1)
     fail5("unsupported_scope");
   const inventory = report.checks.find((check) => check.id === "source.inventory");
   const ast = report.checks.find((check) => check.id === "source.builtin-ast");
@@ -242078,7 +242375,22 @@ async function startEgressGate(policy) {
   const token = randomBytes2(18).toString("base64url");
   const expected = Buffer.from(`Basic ${Buffer.from(`wakeio:${token}`).toString("base64")}`);
   const counters = { forwarded: 0, tunnels: 0, blockedOrigin: 0, blockedMethod: 0, blockedBudget: 0, upstreamErrors: 0, rejectedEncoding: 0, responseBytes: 0 };
-  const sockets = /* @__PURE__ */ new Set();
+  const sockets = /* @__PURE__ */ new Map();
+  const upstreams = /* @__PURE__ */ new Map();
+  let closing = false;
+  let closePromise;
+  const trackSocket = (socket) => {
+    if (!sockets.has(socket)) {
+      sockets.set(socket, new Promise((resolve17) => {
+        socket.once("close", () => {
+          sockets.delete(socket);
+          resolve17();
+        });
+      }));
+    }
+    if (closing || policy.signal.aborted)
+      socket.destroy();
+  };
   const listeners = [];
   let stopped;
   const stop = (reason) => {
@@ -242124,7 +242436,7 @@ async function startEgressGate(policy) {
       refuse(response, 405);
       return;
     }
-    if (stopped || policy.signal.aborted || counters.forwarded >= policy.maxRequests) {
+    if (closing || stopped || policy.signal.aborted || counters.forwarded >= policy.maxRequests) {
       counters.blockedBudget += 1;
       if (counters.forwarded >= policy.maxRequests)
         stop("request_limit");
@@ -242135,7 +242447,7 @@ async function startEgressGate(policy) {
     counters.forwarded += 1;
     let failed = false;
     const fail6 = () => {
-      if (!failed) {
+      if (!failed && !closing && !response.destroyed) {
         failed = true;
         counters.upstreamErrors += 1;
       }
@@ -242197,6 +242509,14 @@ async function startEgressGate(policy) {
       });
       incoming.on("error", fail6);
     });
+    upstreams.set(upstream, new Promise((resolve17) => {
+      upstream.once("close", () => {
+        upstreams.delete(upstream);
+        resolve17();
+      });
+    }));
+    upstream.once("socket", trackSocket);
+    response.once("close", () => upstream.destroy());
     upstream.once("timeout", () => upstream.destroy(new Error("timeout")));
     upstream.on("error", fail6);
     request2.on("error", () => upstream.destroy());
@@ -242213,10 +242533,7 @@ async function startEgressGate(policy) {
     request2.once("end", () => upstream.end());
   };
   const server2 = createServer2({ maxHeaderSize: 16 * 1024 }, onRequest);
-  server2.on("connection", (socket) => {
-    sockets.add(socket);
-    socket.once("close", () => sockets.delete(socket));
-  });
+  server2.on("connection", trackSocket);
   server2.on("connect", (request2, client) => {
     const reject = (status) => {
       client.end(`HTTP/1.1 ${status}\r
@@ -242234,7 +242551,7 @@ content-length: 0\r
       reject("502 Bad Gateway");
       return;
     }
-    if (stopped || policy.signal.aborted || counters.tunnels >= policy.maxRequests) {
+    if (closing || stopped || policy.signal.aborted || counters.tunnels >= policy.maxRequests) {
       counters.blockedBudget += 1;
       if (counters.tunnels >= policy.maxRequests)
         stop("request_limit");
@@ -242243,8 +242560,7 @@ content-length: 0\r
     }
     counters.tunnels += 1;
     const upstream = connect({ host: policy.address.address, port: Number(defaultPort(policy.origin)), family: policy.address.family, timeout: remaining() });
-    sockets.add(upstream);
-    upstream.once("close", () => sockets.delete(upstream));
+    trackSocket(upstream);
     upstream.once("connect", () => {
       if (!sameAddress2(upstream.remoteAddress, policy.address.address)) {
         counters.upstreamErrors += 1;
@@ -242278,7 +242594,10 @@ content-length: 0\r
     client.once("close", () => upstream.destroy());
   });
   const closeAll = () => {
-    for (const socket of sockets)
+    closing = true;
+    for (const upstream of upstreams.keys())
+      upstream.destroy();
+    for (const socket of sockets.keys())
       socket.destroy();
   };
   policy.signal.addEventListener("abort", closeAll, { once: true });
@@ -242299,9 +242618,13 @@ content-length: 0\r
         listener(stopped);
     },
     close() {
+      if (closePromise)
+        return closePromise;
       policy.signal.removeEventListener("abort", closeAll);
+      const pending = [...upstreams.values(), ...sockets.values()];
       closeAll();
-      return new Promise((resolve17) => server2.close(() => resolve17()));
+      closePromise = Promise.all([...pending, new Promise((resolve17) => server2.close(() => resolve17()))]).then(() => void 0);
+      return closePromise;
     }
   };
 }
@@ -242494,14 +242817,14 @@ function findingsFor(result3, origin) {
       groups.set(key2, group);
     }
   }
-  return [...groups.values()].map(({ operation, failure: failure3, count }) => {
+  return [...groups.values()].map(({ operation, failure: failure3, count: count2 }) => {
     const path2 = operation.slice("GET ".length);
     const server2 = failure3.rule === "not_a_server_error";
     const detail = failure3.kind === "schema_violation" ? ` (schema keyword: ${failure3.keyword})` : failure3.kind === "malformed_json" ? " (malformed JSON)" : "";
     return {
       ruleId: server2 ? "api.schemathesis.server_error" : "api.schemathesis.response_schema",
       title: server2 ? "Generated request caused a server error" : "Response did not conform to the OpenAPI schema",
-      description: `${operation}: ${count} generated request(s) failed ${failure3.rule}${detail}. Response bodies and generated values are not retained; only input fingerprints are recorded.`,
+      description: `${operation}: ${count2} generated request(s) failed ${failure3.rule}${detail}. Response bodies and generated values are not retained; only input fingerprints are recorded.`,
       severity: server2 ? "medium" : "low",
       confidence: "high",
       kind: "observation",
@@ -243052,6 +243375,7 @@ Options:
   --tools none                 Run built-in source checks only
   --source-max-files N         Collected-file cap 1..10000 (source only; default: 1000)
   --source-max-bytes N         Total-byte cap 1..134217728 (source only; default: 26214400)
+  --require-code-analysis     Require completed analysis for every collected code input (source only)
   --analysis-profile PROFILE   default|extended AST workload (source only; default: default)
   --fail-on LEVEL              critical|high|medium|low|info|none (default: high)
   --api-policy FILE            Explicit read-only API authorization policy JSON
@@ -243202,7 +243526,12 @@ function parseCliArgs(argv) {
       return void 0;
     };
     let value;
-    if ((value = valueFlag("--source")) !== void 0)
+    if (arg === "--require-code-analysis") {
+      if (seen.has(arg))
+        throw new CliUsageError(`${arg} may only be specified once`);
+      seen.add(arg);
+      options.requireCodeAnalysis = true;
+    } else if ((value = valueFlag("--source")) !== void 0)
       options.source = value;
     else if ((value = valueFlag("--source-max-files")) !== void 0)
       options.sourceMaxFiles = parseSourceLimit("--source-max-files", value, COLLECTION_MAX_FILES);
@@ -243385,6 +243714,8 @@ function parseCliArgs(argv) {
     throw new CliUsageError("--source-max-files and --source-max-bytes require source mode");
   if (options.analysisProfile !== void 0 && !options.source)
     throw new CliUsageError("--analysis-profile requires source mode");
+  if (options.requireCodeAnalysis && !options.source)
+    throw new CliUsageError("--require-code-analysis requires source mode");
   if (options.nativePreview && !options.source)
     throw new CliUsageError("--opengrep-core requires source mode");
   return options;
@@ -243426,7 +243757,7 @@ async function runComparison(argv) {
     await writeComparison(result3, options.outDir);
     process.stdout.write(`Wakeio comparison: ${result3.comparable ? "comparable declared scope" : "UNVERIFIED scope"}
 `);
-    process.stdout.write(Object.entries(result3.summary).map(([state, count]) => `${state}: ${count}`).join(", ") + "\n");
+    process.stdout.write(Object.entries(result3.summary).map(([state, count2]) => `${state}: ${count2}`).join(", ") + "\n");
     process.stdout.write("Not observed is not proof of a fix. Details: comparison.json, comparison.md\n");
     return comparisonExitCode(result3, options.failOn);
   } catch (error) {
@@ -243643,6 +243974,7 @@ async function declaredScope(options, apiPolicy, dastPolicySha256, dastPolicy) {
     sourceMaxFiles: options.sourceMaxFiles,
     sourceMaxBytes: options.sourceMaxBytes,
     analysisProfile: options.analysisProfile,
+    requireCodeAnalysis: options.requireCodeAnalysis,
     url: options.url,
     projectId: options.projectId,
     tools: options.source ? options.tools : [],
@@ -243741,6 +244073,7 @@ ${USAGE2}`);
         maxFiles: parsed.sourceMaxFiles,
         maxBytes: parsed.sourceMaxBytes,
         analysisProfile: parsed.analysisProfile,
+        requireCodeAnalysis: parsed.requireCodeAnalysis,
         tools: parsed.tools,
         toolPaths: parsed.toolPaths,
         timeoutMs: parsed.timeoutMs,

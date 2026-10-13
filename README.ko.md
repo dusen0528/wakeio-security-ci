@@ -19,6 +19,9 @@ API preview는 redacted index 기반 실행 ledger로 판정한 단계, 불확�
 
 별도의 [소유 PATCH state pilot](docs/api-write-state.md)은 고정 자체 loopback fixture에서 실제 저장 변경과 정상 owner 대조를 확인합니다. SDK·CLI·전용 Action은 명시적 동의를 요구하고 원 phase gate를 보존하며 외부 API를 입력받지 않습니다.
 
+
+[수집한 코드의 분석 범위](docs/source-code-coverage.md)는 파일 수집과 언어 분석 완료를 구분합니다. `--require-code-analysis`로 미분석 코드에 CI gate를 적용할 수 있으며 새 분석기나 프로젝트 전체 coverage를 뜻하지 않습니다.
+
 ## 무엇을 검사하나요?
 
 | 범위 | 확인할 수 있는 내용 | 기억해야 할 한계 |
@@ -324,6 +327,8 @@ node build/src/cli.js scan --url http://127.0.0.1:3000/ --engine nuclei \
 GitHub Actions에서는 별도의 `dast` Action을 씁니다. 수동 검사 workflow가 능동 검사를 시작할 일이 없게 분리했습니다. `active-consent: 'true'`와 모든 대상 origin을 담은 `allowed-origins`가 필요합니다. 정책 평가를 위한 Node.js 설정 후 `pull_request_target`·fork PR·fork `workflow_run`은 엔진 다운로드·Python 설정·대상 요청 전에 거부합니다. Nuclei는 고정 아카이브로 설치하고, nuclei-templates는 기대한 `templates-checksum.txt` digest와 일치해야 합니다. [`examples/github-dast.yml`](examples/github-dast.yml)은 job 안에서 앱을 띄우고 push·PR·매일 스케줄로 검사한 뒤 SARIF를 올리고 보고서를 남깁니다.
 
 보고서에는 실행한 요청 수, 예산 때문에 거부한 요청 수, egress 거부 수, seed와 스키마 digest(Schemathesis), 템플릿 수·제외 수·`templates-checksum.txt` digest(Nuclei)를 남깁니다. 응답 본문, 생성 값, 추출 값, proxy 자격증명, 템플릿 원문은 남기지 않습니다. `wakeio-security-ci doctor --dast`는 아무것도 실행하지 않고 엔진 준비 상태만 보여 줍니다. 인증, 쓰기 요청, 상태 기반 workflow, 브라우저 기반 검사와 크롤링은 외부 Schemathesis/Nuclei 프리뷰 범위가 아닙니다. 앞서 안내한 네이티브 숫자형 SQL v2 인증 정책은 별도 기능입니다.
+
+소스·DAST 스캔 단계는 SIGINT/SIGTERM을 실행 중인 설치·정책 사전 점검·스캔 프로세스에 전달합니다. CLI가 부분 보고서를 저장할 제한된 유예 시간을 준 뒤 소유한 프로세스 그룹을 정리합니다. 자식 프로세스가 0으로 끝나도 취소는 성공으로 처리하지 않고 Action 상태와 종료 코드 2를 남기며, 갱신되지 않은 이전 보고서를 이번 실행의 증거로 집계하지 않습니다. 별도 DAST preflight 단계는 취소 시 엔진 준비를 비활성화하고 스캔 보고서 없이 종료합니다. egress gate는 취소·명시적 종료·엔진 연결 종료 시 대상 요청도 닫고 HTTP/CONNECT 연결 정리를 기다립니다. SIGKILL, 프로세스 충돌, 별도로 분리된 프로세스는 정상 취소 보장 범위 밖입니다.
 
 ## 작은 합성 예시
 

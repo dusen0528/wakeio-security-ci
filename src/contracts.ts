@@ -180,6 +180,7 @@ export interface CollectionEvidence {
   issues: Array<{ code: CollectionIssueCode; count: number }>;
 }
 export interface CheckResult {
+  codeCoverage?: CodeCoverage;
   analysisBudget?: AstAnalysisBudget;
   collectionBudget?: CollectionBudget;
   collectionEvidence?: CollectionEvidence;
@@ -197,6 +198,23 @@ export interface CheckResult {
   apiExecution?: ApiExecutionLedger;
   /** Bounded native differential metadata; not independent exploit verification. */
   dastExecution?: DastExecution;
+}
+
+export type CodeLanguage = 'javascript' | 'typescript' | 'python' | 'c' | 'cpp' | 'csharp' | 'go' | 'java' | 'kotlin' | 'php' | 'ruby' | 'rust' | 'shell' | 'swift' | 'vue';
+export type CodeProvider = 'builtin_ast' | 'bandit' | 'opengrep_native';
+export interface CodeCounts { collected: number | null; eligible: number | null; completed: number | null; uncovered: number | null }
+export interface CodeCoverage {
+  version: 1;
+  basis: 'collected_code_inputs';
+  requireCodeAnalysis: boolean;
+  collectionComplete: boolean;
+  accounting: 'exact' | 'unknown';
+  languages: Array<CodeCounts & { language: CodeLanguage; providers: Array<{
+    provider: CodeProvider; selected: boolean | null;
+    status: CheckResult['status'] | 'not_selected' | 'unknown';
+    eligible: number | null; completed: number | null;
+  }> }>;
+  totals: CodeCounts;
 }
 
 export interface SourceSnapshotEvidence {
@@ -265,6 +283,7 @@ export interface ApiWriteExecutionLedger {
     attempted: boolean; outcome: 'evaluated' | 'inconclusive' | 'not_attempted'; httpStatus: number | null }>;
 }
 export interface SourceOptions {
+  requireCodeAnalysis?: boolean;
   analysisProfile?: AnalysisProfile;
   root: string;
   tools: ToolName[];
@@ -307,6 +326,7 @@ export interface ScanProvenance {
 }
 
 export interface ScanScope {
+  codeAnalysisPolicy?: { revision: 'code-coverage-v1'; requireCodeAnalysis: true };
   analysisBudget?: AstAnalysisBudget;
   collectionBudget?: CollectionBudget;
   fingerprint: string;
@@ -386,6 +406,7 @@ export interface ReportSummary {
   }>;
   omittedIncompleteChecks: number;
   scope: {
+    codeCoverage?: CodeCoverage;
     collectionBudget?: CollectionBudget;
     collectionEvidence?: CollectionEvidence;
     collectionBudgetConsistency?: 'consistent' | 'inconsistent' | 'unknown';
@@ -448,6 +469,7 @@ export interface AgentReport {
     basis: 'declared_check_statuses';
   };
   checks: Array<{
+    codeCoverage?: CodeCoverage;
     checkIndex: number;
     checkId: string;
     status: CheckResult['status'];
