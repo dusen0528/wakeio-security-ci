@@ -3,7 +3,7 @@ import { types } from "node:util";
 import { createApiRunControl } from "./api.js";
 import type { CheckResult, Finding } from "./contracts.js";
 import { snapshotJsonData } from "./json-snapshot.js";
-import { sanitizeDastExecution, type DastExecution, type DastExecutionV1, type DastExecutionV2, type DastAuthExecutionStep, type DastAuthPhase, type DastAuthStepReason, dastProbeOutcome, type DastExecutionStep, type DastStepReason, type DastPhase, type DastOracleMatch } from "./dast-execution.js";
+import { sanitizeDastExecution, type DastExecution, type DastExecutionV1, type DastExecutionV2, type DastExecutionV3Unauth, type DastExecutionV3Auth, type DastAuthExecutionStep, type DastAuthPhase, type DastAuthStepReason, dastProbeOutcome, type DastExecutionStep, type DastStepReason, type DastPhase, type DastOracleMatch } from "./dast-execution.js";
 import { fetchResource, normalizeUrl, safeUrl, type UrlNetworkContext, UrlNetworkError } from "./url-network.js";
 
 /** A bounded, opt-in numeric SQL boolean differential probe, based on an explicit JSON oracle. */
@@ -12,6 +12,8 @@ export const DAST_PROFILE_REVISION = "sql-boolean-numeric-v1";
 export const DAST_DEFAULT_MAX_REQUESTS = 8;
 export const DAST_AUTH_PROFILE_REVISION = "sql-boolean-numeric-auth-v2";
 export const DAST_AUTH_DEFAULT_MAX_REQUESTS = 10;
+export const DAST_QUOTED_PROFILE_REVISION = "sql-boolean-single-quoted-v3";
+export const DAST_QUOTED_AUTH_PROFILE_REVISION = "sql-boolean-single-quoted-auth-v3";
 export const DAST_MAX_REQUESTS = 64;
 export const DAST_DEFAULT_TIMEOUT_MS = 30_000;
 export const DAST_MAX_TIMEOUT_MS = 120_000;
@@ -36,11 +38,36 @@ export interface DastPolicyV2 extends Omit<DastPolicyV1, "version"> {
   authorizationEnv: string;
   identity: { path: string; status: number; jsonPointer: string; equals: string };
 }
-export type DastPolicy = DastPolicyV1 | DastPolicyV2;
-export function dastProfileRevision(policy: DastPolicy): typeof DAST_PROFILE_REVISION | typeof DAST_AUTH_PROFILE_REVISION {
-  return policy.version === 2 ? DAST_AUTH_PROFILE_REVISION : DAST_PROFILE_REVISION;
+export interface DastPolicyV3Unauth extends Omit<DastPolicyV1, "version" | "profile"> {
+  version: 3;
+  profile: "single-quoted";
+  authorizationEnv?: never;
+  identity?: never;
 }
-export function dastDefaultMaxRequests(policy: DastPolicy): 8 | 10 { return policy.version === 2 ? 10 : 8; }
+export interface DastPolicyV3Auth extends Omit<DastPolicyV3Unauth, "authorizationEnv" | "identity"> {
+  authorizationEnv: DastPolicyV2['authorizationEnv'];
+  identity: DastPolicyV2['identity'];
+}
+export type DastPolicyV3 = DastPolicyV3Unauth | DastPolicyV3Auth;
+export type DastPolicy = DastPolicyV1 | DastPolicyV2 | DastPolicyV3;
+/** Capability query for a policy already accepted by parseDastPolicy. */
+export function hasDastAuthentication(policy: DastPolicy): policy is DastPolicyV2 | DastPolicyV3Auth {
+  return policy.version === 2 || policy.version === 3 && Object.hasOwn(policy, 'authorizationEnv');
+}
+export function dastProfileRevision(policy: DastPolicy): typeof DAST_PROFILE_REVISION | typeof DAST_AUTH_PROFILE_REVISION | typeof DAST_QUOTED_PROFILE_REVISION | typeof DAST_QUOTED_AUTH_PROFILE_REVISION {
+  return policy.version === 3 ? hasDastAuthentication(policy) ? DAST_QUOTED_AUTH_PROFILE_REVISION : DAST_QUOTED_PROFILE_REVISION
+    : policy.version === 2 ? DAST_AUTH_PROFILE_REVISION : DAST_PROFILE_REVISION;
+}
+export function dastDefaultMaxRequests(policy: DastPolicy): 8 | 10 { return hasDastAuthentication(policy) ? 10 : 8; }
+export function dastRequestPlan(policy: DastPolicy): { ordinal: number; round: 0 | 1 | 2; phase: DastAuthPhase }[] {
+  const authenticated = hasDastAuthentication(policy);
+  const phases: DastPhase[] = ['baseline-before', 'true', 'false', 'baseline-after'];
+  return Array.from({ length: authenticated ? 10 : 8 }, (_, ordinal): { ordinal: number; round: 0 | 1 | 2; phase: DastAuthPhase } => {
+    const identity = authenticated && (ordinal === 0 || ordinal === 9), index = ordinal - (authenticated ? 1 : 0);
+    return { ordinal, round: identity ? 0 : index < 4 ? 1 : 2,
+      phase: identity ? ordinal === 0 ? 'identity-before' : 'identity-after' : phases[index % 4]! };
+  });
+}
 export interface ParsedDastPolicy { policy: DastPolicy; policySha256: string }
 export interface DastOptions {
   policy: DastPolicy;
@@ -88,15 +115,19 @@ function atPointer(value: unknown, jsonPointer: string): unknown {
 export function parseDastPolicy(raw: unknown): ParsedDastPolicy {
   const input = snapshotJsonData(raw, () => fail("bounded JSON data required"), () => fail("policy too large"));
   if (!record(input)) fail("object required");
-  keys(input, ["version", "kind", "baseUrl", "url", "parameter", "profile", "oracle", ...(input.version === 2 ? ["authorizationEnv", "identity"] : [])], "policy");
-  if ((input.version !== 1 && input.version !== 2) || input.kind !== "sql-boolean-differential" || input.profile !== "numeric") fail("unsupported version, kind or profile");
+  const authenticated = input.version === 2 || input.version === 3 && (Object.hasOwn(input, 'authorizationEnv') || Object.hasOwn(input, 'identity'));
+  keys(input, ["version", "kind", "baseUrl", "url", "parameter", "profile", "oracle", ...(authenticated ? ["authorizationEnv", "identity"] : [])], "policy");
+  if (input.version !== 1 && input.version !== 2 && input.version !== 3
+    || input.kind !== "sql-boolean-differential" || input.profile !== (input.version === 3 ? "single-quoted" : "numeric")) fail("unsupported version, kind or profile");
   if (typeof input.baseUrl !== "string" || typeof input.url !== "string") fail("URL strings required");
   const base = normalizeUrl(input.baseUrl), target = normalizeUrl(input.url);
   const baseParsed = new URL(base.href), targetParsed = new URL(target.href);
   if (baseParsed.pathname !== "/" || baseParsed.search || target.origin !== base.origin || !targetParsed.search) fail("one same-origin URL with an existing query is required");
   if (typeof input.parameter !== "string" || !PARAMETER.test(input.parameter)) fail("invalid parameter name");
   const matches = targetParsed.searchParams.getAll(input.parameter);
-  if (matches.length !== 1 || !NUMERIC.test(matches[0]!)) fail("parameter must appear once with a bounded decimal value");
+  if (input.version === 3) {
+    if (matches.length !== 1 || !/^[\x20-\x7e]{1,128}$/.test(matches[0]!) || !matches[0]!.trim() || /['\\]/.test(matches[0]!)) fail("parameter must appear once with a bounded single-quoted seed");
+  } else if (matches.length !== 1 || !NUMERIC.test(matches[0]!)) fail("parameter must appear once with a bounded decimal value");
   if (!record(input.oracle)) fail("oracle object required");
   keys(input.oracle, ["jsonPointer", "expectedBaseline", "expectedTrue", "expectedFalse"], "oracle");
   const oracle = { jsonPointer: pointer(input.oracle.jsonPointer), expectedBaseline: scalar(input.oracle.expectedBaseline, "baseline"),
@@ -105,7 +136,8 @@ export function parseDastPolicy(raw: unknown): ParsedDastPolicy {
     fail("true oracle must equal baseline; false oracle must differ");
   let policy: DastPolicy = { version: 1, kind: "sql-boolean-differential", baseUrl: base.href, url: target.href,
     parameter: input.parameter, profile: "numeric", oracle };
-  if (input.version === 2) {
+  if (input.version === 3) policy = { ...policy, version: 3, profile: "single-quoted" };
+  if (authenticated) {
     if (typeof input.authorizationEnv !== "string" || !/^[A-Z][A-Z0-9_]{0,127}$/.test(input.authorizationEnv)) fail("invalid authorization binding");
     if (!record(input.identity)) fail("identity object required");
     keys(input.identity, ["path", "status", "jsonPointer", "equals"], "identity");
@@ -116,8 +148,9 @@ export function parseDastPolicy(raw: unknown): ParsedDastPolicy {
     if (identityUrl.origin !== base.origin) fail("identity origin mismatch");
     if (!Number.isSafeInteger(identity.status) || Number(identity.status) < 200 || Number(identity.status) > 299) fail("invalid identity status");
     if (typeof identity.equals !== "string" || identity.equals.trim().length === 0 || identity.equals.length > 512 || /[\u0000-\u001f\u007f]/.test(identity.equals)) fail("invalid identity assertion");
-    policy = { ...policy, version: 2, authorizationEnv: input.authorizationEnv,
+    const authFields = { authorizationEnv: input.authorizationEnv,
       identity: { path: identity.path, status: Number(identity.status), jsonPointer: pointer(identity.jsonPointer), equals: identity.equals } };
+    policy = policy.version === 3 ? { ...policy, ...authFields } : { ...policy, version: 2, ...authFields };
   }
   const policySha256 = createHash("sha256").update(JSON.stringify({ revision: dastProfileRevision(policy), policy })).digest("hex");
   return { policy, policySha256 };
@@ -135,7 +168,10 @@ function optionsSnapshot(raw: DastOptions): DastOptions {
 }
 
 function result(status: CheckResult["status"], reason: string, metrics: Record<string, number | string | boolean> = {}): CheckResult[] {
-  return [{ id: DAST_CHECK_ID, status, findings: [], notes: [NOTE, reason], metrics: { requestCount: 0, ...metrics } }];
+  return [{ id: DAST_CHECK_ID, status, findings: [], notes: ['SQL differential preparation: no profile execution is established. A candidate is not proof of exploitability or complete SQL injection coverage.', reason], metrics: { requestCount: 0, ...metrics } }];
+}
+function profileNote(policy: DastPolicy): string {
+  return policy.profile === 'numeric' ? NOTE : 'Single-quoted SQL differential preview: one consented GET URL and one existing query parameter, eight fixed SQL phases, exact configured JSON oracle. A candidate is not proof of exploitability or general SQL dialect support.';
 }
 function stopReason(error: unknown, abortCause: "deadline" | "cancelled" | undefined, deadlineAt: number): DastStepReason {
   if (abortCause) return abortCause;
@@ -149,8 +185,8 @@ function stopReason(error: unknown, abortCause: "deadline" | "cancelled" | undef
 function phaseUrl(policy: DastPolicy, phase: DastPhase): string {
   const url = new URL(policy.url);
   const original = url.searchParams.get(policy.parameter)!;
-  if (phase === "true") url.searchParams.set(policy.parameter, `${original} AND 1=1`);
-  if (phase === "false") url.searchParams.set(policy.parameter, `${original} AND 1=2`);
+  if (phase === "true") url.searchParams.set(policy.parameter, policy.profile === 'single-quoted' ? `${original}' AND '1'='1` : `${original} AND 1=1`);
+  if (phase === "false") url.searchParams.set(policy.parameter, policy.profile === 'single-quoted' ? `${original}' AND '1'='2` : `${original} AND 1=2`);
   return url.toString();
 }
 function matches(value: DastScalar, policy: DastPolicy): DastOracleMatch {
@@ -188,7 +224,7 @@ export async function runDast(rawOptions: DastOptions): Promise<CheckResult[]> {
     || !Number.isSafeInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > DAST_MAX_TIMEOUT_MS
     || (options.signal !== undefined && (types.isProxy(options.signal) || !(options.signal instanceof AbortSignal))))
     return result("error", "DAST budget or cancellation signal is invalid; no requests were made.", { errorCode: "invalid_budget" });
-  if (parsed.policy.version === 2) return runAuthenticatedDast(parsed.policy, parsed.policySha256, options, maxRequests, timeoutMs);
+  if (hasDastAuthentication(parsed.policy)) return runAuthenticatedDast(parsed.policy, parsed.policySha256, options, maxRequests, timeoutMs);
   const control = createApiRunControl(timeoutMs, options.signal, DAST_MAX_TIMEOUT_MS);
   // The shared signal merges caller cancellation and the timer. Capture the cause
   // at its first abort: wall-clock checks in a later catch can mislabel either.
@@ -227,14 +263,15 @@ export async function runDast(rawOptions: DastOptions): Promise<CheckResult[]> {
         let json: unknown;
         try { json = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(response.body)); }
         catch { throw new Error("response_invalid"); }
+        if (control.signal.aborted || Date.now() >= control.deadlineAt) throw new Error('run_stopped');
         const value = atPointer(json, parsed.policy.oracle.jsonPointer);
         if (!isScalar(value)) throw new Error("response_invalid");
         values.push(value);
         steps.push({ ordinal, round, phase, outcome: "evaluated", reason: "evaluated", attemptStart,
           httpAttempts: budget.count - attemptStart, httpStatus, oracleMatch: matches(value, parsed.policy) });
       } catch (error) {
-        firstFailure = error instanceof Error && error.message === "response_invalid" ? "response_invalid"
-          : stopReason(error, abortCause, control.deadlineAt);
+        firstFailure = abortCause ?? (Date.now() >= control.deadlineAt ? 'deadline' : error instanceof Error && error.message === "response_invalid" ? "response_invalid"
+          : stopReason(error, abortCause, control.deadlineAt));
         steps.push({ ordinal, round, phase, outcome: "inconclusive", reason: firstFailure, attemptStart,
           httpAttempts: budget.count - attemptStart, httpStatus, oracleMatch: "unavailable" });
       }
@@ -257,19 +294,22 @@ export async function runDast(rawOptions: DastOptions): Promise<CheckResult[]> {
       }
       if (outcome !== "inconclusive") { status = "complete"; stop = "none"; }
     }
-    const execution = ledger(parsed.policySha256, steps, status, outcome, stop, maxRequests, timeoutMs, options.allowPrivate === true);
+    const numericExecution = ledger(parsed.policySha256, steps, status, outcome, stop, maxRequests, timeoutMs, options.allowPrivate === true);
+    const execution: DastExecutionV1 | DastExecutionV3Unauth = parsed.policy.version === 3
+      ? { ...numericExecution, version: 3, profile: 'single-quoted', profileRevision: DAST_QUOTED_PROFILE_REVISION, authentication: 'none', status }
+      : numericExecution;
     if (!sanitizeDastExecution(execution)) return result("error", "DAST execution ledger failed its internal validation.", { errorCode: "invalid_execution", requestCount: budget.count });
     const finding: Finding[] = outcome === "observed" ? [{ ruleId: "dast.sql-boolean-differential", title: "SQL boolean response differential observed",
-      description: `The configured JSON oracle changed consistently for numeric true/false conditions on parameter ${parsed.policy.parameter}. This is a candidate; SQL execution and exploitability have not been independently proven.`,
+      description: `The configured JSON oracle changed consistently for ${parsed.policy.profile} true/false conditions on parameter ${parsed.policy.parameter}. This is a candidate; SQL execution and exploitability have not been independently proven.`,
       severity: "high", confidence: "medium", kind: "candidate", location: { url: safeUrl(parsed.policy.url) },
       remediation: "Review how the query parameter reaches database execution. Use parameter binding, then rerun the same normal and differential controls." }] : [];
     const check: CheckResult = { id: DAST_CHECK_ID, status: status === "complete" ? "completed" : "partial", findings: finding,
-      notes: [NOTE, `Target ${safeUrl(parsed.policy.url)}; parameter ${parsed.policy.parameter}; ${budget.count} HTTP attempt(s) across ${steps.filter(s => s.outcome === "evaluated").length}/8 evaluated phase(s).`,
+      notes: [profileNote(parsed.policy), `Target ${safeUrl(parsed.policy.url)}; parameter ${parsed.policy.parameter}; ${budget.count} HTTP attempt(s) across ${steps.filter(s => s.outcome === "evaluated").length}/8 evaluated phase(s).`,
         outcome === "observed" ? "The expected boolean differential repeated in both rounds; browser, database internals and exploitability were not independently verified."
           : outcome === "not_observed" ? "Both boolean probes had the same stable oracle; the configured differential was not observed."
           : `Incomplete: ${stop}. Absent findings are not a clean SQL result.`],
       metrics: { requestCount: budget.count, plannedRequests: 8, maxRequests, responseBytes: totalBytes,
-        profileRevision: DAST_PROFILE_REVISION, policySha256: parsed.policySha256, outcome, stopReason: stop },
+        profileRevision: dastProfileRevision(parsed.policy), policySha256: parsed.policySha256, outcome, stopReason: stop },
       dastExecution: execution };
     return [check];
   } finally { control.signal.removeEventListener("abort", captureAbortCause); control.dispose(); }
@@ -285,7 +325,7 @@ export interface DastPreparationOptions { allowPrivate?: boolean; env?: NodeJS.P
 export function snapshotDastEnvironment(rawPolicy: DastPolicy, env: NodeJS.ProcessEnv = process.env): NodeJS.ProcessEnv | undefined {
   let policy: DastPolicy;
   try { policy = parseDastPolicy(rawPolicy).policy; } catch { throw new DastPreparationError('invalid_policy'); }
-  if (policy.version === 1) return undefined;
+  if (!hasDastAuthentication(policy)) return undefined;
   if (!env || typeof env !== 'object' || types.isProxy(env) || Array.isArray(env)) throw new DastPreparationError('invalid_credentials');
   const descriptor = Object.getOwnPropertyDescriptor(env, policy.authorizationEnv);
   const value: unknown = descriptor && 'value' in descriptor ? descriptor.value : undefined;
@@ -294,7 +334,7 @@ export function snapshotDastEnvironment(rawPolicy: DastPolicy, env: NodeJS.Proce
 }
 
 /** Snapshot authorization before awaits. Neither its value nor a value hash is public evidence. */
-function authorizationSnapshot(policy: DastPolicyV2, options: DastPreparationOptions): string {
+function authorizationSnapshot(policy: DastPolicyV2 | DastPolicyV3Auth, options: DastPreparationOptions): string {
   const selected = snapshotDastEnvironment(policy, options.env);
   const target = new URL(policy.baseUrl);
   if (target.protocol !== 'https:' && !(options.allowPrivate === true && ['127.0.0.1', '[::1]'].includes(target.hostname))) throw new DastPreparationError('insecure_authenticated_transport');
@@ -311,12 +351,12 @@ export function prepareDastPolicy(raw: unknown, rawOptions: DastPreparationOptio
   if (options.allowPrivate !== undefined && typeof options.allowPrivate !== 'boolean') throw new DastPreparationError('invalid_options');
   let parsed: ParsedDastPolicy;
   try { parsed = parseDastPolicy(raw); } catch { throw new DastPreparationError('invalid_policy'); }
-  if (parsed.policy.version === 2) authorizationSnapshot(parsed.policy, options);
+  if (hasDastAuthentication(parsed.policy)) authorizationSnapshot(parsed.policy, options);
   return parsed;
 }
 
 /** V2 has one request/body/deadline budget across identity-before, eight probes and identity-after. */
-async function runAuthenticatedDast(policy: DastPolicyV2, policySha256: string, options: DastOptions,
+async function runAuthenticatedDast(policy: DastPolicyV2 | DastPolicyV3Auth, policySha256: string, options: DastOptions,
   maxRequests: number, timeoutMs: number): Promise<CheckResult[]> {
   let authorization: string;
   try { authorization = authorizationSnapshot(policy, options); }
@@ -369,19 +409,22 @@ async function runAuthenticatedDast(policy: DastPolicyV2, policySha256: string, 
     const outcome = identityControls.before === 'matched' && identityControls.after === 'matched' ? probeOutcome : 'inconclusive';
     const status = outcome === 'inconclusive' ? 'partial' : 'complete';
     const stop = firstFailure ?? (status === 'complete' ? 'none' : 'oracle_inconsistent');
-    const execution: DastExecutionV2 = { version: 2, policySha256, profile: 'numeric', profileRevision: DAST_AUTH_PROFILE_REVISION,
+    const numericExecution: DastExecutionV2 = { version: 2, policySha256, profile: 'numeric', profileRevision: DAST_AUTH_PROFILE_REVISION,
       maxRequests, timeoutMs, allowPrivate: options.allowPrivate === true, plannedRequests: 10, steps, status, outcome, probeOutcome, identityControls,
       counts: { evaluated: steps.filter(step => step.outcome === 'evaluated').length, inconclusive: steps.filter(step => step.outcome === 'inconclusive').length,
         notAttempted: steps.filter(step => step.outcome === 'not_attempted').length, httpAttempts: budget.count }, stopReason: stop };
+    const execution: DastExecutionV2 | DastExecutionV3Auth = policy.version === 3
+      ? { ...numericExecution, version: 3, profile: 'single-quoted', profileRevision: DAST_QUOTED_AUTH_PROFILE_REVISION, authentication: 'authorization' }
+      : numericExecution;
     if (!sanitizeDastExecution(execution)) return result('error', 'DAST execution ledger failed its internal validation.', { errorCode: 'invalid_execution', requestCount: budget.count });
     const findings: Finding[] = probeOutcome === 'observed' ? [{ ruleId: 'dast.sql-boolean-differential', title: 'SQL boolean response differential observed',
-      description: `The configured JSON oracle changed consistently for numeric true/false conditions on parameter ${policy.parameter}. This is a candidate; SQL execution and exploitability have not been independently proven.`,
+      description: `The configured JSON oracle changed consistently for ${policy.profile} true/false conditions on parameter ${policy.parameter}. This is a candidate; SQL execution and exploitability have not been independently proven.`,
       severity: 'high', confidence: status === 'complete' ? 'medium' : 'low', kind: 'candidate', location: { url: safeUrl(policy.url) },
       remediation: 'Review how the query parameter reaches database execution. Use parameter binding, then rerun the same normal and differential controls.' }] : [];
     return [{ id: DAST_CHECK_ID, status: status === 'complete' ? 'completed' : 'partial', findings,
-      notes: [NOTE, 'Authenticated numeric profile: identity is checked before and after eight SQL phases; matching controls do not prove uninterrupted session identity.',
+      notes: [profileNote(policy), `Authenticated ${policy.profile} profile: identity is checked before and after eight SQL phases; matching controls do not prove uninterrupted session identity.`,
         status === 'complete' ? 'All identity and SQL controls completed for this policy.' : `Incomplete: ${stop}. Any retained differential is unverified and cannot authorize replay.`],
       metrics: { requestCount: budget.count, plannedRequests: 10, maxRequests, responseBytes: totalBytes,
-        profileRevision: DAST_AUTH_PROFILE_REVISION, policySha256, outcome, probeOutcome, stopReason: stop }, dastExecution: execution }];
+        profileRevision: dastProfileRevision(policy), policySha256, outcome, probeOutcome, stopReason: stop }, dastExecution: execution }];
   } finally { control.signal.removeEventListener('abort', captureAbortCause); control.dispose(); }
 }

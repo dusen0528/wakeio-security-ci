@@ -69,7 +69,7 @@ function snapshotOptions(raw: DastReplayOptions): DastReplayOptions | undefined 
 }
 
 /**
- * Re-execute exactly the selected prior numeric SQL candidate's policy. A complete
+ * Re-execute exactly the selected prior declared-profile SQL candidate's policy. A complete
  * baseline-preserving negative is not_reproduced; every incomplete/ambiguous run
  * is inconclusive. Neither outcome proves exploitability or a security fix.
  */
@@ -138,6 +138,8 @@ export async function replayDastFinding(rawOptions: DastReplayOptions): Promise<
   const execution = fresh?.dastExecution ? sanitizeDastExecution(fresh.dastExecution) : null;
   if (execution) metadata.freshExecutionSha256 = digest(execution);
   const sameSettings = execution?.policySha256 === original.policySha256
+    && execution.version === original.version && execution.profile === original.profile
+    && execution.plannedRequests === original.plannedRequests
     && execution.profileRevision === original.profileRevision && execution.maxRequests === original.maxRequests
     && execution.timeoutMs === original.timeoutMs && execution.allowPrivate === original.allowPrivate;
   const completed = fresh?.id === DAST_CHECK_ID && fresh.status === 'completed' && execution?.status === 'complete'

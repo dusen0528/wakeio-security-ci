@@ -38,7 +38,7 @@ test('authenticated native cards expose only typed control/probe outcomes and re
         confidence: after === 'matched' ? 'medium' : 'low', location: { url: 'https://private-auth-target.invalid/items' } }] }], 'url', NOW);
     const agent = toAgentReport(scan);
     const projected = projectAdviceContext(agent, true).input;
-    assert.equal(projected.projectionVersion, 5);
+    assert.equal(projected.projectionVersion, ADVICE_PROJECTION_POLICY_VERSION);
     assert.deepEqual(projected.checks[0].nativeDast?.identityControls, { before: 'matched', after });
     assert.equal(projected.checks[0].nativeDast?.probeOutcome, 'observed');
     assert.equal(projected.checks[0].nativeDast?.steps.length, 10);

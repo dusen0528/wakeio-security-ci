@@ -2,7 +2,7 @@ import { sanitiseAnalysisBudget, sameAnalysisBudget } from './source/analysis-bu
 import { sanitiseCollectionBudget, sanitiseCollectionEvidence, sameCollectionBudget } from './source/collection-budget.js';
 import { types as utilTypes } from 'node:util';
 import { sanitiseStaticContext } from './static-context.js';
-import { sanitizeDastExecution, isDastObservedEvidence } from './dast-execution.js';
+import { sanitizeDastExecution, isDastObservedEvidence, isLegacyDastExecution } from './dast-execution.js';
 import type { Finding, ScanProvenance, ScanReport, Severity } from './contracts.js';
 import { exitCode, sanitiseReport, writeArtifacts } from './report.js';
 import { readJsonInput } from './json-input.js';
@@ -53,7 +53,7 @@ export function parseScanReport(input: unknown): ScanReport {
     if (evidence?.issues.some(issue => issue.code === 'root_error') && check.status !== 'error'
       || evidence?.issues.some(issue => issue.code !== 'unsupported_file') && ['completed', 'not_applicable'].includes(check.status)) return invalid();
     const nativeField = collectionField(check, 'dastExecution');
-    // Keep historical v1 normalization readable; new v2 evidence must be valid
+    // Keep historical v1 normalization readable; newer evidence must be valid
     // before sanitation can preserve a candidate or a completed result.
     const nativeVersion = nativeField.valid && nativeField.value && typeof nativeField.value === 'object'
       && !utilTypes.isProxy(nativeField.value) ? Object.getOwnPropertyDescriptor(nativeField.value, 'version') : undefined;
@@ -62,7 +62,7 @@ export function parseScanReport(input: unknown): ScanReport {
     let nativeExecution: ReturnType<typeof sanitizeDastExecution> = null;
     if (nativeField.present && !nativeV1) {
       const execution = sanitizeDastExecution(nativeField.value);
-      if (!execution || execution.version !== 2 || check.id !== 'url.sql-boolean' || check.metrics?.requestCount !== execution.counts.httpAttempts
+      if (!execution || isLegacyDastExecution(execution) || check.id !== 'url.sql-boolean' || check.metrics?.requestCount !== execution.counts.httpAttempts
         || execution.status !== 'complete' && ['completed', 'not_applicable'].includes(check.status)
         || isDastObservedEvidence(execution) && check.findings.length !== 1 && ['completed', 'not_applicable'].includes(check.status)
         || check.findings.length > 0 && !isDastObservedEvidence(execution)) return invalid();
@@ -77,7 +77,7 @@ export function parseScanReport(input: unknown): ScanReport {
         || !text(finding.description) || !text(finding.remediation) || !severities.includes(finding.severity)
         || !['low', 'medium', 'high'].includes(finding.confidence)
         || !['observation', 'candidate', 'advisory'].includes(finding.kind) || !record(finding.location)) return invalid();
-      if (nativeExecution?.version === 2 && (finding.kind !== 'candidate' || finding.confidence === 'high'
+      if (nativeExecution && !isLegacyDastExecution(nativeExecution) && (finding.kind !== 'candidate' || finding.confidence === 'high'
         || (nativeExecution.status !== 'complete' || check.status !== 'completed') && finding.confidence !== 'low')) return invalid();
       const context = collectionField(finding, 'staticContext');
       if (!context.valid || context.present && (!sanitiseStaticContext(context.value)

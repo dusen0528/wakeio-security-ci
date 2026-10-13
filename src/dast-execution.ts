@@ -131,7 +131,25 @@ export interface DastExecutionV2 extends Omit<DastExecutionV1, "version" | "prof
   probeOutcome: DastExecutionV1["outcome"];
   stopReason: DastExecutionV1["stopReason"] | "identity_mismatch";
 }
-export type DastExecution = DastExecutionV1 | DastExecutionV2;
+export interface DastExecutionV3Unauth extends Omit<DastExecutionV1, 'version' | 'profile' | 'profileRevision' | 'status'> {
+  version: 3;
+  profile: 'single-quoted';
+  profileRevision: 'sql-boolean-single-quoted-v3';
+  authentication: 'none';
+  status: 'complete' | 'partial';
+}
+export interface DastExecutionV3Auth extends Omit<DastExecutionV2, 'version' | 'profile' | 'profileRevision'> {
+  version: 3;
+  profile: 'single-quoted';
+  profileRevision: 'sql-boolean-single-quoted-auth-v3';
+  authentication: 'authorization';
+}
+export type DastExecutionV3 = DastExecutionV3Unauth | DastExecutionV3Auth;
+export type DastExecution = DastExecutionV1 | DastExecutionV2 | DastExecutionV3;
+export function isLegacyDastExecution(execution: DastExecution): execution is DastExecutionV1 { return execution.version === 1; }
+export function hasDastIdentityControls(execution: DastExecution): execution is DastExecutionV2 | DastExecutionV3Auth {
+  return execution.version === 2 || execution.version === 3 && execution.authentication === 'authorization';
+}
 
 /** Classifies only the eight SQL phases, independently of identity controls. */
 export function dastProbeOutcome(steps: readonly DastExecutionStep[]): DastExecutionV1["outcome"] {
@@ -144,22 +162,28 @@ export function dastProbeOutcome(steps: readonly DastExecutionStep[]): DastExecu
 function exact(value: Record<string, unknown>, keys: readonly string[]): boolean {
   return Object.keys(value).sort().join("\0") === [...keys].sort().join("\0");
 }
-function sanitizeV2(raw: Record<string, unknown>): DastExecutionV2 | null {
-  if (!exact(raw, ["version", "policySha256", "profile", "profileRevision", "maxRequests", "timeoutMs", "allowPrivate", "status", "outcome", "plannedRequests", "steps", "counts", "stopReason", "identityControls", "probeOutcome"])
-    || typeof raw.policySha256 !== "string" || !SHA256.test(raw.policySha256) || raw.profile !== "numeric" || raw.profileRevision !== "sql-boolean-numeric-auth-v2"
+function sanitizeFixed(raw: Record<string, unknown>): DastExecutionV2 | DastExecutionV3 | null {
+  const quoted = raw.version === 3;
+  const authenticated = raw.version === 2 || quoted && raw.authentication === 'authorization';
+  const plannedRequests = authenticated ? 10 : 8;
+  const revision = quoted ? authenticated ? 'sql-boolean-single-quoted-auth-v3' : 'sql-boolean-single-quoted-v3' : 'sql-boolean-numeric-auth-v2';
+  if ((!quoted && raw.version !== 2) || quoted && !['none', 'authorization'].includes(String(raw.authentication))
+    || !exact(raw, ["version", "policySha256", "profile", "profileRevision", "maxRequests", "timeoutMs", "allowPrivate", "status", "outcome", "plannedRequests", "steps", "counts", "stopReason", ...(quoted ? ['authentication'] : []), ...(authenticated ? ["identityControls", "probeOutcome"] : [])])
+    || typeof raw.policySha256 !== "string" || !SHA256.test(raw.policySha256) || raw.profile !== (quoted ? 'single-quoted' : "numeric") || raw.profileRevision !== revision
     || !Number.isSafeInteger(raw.maxRequests) || Number(raw.maxRequests) < 1 || Number(raw.maxRequests) > 64
     || !Number.isSafeInteger(raw.timeoutMs) || Number(raw.timeoutMs) < 1 || Number(raw.timeoutMs) > 120_000
     || typeof raw.allowPrivate !== "boolean" || !["complete", "partial"].includes(String(raw.status))
-    || !["observed", "not_observed", "inconclusive"].includes(String(raw.outcome)) || raw.plannedRequests !== 10
-    || !Array.isArray(raw.steps) || raw.steps.length !== 10 || !record(raw.counts)
+    || !["observed", "not_observed", "inconclusive"].includes(String(raw.outcome)) || raw.plannedRequests !== plannedRequests
+    || !Array.isArray(raw.steps) || raw.steps.length !== plannedRequests || !record(raw.counts)
     || !exact(raw.counts, ["evaluated", "inconclusive", "notAttempted", "httpAttempts"])
-    || !record(raw.identityControls) || !exact(raw.identityControls, ["before", "after"])) return null;
+    || authenticated && (!record(raw.identityControls) || !exact(raw.identityControls, ["before", "after"]))) return null;
   const steps: DastAuthExecutionStep[] = [];
   let evaluated = 0, inconclusive = 0, notAttempted = 0, httpAttempts = 0, stopped = false;
-  for (let ordinal = 0; ordinal < 10; ordinal++) {
-    const value = raw.steps[ordinal], identity = ordinal === 0 || ordinal === 9;
-    const phase: DastAuthPhase = identity ? ordinal === 0 ? "identity-before" : "identity-after" : PHASES[(ordinal - 1) % 4]!;
-    const round = identity ? 0 : Math.floor((ordinal - 1) / 4) + 1;
+  for (let ordinal = 0; ordinal < plannedRequests; ordinal++) {
+    const value = raw.steps[ordinal], identity = authenticated && (ordinal === 0 || ordinal === 9);
+    const sqlIndex = ordinal - (authenticated ? 1 : 0);
+    const phase: DastAuthPhase = identity ? ordinal === 0 ? "identity-before" : "identity-after" : PHASES[sqlIndex % 4]!;
+    const round = identity ? 0 : Math.floor(sqlIndex / 4) + 1;
     if (!record(value) || !exact(value, ["ordinal", "round", "phase", "outcome", "reason", "attemptStart", "httpAttempts", "httpStatus", "oracleMatch"])
       || value.ordinal !== ordinal || value.round !== round || value.phase !== phase
       || !["evaluated", "inconclusive", "not_attempted"].includes(String(value.outcome))
@@ -189,32 +213,38 @@ function sanitizeV2(raw: Record<string, unknown>): DastExecutionV2 | null {
   if (Object.entries(counts).some(([key, value]) => raw.counts && (raw.counts as Record<string, unknown>)[key] !== value)) return null;
   const identityOutcome = (step: DastAuthExecutionStep): DastIdentityOutcome => step.outcome === "evaluated" ? "matched"
     : (step.outcome === "not_attempted" || step.httpAttempts === 0) ? "not_attempted" : step.reason === "identity_mismatch" ? "mismatched" : "inconclusive";
-  const identityControls = { before: identityOutcome(steps[0]!), after: identityOutcome(steps[9]!) };
-  if (raw.identityControls.before !== identityControls.before || raw.identityControls.after !== identityControls.after) return null;
-  const probeOutcome = dastProbeOutcome(steps.slice(1, 9) as DastExecutionStep[]);
-  if (raw.probeOutcome !== probeOutcome) return null;
-  const outcome = identityControls.before === "matched" && identityControls.after === "matched" ? probeOutcome : "inconclusive";
-  const status = outcome === "inconclusive" ? "partial" : "complete";
+  const identityControls = authenticated ? { before: identityOutcome(steps[0]!), after: identityOutcome(steps[9]!) } : undefined;
+  if (authenticated && (!record(raw.identityControls) || raw.identityControls.before !== identityControls!.before || raw.identityControls.after !== identityControls!.after)) return null;
+  const probeOutcome = dastProbeOutcome((authenticated ? steps.slice(1, 9) : steps) as DastExecutionStep[]);
+  if (authenticated && raw.probeOutcome !== probeOutcome) return null;
+  const outcome = !authenticated || identityControls!.before === "matched" && identityControls!.after === "matched" ? probeOutcome : "inconclusive";
+  const status: 'partial' | 'complete' = outcome === "inconclusive" ? "partial" : "complete";
   const firstFailure = steps.find(step => step.outcome === "inconclusive");
   const stopReason = firstFailure?.reason ?? (status === "complete" ? "none" : "oracle_inconsistent");
   if (raw.outcome !== outcome || raw.status !== status || raw.stopReason !== stopReason) return null;
-  return { version: 2, policySha256: raw.policySha256, profile: "numeric", profileRevision: "sql-boolean-numeric-auth-v2",
+  if (!quoted) return { version: 2, policySha256: raw.policySha256, profile: "numeric", profileRevision: "sql-boolean-numeric-auth-v2",
     maxRequests: Number(raw.maxRequests), timeoutMs: Number(raw.timeoutMs), allowPrivate: raw.allowPrivate, status, outcome,
-    plannedRequests: 10, steps, counts, identityControls, probeOutcome, stopReason };
+    plannedRequests: 10, steps, counts, identityControls: identityControls!, probeOutcome, stopReason };
+  const common = { policySha256: raw.policySha256, maxRequests: Number(raw.maxRequests), timeoutMs: Number(raw.timeoutMs), allowPrivate: raw.allowPrivate,
+    status, outcome, counts };
+  return authenticated ? { version: 3, ...common, profile: 'single-quoted', profileRevision: 'sql-boolean-single-quoted-auth-v3', authentication: 'authorization',
+    plannedRequests: 10, steps, identityControls: identityControls!, probeOutcome, stopReason }
+    : { version: 3, ...common, profile: 'single-quoted', profileRevision: 'sql-boolean-single-quoted-v3', authentication: 'none',
+      plannedRequests: 8, steps: steps as DastExecutionStep[], stopReason: stopReason as DastExecutionV3Unauth['stopReason'] };
 }
 
-/** Strict v2 envelope and backward-compatible v1 normalization. No secret metadata is retained. */
+/** Strict fixed-plan v2/v3 reconstruction and backward-compatible v1 normalization. */
 export function sanitizeDastExecution(raw: unknown): DastExecution | null {
   try { raw = snapshotJsonData(raw); } catch { return null; }
   if (!record(raw)) return null;
-  return raw.version === 2 ? sanitizeV2(raw) : sanitizeV1(raw);
+  return raw.version === 2 || raw.version === 3 ? sanitizeFixed(raw) : sanitizeV1(raw);
 }
 /** Use only after ledger sanitation. An observed SQL differential survives failed trailing identity. */
 export function isDastObservedEvidence(execution: DastExecution): boolean {
-  return execution.version === 2 ? execution.probeOutcome === "observed" : execution.status === "complete" && execution.outcome === "observed";
+  return hasDastIdentityControls(execution) ? execution.probeOutcome === "observed" : execution.status === "complete" && execution.outcome === "observed";
 }
 /** Original replay authority requires complete controls, not merely retained probe evidence. */
 export function isDastReplayableExecution(execution: DastExecution): boolean {
   return execution.status === "complete" && execution.outcome === "observed"
-    && (execution.version === 1 || execution.probeOutcome === "observed" && execution.identityControls.before === "matched" && execution.identityControls.after === "matched");
+    && (!hasDastIdentityControls(execution) || execution.probeOutcome === "observed" && execution.identityControls.before === "matched" && execution.identityControls.after === "matched");
 }

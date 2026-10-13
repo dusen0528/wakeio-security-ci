@@ -120,7 +120,7 @@ Options:
 
 Active DAST (off by default; sends generated or template requests to the target):
   --active-consent             Required: you own or are authorized to test the target
-  --dast-policy FILE           Explicit GET/query numeric SQL differential policy JSON
+  --dast-policy FILE           Explicit GET/query numeric or single-quoted SQL differential policy JSON
   --dast-max-requests N        Native DAST HTTP attempt budget, 1..64 (v1 default 8; authenticated v2 default 10)
   --openapi FILE               Local OpenAPI 3.0/3.1 JSON (same-document $ref only)
   --api-base URL               Target origin for --openapi (servers are never used)
