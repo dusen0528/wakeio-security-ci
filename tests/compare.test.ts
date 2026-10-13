@@ -63,8 +63,9 @@ test('line movement and duplicate findings remain visible without claiming remed
   assert.equal(moved.summary.not_observed, 1);
   assert.ok(moved.limitations.some((line) => /not proof of a security fix/.test(line)));
   const duplicates = compareReports(report([finding(), finding()]), report([finding()]));
-  assert.equal(duplicates.summary.unchanged, 1);
-  assert.equal(duplicates.summary.not_observed, 1);
+  assert.equal(duplicates.comparable, false);
+  assert.deepEqual(duplicates.summary, { new: 0, changed: 0, unchanged: 0, not_observed: 0, unverified: 3 });
+  assert.equal(comparisonExitCode(duplicates, 'none'), 2);
 });
 
 test('semantic comparison keys survive line movement and duplicate keys remain unverified', () => {

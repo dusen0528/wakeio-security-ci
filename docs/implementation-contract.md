@@ -41,7 +41,11 @@
   Gitleaks, OSV-Scanner, Trivy이며 Bandit은 별도 선택·설치다.
 - 비교 CLI: `compare --before FILE --after FILE --out DIR`. 같은 범위와 완료된
   검사만 비교하며 불일치·불완전·provenance 변경은 exit 2와 `unverified`로
-  남긴다. 사라진 발견을 수정 완료로 단정하지 않는다.
+  남긴다. before 또는 after의 같은 check에서 semantic key나 key 없는 legacy
+  finding ID가 반복되면 동일한 중복도 순번으로 매칭하지 않고 `unverified`/exit 2로
+  보존한다. 고유 key로 매칭된 finding의 severity·confidence·증거 종류(`kind`)
+  변경은 `changed`이며 after severity로 비교 문턱을 적용한다. 사라진 발견을
+  수정 완료로 단정하지 않는다.
 - 종료 코드: 누락 도구, 오류, timeout, 범위 제한에 따른 누락은 안전·완료로
   해석하지 않는다. exit 0은 검사 완료 및 문턱 이상 결과 없음, 1은 문턱 이상
   결과, 2는 설정·실행·부분 검사 오류다. `--fail-on none`도 실행 오류는 2다.

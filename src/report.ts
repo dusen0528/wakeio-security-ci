@@ -234,7 +234,8 @@ function serialiseReport(report: ScanReport): string {
 
 function projectAgentReport(report: ScanReport, failOn: FailOn): AgentReport {
   const scanGate = evaluateSanitisedGate(report, failOn);
-  const blocking = new Set(scanGate.blockingFindingIds);
+  const threshold = scanGate.failOn === 'none' || scanGate.failOn === 'invalid'
+    ? undefined : SEVERITY_RANK[scanGate.failOn];
   const count = (status: CheckResult['status']) => report.checks.filter((check) => check.status === status).length;
   return {
     schemaVersion: '1.0.0',
@@ -318,7 +319,7 @@ function projectAgentReport(report: ScanReport, failOn: FailOn): AgentReport {
       },
       location: finding.location,
       ...(finding.references ? { references: finding.references } : {}),
-      reachesFailOn: blocking.has(finding.id!),
+      reachesFailOn: threshold !== undefined && SEVERITY_RANK[finding.severity] >= threshold,
       remediation: { guidance: finding.remediation, state: 'not_verified' as const },
       verification: { state: 'not_run' as const, vulnerabilityConfirmed: false as const, remediationVerified: false as const },
     }))),

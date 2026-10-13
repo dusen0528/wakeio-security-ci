@@ -208,7 +208,16 @@ sanitised report. Indexes disambiguate duplicate check IDs; repeated findings
 are retained. Severity, confidence, evidence `kind`, location, references, and
 existing remediation guidance remain separate fields. `reachesFailOn` means a
 finding meets the configured severity threshold, even if incomplete work takes
-precedence. With `none`, it is false.
+precedence. It is calculated from each row's sanitised severity, so repeated
+finding IDs can have different flags when their severities differ. With `none`
+or an invalid threshold, it is false. Stable finding IDs and unique-ID gate
+and summary counts are unchanged.
+
+Older mixed-severity report pairs may contain an incorrect `reachesFailOn` flag
+on a row below the threshold. Regenerate `agent-report.json` from the matching
+`report.json` with the same threshold before using those pairs for advice or
+source handoff. Consumers continue to require the report digest and full
+canonical projection to match; validation is not relaxed for older pairs.
 
 `evidence.basis` is `scanner_report`. An optional `staticFlow` contains only
 observed source/call/parameter/return/sink positions, with no source text.
