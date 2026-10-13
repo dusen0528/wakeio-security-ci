@@ -125,7 +125,7 @@ Fresh baseline도 seven-flow **5/7 관찰**, source partial·exit 2다. 잔여 c
 
 Closed-object 제외는 **module-private 또는 function-local**의 fresh object에서 own data `location`과 닫힌 사용을 증명한 경우에만 적용한다. Top-level script global은 다른 실행자가 값을 바꿀 수 있으므로 이름과 object 구문만으로 제외하지 않고 unknown으로 남긴다. Alias/escape/export/mutation/accessor/spread/동적 receiver는 증명을 취소하며, evaluator의 Identifier/static-string 이름과 computed binding name도 보수적으로 veto한다. 이는 일반 callable-effect나 realm 격리 증명이 아니다.
 
-Opaque parameter는 browser binding 미해결의 낮은 confidence 후보를 유지하고, 모호한 합류가 제외를 덮어쓰지 않게 한다. 고정한 global positive, closed-local negative, opaque parameter, mutation/escape/alias 및 branch counterexample를 같은 public API로 검증했다. Private scope를 좁히기 전 구현은 22개 회귀 중 16개 통과·6개 실패했고, 최종 구현은 22/22 통과했다. 이 red/green은 좁은 binding 계약을 구별하는 근거다.
+Opaque parameter는 browser binding 미해결의 낮은 confidence 후보를 유지하고, 모호한 합류가 제외를 덮어쓰지 않게 한다. 고정한 global positive, closed-local negative, opaque parameter, mutation/escape/alias 및 branch counterexample를 내부 AST 분석기의 동일 진입점 `runBuiltinAst`로 검증했다. Private scope를 좁히기 전 구현은 22개 회귀 중 16개 통과·6개 실패했고, 최종 구현은 22/22 통과했다. 이 red/green은 좁은 binding 계약을 구별하는 근거다.
 
 | 최종 로컬 검증 | 결과 |
 | --- | --- |
