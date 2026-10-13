@@ -30,6 +30,7 @@ const IGNORED_FILES = new Set([
 ]);
 
 export interface ScopeInputs {
+  requireCodeAnalysis?: boolean;
   mode: Mode;
   source?: string;
   sourceMaxFiles?: number;
@@ -185,6 +186,7 @@ export async function buildScanScope(inputs: ScopeInputs): Promise<ScanScope> {
     // A project ID intentionally replaces an absolute checkout path. Without
     // it, retain the old conservative path identity for local comparisons.
     sourceRoot: projectId ? null : inputs.source ? resolve(inputs.source) : null,
+    ...(inputs.source && inputs.requireCodeAnalysis === true ? { codeAnalysisPolicy: { revision: 'code-coverage-v1', requireCodeAnalysis: true } } : {}),
     ...(analysisBudget ? { analysisBudget } : {}),
     ...(collectionBudget ? { collectionBudget } : {}),
     url: inputs.url ?? null,
@@ -205,6 +207,7 @@ export async function buildScanScope(inputs: ScopeInputs): Promise<ScanScope> {
   return {
     fingerprint,
     ruleset: inputs.ruleset,
+    ...(inputs.source && inputs.requireCodeAnalysis === true ? { codeAnalysisPolicy: { revision: 'code-coverage-v1' as const, requireCodeAnalysis: true as const } } : {}),
     ...(analysisBudget ? { analysisBudget } : {}),
     ...(collectionBudget ? { collectionBudget } : {}),
     ...(projectId ? { projectId } : {}),

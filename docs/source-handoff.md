@@ -163,3 +163,10 @@ The composite GitHub Action produces scan reports; it does not expose handoff
 inputs. Use the corresponding reviewed package CLI for create/finish on those
 artifacts and the same source snapshot. See the [agent report contract](agent-report.md)
 and [comparison contract](preview-0.4-comparison.md).
+
+For a CI-to-local path, use the explicit [pinned Action init workflow](init-action-onboarding.md).
+It separates `wakeio-source` from fresh run/attempt report directories. An original
+scan that placed reports inside source retains `outputDirectoryExcluded: true`;
+moving the downloaded files later cannot make that report eligible for handoff.
+Use the actual checkout commit (a merge commit for default PR checkout), matching
+collected source bytes and a compatible reviewed CLI/ruleset.

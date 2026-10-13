@@ -129,7 +129,9 @@ async function pair(path: string, names = ['report.json', 'agent-report.json']):
 function supported(input: Pair): SourceSnapshotEvidence {
   const report = input.report;
   if (report.mode !== 'source' || report.toolVersion !== REPORT_TOOL_VERSION || report.scope?.ruleset !== RULESET_VERSION
-    || report.checks.length !== fixedChecks.length || !fixedChecks.every(id => report.checks.filter(check => check.id === id).length === 1)) fail('unsupported_scope');
+    || ![fixedChecks.length, fixedChecks.length + 1].includes(report.checks.length)
+    || !fixedChecks.every(id => report.checks.filter(check => check.id === id).length === 1)
+    || report.checks.length === fixedChecks.length + 1 && report.checks.filter(check => check.id === 'source.code-coverage').length !== 1) fail('unsupported_scope');
   const inventory = report.checks.find(check => check.id === 'source.inventory')!;
   const ast = report.checks.find(check => check.id === 'source.builtin-ast')!;
   const collection = sanitiseCollectionBudget(inventory.collectionBudget);

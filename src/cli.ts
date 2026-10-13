@@ -27,12 +27,15 @@ import { handoffMain } from './source-handoff.js';
 import { DAST_CHECK_ID, DAST_MAX_REQUESTS, DAST_DEFAULT_MAX_REQUESTS, parseDastPolicy, prepareDastPolicy, snapshotDastEnvironment, dastProfileRevision, dastDefaultMaxRequests, runDast, type DastPolicy } from "./dast.js";
 import { API_MAX_REQUESTS, API_MAX_TIMEOUT_MS } from "./api.js";
 import { runSchemathesisLive } from "./schemathesis-live.js";
+import { parseSchemathesisAuthPolicy, SCHEMATHESIS_AUTH_REVISION, type SchemathesisAuthPolicy } from "./schemathesis-auth.js";
+import { selectOpenApiLiveOperations } from "./openapi.js";
 import { NUCLEI_MAX_RATE_LIMIT, NUCLEI_MAX_REQUESTS, NUCLEI_SCOPES, runNuclei, type NucleiScope } from "./nuclei.js";
 
 const SEVERITY_VALUES = new Set(["critical", "high", "medium", "low", "info", "none"] as const);
 const TOOL_VALUES = new Set<ToolName>(["gitleaks", "osv", "trivy", "bandit"]);
 
 export interface CliOptions {
+  requireCodeAnalysis?: boolean;
   analysisProfile?: SourceOptions['analysisProfile'];
   source?: string;
   sourceMaxFiles?: number;
@@ -57,6 +60,7 @@ export interface CliOptions {
   /** When non-empty, every network target origin must be listed; empty means unrestricted. */
   allowedOrigins: string[];
   openapi?: string;
+  schemathesisAuthPolicy?: string;
   apiBase?: string;
   operations: string[];
   apiMaxRequests?: number;
@@ -107,6 +111,7 @@ Options:
   --tools none                 Run built-in source checks only
   --source-max-files N         Collected-file cap 1..10000 (source only; default: 1000)
   --source-max-bytes N         Total-byte cap 1..134217728 (source only; default: 26214400)
+  --require-code-analysis     Require completed analysis for every collected code input (source only)
   --analysis-profile PROFILE   default|extended AST workload (source only; default: default)
   --fail-on LEVEL              critical|high|medium|low|info|none (default: high)
   --api-policy FILE            Explicit read-only API authorization policy JSON
@@ -126,9 +131,10 @@ Options:
 
 Active DAST (off by default; sends generated or template requests to the target):
   --active-consent             Required: you own or are authorized to test the target
-  --dast-policy FILE           Explicit GET/query numeric or single-quoted SQL differential policy JSON
-  --dast-max-requests N        Native DAST HTTP attempt budget, 1..64 (v1 default 8; authenticated v2 default 10)
+  --dast-policy FILE           Explicit GET/query or authenticated POST JSON SQL differential policy JSON
+  --dast-max-requests N        Native DAST HTTP attempt budget, 1..64 (GET default 8/10; authenticated JSON POST default 12)
   --openapi FILE               Local OpenAPI 3.0/3.1 JSON (same-document $ref only)
+  --schemathesis-auth-policy FILE  Explicit authenticated GET controls JSON (requires --openapi)
   --api-base URL               Target origin for --openapi (servers are never used)
   --operation PATH             Documented GET path to test (repeatable, 1..16)
   --api-max-requests N         Schemathesis request budget, 1..64 (default 32)
@@ -244,7 +250,11 @@ export function parseCliArgs(argv: readonly string[]): CliOptions | { help: true
       return undefined;
     };
     let value: string | undefined;
-    if ((value = valueFlag("--source")) !== undefined) options.source = value;
+    if (arg === "--require-code-analysis") {
+      if (seen.has(arg)) throw new CliUsageError(`${arg} may only be specified once`);
+      seen.add(arg); options.requireCodeAnalysis = true;
+    }
+    else if ((value = valueFlag("--source")) !== undefined) options.source = value;
     else if ((value = valueFlag("--source-max-files")) !== undefined) options.sourceMaxFiles = parseSourceLimit("--source-max-files", value, COLLECTION_MAX_FILES);
     else if ((value = valueFlag("--source-max-bytes")) !== undefined) options.sourceMaxBytes = parseSourceLimit("--source-max-bytes", value, COLLECTION_MAX_BYTES);
     else if ((value = valueFlag("--url")) !== undefined) options.url = value;
@@ -291,6 +301,7 @@ export function parseCliArgs(argv: readonly string[]): CliOptions | { help: true
       options.nativePreview = { executable: value };
     }
     else if ((value = valueFlag("--openapi")) !== undefined) options.openapi = value;
+    else if ((value = valueFlag("--schemathesis-auth-policy")) !== undefined) options.schemathesisAuthPolicy = value;
     else if ((value = valueFlag("--api-base")) !== undefined) options.apiBase = value;
     else if (arg === "--operation" || arg.startsWith("--operation=")) {
       let operation: string;
@@ -351,6 +362,7 @@ export function parseCliArgs(argv: readonly string[]): CliOptions | { help: true
     }
   }
   if (help) return { help: true };
+  if (options.schemathesisAuthPolicy && !options.openapi) throw new CliUsageError("--schemathesis-auth-policy requires --openapi");
   if (!options.source && !options.url && !options.apiPolicy && !options.openapi && !options.dastPolicy) throw new CliUsageError("provide --source, --url, --api-policy, --dast-policy, or --openapi");
   if (options.pages.length > 0 && !options.url) throw new CliUsageError("--page requires --url");
   if (options.maxPages !== undefined && !options.url) throw new CliUsageError("--max-pages requires --url");
@@ -376,6 +388,7 @@ export function parseCliArgs(argv: readonly string[]): CliOptions | { help: true
   if (options.osvOffline && !options.source) throw new CliUsageError("--osv-offline requires source mode");
   if ((options.sourceMaxFiles !== undefined || options.sourceMaxBytes !== undefined) && !options.source) throw new CliUsageError('--source-max-files and --source-max-bytes require source mode');
   if (options.analysisProfile !== undefined && !options.source) throw new CliUsageError('--analysis-profile requires source mode');
+  if (options.requireCodeAnalysis && !options.source) throw new CliUsageError('--require-code-analysis requires source mode');
   if (options.nativePreview && !options.source) throw new CliUsageError('--opengrep-core requires source mode');
   return options;
 }
@@ -562,13 +575,15 @@ async function runReplay(argv: readonly string[]): Promise<number> {
   }
 }
 
-async function declaredScope(options: CliOptions, apiPolicy: ApiPolicy | undefined, dastPolicySha256?: string, dastPolicy?: DastPolicy): Promise<ScanScope> {
-  return buildScanScope({
+async function declaredScope(options: CliOptions, apiPolicy: ApiPolicy | undefined, dastPolicySha256?: string, dastPolicy?: DastPolicy,
+  schemathesisAuthPolicy?: ScanScope['schemathesisAuthPolicy']): Promise<ScanScope> {
+  const scope = await buildScanScope({
     mode: modeFor(options),
     source: options.source,
     sourceMaxFiles: options.sourceMaxFiles,
     sourceMaxBytes: options.sourceMaxBytes,
     analysisProfile: options.analysisProfile,
+    requireCodeAnalysis: options.requireCodeAnalysis,
     url: options.url,
     projectId: options.projectId,
     tools: options.source ? options.tools : [],
@@ -586,9 +601,11 @@ async function declaredScope(options: CliOptions, apiPolicy: ApiPolicy | undefin
     ...(options.openapi || options.dastPolicy || options.engines.length > 0 ? { dast: {
       ...(options.dastPolicy ? { native: { policySha256: dastPolicySha256 ?? null, profileRevision: dastPolicy ? dastProfileRevision(dastPolicy) : null, maxRequests: options.dastMaxRequests ?? (dastPolicy ? dastDefaultMaxRequests(dastPolicy) : DAST_DEFAULT_MAX_REQUESTS), timeoutMs: Math.min(options.timeoutMs, API_MAX_TIMEOUT_MS) } } : {}),
       ...(options.openapi ? { schemathesis: { apiBase: options.apiBase, operations: [...options.operations], maxRequests: options.apiMaxRequests ?? 32, seed: options.seed ?? 1 } } : {}),
+      ...(options.schemathesisAuthPolicy ? { schemathesisAuthPolicy: schemathesisAuthPolicy ?? { profileRevision: SCHEMATHESIS_AUTH_REVISION, policySha256: null, schemaSha256: null } } : {}),
       ...(options.engines.includes("nuclei") ? { nuclei: { scopes: [...options.nucleiScopes].sort(), maxRequests: options.nucleiMaxRequests ?? null, rateLimit: options.nucleiRateLimit ?? null } } : {}),
     } } : {}),
   });
+  return { ...scope, ...(schemathesisAuthPolicy ? { schemathesisAuthPolicy } : {}) };
 }
 
 /** Executes a scan and writes public reports when scanning starts. */
@@ -648,12 +665,30 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
   // The policy baseUrl is only known after reading the file; refuse it here, before any request.
   const apiPolicyAllowed = apiPolicy !== undefined && (parsed.allowedOrigins.length === 0 || originAllowed(apiPolicy.baseUrl, parsed.allowedOrigins));
   if (apiPolicy && !apiPolicyAllowed) checks.push(runtimeErrorCheck('api.authorization', 'The API policy baseUrl origin is not in --allowed-origin; no API requests were made.'));
+  let schemathesisAuthPolicy: SchemathesisAuthPolicy | undefined;
+  let schemathesisAuthScope: ScanScope['schemathesisAuthPolicy'];
+  let schemathesisAuthDocument: unknown;
+  if (parsed.schemathesisAuthPolicy) {
+    try {
+      const input = parseSchemathesisAuthPolicy(await readJsonInput(parsed.schemathesisAuthPolicy, 64 * 1024));
+      if (new URL(input.policy.baseUrl).origin !== new URL(parsed.apiBase!).origin
+        || (parsed.allowedOrigins.length > 0 && !originAllowed(input.policy.baseUrl, parsed.allowedOrigins))) throw new Error('auth origin mismatch');
+      schemathesisAuthDocument = await readJsonInput(parsed.openapi!, 1024 * 1024);
+      const selection = selectOpenApiLiveOperations(schemathesisAuthDocument, parsed.operations.map(path => ({ method: 'GET', path })));
+      schemathesisAuthScope = { profileRevision: SCHEMATHESIS_AUTH_REVISION, policySha256: input.policySha256,
+        schemaSha256: createHash('sha256').update(JSON.stringify(selection.document)).digest('hex') };
+      schemathesisAuthPolicy = input.policy;
+    } catch {
+      checks.push({ ...runtimeErrorCheck('api.schemathesis', 'Schemathesis authentication policy or OpenAPI input is invalid; authenticated testing did not start.'), schemathesisAuthRequired: true });
+    }
+  }
   if (parsed.source) {
     const sourceOptions: SourceOptions = {
       root: parsed.source,
       maxFiles: parsed.sourceMaxFiles,
       maxBytes: parsed.sourceMaxBytes,
       analysisProfile: parsed.analysisProfile,
+      requireCodeAnalysis: parsed.requireCodeAnalysis,
       tools: parsed.tools,
       toolPaths: parsed.toolPaths,
       timeoutMs: parsed.timeoutMs,
@@ -701,17 +736,19 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
       checks.push(runtimeErrorCheck('url.nuclei', 'Nuclei scanning could not be completed.'));
     }
   }
-  if (parsed.openapi && !controller.signal.aborted) {
+  if (parsed.openapi && (!parsed.schemathesisAuthPolicy || schemathesisAuthPolicy) && !controller.signal.aborted) {
     try {
-      const document = await readJsonInput(parsed.openapi, 1024 * 1024);
+      const document = parsed.schemathesisAuthPolicy ? schemathesisAuthDocument : await readJsonInput(parsed.openapi, 1024 * 1024);
       checks.push(...await runSchemathesisLive({
         document, baseUrl: parsed.apiBase!, operations: parsed.operations.map((path) => ({ method: "GET" as const, path })),
         consent: parsed.activeConsent, allowPrivate: parsed.allowPrivate,
         python: parsed.schemathesisPython ?? process.env.WAKEIO_SCHEMATHESIS_PYTHON ?? "python3",
         timeoutMs: Math.min(parsed.timeoutMs, API_MAX_TIMEOUT_MS), maxRequests: parsed.apiMaxRequests, seed: parsed.seed, signal: controller.signal,
+        ...(schemathesisAuthPolicy ? { authPolicy: schemathesisAuthPolicy, env: process.env } : {}),
       }));
     } catch {
-      checks.push(runtimeErrorCheck('api.schemathesis', 'OpenAPI input must be a bounded local JSON file; Schemathesis live testing did not start.'));
+      checks.push({ ...runtimeErrorCheck('api.schemathesis', 'OpenAPI input must be a bounded local JSON file; Schemathesis live testing did not start.'),
+        ...(parsed.schemathesisAuthPolicy ? { schemathesisAuthRequired: true as const } : {}) });
     }
   }
   if (dastPolicy && dastPolicyAllowed && !controller.signal.aborted) {
@@ -722,7 +759,7 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
       checks.push(runtimeErrorCheck(DAST_CHECK_ID, 'Native DAST could not be completed.'));
     }
   }
-  const scope = await declaredScope(parsed, apiPolicy, dastPolicySha256, dastPolicy);
+  const scope = await declaredScope(parsed, apiPolicy, dastPolicySha256, dastPolicy, schemathesisAuthScope);
   const markCancelled = (): void => {
     if (controller.signal.aborted && !checks.some((check) => check.id === 'scan.cancelled')) checks.push({ id: 'scan.cancelled', status: 'partial', findings: [], notes: ['The command was cancelled; completed stages do not establish command completion.'] });
   };

@@ -62,6 +62,17 @@ try {
   receipt.live = validateTestEvents(events,
     ['schemathesis live: risk/normal pair through the egress gate', 'schemathesis live: a target that fails mid-run is partial, never clean'],
     join(root, 'build/tests/schemathesis-live.test.js'));
+  receipt.schemathesisAuth = validateTestEvents(events, [
+    'auth independent: documented401 legacy clean never reaches protected handler; real generated id2 V/F discriminates1/0',
+    'auth independent: initial denial/ignored credential/expiry/normal failure prohibit generation; trailing drift retains observed failure2',
+    'auth independent: strict policy/credential boundaries refuse traffic; snapshots remain stable and SetCookie cannot alter auth',
+    'auth independent: exact shared budget, no dropped-reply retry, streaming abort/descendants and verified owned TLS',
+    'auth independent: malformed/missing control metadata never upgrades report to clean and secret extras never escape',
+    'auth independent: public CLI and real DAST Action retain0/1/2 gates, four reports, typed advice and digest-bound outputs',
+  ], join(root, 'build/tests/schemathesis-auth-acceptance.test.js'));
+  receipt.schemathesisAuthMultiOperation = validateTestEvents(events,
+    ['schemathesis auth: real two-operation generated risk/normal pair preserves controls and denominator'],
+    join(root, 'build/tests/schemathesis-auth.test.js'));
   receipt.nuclei = validateTestEvents(events,
     ['real nuclei: risk/normal pair, wire coverage and egress refusal counts',
       'real nuclei: request budget and a failing target are partial even though nuclei exits 0'],

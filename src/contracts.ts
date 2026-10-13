@@ -1,5 +1,6 @@
 import type { DastExecution } from './dast-execution.js';
-export type { DastExecution } from './dast-execution.js';
+import type { SchemathesisAuthEvidence } from './schemathesis-auth.js';
+export type { DastExecution, DastExecutionV4, DastJsonExecutionStep, DastJsonStepReason } from './dast-execution.js';
 export type Severity = 'info' | 'low' | 'medium' | 'high' | 'critical';
 export type Mode = 'source' | 'url' | 'both' | 'api' | 'combined';
 export type ToolName = 'gitleaks' | 'osv' | 'trivy' | 'bandit';
@@ -7,7 +8,7 @@ export type ToolName = 'gitleaks' | 'osv' | 'trivy' | 'bandit';
 export interface StaticFlow {
   kind: 'static_flow';
   /** Selected trace origin; absence remains legacy/unknown. Never HTTP proof. */
-  sourceKind?: 'filesystem_filename';
+  sourceKind?: 'filesystem_filename' | 'archive_entry_path';
   steps: Array<{ role: 'source' | 'call' | 'parameter' | 'return' | 'intermediate' | 'sink'; location: { path: string; line: number; column: number } }>;
   truncated: boolean;
 }
@@ -17,7 +18,7 @@ export interface StaticCandidateContext {
   authority: 'conditional';
   items: Array<{
     kind: 'unresolved_cjs_dispatch' | 'constructor_continuation' | 'declared_callback_entry' | 'unqualified_mongo_origin'
-      | 'declared_filesystem_stream_origin' | 'declared_stream_callback_schedule' | 'conditional_array_accumulator' | 'declared_process_wrapper';
+      | 'declared_filesystem_stream_origin' | 'declared_stream_callback_schedule' | 'conditional_array_accumulator' | 'declared_process_wrapper' | 'declared_package_api';
     location: { path: string; line: number; column: number };
     target?: { path: string; line: number; column: number };
   }>;
@@ -180,6 +181,10 @@ export interface CollectionEvidence {
   issues: Array<{ code: CollectionIssueCode; count: number }>;
 }
 export interface CheckResult {
+  /** Explicit requested authenticated scope survives missing diagnostic evidence. */
+  schemathesisAuthRequired?: true;
+  schemathesisAuth?: SchemathesisAuthEvidence;
+  codeCoverage?: CodeCoverage;
   analysisBudget?: AstAnalysisBudget;
   collectionBudget?: CollectionBudget;
   collectionEvidence?: CollectionEvidence;
@@ -197,6 +202,23 @@ export interface CheckResult {
   apiExecution?: ApiExecutionLedger;
   /** Bounded native differential metadata; not independent exploit verification. */
   dastExecution?: DastExecution;
+}
+
+export type CodeLanguage = 'javascript' | 'typescript' | 'python' | 'c' | 'cpp' | 'csharp' | 'go' | 'java' | 'kotlin' | 'php' | 'ruby' | 'rust' | 'shell' | 'swift' | 'vue';
+export type CodeProvider = 'builtin_ast' | 'bandit' | 'opengrep_native';
+export interface CodeCounts { collected: number | null; eligible: number | null; completed: number | null; uncovered: number | null }
+export interface CodeCoverage {
+  version: 1;
+  basis: 'collected_code_inputs';
+  requireCodeAnalysis: boolean;
+  collectionComplete: boolean;
+  accounting: 'exact' | 'unknown';
+  languages: Array<CodeCounts & { language: CodeLanguage; providers: Array<{
+    provider: CodeProvider; selected: boolean | null;
+    status: CheckResult['status'] | 'not_selected' | 'unknown';
+    eligible: number | null; completed: number | null;
+  }> }>;
+  totals: CodeCounts;
 }
 
 export interface SourceSnapshotEvidence {
@@ -265,6 +287,7 @@ export interface ApiWriteExecutionLedger {
     attempted: boolean; outcome: 'evaluated' | 'inconclusive' | 'not_attempted'; httpStatus: number | null }>;
 }
 export interface SourceOptions {
+  requireCodeAnalysis?: boolean;
   analysisProfile?: AnalysisProfile;
   root: string;
   tools: ToolName[];
@@ -307,6 +330,8 @@ export interface ScanProvenance {
 }
 
 export interface ScanScope {
+  schemathesisAuthPolicy?: { profileRevision: 'schemathesis-get-auth-v1'; policySha256: string; schemaSha256: string };
+  codeAnalysisPolicy?: { revision: 'code-coverage-v1'; requireCodeAnalysis: true };
   analysisBudget?: AstAnalysisBudget;
   collectionBudget?: CollectionBudget;
   fingerprint: string;
@@ -386,6 +411,7 @@ export interface ReportSummary {
   }>;
   omittedIncompleteChecks: number;
   scope: {
+    codeCoverage?: CodeCoverage;
     collectionBudget?: CollectionBudget;
     collectionEvidence?: CollectionEvidence;
     collectionBudgetConsistency?: 'consistent' | 'inconsistent' | 'unknown';
@@ -448,6 +474,9 @@ export interface AgentReport {
     basis: 'declared_check_statuses';
   };
   checks: Array<{
+    schemathesisAuthRequired?: true;
+    schemathesisAuth?: SchemathesisAuthEvidence;
+    codeCoverage?: CodeCoverage;
     checkIndex: number;
     checkId: string;
     status: CheckResult['status'];

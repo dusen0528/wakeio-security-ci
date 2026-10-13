@@ -1,4 +1,6 @@
+import { CODE_COVERAGE_ID, parseCodeCoverage, unknownCodeCoverage, coverageIncomplete, codeCoverageConsistent } from './source/code-coverage.js';
 import { sanitizeDastExecution, isDastObservedEvidence, hasDastIdentityControls, isLegacyDastExecution } from './dast-execution.js';
+import { SCHEMATHESIS_AUTH_REVISION, sanitiseSchemathesisAuth } from './schemathesis-auth.js';
 import { types as utilTypes } from "node:util";
 import { sanitiseApiExecutionLedger, invalidApiExecutionLedger } from "./api-execution.js";
 import { redactSecrets, safeRelativePath, safeHttpUrl } from './report-path.js';
@@ -20,6 +22,7 @@ import type {
   ApiExecutionLedger,
   ApiRequestPlanStep,
   CheckResult,
+  CodeCoverage,
   CollectionBudget,
   CollectionEvidence,
   FailOn,
@@ -42,7 +45,7 @@ export const REPORT_SCHEMA_VERSION = '1.0.0' as const;
 
 /** The version advertised to SARIF consumers when the package is built. */
 export const REPORT_TOOL_VERSION = '0.5.0';
-export const RULESET_VERSION = '2026-10-13.3';
+export const RULESET_VERSION = '2026-10-13.4';
 
 const SEVERITIES: readonly Severity[] = [
   'info',
@@ -97,7 +100,7 @@ export function createReport(
   const start = timestamp(startedAt);
   const finished = new Date().toISOString();
 
-  return {
+  const report: ScanReport = {
     schemaVersion: REPORT_SCHEMA_VERSION,
     toolVersion: REPORT_TOOL_VERSION,
     mode: validMode(mode),
@@ -106,6 +109,9 @@ export function createReport(
     checks: sanitiseChecks(checks),
     ...safeScope(scope),
   };
+  // Preserve explicit auth intent before scope sanitation can discard it.
+  // Legacy constructors keep their previous behavior when this field is absent.
+  return ownDataField(scope, 'schemathesisAuthPolicy').present ? sanitiseReport({ ...report, scope }) : report;
 }
 
 /**
@@ -171,6 +177,11 @@ export function evaluateGate(report: ScanReport, failOn: FailOn = 'high'): ScanG
   return evaluateSanitisedGate(sanitiseReport(report), failOn);
 }
 
+function applicableChecks(checks: readonly CheckResult[]): readonly CheckResult[] {
+  // Keep legacy reports readable; new informational coverage must never add applicability.
+  return checks.some(check => check.id === CODE_COVERAGE_ID) ? checks.filter(check => check.id !== CODE_COVERAGE_ID && check.id !== 'source.inventory') : checks;
+}
+
 function evaluateSanitisedGate(report: ScanReport, failOn: FailOn): ScanGate {
   const checks = report.checks;
   const threshold = SEVERITIES.includes(failOn as Severity) ? SEVERITY_RANK[failOn as Severity] : undefined;
@@ -179,7 +190,7 @@ function evaluateSanitisedGate(report: ScanReport, failOn: FailOn): ScanGate {
   const blockingFindingIds: string[] = [];
   if (!validThreshold) reasons.push({ code: 'invalid_fail_on' });
   if (checks.length === 0) reasons.push({ code: 'no_checks' });
-  else if (checks.every((check) => check.status === 'not_applicable')) {
+  else if (applicableChecks(checks).every((check) => check.status === 'not_applicable')) {
     reasons.push({ code: 'no_applicable_checks' });
   }
   for (const check of checks) {
@@ -263,7 +274,7 @@ function projectAgentReport(report: ScanReport, failOn: FailOn): AgentReport {
       error: count('error'),
       skipped: count('skipped'),
       notApplicable: count('not_applicable'),
-      complete: report.checks.some((check) => check.status === 'completed')
+      complete: applicableChecks(report.checks).some((check) => check.status === 'completed')
         && report.checks.every((check) => check.status === 'completed' || check.status === 'not_applicable'),
       basis: 'declared_check_statuses',
     },
@@ -278,11 +289,14 @@ function projectAgentReport(report: ScanReport, failOn: FailOn): AgentReport {
       ...(check.collectionBudget ? { collectionBudget: check.collectionBudget } : {}),
       ...(check.collectionEvidence ? { collectionEvidence: check.collectionEvidence } : {}),
       ...(check.sourceSnapshot ? { sourceSnapshot: check.sourceSnapshot } : {}),
+      ...(check.codeCoverage ? { codeCoverage: check.codeCoverage } : {}),
       ...(check.analysisGaps ? { analysisGaps: check.analysisGaps } : {}),
       ...(check.apiStateEvidence ? { apiStateEvidence: check.apiStateEvidence } : {}),
       ...(check.apiWriteStateEvidence ? { apiWriteStateEvidence: check.apiWriteStateEvidence } : {}),
       ...(check.apiExecution ? { apiExecution: check.apiExecution } : {}),
       ...(check.dastExecution ? { dastExecution: check.dastExecution } : {}),
+      ...(check.schemathesisAuthRequired ? { schemathesisAuthRequired: true as const } : {}),
+      ...(check.schemathesisAuth ? { schemathesisAuth: check.schemathesisAuth } : {}),
     })),
     findings: report.checks.flatMap((check, checkIndex) => check.findings.map((finding) => ({
       findingId: finding.id!,
@@ -398,11 +412,16 @@ export function toSarif(report: ScanReport): SarifLog {
   );
   const noWork =
     safeReport.checks.length === 0 ||
-    safeReport.checks.every((check) => check.status === 'not_applicable');
+    applicableChecks(safeReport.checks).every((check) => check.status === 'not_applicable');
 
   const invocationProperties: Record<string, unknown> = {
     mode: safeReport.mode,
     category: `wakeio-security-ci/${safeReport.mode}`,
+    ...(safeReport.checks.some(check => check.schemathesisAuthRequired) ? {
+      schemathesisAuths: safeReport.checks.flatMap((check, checkIndex) => check.schemathesisAuthRequired
+        ? [{ checkIndex, checkId: check.id, schemathesisAuthRequired: true, ...(check.schemathesisAuth ? { schemathesisAuth: check.schemathesisAuth } : {}) }] : []),
+    } : {}),
+    ...(safeReport.checks.some(check => check.codeCoverage) ? { codeCoverages: safeReport.checks.filter(check => check.codeCoverage).map(check => ({ checkId: check.id, codeCoverage: check.codeCoverage })) } : {}),
     statuses: Object.fromEntries(
       safeReport.checks.map((check) => [safeId(check.id, 'check'), check.status]),
     ),
@@ -508,6 +527,15 @@ export function toMarkdown(report: ScanReport, failOn: FailOn = 'high'): string 
   } else {
     for (const check of safeReport.checks) {
       lines.push(`- **${markdownInline(check.id)}**: ${markdownInline(check.status)}`);
+      if (check.codeCoverage) lines.push(...markdownCodeCoverage(check.codeCoverage));
+      if (check.schemathesisAuthRequired) {
+        const e = check.schemathesisAuth;
+        lines.push(`  - Schemathesis authentication ${SCHEMATHESIS_AUTH_REVISION}: required; ${e ? `${e.status} (${e.stopReason}); ${e.requests.attempted} HTTP attempts, ${e.requests.completedGenerated}/${e.requests.generated} generated responses completed` : 'diagnostic evidence missing or invalid'}. Declared observations, not independent authentication or exploit attestation.`);
+        if (e) {
+          for (const c of e.controls) lines.push(`    - Control ${c.ordinal}: ${c.phase}, operation index ${c.operationIndex ?? 'none'}: ${c.outcome}; HTTP ${c.httpStatus ?? 'not observed'}.`);
+          e.operations.forEach((op, index) => lines.push(`    - Operation index ${index}: generated=${op.generatedRequests}, denied=${op.deniedRequests}.`));
+        }
+      }
       if (check.analysisBudget) lines.push(`  - AST analysis budget: ${budgetText(check.analysisBudget)}`);
       if (check.collectionBudget) lines.push(`  - Collection budget: ${collectionBudgetText(check.collectionBudget)}`);
       if (check.collectionEvidence) lines.push(...markdownCollectionEvidence(check.collectionEvidence));
@@ -530,6 +558,10 @@ export function toMarkdown(report: ScanReport, failOn: FailOn = 'high'): string 
           lines.push(`  - Authenticated identity controls: before=${e.identityControls.before}; after=${e.identityControls.after}. These bounded controls do not establish uninterrupted session continuity.`);
           lines.push(`  - SQL probe outcome: ${e.probeOutcome}. An observed probe with incomplete identity controls remains a low-confidence candidate; it grants no replay authority.`);
         }
+      }
+      if (check.dastExecution?.version === 4) {
+        const e = check.dastExecution;
+        lines.push(`  - JSON POST profile revision: ${e.profileRevision}; method: ${e.method}; normal field-effect controls: round1=${e.normalControls.round1}, round2=${e.normalControls.round2}. Single POST attempt per phase, no redirects or retries. These controls are scanner evidence, not independent SQL execution proof.`);
       }
       if (check.apiStateEvidence) {
         const e = check.apiStateEvidence;
@@ -641,6 +673,7 @@ function markdownSummary(summary: ReportSummary): string[] {
     }
   }
   if (summary.omittedIncompleteChecks) lines.push(`- ${summary.omittedIncompleteChecks} incomplete checks omitted from this summary; see Checks.`);
+  if (summary.scope.codeCoverage) lines.push(...markdownCodeCoverage(summary.scope.codeCoverage));
   if (summary.scope.analysisProfile) lines.push(`- AST workload selection: ${summary.scope.analysisProfile} (${summary.scope.analysisBudgetRevision}).`);
   if (summary.scope.collectionBudget) lines.push(`- Collection workload selection: ${collectionBudgetText(summary.scope.collectionBudget)}`);
   if (summary.scope.collectionBudgetConsistency) lines.push(`- Collection budget identity against declared scope: ${summary.scope.collectionBudgetConsistency}. This identity does not change the scan execution gate.`);
@@ -660,6 +693,12 @@ function markdownGapReasons(summary: AnalysisGapReasonSummary | undefined): stri
   return ['', 'Recorded reason observations (weighted events, not unique sites or coverage). Dropped observations lack retained location items.', '',
     '| Reason | Observed | Dropped |', '| --- | ---: | ---: |',
     ...summary.rows.map(row => `| ${markdownInline(row.reason)} | ${row.eventsObserved} | ${row.eventsDropped} |`), ''];
+}
+
+function markdownCodeCoverage(c: CodeCoverage): string[] {
+  return [`  - Code coverage: ${c.basis}; accounting=${c.accounting}; required=${c.requireCodeAnalysis}; collection complete=${c.collectionComplete}.`,
+    `  - Collected=${c.totals.collected ?? 'unknown'}, eligible=${c.totals.eligible ?? 'unknown'}, completed=${c.totals.completed ?? 'unknown'}, uncovered=${c.totals.uncovered ?? 'unknown'}. Eligible is selected input support, not execution; completed is bounded adapter completion, not vulnerability completeness.`,
+    ...c.languages.map(row => `  - ${row.language}: collected=${row.collected}, eligible=${row.eligible}, completed=${row.completed}, uncovered=${row.uncovered}; ${row.providers.map(p => `${p.provider} selected=${p.selected}, status=${p.status}, eligible=${p.eligible}, completed=${p.completed}`).join('; ')}.`)];
 }
 
 function collectionBudgetText(budget: CollectionBudget): string {
@@ -723,13 +762,49 @@ interface SarifLocation {
 }
 
 export function sanitiseReport(report: ScanReport): ScanReport {
+  const checks = sanitiseChecks(report?.checks);
+  const authPolicyField = ownDataField(report?.scope, 'schemathesisAuthPolicy');
+  const authPolicy = authPolicyField.valid ? safeSchemathesisAuthPolicy(authPolicyField.value) : undefined;
+  const authChecks = checks.filter(check => check.id === 'api.schemathesis');
+  if (authPolicyField.present && (!authPolicy || authChecks.length !== 1
+    || !authChecks[0].schemathesisAuthRequired || !authChecks[0].schemathesisAuth
+    || authChecks[0].schemathesisAuth.policySha256 !== authPolicy.policySha256
+    || authChecks[0].schemathesisAuth.schemaSha256 !== authPolicy.schemaSha256)) {
+    if (!authChecks.length) checks.push({ id: 'api.schemathesis', status: 'partial', findings: [],
+      notes: ['Required Schemathesis authentication evidence is missing or inconsistent.'], schemathesisAuthRequired: true });
+    for (const check of authChecks) {
+      check.schemathesisAuthRequired = true;
+      if (check.status !== 'error') check.status = 'partial';
+      const entries = schemathesisAuthMetrics(check.metrics);
+      if (entries.length) check.metrics = Object.fromEntries(entries);
+      else delete check.metrics;
+    }
+  }
+  if (authChecks.length > 1 && authChecks.some(check => check.schemathesisAuthRequired)) {
+    for (const check of authChecks) if (check.status !== 'error') check.status = 'partial';
+  }
+  const policy = ownDataField(report?.scope, 'codeAnalysisPolicy');
+  const strict = policy.valid && validCodeAnalysisPolicy(policy.value);
+  if (policy.present && (!strict || !checks.some(check => check.id === CODE_COVERAGE_ID))) {
+    const existing = checks.find(check => check.id === CODE_COVERAGE_ID);
+    if (existing) { existing.codeCoverage = unknownCodeCoverage(strict); existing.status = 'partial'; }
+    else checks.push({ id: CODE_COVERAGE_ID, status: 'partial', findings: [], notes: ['Required code-analysis coverage evidence is missing or invalid.'], codeCoverage: unknownCodeCoverage(strict) });
+  }
+  for (const check of checks.filter(c => c.id === CODE_COVERAGE_ID)) {
+    if (!check.codeCoverage || checks.filter(c => c.id === CODE_COVERAGE_ID).length !== 1
+      || strict && !check.codeCoverage.requireCodeAnalysis || policy.present && check.codeCoverage.requireCodeAnalysis && !strict
+      || !codeCoverageConsistent(check.codeCoverage, checks)) {
+      check.codeCoverage = unknownCodeCoverage(strict || check.codeCoverage?.requireCodeAnalysis === true);
+      if (check.status !== 'error') check.status = 'partial';
+    }
+  }
   return {
     schemaVersion: REPORT_SCHEMA_VERSION,
     toolVersion: safeId(report?.toolVersion, REPORT_TOOL_VERSION),
     mode: validMode(report?.mode),
     startedAt: timestamp(report?.startedAt),
     finishedAt: timestamp(report?.finishedAt),
-    checks: sanitiseChecks(report?.checks),
+    checks,
     ...safeScope(report?.scope),
   };
 }
@@ -749,6 +824,28 @@ function sanitiseChecks(input: CheckResult[] | undefined): CheckResult[] {
 
 function sanitiseCheck(input: CheckResult): CheckResult {
   let status = STATUSES.includes(input?.status) ? input.status : 'error';
+  const authRequiredField = ownDataField(input, 'schemathesisAuthRequired');
+  const authField = ownDataField(input, 'schemathesisAuth');
+  const authRequested = authRequiredField.present || authField.present;
+  const schemathesisAuth = authField.valid ? sanitiseSchemathesisAuth(authField.value) : undefined;
+  const authCount = ownDataField(ownDataField(input, 'metrics').value, 'requestCount');
+  if (authRequested && (input?.id !== 'api.schemathesis' || !authRequiredField.valid || authRequiredField.value !== true
+    || !schemathesisAuth || !authCount.valid || authCount.value !== schemathesisAuth.requests.attempted
+    || schemathesisAuth.status !== 'completed' || status === 'not_applicable') && status !== 'error') status = 'partial';
+  if (schemathesisAuth) {
+    const expected = { generatedRequests: schemathesisAuth.requests.generated, responseBytes: schemathesisAuth.requests.responseBytes,
+      operationsSelected: schemathesisAuth.operations.length, schemaSha256: schemathesisAuth.schemaSha256,
+      workerSha256: schemathesisAuth.workerSha256, engineVersion: schemathesisAuth.engineVersion, engine: 'schemathesis', stopReason: schemathesisAuth.stopReason };
+    for (const [key, value] of Object.entries(expected)) {
+      const field = ownDataField(ownDataField(input, 'metrics').value, key);
+      if (field.present && (!field.valid || field.value !== value) && status !== 'error') status = 'partial';
+    }
+  }
+  const codeField = ownDataField(input, 'codeCoverage');
+  const needsCodeCoverage = codeField.present || input?.id === CODE_COVERAGE_ID;
+  const parsedCode = codeField.valid ? parseCodeCoverage(codeField.value) : undefined;
+  const codeCoverage = needsCodeCoverage ? parsedCode ?? unknownCodeCoverage() : undefined;
+  if (needsCodeCoverage && (input?.id !== CODE_COVERAGE_ID || !parsedCode || coverageIncomplete(codeCoverage!) || status === 'not_applicable' || input.findings?.length > 0) && status !== 'error') status = 'partial';
   const executionDescriptor = input && typeof input === 'object' && !utilTypes.isProxy(input)
     ? Object.getOwnPropertyDescriptor(input, 'apiExecution') : undefined;
   let apiExecution = executionDescriptor ? sanitiseApiExecutionLedger('value' in executionDescriptor ? executionDescriptor.value : undefined) : undefined;
@@ -791,6 +888,19 @@ function sanitiseCheck(input: CheckResult): CheckResult {
         ...(dastExecution && !isLegacyDastExecution(dastExecution) ? { confidence: dastExecution.status === 'complete' && status === 'completed'
           && finding.confidence !== 'low' ? 'medium' as const : 'low' as const } : {}) } : finding)
     : [];
+  if (schemathesisAuth?.status === 'completed') {
+    if (findings.some(finding => !['api.schemathesis.server_error', 'api.schemathesis.response_schema'].includes(finding.ruleId)) && status !== 'error') status = 'partial';
+    for (const [ruleId, severity, failureRule] of [
+      ['api.schemathesis.server_error', 'medium', 'not_a_server_error'],
+      ['api.schemathesis.response_schema', 'low', 'response_schema_conformance'],
+    ] as const) {
+      const observed = schemathesisAuth.records.some(record => record.failures.some(failure => failure.rule === failureRule));
+      const reported = findings.filter(finding => finding.ruleId === ruleId);
+      if (observed !== (reported.length > 0) || reported.some(finding => finding.kind !== 'observation' || finding.severity !== severity)) {
+        if (status !== 'error') status = 'partial';
+      }
+    }
+  }
   if (input?.id === 'api.owned-write-state-oracle' && apiWriteStateEvidence?.execution === 'completed') {
     const effects = findings.filter(finding => finding.ruleId === 'api.owned-write-state-effect_persists');
     const matchingEffect = effects.length === 1 && effects[0].severity === 'high' && effects[0].kind === 'observation' && effects[0].confidence === 'high';
@@ -804,7 +914,7 @@ function sanitiseCheck(input: CheckResult): CheckResult {
   if (Array.isArray(input?.findings) && input.findings.some(finding => {
     const flow = ownDataField(finding, 'staticFlow');
     const origin = ownDataField(flow.value, 'sourceKind');
-    return origin.present && (!origin.valid || origin.value !== 'filesystem_filename'
+    return origin.present && (!origin.valid || !['filesystem_filename', 'archive_entry_path'].includes(origin.value as string)
       || !flow.valid || !sanitiseStaticFlow(flow.value as Finding['staticFlow']));
   }) && status !== 'error') status = 'partial';
   const notes = Array.isArray(input?.notes)
@@ -815,7 +925,8 @@ function sanitiseCheck(input: CheckResult): CheckResult {
   const analysisGaps = sanitiseAnalysisGaps(input?.analysisGaps,
     (path) => redactSecrets(path) === path ? safeRelativePath(path) : undefined);
   if (input?.metrics && typeof input.metrics === 'object') {
-    for (const [key, value] of Object.entries(input.metrics)) {
+    const entries = authRequested ? schemathesisAuthMetrics(ownDataField(input, 'metrics').value) : Object.entries(input.metrics);
+    for (const [key, value] of entries) {
       if (
         typeof value === 'number' ||
         typeof value === 'boolean' ||
@@ -831,23 +942,68 @@ function sanitiseCheck(input: CheckResult): CheckResult {
     id: safeId(input?.id, 'check'),
     status,
     findings: findings.map((finding) => ({ ...finding, id: findingIdentity(safeId(input?.id, 'check'), finding,
-      dastExecution?.profile === 'single-quoted' ? dastExecution.profileRevision : undefined) })),
+      dastExecution && (dastExecution.profile === 'single-quoted' || dastExecution.version === 4) ? dastExecution.profileRevision : undefined) })),
     notes,
     ...(Object.keys(metrics).length > 0 ? { metrics } : {}),
     ...(analysisBudget ? { analysisBudget } : {}),
     ...(collectionBudget ? { collectionBudget } : {}),
     ...(collectionEvidence ? { collectionEvidence } : {}),
     ...(sourceSnapshot ? { sourceSnapshot } : {}),
+    ...(codeCoverage ? { codeCoverage } : {}),
     ...(analysisGaps ? { analysisGaps } : {}),
     ...(apiStateEvidence ? { apiStateEvidence } : {}),
     ...(apiWriteStateEvidence ? { apiWriteStateEvidence } : {}),
     ...(apiExecution ? { apiExecution } : {}),
     ...(dastExecution ? { dastExecution } : {}),
+    ...(authRequested ? { schemathesisAuthRequired: true as const } : {}),
+    ...(schemathesisAuth ? { schemathesisAuth } : {}),
   };
+}
+
+/** Auth diagnostics have a closed metric surface; arbitrary environment/body strings are not retained. */
+function schemathesisAuthMetrics(input: unknown): Array<[string, number | string]> {
+  const result: Array<[string, number | string]> = [];
+  for (const key of ['requestCount', 'generatedRequests', 'responseBytes', 'operationsSelected']) {
+    const f = ownDataField(input, key);
+    if (f.valid && Number.isSafeInteger(f.value) && Number(f.value) >= 0) result.push([key, Number(f.value)]);
+  }
+  for (const key of ['schemaSha256', 'workerSha256']) {
+    const f = ownDataField(input, key);
+    if (f.valid && typeof f.value === 'string' && /^[a-f0-9]{64}$/.test(f.value)) result.push([key, f.value]);
+  }
+  for (const [key, allowed] of [
+    ['engine', ['schemathesis']], ['engineVersion', ['4.2.0', 'unknown']],
+    ['stopReason', ['complete', 'identity_mismatch', 'anonymous_control_failed', 'normal_control_mismatch', 'generated_auth_denied',
+      'request_limit', 'body_limit', 'timeout', 'cancelled', 'transport_error', 'egress_refused', 'worker_invalid', 'worker_failed', 'unknown']],
+  ] as const) {
+    const f = ownDataField(input, key);
+    if (f.valid && typeof f.value === 'string' && (allowed as readonly string[]).includes(f.value)) result.push([key, f.value]);
+  }
+  return result;
+}
+
+function safeSchemathesisAuthPolicy(input: unknown): NonNullable<ScanReport['scope']>['schemathesisAuthPolicy'] {
+  if (!input || typeof input !== 'object' || utilTypes.isProxy(input) || Array.isArray(input) || Object.keys(input).length !== 3) return undefined;
+  const revision = ownDataField(input, 'profileRevision'), policy = ownDataField(input, 'policySha256'), schema = ownDataField(input, 'schemaSha256');
+  if (!revision.valid || revision.value !== SCHEMATHESIS_AUTH_REVISION || !policy.valid || !schema.valid
+    || typeof policy.value !== 'string' || !/^[a-f0-9]{64}$/.test(policy.value)
+    || typeof schema.value !== 'string' || !/^[a-f0-9]{64}$/.test(schema.value)) return undefined;
+  return { profileRevision: SCHEMATHESIS_AUTH_REVISION, policySha256: policy.value, schemaSha256: schema.value };
+}
+
+function validCodeAnalysisPolicy(value: unknown): boolean {
+  if (!value || typeof value !== 'object' || utilTypes.isProxy(value)) return false;
+  const revision = ownDataField(value, 'revision'), required = ownDataField(value, 'requireCodeAnalysis');
+  return Object.keys(value).length === 2 && revision.valid && revision.value === 'code-coverage-v1' && required.valid && required.value === true;
 }
 
 function safeScope(scope: ScanReport['scope']): { scope?: ScanReport['scope'] } {
   if (!scope || !/^[a-f0-9]{64}$/.test(scope.fingerprint) || !/^[A-Za-z0-9._-]{1,80}$/.test(scope.ruleset)) return {};
+  const policy = ownDataField(scope, 'codeAnalysisPolicy');
+  const auth = ownDataField(scope, 'schemathesisAuthPolicy');
+  const authPolicy = auth.valid ? safeSchemathesisAuthPolicy(auth.value) : undefined;
+  if (auth.present && !authPolicy) return {};
+  if (policy.present && (!policy.valid || !validCodeAnalysisPolicy(policy.value))) return {};
   const projectId = scope.projectId && /^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$/.test(scope.projectId)
     ? scope.projectId
     : undefined;
@@ -860,6 +1016,8 @@ function safeScope(scope: ScanReport['scope']): { scope?: ScanReport['scope'] } 
   return {
     scope: {
       fingerprint: scope.fingerprint,
+      ...(authPolicy ? { schemathesisAuthPolicy: authPolicy } : {}),
+      ...(policy.present ? { codeAnalysisPolicy: { revision: 'code-coverage-v1' as const, requireCodeAnalysis: true as const } } : {}),
       ...(analysisBudget ? { analysisBudget } : {}),
       ...(collectionBudget ? { collectionBudget } : {}),
       ruleset: scope.ruleset,
@@ -931,8 +1089,8 @@ function findingIdentity(checkId: string, finding: Finding, profileRevision?: st
     finding.location.path ?? null, finding.location.url ?? null,
     finding.location.line ?? null, finding.location.column ?? null,
   ];
-  // Only a sanitized, count-bound single-quoted execution supplies this
-  // discriminator. Preserve the original numeric payload byte-for-byte.
+  // Only sanitized newer transport/profile evidence supplies this discriminator.
+  // Preserve the original GET numeric identity byte-for-byte.
   if (profileRevision !== undefined) identity.push('native-dast-profile', profileRevision);
   return createHash('sha256').update(JSON.stringify(identity)).digest('hex');
 }
@@ -1083,7 +1241,7 @@ function sanitiseFinding(input: Finding, proofLedger?: ApiExecutionLedger): Find
 function sanitiseStaticFlow(input: Finding['staticFlow'] | undefined): Finding['staticFlow'] | undefined {
   if (!input || input.kind !== 'static_flow' || !Array.isArray(input.steps) || typeof input.truncated !== 'boolean') return undefined;
   const origin = ownDataField(input, 'sourceKind');
-  if (origin.present && (!origin.valid || origin.value !== 'filesystem_filename')) return undefined;
+  if (origin.present && (!origin.valid || !['filesystem_filename', 'archive_entry_path'].includes(origin.value as string))) return undefined;
   const allowed = ['source', 'call', 'parameter', 'return', 'intermediate', 'sink'];
   const steps: NonNullable<Finding['staticFlow']>['steps'] = [];
   for (const item of input.steps.slice(0, 24)) {
@@ -1092,7 +1250,7 @@ function sanitiseStaticFlow(input: Finding['staticFlow'] | undefined): Finding['
     if (!location.path || !location.line || !location.column) continue;
     steps.push({ role: item.role, location: { path: location.path, line: location.line, column: location.column } });
   }
-  return steps.length ? { kind: 'static_flow', steps, ...(origin.present ? { sourceKind: 'filesystem_filename' as const } : {}),
+  return steps.length ? { kind: 'static_flow', steps, ...(origin.present ? { sourceKind: origin.value as 'filesystem_filename' | 'archive_entry_path' } : {}),
     truncated: input.truncated || input.steps.length > 24 || steps.length !== input.steps.length
       || !steps.some((item) => item.role === 'source') || steps.at(-1)?.role !== 'sink' } : undefined;
 }

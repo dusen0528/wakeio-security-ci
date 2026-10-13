@@ -1,8 +1,6 @@
-# Copy-ready public preview for a consumer repository.
-# `@main` is intentionally used while the Action is in preview; review the
-# resolved commit and replace it with that full SHA before production use.
-# `tools: none` selects Wakeio's built-in checks only, so this first run does
-# not install or download optional native scanners.
+# Reviewed source-preview scanner; review this commit and future updates yourself.
+# The new init --mode action generator is added after this scanner commit.
+# Target files are read as data. Reports stay outside the target checkout.
 name: wakeio-security-ci
 
 on:
@@ -14,24 +12,25 @@ permissions:
   contents: read
 
 jobs:
-  scan:
+  security:
     runs-on: ubuntu-latest
     steps:
-      - name: Check out application
+      - name: Check out source as data
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
-      - name: Run Wakeio Security CI built-in checks
-        uses: dusen0528/wakeio-security-ci@main
+          path: wakeio-source
+      - name: Run pinned Wakeio Action
+        id: wakeio
+        uses: dusen0528/wakeio-security-ci@575dbff63c6adc36e327487a2a9a2ead8337b4f0
         with:
-          source: .
+          source: wakeio-source
           tools: none
-          fail-on: high
-          out: wakeio-security-reports
-      - name: Upload Wakeio reports
+          out: "wakeio-security-reports/${{ github.run_id }}-${{ github.run_attempt }}"
+      - name: Upload reports
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: wakeio-security-ci-reports
-          path: wakeio-security-reports
+          name: wakeio-security-reports-${{ github.run_id }}-${{ github.run_attempt }}
+          path: "wakeio-security-reports/${{ github.run_id }}-${{ github.run_attempt }}"
           if-no-files-found: error

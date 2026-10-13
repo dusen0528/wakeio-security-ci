@@ -344,3 +344,25 @@ The separate `advise` command validates the digest-bound report pair and, with e
 The advisor projection also includes capped typed detection evidence: native phase/control summaries, API control and replay capability, and static-flow structural roles or analysis gaps. It excludes response/query/oracle values and source text. Model recommendations must select a locally permitted `recheckRoute` for their referenced finding or check; unsupported routes are rejected. `replay_native_finding_same_policy` is allowed only for a complete observed native candidate; `repeat_native_same_policy` applies to its check scope. A route is advice only and never starts a request, process or repair.
 
 For a complete native SQL candidate, `replay --report report.json --dast-policy FILE --finding ID --active-consent --out NEW_DIR` repeats the original bounded check. Supply `--allow-private` again when required; the old ledger never supplies permission. Fresh results and `replay.json` are separate from the original reports. `reproduced` and `not_reproduced` remain scanner observations, so exploit/fix `verification` stays `not_run`. See [native replay](native-dast.md#repeat-a-native-finding-with-its-original-policy).
+
+## Collected-code analysis coverage
+
+`source.code-coverage` always projects typed `codeCoverage` version 1 with basis
+`collected_code_inputs` into the four report formats and summary scope. It records
+the explicit require policy, collection completeness, exact/unknown accounting,
+fixed language/provider enums and collected/eligible/completed/uncovered counts.
+Unknown counts remain null. Eligible counts accepted selected input, not successful
+execution; partial code adapters conservatively count zero completed inputs.
+Secret/dependency/config coverage does not certify code analysis.
+
+Default informational coverage preserves existing scan gates. Explicit
+`--require-code-analysis` adds incomplete gate 2 for uncovered, zero, incomplete or
+unknown collected-code proof, including with `--fail-on none`. Policy drift or
+missing required metadata cannot establish a comparable fix. This scope describes
+collected code only; bounded analysis completion does not prove support for every
+source shape, vulnerability, runtime or whole project. Advice projection remains
+diagnostic under advice policy 8 and grants no execution authority. SDK check-only
+reports carry the strict flag in their coverage check; an external scope-less report
+that deletes the whole check cannot establish its original strict intent. CLI strict
+reports also bind `scope.codeAnalysisPolicy` revision `code-coverage-v1`. See
+[user contract](source-code-coverage.md).

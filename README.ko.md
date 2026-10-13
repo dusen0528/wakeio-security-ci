@@ -19,6 +19,12 @@ API preview는 redacted index 기반 실행 ledger로 판정한 단계, 불확�
 
 별도의 [소유 PATCH state pilot](docs/api-write-state.md)은 고정 자체 loopback fixture에서 실제 저장 변경과 정상 owner 대조를 확인합니다. SDK·CLI·전용 Action은 명시적 동의를 요구하고 원 phase gate를 보존하며 외부 API를 입력받지 않습니다.
 
+
+[수집한 코드의 분석 범위](docs/source-code-coverage.md)는 파일 수집과 언어 분석 완료를 구분합니다. `--require-code-analysis`로 미분석 코드에 CI gate를 적용할 수 있으며 새 분석기나 프로젝트 전체 coverage를 뜻하지 않습니다.
+
+
+명시적 [인증 POST JSON numeric SQL profile](docs/native-dast-post-json.md)은 고정 body field와 다른 정상값 대조를 consented 차등 검사 계약에 추가합니다. 별도 v4 정책이며 기존 GET 정책의 범위는 유지합니다.
+
 ## 무엇을 검사하나요?
 
 | 범위 | 확인할 수 있는 내용 | 기억해야 할 한계 |
@@ -26,7 +32,7 @@ API preview는 redacted index 기반 실행 ledger로 판정한 단계, 불확�
 | 소스 코드 | 요청 입력이 SQL·HTML·프로세스·외부 요청·리디렉션 sink로 흐르는 제한된 JS/TS AST 후보, 동적 코드 실행, 일부 자격증명 형태, 선택적인 Next/React·Supabase migration 후보 | 같은 함수와 제한된 로컬 흐름 중심. 일반적인 함수 간·파일 간·타입 기반·런타임·빌드·실제 DB 검증은 제공하지 않음 |
 | 공개 URL | 명시한 페이지와 같은 origin의 정적 JavaScript 모듈, 전송, 보안 헤더, CSP, 쿠키, CORS, 혼합 콘텐츠, source map/debug/version 단서, DOM·비밀값 형태 후보 | 명시된 제한적 GET만 실행. 브라우저 실행, 로그인, endpoint 탐색, API 퍼징, 결제 흐름, 전체 사이트 자동 순회는 하지 않음 |
 | 읽기 전용 API 정책 | 선언한 리소스 식별자와 별도의 보호 데이터 canary를 기준으로 identity, 소유자·다른 계정·비로그인 사용자의 접근 결과 | 정책에 정의한 GET 요청만 실행. 쓰기, 자동 로그인, endpoint 탐색, 일반 퍼징은 하지 않음 |
-| 능동 DAST 프리뷰(선택) | 명시한 OpenAPI operation에 Schemathesis가 생성한 GET 입력(5xx·응답 스키마 위반), `misconfiguration`/`exposures`의 서명된 Nuclei HTTP GET/HEAD 템플릿 | `--active-consent` 필수. 검증한 origin 하나에 loopback egress gate로만 접속. 쓰기·자격증명·리디렉션·OAST·raw/unsafe 템플릿·크롤링 없음 |
+| 능동 DAST 프리뷰(선택) | 명시한 OpenAPI operation에 Schemathesis가 생성한 GET 입력(5xx·응답 스키마 위반), `misconfiguration`/`exposures`의 서명된 Nuclei HTTP GET/HEAD 템플릿 | `--active-consent` 필수. 검증한 origin 하나에 loopback egress gate로만 접속. 쓰기·리디렉션·OAST·raw/unsafe 템플릿·크롤링 없음. 자격증명은 명시적 [Schemathesis 인증 대조 정책](docs/schemathesis-auth-controls.md)에서만 사용 |
 | 전후 보고서 | 논리적 프로젝트 식별자, 의미 기반 source anchor, 새 문제·변경 문제·같은 문제, `not_observed`·`unverified` 상태 | 나중에 발견되지 않았다는 사실만으로 수정 완료라고 판단하지 않음 |
 
 소스와 URL 범위는 한 보고서에 함께 담을 수 있습니다. API 정책은 선택 사항이며 환경변수 이름으로 자격증명을 참조합니다. 토큰과 canary 값은 보고서에 기록하지 않습니다. [API 정책 예제](examples/api-authorization-policy.json)와 [API 안내](docs/preview-0.4-api.md)를 참고하세요.
@@ -92,7 +98,7 @@ node build/src/cli.js scan \
 
 ## GitHub Actions
 
-아래 예제는 `main` 브랜치의 공개 Action을 사용합니다. 운영 workflow에서는 Wakeio를 검토한 commit SHA로 고정하세요. 아래 예제는 내장 검사만 명시적으로 선택하고, 발견 결과로 job이 실패해도 보고서를 artifact로 보관하며, 주변 Action은 현재 저장소의 고정 SHA를 재사용합니다.
+검토한 전체 commit SHA로 Action을 고정하고 보고서를 대상 checkout 밖에 둡니다. 아래 예제는 기존에 검토한 scanner `575dbff63c6adc36e327487a2a9a2ead8337b4f0`를 사용합니다. 내장 검사만 선택하고 scan 실패 뒤에도 보고서 업로드를 시도합니다.
 
 ```yaml
 name: wakeio-security-ci
@@ -106,32 +112,42 @@ permissions:
   contents: read
 
 jobs:
-  scan:
+  security:
     runs-on: ubuntu-latest
     steps:
-      - name: 애플리케이션 checkout
+      - name: Check out source as data
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
-
-      - name: Wakeio Security CI 실행
-        uses: dusen0528/wakeio-security-ci@main
+          path: wakeio-source
+      - name: Run pinned Wakeio Action
+        id: wakeio
+        uses: dusen0528/wakeio-security-ci@575dbff63c6adc36e327487a2a9a2ead8337b4f0
         with:
-          source: .
+          source: wakeio-source
           tools: none
-          out: wakeio-security-reports
-          fail-on: high
-
-      - name: 검사 보고서 업로드
+          out: "wakeio-security-reports/${{ github.run_id }}-${{ github.run_attempt }}"
+      - name: Upload reports
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: wakeio-security-ci-reports
-          path: wakeio-security-reports
+          name: wakeio-security-reports-${{ github.run_id }}-${{ github.run_attempt }}
+          path: "wakeio-security-reports/${{ github.run_id }}-${{ github.run_attempt }}"
           if-no-files-found: error
 ```
 
-복사해서 쓸 수 있는 파일은 [`examples/github-action.yml`](examples/github-action.yml)입니다. `@main`은 프리뷰를 바로 시험하기 좋은 이동형 참조입니다. 운영 workflow에서는 `dusen0528/wakeio-security-ci`를 검토한 commit SHA로 고정하고 변경을 직접 검토하세요. 주변 Action도 검토한 SHA를 유지하는 편이 좋습니다. 이 Action은 Node.js 22를 준비하고 대상 프로젝트의 script를 실행하지 않으며 Job Summary와 `report.md`, `report.json`, `report.sarif`, `agent-report.json`, `action-status.json`을 출력 디렉터리에 남깁니다.
+복사해서 쓸 파일은 [`examples/github-action.yml`](examples/github-action.yml)입니다. Action은 Node.js 22를 준비하고 대상 의존성 설치나 script 실행 없이 소스를 데이터로 읽습니다. Job Summary와 `report.md`, `report.json`, `report.sarif`, `agent-report.json`, `action-status.json`을 새 출력 디렉터리에 남깁니다. artifact 업로드 성공은 scan gate를 바꾸지 않습니다.
+
+새 소스 CLI에서 이 레이아웃을 명시적으로 생성할 수 있습니다.
+
+```sh
+node /path/to/wakeio-security-ci/build/src/cli.js init \
+  --source /path/to/your-app --mode action \
+  --action-ref 575dbff63c6adc36e327487a2a9a2ead8337b4f0 \
+  --tools none --out wakeio-security-reports
+```
+
+새 init 옵션은 위 scanner commit 이후에 추가됐으며 npm 공개판 0.4.0에는 없습니다. 기본 `init`은 기존 npm 모드를 유지합니다. [CI artifact에서 로컬 handoff까지의 안내](docs/init-action-onboarding.md)는 실행·attempt 지정 다운로드, 실제 checkout commit 복원, 호환 CLI 선택과 after 보고서 비교를 설명합니다. 지원 언어와 분석 한도는 그대로입니다.
 
 ## 선택형 외부 엔진
 
@@ -323,7 +339,7 @@ node build/src/cli.js scan --url http://127.0.0.1:3000/ --engine nuclei \
 
 GitHub Actions에서는 별도의 `dast` Action을 씁니다. 수동 검사 workflow가 능동 검사를 시작할 일이 없게 분리했습니다. `active-consent: 'true'`와 모든 대상 origin을 담은 `allowed-origins`가 필요합니다. 정책 평가를 위한 Node.js 설정 후 `pull_request_target`·fork PR·fork `workflow_run`은 엔진 다운로드·Python 설정·대상 요청 전에 거부합니다. Nuclei는 고정 아카이브로 설치하고, nuclei-templates는 기대한 `templates-checksum.txt` digest와 일치해야 합니다. [`examples/github-dast.yml`](examples/github-dast.yml)은 job 안에서 앱을 띄우고 push·PR·매일 스케줄로 검사한 뒤 SARIF를 올리고 보고서를 남깁니다.
 
-보고서에는 실행한 요청 수, 예산 때문에 거부한 요청 수, egress 거부 수, seed와 스키마 digest(Schemathesis), 템플릿 수·제외 수·`templates-checksum.txt` digest(Nuclei)를 남깁니다. 응답 본문, 생성 값, 추출 값, proxy 자격증명, 템플릿 원문은 남기지 않습니다. `wakeio-security-ci doctor --dast`는 아무것도 실행하지 않고 엔진 준비 상태만 보여 줍니다. 인증, 쓰기 요청, 상태 기반 workflow, 브라우저 기반 검사와 크롤링은 외부 Schemathesis/Nuclei 프리뷰 범위가 아닙니다. 앞서 안내한 네이티브 숫자형 SQL v2 인증 정책은 별도 기능입니다.
+보고서에는 실행한 요청 수, 예산 때문에 거부한 요청 수, egress 거부 수, seed와 스키마 digest(Schemathesis), 템플릿 수·제외 수·`templates-checksum.txt` digest(Nuclei)를 남깁니다. 응답 본문, 생성 값, 추출 값, proxy 자격증명, 템플릿 원문은 남기지 않습니다. `wakeio-security-ci doctor --dast`는 아무것도 실행하지 않고 엔진 준비 상태만 보여 줍니다. 기본 외부 모드는 자격증명을 사용하지 않습니다. 명시적 [Schemathesis GET 인증 대조 정책](docs/schemathesis-auth-controls.md)은 Node TLS-aware gate에서 한 Authorization snapshot, 무인증·정상 대조와 principal 확인을 추가합니다. Nuclei 인증을 추가하는 기능은 아닙니다. 쓰기 요청, 상태 기반 workflow, 브라우저 기반 검사와 크롤링은 여전히 지원 범위 밖입니다. 앞서 안내한 네이티브 숫자형 SQL v2 인증 정책은 별도 기능입니다.
 
 소스·DAST 스캔 단계는 SIGINT/SIGTERM을 실행 중인 설치·정책 사전 점검·스캔 프로세스에 전달합니다. CLI가 부분 보고서를 저장할 제한된 유예 시간을 준 뒤 소유한 프로세스 그룹을 정리합니다. 자식 프로세스가 0으로 끝나도 취소는 성공으로 처리하지 않고 Action 상태와 종료 코드 2를 남기며, 갱신되지 않은 이전 보고서를 이번 실행의 증거로 집계하지 않습니다. 별도 DAST preflight 단계는 취소 시 엔진 준비를 비활성화하고 스캔 보고서 없이 종료합니다. egress gate는 취소·명시적 종료·엔진 연결 종료 시 대상 요청도 닫고 HTTP/CONNECT 연결 정리를 기다립니다. SIGKILL, 프로세스 충돌, 별도로 분리된 프로세스는 정상 취소 보장 범위 밖입니다.
 
@@ -354,6 +370,8 @@ npm run benchmark -- --strict
 ```
 
 [구현 체크리스트](docs/checklist.md), [0.4 안내](docs/preview-0.4.md), [검증 기록](docs/verification-0.4.md)에 실제 범위가 적혀 있습니다. 완전한 침투 테스트, exploit 생성, 브라우저·런타임 검증, 광범위한 API 퍼징, 실제 DB·클라우드 검사, 이미지 CVE 검사, 서비스 전체 안전 판정은 이 프로젝트의 계약에 포함되지 않습니다.
+
+[Archive 파일명→쓰기 경로 source 검사 범위와 로컬 검증 기록](docs/archive-path-sast.md)을 참고하세요.
 
 ## 기여와 라이선스
 
