@@ -40,6 +40,8 @@ Source and URL scopes can be combined in one report. The API policy is opt-in an
 
 The built-in source rules are intentionally narrow. They cover useful code scenes such as a request value flowing through a local variable into a raw SQL call, a JSX HTML sink, a process invocation, an outbound request, or a redirect. They also include bounded destructuring and loop bindings, selected Next route inputs, static client/server environment exposure, and Supabase migration history candidates. These are reviewable candidates, not exploit demonstrations or a claim that the whole application is safe.
 
+The [Koa request-context source contract](docs/source-koa-context.md) describes declared middleware registration inputs, request/response alias boundaries, and the source-only four-report workflow.
+
 The source preview distinguishes command, executable, argv and shell-option
 roles for the [six Node process APIs](docs/process-role.md). Default/false argv
 exclusions cover Node's shell interpretation only; program-option safety and
