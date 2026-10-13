@@ -19,6 +19,9 @@ API preview는 redacted index 기반 실행 ledger로 판정한 단계, 불확�
 
 별도의 [소유 PATCH state pilot](docs/api-write-state.md)은 고정 자체 loopback fixture에서 실제 저장 변경과 정상 owner 대조를 확인합니다. SDK·CLI·전용 Action은 명시적 동의를 요구하고 원 phase gate를 보존하며 외부 API를 입력받지 않습니다.
 
+
+[수집한 코드의 분석 범위](docs/source-code-coverage.md)는 파일 수집과 언어 분석 완료를 구분합니다. `--require-code-analysis`로 미분석 코드에 CI gate를 적용할 수 있으며 새 분석기나 프로젝트 전체 coverage를 뜻하지 않습니다.
+
 ## 무엇을 검사하나요?
 
 | 범위 | 확인할 수 있는 내용 | 기억해야 할 한계 |

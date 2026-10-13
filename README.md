@@ -20,6 +20,9 @@ normal-behavior controls; inconsistent repeats remain inconclusive.
 
 The separate [owned PATCH state pilot](docs/api-write-state.md) checks actual persisted writes and normal owner controls on fixed synthetic loopback fixtures. Its SDK, CLI and dedicated Action require explicit consent, preserve the original phase gates, and do not accept an external API target.
 
+
+The [collected-code coverage contract](docs/source-code-coverage.md) separates file collection from completed language analysis. Opt into `--require-code-analysis` to gate uncovered collected code; this does not add a language analyzer or establish whole-project coverage.
+
 ## What it checks
 
 | Scope | What Wakeio can observe | Boundary to keep in mind |

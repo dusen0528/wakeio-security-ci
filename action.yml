@@ -27,6 +27,10 @@ inputs:
     description: Comma-separated source scanner set, or none
     required: false
     default: gitleaks,osv,trivy
+  require-code-analysis:
+    description: Require completed code analysis for every collected code input (not whole-project safety)
+    required: false
+    default: 'false'
   analysis-profile:
     description: Versioned AST workload preset, default or extended (extended requires source)
     required: false
@@ -111,10 +115,16 @@ runs:
       shell: bash
       env:
         WAKEIO_SOURCE: ${{ inputs.source }}
+        WAKEIO_REQUIRE_CODE_ANALYSIS: ${{ inputs.require-code-analysis }}
         WAKEIO_ANALYSIS_PROFILE: ${{ inputs.analysis-profile }}
         WAKEIO_SOURCE_MAX_FILES: ${{ inputs.source-max-files }}
         WAKEIO_SOURCE_MAX_BYTES: ${{ inputs.source-max-bytes }}
       run: |
+        case "${WAKEIO_REQUIRE_CODE_ANALYSIS-false}" in
+          false) ;;
+          true) [[ "$WAKEIO_SOURCE" =~ [^[:space:]] ]] || { echo 'require-code-analysis requires source' >&2; exit 2; } ;;
+          *) echo 'require-code-analysis must be true or false' >&2; exit 2 ;;
+        esac
         case "$WAKEIO_ANALYSIS_PROFILE" in
           default) ;;
           extended) [[ "$WAKEIO_SOURCE" =~ [^[:space:]] ]] || { echo 'extended analysis-profile requires source' >&2; exit 2; } ;;
@@ -139,6 +149,7 @@ runs:
       env:
         WAKEIO_ACTION_PATH: ${{ github.action_path }}
         WAKEIO_SOURCE: ${{ inputs.source }}
+        WAKEIO_REQUIRE_CODE_ANALYSIS: ${{ inputs.require-code-analysis }}
         WAKEIO_ANALYSIS_PROFILE: ${{ inputs.analysis-profile }}
         WAKEIO_SOURCE_MAX_FILES: ${{ inputs.source-max-files }}
         WAKEIO_SOURCE_MAX_BYTES: ${{ inputs.source-max-bytes }}

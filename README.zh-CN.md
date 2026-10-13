@@ -12,6 +12,9 @@ GitHub 源码版本为 **0.5.0**，npm 已发布的最新版本为 **0.4.0**。�
 
 独立的[自有 PATCH state pilot](docs/api-write-state.md)检查固定合成 loopback fixture 的实际存储变化和正常 owner control。SDK、CLI 与专用 Action 要求明确同意并保留原 phase gate，不接受外部 API target。
 
+
+[已收集代码的分析范围](docs/source-code-coverage.md)区分文件收集与语言分析完成。可通过`--require-code-analysis`将未分析代码纳入CI gate；这不会新增分析器或证明整个项目的coverage。
+
 ## 可以检查什么
 
 | 输入 | 检查内容 | 这个预览版无法证明的内容 |

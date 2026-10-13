@@ -12,6 +12,9 @@ GitHub のソースは **0.5.0**、npm で公開済みの最新版は **0.4.0** 
 
 別の[所有 PATCH state pilot](docs/api-write-state.md)は、固定した合成 loopback fixture の保存変更と正常 owner control を確認します。SDK・CLI・専用 Action は明示的同意を要求し、元の phase gate を保持します。外部 API は入力できません。
 
+
+[収集コードの分析範囲](docs/source-code-coverage.md)は、ファイル収集と各言語の分析完了を区別します。`--require-code-analysis`で未分析コードをCI gateに含められますが、新しい解析器やプロジェクト全体のcoverageを保証しません。
+
 ## 何を確認できるか
 
 | 入力 | 確認する内容 | このプレビューで分からないこと |
