@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "wakeio.worker-result/v1",
+  "title": "Wakeio agent-dast worker result",
+  "description": "The only value a worker script may print to stdout. Reference contract for docs and tests; the runtime validator is src/agent-dast/result.ts. Serialized size must not exceed 2048 bytes.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "run_id", "task_id", "category", "status", "coverage", "findings", "finding_ids", "gaps", "next_hint", "duration_ms", "truncated"],
+  "properties": {
+    "schema": { "const": "wakeio.worker-result/v1" },
+    "run_id": { "type": "string", "pattern": "^r-[0-9a-z-]{1,40}$" },
+    "task_id": { "type": "string", "pattern": "^t-[0-9a-z-]{1,60}$" },
+    "category": { "enum": ["recon", "injection", "authz", "config", "verify"] },
+    "status": { "enum": ["completed", "partial", "error", "skipped"] },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["planned", "executed", "skipped"],
+      "properties": {
+        "planned": { "type": "integer", "minimum": 0 },
+        "executed": { "type": "integer", "minimum": 0 },
+        "skipped": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "findings": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["candidate", "by_severity"],
+      "properties": {
+        "candidate": { "type": "integer", "minimum": 0 },
+        "by_severity": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "critical": { "type": "integer", "minimum": 0 },
+            "high": { "type": "integer", "minimum": 0 },
+            "medium": { "type": "integer", "minimum": 0 },
+            "low": { "type": "integer", "minimum": 0 },
+            "info": { "type": "integer", "minimum": 0 }
+          }
+        }
+      }
+    },
+    "finding_ids": {
+      "type": "array",
+      "maxItems": 20,
+      "uniqueItems": true,
+      "items": { "type": "string", "pattern": "^f-[0-9a-z-]{1,40}$" }
+    },
+    "gaps": {
+      "type": "array",
+      "maxItems": 10,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["reason", "count"],
+        "properties": {
+          "reason": { "enum": ["auth_required", "timeout", "budget_exhausted", "out_of_scope", "tool_error", "unsupported"] },
+          "count": { "type": "integer", "minimum": 1 }
+        }
+      }
+    },
+    "next_hint": { "enum": ["verify", "retry", "none"] },
+    "duration_ms": { "type": "integer", "minimum": 0 },
+    "truncated": { "type": "boolean" }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "status": { "const": "partial" } } },
+      "then": { "properties": { "gaps": { "minItems": 1 } } }
+    }
+  ]
+}

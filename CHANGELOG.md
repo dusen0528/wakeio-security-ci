@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Add the agent-dast contracts (internal, not yet exported or wired to the CLI):
+  the `wakeio.worker-result/v1` worker stdout contract with a 2 KB cap and
+  identity binding, and a `run.db` store on Node's built-in `node:sqlite`
+  with cross-worker finding de-duplication and a fixed-shape round summary.
+  agent-dast needs Node >= 22.5; other modes keep the current Node floor.
 - Close outstanding DAST target requests on cancellation, gate close or engine
   disconnect, and await HTTP/CONNECT connection cleanup while retaining tunnel caps.
 - Forward Action SIGINT/SIGTERM through setup, native policy preflight and scan
