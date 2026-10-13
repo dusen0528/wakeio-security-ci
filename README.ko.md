@@ -31,6 +31,8 @@ API preview는 redacted index 기반 실행 ledger로 판정한 단계, 불확�
 
 내장 소스 규칙은 의도적으로 좁게 잡았습니다. 예를 들어 요청값이 로컬 변수를 거쳐 raw SQL 호출·JSX HTML sink·프로세스 호출·외부 요청·리디렉션으로 전달되는 장면을 후보로 표시합니다. 구조 분해·반복문 binding, 일부 Next route 입력, 정적 client/server 환경변수 노출, Supabase migration 이력 후보도 확인합니다. 결과는 검토할 후보이며 exploit 재현이나 애플리케이션 전체의 안전 보장이 아닙니다.
 
+소스 preview는 [Node process API 여섯 개](docs/process-role.md)의 command·executable·argv·shell 필드 역할을 구별합니다. 기본/false argv의 제외는 Node의 셸 해석만 대상으로 하며, 프로그램 옵션 안전이나 실제 실행을 검증하지 않습니다. 이 ruleset 변경은 npm 게시를 뜻하지 않습니다.
+
 ## 빠른 시작: 내장 검사만 실행하기
 
 Node.js 22 이상에서 버전을 고정한 npm CLI를 실행합니다. 두 경로를 실제 경로로 바꾸고 보고서는 검사 대상 저장소 밖에 둡니다.

@@ -492,7 +492,7 @@ export class StaticModules {
     for (const reference of this.references.get(symbol) ?? []) {
       if (!this.tick()) return false;
       const parent = reference.parent;
-      if (reference === exportValue || (ts.isVariableDeclaration(parent) || ts.isFunctionDeclaration(parent)) && parent.name === reference) continue;
+      if (reference === exportValue || (ts.isVariableDeclaration(parent) || ts.isFunctionDeclaration(parent) || ts.isFunctionExpression(parent)) && parent.name === reference) continue;
       if (ts.isNewExpression(parent) && parent.expression === reference && !callOnly) continue;
       if (ts.isCallExpression(parent) && parent.expression === reference && callOnly) continue;
       // A structurally recognized no-new guard is evaluated only in an actual new context.
@@ -1673,9 +1673,21 @@ export class StaticModules {
     }
     const symbol = this.symbol(call.expression);
     if (!symbol) return { kind: "external" };
-    if (symbol.declarations?.length !== 1) return { kind: "unsupported" };
+    const declarations: ts.Declaration[] = [];
+    for (const declaration of symbol.declarations ?? []) {
+      if (!this.tick()) return { kind: 'unsupported' };
+      // Erased imports cannot conflict with an actual local function. Runtime
+      // imports, writes and multiple actual declarations still deny dispatch.
+      if (ts.isImportSpecifier(declaration) && (declaration.isTypeOnly || declaration.parent.parent.isTypeOnly)
+        || ts.isImportClause(declaration) && declaration.isTypeOnly
+        || ts.isNamespaceImport(declaration) && declaration.parent.isTypeOnly
+        || ts.isImportEqualsDeclaration(declaration) && declaration.isTypeOnly) continue;
+      declarations.push(declaration);
+    }
+    if (declarations.length !== 1) return { kind: "unsupported" };
+    if (symbol.declarations?.length !== 1 && !ts.isFunctionDeclaration(declarations[0])) return { kind: 'unsupported' };
     const unproved = this.mutated.has(symbol);
-    const declaration = symbol.declarations[0];
+    const declaration = declarations[0];
     if (ts.isImportSpecifier(declaration)) {
       const importDeclaration = declaration.parent.parent.parent;
       if (!ts.isImportDeclaration(importDeclaration) || !ts.isStringLiteral(importDeclaration.moduleSpecifier)
@@ -1712,9 +1724,18 @@ export class StaticModules {
     if (this.localClassCalls.has(call)) return true;
     if (ts.isIdentifier(call.expression)) {
       const declarations = this.symbol(call.expression)?.declarations;
-      return declarations?.some((declaration) => ts.isFunctionDeclaration(declaration)
+      if (declarations?.some((declaration) => ts.isFunctionDeclaration(declaration)
         || ts.isVariableDeclaration(declaration) && !!this.functionOf(declaration)
-        || ts.isImportSpecifier(declaration) || ts.isBindingElement(declaration)) ?? false;
+        || ts.isImportSpecifier(declaration) || ts.isBindingElement(declaration))) return true;
+      const declaration = declarations?.length === 1 ? declarations[0] : undefined;
+      if (!declaration || !ts.isVariableDeclaration(declaration) || !(declaration.parent.flags & ts.NodeFlags.Const)) return false;
+      const initializer = declaration.initializer;
+      const load = initializer && ts.isPropertyAccessExpression(initializer) ? initializer.expression : initializer;
+      if (!load || !ts.isCallExpression(load) || !ts.isIdentifier(load.expression) || load.expression.text !== 'require'
+        || load.arguments.length !== 1 || !ts.isStringLiteralLike(load.arguments[0]) || !load.arguments[0].text.startsWith('.')) return false;
+      // The strict canonical dispatcher validates all consumers and never calls
+      // localCallable. A possible/conditional CJS body cannot satisfy this lane.
+      return this.resolveCjsFunctionCall(call)?.kind === 'resolved';
     }
     if (ts.isPropertyAccessExpression(call.expression) && ts.isIdentifier(call.expression.expression)) {
       const receiver = this.symbol(call.expression.expression);

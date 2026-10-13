@@ -32,6 +32,11 @@ Source and URL scopes can be combined in one report. The API policy is opt-in an
 
 The built-in source rules are intentionally narrow. They cover useful code scenes such as a request value flowing through a local variable into a raw SQL call, a JSX HTML sink, a process invocation, an outbound request, or a redirect. They also include bounded destructuring and loop bindings, selected Next route inputs, static client/server environment exposure, and Supabase migration history candidates. These are reviewable candidates, not exploit demonstrations or a claim that the whole application is safe.
 
+The source preview distinguishes command, executable, argv and shell-option
+roles for the [six Node process APIs](docs/process-role.md). Default/false argv
+exclusions cover Node's shell interpretation only; program-option safety and
+runtime execution remain unverified. This ruleset change is not an npm release.
+
 ## Quick start: built-in checks only
 
 With Node.js 22+, run the versioned npm CLI. Replace both paths and keep reports outside the scanned repository:

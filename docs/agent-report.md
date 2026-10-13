@@ -70,6 +70,14 @@ SARIF results/rules/code flows, scan gate, scope, coverage and finding verificat
 retain their evidence boundaries. Conditional-body semantics use source ruleset
 `2026-10-13.1`, so source CLI scope identity differs from older rulesets.
 
+Native process argument roles use source ruleset `2026-10-13.2` and the same
+report schema. Read the [process role contract](process-role.md) for all six
+Node APIs, command/executable/argv/shell-field evidence, unknown-role candidates
+and shell-only exclusions. `ast:process-executable` is high; shell-input
+candidates remain critical. Static input certainty does not verify runtime
+type, execution, exploitability or remediation. Ruleset changes make older
+scopes incomparable; candidate changes are not verified fixes.
+
 ## API execution navigation
 
 Prepared API runs include optional version-1 `checks[].apiExecution`: the same
