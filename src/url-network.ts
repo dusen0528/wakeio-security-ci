@@ -4,6 +4,7 @@ import { request as httpsRequest } from "node:https";
 import { isIP } from "node:net";
 import type { Duplex } from "node:stream";
 import { createBrotliDecompress, createGunzip, createInflate } from "node:zlib";
+import { DastAdmissionError, type AttemptPermit, type TaskAdmission } from './agent-dast/admission.js';
 
 /** The network policy is deliberately stricter than a normal HTTP client. */
 export const MAX_REDIRECTS = 3;
@@ -55,6 +56,9 @@ export interface UrlNetworkContext {
   rejectRedirects?: boolean;
   /** Prefer JSON in the request's Accept header. */
   acceptJson?: boolean;
+  /** Trusted caller-only capability; request contents never enter its ledger. */
+  admission?: TaskAdmission;
+  requestKind?: 'probe' | 'control';
 }
 
 export interface RedirectHop {
@@ -414,7 +418,9 @@ function responseHeaders(response: IncomingMessage): Record<string, string | str
   return result;
 }
 
+const responsePermits = new WeakMap<IncomingMessage, AttemptPermit>();
 function closeResponse(response: IncomingMessage): void {
+  responsePermits.get(response)?.finish('transport_error');
   response.removeAllListeners("data");
   response.resume();
   response.destroy();
@@ -438,6 +444,11 @@ function sameAddress(left: string | undefined, right: string): boolean {
 async function requestPinned(url: NormalizedUrl, address: DnsAddress, context: UrlNetworkContext, jsonPost?: Buffer): Promise<IncomingMessage> {
   if (context.signal.aborted || Date.now() >= context.deadlineAt) fail("timeout", "collection deadline exceeded");
   if (context.authorization !== undefined) validateAuthorization(context.authorization);
+  if (context.budget.count >= context.budget.max) fail('request_limit', 'request budget exhausted');
+  let permit: AttemptPermit | undefined;
+  try { permit = await context.admission?.reserve({ method: jsonPost === undefined ? 'GET' : 'POST', kind: context.requestKind ?? 'probe' }, context.signal); }
+  catch (error) { fail(error instanceof DastAdmissionError && error.code === 'request_limit' ? 'request_limit' : 'timeout'); }
+  if (context.signal.aborted || Date.now() >= context.deadlineAt) { permit?.finish('transport_error'); fail('timeout'); }
   consumeRequestBudget(context.budget);
   const isHttps = url.protocol === "https:";
   const requestFn = isHttps ? httpsRequest : httpRequest;
@@ -478,6 +489,8 @@ async function requestPinned(url: NormalizedUrl, address: DnsAddress, context: U
       ...(isHttps ? { servername: isIP(url.hostname) === 0 ? url.hostname : undefined, rejectUnauthorized: true } : {}),
     } as never, (incoming: IncomingMessage) => {
       response = incoming;
+      if (permit) responsePermits.set(incoming, permit);
+      incoming.once('aborted', () => permit?.finish('transport_error'));
       const peer = incoming.socket?.remoteAddress;
       if (!sameAddress(peer, address.address)) {
         closeResponse(incoming);
@@ -506,6 +519,7 @@ async function requestPinned(url: NormalizedUrl, address: DnsAddress, context: U
     context.signal.addEventListener("abort", onAbort, { once: true });
     const cleanup = () => context.signal.removeEventListener("abort", onAbort);
     req.once("error", (error: Error) => {
+      permit?.finish('transport_error');
       cleanup();
       if (context.signal.aborted) finishError(new UrlNetworkError("timeout", "collection deadline exceeded"));
       else finishError(new UrlNetworkError("request_error", "HTTP request failed"));
@@ -527,7 +541,7 @@ async function requestPinned(url: NormalizedUrl, address: DnsAddress, context: U
         req.end(jsonPost);
       });
     });
-  });
+  }).catch(error => { permit?.finish('transport_error'); throw error; });
 }
 
 /** Fixed JSON POST lane: one checked address, one wire attempt, never a redirect or retry. */
@@ -655,6 +669,7 @@ export async function readResponseBody(
     for await (const chunk of response) {
       if (signal.aborted) fail("timeout", "collection deadline exceeded");
       const value = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk as Uint8Array);
+      responsePermits.get(response)?.addBytes(value.byteLength);
       compressedBytes += value.byteLength;
       if (compressedBytes > maxCompressedBytes) {
         closeResponse(response);
@@ -667,6 +682,7 @@ export async function readResponseBody(
     if (signal.aborted) fail("timeout", "collection deadline exceeded");
     fail("body_read_error", "response body could not be read");
   } finally {
+    responsePermits.get(response)?.finish(response.complete && !signal.aborted ? 'response' : 'transport_error');
     signal.removeEventListener("abort", onAbort);
   }
   const compressed = Buffer.concat(chunks);

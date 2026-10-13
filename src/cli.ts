@@ -91,6 +91,8 @@ export const USAGE = `Usage:
   wakeio-security-ci plan --api-policy FILE | --openapi-input FILE | --dast-policy FILE [--allow-private] [--timeout-ms N]
   wakeio-security-ci scan --openapi openapi.json --api-base URL --operation PATH --active-consent [options]
   wakeio-security-ci scan --url URL --engine nuclei --nuclei-templates DIR --active-consent [options]
+  wakeio-security-ci run-plan --plan FILE --inputs FILE --active-consent --allowed-origin ORIGIN --out NEW_DIR
+    Reviewed built-in DAST tasks only; shared owner limits. See run-plan --help.
   wakeio-security-ci compare --before report.json --after report.json --out DIR [--fail-on LEVEL]
   wakeio-security-ci replay --report report.json --api-policy FILE --finding ID --out DIR [--allow-private] [--timeout-ms N]
   wakeio-security-ci replay --report report.json --dast-policy FILE --finding ID --active-consent --out NEW_DIR [--allow-private]
@@ -610,6 +612,7 @@ async function declaredScope(options: CliOptions, apiPolicy: ApiPolicy | undefin
 
 /** Executes a scan and writes public reports when scanning starts. */
 export async function main(argv: readonly string[] = process.argv.slice(2)): Promise<number> {
+  if (argv[0] === 'run-plan') return (await import('./agent-dast/cli.js')).runPlanMain(argv);
   if (argv[0] === 'plan') return planMain(argv);
   if (argv[0] === 'api-write-state') return apiWriteStateMain(argv);
   if (argv[0] === 'compare') return runComparison(argv);
