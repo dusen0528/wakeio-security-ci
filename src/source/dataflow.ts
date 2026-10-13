@@ -10,6 +10,7 @@ import type { ChildProcessBindingUse } from './fork-role.js';
 import { SqlRoleModel, type SqlRoleUse } from './sql-role.js';
 import { HttpRoleModel, fixedInitialHttpUrl, legacyAxiosRequest, type HttpRoleUse } from './http-role.js';
 import { ExpressRoleModel } from './express-role.js';
+import { KoaRoleModel, type KoaRequestRole } from './koa-role.js';
 import { NoSqlRoleModel, type NoSqlRoleUse } from './nosql-role.js';
 import { analyzeClosureShape, analyzeConstructedShape, type ClosureShape, type ConstructorShape, type ShapeResult } from './closure-shape.js';
 import { MongoRoleModel, type MongoDbRole, type MongoCollectionRole } from './mongo-role.js';
@@ -74,6 +75,7 @@ function containResponse(value: FlowValue): void {
 }
 
 interface FlowValue {
+  koaRequest?: KoaRequestRole;
   traceSourceKind?: StaticFlow['sourceKind'];
   archiveRole?: ArchiveRole;
   /** Independent path-origin witness when another input wins the general trace. */
@@ -400,6 +402,9 @@ function joinValues(left: FlowValue, right: FlowValue): FlowValue {
     const archiveRole = left.archiveRole ?? right.archiveRole;
     result.archiveRole = left.archiveRole === right.archiveRole ? left.archiveRole
       : archiveRole ? { ...archiveRole, state: { valid: false } } : undefined;
+    const koaRole = left.koaRequest ?? right.koaRequest;
+    result.koaRequest = left.koaRequest?.state === right.koaRequest?.state && left.koaRequest?.stage === right.koaRequest?.stage
+      ? left.koaRequest : koaRole ? { ...koaRole, state: { valid: false } } : undefined;
     return { ...result, sequenceContent, filesystemStream, filesystemContent, expressResponse: joinResponse(left.expressResponse, right.expressResponse), nosqlObject: left.nosqlObject === right.nosqlObject ? left.nosqlObject : undefined, nosqlUnknown, nosqlWhere, mongoDb, mongoCollection, expressObjectBody: left.expressObjectBody === true && right.expressObjectBody === true, ...(properties ? { properties } : {}), sqlFixedText, sqlArray, sqlConfig, sqlScalarUnavailable:left.sqlScalarUnavailable || right.sqlScalarUnavailable, sqlCallback:left.sqlCallback || right.sqlCallback, sqlDataUnavailable:left.sqlDataUnavailable || right.sqlDataUnavailable, httpTargetUnavailable:httpUnavailable([left,right]), urlFragments, nativeQuery: left.nativeQuery === true && right.nativeQuery === true, queryContent: sharedQueryContent, httpConfig };
   };
   if (left.kind === right.kind && (left.kind !== "root" || left.root === right.root)) {
@@ -443,6 +448,21 @@ function withoutUrlProof(value: FlowValue): FlowValue {
 }
 
 function projectValue(base: FlowValue, property: string): FlowValue {
+  if (base.koaRequest) {
+    const known = base.properties?.get(property);
+    if (known) return known;
+    const role = base.koaRequest;
+    if (!role.state.valid) return UNKNOWN;
+    if (role.stage === 'context' && property === 'request') return { ...UNKNOWN, koaRequest: { ...role, stage: 'request' } };
+    if (role.stage === 'context' || role.stage === 'request') {
+      if (property === 'query' || property === 'header' || property === 'headers') return {
+        ...rootValue(property === 'query' ? 'query' : 'headers'),
+        koaRequest: { ...role, stage: 'input' },
+      };
+      return ['querystring', 'url', 'originalUrl', 'path'].includes(property) ? TAINTED : UNKNOWN;
+    }
+    if (role.stage === 'next') return UNKNOWN;
+  }
   if (base.archiveRole?.state.valid) {
     const role = base.archiveRole;
     if (role.stage === 'directory' && property === 'files') return { ...UNKNOWN, archiveRole: { ...role, stage: 'files' } };
@@ -531,7 +551,7 @@ class FlowEnv {
       if (index === path.length - 1) {
         properties.set(property, value);
       } else {
-        properties.set(property, update(properties.get(property) ?? UNKNOWN, index + 1));
+        properties.set(property, update(properties.get(property) ?? (base.koaRequest ? projectValue(base, property) : UNKNOWN), index + 1));
       }
       const combined = combineValues([base, value]);
       if (base.nosqlObject) {
@@ -543,11 +563,13 @@ class FlowEnv {
       const benignResponseWrite = index === 1 && ['locals', 'statusCode', 'statusMessage'].includes(property);
       if (base.expressResponse && !benignResponseWrite) base.expressResponse.valid = false;
       const expressResponse = benignResponseWrite ? base.expressResponse : undefined;
+      const benignKoaWrite = base.koaRequest?.stage === 'context' && ['body', 'state', 'status', 'type', 'response'].includes(property);
+      if (base.koaRequest && !benignKoaWrite) base.koaRequest.state.valid = false;
       if (base.constructed) base.constructed.valid = false;
       if (base.archiveRole) base.archiveRole.state.valid = false;
       invalidateMongo(base.mongoDb, 'write');
       invalidateMongo(base.mongoCollection, 'write');
-      return { ...combined, expressResponse, expressObjectBody: base.expressObjectBody, properties, nosqlObject: base.nosqlObject, constructed: base.constructed, mongoDb: base.mongoDb, mongoCollection: base.mongoCollection };
+      return { ...combined, koaRequest: base.koaRequest, expressResponse, expressObjectBody: base.expressObjectBody, properties, nosqlObject: base.nosqlObject, constructed: base.constructed, mongoDb: base.mongoDb, mongoCollection: base.mongoCollection };
     };
     this.assign(path[0], update(this.resolve(path[0]), 1));
   }
@@ -626,6 +648,7 @@ export function observedGapLocation(node: ts.Node, files: ReadonlyMap<string, ts
 interface FunctionSummary { returned: FlowValue; }
 // Mutable content must not be reused through a cached return or skipped side effect.
 function hasMutableQuery(value: FlowValue, seen = new Set<FlowValue>(), depth = 0): boolean {
+  if (value.koaRequest) return true;
   if (value.archiveRole || value.archiveContent) return true;
   if (value.sequenceContent || value.filesystemStream || value.staticContext || value.boundaryInput || value.expressResponse || value.queryContent || value.nosqlObject || value.nosqlUnknown || value.callable || value.constructed || value.mongoDb || value.mongoCollection || seen.has(value) || depth > 16 || seen.size > 128) return true;
   seen.add(value);
@@ -658,6 +681,7 @@ class FlowSession {
   readonly filesystemModel: FilesystemRoleModel;
   readonly archiveModel: ArchiveRoleModel;
   readonly expressModel: ExpressRoleModel;
+  readonly koaModel: KoaRoleModel;
   readonly active = new Set<string>();
   readonly cache = new Map<string, FunctionSummary>();
   readonly localForkCalls = new WeakMap<ts.CallExpression, { complete: boolean }>();
@@ -706,6 +730,7 @@ class FlowSession {
     this.filesystemModel = new FilesystemRoleModel(this.modules, metadata, () => this.tick(), (reason, node) => this.gap(reason, node), roleProofScopeComplete, limits.aliasSteps);
     this.archiveModel = new ArchiveRoleModel(this.modules, metadata, () => this.tick(), (reason, node) => this.gap(reason, node), roleProofScopeComplete, limits.aliasSteps);
     this.expressModel = new ExpressRoleModel(this.modules, () => this.tick(), this.indexComplete);
+    this.koaModel = new KoaRoleModel(this.modules, () => this.tick(), this.indexComplete);
     this.modules.finishIndex(this.indexComplete);
     this.phase = 'flow';
   }
@@ -911,6 +936,7 @@ class FlowSession {
       if (value.sequenceContent) value.sequenceContent.closed = value.sequenceContent.valid = false;
       if (value.filesystemStream) value.filesystemStream.valid = false;
       if (value.archiveRole) { value.archiveRole.state.valid = false; this.archiveModel.unsupported(value.archiveRole.origin); }
+      if (value.koaRequest) { value.koaRequest.state.valid = false; this.gap('module_export_unsupported'); }
       invalidateMongo(value.mongoDb, 'opaque'); invalidateMongo(value.mongoCollection, 'opaque');
       if (value.constructed) { value.constructed.valid = false; value.constructed.staticContext = contexts(value.constructed.staticContext, staticContext); for (const slot of value.constructed.slots.values()) visit(slot, depth + 1); }
       if (value.callable) { value.callable.valid = false; value.callable.staticContext = contexts(value.callable.staticContext, staticContext); for (const captured of value.callable.captures.values()) visit(captured, depth + 1); if (value.callable.lexicalThis) visit(value.callable.lexicalThis, depth + 1); }
@@ -1094,9 +1120,12 @@ class DataflowAnalyzer {
     this.constructedReceiver = capability?.lexicalThis;
     for (const [symbol, value] of capability?.captures ?? []) env.declare(symbol.name, value, true, symbol);
     const expressEntry = this.session?.expressModel.entry(functionLike);
+    const koaEntry = this.session?.koaModel.entry(functionLike);
+    const koaState = { valid: true };
     const mongoEntry = actuals ? undefined : this.session?.mongoModel.entry(functionLike);
     for (const [index, parameter] of functionLike.parameters.entries()) {
       if (actuals) this.declareBinding(parameter.name, traced(actuals[index] ?? UNKNOWN, parameter, "parameter"), env, true);
+      else if (koaEntry) this.declareBinding(parameter.name, { ...UNKNOWN, koaRequest: { stage: index === 0 ? 'context' : 'next', state: koaState } }, env, true);
       else if (mongoEntry && index === 1) this.declareBinding(parameter.name, { ...UNKNOWN, mongoDb: mongoEntry }, env, true);
       else if (expressEntry) this.declareBinding(parameter.name,
         index === expressEntry.request ? rootValue('request')
@@ -1181,11 +1210,12 @@ class DataflowAnalyzer {
       for (const element of name.elements) {
         if (ts.isOmittedExpression(element)) continue;
         const key = propertyName(element.propertyName) ?? (ts.isIdentifier(element.name) ? element.name.text : undefined);
-        const elementValue = element.dotDotDotToken
+        let elementValue = element.dotDotDotToken
           ? value
           : key === undefined
             ? UNKNOWN
             : projectValue(value, key);
+        if (value.koaRequest && isInputRelated(elementValue)) elementValue = traced(elementValue, element.name, 'source');
         this.declareBinding(element.name, elementValue, env, blockScoped);
       }
       return;
@@ -1472,6 +1502,7 @@ class DataflowAnalyzer {
       const archiveOpen = this.session?.archiveModel.open(expression);
       const archivePathCall = this.session?.archiveModel.pathCall(expression);
       const archiveWriter = this.session?.archiveModel.writer(expression);
+      const koaRegistration = this.session?.koaModel.registration(expression);
       this.session?.mongoModel.observe(expression);
       const mongoCollection = this.session?.mongoModel.collection(expression, response?.mongoDb);
       // Preserve operand order in this syntax-shaped lane: later writes cannot replace earlier actual evidence.
@@ -1535,13 +1566,18 @@ class DataflowAnalyzer {
         if (responseState.contained && responseState.mime !== "html") responseState.mime = "unknown";
       }
       const callable = selectedCallable.callable;
+      if (koaRegistration && args[0]?.callable) this.session?.callback(args[0].callable, expression);
+      if (response?.koaRequest || selectedCallable.koaRequest?.stage === 'next') {
+        const role = response?.koaRequest ?? selectedCallable.koaRequest!;
+        role.state.valid = false; this.session?.gap('module_export_unsupported', expression);
+      }
       const archiveMethod = ts.isPropertyAccessExpression(callee) ? callee.name.text
         : ts.isElementAccessExpression(callee) ? propertyName(callee.argumentExpression) : undefined;
       if (response?.archiveRole && !(response.archiveRole.stage === 'entry' && archiveMethod === 'stream' && expression.arguments.length === 0)) {
         response.archiveRole.state.valid = false; this.session?.archiveModel.unsupported(expression);
       }
       if (selectedCallable.opaqueClosure) this.session?.gap('module_export_unsupported', expression);
-      const applied = archiveOpen ? { ...UNKNOWN, archiveRole: archiveOpen }
+      const applied = koaRegistration ? UNKNOWN : archiveOpen ? { ...UNKNOWN, archiveRole: archiveOpen }
         : archivePathCall ? archivePathCall === 'predicate' ? SAFE : traced(combineValues(args), expression, 'call')
         : archiveWriter ? UNKNOWN : filesystemStream ? { ...UNKNOWN, filesystemStream }
         : arrayMutation ? cell.closed && cell.valid ? SAFE : UNKNOWN // Only qualified arrays have a length return; opaque methods remain unknown.
@@ -1564,6 +1600,7 @@ class DataflowAnalyzer {
             if (value.sequenceContent) value.sequenceContent.valid = value.sequenceContent.closed = false;
             if (value.filesystemStream) value.filesystemStream.valid = false;
             if (value.archiveRole) { value.archiveRole.state.valid = false; this.session.archiveModel.unsupported(expression); }
+            if (value.koaRequest) { value.koaRequest.state.valid = false; this.session.gap('module_export_unsupported', expression); }
             if (value.nosqlObject) {
               value.nosqlObject.value = combineValues([value.nosqlObject.value, ...args]);
               value.nosqlObject.modified = true;
@@ -1662,12 +1699,21 @@ class DataflowAnalyzer {
       this.analyzeExpression(expression.operand, env);
       if (expression.operator === ts.SyntaxKind.PlusPlusToken || expression.operator === ts.SyntaxKind.MinusMinusToken) {
         if (ts.isIdentifier(expression.operand)) env.assign(expression.operand.text, UNKNOWN);
+        else if (env.resolve(staticMemberPath(expression.operand)[0] ?? '').koaRequest) this.assignMemberPath(expression.operand, UNKNOWN, env);
       }
       return;
     }
     if (ts.isPostfixUnaryExpression(expression)) {
       this.analyzeExpression(expression.operand, env);
       if (ts.isIdentifier(expression.operand)) env.assign(expression.operand.text, UNKNOWN);
+      else if (env.resolve(staticMemberPath(expression.operand)[0] ?? '').koaRequest) this.assignMemberPath(expression.operand, UNKNOWN, env);
+      return;
+    }
+    if (ts.isDeleteExpression(expression)) {
+      this.analyzeExpression(expression.expression, env);
+      // Only the Koa capability needs this new negative effect. Preserve
+      // historical handling for unrelated member expressions.
+      if (env.resolve(staticMemberPath(expression.expression)[0] ?? '').koaRequest) this.assignMemberPath(expression.expression, UNKNOWN, env);
       return;
     }
     if (ts.isConditionalExpression(expression)) {
@@ -2041,7 +2087,9 @@ class DataflowAnalyzer {
           conditionalContext('declared_package_api', receiver.archiveRole.origin)), expression, 'source');
       }
       if (receiver.constructed) return receiver.constructed.valid ? receiver.constructed.slots.get(expression.name.text) ?? UNKNOWN : UNKNOWN;
-      return currentQuery(projectValue(receiver, expression.name.text));
+      const projected = currentQuery(projectValue(receiver, expression.name.text));
+      if (receiver.koaRequest && !receiver.koaRequest.state.valid) this.session?.gap('module_export_unsupported', expression);
+      return receiver.koaRequest && isInputRelated(projected) && !projected.trace?.some(step => step.role === 'source') ? traced(projected, expression, 'source') : projected;
     }
     if (ts.isElementAccessExpression(expression)) {
       const key = propertyName(expression.argumentExpression);
@@ -2051,7 +2099,11 @@ class DataflowAnalyzer {
         return traced(withContext({ ...UNKNOWN_INPUT, traceSourceKind: 'archive_entry_path' },
           conditionalContext('declared_package_api', base.archiveRole.origin)), expression, 'source');
       }
-      if (key !== undefined) return currentQuery(projectValue(base, key));
+      if (key !== undefined) {
+        const projected = currentQuery(projectValue(base, key));
+        if (base.koaRequest && !base.koaRequest.state.valid) this.session?.gap('module_export_unsupported', expression);
+        return base.koaRequest && isInputRelated(projected) && !projected.trace?.some(step => step.role === 'source') ? traced(projected, expression, 'source') : projected;
+      }
       // Dynamic keys cannot be resolved in this bounded analysis, but a
       // tainted base still means the selected property is input-related.
       const keyValue = expression.argumentExpression
@@ -2251,6 +2303,7 @@ export function findSnapshotInputFlows(files: readonly ts.SourceFile[], limits: 
   return { uses: session.uses, reasons: [...session.reasons].sort(), analysisGaps: session.diagnostics.result(), metrics: {
     flowModel: "bounded-static-local-relative-v1", budgetModel: "shared-index-separate-flow-v1", entrySeedModel: "request_shaped_uncalled_exported_or_callback_escaped_function",
     expressEntryModel: 'lexical-express-registration-v1',
+    koaEntryModel: 'lexical-koa-use-v1',
     nodeVisits: session.nodeVisits, indexWork: session.indexWork, flowWork: session.flowWork,
     maxIndexWork: session.maxIndexWork, maxFlowWork: session.maxFlowWork,
     indexComplete: session.indexComplete, rootInventoryComplete: session.indexComplete,

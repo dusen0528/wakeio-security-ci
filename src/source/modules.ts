@@ -86,6 +86,7 @@ export class StaticModules {
   readonly cjsReferences = new Map<ts.SourceFile, ts.Identifier[]>();
   readonly requireReferences: ts.Identifier[] = [];
   readonly expressOpaqueLoads: ts.Node[] = [];
+  readonly koaOpaqueLoads: ts.Node[] = [];
   readonly indexWalkFiles = new Set<ts.SourceFile>();
   indexedAstNodes = 0;
   symbolLookups = 0;
@@ -197,14 +198,17 @@ export class StaticModules {
       if (ts.isCallExpression(node) && node.expression.kind === ts.SyntaxKind.ImportKeyword) {
         const specifier = node.arguments.length === 1 ? staticLoadExpression(node.arguments[0]) : undefined;
         if (specifier && ts.isStringLiteralLike(specifier) && specifier.text === 'express') this.expressOpaqueLoads.push(node);
+        if (specifier && ts.isStringLiteralLike(specifier) && specifier.text === 'koa') this.koaOpaqueLoads.push(node);
         this.unsupportedObjectLoads.push({node, specifier: specifier
           && ts.isStringLiteralLike(specifier) ? specifier.text : undefined});
       }
       if (ts.isExportDeclaration(node) && node.moduleSpecifier) this.unsupportedObjectLoads.push({node,
         specifier: ts.isStringLiteralLike(node.moduleSpecifier) ? node.moduleSpecifier.text : undefined});
+      if (ts.isExportDeclaration(node) && node.moduleSpecifier && ts.isStringLiteralLike(node.moduleSpecifier) && node.moduleSpecifier.text === 'koa') this.koaOpaqueLoads.push(node);
       if (ts.isImportEqualsDeclaration(node) && ts.isExternalModuleReference(node.moduleReference)) {
         const specifier = node.moduleReference.expression;
         if (specifier && ts.isStringLiteralLike(specifier) && specifier.text === 'express') this.expressOpaqueLoads.push(node);
+        if (specifier && ts.isStringLiteralLike(specifier) && specifier.text === 'koa') this.koaOpaqueLoads.push(node);
         this.unsupportedObjectLoads.push({node, specifier: specifier && ts.isStringLiteralLike(specifier) ? specifier.text : undefined});
       }
       if (ts.isCallExpression(node) && node.arguments.length >= 1) {
