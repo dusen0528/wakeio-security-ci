@@ -340,6 +340,8 @@ In GitHub Actions, use the separate `dast` Action so passive workflows can never
 
 Reports record executed requests, requests refused by the budget, egress refusals, the seed and schema digest (Schemathesis), and template counts, exclusions and the `templates-checksum.txt` digest (Nuclei). Response bodies, generated values, extracted values, proxy credentials and template text are not retained. `wakeio-security-ci doctor --dast` reports engine readiness without running anything. Authentication, write operations, stateful workflows, browser-driven checks and crawling are not part of the external Schemathesis/Nuclei preview. Native numeric v2 and optional single-quoted v3 authentication use the separate policies described above.
 
+Source and DAST scan steps forward SIGINT/SIGTERM to the active setup, policy-plan or scan process. A bounded grace period lets the CLI save partial evidence before cleanup of its owned process group. Cancellation writes non-success Action status and exit 2 even if a child exits 0; unchanged older reports are not counted as current evidence. The separate DAST preflight exits without a scan receipt and disables engine preparation when cancelled. The egress gate closes outstanding target requests on cancellation, explicit close or engine disconnect and awaits its HTTP/CONNECT connections. SIGKILL, crashes and independently detached processes remain outside this graceful-cancellation guarantee.
+
 ## A small synthetic example
 
 The following is a labeled regression fixture, not a real application result:

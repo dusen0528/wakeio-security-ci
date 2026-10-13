@@ -1,5 +1,5 @@
 import { randomBytes, timingSafeEqual } from "node:crypto";
-import { createServer, request as httpRequest, type IncomingHttpHeaders, type IncomingMessage, type ServerResponse } from "node:http";
+import { createServer, request as httpRequest, type ClientRequest, type IncomingHttpHeaders, type IncomingMessage, type ServerResponse } from "node:http";
 import { connect, isIP, type Socket } from "node:net";
 import { normalizeUrl, resolveAddresses, type DnsAddress, type NormalizedUrl } from "./url-network.js";
 
@@ -110,7 +110,18 @@ export async function startEgressGate(policy: EgressPolicy): Promise<EgressGate>
   const token = randomBytes(18).toString("base64url");
   const expected = Buffer.from(`Basic ${Buffer.from(`wakeio:${token}`).toString("base64")}`);
   const counters: EgressCounters = { forwarded: 0, tunnels: 0, blockedOrigin: 0, blockedMethod: 0, blockedBudget: 0, upstreamErrors: 0, rejectedEncoding: 0, responseBytes: 0 };
-  const sockets = new Set<Socket>();
+  const sockets = new Map<Socket, Promise<void>>();
+  const upstreams = new Map<ClientRequest, Promise<void>>();
+  let closing = false;
+  let closePromise: Promise<void> | undefined;
+  const trackSocket = (socket: Socket) => {
+    if (!sockets.has(socket)) {
+      sockets.set(socket, new Promise<void>((resolve) => {
+        socket.once("close", () => { sockets.delete(socket); resolve(); });
+      }));
+    }
+    if (closing || policy.signal.aborted) socket.destroy();
+  };
   const listeners: Array<(reason: EgressStopReason) => void> = [];
   let stopped: EgressStopReason | undefined;
   const stop = (reason: EgressStopReason) => {
@@ -142,7 +153,7 @@ export async function startEgressGate(policy: EgressPolicy): Promise<EgressGate>
     const target = policy.origin.protocol === "http:" ? sameOrigin(request.url, policy.origin) : undefined;
     if (!target) { counters.blockedOrigin += 1; request.resume(); refuse(response, 502); return; }
     if (!policy.methods.has(request.method ?? "")) { counters.blockedMethod += 1; request.resume(); refuse(response, 405); return; }
-    if (stopped || policy.signal.aborted || counters.forwarded >= policy.maxRequests) {
+    if (closing || stopped || policy.signal.aborted || counters.forwarded >= policy.maxRequests) {
       counters.blockedBudget += 1;
       if (counters.forwarded >= policy.maxRequests) stop("request_limit");
       request.resume(); refuse(response, 503); return;
@@ -150,7 +161,10 @@ export async function startEgressGate(policy: EgressPolicy): Promise<EgressGate>
     counters.forwarded += 1;
     // Sockets can emit more than one error; count one failure per request and never leave an error unhandled.
     let failed = false;
-    const fail = () => { if (!failed) { failed = true; counters.upstreamErrors += 1; } response.destroy(); };
+    const fail = () => {
+      if (!failed && !closing && !response.destroyed) { failed = true; counters.upstreamErrors += 1; }
+      response.destroy();
+    };
     const upstream = httpRequest({
       host: policy.address.address, port: defaultPort(policy.origin), family: policy.address.family,
       method: request.method, path: `${target.pathname}${target.search}`,
@@ -187,6 +201,13 @@ export async function startEgressGate(policy: EgressPolicy): Promise<EgressGate>
       });
       incoming.on("error", fail);
     });
+    // The proxy's accepted socket is not the connection to the target. Own
+    // both the outgoing request (including pending connects) and its socket.
+    upstreams.set(upstream, new Promise<void>((resolve) => {
+      upstream.once("close", () => { upstreams.delete(upstream); resolve(); });
+    }));
+    upstream.once("socket", trackSocket);
+    response.once("close", () => upstream.destroy());
     upstream.once("timeout", () => upstream.destroy(new Error("timeout")));
     upstream.on("error", fail);
     request.on("error", () => upstream.destroy());
@@ -200,22 +221,21 @@ export async function startEgressGate(policy: EgressPolicy): Promise<EgressGate>
   };
 
   const server = createServer({ maxHeaderSize: 16 * 1024 }, onRequest);
-  server.on("connection", (socket) => { sockets.add(socket); socket.once("close", () => sockets.delete(socket)); });
+  server.on("connection", trackSocket);
   server.on("connect", (request: IncomingMessage, client: Socket) => {
     const reject = (status: string) => { client.end(`HTTP/1.1 ${status}\r\nconnection: close\r\ncontent-length: 0\r\n\r\n`); };
     if (!authorized(request.headers)) { reject("407 Proxy Authentication Required"); return; }
     if (policy.origin.protocol !== "https:" || (request.url ?? "").toLowerCase() !== authority(policy.origin)) {
       counters.blockedOrigin += 1; reject("502 Bad Gateway"); return;
     }
-    if (stopped || policy.signal.aborted || counters.tunnels >= policy.maxRequests) {
+    if (closing || stopped || policy.signal.aborted || counters.tunnels >= policy.maxRequests) {
       counters.blockedBudget += 1;
       if (counters.tunnels >= policy.maxRequests) stop("request_limit");
       reject("503 Service Unavailable"); return;
     }
     counters.tunnels += 1;
     const upstream = connect({ host: policy.address.address, port: Number(defaultPort(policy.origin)), family: policy.address.family, timeout: remaining() });
-    sockets.add(upstream);
-    upstream.once("close", () => sockets.delete(upstream));
+    trackSocket(upstream);
     upstream.once("connect", () => {
       if (!sameAddress(upstream.remoteAddress, policy.address.address)) { counters.upstreamErrors += 1; stop("peer_mismatch"); upstream.destroy(); client.destroy(); return; }
       client.write("HTTP/1.1 200 Connection Established\r\n\r\n");
@@ -233,7 +253,11 @@ export async function startEgressGate(policy: EgressPolicy): Promise<EgressGate>
     client.once("close", () => upstream.destroy());
   });
 
-  const closeAll = () => { for (const socket of sockets) socket.destroy(); };
+  const closeAll = () => {
+    closing = true;
+    for (const upstream of upstreams.keys()) upstream.destroy();
+    for (const socket of sockets.keys()) socket.destroy();
+  };
   policy.signal.addEventListener("abort", closeAll, { once: true });
   await new Promise<void>((resolve, reject) => {
     server.once("error", reject);
@@ -248,9 +272,12 @@ export async function startEgressGate(policy: EgressPolicy): Promise<EgressGate>
     stopReason: () => stopped,
     onStop(listener) { listeners.push(listener); if (stopped) listener(stopped); },
     close() {
+      if (closePromise) return closePromise;
       policy.signal.removeEventListener("abort", closeAll);
+      const pending = [...upstreams.values(), ...sockets.values()];
       closeAll();
-      return new Promise((resolve) => server.close(() => resolve()));
+      closePromise = Promise.all([...pending, new Promise<void>((resolve) => server.close(() => resolve()))]).then(() => undefined);
+      return closePromise;
     },
   };
 }
