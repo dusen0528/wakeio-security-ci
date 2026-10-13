@@ -24,7 +24,7 @@ node build/src/cli.js scan --source . \
 
 검사기가 64자리 소문자 hex `comparisonKey`를 제공하면 `compare`는 같은 check 안에서 그 key를 우선 사용한다. 파일의 line·column은 표시 위치이므로 상단에 주석이나 import가 추가되어도 같은 semantic key는 `unchanged`로 남을 수 있다. key가 없는 legacy finding은 위치 기반 ID를 사용하므로 이동 시 `new`와 `not_observed`가 될 수 있다.
 
-같은 check에서 동일한 semantic key가 두 번 나오면 어느 경고가 어느 경고인지 결정하지 않는다. 관련 항목은 `unverified`로 보존되고 비교 exit code는 2다. 위치가 같다는 이유로 중복을 임의로 합치지 않는다. `not_observed` 역시 코드 삭제나 detector 변화의 결과일 수 있으므로 수정 완료나 안전을 증명하지 않는다.
+before 또는 after의 같은 check에서 동일한 semantic key가 두 번 나오거나, key가 없는 legacy finding의 ID가 두 번 나오면 어느 경고가 어느 경고인지 결정하지 않는다. 내용이 완전히 같은 중복도 발생 순서로 짝짓지 않는다. 중복 항목은 모두 보존되고 비교 전체가 `unverified`, exit 2로 남는다. `--fail-on none`도 이 모호성을 통과시키지 않는다. 서로 다른 check의 ID는 분리되며, 동일한 report ID를 가진 finding도 서로 다른 고유 semantic key가 있으면 그 key로 비교한다. `not_observed` 역시 코드 삭제나 detector 변화의 결과일 수 있으므로 수정 완료나 안전을 증명하지 않는다.
 
 ## 비교 명령과 결과
 
@@ -39,12 +39,16 @@ node build/src/cli.js compare \
 결과의 상태는 다음과 같다.
 
 - `new`: after에서 새로 관찰된 finding
-- `changed`: 같은 finding의 severity 또는 confidence가 바뀜
-- `unchanged`: 같은 finding이 같은 수준으로 다시 관찰됨
+- `changed`: 같은 finding의 severity, confidence 또는 증거 종류(`kind`: observation/candidate/advisory)가 바뀜
+- `unchanged`: 같은 finding의 severity, confidence와 증거 종류가 모두 유지됨
 - `not_observed`: comparable한 after에서 이전 finding이 관찰되지 않음
 - `unverified`: 범위·provenance·check 완료 상태 또는 매칭이 검증되지 않음
 
 비교가 unverified이면 `comparison.json`과 `comparison.md`를 계속 쓰지만 exit 2다. comparable한 결과에서 fail threshold 이상의 `new`/`changed`가 있으면 exit 1, 그 외는 exit 0이다. `--fail-on none`은 finding threshold만 끄며 unverified 비교를 성공으로 바꾸지 않는다.
+
+고유 semantic key가 같은 finding이라도 증거 종류가 바뀌면 `changed`다. 예를 들어 severity high와 confidence가 유지된 채 `observation`에서 `candidate`로 바뀌어도 `--fail-on high` 비교는 exit 1이다. 증거 종류 변경을 취약점 확인이나 수정 완료로 해석하지 않는다.
+
+증거 종류가 바뀐 comparison JSON 항목은 기존 `previousSeverity`와 함께 선택 필드 `previousKind`를 기록하고, 현재 종류는 `finding.kind`에 남긴다. Markdown에는 `kind: observation → candidate`처럼 전후 종류를 표시한다. 종류가 같으면 `previousKind`는 생략한다.
 
 ## SARIF와 PR 업로드
 

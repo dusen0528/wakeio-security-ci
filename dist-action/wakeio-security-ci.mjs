@@ -225387,7 +225387,7 @@ function serialiseReport(report) {
 }
 function projectAgentReport(report, failOn) {
   const scanGate = evaluateSanitisedGate(report, failOn);
-  const blocking = new Set(scanGate.blockingFindingIds);
+  const threshold = scanGate.failOn === "none" || scanGate.failOn === "invalid" ? void 0 : SEVERITY_RANK[scanGate.failOn];
   const count5 = (status) => report.checks.filter((check2) => check2.status === status).length;
   return {
     schemaVersion: "1.0.0",
@@ -225472,7 +225472,7 @@ function projectAgentReport(report, failOn) {
       },
       location: finding2.location,
       ...finding2.references ? { references: finding2.references } : {},
-      reachesFailOn: blocking.has(finding2.id),
+      reachesFailOn: threshold !== void 0 && SEVERITY_RANK[finding2.severity] >= threshold,
       remediation: { guidance: finding2.remediation, state: "not_verified" },
       verification: { state: "not_run", vulnerabilityConfirmed: false, remediationVerified: false }
     })))
@@ -227251,6 +227251,8 @@ async function requestApi(url, authorization, state) {
   }
 }
 function requestFailureReason(code, state) {
+  if (state.abortCause)
+    return state.abortCause;
   if (Date.now() >= state.context.deadlineAt)
     return "deadline";
   if (state.context.signal.aborted)
@@ -227641,6 +227643,13 @@ async function runApiPolicy(options) {
     bodyBudgetExhausted: false,
     bodyReadIncomplete: false
   };
+  const captureAbortCause = () => {
+    state.abortCause ??= signal?.aborted ? "cancelled" : "deadline";
+  };
+  if (controller.signal.aborted)
+    captureAbortCause();
+  else
+    controller.signal.addEventListener("abort", captureAbortCause, { once: true });
   let incomplete = parsed.legacy;
   let controlsPassed = 0;
   let identityControlsPassed = 0;
@@ -227715,10 +227724,11 @@ async function runApiPolicy(options) {
       }
     }
   } finally {
+    controller.signal.removeEventListener("abort", captureAbortCause);
     controller.dispose();
   }
   if (controller.signal.aborted || Date.now() >= state.context.deadlineAt) {
-    addNote2(notes, signal?.aborted ? "The API policy was cancelled; the authorization preview is incomplete." : "The API policy time budget elapsed; the authorization preview is incomplete.");
+    addNote2(notes, state.abortCause === "cancelled" || !state.abortCause && signal?.aborted ? "The API policy was cancelled; the authorization preview is incomplete." : "The API policy time budget elapsed; the authorization preview is incomplete.");
     incomplete = true;
   }
   const apiExecution = finishApiExecutionLedger(state.execution, incomplete);
@@ -244060,6 +244070,8 @@ function indexed(report) {
       const key2 = `legacy:${check2.id}:${finding2.id}`;
       const count5 = occurrences.get(key2) ?? 0;
       occurrences.set(key2, count5 + 1);
+      if (count5 > 0)
+        ambiguous.add(key2);
       output.set(`${key2}:${count5}`, { checkId: check2.id, finding: finding2, matchKey: key2 });
     }
   return { findings: output, ambiguous };
@@ -244163,7 +244175,7 @@ function compareReports(beforeInput, afterInput) {
     }
   }
   if (oldIndex.ambiguous.size > 0 || currentIndex.ambiguous.size > 0) {
-    reasons.push("A semantic comparison key occurs more than once in a check; matching is ambiguous.");
+    reasons.push("A semantic comparison key or legacy finding ID occurs more than once in a check; matching is ambiguous.");
   }
   const comparable = reasons.length === 0;
   const old = oldIndex.findings;
@@ -244172,12 +244184,13 @@ function compareReports(beforeInput, afterInput) {
   for (const [id, item] of current) {
     const ambiguous = oldIndex.ambiguous.has(item.matchKey) || currentIndex.ambiguous.has(item.matchKey);
     const previous = ambiguous ? void 0 : old.get(id);
-    const changed = previous && (previous.finding.severity !== item.finding.severity || previous.finding.confidence !== item.finding.confidence);
+    const changed = previous && (previous.finding.severity !== item.finding.severity || previous.finding.confidence !== item.finding.confidence || previous.finding.kind !== item.finding.kind);
     entries.push({
       checkId: item.checkId,
       finding: item.finding,
       state: !comparable ? "unverified" : !previous ? "new" : changed ? "changed" : "unchanged",
-      ...previous && changed ? { previousSeverity: previous.finding.severity } : {}
+      ...previous && changed ? { previousSeverity: previous.finding.severity } : {},
+      ...previous && previous.finding.kind !== item.finding.kind ? { previousKind: previous.finding.kind } : {}
     });
     if (previous)
       old.delete(id);
@@ -244190,7 +244203,7 @@ function compareReports(beforeInput, afterInput) {
   return { schemaVersion: "1.0.0", comparable, reasons, summary, entries, limitations: [
     "Comparable means the declared target/options, logical project identity, Wakeio version/ruleset, completed check set, and known engine/data provenance match. It is not proof that an unknown advisory database or rule bundle stayed identical.",
     "Not observed means that finding is absent from the later report. Code deletion, line movement, changed data, or detector limitations may explain it; it is not proof of a security fix.",
-    "Semantic comparison keys can survive line movement. Findings without a key retain location-based IDs, so moving them appears as new plus not observed. Duplicate semantic keys are left unverified instead of being matched arbitrarily.",
+    "Semantic comparison keys can survive line movement. Findings without a key retain location-based IDs, so moving them appears as new plus not observed. Repeated semantic keys or legacy finding IDs within a check make matching unverified, even for identical rows; occurrence order cannot establish identity.",
     "Source content hashes are provenance evidence and do not establish scope identity. Unknown scanner databases or rule bundles make the comparison unverified.",
     "Source inventory comparisons require known matching effective collection budgets and recorded exclusion reasons independently of the supplied scope fingerprint. Changed or unknown collection selection remains unverified.",
     "Comparisons do not suppress findings in the scan reports and do not certify the whole service."
@@ -244362,7 +244375,7 @@ async function writeComparison(result3, outDir) {
     "",
     "## Findings",
     "",
-    ...result3.entries.map((entry) => `- **${entry.state}** [${entry.finding.severity}] ${escape(entry.finding.title)} (${entry.finding.id})`),
+    ...result3.entries.map((entry) => `- **${entry.state}** [${entry.finding.severity}] ${escape(entry.finding.title)} (${entry.finding.id})` + (entry.previousKind ? `; kind: ${escape(entry.previousKind)} \u2192 ${escape(entry.finding.kind)}` : "")),
     "",
     "## Limits",
     "",

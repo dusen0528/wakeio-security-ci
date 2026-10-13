@@ -365,6 +365,59 @@ test('source handoff: original fail-on policy is preserved and cannot be relaxed
   assert.equal(after.code, 0); assert.equal((await finish(w, handoff.out, after)).code, 2);
 });
 
+test('source handoff: after-only legacy duplicates cannot select the first row even under none or critical', async t => {
+  for (const failOn of ['none', 'critical']) {
+    const w = await workspace(t);
+    const before = await resign(await scan(w, 'before', ['--fail-on', failOn]), report => {
+      for (const check of report.checks) for (const finding of check.findings) delete finding.comparisonKey;
+    });
+    assert.equal(before.code, 0);
+    const handoff = await create(w, before); assert.equal(handoff.code, 0);
+    assert.equal((await receipt(handoff.out)).selected.comparisonKey, undefined);
+    const after = await resign(await scan(w, 'after', ['--fail-on', failOn]), report => {
+      for (const check of report.checks) for (const finding of check.findings) delete finding.comparisonKey;
+      const check = report.checks.find((c: any) => c.id === 'source.builtin-ast');
+      check.findings.push(structuredClone(check.findings[0]));
+    });
+    assert.equal(after.agent.scanGate.exitCode, 0);
+    const source = await tree(w.source), beforeBytes = await tree(before.dir), afterBytes = await tree(after.dir);
+    const result = await finish(w, handoff.out, after); assert.equal(result.code, 2, failOn);
+    const r = await receipt(result.out);
+    assert.equal(r.selectedState, 'unverified'); assert.equal(r.reason, 'comparison_unverified');
+    assert.equal(r.comparison.comparable, false); assert.equal(r.after.scanGate.exitCode, 0);
+    assert.ok(r.comparison.entries.every((row: any) => row.state === 'unverified')); unverified(r);
+    assert.deepEqual(await tree(w.source), source); assert.deepEqual(await tree(before.dir), beforeBytes);
+    assert.deepEqual(await tree(after.dir), afterBytes);
+  }
+});
+
+test('source handoff: old ID-wide threshold projection is rejected while corrected canonical pair is accepted', async t => {
+  const w = await workspace(t);
+  await writeFile(w.app, RISK + NEW_HIGH);
+  let duplicateRule: string | undefined;
+  const before = await resign(await scan(w, 'before'), report => {
+    const ast = report.checks.find((check: any) => check.id === 'source.builtin-ast');
+    const high = ast.findings.find((row: any) => row.ruleId !== 'ast:sql-input-sink');
+    assert.ok(high, 'second owned source candidate provides a valid unrelated row');
+    assert.equal(high.severity, 'high'); duplicateRule = high.ruleId;
+    // Retain the actual deterministic ID; severity is outside its namespace.
+    ast.findings.push({ ...structuredClone(high), severity: 'low' });
+  });
+  const rows = before.agent.findings.filter((row: any) => row.ruleId === duplicateRule);
+  assert.equal(rows.length, 2); assert.equal(rows[0].findingId, rows[1].findingId);
+  assert.deepEqual(rows.map((row: any) => row.reachesFailOn), [true, false]);
+  const oldAgent = structuredClone(before.agent);
+  for (const row of oldAgent.findings) if (row.ruleId === duplicateRule) row.reachesFailOn = true;
+  await writeFile(join(before.dir, 'agent-report.json'), `${JSON.stringify(oldAgent, null, 2)}\n`);
+  const rejected = await create(w, before, join(w.top, 'old-pair')); assert.equal(rejected.code, 2);
+  assert.equal((await receipt(rejected.out)).reason, 'invalid_report_pair');
+  await writeFile(join(before.dir, 'agent-report.json'), before.agentBytes);
+  const corrected = await create(w, before, join(w.top, 'corrected-pair')); assert.equal(corrected.code, 0);
+  const r = await receipt(corrected.out); assert.equal(r.originalScanGate.exitCode, 1); unverified(r);
+  assert.deepEqual(await readFile(join(before.dir, 'report.json')), before.reportBytes);
+  assert.deepEqual(await readFile(join(before.dir, 'agent-report.json')), before.agentBytes);
+});
+
 test('source handoff: explicitly original fail-on none stays none without claiming remediation', async t => {
   const w = await workspace(t), before = await scan(w, 'before', ['--fail-on', 'none']); assert.equal(before.code, 0);
   const handoff = await create(w, before); assert.equal(handoff.code, 0);

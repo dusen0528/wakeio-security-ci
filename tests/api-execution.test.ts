@@ -19,10 +19,11 @@ function policy(baseUrl: string): any {
     deny: [{ actor: 'OtherPrivateLabel', statuses: [401, 403] }, { actor: 'anonymous', statuses: [401] }] }] };
 }
 const json = (response: ServerResponse, status: number, value: unknown) => { response.writeHead(status, { 'content-type': 'application/json' }); response.end(JSON.stringify(value)); };
-async function fixture(mode = 'safe', extra: Partial<ApiRunOptions> = {}) {
+async function fixture(mode = 'safe', extra: Partial<ApiRunOptions> = {}, onArrival?: () => void) {
   const arrivals: string[] = [];
   const server = createServer((request, response) => {
     arrivals.push(request.url!);
+    onArrival?.();
     const owner = request.headers.authorization === ENV.LEDGER_OWNER_AUTH;
     const other = request.headers.authorization === ENV.LEDGER_OTHER_AUTH;
     if (mode === 'timeout') return; // Closed explicitly in finally, no background timer.
@@ -84,6 +85,62 @@ test('deadline distinguishes an attempted inconclusive request from remaining un
   assert.equal(arrivals.length, 1); assert.equal(value.steps[0].outcome, 'inconclusive');
   assert.equal(value.steps[0].reason, 'deadline'); assert.equal(value.steps[0].httpStatus, null);
   assert.equal(value.counts.httpAttempts, 1); assert.equal(value.counts.notAttempted, 7); assert.equal(value.status, 'partial');
+});
+
+// Top-level tests in this file run serially; other test files have separate processes.
+// These tests replace only the wall clock. Node's deadline and guard timers stay real.
+test('deadline timer retains deadline evidence when the wall clock lags behind', { concurrency: false }, async () => {
+  const originalNow = Date.now, fixedNow = originalNow();
+  const external = new AbortController();
+  const guard = setTimeout(() => external.abort(), 5000);
+  try {
+    Date.now = () => fixedNow;
+    const { check, arrivals } = await fixture('timeout', { timeoutMs: 1000, signal: external.signal });
+    const value = ledger(check);
+    assert.equal(external.signal.aborted, false, 'the real deadline must fire before the external guard');
+    assert.equal(Date.now(), fixedNow);
+    assert.equal(arrivals.length, 1);
+    assert.equal(check.metrics?.requestCount, 1);
+    assert.equal(check.status, 'partial');
+    assert.equal(value.status, 'partial');
+    assert.deepEqual(value.counts, { planned: 8, evaluated: 0, inconclusive: 1, notAttempted: 7, httpAttempts: 1 });
+    assert.deepEqual(value.steps[0], { ordinal: 0, outcome: 'inconclusive', reason: 'deadline',
+      attemptStart: 0, httpAttempts: 1, httpStatus: null });
+    assert.ok(value.steps.slice(1).every(step => step.outcome === 'not_attempted' && step.httpAttempts === 0 && step.httpStatus === null));
+    assert.ok(check.notes.some(note => note.includes('time budget elapsed')));
+    assert.ok(!check.notes.some(note => note.includes('was cancelled')));
+    assert.equal(sdk.evaluateGate(report(check), 'none').exitCode, 2);
+    assert.deepEqual(sdk.sanitiseApiExecutionLedger(value), value);
+  } finally { Date.now = originalNow; clearTimeout(guard); }
+});
+
+test('external cancellation remains the first cause after the wall clock passes the deadline', { concurrency: false }, async () => {
+  const originalNow = Date.now, startedNow = originalNow(), timeoutMs = 1000;
+  let observedNow = startedNow;
+  const external = new AbortController();
+  const guard = setTimeout(() => external.abort(), 5000);
+  try {
+    Date.now = () => observedNow;
+    const { check, arrivals } = await fixture('timeout', { timeoutMs, signal: external.signal }, () => {
+      external.abort();
+      observedNow = startedNow + timeoutMs + 1;
+    });
+    const value = ledger(check);
+    assert.equal(external.signal.aborted, true);
+    assert.equal(observedNow, startedNow + timeoutMs + 1, 'the external abort precedes the wall-clock advance');
+    assert.equal(arrivals.length, 1);
+    assert.equal(check.metrics?.requestCount, 1);
+    assert.equal(check.status, 'partial');
+    assert.equal(value.status, 'partial');
+    assert.deepEqual(value.counts, { planned: 8, evaluated: 0, inconclusive: 1, notAttempted: 7, httpAttempts: 1 });
+    assert.deepEqual(value.steps[0], { ordinal: 0, outcome: 'inconclusive', reason: 'cancelled',
+      attemptStart: 0, httpAttempts: 1, httpStatus: null });
+    assert.ok(value.steps.slice(1).every(step => step.outcome === 'not_attempted' && step.httpAttempts === 0 && step.httpStatus === null));
+    assert.ok(check.notes.some(note => note.includes('was cancelled')));
+    assert.ok(!check.notes.some(note => note.includes('time budget elapsed')));
+    assert.equal(sdk.evaluateGate(report(check), 'none').exitCode, 2);
+    assert.deepEqual(sdk.sanitiseApiExecutionLedger(value), value);
+  } finally { Date.now = originalNow; clearTimeout(guard); }
 });
 
 test('body-limit stops later attempts and never fabricates a captured HTTP status', async () => {

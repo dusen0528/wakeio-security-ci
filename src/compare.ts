@@ -17,6 +17,7 @@ export interface ComparisonEntry {
   checkId: string;
   finding: Finding;
   previousSeverity?: Severity;
+  previousKind?: Finding['kind'];
 }
 export interface ReportComparison {
   schemaVersion: '1.0.0';
@@ -168,6 +169,8 @@ function indexed(report: ScanReport): FindingIndex {
     const key = `legacy:${check.id}:${finding.id!}`;
     const count = occurrences.get(key) ?? 0;
     occurrences.set(key, count + 1);
+    // Occurrence order does not establish which repeated legacy finding survived.
+    if (count > 0) ambiguous.add(key);
     output.set(`${key}:${count}`, { checkId: check.id, finding, matchKey: key });
   }
   return { findings: output, ambiguous };
@@ -274,7 +277,7 @@ export function compareReports(beforeInput: ScanReport, afterInput: ScanReport):
     }
   }
   if (oldIndex.ambiguous.size > 0 || currentIndex.ambiguous.size > 0) {
-    reasons.push('A semantic comparison key occurs more than once in a check; matching is ambiguous.');
+    reasons.push('A semantic comparison key or legacy finding ID occurs more than once in a check; matching is ambiguous.');
   }
   const comparable = reasons.length === 0;
   const old = oldIndex.findings;
@@ -283,9 +286,11 @@ export function compareReports(beforeInput: ScanReport, afterInput: ScanReport):
   for (const [id, item] of current) {
     const ambiguous = oldIndex.ambiguous.has(item.matchKey) || currentIndex.ambiguous.has(item.matchKey);
     const previous = ambiguous ? undefined : old.get(id);
-    const changed = previous && (previous.finding.severity !== item.finding.severity || previous.finding.confidence !== item.finding.confidence);
+    const changed = previous && (previous.finding.severity !== item.finding.severity
+      || previous.finding.confidence !== item.finding.confidence || previous.finding.kind !== item.finding.kind);
     entries.push({ checkId: item.checkId, finding: item.finding, state: !comparable ? 'unverified' : !previous ? 'new' : changed ? 'changed' : 'unchanged',
-      ...(previous && changed ? { previousSeverity: previous.finding.severity } : {}) });
+      ...(previous && changed ? { previousSeverity: previous.finding.severity } : {}),
+      ...(previous && previous.finding.kind !== item.finding.kind ? { previousKind: previous.finding.kind } : {}) });
     if (previous) old.delete(id);
   }
   for (const item of old.values()) entries.push({ checkId: item.checkId, finding: item.finding, state: comparable ? 'not_observed' : 'unverified' });
@@ -294,7 +299,7 @@ export function compareReports(beforeInput: ScanReport, afterInput: ScanReport):
   return { schemaVersion: '1.0.0', comparable, reasons, summary, entries, limitations: [
     'Comparable means the declared target/options, logical project identity, Wakeio version/ruleset, completed check set, and known engine/data provenance match. It is not proof that an unknown advisory database or rule bundle stayed identical.',
     'Not observed means that finding is absent from the later report. Code deletion, line movement, changed data, or detector limitations may explain it; it is not proof of a security fix.',
-    'Semantic comparison keys can survive line movement. Findings without a key retain location-based IDs, so moving them appears as new plus not observed. Duplicate semantic keys are left unverified instead of being matched arbitrarily.',
+    'Semantic comparison keys can survive line movement. Findings without a key retain location-based IDs, so moving them appears as new plus not observed. Repeated semantic keys or legacy finding IDs within a check make matching unverified, even for identical rows; occurrence order cannot establish identity.',
     'Source content hashes are provenance evidence and do not establish scope identity. Unknown scanner databases or rule bundles make the comparison unverified.',
     'Source inventory comparisons require known matching effective collection budgets and recorded exclusion reasons independently of the supplied scope fingerprint. Changed or unknown collection selection remains unverified.',
     'Comparisons do not suppress findings in the scan reports and do not certify the whole service.',
@@ -456,7 +461,8 @@ export async function writeComparison(result: ReportComparison, outDir: string):
   const lines = ['# Wakeio report comparison', '', `Comparable declared scope: ${result.comparable}`, '',
     ...result.reasons.map((reason) => `- ${reason}`), '', '## Counts', '',
     ...Object.entries(result.summary).map(([state, count]) => `- ${state}: ${count}`), '', '## Findings', '',
-    ...result.entries.map((entry) => `- **${entry.state}** [${entry.finding.severity}] ${escape(entry.finding.title)} (${entry.finding.id})`),
+    ...result.entries.map((entry) => `- **${entry.state}** [${entry.finding.severity}] ${escape(entry.finding.title)} (${entry.finding.id})`
+      + (entry.previousKind ? `; kind: ${escape(entry.previousKind)} → ${escape(entry.finding.kind)}` : '')),
     '', '## Limits', '', ...result.limitations.map((limit) => `- ${limit}`), ''];
   await writeArtifacts(outDir, [['comparison.json', JSON.stringify(result, null, 2) + '\n'], ['comparison.md', lines.join('\n')]]);
 }
