@@ -2,6 +2,7 @@ import { sanitiseAnalysisBudget, sameAnalysisBudget } from './source/analysis-bu
 import { sanitiseCollectionBudget, sanitiseCollectionEvidence, sameCollectionBudget } from './source/collection-budget.js';
 import { types as utilTypes } from 'node:util';
 import { sanitiseStaticContext } from './static-context.js';
+import { sanitizeDastExecution, isDastObservedEvidence } from './dast-execution.js';
 import type { Finding, ScanProvenance, ScanReport, Severity } from './contracts.js';
 import { exitCode, sanitiseReport, writeArtifacts } from './report.js';
 import { readJsonInput } from './json-input.js';
@@ -51,6 +52,22 @@ export function parseScanReport(input: unknown): ScanReport {
     const evidence = collectionEvidence.present ? sanitiseCollectionEvidence(collectionEvidence.value) : undefined;
     if (evidence?.issues.some(issue => issue.code === 'root_error') && check.status !== 'error'
       || evidence?.issues.some(issue => issue.code !== 'unsupported_file') && ['completed', 'not_applicable'].includes(check.status)) return invalid();
+    const nativeField = collectionField(check, 'dastExecution');
+    // Keep historical v1 normalization readable; new v2 evidence must be valid
+    // before sanitation can preserve a candidate or a completed result.
+    const nativeVersion = nativeField.valid && nativeField.value && typeof nativeField.value === 'object'
+      && !utilTypes.isProxy(nativeField.value) ? Object.getOwnPropertyDescriptor(nativeField.value, 'version') : undefined;
+    const nativeV1 = nativeVersion && 'value' in nativeVersion && nativeVersion.value === 1;
+    if (nativeField.present && !nativeField.valid) return invalid();
+    let nativeExecution: ReturnType<typeof sanitizeDastExecution> = null;
+    if (nativeField.present && !nativeV1) {
+      const execution = sanitizeDastExecution(nativeField.value);
+      if (!execution || execution.version !== 2 || check.id !== 'url.sql-boolean' || check.metrics?.requestCount !== execution.counts.httpAttempts
+        || execution.status !== 'complete' && ['completed', 'not_applicable'].includes(check.status)
+        || isDastObservedEvidence(execution) && check.findings.length !== 1 && ['completed', 'not_applicable'].includes(check.status)
+        || check.findings.length > 0 && !isDastObservedEvidence(execution)) return invalid();
+      nativeExecution = execution;
+    }
     checkIds.add(check.id);
     count += check.findings.length;
     if (count > 50_000 || (check.status === 'not_applicable' && check.findings.length)) return invalid();
@@ -60,6 +77,8 @@ export function parseScanReport(input: unknown): ScanReport {
         || !text(finding.description) || !text(finding.remediation) || !severities.includes(finding.severity)
         || !['low', 'medium', 'high'].includes(finding.confidence)
         || !['observation', 'candidate', 'advisory'].includes(finding.kind) || !record(finding.location)) return invalid();
+      if (nativeExecution?.version === 2 && (finding.kind !== 'candidate' || finding.confidence === 'high'
+        || (nativeExecution.status !== 'complete' || check.status !== 'completed') && finding.confidence !== 'low')) return invalid();
       const context = collectionField(finding, 'staticContext');
       if (!context.valid || context.present && (!sanitiseStaticContext(context.value)
         || finding.confidence !== 'low' || finding.kind !== 'candidate'
@@ -170,6 +189,7 @@ export function compareReports(beforeInput: ScanReport, afterInput: ScanReport):
     const next = after.checks.find(candidate => candidate.id === check.id)?.dastExecution;
     if (!previous && !next) continue;
     if (!previous || !next || previous.status !== 'complete' || next.status !== 'complete'
+      || previous.version !== next.version || previous.plannedRequests !== next.plannedRequests
       || previous.policySha256 !== next.policySha256 || previous.profile !== next.profile
       || previous.profileRevision !== next.profileRevision || previous.maxRequests !== next.maxRequests
       || previous.timeoutMs !== next.timeoutMs || previous.allowPrivate !== next.allowPrivate) {

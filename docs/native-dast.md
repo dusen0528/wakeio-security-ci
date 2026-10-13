@@ -36,13 +36,66 @@ node build/src/cli.js scan --dast-policy dast-policy.json --active-consent \
 
 Private/loopback targets need `--allow-private` in both commands; metadata/link-local addresses remain blocked. `plan` exit 0 means local configuration is ready, not that DNS, TLS, or the target has been checked. A plan below eight allowed attempts is blocked. Direct `scan` accepts lower budgets but must finish incomplete when the plan cannot complete.
 
+## Authenticated numeric policy v2
+
+For an authorized endpoint protected by an existing Authorization credential, use version 2 with the same numeric URL/parameter/oracle fields and these additional fields:
+
+```json
+{
+  "version": 2,
+  "kind": "sql-boolean-differential",
+  "baseUrl": "https://staging.example.test/",
+  "url": "https://staging.example.test/items?id=1",
+  "parameter": "id",
+  "profile": "numeric",
+  "authorizationEnv": "STAGING_AUTHORIZATION",
+  "identity": {
+    "path": "/whoami",
+    "status": 200,
+    "jsonPointer": "/user/id",
+    "equals": "owned-test-user"
+  },
+  "oracle": {
+    "jsonPointer": "/count",
+    "expectedBaseline": 1,
+    "expectedTrue": 1,
+    "expectedFalse": 0
+  }
+}
+```
+
+Supply `STAGING_AUTHORIZATION` through your local secret manager or CI environment. Its value is the **complete Authorization header**, not a token that Wakeio prefixes automatically. Keep the credential out of policy JSON, command arguments and committed workflows. Wakeio reads only the selected own environment property; missing/blank, control-character, non-Latin-1 or oversized values are refused. Each scan and replay captures a fresh selected credential and uses that value throughout its run. There is no login, credential refresh, cookie jar, discovery or unauthenticated fallback.
+
+Authenticated requests require HTTPS. The only plaintext exception is explicit `--allow-private` with literal `127.0.0.1` or `[::1]` for owned tests; `localhost`, other private HTTP addresses and public HTTP are refused offline before DNS. The identity path stays on the same origin and cannot contain a query or fragment. `identity.status` is a 2xx status and `identity.equals` is a nonempty bounded string. Choose an identity response that distinguishes the intended principal; a public or misleading response cannot establish authentication.
+
+Profile `sql-boolean-numeric-auth-v2` sends identity-before, the original eight SQL requests, then identity-after. All ten logical requests and DNS-address retries share one budget: default 10, maximum 64. Version 1 retains its original profile, policy hash behavior and default 8. Offline `plan` requires the selected credential and enough budget, printing enum phase records, origin, digests and effective limits. It omits identity path/pointer/principal, environment name and credential. Configuration readiness does not validate the live target or credential.
+
+Both identity controls must match for a completed v2 result. A mismatch or failed trailing control keeps the check partial/exit 2. If all eight SQL phases already observed the differential, the report retains a **low-confidence candidate** with `probeOutcome: observed`; overall `outcome` stays inconclusive and cannot authorize finding replay. A before-control failure prevents SQL probes. Boundary identity checks cannot exclude a mid-run change or prove the SQL endpoint used the same principal.
+
+The redacted v2 ledger has ten phase records plus `identityControls.before/after` (`matched`, `mismatched`, `inconclusive`, `not_attempted`) and `probeOutcome` (`observed`, `not_observed`, `inconclusive`). Scope binds revision, policy digest and effective budget, never the credential value. Reports and advice omit identity values and credentials. Advice projection policy 5 receives these enums only; failed controls expose diagnostics, not replay.
+
+Supply the selected credential as an active Action step environment secret and omit `dast-max-requests` to use the policy-derived default:
+
+```yaml
+- uses: dusen0528/wakeio-security-ci/dast@REVIEWED_COMMIT_SHA
+  env:
+    STAGING_AUTHORIZATION: ${{ secrets.STAGING_AUTHORIZATION }}
+  with:
+    active-consent: 'true'
+    allowed-origins: https://staging.example.test
+    dast-policy: authenticated-dast-policy.json
+    out: dast-reports
+```
+
+Consent, trigger/fork and origin refusals still run before engine setup. The passive Action is unchanged. SDK callers can pass `env` explicitly to `runDast` and `replayDastFinding`; selected credentials are snapshotted before awaits. `prepareDastPolicy` returns only validated policy/digest, and `snapshotDastEnvironment` returns a private one-key environment for v2 or undefined for v1. Do not serialize that private environment.
+
 ## Fixed execution and evidence
 
 The only mutation is appending a fixed numeric true or false SQL predicate to the approved value. Each of two rounds performs baseline, true probe, false probe, baseline: eight logical GET requests. Both normal baselines must match the configured oracle in both rounds. A repeated true/baseline match and false/false-oracle match produces a **candidate**, not independent exploit verification. If both valid probes return the same known oracle value consistently and all baselines pass, the result is `not_observed` within this policy only. Unknown values, a changed baseline, disagreement between rounds, 429/5xx, malformed JSON, oversized bodies, network errors, cancellation and incomplete budgets remain `partial`/`inconclusive`.
 
-The native runner uses Wakeio's Node transport directly: DNS answers are checked, sockets are pinned and peer-checked, TLS certificate/hostname verification remains enabled, and redirects are refused. Every HTTP attempt, including a retry against another approved DNS answer, consumes the shared request budget before sending. The default is 8 attempts, maximum 64; timeout is capped at 120000 ms. Response collection is bounded per response and per run. Nuclei's separate HTTPS refusal is unchanged because its CONNECT proxy cannot count HTTP requests inside TLS.
+The native runner uses Wakeio's Node transport directly: DNS answers are checked, sockets are pinned and peer-checked, TLS certificate/hostname verification remains enabled, and redirects are refused. Every HTTP attempt, including a retry against another approved DNS answer, consumes the shared request budget before sending. The default is 8 attempts for v1 and 10 for v2, maximum 64; timeout is capped at 120000 ms. Response collection is bounded per response and per run. Nuclei's separate HTTPS refusal is unchanged because its CONNECT proxy cannot count HTTP requests inside TLS.
 
-`report.json` and `agent-report.json` carry a sanitized `checks[].dastExecution` ledger: policy digest, profile revision, effective attempt/time/private-network settings, eight fixed phase records, HTTP statuses, counts and oracle-match categories. Reports retain no response body, original query value, oracle scalar, credential or model output. Markdown summarizes this scope; SARIF includes the ledger with a candidate finding. Missing, malformed, inconsistent or unsupported execution evidence cannot support a completed native check. Comparison requires unchanged policy and effective execution settings.
+`report.json` and `agent-report.json` carry a sanitized `checks[].dastExecution` ledger: policy digest, profile revision, effective attempt/time/private-network settings, eight v1 or ten v2 fixed phase records, HTTP statuses, counts and oracle-match categories. Reports retain no response body, original query value, oracle scalar, credential or model output. Markdown summarizes this scope; SARIF includes the ledger with a candidate finding. Missing, malformed, inconsistent or unsupported execution evidence cannot support a completed native check. Comparison requires unchanged policy and effective execution settings.
 
 Exit 0 means the requested checks completed without a finding at the selected threshold; exit 1 means a threshold finding; exit 2 means incomplete/error. `--fail-on none` never converts incomplete work to success. No finding means the selected differential was not observed, not that the service is free of SQL injection.
 
@@ -106,7 +159,7 @@ node build/src/cli.js replay --report dast-reports/report.json \
   --active-consent --out dast-replay
 ```
 
-For an originally private/loopback target, add `--allow-private` explicitly again. The receipt cannot grant that permission. The original report must fit the replay snapshot limit of 1 MiB of JSON data; larger reports are refused before traffic. Replay checks the policy digest, candidate identity and complete original eight-phase ledger before making requests. It preserves the original maximum request count, timeout, profile and private-network setting; overrides are refused. Existing output directories are refused before traffic. API authorization replay continues to use `--api-policy`.
+For an originally private/loopback target, add `--allow-private` explicitly again. The receipt cannot grant that permission. The original report must fit the replay snapshot limit of 1 MiB of JSON data; larger reports are refused before traffic. Replay checks the policy digest, candidate identity and complete original versioned ledger (eight v1 or ten v2 phases) before making requests. Authenticated v2 additionally resolves a fresh selected credential and requires both original identity controls to match. Partial trailing-identity candidates are not replayable. It preserves the original maximum request count, timeout, profile and private-network setting; overrides are refused. Existing output directories are refused before traffic. API authorization replay continues to use `--api-policy`.
 
 A complete repeated differential returns `reproduced` (exit 1). A complete baseline-preserving non-differential returns `not_reproduced` (exit 0). Incomplete or ambiguous execution returns `inconclusive`; invalid evidence, policy or permission returns `refused` (both exit 2). These are bounded scanner outcomes, not independent exploit or fix verification.
 

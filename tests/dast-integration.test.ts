@@ -105,6 +105,8 @@ test('plan is offline; CLI writes all reports, applies origin policy and preserv
   const directory = await mkdtemp(join(tmpdir(), 'wakeio-dast-integration-'));
   try {
     const input = join(directory, 'policy.json'); await writeFile(input, JSON.stringify(policy(origin)));
+    await assert.rejects(exec(process.execPath, [cli, 'plan', '--dast-policy', input]), (error: any) => error.code === 2);
+    assert.equal(hits, 0, 'v1 offline private-target refusal remains unchanged');
     const plan = await exec(process.execPath, [cli, 'plan', '--dast-policy', input, '--allow-private']);
     const planned = JSON.parse(plan.stdout);
     assert.equal(planned.status, 'ready'); assert.equal(planned.plannedRequests, 8);
@@ -133,4 +135,93 @@ test('advise help dispatches independently of scan and requires explicit upload 
   const help = await exec(process.execPath, [cli, 'advise', '--help']);
   assert.match(help.stdout, /cli-login\|api-key/);
   assert.match(help.stdout, /allow-report-upload/);
+});
+
+test('authenticated v2 offline plan validates fresh credentials and transport without disclosing identity values', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'wakeio-auth-plan-'));
+  const authName = 'WAKEIO_OWNED_AUTH_PLAN';
+  const secret = 'Bearer owned-plan-credential-sentinel';
+  try {
+    const input = join(directory, 'policy.json');
+    const v2 = { ...policy('http://127.0.0.1:1'), version: 2, authorizationEnv: authName,
+      identity: { path: '/private-identity-sentinel', status: 200, jsonPointer: '/principal-sentinel', equals: 'private-principal-sentinel' } };
+    await writeFile(input, JSON.stringify(v2));
+    const env = { ...process.env, [authName]: secret };
+    const ready = await exec(process.execPath, [cli, 'plan', '--dast-policy', input, '--allow-private'], { env });
+    const planned = JSON.parse(ready.stdout);
+    assert.equal(planned.status, 'ready'); assert.equal(planned.profileRevision, 'sql-boolean-numeric-auth-v2');
+    assert.equal(planned.plannedRequests, 10); assert.equal(planned.maxHttpAttempts, 10);
+    assert.deepEqual(planned.steps.map((step: { phase: string }) => step.phase),
+      ['identity-before', 'baseline-before', 'true', 'false', 'baseline-after', 'baseline-before', 'true', 'false', 'baseline-after', 'identity-after']);
+    for (const forbidden of [authName, secret, 'private-identity-sentinel', 'principal-sentinel', 'private-principal-sentinel', 'expectedBaseline']) assert.equal(ready.stdout.includes(forbidden), false);
+    await assert.rejects(exec(process.execPath, [cli, 'plan', '--dast-policy', input, '--allow-private', '--dast-max-requests', '9'], { env }),
+      (error: any) => error.code === 2 && error.stdout.includes('insufficient_request_budget'));
+    const missing: NodeJS.ProcessEnv = { ...env }; delete missing[authName];
+    for (const blockedEnv of [missing, { ...env, [authName]: 'Bearer bad\r\nheader' }]) {
+      await assert.rejects(exec(process.execPath, [cli, 'plan', '--dast-policy', input, '--allow-private'], { env: blockedEnv }),
+        (error: any) => error.code === 2 && !error.stdout.includes(authName) && !error.stdout.includes(secret));
+    }
+    await writeFile(input, JSON.stringify({ ...v2, baseUrl: 'http://no-dns-auth-plan.invalid/', url: 'http://no-dns-auth-plan.invalid/items?id=1' }));
+    await assert.rejects(exec(process.execPath, [cli, 'plan', '--dast-policy', input, '--allow-private'], { env }),
+      (error: any) => error.code === 2 && !error.stdout.includes('private-identity-sentinel'));
+  } finally { await rm(directory, { recursive: true, force: true }); }
+});
+
+// Synthetic protocol fixture only: the core SQLite suite separately validates SQL behavior.
+test('authenticated v2 CLI uses ten shared attempts, binds effective scope without token, and retains failed-after probe evidence', async () => {
+  const authName = 'WAKEIO_OWNED_AUTH_INTEGRATION';
+  const originalEnv = process.env[authName];
+  const tokens = ['Bearer owned-first-secret', 'Bearer owned-rotated-secret'];
+  let hits = 0, identityHits = 0, failAfter = false;
+  const server = createServer((request, response) => {
+    hits++; assert.ok(tokens.includes(request.headers.authorization!));
+    response.setHeader('content-type', 'application/json');
+    if (request.url === '/private-identity-integration') {
+      identityHits++;
+      response.end(JSON.stringify({ principal: failAfter && identityHits % 2 === 0 ? 'changed-private-principal' : 'owned-private-principal' }));
+    } else {
+      const value = new URL(request.url!, 'http://owned.invalid').searchParams.get('id')!;
+      response.end(JSON.stringify({ count: value.includes('1=2') ? 0 : 1 }));
+    }
+  });
+  await new Promise<void>(done => server.listen(0, '127.0.0.1', done));
+  const address = server.address(); assert.ok(address && typeof address === 'object');
+  const top = await mkdtemp(join(tmpdir(), 'wakeio-auth-cli-'));
+  try {
+    const origin = `http://127.0.0.1:${address.port}`;
+    const input = join(top, 'policy.json');
+    const v2 = { ...policy(origin), version: 2, authorizationEnv: authName,
+      identity: { path: '/private-identity-integration', status: 200, jsonPointer: '/principal', equals: 'owned-private-principal' } };
+    await writeFile(input, JSON.stringify(v2));
+    delete process.env[authName];
+    assert.equal(await main(['scan', '--dast-policy', input, '--active-consent', '--allow-private', '--out', join(top, 'missing')]), 2);
+    assert.equal(hits, 0);
+    const successful: any[] = [];
+    for (const [index, token] of tokens.entries()) {
+      process.env[authName] = token;
+      const out = join(top, `scan-${index}`);
+      assert.equal(await main(['scan', '--dast-policy', input, '--active-consent', '--allow-private', '--out', out]), 1);
+      successful.push(JSON.parse(await readFile(join(out, 'report.json'), 'utf8')));
+      const execution = successful[index].checks[0].dastExecution;
+      assert.equal(execution.maxRequests, 10); assert.equal(execution.counts.httpAttempts, 10);
+      assert.equal(execution.profileRevision, 'sql-boolean-numeric-auth-v2');
+      assert.deepEqual(execution.identityControls, { before: 'matched', after: 'matched' });
+      for (const file of ['report.json', 'agent-report.json', 'report.md', 'report.sarif']) {
+        const text = await readFile(join(out, file), 'utf8');
+        for (const forbidden of [...tokens, authName, '/private-identity-integration', 'owned-private-principal', '"authorization"', 'AND 1=']) assert.equal(text.includes(forbidden), false, `${file}: ${forbidden}`);
+      }
+    }
+    assert.equal(hits, 20); assert.equal(successful[0].scope.fingerprint, successful[1].scope.fingerprint, 'token changes do not alter approved scope');
+    failAfter = true;
+    const partialOut = join(top, 'failed-after');
+    assert.equal(await main(['scan', '--dast-policy', input, '--active-consent', '--allow-private', '--out', partialOut]), 2);
+    const incomplete = JSON.parse(await readFile(join(partialOut, 'report.json'), 'utf8'));
+    assert.equal(incomplete.checks[0].status, 'partial'); assert.equal(incomplete.checks[0].dastExecution.probeOutcome, 'observed');
+    assert.equal(incomplete.checks[0].dastExecution.identityControls.after, 'mismatched');
+    assert.equal(incomplete.checks[0].findings.length, 1); assert.equal(incomplete.checks[0].findings[0].confidence, 'low');
+    assert.equal(hits, 30);
+  } finally {
+    if (originalEnv === undefined) delete process.env[authName]; else process.env[authName] = originalEnv;
+    await new Promise<void>(done => server.close(() => done())); await rm(top, { recursive: true, force: true });
+  }
 });
