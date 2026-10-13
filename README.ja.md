@@ -162,6 +162,24 @@ jobs:
 
 `--fail-on none` は finding による失敗だけを無効にします。未完了の検査や setup failure は引き続き exit `2` です。exit `0` はサービス全体の安全性や認証の完全性を証明しません。
 
+## ローカル source handoff
+
+レビュー済みの 0.5.0 ソースプレビューでは、source candidate と現在の収集済み
+ソースを結び付けた非公開パケットを作成できます。公開 npm 0.4.0 には含まれません。
+`FINDING_ID` とゼロ始まりの `CHECK_INDEX` を agent report の実際の値に置き換え、
+レポートとパケットはすべてソースディレクトリの外に置いてください。
+
+```sh
+wakeio-security-ci handoff create --report /path/outside/your-app/before --source /path/to/your-app --finding FINDING_ID --check-index CHECK_INDEX --out /path/outside/your-app/review
+wakeio-security-ci handoff finish --handoff /path/outside/your-app/review --report /path/outside/your-app/after --source /path/to/your-app --out /path/outside/your-app/recheck
+```
+
+利用者が元の scan を同じオプションで別途実行し、`after` を用意します。
+Handoff は scan、モデル呼び出し、argv の生成・実行、パッチ適用をしません。
+Finish は比較と **after 全体の gate** を確認します。同じ high finding も失敗し、
+partial は exit `2` のままです。`not_observed` は修正の検証ではありません。
+[全体の流れ、snapshot と出力先](docs/source-handoff.md)を参照してください。
+
 ## 範囲と限界
 
 - 収集上限は既定で 1,000 ファイル、合計 25 MiB、1 ファイル 2 MiB です。`.git`、`node_modules`、`vendor`、build/cache ディレクトリ、scanner の制御ファイルは除外します。上限超過や読み取り失敗は incomplete として報告します。

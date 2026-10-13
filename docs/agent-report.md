@@ -10,13 +10,38 @@ The latest published npm package remains 0.4.0; use a reviewed source build
 for the 0.5.0 examples and fields.
 
 ```sh
-wakeio-security-ci scan --source . --tools none --fail-on high --out reports
+wakeio-security-ci scan --source /path/to/your-app --tools none --fail-on high --out /path/outside/your-app/reports
 ```
 
 The SDK keeps `writeReports(report, outDir)` compatible, with `high` as its
 default threshold. Pass `{ failOn: 'none' }` as the optional third argument to
 match a different CLI policy. `toAgentReport(report, failOn)` and
 `evaluateGate(report, failOn)` are exported through the package index.
+
+## Collected source snapshot and local handoff
+
+New source inventory checks may include additive `sourceSnapshot` metadata,
+preserved in the corresponding `agent-report.json` check. Its fields are
+`revision: source-snapshot-v1`, `basis: collected_utf8_strings`,
+`algorithm: sha256`, `digest`, `filesSelected`, `bytesSelected`, `complete` and
+`outputDirectoryExcluded`. The aggregate binds the immutable decoded strings
+actually collected for the scan, their selection metadata and effective
+collection budget. It exports no per-file list/hash, source text or secret.
+
+This snapshot is separate from tree provenance `sourceContentHash`, declared
+scope fingerprint and semantic finding anchors. It is not raw-file-byte
+attestation, a filesystem transaction, a scanner signature or runtime proof.
+Missing legacy or malformed metadata cannot establish a source-bound handoff.
+
+The [local source handoff](source-handoff.md) uses a digest-bound report pair
+and `(checkIndex, findingId)` to create a new private, data-only review packet.
+It re-collects the current source to verify the aggregate, and finish binds a
+separately produced after report to the current after source. A complete
+collector with a partial AST can create a packet while preserving original
+gate `2`. Finish applies both strict comparison and the full after scan gate;
+unchanged high candidates still block. Neither command scans, generates or
+executes argv, invokes a model or applies a patch. `not_observed`, including a
+finish exit `0`, retains verification=false and controls=`not_run`.
 
 ## First-read summary
 

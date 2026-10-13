@@ -162,6 +162,23 @@ jobs:
 
 `--fail-on none` 只关闭由 finding 触发的失败。未完成检查和 setup failure 仍然返回 exit `2`。exit `0` 不代表整个服务安全，也不代表认证流程完整。
 
+## 本地 source handoff
+
+经审查的 0.5.0 源码预览版可以将 source candidate 与当前收集的源码绑定，
+生成私有审查与复查包。公开 npm 0.4.0 不包含此命令。
+将 `FINDING_ID` 和从零开始的 `CHECK_INDEX` 替换为 agent report 的实际值；
+所有报告与交接包都应放在源码目录之外。
+
+```sh
+wakeio-security-ci handoff create --report /path/outside/your-app/before --source /path/to/your-app --finding FINDING_ID --check-index CHECK_INDEX --out /path/outside/your-app/review
+wakeio-security-ci handoff finish --handoff /path/outside/your-app/review --report /path/outside/your-app/after --source /path/to/your-app --out /path/outside/your-app/recheck
+```
+
+用户须使用相同选项单独重新运行原 scan，生成 `after`。Handoff 不执行 scan、
+模型调用、argv 生成或执行、补丁应用。Finish 同时检查比较结果和 **after 完整 gate**；
+未改变的 high finding 仍导致失败，partial 仍为 exit `2`。`not_observed` 不代表修复已验证。
+详见[完整流程、snapshot 绑定与输出位置](docs/source-handoff.md)。
+
 ## 范围和限制
 
 - 默认收集上限是 1,000 个文件、总计 25 MiB、单文件 2 MiB。`.git`、`node_modules`、`vendor`、build/cache 目录和 scanner 控制文件会被排除。超出上限或读取失败会记录为 incomplete。

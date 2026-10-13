@@ -176,6 +176,24 @@ node build/src/cli.js scan \
 
 `--fail-on none`은 발견 결과에 따른 실패만 끄며 미완료 검사를 통과로 바꾸지 않습니다. 보고서는 원문 소스와 Secret 값을 제외하지만 프로젝트 경로·패키지 식별자·URL을 포함할 수 있으므로 CI artifact 공개 범위를 확인하세요.
 
+## 로컬 소스 handoff
+
+검토한 0.5.0 소스 프리뷰에서는 소스 candidate와 현재 수집한 소스를 연결해
+비공개 검토·재검사 패킷을 만듭니다. 공개 npm 0.4.0에는 이 명령이 없습니다.
+`FINDING_ID`와 0부터 시작하는 `CHECK_INDEX`를 agent 보고서의 실제 값으로 바꾸고,
+보고서와 패킷은 모두 소스 디렉터리 밖에 둡니다.
+
+```sh
+wakeio-security-ci handoff create --report /path/outside/your-app/before --source /path/to/your-app --finding FINDING_ID --check-index CHECK_INDEX --out /path/outside/your-app/review
+wakeio-security-ci handoff finish --handoff /path/outside/your-app/review --report /path/outside/your-app/after --source /path/to/your-app --out /path/outside/your-app/recheck
+```
+
+사용자가 원 scan을 같은 옵션으로 별도 재실행해 `after`를 준비합니다. Handoff는
+scan·모델 호출·argv 생성/실행·패치 적용을 하지 않습니다. Finish는 비교와
+**after 전체 gate**를 함께 확인하므로 같은 high finding도 실패하며 partial은
+exit `2`입니다. `not_observed`는 수정 검증이 아닙니다.
+[전체 동선·snapshot 연결·출력 위치](docs/source-handoff.md)를 참고하세요.
+
 ## 읽기 전용 API 정책과 비교
 
 현재 소스 checkout에서는 staging 실행 전에 대상에 연결하지 않고 로컬 설정을 확인할 수 있습니다.

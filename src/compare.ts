@@ -1,5 +1,6 @@
 import { sanitiseAnalysisBudget, sameAnalysisBudget } from './source/analysis-budget.js';
 import { sanitiseCollectionBudget, sanitiseCollectionEvidence, sameCollectionBudget } from './source/collection-budget.js';
+import { sanitiseSourceSnapshotEvidence } from './source/snapshot-evidence.js';
 import { types as utilTypes } from 'node:util';
 import { sanitiseStaticContext } from './static-context.js';
 import { sanitizeDastExecution, isDastObservedEvidence, isLegacyDastExecution } from './dast-execution.js';
@@ -45,6 +46,13 @@ export function parseScanReport(input: unknown): ScanReport {
     if (check.analysisBudget !== undefined && !sanitiseAnalysisBudget(check.analysisBudget)) return invalid();
     const collectionBudget = collectionField(check, 'collectionBudget');
     const collectionEvidence = collectionField(check, 'collectionEvidence');
+    const snapshotField = collectionField(check, 'sourceSnapshot');
+    const sourceSnapshot = snapshotField.present ? sanitiseSourceSnapshotEvidence(snapshotField.value) : undefined;
+    const snapshotBudget = sanitiseCollectionBudget(collectionBudget.value);
+    if (!snapshotField.valid || snapshotField.present && (!sourceSnapshot || check.id !== 'source.inventory' || !snapshotBudget
+      || sourceSnapshot.filesSelected > snapshotBudget.limits.maxFiles || sourceSnapshot.bytesSelected > snapshotBudget.limits.maxBytes
+      || check.metrics?.filesSelected !== sourceSnapshot.filesSelected || check.metrics?.bytesSelected !== sourceSnapshot.bytesSelected
+      || !sourceSnapshot.complete && ['completed', 'not_applicable'].includes(check.status))) return invalid();
     if (!collectionBudget.valid || !collectionEvidence.valid
       || (collectionBudget.present && !sanitiseCollectionBudget(collectionBudget.value))
       || (collectionEvidence.present && !sanitiseCollectionEvidence(collectionEvidence.value))

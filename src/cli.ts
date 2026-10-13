@@ -22,6 +22,7 @@ import { initMain } from "./init.js";
 import { planMain } from "./plan.js";
 import { repairMain } from "./repair.js";
 import { adviseMain } from "./agent-advice.js";
+import { handoffMain } from './source-handoff.js';
 import { DAST_CHECK_ID, DAST_MAX_REQUESTS, DAST_DEFAULT_MAX_REQUESTS, parseDastPolicy, prepareDastPolicy, snapshotDastEnvironment, dastProfileRevision, dastDefaultMaxRequests, runDast, type DastPolicy } from "./dast.js";
 import { API_MAX_REQUESTS, API_MAX_TIMEOUT_MS } from "./api.js";
 import { runSchemathesisLive } from "./schemathesis-live.js";
@@ -93,6 +94,8 @@ export const USAGE = `Usage:
   wakeio-security-ci repair --source DIR --policy FILE --out NEW_DIR --proposal FILE
   wakeio-security-ci repair --help
   wakeio-security-ci advise --report DIR --agent codex --auth cli-login|api-key --allow-report-upload --out NEW_DIR
+  wakeio-security-ci handoff create --report DIR --source DIR --finding ID --check-index N --out NEW_DIR
+  wakeio-security-ci handoff finish --handoff DIR --report AFTER_DIR --source DIR --out NEW_DIR
 
 Options:
   --out DIR                    Report directory (default: wakeio-security-reports)
@@ -594,6 +597,7 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
   if (argv[0] === 'init') return initMain(argv);
   if (argv[0] === 'repair') return repairMain(argv);
   if (argv[0] === 'advise') return adviseMain(argv);
+  if (argv[0] === 'handoff') return handoffMain(argv);
   let parsed: CliOptions | { help: true };
   try {
     parsed = parseCliArgs(argv);
