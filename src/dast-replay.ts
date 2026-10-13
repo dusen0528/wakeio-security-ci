@@ -1,8 +1,8 @@
 import { createHash } from 'node:crypto';
 import { types } from 'node:util';
 import { parseScanReport } from './compare.js';
-import { DAST_CHECK_ID, DAST_PROFILE_REVISION, parseDastPolicy, runDast, type DastPolicy } from './dast.js';
-import { sanitizeDastExecution } from './dast-execution.js';
+import { DAST_CHECK_ID, dastProfileRevision, parseDastPolicy, runDast, type DastPolicy } from './dast.js';
+import { sanitizeDastExecution, isDastReplayableExecution } from './dast-execution.js';
 import { snapshotJsonData } from './json-snapshot.js';
 import { createReport, REPORT_TOOL_VERSION } from './report.js';
 import { safeHttpUrl } from './report-path.js';
@@ -19,6 +19,7 @@ export interface DastReplayOptions {
   consent: boolean;
   allowPrivate?: boolean;
   signal?: AbortSignal;
+  env?: NodeJS.ProcessEnv;
 }
 
 export interface DastReplayResult {
@@ -35,7 +36,7 @@ export interface DastReplayResult {
   profileRevision?: string;
   sourceExecutionSha256?: string;
   freshExecutionSha256?: string;
-  /** New eight-phase check; the normal report writer sanitizes it for public output. */
+  /** New fixed-plan check; the normal report writer sanitizes it for public output. */
   check?: CheckResult;
 }
 
@@ -55,7 +56,7 @@ function snapshotOptions(raw: DastReplayOptions): DastReplayOptions | undefined 
   const prototype = Object.getPrototypeOf(raw);
   if (prototype !== Object.prototype && prototype !== null || Object.getOwnPropertySymbols(raw).length) return undefined;
   const descriptors = Object.getOwnPropertyDescriptors(raw);
-  const permitted = new Set(['report', 'policy', 'findingId', 'consent', 'allowPrivate', 'signal']);
+  const permitted = new Set(['report', 'policy', 'findingId', 'consent', 'allowPrivate', 'signal', 'env']);
   if (Object.entries(descriptors).some(([key, descriptor]) => !permitted.has(key) || !descriptor.enumerable || !('value' in descriptor))) return undefined;
   const value = (key: keyof DastReplayOptions) => descriptors[key]?.value;
   if (typeof value('findingId') !== 'string' || !ID.test(value('findingId') as string)
@@ -64,7 +65,7 @@ function snapshotOptions(raw: DastReplayOptions): DastReplayOptions | undefined 
     || value('signal') !== undefined && (types.isProxy(value('signal')) || !(value('signal') instanceof AbortSignal))) return undefined;
   return { report: value('report'), policy: value('policy'), findingId: value('findingId') as string,
     consent: value('consent') as boolean, allowPrivate: value('allowPrivate') as boolean | undefined,
-    signal: value('signal') as AbortSignal | undefined };
+    signal: value('signal') as AbortSignal | undefined, env: value('env') as NodeJS.ProcessEnv | undefined };
 }
 
 /**
@@ -93,7 +94,7 @@ export async function replayDastFinding(rawOptions: DastReplayOptions): Promise<
   const metadata: Partial<DastReplayResult> = { sourceReportSha256: digest(rawReport),
     sourceToolVersion: report.toolVersion === REPORT_TOOL_VERSION ? REPORT_TOOL_VERSION : 'other',
     replayToolVersion: REPORT_TOOL_VERSION,
-    policySha256, profileRevision: DAST_PROFILE_REVISION };
+    policySha256, profileRevision: dastProfileRevision(policy) };
   const rawChecks = object(rawReport) && Array.isArray(rawReport.checks) ? rawReport.checks : [];
   const rawNative = rawChecks.filter(item => object(item) && item.id === DAST_CHECK_ID);
   if (rawNative.length !== 1 || !object(rawNative[0]) || !Array.isArray(rawNative[0].findings)) {
@@ -110,15 +111,15 @@ export async function replayDastFinding(rawOptions: DastReplayOptions): Promise<
   if (check.findings.length !== 1 || check.status !== 'completed'
     || !check.dastExecution || check.dastExecution.status !== 'complete' || check.dastExecution.outcome !== 'observed'
     || check.metrics?.requestCount !== check.dastExecution.counts.httpAttempts
-    || check.dastExecution.counts.evaluated !== 8 || check.dastExecution.counts.httpAttempts < 8) {
+    || check.dastExecution.counts.evaluated !== check.dastExecution.plannedRequests || check.dastExecution.counts.httpAttempts < check.dastExecution.plannedRequests) {
     return refused(findingId, 'not_replayable', metadata);
   }
   const original = sanitizeDastExecution(check.dastExecution);
-  if (!original) return refused(findingId, 'not_replayable', metadata);
+  if (!original || !isDastReplayableExecution(original)) return refused(findingId, 'not_replayable', metadata);
   metadata.sourceExecutionSha256 = digest(original);
   const finding = selected[0]!;
   if (original.policySha256 !== policySha256 || original.profile !== policy.profile
-    || original.profileRevision !== DAST_PROFILE_REVISION) return refused(findingId, 'policy_mismatch', metadata);
+    || original.profileRevision !== dastProfileRevision(policy) || original.version !== policy.version) return refused(findingId, 'policy_mismatch', metadata);
   if (finding.ruleId !== RULE || finding.title !== TITLE || finding.kind !== 'candidate'
     || finding.severity !== 'high' || finding.confidence !== 'medium'
     || finding.location.url !== safeHttpUrl(policy.url)) return refused(findingId, 'not_replayable', metadata);
@@ -129,7 +130,7 @@ export async function replayDastFinding(rawOptions: DastReplayOptions): Promise<
   let fresh: CheckResult | undefined;
   try {
     const [rawFresh] = await runDast({ policy, consent: true, allowPrivate: options.allowPrivate,
-      maxRequests: original.maxRequests, timeoutMs: original.timeoutMs, signal: options.signal });
+      maxRequests: original.maxRequests, timeoutMs: original.timeoutMs, signal: options.signal, env: options.env });
     if (rawFresh) fresh = createReport([rawFresh], 'url', new Date()).checks[0];
   } catch {
     return { version: 1, kind: 'native-dast-finding-replay', outcome: 'inconclusive', findingId, ...metadata };
@@ -140,7 +141,7 @@ export async function replayDastFinding(rawOptions: DastReplayOptions): Promise<
     && execution.profileRevision === original.profileRevision && execution.maxRequests === original.maxRequests
     && execution.timeoutMs === original.timeoutMs && execution.allowPrivate === original.allowPrivate;
   const completed = fresh?.id === DAST_CHECK_ID && fresh.status === 'completed' && execution?.status === 'complete'
-    && execution.counts.evaluated === 8 && fresh.metrics?.requestCount === execution.counts.httpAttempts && sameSettings;
+    && execution.counts.evaluated === execution.plannedRequests && fresh.metrics?.requestCount === execution.counts.httpAttempts && sameSettings;
   const outcome: DastReplayOutcome = !completed ? 'inconclusive'
     : execution?.outcome === 'observed' && fresh?.findings.length === 1 && fresh.findings[0]?.id === findingId ? 'reproduced'
       : execution?.outcome === 'not_observed' && fresh?.findings.length === 0 ? 'not_reproduced'

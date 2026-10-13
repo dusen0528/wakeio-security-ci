@@ -52,7 +52,7 @@ inputs:
     required: false
     default: ''
   dast-max-requests:
-    description: Native DAST HTTP attempt budget, 1..64 (default 8); every retry counts
+    description: Native DAST HTTP attempt budget, 1..64 (v1 default 8; authenticated v2 default 10); every retry counts
     required: false
     default: ''
   openapi:

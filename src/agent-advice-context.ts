@@ -1,14 +1,14 @@
 import { sanitiseCollectionBudget, sanitiseCollectionEvidence } from './source/collection-budget.js';
 import type { AgentReport } from './contracts.js';
 import { redactSecrets, safeHttpUrl } from './report-path.js';
-import { sanitizeDastExecution } from './dast-execution.js';
+import { sanitizeDastExecution, isDastReplayableExecution } from './dast-execution.js';
 import { sanitiseStaticContext } from './static-context.js';
 import { types } from 'node:util';
 
 export type RecheckRoute = 'repeat_native_same_policy' | 'replay_native_finding_same_policy' | 'replay_api_finding_same_policy'
   | 'review_static_flow_or_budget' | 'review_check_diagnostics' | 'review_scope';
 
-export const ADVICE_PROJECTION_POLICY_VERSION = 4;
+export const ADVICE_PROJECTION_POLICY_VERSION = 5;
 
 const MAX_CHECKS = 24;
 const MAX_FINDINGS = 24;
@@ -28,11 +28,12 @@ function checkPriority(check: AgentReport['checks'][number], blocking: Set<strin
 
 /** Report-only prerequisites mirrored from replayDastFinding; policy matching is still checked at replay time. */
 function nativeExecutionEligible(check: AgentReport['checks'][number], nativeCheckCount: number): boolean {
-  const execution = check.dastExecution;
+  const execution = sanitizeDastExecution(check.dastExecution);
   return nativeCheckCount === 1 && check.checkId === NATIVE_CHECK && check.status === 'completed'
-    && !!execution && execution.status === 'complete' && !!sanitizeDastExecution(execution)
+    && !!execution && execution.status === 'complete'
     && check.metrics?.requestCount === execution.counts.httpAttempts
-    && execution.counts.evaluated === 8 && execution.counts.httpAttempts >= 8;
+    && execution.counts.evaluated === execution.plannedRequests && execution.counts.httpAttempts >= execution.plannedRequests
+    && (execution.version === 1 || execution.identityControls.before === 'matched' && execution.identityControls.after === 'matched');
 }
 
 function checkRoute(check: AgentReport['checks'][number], mode: AgentReport['mode'], nativeCheckCount: number): RecheckRoute {
@@ -45,7 +46,7 @@ function checkRoute(check: AgentReport['checks'][number], mode: AgentReport['mod
 }
 
 function checkCard(check: AgentReport['checks'][number], mode: AgentReport['mode'], nativeCheckCount: number) {
-  const dast = check.checkId === 'url.sql-boolean' ? check.dastExecution : undefined;
+  const dast = check.checkId === 'url.sql-boolean' ? sanitizeDastExecution(check.dastExecution) : undefined;
   const api = check.checkId === 'api.authorization' ? check.apiExecution : undefined;
   const gaps = check.analysisGaps;
   const collectionBudget = check.checkId === 'source.inventory' ? sanitiseCollectionBudget(check.collectionBudget) : undefined;
@@ -60,6 +61,7 @@ function checkCard(check: AgentReport['checks'][number], mode: AgentReport['mode
       : mode === 'source' || check.checkId.startsWith('source.') ? 'source_check' as const : 'other' as const,
     ...(dast ? { nativeDast: {
       profileRevision: dast.profileRevision, status: dast.status, outcome: dast.outcome,
+      ...(dast.version === 2 ? { identityControls: { before: dast.identityControls.before, after: dast.identityControls.after }, probeOutcome: dast.probeOutcome } : {}),
       plannedRequests: dast.plannedRequests, maxRequests: dast.maxRequests,
       timeoutMs: dast.timeoutMs, allowPrivate: dast.allowPrivate, policyBound: true,
       counts: dast.counts, stopReason: dast.stopReason,
@@ -96,7 +98,7 @@ function findingRoute(finding: AgentReport['findings'][number],
   findingRowsForCheck: number, nativeReplayReportEligible: boolean, conditionalContext: boolean): RecheckRoute {
   if (conditionalContext) return 'review_static_flow_or_budget';
   if (nativeReplayReportEligible && nativeExecutionEligible(check, nativeCheckCount)
-      && check.dastExecution?.outcome === 'observed'
+      && check.dastExecution && isDastReplayableExecution(check.dastExecution)
       && check.findingIds.length === 1 && findingRowsForCheck === 1
       && check.findingIds[0] === finding.findingId
       && finding.ruleId === NATIVE_RULE && finding.title === NATIVE_TITLE

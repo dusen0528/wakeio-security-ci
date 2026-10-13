@@ -81,3 +81,57 @@ test('native replay CLI records reproduction and non-reproduction without changi
     }
   } finally { await new Promise<void>(done => server.close(() => done())); await rm(directory, { recursive: true, force: true }); }
 });
+
+// Synthetic authenticated protocol fixture; no real target or database behavior is asserted here.
+test('authenticated native replay resolves fresh environment credentials and refuses partial trailing identity', async () => {
+  const authName = 'WAKEIO_OWNED_AUTH_REPLAY', previous = process.env[authName];
+  let hits = 0, identityHits = 0, failAfter = false;
+  const observedHeaders: string[] = [];
+  const server = createServer((request, response) => {
+    hits++; observedHeaders.push(request.headers.authorization ?? '');
+    response.setHeader('content-type', 'application/json');
+    if (request.url === '/private-replay-identity') {
+      identityHits++;
+      response.end(JSON.stringify({ user: failAfter && identityHits % 2 === 0 ? 'different-private-user' : 'owned-private-user' }));
+    } else response.end(JSON.stringify({ count: request.url?.includes('1%3D2') ? 0 : 1 }));
+  });
+  await new Promise<void>(done => server.listen(0, '127.0.0.1', done));
+  const address = server.address(); assert.ok(address && typeof address === 'object');
+  const top = await mkdtemp(join(tmpdir(), 'wakeio-auth-replay-cli-'));
+  try {
+    const origin = `http://127.0.0.1:${address.port}`, input = join(top, 'policy.json');
+    const policy = { version: 2, kind: 'sql-boolean-differential', baseUrl: `${origin}/`, url: `${origin}/items?id=1`, parameter: 'id', profile: 'numeric',
+      authorizationEnv: authName, identity: { path: '/private-replay-identity', status: 200, jsonPointer: '/user', equals: 'owned-private-user' },
+      oracle: { jsonPointer: '/count', expectedBaseline: 1, expectedTrue: 1, expectedFalse: 0 } };
+    await writeFile(input, JSON.stringify(policy)); process.env[authName] = 'Bearer owned-original-token';
+    const original = join(top, 'original');
+    assert.equal(await main(['scan', '--dast-policy', input, '--active-consent', '--allow-private', '--out', original]), 1);
+    const originalBytes = await readFile(join(original, 'report.json'));
+    const report = JSON.parse(originalBytes.toString()), finding = report.checks[0].findings[0].id;
+    const replay = ['replay', '--report', join(original, 'report.json'), '--dast-policy', input, '--finding', finding, '--active-consent', '--allow-private'];
+    delete process.env[authName];
+    assert.equal(await main([...replay, '--out', join(top, 'missing')]), 2); assert.equal(hits, 10);
+    process.env[authName] = 'Bearer owned-fresh-token';
+    const repeated = join(top, 'repeated');
+    assert.equal(await main([...replay, '--out', repeated]), 1); assert.equal(hits, 20);
+    assert.ok(observedHeaders.slice(0, 10).every(value => value === 'Bearer owned-original-token'));
+    assert.ok(observedHeaders.slice(10).every(value => value === 'Bearer owned-fresh-token'));
+    const receipt = JSON.parse(await readFile(join(repeated, 'replay.json'), 'utf8'));
+    assert.equal(receipt.outcome, 'reproduced'); assert.equal(receipt.profileRevision, 'sql-boolean-numeric-auth-v2');
+    failAfter = true;
+    const incomplete = join(top, 'incomplete');
+    assert.equal(await main(['scan', '--dast-policy', input, '--active-consent', '--allow-private', '--out', incomplete]), 2);
+    const partial = JSON.parse(await readFile(join(incomplete, 'report.json'), 'utf8'));
+    assert.equal(partial.checks[0].findings.length, 1); assert.equal(partial.checks[0].findings[0].confidence, 'low');
+    const partialReplay = [...replay]; partialReplay[2] = join(incomplete, 'report.json'); partialReplay[6] = partial.checks[0].findings[0].id;
+    assert.equal(await main([...partialReplay, '--out', join(top, 'refused-partial')]), 2); assert.equal(hits, 30);
+    assert.deepEqual(await readFile(join(original, 'report.json')), originalBytes);
+    for (const file of await readdir(repeated)) {
+      const text = await readFile(join(repeated, file), 'utf8');
+      for (const forbidden of [authName, 'owned-original-token', 'owned-fresh-token', '/private-replay-identity', 'owned-private-user', 'AND 1=']) assert.equal(text.includes(forbidden), false, file);
+    }
+  } finally {
+    if (previous === undefined) delete process.env[authName]; else process.env[authName] = previous;
+    await new Promise<void>(done => server.close(() => done())); await rm(top, { recursive: true, force: true });
+  }
+});

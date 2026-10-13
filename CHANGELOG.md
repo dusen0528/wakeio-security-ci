@@ -6,6 +6,8 @@ Source and the checked-in Action are versioned 0.5.0. The latest published npm
 package remains 0.4.0; use a reviewed Git commit or build this checkout for the
 features below. This entry does not claim an npm 0.5.0 publication.
 
+- Add opt-in native numeric SQL policy v2 with one selected environment Authorization credential, same-origin identity controls before and after the original eight SQL phases, and default ten shared HTTP attempts. HTTPS is required except explicitly permitted literal owned loopback tests. V1 policy hashes, profile and default eight attempts are unchanged. Failed identity controls remain partial; an already observed probe is retained as a low-confidence candidate without replay authority. CLI/Action offline preflight, fresh-credential replay and advice projection policy 5 preserve these boundaries without storing credentials or identity values. Owned fixture validation does not establish production authentication or SQL coverage.
+
 - Preserve incomplete API replay as `inconclusive` (exit 2), even when a
   candidate exposure was observed before a later control or request failed.
   A completed replay is required for `reproduced` or `not_reproduced`.

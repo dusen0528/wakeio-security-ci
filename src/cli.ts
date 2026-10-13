@@ -22,7 +22,7 @@ import { initMain } from "./init.js";
 import { planMain } from "./plan.js";
 import { repairMain } from "./repair.js";
 import { adviseMain } from "./agent-advice.js";
-import { DAST_CHECK_ID, DAST_PROFILE_REVISION, DAST_MAX_REQUESTS, DAST_DEFAULT_MAX_REQUESTS, parseDastPolicy, runDast, type DastPolicy } from "./dast.js";
+import { DAST_CHECK_ID, DAST_MAX_REQUESTS, DAST_DEFAULT_MAX_REQUESTS, parseDastPolicy, prepareDastPolicy, snapshotDastEnvironment, dastProfileRevision, dastDefaultMaxRequests, runDast, type DastPolicy } from "./dast.js";
 import { API_MAX_REQUESTS, API_MAX_TIMEOUT_MS } from "./api.js";
 import { runSchemathesisLive } from "./schemathesis-live.js";
 import { NUCLEI_MAX_RATE_LIMIT, NUCLEI_MAX_REQUESTS, NUCLEI_SCOPES, runNuclei, type NucleiScope } from "./nuclei.js";
@@ -121,7 +121,7 @@ Options:
 Active DAST (off by default; sends generated or template requests to the target):
   --active-consent             Required: you own or are authorized to test the target
   --dast-policy FILE           Explicit GET/query numeric SQL differential policy JSON
-  --dast-max-requests N        Native DAST HTTP attempt budget, 1..64 (default 8)
+  --dast-max-requests N        Native DAST HTTP attempt budget, 1..64 (v1 default 8; authenticated v2 default 10)
   --openapi FILE               Local OpenAPI 3.0/3.1 JSON (same-document $ref only)
   --api-base URL               Target origin for --openapi (servers are never used)
   --operation PATH             Documented GET path to test (repeatable, 1..16)
@@ -486,8 +486,11 @@ async function runDastReplay(argv: readonly string[]): Promise<number> {
       await writeArtifacts(options.outDir, []);
     } catch { process.stderr.write('Error: native replay requires a new, safe output directory; no target requests were made.\n'); return 2; }
     const startedAt = new Date().toISOString();
+    let env: NodeJS.ProcessEnv | undefined;
+    try { env = snapshotDastEnvironment(parseDastPolicy(policy).policy); }
+    catch { env = {}; /* The replay core reports invalid policy/credential without rereading the environment. */ }
     const result = await replayDastFinding({ report, policy, findingId: options.findingId, consent: options.consent,
-      allowPrivate: options.allowPrivate, signal: controller.signal });
+      allowPrivate: options.allowPrivate, env, signal: controller.signal });
     const { check, ...summary } = result;
     const receiptPath = resolve(options.outDir, 'replay.json');
     try {
@@ -553,7 +556,7 @@ async function runReplay(argv: readonly string[]): Promise<number> {
   }
 }
 
-async function declaredScope(options: CliOptions, apiPolicy: ApiPolicy | undefined, dastPolicySha256?: string): Promise<ScanScope> {
+async function declaredScope(options: CliOptions, apiPolicy: ApiPolicy | undefined, dastPolicySha256?: string, dastPolicy?: DastPolicy): Promise<ScanScope> {
   return buildScanScope({
     mode: modeFor(options),
     source: options.source,
@@ -575,7 +578,7 @@ async function declaredScope(options: CliOptions, apiPolicy: ApiPolicy | undefin
     apiPolicy,
     ruleset: RULESET_VERSION,
     ...(options.openapi || options.dastPolicy || options.engines.length > 0 ? { dast: {
-      ...(options.dastPolicy ? { native: { policySha256: dastPolicySha256 ?? null, profileRevision: DAST_PROFILE_REVISION, maxRequests: options.dastMaxRequests ?? DAST_DEFAULT_MAX_REQUESTS, timeoutMs: Math.min(options.timeoutMs, API_MAX_TIMEOUT_MS) } } : {}),
+      ...(options.dastPolicy ? { native: { policySha256: dastPolicySha256 ?? null, profileRevision: dastPolicy ? dastProfileRevision(dastPolicy) : null, maxRequests: options.dastMaxRequests ?? (dastPolicy ? dastDefaultMaxRequests(dastPolicy) : DAST_DEFAULT_MAX_REQUESTS), timeoutMs: Math.min(options.timeoutMs, API_MAX_TIMEOUT_MS) } } : {}),
       ...(options.openapi ? { schemathesis: { apiBase: options.apiBase, operations: [...options.operations], maxRequests: options.apiMaxRequests ?? 32, seed: options.seed ?? 1 } } : {}),
       ...(options.engines.includes("nuclei") ? { nuclei: { scopes: [...options.nucleiScopes].sort(), maxRequests: options.nucleiMaxRequests ?? null, rateLimit: options.nucleiRateLimit ?? null } } : {}),
     } } : {}),
@@ -621,12 +624,15 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
   }
   let dastPolicy: DastPolicy | undefined;
   let dastPolicySha256: string | undefined;
+  let dastEnv: NodeJS.ProcessEnv | undefined;
   if (parsed.dastPolicy) {
     try {
-      const validated = parseDastPolicy(await readJsonInput(parsed.dastPolicy, 1024 * 1024));
+      const input = parseDastPolicy(await readJsonInput(parsed.dastPolicy, 1024 * 1024));
+      dastEnv = snapshotDastEnvironment(input.policy);
+      const validated = prepareDastPolicy(input.policy, { allowPrivate: parsed.allowPrivate, env: dastEnv });
       dastPolicy = validated.policy; dastPolicySha256 = validated.policySha256;
     } catch {
-      checks.push(runtimeErrorCheck(DAST_CHECK_ID, 'DAST policy must be a valid bounded JSON file with the supported numeric GET/query schema; no DAST requests were made.'));
+      checks.push(runtimeErrorCheck(DAST_CHECK_ID, 'DAST policy, selected credential or transport is invalid; no DAST requests were made.'));
     }
   }
   const dastPolicyAllowed = dastPolicy !== undefined && (parsed.allowedOrigins.length === 0 || originAllowed(dastPolicy.baseUrl, parsed.allowedOrigins));
@@ -703,12 +709,12 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
   if (dastPolicy && dastPolicyAllowed && !controller.signal.aborted) {
     try {
       checks.push(...await runDast({ policy: dastPolicy, consent: parsed.activeConsent, allowPrivate: parsed.allowPrivate,
-        timeoutMs: Math.min(parsed.timeoutMs, API_MAX_TIMEOUT_MS), maxRequests: parsed.dastMaxRequests, signal: controller.signal }));
+        timeoutMs: Math.min(parsed.timeoutMs, API_MAX_TIMEOUT_MS), maxRequests: parsed.dastMaxRequests, env: dastEnv, signal: controller.signal }));
     } catch {
       checks.push(runtimeErrorCheck(DAST_CHECK_ID, 'Native DAST could not be completed.'));
     }
   }
-  const scope = await declaredScope(parsed, apiPolicy, dastPolicySha256);
+  const scope = await declaredScope(parsed, apiPolicy, dastPolicySha256, dastPolicy);
   const markCancelled = (): void => {
     if (controller.signal.aborted && !checks.some((check) => check.id === 'scan.cancelled')) checks.push({ id: 'scan.cancelled', status: 'partial', findings: [], notes: ['The command was cancelled; completed stages do not establish command completion.'] });
   };

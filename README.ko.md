@@ -242,6 +242,8 @@ node build/src/cli.js compare \
 
 ## 네이티브 DAST와 선택형 Codex 조언
 
+[인증된 숫자형 정책 v2](docs/native-dast.md#authenticated-numeric-policy-v2)는 지정한 Authorization 환경변수와 SQL 요청 8개 전후의 identity 확인을 사용합니다. 기본 공유 예산은 10회입니다. control 실패는 미완료이며, 이미 관찰한 차등은 재검사 권한 없는 low-confidence 후보로 남습니다. v1의 기본 8회는 유지합니다. GitHub 소스 프리뷰 기능이며 npm 발행본은 계속 0.4.0입니다.
+
 소스 checkout에는 명시한 GET 쿼리 파라미터 하나에 숫자형 SQL 차등 검사를 수행하는 기능이 포함됩니다. 정책에 정상·참·거짓 JSON 응답 기준을 정하고, 정상/참/거짓/정상 순서를 두 번 반복합니다. 대조군과 차등 결과가 모두 반복될 때만 제한된 `candidate`를 기록합니다. [정책 작성, HTTPS 경계, Action 입력과 SDK](docs/native-dast.md)를 참고하세요. 이 명령은 소스 프리뷰용이며 npm 0.5.0은 아직 발행하지 않았습니다.
 
 ```mermaid
@@ -295,7 +297,7 @@ node build/src/cli.js scan --url http://127.0.0.1:3000/ --engine nuclei \
 
 GitHub Actions에서는 별도의 `dast` Action을 씁니다. 수동 검사 workflow가 능동 검사를 시작할 일이 없게 분리했습니다. `active-consent: 'true'`와 모든 대상 origin을 담은 `allowed-origins`가 필요합니다. 정책 평가를 위한 Node.js 설정 후 `pull_request_target`·fork PR·fork `workflow_run`은 엔진 다운로드·Python 설정·대상 요청 전에 거부합니다. Nuclei는 고정 아카이브로 설치하고, nuclei-templates는 기대한 `templates-checksum.txt` digest와 일치해야 합니다. [`examples/github-dast.yml`](examples/github-dast.yml)은 job 안에서 앱을 띄우고 push·PR·매일 스케줄로 검사한 뒤 SARIF를 올리고 보고서를 남깁니다.
 
-보고서에는 실행한 요청 수, 예산 때문에 거부한 요청 수, egress 거부 수, seed와 스키마 digest(Schemathesis), 템플릿 수·제외 수·`templates-checksum.txt` digest(Nuclei)를 남깁니다. 응답 본문, 생성 값, 추출 값, proxy 자격증명, 템플릿 원문은 남기지 않습니다. `wakeio-security-ci doctor --dast`는 아무것도 실행하지 않고 엔진 준비 상태만 보여 줍니다. 인증, 쓰기 요청, 상태 기반 workflow, 브라우저 기반 검사와 크롤링은 이 프리뷰 범위가 아닙니다.
+보고서에는 실행한 요청 수, 예산 때문에 거부한 요청 수, egress 거부 수, seed와 스키마 digest(Schemathesis), 템플릿 수·제외 수·`templates-checksum.txt` digest(Nuclei)를 남깁니다. 응답 본문, 생성 값, 추출 값, proxy 자격증명, 템플릿 원문은 남기지 않습니다. `wakeio-security-ci doctor --dast`는 아무것도 실행하지 않고 엔진 준비 상태만 보여 줍니다. 인증, 쓰기 요청, 상태 기반 workflow, 브라우저 기반 검사와 크롤링은 외부 Schemathesis/Nuclei 프리뷰 범위가 아닙니다. 앞서 안내한 네이티브 숫자형 SQL v2 인증 정책은 별도 기능입니다.
 
 ## 작은 합성 예시
 

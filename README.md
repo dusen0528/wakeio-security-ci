@@ -241,6 +241,8 @@ Comparison refuses to present mismatched or incomplete scopes as a clean result.
 
 ## Native DAST and optional Codex advice
 
+[Authenticated numeric policy v2](docs/native-dast.md#authenticated-numeric-policy-v2) uses a selected Authorization environment value and identity checks before and after the eight SQL requests (default ten shared attempts). Failed controls stay incomplete; an already observed differential remains a low-confidence candidate without replay authority. Version 1 keeps its eight-request default. This is GitHub source-preview functionality; npm remains 0.4.0.
+
 The source checkout now includes an explicit numeric SQL differential probe for one approved GET query parameter. A policy supplies the normal/true/false JSON oracle; two baseline/true/false/baseline rounds produce a scoped candidate only when controls and the differential repeat. See [the policy, HTTPS boundaries, Action inputs and SDK](docs/native-dast.md). These are source-preview commands; npm 0.5.0 remains unpublished.
 
 ```mermaid
@@ -309,7 +311,7 @@ In GitHub Actions, use the separate `dast` Action so passive workflows can never
     operations: /items/{id}
 ```
 
-Reports record executed requests, requests refused by the budget, egress refusals, the seed and schema digest (Schemathesis), and template counts, exclusions and the `templates-checksum.txt` digest (Nuclei). Response bodies, generated values, extracted values, proxy credentials and template text are not retained. `wakeio-security-ci doctor --dast` reports engine readiness without running anything. Authentication, write operations, stateful workflows, browser-driven checks and crawling are not part of this preview.
+Reports record executed requests, requests refused by the budget, egress refusals, the seed and schema digest (Schemathesis), and template counts, exclusions and the `templates-checksum.txt` digest (Nuclei). Response bodies, generated values, extracted values, proxy credentials and template text are not retained. `wakeio-security-ci doctor --dast` reports engine readiness without running anything. Authentication, write operations, stateful workflows, browser-driven checks and crawling are not part of the external Schemathesis/Nuclei preview. Native numeric SQL v2 authentication is a separate policy described above.
 
 ## A small synthetic example
 
