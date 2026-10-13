@@ -10,7 +10,7 @@ import { resolveCollectionBudget, collectionEvidence } from '../src/source/colle
 import { runProcess } from '../src/source/process.js';
 import { runDast, type DastPolicy } from '../src/dast.js';
 import { createServer } from 'node:http';
-import type { StaticCandidateContext } from '../src/contracts.js';
+import type { StaticCandidateContext, CheckResult } from '../src/contracts.js';
 
 const testFinding = {
   ruleId: 'fixture:sql', title: 'Potential SQL injection', description: 'Synthetic owned fixture only.',
@@ -179,7 +179,7 @@ test('explicit auth modes, bounded projection, and original report unchanged', a
   }
 });
 
-test('fake CLI policy5 receives authenticated control enums in both auth modes and no replay authority after failed identity', async () => {
+test('fake CLI current policy receives authenticated control enums in both auth modes and no replay authority after failed identity', async () => {
   const top = await mkdtemp(join(tmpdir(), 'wakeio-auth-dast-advice-'));
   const previousKey = process.env.CODEX_API_KEY, previousHome = process.env.CODEX_HOME, previousAuth = process.env.WAKEIO_OWNED_ADVICE_AUTH;
   let identities = 0, failAfter = false;
@@ -213,12 +213,12 @@ test('fake CLI policy5 receives authenticated control enums in both auth modes a
         const out = join(top, `advice-${after}-${mode}`);
         assert.equal(await adviseMain(args(reports, out, fake, mode)), 0);
         const projection = JSON.parse(await readFile(join(top, 'captured-projection.json'), 'utf8'));
-        assert.equal(projection.projectionVersion, 5);
+        assert.equal(projection.projectionVersion, ADVICE_PROJECTION_POLICY_VERSION);
         assert.deepEqual(projection.checks[0].nativeDast.identityControls, { before: 'matched', after });
         assert.equal(projection.checks[0].nativeDast.probeOutcome, 'observed'); assert.equal(projection.checks[0].nativeDast.steps.length, 10);
         assert.equal(projection.findings[0].replayAvailable, after === 'matched');
         assert.equal(projection.findings[0].recheckRoute, after === 'matched' ? 'replay_native_finding_same_policy' : 'review_check_diagnostics');
-        const produced = await receipt(out); assert.equal(produced.policyVersion, 5); assert.equal(produced.authMode, mode);
+        const produced = await receipt(out); assert.equal(produced.policyVersion, ADVICE_PROJECTION_POLICY_VERSION); assert.equal(produced.authMode, mode);
         assert.equal(produced.verified, false);
         for (const forbidden of ['WAKEIO_OWNED_ADVICE_AUTH', 'owned-advice-target-secret', 'private-advice-identity', 'owned-private-principal', 'jsonPointer', 'authorizationEnv']) {
           assert.equal(JSON.stringify(projection).includes(forbidden), false); assert.equal(JSON.stringify(produced).includes(forbidden), false);
@@ -231,6 +231,62 @@ test('fake CLI policy5 receives authenticated control enums in both auth modes a
     if (previousHome === undefined) delete process.env.CODEX_HOME; else process.env.CODEX_HOME = previousHome;
     if (previousAuth === undefined) delete process.env.WAKEIO_OWNED_ADVICE_AUTH; else process.env.WAKEIO_OWNED_ADVICE_AUTH = previousAuth;
     await new Promise<void>(done => server.close(() => done())); await rm(top, { recursive: true, force: true });
+  }
+});
+
+test('fake CLI policy6 keeps quoted profile metadata bounded in both auth modes without invented identity or replay', async () => {
+  const top = await mkdtemp(join(tmpdir(), 'wakeio-quoted-advice-'));
+  const previousKey = process.env.CODEX_API_KEY, previousHome = process.env.CODEX_HOME;
+  try {
+    process.env.CODEX_API_KEY = 'test-only-key';
+    const state = join(top, 'codex-state'); await mkdir(state); process.env.CODEX_HOME = state;
+    const fake = await fakeCodex(top, 'capture');
+    for (const authentication of ['none', 'authorization'] as const) for (const failed of authentication === 'none' ? [false] : [false, true]) {
+      const total = authentication === 'none' ? 8 : 10;
+      const phases = ['baseline-before', 'true', 'false', 'baseline-after'];
+      // Protocol metadata only; real SQLite behavior is independently tested.
+      const execution: any = { version: 3, profile: 'single-quoted', authentication,
+        profileRevision: authentication === 'none' ? 'sql-boolean-single-quoted-v3' : 'sql-boolean-single-quoted-auth-v3',
+        policySha256: 'a'.repeat(64), maxRequests: total, timeoutMs: 30000, allowPrivate: false,
+        status: failed ? 'partial' : 'complete', outcome: failed ? 'inconclusive' : 'observed', plannedRequests: total,
+        steps: Array.from({ length: total }, (_, ordinal) => {
+          const identity = authentication === 'authorization' && (ordinal === 0 || ordinal === 9), index = authentication === 'none' ? ordinal : ordinal - 1;
+          return { ordinal, round: identity ? 0 : index < 4 ? 1 : 2,
+            phase: identity ? ordinal === 0 ? 'identity-before' : 'identity-after' : phases[index % 4],
+            outcome: failed && ordinal === 9 ? 'inconclusive' : 'evaluated', reason: failed && ordinal === 9 ? 'identity_mismatch' : 'evaluated',
+            attemptStart: ordinal, httpAttempts: 1, httpStatus: 200, oracleMatch: identity ? 'unavailable' : index % 4 === 2 ? 'false' : 'baseline' };
+        }), counts: { evaluated: failed ? 9 : total, inconclusive: failed ? 1 : 0, notAttempted: 0, httpAttempts: total },
+        stopReason: failed ? 'identity_mismatch' : 'none', ...(authentication === 'authorization'
+          ? { identityControls: { before: 'matched', after: failed ? 'mismatched' : 'matched' }, probeOutcome: 'observed' } : {}) };
+      const check: CheckResult = { id: 'url.sql-boolean', status: failed ? 'partial' : 'completed', notes: [], metrics: { requestCount: total }, dastExecution: execution,
+        findings: [{ ...testFinding, ruleId: 'dast.sql-boolean-differential', title: 'SQL boolean response differential observed', location: { url: 'https://owned.example/items' } }] };
+      const reports = join(top, `reports-${authentication}-${failed}`);
+      await writeReports(createReport([check], 'url', '2026-10-13T00:00:00Z'), reports);
+      const before = await readFile(join(reports, 'report.json'));
+      for (const mode of ['api-key', 'cli-login'] as const) {
+        const out = join(top, `advice-${authentication}-${failed}-${mode}`);
+        assert.equal(await adviseMain(args(reports, out, fake, mode)), 0);
+        const projection = JSON.parse(await readFile(join(top, 'captured-projection.json'), 'utf8'));
+        assert.equal(projection.projectionVersion, 6);
+        assert.equal(projection.checks[0].nativeDast.profileRevision, execution.profileRevision);
+        assert.equal(projection.checks[0].nativeDast.steps.length, total);
+        assert.equal(projection.findings[0].replayAvailable, !failed);
+        assert.equal(projection.findings[0].recheckRoute, failed ? 'review_check_diagnostics' : 'replay_native_finding_same_policy');
+        if (authentication === 'none') {
+          assert.equal('identityControls' in projection.checks[0].nativeDast, false);
+          assert.equal('probeOutcome' in projection.checks[0].nativeDast, false);
+        } else assert.deepEqual(projection.checks[0].nativeDast.identityControls, execution.identityControls);
+        const produced = await receipt(out); assert.equal(produced.policyVersion, 6); assert.equal(produced.authMode, mode); assert.equal(produced.verified, false);
+        assert.ok(Buffer.byteLength(JSON.stringify(projection)) <= 32 * 1024);
+        for (const forbidden of ['owned.example', 'authorizationEnv', 'jsonPointer', 'expectedBaseline', "AND '1'"])
+          assert.equal(JSON.stringify(projection).includes(forbidden), false);
+      }
+      assert.deepEqual(await readFile(join(reports, 'report.json')), before);
+    }
+  } finally {
+    if (previousKey === undefined) delete process.env.CODEX_API_KEY; else process.env.CODEX_API_KEY = previousKey;
+    if (previousHome === undefined) delete process.env.CODEX_HOME; else process.env.CODEX_HOME = previousHome;
+    await rm(top, { recursive: true, force: true });
   }
 });
 

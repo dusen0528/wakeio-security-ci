@@ -2,6 +2,8 @@
 
 This preview is available from the source checkout and implements an original bounded HTTP(S) probe. It needs Node.js 22+, no external DAST binary, and an explicitly authorized target. It does not call a model. Build this checkout with `npm run build`; these commands are not available in the published npm 0.4.0 package, and npm 0.5.0 has not been published.
 
+This page describes numeric v1/v2. [Explicit single-quoted policy v3](native-dast-quoted.md) is a separately selected string-context profile with optional paired authentication; numeric policies never switch to it automatically.
+
 ## Declare the checked behavior
 
 Supply one URL, one existing unique query parameter with a nonnegative decimal value, and a known scalar JSON oracle. For an owned `/items?id=1` endpoint returning `{ "count": 1 }`, a policy can be:
@@ -72,7 +74,7 @@ Profile `sql-boolean-numeric-auth-v2` sends identity-before, the original eight 
 
 Both identity controls must match for a completed v2 result. A mismatch or failed trailing control keeps the check partial/exit 2. If all eight SQL phases already observed the differential, the report retains a **low-confidence candidate** with `probeOutcome: observed`; overall `outcome` stays inconclusive and cannot authorize finding replay. A before-control failure prevents SQL probes. Boundary identity checks cannot exclude a mid-run change or prove the SQL endpoint used the same principal.
 
-The redacted v2 ledger has ten phase records plus `identityControls.before/after` (`matched`, `mismatched`, `inconclusive`, `not_attempted`) and `probeOutcome` (`observed`, `not_observed`, `inconclusive`). Scope binds revision, policy digest and effective budget, never the credential value. Reports and advice omit identity values and credentials. Advice projection policy 5 receives these enums only; failed controls expose diagnostics, not replay.
+The redacted v2 ledger has ten phase records plus `identityControls.before/after` (`matched`, `mismatched`, `inconclusive`, `not_attempted`) and `probeOutcome` (`observed`, `not_observed`, `inconclusive`). Scope binds revision, policy digest and effective budget, never the credential value. Reports and advice omit identity values and credentials. Current advice projection policy 6 preserves these enums; failed controls expose diagnostics, not replay.
 
 Supply the selected credential as an active Action step environment secret and omit `dast-max-requests` to use the policy-derived default:
 

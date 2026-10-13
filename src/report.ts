@@ -1,4 +1,4 @@
-import { sanitizeDastExecution, isDastObservedEvidence } from './dast-execution.js';
+import { sanitizeDastExecution, isDastObservedEvidence, hasDastIdentityControls, isLegacyDastExecution } from './dast-execution.js';
 import { types as utilTypes } from "node:util";
 import { sanitiseApiExecutionLedger, invalidApiExecutionLedger } from "./api-execution.js";
 import { redactSecrets, safeRelativePath, safeHttpUrl } from './report-path.js';
@@ -438,8 +438,8 @@ export function toSarif(report: ScanReport): SarifLog {
             apiExecution: safeReport.checks.flatMap((check, checkIndex) => check.apiExecution
               ? [{ checkIndex, checkId: check.id, apiExecution: check.apiExecution }] : []),
           } : {}),
-          ...(safeReport.checks.some(check => check.dastExecution?.version === 2) ? {
-            dastExecution: safeReport.checks.flatMap((check, checkIndex) => check.dastExecution?.version === 2
+          ...(safeReport.checks.some(check => check.dastExecution && !isLegacyDastExecution(check.dastExecution)) ? {
+            dastExecution: safeReport.checks.flatMap((check, checkIndex) => check.dastExecution && !isLegacyDastExecution(check.dastExecution)
               ? [{ checkIndex, checkId: check.id, dastExecution: check.dastExecution }] : []),
           } : {}),
           ...(safeReport.checks.some(check => check.apiStateEvidence) ? {
@@ -515,8 +515,8 @@ export function toMarkdown(report: ScanReport, failOn: FailOn = 'high'): string 
       }
       if (check.dastExecution) {
         const e = check.dastExecution;
-        lines.push(`  - Native DAST: ${e.status}; ${e.outcome}; ${e.counts.evaluated}/${e.plannedRequests} logical steps evaluated; ${e.counts.httpAttempts} HTTP attempts. Two bounded numeric SQL differential rounds; not independent exploit or fix verification.`);
-        if (e.version === 2) {
+        lines.push(`  - Native DAST: ${e.status}; ${e.outcome}; ${e.counts.evaluated}/${e.plannedRequests} logical steps evaluated; ${e.counts.httpAttempts} HTTP attempts. Two bounded ${e.profile} SQL differential rounds; not independent exploit or fix verification.`);
+        if (hasDastIdentityControls(e)) {
           lines.push(`  - Authenticated identity controls: before=${e.identityControls.before}; after=${e.identityControls.after}. These bounded controls do not establish uninterrupted session continuity.`);
           lines.push(`  - SQL probe outcome: ${e.probeOutcome}. An observed probe with incomplete identity controls remains a low-confidence candidate; it grants no replay authority.`);
         }
@@ -743,7 +743,7 @@ function sanitiseCheck(input: CheckResult): CheckResult {
   let dastExecution = dastDescriptor ? sanitizeDastExecution('value' in dastDescriptor ? dastDescriptor.value : undefined) ?? undefined : undefined;
   if (dastExecution && (input.id !== 'url.sql-boolean' || input.metrics?.requestCount !== dastExecution.counts.httpAttempts)) dastExecution = undefined;
   if ((dastDescriptor && !dastExecution || input.id === 'url.sql-boolean' && (!dastExecution || dastExecution.status !== 'complete')) && status !== 'error') status = 'partial';
-  if (dastExecution?.version === 2 && isDastObservedEvidence(dastExecution)
+  if (dastExecution && !isLegacyDastExecution(dastExecution) && isDastObservedEvidence(dastExecution)
     && (!Array.isArray(input.findings) || input.findings.length !== 1) && status !== 'error') status = 'partial';
   const apiStateEvidence = input?.apiStateEvidence === undefined ? undefined : sanitiseApiStateEvidence(input.apiStateEvidence);
   if (input?.id === 'api.owned-state-oracle' && apiStateEvidence?.execution !== undefined && apiStateEvidence.execution !== 'completed' && status === 'completed') status = 'partial';
@@ -761,7 +761,7 @@ function sanitiseCheck(input: CheckResult): CheckResult {
     ? input.findings.map((finding) => sanitiseFinding(finding, proofLedger))
       .filter(() => input.id !== 'url.sql-boolean' || !!dastExecution && isDastObservedEvidence(dastExecution))
       .map(finding => input.id === 'url.sql-boolean' ? { ...finding, kind: 'candidate' as const,
-        ...(dastExecution?.version === 2 ? { confidence: dastExecution.status === 'complete' && status === 'completed'
+        ...(dastExecution && !isLegacyDastExecution(dastExecution) ? { confidence: dastExecution.status === 'complete' && status === 'completed'
           && finding.confidence !== 'low' ? 'medium' as const : 'low' as const } : {}) } : finding)
     : [];
   if (Array.isArray(input?.findings) && input.findings.some(finding => ownDataField(finding, 'staticContext').present)
@@ -789,7 +789,8 @@ function sanitiseCheck(input: CheckResult): CheckResult {
   return {
     id: safeId(input?.id, 'check'),
     status,
-    findings: findings.map((finding) => ({ ...finding, id: findingIdentity(safeId(input?.id, 'check'), finding) })),
+    findings: findings.map((finding) => ({ ...finding, id: findingIdentity(safeId(input?.id, 'check'), finding,
+      dastExecution?.profile === 'single-quoted' ? dastExecution.profileRevision : undefined) })),
     notes,
     ...(Object.keys(metrics).length > 0 ? { metrics } : {}),
     ...(analysisBudget ? { analysisBudget } : {}),
@@ -881,12 +882,16 @@ function safeMetadataKey(value: string): boolean {
     && value !== '__proto__' && value !== 'constructor' && value !== 'prototype';
 }
 
-function findingIdentity(checkId: string, finding: Finding): string {
-  return createHash('sha256').update(JSON.stringify([
+function findingIdentity(checkId: string, finding: Finding, profileRevision?: string): string {
+  const identity: Array<string | number | null> = [
     checkId, finding.ruleId, finding.kind, finding.title,
     finding.location.path ?? null, finding.location.url ?? null,
     finding.location.line ?? null, finding.location.column ?? null,
-  ])).digest('hex');
+  ];
+  // Only a sanitized, count-bound single-quoted execution supplies this
+  // discriminator. Preserve the original numeric payload byte-for-byte.
+  if (profileRevision !== undefined) identity.push('native-dast-profile', profileRevision);
+  return createHash('sha256').update(JSON.stringify(identity)).digest('hex');
 }
 
 /** Bounded callers choose fixed artifact names; all outputs retain report path protections. */

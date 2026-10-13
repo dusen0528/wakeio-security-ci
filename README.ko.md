@@ -242,6 +242,8 @@ node build/src/cli.js compare \
 
 ## 네이티브 DAST와 선택형 Codex 조언
 
+[명시적 단일 인용 문자열 정책 v3](docs/native-dast-quoted.md)는 GET 파라미터가 SQL 문자열 안에 들어가는 맥락을 사용자가 확인하고 선택합니다. 비인증 8회·인증 10회의 제한된 차등 검사이며 숫자형 v1/v2가 자동으로 전환되지 않습니다. 소스 0.5.0 프리뷰 기능이며 npm 0.5.0 발행을 뜻하지 않습니다.
+
 [인증된 숫자형 정책 v2](docs/native-dast.md#authenticated-numeric-policy-v2)는 지정한 Authorization 환경변수와 SQL 요청 8개 전후의 identity 확인을 사용합니다. 기본 공유 예산은 10회입니다. control 실패는 미완료이며, 이미 관찰한 차등은 재검사 권한 없는 low-confidence 후보로 남습니다. v1의 기본 8회는 유지합니다. GitHub 소스 프리뷰 기능이며 npm 발행본은 계속 0.4.0입니다.
 
 소스 checkout에는 명시한 GET 쿼리 파라미터 하나에 숫자형 SQL 차등 검사를 수행하는 기능이 포함됩니다. 정책에 정상·참·거짓 JSON 응답 기준을 정하고, 정상/참/거짓/정상 순서를 두 번 반복합니다. 대조군과 차등 결과가 모두 반복될 때만 제한된 `candidate`를 기록합니다. [정책 작성, HTTPS 경계, Action 입력과 SDK](docs/native-dast.md)를 참고하세요. 이 명령은 소스 프리뷰용이며 npm 0.5.0은 아직 발행하지 않았습니다.
