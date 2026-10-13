@@ -1,7 +1,10 @@
 import { randomBytes, timingSafeEqual } from "node:crypto";
 import { createServer, request as httpRequest, type ClientRequest, type IncomingHttpHeaders, type IncomingMessage, type ServerResponse } from "node:http";
 import { connect, isIP, type Socket } from "node:net";
+import { request as httpsRequest } from 'node:https';
+import type { TLSSocket } from 'node:tls';
 import { normalizeUrl, resolveAddresses, type DnsAddress, type NormalizedUrl } from "./url-network.js";
+import { operationPathMatches } from './schemathesis-auth.js';
 
 /**
  * Loopback forward proxy that every active DAST engine must use. It inherits
@@ -23,10 +26,12 @@ export interface EgressPolicy {
   maxTotalBytes: number;
   signal: AbortSignal;
   deadlineAt: number;
+  /** Private Node-only authority. The worker receives only the ordinary proxy credential. */
+  authentication?: { authorization: string; operations: readonly string[]; controlPaths: readonly string[]; generatedMaxRequests: number };
 }
 
 export interface EgressCounters {
-  /** Requests forwarded to the approved origin (plain HTTP only). */
+  /** Requests forwarded to the approved origin (HTTP and authenticated HTTPS). */
   forwarded: number;
   /**
    * HTTPS CONNECT tunnels opened to the approved origin. This separate tunnel
@@ -51,6 +56,12 @@ export interface EgressGate {
   /** First budget stop, if any. The caller must stop its engine. */
   stopReason(): EgressStopReason | undefined;
   onStop(listener: (reason: EgressStopReason) => void): void;
+  authenticated?: {
+    beginGeneration(): void;
+    finishGeneration(): void;
+    observations: Array<{ attempt: number; operationIndex: number; status: number | null; completed: boolean }>;
+    control(path: string, anonymous: boolean): Promise<{ attempt: number; status: number; body: Buffer }>;
+  };
   close(): Promise<void>;
 }
 
@@ -109,6 +120,11 @@ function forwardHeaders(headers: IncomingHttpHeaders, host: string): Record<stri
 export async function startEgressGate(policy: EgressPolicy): Promise<EgressGate> {
   const token = randomBytes(18).toString("base64url");
   const expected = Buffer.from(`Basic ${Buffer.from(`wakeio:${token}`).toString("base64")}`);
+  const controlToken = randomBytes(24).toString('base64url');
+  const controlExpected = Buffer.from(`Basic ${Buffer.from(`wakeio-control:${controlToken}`).toString('base64')}`);
+  const observations: Array<{ attempt:number; operationIndex:number; status:number|null; completed:boolean }> = [];
+  let generating = false;
+  let authenticatedTransportStopped = false;
   const counters: EgressCounters = { forwarded: 0, tunnels: 0, blockedOrigin: 0, blockedMethod: 0, blockedBudget: 0, upstreamErrors: 0, rejectedEncoding: 0, responseBytes: 0 };
   const sockets = new Map<Socket, Promise<void>>();
   const upstreams = new Map<ClientRequest, Promise<void>>();
@@ -129,9 +145,9 @@ export async function startEgressGate(policy: EgressPolicy): Promise<EgressGate>
     stopped = reason;
     for (const listener of listeners) listener(reason);
   };
-  const authorized = (headers: IncomingHttpHeaders) => {
+  const authorized = (headers: IncomingHttpHeaders, wanted = expected) => {
     const value = Buffer.from(String(headers["proxy-authorization"] ?? ""));
-    return value.length === expected.length && timingSafeEqual(value, expected);
+    return value.length === wanted.length && timingSafeEqual(value, wanted);
   };
   const remaining = () => Math.max(1, policy.deadlineAt - Date.now());
   const countBytes = (bytes: number, single: number): boolean => {
@@ -149,31 +165,62 @@ export async function startEgressGate(policy: EgressPolicy): Promise<EgressGate>
   };
 
   const onRequest = (request: IncomingMessage, response: ServerResponse) => {
-    if (!authorized(request.headers)) { response.writeHead(407, { "proxy-authenticate": "Basic", "content-length": "0", connection: "close" }); response.end(); return; }
-    const target = policy.origin.protocol === "http:" ? sameOrigin(request.url, policy.origin) : undefined;
+    const auth = policy.authentication;
+    const control = !!auth && authorized(request.headers,controlExpected);
+    if (!control && !authorized(request.headers)) { response.writeHead(407, { "proxy-authenticate": "Basic", "content-length": "0", connection: "close" }); response.end(); return; }
+    const target = auth ? sameOrigin(request.url, normalizeUrl('http://wakeio-schemathesis.invalid'))
+      : policy.origin.protocol === "http:" ? sameOrigin(request.url, policy.origin) : undefined;
     if (!target) { counters.blockedOrigin += 1; request.resume(); refuse(response, 502); return; }
+    let operationIndex = -1;
+    if (auth) {
+      let validPath = true;
+      try { for (const part of target.pathname.split('/')) { const decoded = decodeURIComponent(part); if (decoded === '.' || decoded === '..' || /[%\\/;\u0000-\u001f\u007f]/.test(decoded)) validPath=false; } } catch { validPath=false; }
+      operationIndex = auth.operations.findIndex(path=>operationPathMatches(path,target.pathname));
+      if (!validPath || (control ? !auth.controlPaths.includes(`${target.pathname}${target.search}`) || generating
+        : !generating || operationIndex < 0 || request.headers['x-wakeio-control-mode'] !== undefined)) {
+        counters.blockedOrigin += 1; request.resume(); refuse(response,502); return;
+      }
+      if (request.method !== 'GET' || request.headers['transfer-encoding'] !== undefined || Number(request.headers['content-length'] ?? 0) !== 0) {
+        counters.blockedMethod += 1; request.resume(); refuse(response,405); return;
+      }
+    }
     if (!policy.methods.has(request.method ?? "")) { counters.blockedMethod += 1; request.resume(); refuse(response, 405); return; }
-    if (closing || stopped || policy.signal.aborted || counters.forwarded >= policy.maxRequests) {
+    if (closing || stopped || policy.signal.aborted || auth && (authenticatedTransportStopped || Date.now()>=policy.deadlineAt) || counters.forwarded >= policy.maxRequests || auth && !control && observations.length >= auth.generatedMaxRequests) {
       counters.blockedBudget += 1;
-      if (counters.forwarded >= policy.maxRequests) stop("request_limit");
+      if (counters.forwarded >= policy.maxRequests || auth && !control && observations.length >= auth.generatedMaxRequests) stop("request_limit");
       request.resume(); refuse(response, 503); return;
     }
     counters.forwarded += 1;
+    const attempt = counters.forwarded;
+    const observation = auth && !control ? {attempt,operationIndex,status:null as number|null,completed:false} : undefined;
+    if (observation) observations.push(observation);
     // Sockets can emit more than one error; count one failure per request and never leave an error unhandled.
     let failed = false;
     const fail = () => {
+      // A lost response cannot authorize another authenticated wire attempt,
+      // including a worker's failure reproduction or a trailing control.
+      if (auth && !closing) authenticatedTransportStopped = true;
       if (!failed && !closing && !response.destroyed) { failed = true; counters.upstreamErrors += 1; }
       response.destroy();
     };
-    const upstream = httpRequest({
-      host: policy.address.address, port: defaultPort(policy.origin), family: policy.address.family,
+    const headersToForward = forwardHeaders(request.headers, new URL(policy.origin.href).host);
+    if (auth) {
+      for (const name of Object.keys(headersToForward)) if (['authorization','cookie','x-wakeio-control-mode'].includes(name.toLowerCase())) delete headersToForward[name];
+      if (!control || request.headers['x-wakeio-control-mode'] !== 'anonymous') headersToForward.authorization = auth.authorization;
+    }
+    const upstream = (auth && policy.origin.protocol === 'https:' ? httpsRequest : httpRequest)({
+      ...(auth ? {hostname:policy.origin.hostname, lookup:((_host:unknown,_options:unknown,callback:any)=>callback(null,policy.address.address,policy.address.family)) as never,
+        autoSelectFamily:false, rejectUnauthorized:true, servername:isIP(policy.origin.hostname)===0?policy.origin.hostname:undefined}
+        : {host: policy.address.address}),
+      port: defaultPort(policy.origin), family: policy.address.family,
       method: request.method, path: `${target.pathname}${target.search}`,
-      headers: forwardHeaders(request.headers, new URL(policy.origin.href).host),
+      headers: headersToForward,
       agent: false, timeout: remaining(),
     }, (incoming) => {
-      if (!sameAddress(incoming.socket?.remoteAddress, policy.address.address)) {
+      if (!sameAddress(incoming.socket?.remoteAddress, policy.address.address) || auth && policy.origin.protocol === 'https:' && !(incoming.socket as TLSSocket).authorized) {
         incoming.destroy(); counters.upstreamErrors += 1; stop("peer_mismatch"); response.destroy(); return;
       }
+      if (observation) observation.status = incoming.statusCode ?? null;
       const encoding = String(incoming.headers["content-encoding"] ?? "identity").trim().toLowerCase();
       if (encoding !== "identity" && encoding !== "") {
         incoming.destroy(); counters.rejectedEncoding += 1; refuse(response, 502); return;
@@ -184,7 +231,7 @@ export async function startEgressGate(policy: EgressPolicy): Promise<EgressGate>
       }
       const headers: Record<string, string | string[]> = {};
       for (const [name, value] of Object.entries(incoming.headers)) {
-        if (value !== undefined && !HOP_BY_HOP.has(name.toLowerCase()) && name.toLowerCase() !== "content-length") headers[name] = value;
+        if (value !== undefined && !HOP_BY_HOP.has(name.toLowerCase()) && name.toLowerCase() !== "content-length" && (!auth || !['set-cookie','x-wakeio-attempt'].includes(name.toLowerCase()))) headers[name] = value;
       }
       const chunks: Buffer[] = [];
       let single = 0;
@@ -196,6 +243,8 @@ export async function startEgressGate(policy: EgressPolicy): Promise<EgressGate>
       incoming.once("end", () => {
         if (response.destroyed) return;
         const body = Buffer.concat(chunks);
+        if (observation) observation.completed = true;
+        if (control) headers['x-wakeio-attempt'] = String(attempt);
         response.writeHead(incoming.statusCode ?? 502, { ...headers, "content-length": String(body.byteLength), connection: "close" });
         response.end(body);
       });
@@ -225,7 +274,7 @@ export async function startEgressGate(policy: EgressPolicy): Promise<EgressGate>
   server.on("connect", (request: IncomingMessage, client: Socket) => {
     const reject = (status: string) => { client.end(`HTTP/1.1 ${status}\r\nconnection: close\r\ncontent-length: 0\r\n\r\n`); };
     if (!authorized(request.headers)) { reject("407 Proxy Authentication Required"); return; }
-    if (policy.origin.protocol !== "https:" || (request.url ?? "").toLowerCase() !== authority(policy.origin)) {
+    if (policy.authentication || policy.origin.protocol !== "https:" || (request.url ?? "").toLowerCase() !== authority(policy.origin)) {
       counters.blockedOrigin += 1; reject("502 Bad Gateway"); return;
     }
     if (closing || stopped || policy.signal.aborted || counters.tunnels >= policy.maxRequests) {
@@ -271,6 +320,24 @@ export async function startEgressGate(policy: EgressPolicy): Promise<EgressGate>
     counters,
     stopReason: () => stopped,
     onStop(listener) { listeners.push(listener); if (stopped) listener(stopped); },
+    ...(policy.authentication ? { authenticated: {
+      observations,
+      beginGeneration() { generating=true; },
+      finishGeneration() { generating=false; },
+      control(path:string, anonymous:boolean) {
+        return new Promise<{attempt:number;status:number;body:Buffer}>((resolve,reject)=>{
+          const local = httpRequest({hostname:'127.0.0.1',port,method:'GET',path:`http://wakeio-schemathesis.invalid${path}`,agent:false,timeout:remaining(),
+            headers:{'proxy-authorization':controlExpected.toString(),'x-wakeio-control-mode':anonymous?'anonymous':'authenticated',accept:'application/json'}},incoming=>{
+            const chunks:Buffer[]=[]; let bytes=0;
+            incoming.on('data',(chunk:Buffer)=>{ bytes+=chunk.length; if (bytes>policy.maxSingleBodyBytes) incoming.destroy(); else chunks.push(chunk); });
+            incoming.on('error',()=>reject(new Error('control_transport')));
+            incoming.once('end',()=>{ const attempt=Number(incoming.headers['x-wakeio-attempt']); if (!Number.isSafeInteger(attempt) || attempt<1) reject(new Error('control_transport')); else resolve({attempt,status:incoming.statusCode ?? 0,body:Buffer.concat(chunks)}); });
+          });
+          upstreams.set(local,new Promise<void>(resolveClose=>local.once('close',()=>{upstreams.delete(local);resolveClose();})));
+          local.once('socket',trackSocket); local.once('timeout',()=>local.destroy(new Error('timeout'))); local.on('error',()=>reject(new Error('control_transport'))); local.end();
+        });
+      },
+    }} : {}),
     close() {
       if (closePromise) return closePromise;
       policy.signal.removeEventListener("abort", closeAll);

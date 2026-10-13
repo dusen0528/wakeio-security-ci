@@ -27,6 +27,8 @@ import { handoffMain } from './source-handoff.js';
 import { DAST_CHECK_ID, DAST_MAX_REQUESTS, DAST_DEFAULT_MAX_REQUESTS, parseDastPolicy, prepareDastPolicy, snapshotDastEnvironment, dastProfileRevision, dastDefaultMaxRequests, runDast, type DastPolicy } from "./dast.js";
 import { API_MAX_REQUESTS, API_MAX_TIMEOUT_MS } from "./api.js";
 import { runSchemathesisLive } from "./schemathesis-live.js";
+import { parseSchemathesisAuthPolicy, SCHEMATHESIS_AUTH_REVISION, type SchemathesisAuthPolicy } from "./schemathesis-auth.js";
+import { selectOpenApiLiveOperations } from "./openapi.js";
 import { NUCLEI_MAX_RATE_LIMIT, NUCLEI_MAX_REQUESTS, NUCLEI_SCOPES, runNuclei, type NucleiScope } from "./nuclei.js";
 
 const SEVERITY_VALUES = new Set(["critical", "high", "medium", "low", "info", "none"] as const);
@@ -58,6 +60,7 @@ export interface CliOptions {
   /** When non-empty, every network target origin must be listed; empty means unrestricted. */
   allowedOrigins: string[];
   openapi?: string;
+  schemathesisAuthPolicy?: string;
   apiBase?: string;
   operations: string[];
   apiMaxRequests?: number;
@@ -131,6 +134,7 @@ Active DAST (off by default; sends generated or template requests to the target)
   --dast-policy FILE           Explicit GET/query or authenticated POST JSON SQL differential policy JSON
   --dast-max-requests N        Native DAST HTTP attempt budget, 1..64 (GET default 8/10; authenticated JSON POST default 12)
   --openapi FILE               Local OpenAPI 3.0/3.1 JSON (same-document $ref only)
+  --schemathesis-auth-policy FILE  Explicit authenticated GET controls JSON (requires --openapi)
   --api-base URL               Target origin for --openapi (servers are never used)
   --operation PATH             Documented GET path to test (repeatable, 1..16)
   --api-max-requests N         Schemathesis request budget, 1..64 (default 32)
@@ -297,6 +301,7 @@ export function parseCliArgs(argv: readonly string[]): CliOptions | { help: true
       options.nativePreview = { executable: value };
     }
     else if ((value = valueFlag("--openapi")) !== undefined) options.openapi = value;
+    else if ((value = valueFlag("--schemathesis-auth-policy")) !== undefined) options.schemathesisAuthPolicy = value;
     else if ((value = valueFlag("--api-base")) !== undefined) options.apiBase = value;
     else if (arg === "--operation" || arg.startsWith("--operation=")) {
       let operation: string;
@@ -357,6 +362,7 @@ export function parseCliArgs(argv: readonly string[]): CliOptions | { help: true
     }
   }
   if (help) return { help: true };
+  if (options.schemathesisAuthPolicy && !options.openapi) throw new CliUsageError("--schemathesis-auth-policy requires --openapi");
   if (!options.source && !options.url && !options.apiPolicy && !options.openapi && !options.dastPolicy) throw new CliUsageError("provide --source, --url, --api-policy, --dast-policy, or --openapi");
   if (options.pages.length > 0 && !options.url) throw new CliUsageError("--page requires --url");
   if (options.maxPages !== undefined && !options.url) throw new CliUsageError("--max-pages requires --url");
@@ -569,8 +575,9 @@ async function runReplay(argv: readonly string[]): Promise<number> {
   }
 }
 
-async function declaredScope(options: CliOptions, apiPolicy: ApiPolicy | undefined, dastPolicySha256?: string, dastPolicy?: DastPolicy): Promise<ScanScope> {
-  return buildScanScope({
+async function declaredScope(options: CliOptions, apiPolicy: ApiPolicy | undefined, dastPolicySha256?: string, dastPolicy?: DastPolicy,
+  schemathesisAuthPolicy?: ScanScope['schemathesisAuthPolicy']): Promise<ScanScope> {
+  const scope = await buildScanScope({
     mode: modeFor(options),
     source: options.source,
     sourceMaxFiles: options.sourceMaxFiles,
@@ -594,9 +601,11 @@ async function declaredScope(options: CliOptions, apiPolicy: ApiPolicy | undefin
     ...(options.openapi || options.dastPolicy || options.engines.length > 0 ? { dast: {
       ...(options.dastPolicy ? { native: { policySha256: dastPolicySha256 ?? null, profileRevision: dastPolicy ? dastProfileRevision(dastPolicy) : null, maxRequests: options.dastMaxRequests ?? (dastPolicy ? dastDefaultMaxRequests(dastPolicy) : DAST_DEFAULT_MAX_REQUESTS), timeoutMs: Math.min(options.timeoutMs, API_MAX_TIMEOUT_MS) } } : {}),
       ...(options.openapi ? { schemathesis: { apiBase: options.apiBase, operations: [...options.operations], maxRequests: options.apiMaxRequests ?? 32, seed: options.seed ?? 1 } } : {}),
+      ...(options.schemathesisAuthPolicy ? { schemathesisAuthPolicy: schemathesisAuthPolicy ?? { profileRevision: SCHEMATHESIS_AUTH_REVISION, policySha256: null, schemaSha256: null } } : {}),
       ...(options.engines.includes("nuclei") ? { nuclei: { scopes: [...options.nucleiScopes].sort(), maxRequests: options.nucleiMaxRequests ?? null, rateLimit: options.nucleiRateLimit ?? null } } : {}),
     } } : {}),
   });
+  return { ...scope, ...(schemathesisAuthPolicy ? { schemathesisAuthPolicy } : {}) };
 }
 
 /** Executes a scan and writes public reports when scanning starts. */
@@ -656,6 +665,23 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
   // The policy baseUrl is only known after reading the file; refuse it here, before any request.
   const apiPolicyAllowed = apiPolicy !== undefined && (parsed.allowedOrigins.length === 0 || originAllowed(apiPolicy.baseUrl, parsed.allowedOrigins));
   if (apiPolicy && !apiPolicyAllowed) checks.push(runtimeErrorCheck('api.authorization', 'The API policy baseUrl origin is not in --allowed-origin; no API requests were made.'));
+  let schemathesisAuthPolicy: SchemathesisAuthPolicy | undefined;
+  let schemathesisAuthScope: ScanScope['schemathesisAuthPolicy'];
+  let schemathesisAuthDocument: unknown;
+  if (parsed.schemathesisAuthPolicy) {
+    try {
+      const input = parseSchemathesisAuthPolicy(await readJsonInput(parsed.schemathesisAuthPolicy, 64 * 1024));
+      if (new URL(input.policy.baseUrl).origin !== new URL(parsed.apiBase!).origin
+        || (parsed.allowedOrigins.length > 0 && !originAllowed(input.policy.baseUrl, parsed.allowedOrigins))) throw new Error('auth origin mismatch');
+      schemathesisAuthDocument = await readJsonInput(parsed.openapi!, 1024 * 1024);
+      const selection = selectOpenApiLiveOperations(schemathesisAuthDocument, parsed.operations.map(path => ({ method: 'GET', path })));
+      schemathesisAuthScope = { profileRevision: SCHEMATHESIS_AUTH_REVISION, policySha256: input.policySha256,
+        schemaSha256: createHash('sha256').update(JSON.stringify(selection.document)).digest('hex') };
+      schemathesisAuthPolicy = input.policy;
+    } catch {
+      checks.push({ ...runtimeErrorCheck('api.schemathesis', 'Schemathesis authentication policy or OpenAPI input is invalid; authenticated testing did not start.'), schemathesisAuthRequired: true });
+    }
+  }
   if (parsed.source) {
     const sourceOptions: SourceOptions = {
       root: parsed.source,
@@ -710,17 +736,19 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
       checks.push(runtimeErrorCheck('url.nuclei', 'Nuclei scanning could not be completed.'));
     }
   }
-  if (parsed.openapi && !controller.signal.aborted) {
+  if (parsed.openapi && (!parsed.schemathesisAuthPolicy || schemathesisAuthPolicy) && !controller.signal.aborted) {
     try {
-      const document = await readJsonInput(parsed.openapi, 1024 * 1024);
+      const document = parsed.schemathesisAuthPolicy ? schemathesisAuthDocument : await readJsonInput(parsed.openapi, 1024 * 1024);
       checks.push(...await runSchemathesisLive({
         document, baseUrl: parsed.apiBase!, operations: parsed.operations.map((path) => ({ method: "GET" as const, path })),
         consent: parsed.activeConsent, allowPrivate: parsed.allowPrivate,
         python: parsed.schemathesisPython ?? process.env.WAKEIO_SCHEMATHESIS_PYTHON ?? "python3",
         timeoutMs: Math.min(parsed.timeoutMs, API_MAX_TIMEOUT_MS), maxRequests: parsed.apiMaxRequests, seed: parsed.seed, signal: controller.signal,
+        ...(schemathesisAuthPolicy ? { authPolicy: schemathesisAuthPolicy, env: process.env } : {}),
       }));
     } catch {
-      checks.push(runtimeErrorCheck('api.schemathesis', 'OpenAPI input must be a bounded local JSON file; Schemathesis live testing did not start.'));
+      checks.push({ ...runtimeErrorCheck('api.schemathesis', 'OpenAPI input must be a bounded local JSON file; Schemathesis live testing did not start.'),
+        ...(parsed.schemathesisAuthPolicy ? { schemathesisAuthRequired: true as const } : {}) });
     }
   }
   if (dastPolicy && dastPolicyAllowed && !controller.signal.aborted) {
@@ -731,7 +759,7 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
       checks.push(runtimeErrorCheck(DAST_CHECK_ID, 'Native DAST could not be completed.'));
     }
   }
-  const scope = await declaredScope(parsed, apiPolicy, dastPolicySha256, dastPolicy);
+  const scope = await declaredScope(parsed, apiPolicy, dastPolicySha256, dastPolicy, schemathesisAuthScope);
   const markCancelled = (): void => {
     if (controller.signal.aborted && !checks.some((check) => check.id === 'scan.cancelled')) checks.push({ id: 'scan.cancelled', status: 'partial', findings: [], notes: ['The command was cancelled; completed stages do not establish command completion.'] });
   };
