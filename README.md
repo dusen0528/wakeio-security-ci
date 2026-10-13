@@ -23,6 +23,9 @@ The separate [owned PATCH state pilot](docs/api-write-state.md) checks actual pe
 
 The [collected-code coverage contract](docs/source-code-coverage.md) separates file collection from completed language analysis. Opt into `--require-code-analysis` to gate uncovered collected code; this does not add a language analyzer or establish whole-project coverage.
 
+
+The explicit [authenticated POST JSON numeric SQL profile](docs/native-dast-post-json.md) adds a fixed body field and a distinct benign-value control to the consented differential contract. It uses a separate v4 policy; GET policies retain their scope.
+
 ## What it checks
 
 | Scope | What Wakeio can observe | Boundary to keep in mind |

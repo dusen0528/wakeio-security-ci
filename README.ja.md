@@ -15,6 +15,9 @@ GitHub のソースは **0.5.0**、npm で公開済みの最新版は **0.4.0** 
 
 [収集コードの分析範囲](docs/source-code-coverage.md)は、ファイル収集と各言語の分析完了を区別します。`--require-code-analysis`で未分析コードをCI gateに含められますが、新しい解析器やプロジェクト全体のcoverageを保証しません。
 
+
+明示的な[認証POST JSON numeric SQL profile](docs/native-dast-post-json.md)は、固定body fieldと異なる正常値のcontrolをconsented差分検査契約に追加します。別のv4 policyを使い、既存GET policyの範囲を保持します。
+
 ## 何を確認できるか
 
 | 入力 | 確認する内容 | このプレビューで分からないこと |

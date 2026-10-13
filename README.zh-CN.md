@@ -15,6 +15,9 @@ GitHub 源码版本为 **0.5.0**，npm 已发布的最新版本为 **0.4.0**。�
 
 [已收集代码的分析范围](docs/source-code-coverage.md)区分文件收集与语言分析完成。可通过`--require-code-analysis`将未分析代码纳入CI gate；这不会新增分析器或证明整个项目的coverage。
 
+
+显式的[认证POST JSON numeric SQL profile](docs/native-dast-post-json.md)在已同意的差分检查契约中加入固定body field与不同正常值的control。它使用独立v4 policy，保留原GET policy的范围。
+
 ## 可以检查什么
 
 | 输入 | 检查内容 | 这个预览版无法证明的内容 |

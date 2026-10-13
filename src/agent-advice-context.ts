@@ -9,7 +9,7 @@ import { types } from 'node:util';
 export type RecheckRoute = 'repeat_native_same_policy' | 'replay_native_finding_same_policy' | 'replay_api_finding_same_policy'
   | 'review_static_flow_or_budget' | 'review_check_diagnostics' | 'review_scope';
 
-export const ADVICE_PROJECTION_POLICY_VERSION = 8;
+export const ADVICE_PROJECTION_POLICY_VERSION = 9;
 
 const MAX_CHECKS = 24;
 const MAX_FINDINGS = 24;
@@ -65,6 +65,7 @@ function checkCard(check: AgentReport['checks'][number], mode: AgentReport['mode
       : mode === 'source' || check.checkId.startsWith('source.') ? 'source_check' as const : 'other' as const,
     ...(dast ? { nativeDast: {
       profileRevision: dast.profileRevision, status: dast.status, outcome: dast.outcome,
+      ...(dast.version === 4 ? { method: dast.method, normalControls: dast.normalControls } : {}),
       ...(hasDastIdentityControls(dast) ? { identityControls: { before: dast.identityControls.before, after: dast.identityControls.after }, probeOutcome: dast.probeOutcome } : {}),
       plannedRequests: dast.plannedRequests, maxRequests: dast.maxRequests,
       timeoutMs: dast.timeoutMs, allowPrivate: dast.allowPrivate, policyBound: true,

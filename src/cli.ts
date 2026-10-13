@@ -128,8 +128,8 @@ Options:
 
 Active DAST (off by default; sends generated or template requests to the target):
   --active-consent             Required: you own or are authorized to test the target
-  --dast-policy FILE           Explicit GET/query numeric or single-quoted SQL differential policy JSON
-  --dast-max-requests N        Native DAST HTTP attempt budget, 1..64 (v1 default 8; authenticated v2 default 10)
+  --dast-policy FILE           Explicit GET/query or authenticated POST JSON SQL differential policy JSON
+  --dast-max-requests N        Native DAST HTTP attempt budget, 1..64 (GET default 8/10; authenticated JSON POST default 12)
   --openapi FILE               Local OpenAPI 3.0/3.1 JSON (same-document $ref only)
   --api-base URL               Target origin for --openapi (servers are never used)
   --operation PATH             Documented GET path to test (repeatable, 1..16)

@@ -22,6 +22,9 @@ API preview는 redacted index 기반 실행 ledger로 판정한 단계, 불확�
 
 [수집한 코드의 분석 범위](docs/source-code-coverage.md)는 파일 수집과 언어 분석 완료를 구분합니다. `--require-code-analysis`로 미분석 코드에 CI gate를 적용할 수 있으며 새 분석기나 프로젝트 전체 coverage를 뜻하지 않습니다.
 
+
+명시적 [인증 POST JSON numeric SQL profile](docs/native-dast-post-json.md)은 고정 body field와 다른 정상값 대조를 consented 차등 검사 계약에 추가합니다. 별도 v4 정책이며 기존 GET 정책의 범위는 유지합니다.
+
 ## 무엇을 검사하나요?
 
 | 범위 | 확인할 수 있는 내용 | 기억해야 할 한계 |
