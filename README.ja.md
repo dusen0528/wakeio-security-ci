@@ -1,5 +1,7 @@
 # Wakeio Security CI
 
+[明示的な単一引用符 SQL プロファイル v3](docs/native-dast-quoted.md)は、所有する GET エンドポイントの文字列コンテキストを手動で選択します。未認証は8段階、認証付きは10段階です。数値型 v1/v2 は自動切り替えされません。ソース 0.5.0 プレビューであり、npm 0.5.0 の公開を意味しません。
+
 **コードと公開 Web 応答にあるよくあるセキュリティ上のミスを、ローカルと CI で見つけ、未完了の検査も可視化します。**
 
 [English](README.md) · [한국어](README.ko.md) · [日本語](README.ja.md) · [简体中文](README.zh-CN.md) · [実装済みチェックリスト](docs/checklist.md) · [0.4 ガイド](docs/preview-0.4.md) · [検証記録](docs/verification-0.4.md)

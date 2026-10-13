@@ -1,14 +1,14 @@
 import { sanitiseCollectionBudget, sanitiseCollectionEvidence } from './source/collection-budget.js';
 import type { AgentReport } from './contracts.js';
 import { redactSecrets, safeHttpUrl } from './report-path.js';
-import { sanitizeDastExecution, isDastReplayableExecution } from './dast-execution.js';
+import { sanitizeDastExecution, isDastReplayableExecution, hasDastIdentityControls } from './dast-execution.js';
 import { sanitiseStaticContext } from './static-context.js';
 import { types } from 'node:util';
 
 export type RecheckRoute = 'repeat_native_same_policy' | 'replay_native_finding_same_policy' | 'replay_api_finding_same_policy'
   | 'review_static_flow_or_budget' | 'review_check_diagnostics' | 'review_scope';
 
-export const ADVICE_PROJECTION_POLICY_VERSION = 5;
+export const ADVICE_PROJECTION_POLICY_VERSION = 6;
 
 const MAX_CHECKS = 24;
 const MAX_FINDINGS = 24;
@@ -33,7 +33,7 @@ function nativeExecutionEligible(check: AgentReport['checks'][number], nativeChe
     && !!execution && execution.status === 'complete'
     && check.metrics?.requestCount === execution.counts.httpAttempts
     && execution.counts.evaluated === execution.plannedRequests && execution.counts.httpAttempts >= execution.plannedRequests
-    && (execution.version === 1 || execution.identityControls.before === 'matched' && execution.identityControls.after === 'matched');
+    && (!hasDastIdentityControls(execution) || execution.identityControls.before === 'matched' && execution.identityControls.after === 'matched');
 }
 
 function checkRoute(check: AgentReport['checks'][number], mode: AgentReport['mode'], nativeCheckCount: number): RecheckRoute {
@@ -61,7 +61,7 @@ function checkCard(check: AgentReport['checks'][number], mode: AgentReport['mode
       : mode === 'source' || check.checkId.startsWith('source.') ? 'source_check' as const : 'other' as const,
     ...(dast ? { nativeDast: {
       profileRevision: dast.profileRevision, status: dast.status, outcome: dast.outcome,
-      ...(dast.version === 2 ? { identityControls: { before: dast.identityControls.before, after: dast.identityControls.after }, probeOutcome: dast.probeOutcome } : {}),
+      ...(hasDastIdentityControls(dast) ? { identityControls: { before: dast.identityControls.before, after: dast.identityControls.after }, probeOutcome: dast.probeOutcome } : {}),
       plannedRequests: dast.plannedRequests, maxRequests: dast.maxRequests,
       timeoutMs: dast.timeoutMs, allowPrivate: dast.allowPrivate, policyBound: true,
       counts: dast.counts, stopReason: dast.stopReason,

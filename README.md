@@ -243,7 +243,7 @@ Comparison refuses to present mismatched or incomplete scopes as a clean result.
 
 [Authenticated numeric policy v2](docs/native-dast.md#authenticated-numeric-policy-v2) uses a selected Authorization environment value and identity checks before and after the eight SQL requests (default ten shared attempts). Failed controls stay incomplete; an already observed differential remains a low-confidence candidate without replay authority. Version 1 keeps its eight-request default. This is GitHub source-preview functionality; npm remains 0.4.0.
 
-The source checkout now includes an explicit numeric SQL differential probe for one approved GET query parameter. A policy supplies the normal/true/false JSON oracle; two baseline/true/false/baseline rounds produce a scoped candidate only when controls and the differential repeat. See [the policy, HTTPS boundaries, Action inputs and SDK](docs/native-dast.md). These are source-preview commands; npm 0.5.0 remains unpublished.
+The source checkout includes explicit numeric v1/v2 and manually selected [single-quoted v3](docs/native-dast-quoted.md) SQL differential profiles for one approved GET query parameter. A policy supplies the normal/true/false JSON oracle; two baseline/true/false/baseline rounds produce a scoped candidate only when controls and the differential repeat. Numeric policies never select the string profile automatically. See [the policy, HTTPS boundaries, Action inputs and SDK](docs/native-dast.md). These are source-preview commands; npm 0.5.0 remains unpublished.
 
 ```mermaid
 flowchart LR
@@ -311,7 +311,7 @@ In GitHub Actions, use the separate `dast` Action so passive workflows can never
     operations: /items/{id}
 ```
 
-Reports record executed requests, requests refused by the budget, egress refusals, the seed and schema digest (Schemathesis), and template counts, exclusions and the `templates-checksum.txt` digest (Nuclei). Response bodies, generated values, extracted values, proxy credentials and template text are not retained. `wakeio-security-ci doctor --dast` reports engine readiness without running anything. Authentication, write operations, stateful workflows, browser-driven checks and crawling are not part of the external Schemathesis/Nuclei preview. Native numeric SQL v2 authentication is a separate policy described above.
+Reports record executed requests, requests refused by the budget, egress refusals, the seed and schema digest (Schemathesis), and template counts, exclusions and the `templates-checksum.txt` digest (Nuclei). Response bodies, generated values, extracted values, proxy credentials and template text are not retained. `wakeio-security-ci doctor --dast` reports engine readiness without running anything. Authentication, write operations, stateful workflows, browser-driven checks and crawling are not part of the external Schemathesis/Nuclei preview. Native numeric v2 and optional single-quoted v3 authentication use the separate policies described above.
 
 ## A small synthetic example
 

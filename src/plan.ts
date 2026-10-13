@@ -1,4 +1,4 @@
-import { parseDastPolicy, prepareDastPolicy, snapshotDastEnvironment, dastProfileRevision, dastDefaultMaxRequests, DAST_MAX_REQUESTS } from './dast.js';
+import { parseDastPolicy, prepareDastPolicy, snapshotDastEnvironment, dastProfileRevision, dastDefaultMaxRequests, dastRequestPlan, DAST_MAX_REQUESTS } from './dast.js';
 import { normalizeUrl, validateStaticTarget } from './url-network.js';
 import { preflightApiPolicy, API_MAX_TIMEOUT_MS, type ApiPreflightResult } from './api.js';
 import { preflightOpenApiPolicy, type OpenApiPolicyInput } from './openapi.js';
@@ -73,11 +73,9 @@ export async function planMain(argv: readonly string[]): Promise<number> {
       process.stdout.write(JSON.stringify({ version: 1, kind: 'native-dast-plan', status: 'ready',
         origin: new URL(policy.baseUrl).origin, policySha256, profileRevision: dastProfileRevision(policy),
         plannedRequests, maxHttpAttempts: effectiveMaxRequests, timeoutMs, allowPrivate,
-        ...(policy.version === 2 ? { steps: [
-          { ordinal: 0, phase: 'identity-before' },
-          ...Array.from({ length: 8 }, (_, index) => ({ ordinal: index + 1, phase: ['baseline-before', 'true', 'false', 'baseline-after'][index % 4] })),
-          { ordinal: 9, phase: 'identity-after' },
-        ] } : {}),
+        // Preserve the historical v1 envelope; newer profiles share the core
+        // enum-only plan without request URLs or assertion values.
+        ...(policy.version === 1 ? {} : { steps: dastRequestPlan(policy).map(({ ordinal, phase }) => ({ ordinal, phase })) }),
         notes: ['Configuration only; explicit active consent is still required to scan. No DNS lookup or request was made.'],
       }, null, 2) + '\n');
       return 0;

@@ -1,5 +1,7 @@
 # Wakeio Security CI
 
+[显式单引号 SQL 配置 v3](docs/native-dast-quoted.md)要求手动确认所授权 GET 端点的字符串上下文。未认证执行8个步骤，认证执行10个步骤；数字型 v1/v2 不会自动切换。这是源代码 0.5.0 预览，不代表 npm 0.5.0 已发布。
+
 **在本地和 CI 中发现代码与公开 Web 响应里的常见安全问题，并把未完成的检查也保留下来。**
 
 [English](README.md) · [한국어](README.ko.md) · [日本語](README.ja.md) · [简体中文](README.zh-CN.md) · [已实现的检查清单](docs/checklist.md) · [0.4 使用指南](docs/preview-0.4.md) · [验证记录](docs/verification-0.4.md)

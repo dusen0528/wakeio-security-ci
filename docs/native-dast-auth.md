@@ -2,6 +2,8 @@
 
 Native DAST policy version 2 tests a protected GET endpoint using one explicitly named Authorization environment variable. A same-origin identity GET must match the configured principal before and after two numeric SQL differential rounds. Version 1 keeps its existing eight-request behavior.
 
+[Explicit single-quoted policy v3](native-dast-quoted.md) reuses these authentication boundaries when both authentication fields are declared. It is selected manually and does not change numeric v1/v2 behavior.
+
 ```mermaid
 flowchart LR
   A[Validate policy and selected credential locally] --> B[Identity before]
