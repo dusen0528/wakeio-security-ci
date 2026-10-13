@@ -98,7 +98,7 @@ node build/src/cli.js scan \
 
 ## GitHub Actions
 
-아래 예제는 `main` 브랜치의 공개 Action을 사용합니다. 운영 workflow에서는 Wakeio를 검토한 commit SHA로 고정하세요. 아래 예제는 내장 검사만 명시적으로 선택하고, 발견 결과로 job이 실패해도 보고서를 artifact로 보관하며, 주변 Action은 현재 저장소의 고정 SHA를 재사용합니다.
+검토한 전체 commit SHA로 Action을 고정하고 보고서를 대상 checkout 밖에 둡니다. 아래 예제는 기존에 검토한 scanner `575dbff63c6adc36e327487a2a9a2ead8337b4f0`를 사용합니다. 내장 검사만 선택하고 scan 실패 뒤에도 보고서 업로드를 시도합니다.
 
 ```yaml
 name: wakeio-security-ci
@@ -112,32 +112,42 @@ permissions:
   contents: read
 
 jobs:
-  scan:
+  security:
     runs-on: ubuntu-latest
     steps:
-      - name: 애플리케이션 checkout
+      - name: Check out source as data
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
-
-      - name: Wakeio Security CI 실행
-        uses: dusen0528/wakeio-security-ci@main
+          path: wakeio-source
+      - name: Run pinned Wakeio Action
+        id: wakeio
+        uses: dusen0528/wakeio-security-ci@575dbff63c6adc36e327487a2a9a2ead8337b4f0
         with:
-          source: .
+          source: wakeio-source
           tools: none
-          out: wakeio-security-reports
-          fail-on: high
-
-      - name: 검사 보고서 업로드
+          out: "wakeio-security-reports/${{ github.run_id }}-${{ github.run_attempt }}"
+      - name: Upload reports
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: wakeio-security-ci-reports
-          path: wakeio-security-reports
+          name: wakeio-security-reports-${{ github.run_id }}-${{ github.run_attempt }}
+          path: "wakeio-security-reports/${{ github.run_id }}-${{ github.run_attempt }}"
           if-no-files-found: error
 ```
 
-복사해서 쓸 수 있는 파일은 [`examples/github-action.yml`](examples/github-action.yml)입니다. `@main`은 프리뷰를 바로 시험하기 좋은 이동형 참조입니다. 운영 workflow에서는 `dusen0528/wakeio-security-ci`를 검토한 commit SHA로 고정하고 변경을 직접 검토하세요. 주변 Action도 검토한 SHA를 유지하는 편이 좋습니다. 이 Action은 Node.js 22를 준비하고 대상 프로젝트의 script를 실행하지 않으며 Job Summary와 `report.md`, `report.json`, `report.sarif`, `agent-report.json`, `action-status.json`을 출력 디렉터리에 남깁니다.
+복사해서 쓸 파일은 [`examples/github-action.yml`](examples/github-action.yml)입니다. Action은 Node.js 22를 준비하고 대상 의존성 설치나 script 실행 없이 소스를 데이터로 읽습니다. Job Summary와 `report.md`, `report.json`, `report.sarif`, `agent-report.json`, `action-status.json`을 새 출력 디렉터리에 남깁니다. artifact 업로드 성공은 scan gate를 바꾸지 않습니다.
+
+새 소스 CLI에서 이 레이아웃을 명시적으로 생성할 수 있습니다.
+
+```sh
+node /path/to/wakeio-security-ci/build/src/cli.js init \
+  --source /path/to/your-app --mode action \
+  --action-ref 575dbff63c6adc36e327487a2a9a2ead8337b4f0 \
+  --tools none --out wakeio-security-reports
+```
+
+새 init 옵션은 위 scanner commit 이후에 추가됐으며 npm 공개판 0.4.0에는 없습니다. 기본 `init`은 기존 npm 모드를 유지합니다. [CI artifact에서 로컬 handoff까지의 안내](docs/init-action-onboarding.md)는 실행·attempt 지정 다운로드, 실제 checkout commit 복원, 호환 CLI 선택과 after 보고서 비교를 설명합니다. 지원 언어와 분석 한도는 그대로입니다.
 
 ## 선택형 외부 엔진
 

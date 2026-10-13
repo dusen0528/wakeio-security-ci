@@ -98,7 +98,7 @@ Static HTML references use the first HTML document base without expanding the al
 
 ## GitHub Actions
 
-The example below uses the public Action from `main`. Pin Wakeio to a reviewed commit SHA in an operational workflow. This example selects built-in checks explicitly, preserves reports when the scan finds a failure, and keeps the surrounding actions on their current pinned SHAs.
+Use a reviewed full commit SHA and keep reports outside the target checkout. This example uses the preexisting reviewed scanner at `575dbff63c6adc36e327487a2a9a2ead8337b4f0`, selects built-in checks, and uploads reports after scan failure.
 
 ```yaml
 name: wakeio-security-ci
@@ -112,32 +112,42 @@ permissions:
   contents: read
 
 jobs:
-  scan:
+  security:
     runs-on: ubuntu-latest
     steps:
-      - name: Check out application
+      - name: Check out source as data
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
-
-      - name: Run Wakeio Security CI
-        uses: dusen0528/wakeio-security-ci@main
+          path: wakeio-source
+      - name: Run pinned Wakeio Action
+        id: wakeio
+        uses: dusen0528/wakeio-security-ci@575dbff63c6adc36e327487a2a9a2ead8337b4f0
         with:
-          source: .
+          source: wakeio-source
           tools: none
-          out: wakeio-security-reports
-          fail-on: high
-
+          out: "wakeio-security-reports/${{ github.run_id }}-${{ github.run_attempt }}"
       - name: Upload reports
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: wakeio-security-ci-reports
-          path: wakeio-security-reports
+          name: wakeio-security-reports-${{ github.run_id }}-${{ github.run_attempt }}
+          path: "wakeio-security-reports/${{ github.run_id }}-${{ github.run_attempt }}"
           if-no-files-found: error
 ```
 
-Copy-ready version: [`examples/github-action.yml`](examples/github-action.yml). `@main` is convenient for trying the preview. For a production workflow, pin `dusen0528/wakeio-security-ci` to a reviewed commit and review updates deliberately; keep helper actions pinned to reviewed SHAs as well. The Action provisions Node.js 22, never runs scripts from the scanned project, writes a Job Summary, and leaves `report.md`, `report.json`, `report.sarif`, `agent-report.json`, and `action-status.json` in the output directory.
+Copy-ready version: [`examples/github-action.yml`](examples/github-action.yml). The Action provisions Node.js 22, reads target source without installing or running target scripts, writes a Job Summary, and leaves `report.md`, `report.json`, `report.sarif`, `agent-report.json`, and `action-status.json` in the fresh output directory. Artifact upload success does not change the scan gate.
+
+With the newer source CLI, generate this layout explicitly:
+
+```sh
+node /path/to/wakeio-security-ci/build/src/cli.js init \
+  --source /path/to/your-app --mode action \
+  --action-ref 575dbff63c6adc36e327487a2a9a2ead8337b4f0 \
+  --tools none --out wakeio-security-reports
+```
+
+The new init flags are added after that scanner commit and are not available in published npm 0.4.0. Default `init` remains npm mode. The [CI artifact-to-handoff guide](docs/init-action-onboarding.md) explains downloading a specific run/attempt, recovering the actual checkout commit, using a compatible CLI, and comparing after reports. Source-analysis limits remain unchanged.
 
 ## Optional engines
 
