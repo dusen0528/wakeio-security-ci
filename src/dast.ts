@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { types } from "node:util";
+import { admissionSignal, type TaskAdmission } from './agent-dast/admission.js';
 import { createApiRunControl } from "./api.js";
 import type { CheckResult, Finding } from "./contracts.js";
 import { snapshotJsonData } from "./json-snapshot.js";
@@ -250,7 +251,7 @@ function ledger(policySha256: string, steps: DastExecutionStep[], status: DastEx
       httpAttempts: steps.reduce((sum, s) => sum + s.httpAttempts, 0) }, stopReason: stop };
 }
 
-export async function runDast(rawOptions: DastOptions): Promise<CheckResult[]> {
+export async function runDast(rawOptions: DastOptions, runtime?: TaskAdmission): Promise<CheckResult[]> {
   let options: DastOptions;
   try { options = optionsSnapshot(rawOptions); } catch { return result("error", "DAST options were rejected before requests.", { errorCode: "invalid_options" }); }
   if (options.consent !== true) return result("error", "Active DAST requires explicit consent; no requests were made.", { errorCode: "consent_required" });
@@ -262,8 +263,8 @@ export async function runDast(rawOptions: DastOptions): Promise<CheckResult[]> {
     || !Number.isSafeInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > DAST_MAX_TIMEOUT_MS
     || (options.signal !== undefined && (types.isProxy(options.signal) || !(options.signal instanceof AbortSignal))))
     return result("error", "DAST budget or cancellation signal is invalid; no requests were made.", { errorCode: "invalid_budget" });
-  if (hasDastAuthentication(parsed.policy)) return runAuthenticatedDast(parsed.policy, parsed.policySha256, options, maxRequests, timeoutMs);
-  const control = createApiRunControl(timeoutMs, options.signal, DAST_MAX_TIMEOUT_MS);
+  if (hasDastAuthentication(parsed.policy)) return runAuthenticatedDast(parsed.policy, parsed.policySha256, options, maxRequests, timeoutMs, runtime);
+  const control = createApiRunControl(timeoutMs, admissionSignal(runtime, options.signal), DAST_MAX_TIMEOUT_MS);
   // The shared signal merges caller cancellation and the timer. Capture the cause
   // at its first abort: wall-clock checks in a later catch can mislabel either.
   let abortCause: "deadline" | "cancelled" | undefined;
@@ -272,7 +273,7 @@ export async function runDast(rawOptions: DastOptions): Promise<CheckResult[]> {
   else control.signal.addEventListener("abort", captureAbortCause, { once: true });
   const budget = { count: 0, max: maxRequests };
   const context: UrlNetworkContext = { allowPrivate: options.allowPrivate === true, signal: control.signal, budget,
-    deadlineAt: control.deadlineAt, rejectRedirects: true, acceptJson: true };
+    deadlineAt: Math.min(control.deadlineAt, runtime?.deadlineAt ?? Infinity), rejectRedirects: true, acceptJson: true, admission: runtime };
   const phases: DastPhase[] = ["baseline-before", "true", "false", "baseline-after"];
   const steps: DastExecutionStep[] = [];
   const values: DastScalar[] = [];
@@ -281,6 +282,7 @@ export async function runDast(rawOptions: DastOptions): Promise<CheckResult[]> {
   try {
     for (let ordinal = 0; ordinal < 8; ordinal++) {
       const phase = phases[ordinal % 4]!;
+      context.requestKind = phase === 'true' || phase === 'false' ? 'probe' : 'control';
       const round = (Math.floor(ordinal / 4) + 1) as 1 | 2;
       const attemptStart = budget.count;
       if (firstFailure) {
@@ -395,17 +397,17 @@ export function prepareDastPolicy(raw: unknown, rawOptions: DastPreparationOptio
 
 /** V2 has one request/body/deadline budget across identity-before, eight probes and identity-after. */
 async function runAuthenticatedDast(policy: DastPolicyV2 | DastPolicyV3Auth | DastPolicyV4, policySha256: string, options: DastOptions,
-  maxRequests: number, timeoutMs: number): Promise<CheckResult[]> {
+  maxRequests: number, timeoutMs: number, runtime?: TaskAdmission): Promise<CheckResult[]> {
   let authorization: string;
   try { authorization = authorizationSnapshot(policy, options); }
   catch (error) { return result('error', 'Authenticated DAST preparation failed before requests.', { errorCode: error instanceof DastPreparationError ? error.code : 'invalid_credentials' }); }
-  const control = createApiRunControl(timeoutMs, options.signal, DAST_MAX_TIMEOUT_MS);
+  const control = createApiRunControl(timeoutMs, admissionSignal(runtime, options.signal), DAST_MAX_TIMEOUT_MS);
   let abortCause: 'deadline' | 'cancelled' | undefined;
   const captureAbortCause = () => { abortCause ??= options.signal?.aborted ? 'cancelled' : 'deadline'; };
   if (control.signal.aborted) captureAbortCause(); else control.signal.addEventListener('abort', captureAbortCause, { once: true });
   const budget = { count: 0, max: maxRequests };
   const context: UrlNetworkContext = { allowPrivate: options.allowPrivate === true, signal: control.signal, budget,
-    deadlineAt: control.deadlineAt, rejectRedirects: true, acceptJson: true, authorization };
+    deadlineAt: Math.min(control.deadlineAt, runtime?.deadlineAt ?? Infinity), rejectRedirects: true, acceptJson: true, authorization, admission: runtime };
   const plan = dastRequestPlan(policy);
   const steps: Array<DastAuthExecutionStep | DastJsonExecutionStep> = [];
   const identityControls: DastExecutionV2['identityControls'] = { before: 'not_attempted', after: 'not_attempted' };
@@ -413,6 +415,7 @@ async function runAuthenticatedDast(policy: DastPolicyV2 | DastPolicyV3Auth | Da
   try {
     for (const { ordinal, phase, round } of plan) {
       const identity = phase === 'identity-before' || phase === 'identity-after';
+      context.requestKind = phase === 'true' || phase === 'false' ? 'probe' : 'control';
       const attemptStart = budget.count;
       const common = { ordinal, round: round as 0 | 1 | 2, phase, attemptStart };
       if (firstFailure) { steps.push({ ...common, outcome: 'not_attempted', reason: 'not_reached', httpAttempts: 0, httpStatus: null, oracleMatch: 'unavailable' }); continue; }

@@ -1,0 +1,173 @@
+name: built-in-run-plan-action-self-test
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  owned-plan-action:
+    # The Action repeats the trigger/fork guard. The owned test target is never
+    # prepared for a fork pull request, even before the Action is called.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: vulnerable
+            mode: vulnerable
+            consent: 'true'
+            budget: '64'
+            fail-on: high
+            expected: '1'
+            requests: '8'
+          - name: bound
+            mode: bound
+            consent: 'true'
+            budget: '64'
+            fail-on: high
+            expected: '0'
+            requests: '8'
+          - name: budget
+            mode: vulnerable
+            consent: 'true'
+            budget: '7'
+            fail-on: high
+            expected: '2'
+            requests: '7'
+          - name: budget-none
+            mode: vulnerable
+            consent: 'true'
+            budget: '7'
+            fail-on: none
+            expected: '2'
+            requests: '7'
+          - name: refusal
+            mode: vulnerable
+            consent: 'false'
+            budget: '64'
+            fail-on: high
+            expected: '2'
+            requests: '0'
+    steps:
+      - name: Check out the trusted Action implementation
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          path: wakeio-security-ci
+          persist-credentials: false
+      - name: Prepare the trusted test runtime
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      # This prepares our own current scanner bundle, never a consumer target.
+      # The consumer Action itself performs no npm, build, install or download.
+      - name: Build the current trusted CLI bundle
+        working-directory: wakeio-security-ci
+        run: |
+          npm ci --ignore-scripts --no-audit --fund=false
+          npm run build
+          node --test tests/run-plan-action.test.mjs
+      - name: Prepare the author-owned SQLite target and bound input files
+        if: matrix.consent == 'true'
+        shell: bash
+        env:
+          WAKEIO_OWNED_PLAN_MODE: ${{ matrix.mode }}
+          WAKEIO_OWNED_PLAN_FIXTURE: owned-plan-fixture
+        run: |
+          node wakeio-security-ci/examples/run-plan-action-fixture.mjs > owned-plan-fixture.log 2>&1 &
+          echo "$!" > owned-plan-fixture.pid
+          for attempt in {1..100}; do
+            [[ -f owned-plan-fixture/ready.json ]] && break
+            sleep 0.1
+          done
+          test -f owned-plan-fixture/ready.json
+          node --input-type=module - <<'NODE'
+          import { appendFileSync, readFileSync } from 'node:fs';
+          const ready = JSON.parse(readFileSync('owned-plan-fixture/ready.json', 'utf8'));
+          const url = new URL(ready.origin);
+          if (url.protocol !== 'http:' || url.hostname !== '127.0.0.1' || !url.port) throw Error('invalid_owned_origin');
+          appendFileSync(process.env.GITHUB_ENV, 'OWNED_PLAN_ORIGIN=' + url.origin + '\n');
+          NODE
+      - name: Execute the actual composite Action
+        id: plan
+        continue-on-error: true
+        uses: ./wakeio-security-ci/actions/run-plan
+        with:
+          plan: owned-plan-fixture/plan.json
+          inputs: owned-plan-fixture/inputs.json
+          active-consent: ${{ matrix.consent }}
+          allowed-origin: ${{ env.OWNED_PLAN_ORIGIN || 'http://127.0.0.1:1' }}
+          out: owned-run-plan-${{ matrix.name }}
+          max-requests: ${{ matrix.budget }}
+          timeout-ms: '120000'
+          rate-per-second: '10'
+          concurrency: '2'
+          fail-on: ${{ matrix.fail-on }}
+          allow-private: 'true'
+      - name: Stop the owned fixture and retain its actual request count
+        if: always() && matrix.consent == 'true'
+        shell: bash
+        run: |
+          if [[ -f owned-plan-fixture.pid ]]; then
+            pid="$(cat owned-plan-fixture.pid)"
+            [[ "$pid" =~ ^[1-9][0-9]*$ ]] || exit 2
+            kill -TERM "$pid" 2>/dev/null || true
+            for attempt in {1..100}; do
+              [[ -f owned-plan-fixture/counts.json ]] && break
+              sleep 0.1
+            done
+          fi
+      - name: Assert the real Action outcome, original scan gates and current delivery
+        if: always()
+        shell: bash
+        env:
+          CASE: ${{ matrix.name }}
+          EXPECTED: ${{ matrix.expected }}
+          EXPECTED_REQUESTS: ${{ matrix.requests }}
+          OUTCOME: ${{ steps.plan.outcome }}
+          EXIT_CODE: ${{ steps.plan.outputs.exit-code }}
+          SETUP: ${{ steps.plan.outputs.setup-status }}
+          DELIVERY: ${{ steps.plan.outputs.delivery-status }}
+          REPORT: ${{ steps.plan.outputs.run-report }}
+          RECEIPT: ${{ steps.plan.outputs.receipt }}
+          OUT_DIR: owned-run-plan-${{ matrix.name }}
+        run: |
+          node --input-type=module - <<'NODE'
+          import assert from 'node:assert/strict';
+          import { existsSync, readFileSync } from 'node:fs';
+          const e = process.env;
+          assert.equal(e.EXIT_CODE, e.EXPECTED);
+          assert.equal(e.OUTCOME, e.EXPECTED === '0' ? 'success' : 'failure');
+          if (e.CASE === 'refusal') {
+            assert.equal(e.SETUP, 'refused'); assert.equal(e.DELIVERY, 'failed');
+            assert.equal(e.REPORT, ''); assert.equal(e.RECEIPT, '');
+            assert.equal(existsSync('owned-plan-fixture'), false);
+            assert.equal(existsSync(e.OUT_DIR), false);
+          } else {
+            assert.equal(e.SETUP, 'success'); assert.equal(e.DELIVERY, 'delivered');
+            const report = JSON.parse(readFileSync(e.REPORT, 'utf8'));
+            const receipt = JSON.parse(readFileSync(e.RECEIPT, 'utf8'));
+            const counts = JSON.parse(readFileSync('owned-plan-fixture/counts.json', 'utf8'));
+            assert.equal(report.exitCode, Number(e.EXPECTED));
+            assert.equal(report.requests.requestCount, Number(e.EXPECTED_REQUESTS));
+            assert.equal(counts.requestCount, Number(e.EXPECTED_REQUESTS));
+            assert.equal(receipt.childExitCode, Number(e.EXPECTED));
+            assert.equal(receipt.childCleanupConfirmed, true);
+            assert.equal(receipt.acknowledgement, 'current_child_and_publication_verified');
+            assert.equal(receipt.provesFinalActionExit, false);
+            for (const task of report.tasks) {
+              const agent = JSON.parse(readFileSync(e.OUT_DIR + '/tasks/' + task.taskId + '/agent-report.json', 'utf8'));
+              assert.equal(agent.scanGate.exitCode, Number(e.EXPECTED));
+              for (const format of ['report.json', 'report.md', 'report.sarif', 'agent-report.json']) assert.ok(existsSync(e.OUT_DIR + '/tasks/' + task.taskId + '/' + format));
+            }
+          }
+          NODE
+      - name: Upload the owned redacted reports and current publication acknowledgements
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: owned-run-plan-${{ matrix.name }}
+          path: owned-run-plan-${{ matrix.name }}
+          if-no-files-found: warn

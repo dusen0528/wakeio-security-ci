@@ -10,6 +10,7 @@ import { superviseWorker } from './schemathesis.js';
 import { LIVE_CHECK_ID, projectLiveResult, type SchemathesisLiveOptions } from './schemathesis-live.js';
 import { normalizeUrl } from './url-network.js';
 import { snapshotJsonData } from './json-snapshot.js';
+import { admissionSignal, type TaskAdmission } from './agent-dast/admission.js';
 import { authScalarObservation, parseSchemathesisAuthPolicy, sanitiseSchemathesisAuth, snapshotSchemathesisCredential,
   operationPathMatches, SCHEMATHESIS_AUTH_REVISION, type SchemathesisAuthEvidence, type SchemathesisAuthPolicy, type SchemathesisAuthStop } from './schemathesis-auth.js';
 
@@ -157,7 +158,7 @@ function observations(e:SchemathesisAuthEvidence, gate:EgressGate, origin:string
   return findings;
 }
 
-export async function runSchemathesisAuthenticated(options:SchemathesisLiveOptions):Promise<CheckResult[]> {
+export async function runSchemathesisAuthenticated(options:SchemathesisLiveOptions,runtime?:TaskAdmission):Promise<CheckResult[]> {
   let p:Prepared;
   try { p=prepare(options); } catch { return [{id:LIVE_CHECK_ID,status:'partial',schemathesisAuthRequired:true,findings:[],notes:[NOTE,'Authentication policy, options, schema or credential was rejected before traffic.'],metrics:{requestCount:0,stopReason:'unknown'}}]; }
   const n=p.policy.operations.length;
@@ -170,7 +171,7 @@ export async function runSchemathesisAuthenticated(options:SchemathesisLiveOptio
     schemaSha256:p.schemaSha256,workerSha256:'',limits:{maxRequests:p.maxRequests,timeoutMs:p.timeoutMs,maxBodyBytes:p.maxBodyBytes,maxTotalBytes:p.maxTotalBytes},
     seed:p.seed,operations:p.selection.operations.map(o=>({operation:`GET ${o.path}`,generatedRequests:0,deniedRequests:0})),controls,
     requests:{attempted:0,generated:0,completedGenerated:0,responseBytes:0},records:[],engineVersion:'unknown',runtime:null};
-  const control=createApiRunControl(p.timeoutMs,p.signal), engine=new AbortController();
+  const control=createApiRunControl(p.timeoutMs,admissionSignal(runtime,p.signal)), engine=new AbortController();
   const stopEngine=()=>engine.abort(); control.signal.addEventListener('abort',stopEngine,{once:true});
   let gate:EgressGate|undefined, reason:SchemathesisAuthStop='complete', result:LiveResult|undefined;
   const interrupted=():SchemathesisAuthStop|undefined=>control.signal.aborted || Date.now()>=control.deadlineAt?(p.signal?.aborted?'cancelled':'timeout'):undefined;
@@ -198,7 +199,7 @@ export async function runSchemathesisAuthenticated(options:SchemathesisLiveOptio
     if (interrupted()) {reason=interrupted()!;throw new Error('stop');}
     gate=await startEgressGate({origin:resolved.origin,address:resolved.address,methods:new Set(['GET']),maxRequests:p.maxRequests,maxSingleBodyBytes:p.maxBodyBytes,
       maxTotalBytes:p.maxTotalBytes,signal:control.signal,deadlineAt:control.deadlineAt,authentication:{authorization:p.authorization,operations:p.selection.operations.map(o=>o.path),
-        controlPaths:[p.policy.identity.path,...p.policy.operations.map(o=>o.normal.path)],generatedMaxRequests:p.maxRequests-(2+3*n)}});
+        controlPaths:[p.policy.identity.path,...p.policy.operations.map(o=>o.normal.path)],generatedMaxRequests:p.maxRequests-(2+3*n)}},runtime);
     gate.onStop(stopEngine);
     for (let i=0;i<1+2*n;i++) if (!await runControl(i)) throw new Error('stop');
     gate.authenticated!.beginGeneration();
