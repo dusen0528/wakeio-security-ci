@@ -77,8 +77,9 @@ function sourceLocation(sourceFile: ts.SourceFile, node: ts.Node): { line: numbe
 
 function findingFromObservation(observation: Observation): Finding {
   const location = sourceLocation(observation.sourceFile, observation.node);
-  const inputText = (value: string) => observation.staticFlow?.sourceKind === 'filesystem_filename'
-    ? value.replace(/(?:untrusted )?(?:request or URL|request|URL) input/gi, 'Filename-derived input') : value;
+  const inputText = (value: string) => observation.staticFlow?.sourceKind
+    ? value.replace(/(?:untrusted )?(?:request or URL|request|URL) input/gi,
+      observation.staticFlow.sourceKind === 'archive_entry_path' ? 'Archive-entry path input' : 'Filename-derived input') : value;
   return {
     ruleId: observation.ruleId,
     title: inputText(observation.title),
@@ -253,7 +254,16 @@ function observeFile(astFile: AstFile, flowUses: ReadonlyMap<ts.Node, InputFlowU
     if (ts.isCallExpression(node)) {
       const name = callName(node.expression);
       const use = flowUses.get(node);
-      if (use?.filesystemProcess) {
+      if (use?.archiveWrite) {
+        const role = use.archiveWrite;
+        if (role.outcome !== 'lexically_contained' && role.staticFlow) {
+          pushObservation(observations, file, sourceFile, node, 'ast:archive-path-write',
+            role.outcome === 'path_role_unknown' ? 'Archive-entry path reaches unresolved filesystem write options' : 'Archive-entry path reaches a filesystem write destination',
+            'A declared unzipper Open.buffer directory entry path is connected to operand 0 of a statically declared Node createWriteStream call. Package API semantics, installed/runtime identity, archive trust and upload reachability remain conditional. Lexical containment, symlinks and filesystem effects require independent review.',
+            'high', 'Use a fixed extraction root and reject parent-relative or absolute paths for the same resolved destination before writing. Review symlinks, filesystem races and options separately.', 'low');
+          observations.at(-1)!.staticFlow = role.staticFlow;
+        }
+      } else if (use?.filesystemProcess) {
         const role = use.filesystemProcess;
         if (role.outcome !== 'argv_only_shell_disabled') {
           pushObservation(observations, file, sourceFile, node, 'ast:filesystem-shell-input',
@@ -363,7 +373,7 @@ function observeFile(astFile: AstFile, flowUses: ReadonlyMap<ts.Node, InputFlowU
     // Dynamic code selects its actual relevant operand; timers still use the generic arg0 trace.
     if (observation.ruleId === 'ast:dynamic-code' && dynamicCodeShape(observation.node)) return observation;
     const use = flowUses.get(observation.node);
-    if (observation.ruleId === 'ast:filesystem-shell-input') return observation;
+    if (observation.ruleId === 'ast:filesystem-shell-input' || observation.ruleId === 'ast:archive-path-write') return observation;
     // A process operand with absent evidence must never borrow argument zero's trace.
     if (use?.processRole && ['ast:shell-input-sink', 'ast:process-executable'].includes(observation.ruleId)) return observation;
     const index = ts.isCallExpression(observation.node) && callName(observation.node.expression) === "React.createElement" ? 1 : 0;
@@ -483,6 +493,10 @@ export function runBuiltinAst(snapshot: SourceSnapshot, hasOtherSecurityCheck = 
     const filesystemRank = { argv_shell_input: 4, argv_shell_unknown: 3, direct_argv_interpreter_unknown: 2, argv_only_shell_disabled: 0 };
     merged.filesystemProcess = filesystemRoles.reduce<NonNullable<InputFlowUse['filesystemProcess']> | undefined>((selected, role) =>
       !selected || filesystemRank[role.outcome] > filesystemRank[selected.outcome] ? role : selected, undefined);
+    const archiveRoles = [prior.archiveWrite, use.archiveWrite].filter((role): role is NonNullable<InputFlowUse['archiveWrite']> => !!role);
+    const archiveRank = { path_role_unknown: 3, path_input: 2, lexically_contained: 0 };
+    merged.archiveWrite = archiveRoles.reduce<NonNullable<InputFlowUse['archiveWrite']> | undefined>((selected, role) =>
+      !selected || archiveRank[role.outcome] > archiveRank[selected.outcome] ? role : selected, undefined);
     if (staticContext) {
       merged.argumentFlows = (merged.argumentFlows ?? []).map(flow => ({ ...flow, certainty: 'unknown' as const, fixedDestination: false, staticFlow: flow.staticFlow ? { ...flow.staticFlow, truncated: true } : undefined }));
       if (merged.nosqlRole) merged.nosqlRole = { ...merged.nosqlRole, certainty: 'unknown', staticFlow: merged.nosqlRole.staticFlow ? { ...merged.nosqlRole.staticFlow, truncated: true } : undefined };

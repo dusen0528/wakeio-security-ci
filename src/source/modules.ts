@@ -79,6 +79,8 @@ export class StaticModules {
   readonly requireDeclarations: ts.VariableDeclaration[] = [];
   readonly sqlLoads: Array<{ specifier: string; node: ts.Node }> = [];
   readonly sqlBoundaryNodes: ts.Identifier[] = [];
+  /** Prototype/opaque computed access evidence from the existing charged walk. */
+  readonly archiveIntrinsicBoundaryNodes: ts.Node[] = [];
   readonly forkLoads: ts.Node[] = [];
   readonly axiosLoads: Array<ts.CallExpression | ts.ImportEqualsDeclaration | ts.ExportDeclaration> = [];
   readonly cjsReferences = new Map<ts.SourceFile, ts.Identifier[]>();
@@ -222,6 +224,13 @@ export class StaticModules {
       if (ts.isExportDeclaration(node) && node.moduleSpecifier && ts.isStringLiteralLike(node.moduleSpecifier)
         && node.moduleSpecifier.text === 'axios') this.axiosLoads.push(node);
       if (ts.isExportDeclaration(node) && node.moduleSpecifier) this.exportDeclarations.push(node);
+      if (ts.isPropertyAccessExpression(node) && ['constructor', 'prototype', '__proto__'].includes(node.name.text)) this.archiveIntrinsicBoundaryNodes.push(node);
+      else if (ts.isElementAccessExpression(node)) {
+        const key = node.argumentExpression;
+        const opaque = !key || !ts.isStringLiteralLike(key) && !ts.isNumericLiteral(key);
+        const prototype = key && ts.isStringLiteralLike(key) && ['constructor', 'prototype', '__proto__'].includes(key.text);
+        if (opaque || prototype) this.archiveIntrinsicBoundaryNodes.push(node);
+      }
       if (ts.isImportEqualsDeclaration(node) && ts.isExternalModuleReference(node.moduleReference) && node.moduleReference.expression && ts.isStringLiteralLike(node.moduleReference.expression) && /^(?:node:)?child_process$/.test(node.moduleReference.expression.text)) this.forkLoads.push(node);
       if (ts.isExportDeclaration(node) && node.moduleSpecifier && ts.isStringLiteralLike(node.moduleSpecifier) && /^(?:node:)?child_process$/.test(node.moduleSpecifier.text)) this.forkLoads.push(node);
       if (ts.isVariableDeclaration(node) && node.initializer && ts.isCallExpression(node.initializer)

@@ -44,7 +44,7 @@ export const REPORT_SCHEMA_VERSION = '1.0.0' as const;
 
 /** The version advertised to SARIF consumers when the package is built. */
 export const REPORT_TOOL_VERSION = '0.5.0';
-export const RULESET_VERSION = '2026-10-13.3';
+export const RULESET_VERSION = '2026-10-13.4';
 
 const SEVERITIES: readonly Severity[] = [
   'info',
@@ -846,7 +846,7 @@ function sanitiseCheck(input: CheckResult): CheckResult {
   if (Array.isArray(input?.findings) && input.findings.some(finding => {
     const flow = ownDataField(finding, 'staticFlow');
     const origin = ownDataField(flow.value, 'sourceKind');
-    return origin.present && (!origin.valid || origin.value !== 'filesystem_filename'
+    return origin.present && (!origin.valid || !['filesystem_filename', 'archive_entry_path'].includes(origin.value as string)
       || !flow.valid || !sanitiseStaticFlow(flow.value as Finding['staticFlow']));
   }) && status !== 'error') status = 'partial';
   const notes = Array.isArray(input?.notes)
@@ -1135,7 +1135,7 @@ function sanitiseFinding(input: Finding, proofLedger?: ApiExecutionLedger): Find
 function sanitiseStaticFlow(input: Finding['staticFlow'] | undefined): Finding['staticFlow'] | undefined {
   if (!input || input.kind !== 'static_flow' || !Array.isArray(input.steps) || typeof input.truncated !== 'boolean') return undefined;
   const origin = ownDataField(input, 'sourceKind');
-  if (origin.present && (!origin.valid || origin.value !== 'filesystem_filename')) return undefined;
+  if (origin.present && (!origin.valid || !['filesystem_filename', 'archive_entry_path'].includes(origin.value as string))) return undefined;
   const allowed = ['source', 'call', 'parameter', 'return', 'intermediate', 'sink'];
   const steps: NonNullable<Finding['staticFlow']>['steps'] = [];
   for (const item of input.steps.slice(0, 24)) {
@@ -1144,7 +1144,7 @@ function sanitiseStaticFlow(input: Finding['staticFlow'] | undefined): Finding['
     if (!location.path || !location.line || !location.column) continue;
     steps.push({ role: item.role, location: { path: location.path, line: location.line, column: location.column } });
   }
-  return steps.length ? { kind: 'static_flow', steps, ...(origin.present ? { sourceKind: 'filesystem_filename' as const } : {}),
+  return steps.length ? { kind: 'static_flow', steps, ...(origin.present ? { sourceKind: origin.value as 'filesystem_filename' | 'archive_entry_path' } : {}),
     truncated: input.truncated || input.steps.length > 24 || steps.length !== input.steps.length
       || !steps.some((item) => item.role === 'source') || steps.at(-1)?.role !== 'sink' } : undefined;
 }

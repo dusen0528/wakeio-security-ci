@@ -104,7 +104,7 @@ export function parseScanReport(input: unknown): ScanReport {
         || finding.staticFlow !== undefined && finding.staticFlow.truncated !== true)) return invalid();
       if (finding.comparisonKey !== undefined
         && (!text(finding.comparisonKey) || !/^[a-f0-9]{64}$/.test(finding.comparisonKey))) return invalid();
-      if (finding.staticFlow?.sourceKind !== undefined && finding.staticFlow.sourceKind !== 'filesystem_filename') return invalid();
+      if (finding.staticFlow?.sourceKind !== undefined && !['filesystem_filename', 'archive_entry_path'].includes(finding.staticFlow.sourceKind)) return invalid();
       for (const key of ['path', 'url']) if (finding.location[key] !== undefined && !text(finding.location[key])) return invalid();
       for (const key of ['line', 'column']) if (finding.location[key] !== undefined
         && (!Number.isSafeInteger(finding.location[key]) || finding.location[key] < 1)) return invalid();
@@ -234,7 +234,7 @@ export function compareReports(beforeInput: ScanReport, afterInput: ScanReport):
     const previousOrigin = oldIndex.findings.get(id)?.finding.staticFlow?.sourceKind;
     const nextOrigin = currentIndex.findings.get(id)?.finding.staticFlow?.sourceKind;
     if ((previousOrigin || nextOrigin) && previousOrigin !== nextOrigin) {
-      reasons.push('Static filename source origin changed or is missing; this cannot establish disappearance or a fix.');
+      reasons.push('Static input source origin changed or is missing; this cannot establish disappearance or a fix.');
       break;
     }
     if ((previous || next) && JSON.stringify(previous) !== JSON.stringify(next)) {

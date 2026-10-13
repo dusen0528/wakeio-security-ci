@@ -7,7 +7,7 @@ export type ToolName = 'gitleaks' | 'osv' | 'trivy' | 'bandit';
 export interface StaticFlow {
   kind: 'static_flow';
   /** Selected trace origin; absence remains legacy/unknown. Never HTTP proof. */
-  sourceKind?: 'filesystem_filename';
+  sourceKind?: 'filesystem_filename' | 'archive_entry_path';
   steps: Array<{ role: 'source' | 'call' | 'parameter' | 'return' | 'intermediate' | 'sink'; location: { path: string; line: number; column: number } }>;
   truncated: boolean;
 }
@@ -17,7 +17,7 @@ export interface StaticCandidateContext {
   authority: 'conditional';
   items: Array<{
     kind: 'unresolved_cjs_dispatch' | 'constructor_continuation' | 'declared_callback_entry' | 'unqualified_mongo_origin'
-      | 'declared_filesystem_stream_origin' | 'declared_stream_callback_schedule' | 'conditional_array_accumulator' | 'declared_process_wrapper';
+      | 'declared_filesystem_stream_origin' | 'declared_stream_callback_schedule' | 'conditional_array_accumulator' | 'declared_process_wrapper' | 'declared_package_api';
     location: { path: string; line: number; column: number };
     target?: { path: string; line: number; column: number };
   }>;
