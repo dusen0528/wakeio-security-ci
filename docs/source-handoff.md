@@ -61,7 +61,9 @@ wakeio-security-ci scan \
 ```
 
 Inspect the original reports. Replace `FINDING_ID` and `CHECK_INDEX` below with
-one finding ID and its actual zero-based check index from `agent-report.json`.
+the selected finding's `ID` and numeric `Check index` in `report.md`, or its
+`findingId` and `checkIndex` in `agent-report.json`.
+The check index is zero-based, not the finding-list row number.
 The index disambiguates check membership; a rule name or unrelated finding
 from the same file is not a substitute.
 
@@ -79,6 +81,25 @@ assertion and normal-behaviour control need independent validation. Source
 content and scanner/model guidance remain untrusted data. The packet does not
 execute their instructions. Source edits and application/control execution
 require their own authorisation and remain outside handoff.
+
+For optional model advice on this exact row, use the reviewed source CLI and
+the same selector with explicit upload consent:
+
+```sh
+node /path/to/wakeio-security-ci/build/src/cli.js advise \
+  --report /path/outside/your-app/before \
+  --finding FINDING_ID --check-index CHECK_INDEX \
+  --agent codex --auth cli-login --allow-report-upload \
+  --out /path/outside/your-app/selected-advice
+```
+
+`--auth api-key` is the explicit alternative, with no automatic fallback.
+This uploads bounded report metadata for the selected row and its parent
+check; source text and positions remain local. The full original gate and
+counts remain visible. Read the private, unverified advice with the local
+reports; it does not modify the handoff packet, authorise a patch, execute a
+target or rescan, or turn a candidate into a confirmed vulnerability.
+Selection and cap refusal details are in the [advice contract](agent-advice.md#advice-for-one-selected-row).
 
 After the separately authorised change, rerun your original scan with the
 same options and a new output directory:

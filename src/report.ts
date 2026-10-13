@@ -592,19 +592,20 @@ export function toMarkdown(report: ScanReport, failOn: FailOn = 'high'): string 
   }
 
   lines.push('', '## Findings', '');
-  const findingRows = safeReport.checks.flatMap((check) =>
-    check.findings.map((finding) => ({ check, finding })),
+  const findingRows = safeReport.checks.flatMap((check, checkIndex) =>
+    check.findings.map((finding) => ({ check, checkIndex, finding })),
   );
   if (findingRows.length === 0) {
     lines.push('No findings were reported.');
   } else {
-    for (const { check, finding } of findingRows) {
+    for (const { check, checkIndex, finding } of findingRows) {
       const where = markdownLocation(finding.location);
       const prefix = `[${finding.severity.toUpperCase()}] [${finding.kind}]`;
       lines.push(
         `- ${prefix} ${markdownInline(finding.title)} — ${markdownInline(finding.description)}`,
       );
       lines.push(`  - Check: ${markdownInline(check.id)}`);
+      lines.push(`  - Check index: ${checkIndex}`);
       lines.push(`  - ID: ${finding.id}`);
       lines.push(`  - Confidence: ${markdownInline(finding.confidence)}`);
       if (where) {

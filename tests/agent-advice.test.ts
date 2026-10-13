@@ -123,6 +123,12 @@ test('fake CLI receives the owned native SQLite evidence and a clean bound contr
           for (const mutate of reportOnlyCases) {
             const copy = structuredClone(agent); mutate(copy);
             const context = projectAdviceContext(copy, true).input;
+            if (copy.findings.length > 1) {
+              assert.equal(context.findings.length, 0);
+              assert.equal(context.ambiguousFindingRows, 2);
+              assert.equal(context.checks[0].recheckRoute, 'repeat_native_same_policy');
+              continue;
+            }
             assert.equal(context.findings[0].replayAvailable, false);
             assert.notEqual(context.findings[0].recheckRoute, 'replay_native_finding_same_policy');
             if (copy.checks[0].status === 'error' || copy.checks[0].metrics?.requestCount === 7) {
@@ -267,7 +273,7 @@ test('fake CLI policy7 keeps quoted profile metadata bounded in both auth modes 
         const out = join(top, `advice-${authentication}-${failed}-${mode}`);
         assert.equal(await adviseMain(args(reports, out, fake, mode)), 0);
         const projection = JSON.parse(await readFile(join(top, 'captured-projection.json'), 'utf8'));
-        assert.equal(projection.projectionVersion, 11);
+        assert.equal(projection.projectionVersion, ADVICE_PROJECTION_POLICY_VERSION);
         assert.equal(projection.checks[0].nativeDast.profileRevision, execution.profileRevision);
         assert.equal(projection.checks[0].nativeDast.steps.length, total);
         assert.equal(projection.findings[0].replayAvailable, !failed);
@@ -276,7 +282,7 @@ test('fake CLI policy7 keeps quoted profile metadata bounded in both auth modes 
           assert.equal('identityControls' in projection.checks[0].nativeDast, false);
           assert.equal('probeOutcome' in projection.checks[0].nativeDast, false);
         } else assert.deepEqual(projection.checks[0].nativeDast.identityControls, execution.identityControls);
-        const produced = await receipt(out); assert.equal(produced.policyVersion, 11); assert.equal(produced.authMode, mode); assert.equal(produced.verified, false);
+        const produced = await receipt(out); assert.equal(produced.policyVersion, ADVICE_PROJECTION_POLICY_VERSION); assert.equal(produced.authMode, mode); assert.equal(produced.verified, false);
         assert.ok(Buffer.byteLength(JSON.stringify(projection)) <= 32 * 1024);
         for (const forbidden of ['owned.example', 'authorizationEnv', 'jsonPointer', 'expectedBaseline', "AND '1'"])
           assert.equal(JSON.stringify(projection).includes(forbidden), false);
