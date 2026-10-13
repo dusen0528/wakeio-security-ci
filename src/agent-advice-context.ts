@@ -4,12 +4,13 @@ import type { AgentReport } from './contracts.js';
 import { redactSecrets, safeHttpUrl } from './report-path.js';
 import { sanitizeDastExecution, isDastReplayableExecution, hasDastIdentityControls } from './dast-execution.js';
 import { sanitiseStaticContext } from './static-context.js';
+import { sanitiseSchemathesisAuth } from './schemathesis-auth.js';
 import { types } from 'node:util';
 
 export type RecheckRoute = 'repeat_native_same_policy' | 'replay_native_finding_same_policy' | 'replay_api_finding_same_policy'
   | 'review_static_flow_or_budget' | 'review_check_diagnostics' | 'review_scope';
 
-export const ADVICE_PROJECTION_POLICY_VERSION = 10;
+export const ADVICE_PROJECTION_POLICY_VERSION = 11;
 
 const MAX_CHECKS = 24;
 const MAX_FINDINGS = 24;
@@ -38,6 +39,7 @@ function nativeExecutionEligible(check: AgentReport['checks'][number], nativeChe
 }
 
 function checkRoute(check: AgentReport['checks'][number], mode: AgentReport['mode'], nativeCheckCount: number): RecheckRoute {
+  if (check.checkId === 'api.schemathesis' && check.schemathesisAuthRequired) return 'review_check_diagnostics';
   if (check.checkId === 'source.code-coverage') return 'review_check_diagnostics';
   if (check.checkId === 'source.inventory' && (sanitiseCollectionBudget(check.collectionBudget) || sanitiseCollectionEvidence(check.collectionEvidence))) return 'review_static_flow_or_budget';
   if (check.status !== 'completed') return check.analysisGaps || check.analysisBudget
@@ -51,6 +53,7 @@ function checkCard(check: AgentReport['checks'][number], mode: AgentReport['mode
   const dast = check.checkId === 'url.sql-boolean' ? sanitizeDastExecution(check.dastExecution) : undefined;
   const api = check.checkId === 'api.authorization' ? check.apiExecution : undefined;
   const codeCoverage = check.checkId === 'source.code-coverage' ? parseCodeCoverage(check.codeCoverage) : undefined;
+  const auth = check.checkId === 'api.schemathesis' ? sanitiseSchemathesisAuth(check.schemathesisAuth) : undefined;
   const gaps = check.analysisGaps;
   const collectionBudget = check.checkId === 'source.inventory' ? sanitiseCollectionBudget(check.collectionBudget) : undefined;
   const collectionEvidence = check.checkId === 'source.inventory' ? sanitiseCollectionEvidence(check.collectionEvidence) : undefined;
@@ -60,6 +63,16 @@ function checkCard(check: AgentReport['checks'][number], mode: AgentReport['mode
     ...(collectionBudget ? { collectionBudget } : {}),
     ...(codeCoverage ? { codeCoverage } : {}),
     ...(collectionEvidence ? { collectionEvidence } : {}),
+    ...(check.schemathesisAuthRequired ? { schemathesisAuthRequired: true } : {}),
+    ...(auth ? { schemathesisAuth: {
+      profileRevision: auth.profileRevision, status: auth.status, stopReason: auth.stopReason,
+      provenancePresent: { policy: true, schema: true, worker: true },
+      engineVersion: auth.engineVersion, limits: auth.limits, seed: auth.seed, requests: auth.requests,
+      controls: auth.controls.map(c => ({ ordinal: c.ordinal, phase: c.phase, operationIndex: c.operationIndex,
+        outcome: c.outcome, httpStatus: c.httpStatus, attempt: c.attempt })),
+      operations: auth.operations.map((op, operationIndex) => ({ operationIndex,
+        generatedRequests: op.generatedRequests, deniedRequests: op.deniedRequests })),
+    } } : {}),
     findingRows: check.findingIds.length, recheckRoute: checkRoute(check, mode, nativeCheckCount),
     engine: dast ? 'native_sql_boolean' as const : api ? 'api_authorization' as const
       : mode === 'source' || check.checkId.startsWith('source.') ? 'source_check' as const : 'other' as const,
@@ -101,6 +114,7 @@ function checkCard(check: AgentReport['checks'][number], mode: AgentReport['mode
 function findingRoute(finding: AgentReport['findings'][number],
   check: AgentReport['checks'][number], mode: AgentReport['mode'], nativeCheckCount: number,
   findingRowsForCheck: number, nativeReplayReportEligible: boolean, conditionalContext: boolean): RecheckRoute {
+  if (check.checkId === 'api.schemathesis' && check.schemathesisAuthRequired) return 'review_check_diagnostics';
   if (conditionalContext) return 'review_static_flow_or_budget';
   if (nativeReplayReportEligible && nativeExecutionEligible(check, nativeCheckCount)
       && check.dastExecution && isDastReplayableExecution(check.dastExecution)

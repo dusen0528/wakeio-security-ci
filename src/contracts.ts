@@ -1,4 +1,5 @@
 import type { DastExecution } from './dast-execution.js';
+import type { SchemathesisAuthEvidence } from './schemathesis-auth.js';
 export type { DastExecution, DastExecutionV4, DastJsonExecutionStep, DastJsonStepReason } from './dast-execution.js';
 export type Severity = 'info' | 'low' | 'medium' | 'high' | 'critical';
 export type Mode = 'source' | 'url' | 'both' | 'api' | 'combined';
@@ -180,6 +181,9 @@ export interface CollectionEvidence {
   issues: Array<{ code: CollectionIssueCode; count: number }>;
 }
 export interface CheckResult {
+  /** Explicit requested authenticated scope survives missing diagnostic evidence. */
+  schemathesisAuthRequired?: true;
+  schemathesisAuth?: SchemathesisAuthEvidence;
   codeCoverage?: CodeCoverage;
   analysisBudget?: AstAnalysisBudget;
   collectionBudget?: CollectionBudget;
@@ -326,6 +330,7 @@ export interface ScanProvenance {
 }
 
 export interface ScanScope {
+  schemathesisAuthPolicy?: { profileRevision: 'schemathesis-get-auth-v1'; policySha256: string; schemaSha256: string };
   codeAnalysisPolicy?: { revision: 'code-coverage-v1'; requireCodeAnalysis: true };
   analysisBudget?: AstAnalysisBudget;
   collectionBudget?: CollectionBudget;
@@ -469,6 +474,8 @@ export interface AgentReport {
     basis: 'declared_check_statuses';
   };
   checks: Array<{
+    schemathesisAuthRequired?: true;
+    schemathesisAuth?: SchemathesisAuthEvidence;
     codeCoverage?: CodeCoverage;
     checkIndex: number;
     checkId: string;

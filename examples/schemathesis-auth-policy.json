@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "kind": "schemathesis-get-auth",
+  "baseUrl": "https://staging.example.invalid/",
+  "authorizationEnv": "WAKEIO_STAGING_AUTH",
+  "identity": {
+    "path": "/whoami",
+    "status": 200,
+    "jsonPointer": "/id",
+    "equals": "owned-user"
+  },
+  "operations": [
+    {
+      "path": "/items",
+      "normal": {
+        "path": "/items?quantity=1",
+        "status": 200,
+        "jsonPointer": "/count",
+        "equals": 1
+      }
+    }
+  ]
+}

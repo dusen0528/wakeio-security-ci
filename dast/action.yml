@@ -59,6 +59,10 @@ inputs:
     description: Workspace-relative OpenAPI 3.0/3.1 JSON for Schemathesis live mode
     required: false
     default: ''
+  schemathesis-auth-policy:
+    description: Workspace-relative authenticated GET controls JSON; requires openapi and a selected credential in the scanner environment
+    required: false
+    default: ''
   api-base:
     description: Target origin for openapi (OpenAPI servers are never used)
     required: false
@@ -166,6 +170,7 @@ runs:
         WAKEIO_ALLOW_PRIVATE: ${{ inputs.allow-private }}
         WAKEIO_TIMEOUT_MS: ${{ inputs.timeout-ms }}
         WAKEIO_OPENAPI: ${{ inputs.openapi }}
+        WAKEIO_SCHEMATHESIS_AUTH_POLICY: ${{ inputs.schemathesis-auth-policy }}
         WAKEIO_API_BASE: ${{ inputs.api-base }}
         WAKEIO_OPERATIONS: ${{ inputs.operations }}
       run: node "$WAKEIO_ACTION_PATH/scripts/action-run.mjs"
@@ -205,6 +210,7 @@ runs:
         WAKEIO_DAST_POLICY: ${{ inputs.dast-policy }}
         WAKEIO_DAST_MAX_REQUESTS: ${{ inputs.dast-max-requests }}
         WAKEIO_OPENAPI: ${{ inputs.openapi }}
+        WAKEIO_SCHEMATHESIS_AUTH_POLICY: ${{ inputs.schemathesis-auth-policy }}
         WAKEIO_API_BASE: ${{ inputs.api-base }}
         WAKEIO_OPERATIONS: ${{ inputs.operations }}
         WAKEIO_API_MAX_REQUESTS: ${{ inputs.api-max-requests }}
