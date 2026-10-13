@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Add an explicit authenticated numeric POST JSON differential policy v4 with
+  one bounded body field, distinct benign-value controls, twelve fixed logical
+  steps and no automatic POST retry. Existing GET policies retain their scope;
+  response candidates do not verify exploits or fixes. See [POST JSON contract](docs/native-dast-post-json.md).
+
 - Close outstanding DAST target requests on cancellation, gate close or engine
   disconnect, and await HTTP/CONNECT connection cleanup while retaining tunnel caps.
 - Forward Action SIGINT/SIGTERM through setup, native policy preflight and scan

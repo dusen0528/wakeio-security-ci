@@ -435,7 +435,7 @@ function sameAddress(left: string | undefined, right: string): boolean {
   return canonical(left) === canonical(right);
 }
 
-async function requestPinned(url: NormalizedUrl, address: DnsAddress, context: UrlNetworkContext): Promise<IncomingMessage> {
+async function requestPinned(url: NormalizedUrl, address: DnsAddress, context: UrlNetworkContext, jsonPost?: Buffer): Promise<IncomingMessage> {
   if (context.signal.aborted || Date.now() >= context.deadlineAt) fail("timeout", "collection deadline exceeded");
   if (context.authorization !== undefined) validateAuthorization(context.authorization);
   consumeRequestBudget(context.budget);
@@ -457,7 +457,7 @@ async function requestPinned(url: NormalizedUrl, address: DnsAddress, context: U
       hostname: url.hostname,
       port,
       path: `${new URL(url.href).pathname}${new URL(url.href).search}` || "/",
-      method: "GET",
+      method: jsonPost === undefined ? "GET" : "POST",
       headers: {
         accept: context.acceptJson
           ? "application/json,application/*+json;q=0.9"
@@ -465,6 +465,7 @@ async function requestPinned(url: NormalizedUrl, address: DnsAddress, context: U
         "accept-encoding": "gzip, br, deflate",
         connection: "close",
         host: hostHeader,
+        ...(jsonPost === undefined ? {} : { 'content-type': 'application/json', 'content-length': String(jsonPost.byteLength) }),
         ...(context.authorization === undefined ? {} : { authorization: context.authorization }),
       },
       // The DNS answer was checked before this call. Returning only the
@@ -515,8 +516,45 @@ async function requestPinned(url: NormalizedUrl, address: DnsAddress, context: U
       req.destroy();
       finishError(new UrlNetworkError("timeout", "request deadline exceeded"));
     });
-    req.end();
+    if (jsonPost === undefined) req.end();
+    else req.once('socket', socket => {
+      // Do not send the POST headers/body until the selected peer (and TLS) is checked.
+      socket.once(isHttps ? 'secureConnect' : 'connect', () => {
+        const verified = sameAddress(socket.remoteAddress, address.address)
+          && (!isHttps || (socket as typeof socket & { authorized?: boolean }).authorized === true);
+        if (!verified) { req.destroy(); finishError(new UrlNetworkError('dns_rebinding')); return; }
+        if (context.signal.aborted || Date.now() >= context.deadlineAt) { req.destroy(); finishError(new UrlNetworkError('timeout')); return; }
+        req.end(jsonPost);
+      });
+    });
   });
+}
+
+/** Fixed JSON POST lane: one checked address, one wire attempt, never a redirect or retry. */
+export async function postJsonResource(start: NormalizedUrl, context: UrlNetworkContext, allowedOrigin: string,
+  body: string, maxCompressedBytes: number, maxDecompressedBytes: number): Promise<FetchedResource> {
+  if (start.origin !== allowedOrigin) fail('cross_origin_redirect');
+  if (context.authorization === undefined) fail('authorization_required');
+  validateAuthorization(context.authorization);
+  if (typeof body !== 'string' || Buffer.byteLength(body, 'utf8') > 4096) fail('request_body_limit');
+  let parsed: unknown;
+  try { parsed = JSON.parse(body); } catch { fail('request_body_invalid'); }
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed) || Object.keys(parsed).length < 1 || Object.keys(parsed).length > 16
+    || Object.entries(parsed).some(([key, value]) => !/^[A-Za-z_][A-Za-z0-9_.-]{0,63}$/.test(key) || ['__proto__', 'constructor', 'prototype'].includes(key)
+      || !(value === null || typeof value === 'boolean' || typeof value === 'number' && Number.isFinite(value) || typeof value === 'string' && value.length <= 1024))
+    || JSON.stringify(parsed) !== body) fail('request_body_invalid');
+  const bytes = Buffer.from(body, 'utf8');
+  try {
+    const addresses = await resolveAddresses(start, context.signal, context.allowPrivate);
+    const selected = addresses[0];
+    if (!selected) fail('dns_failed');
+    const response = await requestPinned(start, selected, context, bytes);
+    const headers = responseHeaders(response);
+    if (isRedirect(response.statusCode ?? 0)) { closeResponse(response); fail('redirect_rejected'); }
+    const content = await readResponseBody(response, context.signal, maxCompressedBytes, maxDecompressedBytes);
+    return { requestedUrl: start, finalUrl: start, status: response.statusCode ?? 0, headers,
+      body: content.bytes, compressedBytes: content.compressedBytes, redirects: [] };
+  } finally { bytes.fill(0); }
 }
 
 async function requestWithAddresses(url: NormalizedUrl, addresses: DnsAddress[], context: UrlNetworkContext): Promise<IncomingMessage> {

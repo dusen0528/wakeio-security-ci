@@ -10,7 +10,7 @@ const USAGE = `Usage:
   wakeio-security-ci plan --openapi-input FILE [--allow-private] [--timeout-ms N]
   wakeio-security-ci plan --dast-policy FILE [--dast-max-requests N] [--allow-private] [--timeout-ms N]
 
-Validate local JSON and print a redacted GET plan without DNS, HTTP or scan reports.
+Validate local JSON and print a redacted fixed request plan without DNS, HTTP or scan reports.
 Use exactly one input. Timeout is 1..120000 ms (default: ${DEFAULT_TOOL_TIMEOUT_MS}, matching scan). Exit 0 means configuration ready;
 exit 2 means blocked. Neither exit is a security result or permission to scan.
 `;
@@ -73,6 +73,7 @@ export async function planMain(argv: readonly string[]): Promise<number> {
       process.stdout.write(JSON.stringify({ version: 1, kind: 'native-dast-plan', status: 'ready',
         origin: new URL(policy.baseUrl).origin, policySha256, profileRevision: dastProfileRevision(policy),
         plannedRequests, maxHttpAttempts: effectiveMaxRequests, timeoutMs, allowPrivate,
+        ...(policy.version === 4 ? { method: policy.method } : {}),
         // Preserve the historical v1 envelope; newer profiles share the core
         // enum-only plan without request URLs or assertion values.
         ...(policy.version === 1 ? {} : { steps: dastRequestPlan(policy).map(({ ordinal, phase }) => ({ ordinal, phase })) }),
