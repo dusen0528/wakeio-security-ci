@@ -361,6 +361,8 @@ npm run benchmark -- --strict
 
 [구현 체크리스트](docs/checklist.md), [0.4 안내](docs/preview-0.4.md), [검증 기록](docs/verification-0.4.md)에 실제 범위가 적혀 있습니다. 완전한 침투 테스트, exploit 생성, 브라우저·런타임 검증, 광범위한 API 퍼징, 실제 DB·클라우드 검사, 이미지 CVE 검사, 서비스 전체 안전 판정은 이 프로젝트의 계약에 포함되지 않습니다.
 
+[Archive 파일명→쓰기 경로 source 검사 범위와 로컬 검증 기록](docs/archive-path-sast.md)을 참고하세요.
+
 ## 기여와 라이선스
 
 규칙을 추가할 때는 취약·수정 합성 fixture, 근거와 한계, 호환 가능한 라이선스를 함께 남겨 주세요. [CONTRIBUTING.md](CONTRIBUTING.md)와 [SECURITY.md](SECURITY.md)를 참고하세요. Wakeio Security CI는 Apache-2.0이며 외부 scanner와 rule은 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)의 각 라이선스를 따릅니다.

@@ -9,7 +9,7 @@ import { types } from 'node:util';
 export type RecheckRoute = 'repeat_native_same_policy' | 'replay_native_finding_same_policy' | 'replay_api_finding_same_policy'
   | 'review_static_flow_or_budget' | 'review_check_diagnostics' | 'review_scope';
 
-export const ADVICE_PROJECTION_POLICY_VERSION = 9;
+export const ADVICE_PROJECTION_POLICY_VERSION = 10;
 
 const MAX_CHECKS = 24;
 const MAX_FINDINGS = 24;

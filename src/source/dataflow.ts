@@ -15,6 +15,7 @@ import { analyzeClosureShape, analyzeConstructedShape, type ClosureShape, type C
 import { MongoRoleModel, type MongoDbRole, type MongoCollectionRole } from './mongo-role.js';
 import type { CollectedFile } from './types.js';
 import { FilesystemRoleModel, type FilesystemStreamRole } from './filesystem-role.js';
+import { ArchiveRoleModel, type ArchiveRole } from './archive-role.js';
 
 /** A source-to-sink use found by the bounded, same-function analysis. */
 export interface InputFlowUse {
@@ -32,6 +33,7 @@ export interface InputFlowUse {
   forkRole?: ForkRoleUse;
   processRole?: ProcessRoleUse;
   filesystemProcess?: { outcome: 'argv_shell_input' | 'argv_shell_unknown' | 'direct_argv_interpreter_unknown' | 'argv_only_shell_disabled'; staticFlow?: StaticFlow };
+  archiveWrite?: { outcome: 'path_input' | 'path_role_unknown' | 'lexically_contained'; staticFlow?: StaticFlow };
   /** Scan-local monotonic actual-analysis proof; never general callable safety. */
   localForkCall?: { complete: boolean };
   localProcessCall?: { complete: boolean };
@@ -72,7 +74,10 @@ function containResponse(value: FlowValue): void {
 }
 
 interface FlowValue {
-  traceSourceKind?: 'filesystem_filename';
+  traceSourceKind?: StaticFlow['sourceKind'];
+  archiveRole?: ArchiveRole;
+  /** Independent path-origin witness when another input wins the general trace. */
+  archiveContent?: FlowValue;
   filesystemStream?: FilesystemStreamRole;
   /** Separate filename subset prevents mixed HTTP traces from being tagged as filenames. */
   filesystemContent?: FlowValue;
@@ -148,7 +153,7 @@ function traced(value: FlowValue, node: ts.Node, role: StaticFlow["steps"][numbe
   const steps = [...previous, next];
   const truncated = value.traceTruncated || steps.length > FLOW_LIMITS.traceSteps;
   // Keep the real endpoint while exposing omission. Never invent missing hops.
-  return { ...value, ...(value.nosqlWhere ? { nosqlWhere: { ...value.nosqlWhere, value: traced(value.nosqlWhere.value, node, role) } } : {}), trace: steps.length > FLOW_LIMITS.traceSteps
+  return { ...value, ...(value.archiveContent ? { archiveContent: traced(value.archiveContent, node, role) } : {}), ...(value.nosqlWhere ? { nosqlWhere: { ...value.nosqlWhere, value: traced(value.nosqlWhere.value, node, role) } } : {}), trace: steps.length > FLOW_LIMITS.traceSteps
     ? [...steps.slice(0, FLOW_LIMITS.traceSteps - 1), next] : steps, traceTruncated: Boolean(truncated) };
 }
 
@@ -183,6 +188,11 @@ function filenamePart(value: FlowValue): FlowValue | undefined {
   if (part && isInputRelated(part)) return part;
   return value.traceSourceKind === 'filesystem_filename' && isInputRelated(value)
     ? { ...value, sequenceContent: undefined, filesystemContent: undefined } : undefined;
+}
+function archivePart(value: FlowValue): FlowValue | undefined {
+  if (value.archiveContent && isInputRelated(value.archiveContent)) return value.archiveContent;
+  return value.traceSourceKind === 'archive_entry_path' && isInputRelated(value)
+    ? { ...value, archiveContent: undefined } : undefined;
 }
 function invalidateMongo(role: MongoDbRole | MongoCollectionRole | undefined, reason: 'opaque' | 'write'): void {
   if (!role) return;
@@ -385,6 +395,11 @@ function joinValues(left: FlowValue, right: FlowValue): FlowValue {
     const filesystemStream = left.filesystemStream === right.filesystemStream ? left.filesystemStream : undefined;
     const filenameValues = [filenamePart(left), filenamePart(right)].filter((value): value is FlowValue => !!value);
     const filesystemContent = filenameValues.length ? combineValues(filenameValues) : undefined;
+    const archiveValues = [archivePart(left), archivePart(right)].filter((part): part is FlowValue => !!part);
+    result.archiveContent = archiveValues.length ? inheritTrace(UNKNOWN_INPUT, archiveValues) : undefined;
+    const archiveRole = left.archiveRole ?? right.archiveRole;
+    result.archiveRole = left.archiveRole === right.archiveRole ? left.archiveRole
+      : archiveRole ? { ...archiveRole, state: { valid: false } } : undefined;
     return { ...result, sequenceContent, filesystemStream, filesystemContent, expressResponse: joinResponse(left.expressResponse, right.expressResponse), nosqlObject: left.nosqlObject === right.nosqlObject ? left.nosqlObject : undefined, nosqlUnknown, nosqlWhere, mongoDb, mongoCollection, expressObjectBody: left.expressObjectBody === true && right.expressObjectBody === true, ...(properties ? { properties } : {}), sqlFixedText, sqlArray, sqlConfig, sqlScalarUnavailable:left.sqlScalarUnavailable || right.sqlScalarUnavailable, sqlCallback:left.sqlCallback || right.sqlCallback, sqlDataUnavailable:left.sqlDataUnavailable || right.sqlDataUnavailable, httpTargetUnavailable:httpUnavailable([left,right]), urlFragments, nativeQuery: left.nativeQuery === true && right.nativeQuery === true, queryContent: sharedQueryContent, httpConfig };
   };
   if (left.kind === right.kind && (left.kind !== "root" || left.root === right.root)) {
@@ -399,7 +414,9 @@ function combineValues(values: readonly FlowValue[]): FlowValue {
   const value=values.some((value) => value.kind === "tainted") ? inheritTrace(TAINTED, values)
     : values.some((value) => isInputRelated(value)) ? inheritTrace(UNKNOWN_INPUT, values)
     : values.some((value) => value.kind === "root" || value.kind === "unknown") ? UNKNOWN : SAFE;
-  return {...value,sqlDataUnavailable:values.some(v=>v.sqlDataUnavailable || v.sqlCallback), httpTargetUnavailable:httpUnavailable(values)};
+  const archiveValues = values.map(archivePart).filter((part): part is FlowValue => !!part);
+  const archiveContent = archiveValues.length ? inheritTrace(UNKNOWN_INPUT, archiveValues) : undefined;
+  return {...value, archiveContent, sqlDataUnavailable:values.some(v=>v.sqlDataUnavailable || v.sqlCallback), httpTargetUnavailable:httpUnavailable(values)};
 }
 
 function concatValues(values: readonly FlowValue[]): FlowValue {
@@ -426,6 +443,12 @@ function withoutUrlProof(value: FlowValue): FlowValue {
 }
 
 function projectValue(base: FlowValue, property: string): FlowValue {
+  if (base.archiveRole?.state.valid) {
+    const role = base.archiveRole;
+    if (role.stage === 'directory' && property === 'files') return { ...UNKNOWN, archiveRole: { ...role, stage: 'files' } };
+    if (role.stage === 'files' && (property === '*' || /^\d+$/.test(property))) return { ...UNKNOWN, archiveRole: { ...role, stage: 'entry' } };
+    return UNKNOWN; // Neither entry content nor the whole record is a path input.
+  }
   const propertyValue = base.properties?.get(property);
   const value = propertyValue ?? (base.kind === "root" && base.root ? inheritTrace(rootProperty(base.root, property), [base])
     : base.kind === "tainted" ? inheritTrace(TAINTED, [base]) : base.kind === "safe" ? SAFE
@@ -521,6 +544,7 @@ class FlowEnv {
       if (base.expressResponse && !benignResponseWrite) base.expressResponse.valid = false;
       const expressResponse = benignResponseWrite ? base.expressResponse : undefined;
       if (base.constructed) base.constructed.valid = false;
+      if (base.archiveRole) base.archiveRole.state.valid = false;
       invalidateMongo(base.mongoDb, 'write');
       invalidateMongo(base.mongoCollection, 'write');
       return { ...combined, expressResponse, expressObjectBody: base.expressObjectBody, properties, nosqlObject: base.nosqlObject, constructed: base.constructed, mongoDb: base.mongoDb, mongoCollection: base.mongoCollection };
@@ -602,6 +626,7 @@ export function observedGapLocation(node: ts.Node, files: ReadonlyMap<string, ts
 interface FunctionSummary { returned: FlowValue; }
 // Mutable content must not be reused through a cached return or skipped side effect.
 function hasMutableQuery(value: FlowValue, seen = new Set<FlowValue>(), depth = 0): boolean {
+  if (value.archiveRole || value.archiveContent) return true;
   if (value.sequenceContent || value.filesystemStream || value.staticContext || value.boundaryInput || value.expressResponse || value.queryContent || value.nosqlObject || value.nosqlUnknown || value.callable || value.constructed || value.mongoDb || value.mongoCollection || seen.has(value) || depth > 16 || seen.size > 128) return true;
   seen.add(value);
   return [...value.properties?.values() ?? []].some((item) => hasMutableQuery(item, seen, depth + 1));
@@ -631,6 +656,7 @@ class FlowSession {
   readonly forkModel: ForkRoleModel;
   readonly processModel: ProcessRoleModel;
   readonly filesystemModel: FilesystemRoleModel;
+  readonly archiveModel: ArchiveRoleModel;
   readonly expressModel: ExpressRoleModel;
   readonly active = new Set<string>();
   readonly cache = new Map<string, FunctionSummary>();
@@ -678,6 +704,7 @@ class FlowSession {
     this.forkModel = new ForkRoleModel(this.modules, () => this.tick(), roleProofScopeComplete, this.indexComplete);
     this.processModel = new ProcessRoleModel(this.modules, () => this.tick(), roleProofScopeComplete, this.indexComplete);
     this.filesystemModel = new FilesystemRoleModel(this.modules, metadata, () => this.tick(), (reason, node) => this.gap(reason, node), roleProofScopeComplete, limits.aliasSteps);
+    this.archiveModel = new ArchiveRoleModel(this.modules, metadata, () => this.tick(), (reason, node) => this.gap(reason, node), roleProofScopeComplete, limits.aliasSteps);
     this.expressModel = new ExpressRoleModel(this.modules, () => this.tick(), this.indexComplete);
     this.modules.finishIndex(this.indexComplete);
     this.phase = 'flow';
@@ -883,6 +910,7 @@ class FlowSession {
       seen.add(value);
       if (value.sequenceContent) value.sequenceContent.closed = value.sequenceContent.valid = false;
       if (value.filesystemStream) value.filesystemStream.valid = false;
+      if (value.archiveRole) { value.archiveRole.state.valid = false; this.archiveModel.unsupported(value.archiveRole.origin); }
       invalidateMongo(value.mongoDb, 'opaque'); invalidateMongo(value.mongoCollection, 'opaque');
       if (value.constructed) { value.constructed.valid = false; value.constructed.staticContext = contexts(value.constructed.staticContext, staticContext); for (const slot of value.constructed.slots.values()) visit(slot, depth + 1); }
       if (value.callable) { value.callable.valid = false; value.callable.staticContext = contexts(value.callable.staticContext, staticContext); for (const captured of value.callable.captures.values()) visit(captured, depth + 1); if (value.callable.lexicalThis) visit(value.callable.lexicalThis, depth + 1); }
@@ -907,6 +935,8 @@ class FlowSession {
     if (result.staticContext?.truncated) this.gap('module_export_unsupported');
     const project = (child: FlowValue) => this.conditionalValue(child, staticContext, depth + 1, seen);
     if (value.filesystemContent) result.filesystemContent = project(value.filesystemContent);
+    if (value.archiveContent) result.archiveContent = project(value.archiveContent);
+    if (value.archiveRole) result.archiveRole = value.archiveRole;
     if (value.sequenceContent) result.sequenceContent = value.sequenceContent;
     if (value.properties) result.properties = new Map([...value.properties].map(([name, child]) => [name, project(child)]));
     if (value.nosqlWhere) result.nosqlWhere = { node: value.nosqlWhere.node, value: project(value.nosqlWhere.value) };
@@ -939,6 +969,7 @@ class FlowSession {
     const current = currentQuery(value);
     return isInputRelated(current) ? {kind:'unknown',inputRelated:true,trace:current.trace,traceTruncated:current.traceTruncated,traceSourceKind:current.traceSourceKind,
       filesystemContent:current.filesystemContent,sequenceContent:current.sequenceContent,
+      archiveContent:current.archiveContent,
       sqlScalarUnavailable:true,httpTargetUnavailable:true,sqlDataUnavailable:current.sqlDataUnavailable} : UNKNOWN;
   }
 
@@ -1129,6 +1160,11 @@ class DataflowAnalyzer {
 
   private declareBinding(name: ts.BindingName, value: FlowValue, env: FlowEnv, blockScoped: boolean): void {
     if (ts.isIdentifier(name)) {
+      if (value.archiveRole && this.session) {
+        if (this.session.archiveModel.bindingMutated(name)) {
+          value.archiveRole.state.valid = false; this.session.archiveModel.unsupported(name);
+        }
+      }
       if (value.filesystemStream) {
         const symbol = this.session?.modules.symbol(name);
         if (symbol && (this.session?.modules.mutated.has(symbol) || this.session?.modules.mutatedMembers.has(symbol))) value.filesystemStream.valid = false;
@@ -1276,13 +1312,13 @@ class DataflowAnalyzer {
           // A loop element inherits the taint of the iterable. For an object or
           // array with tracked fields, wildcard projection keeps the useful
           // property-independent input signal without inventing a value.
-          const elementValue = projectValue(iterable, "*");
+          const elementValue = ts.isForOfStatement(statement) ? projectValue(iterable, "*") : iterable.archiveRole ? UNKNOWN : projectValue(iterable, "*");
           if (declaration.initializer) this.analyzeExpression(declaration.initializer, loop);
           this.declareBinding(declaration.name, elementValue, loop, blockScoped);
         }
       } else {
         this.analyzeAssignmentTarget(statement.initializer, loop);
-        const elementValue = projectValue(iterable, "*");
+        const elementValue = ts.isForOfStatement(statement) ? projectValue(iterable, "*") : iterable.archiveRole ? UNKNOWN : projectValue(iterable, "*");
         if (ts.isIdentifier(statement.initializer)) loop.assign(statement.initializer.text, elementValue);
         else if (isAssignmentPattern(statement.initializer) || isBindingPattern(statement.initializer)) {
           this.assignBinding(statement.initializer as ts.BindingName | ts.ObjectLiteralExpression | ts.ArrayLiteralExpression, elementValue, loop);
@@ -1427,12 +1463,15 @@ class DataflowAnalyzer {
       this.analyzeExpression(expression.expression, env);
       const callee = expression.expression;
       const selectedCallable = this.capabilityValue(callee, env);
-      const response = ts.isPropertyAccessExpression(callee) ? this.evalExpression(callee.expression, env) : undefined;
+      const response = ts.isPropertyAccessExpression(callee) || ts.isElementAccessExpression(callee) ? this.evalExpression(callee.expression, env) : undefined;
       // Body interpretation happens when send/json runs, after argument evaluation.
       const responseState = response?.expressResponse;
       const processBinding = this.session?.processModel.binding(expression);
       const filesystemStream = this.session?.filesystemModel.stream(expression);
       const filesystemWrapper = this.session?.filesystemModel.wrapper(expression);
+      const archiveOpen = this.session?.archiveModel.open(expression);
+      const archivePathCall = this.session?.archiveModel.pathCall(expression);
+      const archiveWriter = this.session?.archiveModel.writer(expression);
       this.session?.mongoModel.observe(expression);
       const mongoCollection = this.session?.mongoModel.collection(expression, response?.mongoDb);
       // Preserve operand order in this syntax-shaped lane: later writes cannot replace earlier actual evidence.
@@ -1496,17 +1535,24 @@ class DataflowAnalyzer {
         if (responseState.contained && responseState.mime !== "html") responseState.mime = "unknown";
       }
       const callable = selectedCallable.callable;
+      const archiveMethod = ts.isPropertyAccessExpression(callee) ? callee.name.text
+        : ts.isElementAccessExpression(callee) ? propertyName(callee.argumentExpression) : undefined;
+      if (response?.archiveRole && !(response.archiveRole.stage === 'entry' && archiveMethod === 'stream' && expression.arguments.length === 0)) {
+        response.archiveRole.state.valid = false; this.session?.archiveModel.unsupported(expression);
+      }
       if (selectedCallable.opaqueClosure) this.session?.gap('module_export_unsupported', expression);
-      const applied = filesystemStream ? { ...UNKNOWN, filesystemStream }
+      const applied = archiveOpen ? { ...UNKNOWN, archiveRole: archiveOpen }
+        : archivePathCall ? archivePathCall === 'predicate' ? SAFE : traced(combineValues(args), expression, 'call')
+        : archiveWriter ? UNKNOWN : filesystemStream ? { ...UNKNOWN, filesystemStream }
         : arrayMutation ? cell.closed && cell.valid ? SAFE : UNKNOWN // Only qualified arrays have a length return; opaque methods remain unknown.
         : filesystemEvent ? { ...UNKNOWN, filesystemStream: response!.filesystemStream }
         : mongoCollection ? { ...UNKNOWN, mongoCollection } : selectedCallable.opaqueClosure ? traced({ ...selectedCallable.opaqueClosure, traceTruncated: true }, expression, 'call')
         : this.session?.invoke(expression, args,this.receiver,this.declared,callable,this.staticContext);
-      const invoked = !arrayMutation && !filesystemStream && !filesystemEvent
+      const invoked = !archiveOpen && !archiveWriter && !arrayMutation && !filesystemStream && !filesystemEvent
         && applied?.kind === 'unknown' && !applied.inputRelated && !applied.constructed && !applied.callable && !applied.mongoCollection && !applied.mongoDb && args.some(isInputRelated)
-        ? { ...traced(inheritTrace(UNKNOWN_INPUT, args), expression, 'call'), traceTruncated: true, httpTargetUnavailable: httpUnavailable([applied, ...args]) } : applied;
+        ? { ...traced(combineValues(args), expression, 'call'), kind: 'unknown' as const, inputRelated: true, traceTruncated: true, httpTargetUnavailable: httpUnavailable([applied, ...args]) } : applied;
       if (invoked || selectedCallable.opaqueClosure) this.callableActuals.set(expression, { env, value: invoked });
-      if (invoked === undefined && !filesystemWrapper?.qualified) {
+      if (invoked === undefined && !filesystemWrapper?.qualified && !archiveOpen && !archivePathCall && !archiveWriter) {
         // An opaque consumer may change headers; never reuse a stale non-HTML
         // exclusion after the response capability escapes to that consumer.
         for (const value of args) if (value.expressResponse) value.expressResponse.mime = "unknown";
@@ -1517,6 +1563,7 @@ class DataflowAnalyzer {
             seen.add(value);
             if (value.sequenceContent) value.sequenceContent.valid = value.sequenceContent.closed = false;
             if (value.filesystemStream) value.filesystemStream.valid = false;
+            if (value.archiveRole) { value.archiveRole.state.valid = false; this.session.archiveModel.unsupported(expression); }
             if (value.nosqlObject) {
               value.nosqlObject.value = combineValues([value.nosqlObject.value, ...args]);
               value.nosqlObject.modified = true;
@@ -1560,8 +1607,17 @@ class DataflowAnalyzer {
         staticFlow: evidence(filename, expression),
       } : undefined;
       const filesystemContext = filesystemProcess ? contexts(filename?.staticContext, conditionalContext('declared_process_wrapper', expression)) : undefined;
+      const archive = args[0] ? archivePart(args[0]) : undefined;
+      if (archive && archiveWriter && !archiveWriter.options) this.session!.archiveModel.unsupported(expression);
+      const archiveWrite = archive && archiveWriter ? {
+        outcome: !archiveWriter.options ? 'path_role_unknown' as const
+          : archiveWriter.closed && this.session?.archiveModel.contained(expression) ? 'lexically_contained' as const : 'path_input' as const,
+        staticFlow: evidence(archive, expression),
+      } : undefined;
+      if (archiveWrite?.outcome === 'lexically_contained') this.session!.archiveModel.lexicalExclusions++;
+      else if (archiveWrite) this.session!.archiveModel.writeCandidates++;
       if (filesystemProcess) this.session?.gap('module_export_unsupported', expression);
-      if (argumentFlows.length > 0 || httpRole || sqlRole || nosqlRole || forkRole || processRole || filesystemProcess) this.uses.push({ node: expression, kind: "call", argumentFlows,
+      if (argumentFlows.length > 0 || httpRole || sqlRole || nosqlRole || forkRole || processRole || filesystemProcess || archiveWrite) this.uses.push({ node: expression, kind: "call", argumentFlows, archiveWrite,
         staticContext: contexts(this.staticContext, filesystemContext, selectedCallable.staticContext, response?.staticContext, ...args.map(value => value.staticContext)),
         localCall: this.session?.modules.localCallable(expression), ...(htmlResponse ? { htmlResponse, htmlResponseMime } : {}), ...(httpRole ? { httpRole } : {}), ...(sqlRole ? { sqlRole } : {}), ...(nosqlRole ? { nosqlRole } : {}), ...(forkRole ? { forkRole } : {}), ...(processRole ? { processRole } : {}), ...(filesystemProcess ? { filesystemProcess } : {}), localForkCall: this.session?.localForkCalls.get(expression), localProcessCall: this.session?.localForkCalls.get(expression) });
       return;
@@ -1969,17 +2025,32 @@ class DataflowAnalyzer {
     if (ts.isStringLiteral(expression) || ts.isNoSubstitutionTemplateLiteral(expression)) return literalValue(expression.text);
     if (ts.isNumericLiteral(expression) || ts.isBigIntLiteral(expression) || ts.isRegularExpressionLiteral(expression)) return SAFE;
     if (expression.kind === ts.SyntaxKind.TrueKeyword || expression.kind === ts.SyntaxKind.FalseKeyword || expression.kind === ts.SyntaxKind.NullKeyword || expression.kind === ts.SyntaxKind.UndefinedKeyword) return SAFE;
-    if (ts.isParenthesizedExpression(expression) || ts.isAsExpression(expression) || ts.isTypeAssertionExpression(expression) || ts.isNonNullExpression(expression) || ts.isAwaitExpression(expression)) return this.evalExpression(expression.expression, env);
+    if (ts.isAwaitExpression(expression)) {
+      const value = this.evalExpression(expression.expression, env);
+      return value.archiveRole?.stage === 'promise' && value.archiveRole.state.valid
+        ? { ...value, archiveRole: { ...value.archiveRole, stage: 'directory' } } : value;
+    }
+    if (ts.isParenthesizedExpression(expression) || ts.isAsExpression(expression) || ts.isTypeAssertionExpression(expression) || ts.isNonNullExpression(expression)) return this.evalExpression(expression.expression, env);
     if (ts.isYieldExpression(expression)) return expression.expression ? this.evalExpression(expression.expression, env) : UNKNOWN;
     if (expression.kind === ts.SyntaxKind.ThisKeyword) return this.constructedReceiver ?? UNKNOWN;
     if (ts.isPropertyAccessExpression(expression)) {
       const receiver = this.evalExpression(expression.expression, env);
+      if (receiver.archiveRole?.state.valid && receiver.archiveRole.stage === 'entry' && expression.name.text === 'path') {
+        this.session!.archiveModel.entryPaths++;
+        return traced(withContext({ ...UNKNOWN_INPUT, traceSourceKind: 'archive_entry_path' },
+          conditionalContext('declared_package_api', receiver.archiveRole.origin)), expression, 'source');
+      }
       if (receiver.constructed) return receiver.constructed.valid ? receiver.constructed.slots.get(expression.name.text) ?? UNKNOWN : UNKNOWN;
       return currentQuery(projectValue(receiver, expression.name.text));
     }
     if (ts.isElementAccessExpression(expression)) {
       const key = propertyName(expression.argumentExpression);
       const base = this.evalExpression(expression.expression, env);
+      if (base.archiveRole?.state.valid && base.archiveRole.stage === 'entry' && key === 'path') {
+        this.session!.archiveModel.entryPaths++;
+        return traced(withContext({ ...UNKNOWN_INPUT, traceSourceKind: 'archive_entry_path' },
+          conditionalContext('declared_package_api', base.archiveRole.origin)), expression, 'source');
+      }
       if (key !== undefined) return currentQuery(projectValue(base, key));
       // Dynamic keys cannot be resolved in this bounded analysis, but a
       // tainted base still means the selected property is input-related.
@@ -2096,7 +2167,7 @@ class DataflowAnalyzer {
       if (returned) {
         // Unmodelled captures/opaque returns cannot erase a prior input candidate.
         if (returned.kind === "unknown" && !returned.inputRelated && !returned.constructed && !returned.callable && !returned.mongoCollection && !returned.mongoDb && args.some(isInputRelated)) {
-          return { ...traced(inheritTrace(UNKNOWN_INPUT, args), expression, "call"), traceTruncated: true, httpTargetUnavailable:httpUnavailable([returned,...args]) };
+          return { ...traced(combineValues(args), expression, "call"), kind: 'unknown', inputRelated: true, traceTruncated: true, httpTargetUnavailable:httpUnavailable([returned,...args]) };
         }
         return returned.sqlArray && this.session?.sqlModel.returnedArrayUse(expression)!==true
           ? {...returned,sqlArray:{...returned.sqlArray,closed:false}} : returned;
@@ -2123,8 +2194,8 @@ class DataflowAnalyzer {
       if (method === "get" && receiver?.kind === "root" && (receiver.root === "searchParams" || receiver.root === "formData")) return withHttpUnavailable(traced(inheritTrace(TAINTED, [receiver]), expression, "source"), [receiver,...args]);
       if (method === "get" && receiver?.kind === "tainted") return withHttpUnavailable(traced(inheritTrace(TAINTED, [receiver]), expression, "source"), [receiver,...args]);
       if (method === "get" && receiver && isInputRelated(receiver)) return withHttpUnavailable(traced(inheritTrace(UNKNOWN_INPUT, [receiver]), expression, "source"), [receiver,...args]);
-      if (receiver && isInputRelated(receiver)) return { ...traced(inheritTrace(UNKNOWN_INPUT, [receiver]), expression, "call"), traceTruncated: true, httpTargetUnavailable:httpUnavailable([receiver,...args]) };
-      if (args.some(isInputRelated)) return { ...traced(inheritTrace(UNKNOWN_INPUT, args), expression, "call"), traceTruncated: true, httpTargetUnavailable:httpUnavailable(receiver ? [receiver,...args] : args) };
+      if (receiver && isInputRelated(receiver)) return { ...traced(combineValues([receiver]), expression, "call"), kind: 'unknown', inputRelated: true, traceTruncated: true, httpTargetUnavailable:httpUnavailable([receiver,...args]) };
+      if (args.some(isInputRelated)) return { ...traced(combineValues(args), expression, "call"), kind: 'unknown', inputRelated: true, traceTruncated: true, httpTargetUnavailable:httpUnavailable(receiver ? [receiver,...args] : args) };
       return withHttpUnavailable(UNKNOWN, receiver ? [receiver,...args] : args);
     }
     if (ts.isNewExpression(expression)) {
@@ -2204,5 +2275,8 @@ export function findSnapshotInputFlows(files: readonly ts.SourceFile[], limits: 
     filesystemStreamModel: 'glob-stream-filename-v1', filesystemStreamsRecognized: session.filesystemModel.streamsRecognized,
     filesystemFilenameCallbacks: session.filesystemModel.filenameCallbacks, filesystemAccumulatorWrites: session.filesystemModel.accumulatorWrites,
     filesystemUnsupportedUses: session.filesystemModel.unsupportedUses,
+    archiveDirectoriesRecognized: session.archiveModel.directoriesRecognized, archiveEntryPaths: session.archiveModel.entryPaths,
+    archiveWriteCandidates: session.archiveModel.writeCandidates, archiveLexicalExclusions: session.archiveModel.lexicalExclusions,
+    archiveUnsupportedUses: session.archiveModel.unsupportedUses,
   }};
 }
