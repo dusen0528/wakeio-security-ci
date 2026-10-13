@@ -18,6 +18,7 @@ import { tmpdir } from 'node:os';
 const spawnAsync = promisify(spawnProcess);
 const TOOL_NAMES = new Set(['gitleaks', 'osv', 'trivy', 'bandit']);
 const INCOMPLETE_STATUSES = new Set(['partial', 'error', 'skipped']);
+const REPORT_FORMATS = ['report.json', 'report.sarif', 'report.md', 'agent-report.json'];
 const STABLE_SYSTEM_ALIASES = new Set(['/tmp', '/var']);
 // Leave time for the CLI to flush valid partial evidence, then bound shutdown
 // even when an installer or scanner ignores the forwarded signal.
@@ -88,8 +89,7 @@ async function main() {
   const tools = sourceMode ? requestedTools : 'none';
   const workspace = resolve(env.GITHUB_WORKSPACE || process.cwd());
   const reportDirectory = resolve(workspace, out);
-  let previousReport;
-  try { previousReport = await reportFingerprint(reportDirectory); } catch { previousReport = undefined; }
+  const previousReports = await reportFingerprints(reportDirectory);
   const toolsRoot = await mkdtemp(join(tmpdir(), 'wakeio-security-ci-action-'));
   const state = {
     exitCode: 2,
@@ -155,6 +155,7 @@ async function main() {
       acceptedStatuses: [0, 1, 2],
     });
     state.exitCode = result.status;
+    state.scanExitCode = result.status;
     state.scanStatus = scanStatusFor(result.status);
   } catch (error) {
     state.exitCode = 2;
@@ -172,7 +173,7 @@ async function main() {
     void error;
   } finally {
     await rm(toolsRoot, { recursive: true, force: true }).catch(() => undefined);
-    await finalizeAction(env, reportDirectory, state, previousReport);
+    await finalizeAction(env, reportDirectory, state, previousReports);
   }
   process.exitCode = state.exitCode;
 }
@@ -187,8 +188,7 @@ async function dastMain(env) {
   const workspace = resolve(env.GITHUB_WORKSPACE || process.cwd());
   const out = value(env.WAKEIO_OUT) || 'wakeio-dast-reports';
   const reportDirectory = resolve(workspace, out);
-  let previousReport;
-  try { previousReport = await reportFingerprint(reportDirectory); } catch { previousReport = undefined; }
+  const previousReports = await reportFingerprints(reportDirectory);
   const toolsRoot = await mkdtemp(join(tmpdir(), 'wakeio-security-ci-dast-'));
   const state = { exitCode: 2, setupStatus: 'not-run', scanStatus: 'not-run', selectedTools: [], cacheMetadata: {}, failurePhase: undefined };
   let plan;
@@ -246,6 +246,7 @@ async function dastMain(env) {
     state.scanStatus = 'running';
     const result = await runCommand(process.execPath, args, { cwd: workspace, env, inherit: true, acceptedStatuses: [0, 1, 2] });
     state.exitCode = result.status;
+    state.scanExitCode = result.status;
     state.scanStatus = scanStatusFor(result.status);
   } catch (error) {
     state.exitCode = 2;
@@ -255,28 +256,45 @@ async function dastMain(env) {
     void error;
   } finally {
     await rm(toolsRoot, { recursive: true, force: true }).catch(() => undefined);
-    await finalizeAction(env, reportDirectory, state, previousReport, plan);
+    await finalizeAction(env, reportDirectory, state, previousReports, plan);
     // Set inside finally: a policy refusal returns early and must still exit 2.
     process.exitCode = state.exitCode;
   }
 }
 
-async function finalizeAction(env, reportDirectory, state, previousReport, plan) {
+async function finalizeAction(env, reportDirectory, state, previousReports, plan) {
   let reportSummary;
-  try { reportSummary = await readReportSummary(reportDirectory, previousReport); } catch { reportSummary = undefined; }
+  try { reportSummary = await readReportSummary(reportDirectory, previousReports); } catch { reportSummary = undefined; }
   if (state.setupStatus === 'success' && state.scanStatus !== 'not-run' && !reportSummary) {
     // A prior report must never be surfaced as this run's result.
     state.exitCode = 2;
     state.scanStatus = 'failure';
   }
+  state.deliveryStatus = 'delivered';
   let observedCancellation;
   do {
     observedCancellation = cancellation.signal.aborted;
     markCancelled(state);
-    try { await writeStatusArtifact(reportDirectory, state, reportSummary); }
-    catch { process.stderr.write('wakeio-security-ci could not write its bounded status artifact.\n'); if (state.exitCode === 0) state.exitCode = 2; }
-    try { await writeActionOutputs(env, reportDirectory, state, reportSummary); }
-    catch { process.stderr.write('wakeio-security-ci could not write GitHub Action outputs.\n'); if (state.exitCode === 0) state.exitCode = 2; }
+    let deliveryFailed = false;
+    const publish = async () => {
+      for (const [write, message] of [
+        [() => writeStatusArtifact(reportDirectory, state, reportSummary), 'its bounded status artifact'],
+        [() => writeActionOutputs(env, reportDirectory, state, reportSummary), 'GitHub Action outputs'],
+      ]) {
+        try { await write(); }
+        catch {
+          process.stderr.write(`wakeio-security-ci could not write ${message}.\n`);
+          state.exitCode = 2;
+          state.deliveryStatus = 'failed';
+          state.failurePhase = 'delivery';
+          deliveryFailed = true;
+        }
+      }
+    };
+    await publish();
+    // A channel written before another channel failed must receive final exit 2.
+    // Retry once, without treating a recovered write as a recovered Action gate.
+    if (deliveryFailed) await publish();
     try { await writeStepSummary(env, reportDirectory, state, reportSummary, plan); }
     catch { process.stderr.write('wakeio-security-ci could not write the GitHub job summary.\n'); }
     // Cancellation may arrive after a successful status was serialized. There
@@ -455,33 +473,47 @@ function asBoolean(input) {
   return ['1', 'true', 'yes', 'on'].includes(value(input).toLowerCase());
 }
 
-async function reportFingerprint(reportDirectory) {
-  const reportPath = join(reportDirectory, 'report.json');
+async function reportFingerprint(reportDirectory, filename = 'report.json') {
+  const reportPath = join(reportDirectory, filename);
   let info;
   try { info = await lstat(reportPath); } catch (error) { if (error?.code === 'ENOENT') return undefined; throw error; }
-  if (info.isSymbolicLink() || !info.isFile() || info.size > 16 * 1024 * 1024) return undefined;
+  if (info.isSymbolicLink() || !info.isFile() || info.size > 16 * 1024 * 1024) return null;
   const digest = createHash('sha256').update(await readFile(reportPath)).digest('hex');
   return `${info.size}:${info.mtimeMs}:${digest}`;
 }
 
-async function readReportSummary(reportDirectory, previousReport) {
+async function reportFingerprints(reportDirectory) {
+  return Object.fromEntries(await Promise.all(REPORT_FORMATS.map(async filename => {
+    // Absent is distinct from unreadable: an unknown prior artifact cannot
+    // establish that the next artifact belongs to this invocation.
+    try { return [filename, await reportFingerprint(reportDirectory, filename)]; }
+    catch { return [filename, null]; }
+  })));
+}
+
+async function readReportSummary(reportDirectory, previousReports) {
+  if (previousReports['report.json'] === null) return undefined;
   const reportPath = join(reportDirectory, 'report.json');
   const info = await lstat(reportPath);
   if (info.isSymbolicLink() || !info.isFile() || info.size > 16 * 1024 * 1024) return undefined;
   const bytes = await readFile(reportPath);
   const digest = createHash('sha256').update(bytes).digest('hex');
   const currentReport = `${info.size}:${info.mtimeMs}:${digest}`;
-  if (previousReport && currentReport === previousReport) return undefined;
+  if (currentReport === previousReports['report.json']) return undefined;
   const parsed = JSON.parse(bytes.toString('utf8'));
   if (!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.checks)) return undefined;
   const checks = parsed.checks.filter((check) => check && typeof check === 'object');
   const findings = checks.reduce((total, check) => total + (Array.isArray(check.findings) ? check.findings.length : 0), 0);
   const incomplete = checks.filter((check) => INCOMPLETE_STATUSES.has(check.status)).length;
+  const currentReports = await reportFingerprints(reportDirectory);
+  const fresh = filename => previousReports[filename] !== null
+    && typeof currentReports[filename] === 'string'
+    && currentReports[filename] !== previousReports[filename];
   let agentReportAvailable = false;
   try {
     const agentPath = join(reportDirectory, 'agent-report.json');
     const agentInfo = await lstat(agentPath);
-    if (!agentInfo.isSymbolicLink() && agentInfo.isFile() && agentInfo.size <= 16 * 1024 * 1024) {
+    if (fresh('agent-report.json') && !agentInfo.isSymbolicLink() && agentInfo.isFile() && agentInfo.size <= 16 * 1024 * 1024) {
       const agent = JSON.parse(await readFile(agentPath, 'utf8'));
       agentReportAvailable = agent?.schemaVersion === '1.0.0'
         && agent.reportArtifact?.name === 'report.json'
@@ -495,6 +527,8 @@ async function readReportSummary(reportDirectory, previousReport) {
   return {
     findingCount: findings,
     incompleteCount: incomplete,
+    sarifAvailable: fresh('report.sarif'),
+    markdownAvailable: fresh('report.md'),
     agentReportAvailable,
     checks: checks.map((check) => ({
       // Check IDs are generated by the package and are safe to display only
@@ -523,7 +557,10 @@ async function writeStatusArtifact(reportDirectory, state, reportSummary) {
     schemaVersion: '1.0.0',
     setupStatus: state.setupStatus,
     scanStatus: state.scanStatus,
+    scanExitCode: state.scanExitCode,
     exitCode: state.exitCode,
+    deliveryStatus: state.deliveryStatus,
+    failurePhase: state.failurePhase,
     cancellationSignal: state.cancellationSignal,
     findingCount: reportSummary?.findingCount ?? 0,
     incompleteCount: reportSummary?.incompleteCount ?? 0,
@@ -544,11 +581,13 @@ async function writeActionOutputs(env, reportDirectory, state, reportSummary) {
   if (!outputFile) return;
   const values = {
     'report-dir': reportDirectory,
-    'report-json': join(reportDirectory, 'report.json'),
-    'report-sarif': join(reportDirectory, 'report.sarif'),
-    'report-markdown': join(reportDirectory, 'report.md'),
+    'report-json': reportSummary ? join(reportDirectory, 'report.json') : '',
+    'report-sarif': reportSummary?.sarifAvailable ? join(reportDirectory, 'report.sarif') : '',
+    'report-markdown': reportSummary?.markdownAvailable ? join(reportDirectory, 'report.md') : '',
     'report-agent': reportSummary?.agentReportAvailable ? join(reportDirectory, 'agent-report.json') : '',
     'exit-code': String(state.exitCode),
+    'scan-exit-code': state.scanExitCode === undefined ? '' : String(state.scanExitCode),
+    'delivery-status': state.deliveryStatus,
     'finding-count': String(reportSummary?.findingCount ?? 0),
     'incomplete-count': String(reportSummary?.incompleteCount ?? 0),
     'setup-status': state.setupStatus,
@@ -569,7 +608,9 @@ async function writeStepSummary(env, reportDirectory, state, reportSummary, dast
     '',
     ...(dastPlan ? [`- Active targets: ${escapeMarkdown([dastPlan.nuclei && `nuclei ${dastPlan.nuclei}`, dastPlan.apiBase && `schemathesis ${dastPlan.apiBase}`, dastPlan.native && `native ${dastPlan.native.origin}`].filter(Boolean).join(', ') || 'none (refused before setup)')}`] : []),
     `- Setup: **${state.setupStatus}**`,
-    `- Scan: **${state.scanStatus}** (exit code ${state.exitCode})`,
+    `- Scan: **${state.scanStatus}**`,
+    `- Final Action exit: **${state.exitCode}**`,
+    `- Scanner child exit: **${state.scanExitCode ?? 'unavailable'}**; report delivery: **${state.deliveryStatus}**`,
     `- Findings: **${reportSummary?.findingCount ?? 0}**`,
     `- Incomplete checks: **${reportSummary?.incompleteCount ?? 0}**`,
     `- Checks: ${escapeMarkdown(checks)}`,

@@ -9733,11 +9733,11 @@ ${lanes.join("\n")}
           return toComponents;
         }
         const components = toComponents.slice(start);
-        const relative10 = [];
+        const relative11 = [];
         for (; start < fromComponents.length; start++) {
-          relative10.push("..");
+          relative11.push("..");
         }
-        return ["", ...relative10, ...components];
+        return ["", ...relative11, ...components];
       }
       function getRelativePathFromDirectory(fromDirectory, to, getCanonicalFileNameOrIgnoreCase) {
         Debug.assert(getRootLength(fromDirectory) > 0 === getRootLength(to) > 0, "Paths must either both be absolute or both be relative");
@@ -48306,11 +48306,11 @@ ${lanes.join("\n")}
             if (i < rootLength) {
               return void 0;
             }
-            const sep7 = directory2.lastIndexOf(directorySeparator, i - 1);
-            if (sep7 === -1) {
+            const sep8 = directory2.lastIndexOf(directorySeparator, i - 1);
+            if (sep8 === -1) {
               return void 0;
             }
-            return directory2.substr(0, Math.max(sep7, rootLength));
+            return directory2.substr(0, Math.max(sep8, rootLength));
           }
         }
       }
@@ -54216,9 +54216,9 @@ ${lanes.join("\n")}
               if (!startsWithDirectory(target, realPathDirectory, getCanonicalFileName)) {
                 return;
               }
-              const relative10 = getRelativePathFromDirectory(realPathDirectory, target, getCanonicalFileName);
+              const relative11 = getRelativePathFromDirectory(realPathDirectory, target, getCanonicalFileName);
               for (const symlinkDirectory of symlinkDirectories) {
-                const option = resolvePath(symlinkDirectory, relative10);
+                const option = resolvePath(symlinkDirectory, relative11);
                 const result22 = cb(option, target === referenceRedirect);
                 shouldFilterIgnoredPaths = true;
                 if (result22) return result22;
@@ -218038,26 +218038,26 @@ var init_archive_role = __esm({
           };
           if (!flatten(prior.expression) || pieces.length !== 3)
             continue;
-          let relative10;
+          let relative11;
           const equality = pieces.find((value) => ts13.isBinaryExpression(value) && value.operatorToken.kind === ts13.SyntaxKind.EqualsEqualsEqualsToken && (ts13.isStringLiteralLike(unwrap4(value.right)) && unwrap4(value.right).text === ".." || ts13.isStringLiteralLike(unwrap4(value.left)) && unwrap4(value.left).text === ".."));
           if (!equality)
             continue;
-          relative10 = ts13.isStringLiteralLike(unwrap4(equality.right)) ? equality.left : equality.right;
-          const calculation = this.constant(relative10);
+          relative11 = ts13.isStringLiteralLike(unwrap4(equality.right)) ? equality.left : equality.right;
+          const calculation = this.constant(relative11);
           if (!calculation || !ts13.isCallExpression(calculation) || !this.native(calculation, "relative") || calculation.arguments.length !== 2 || !this.same(calculation.arguments[0], base) || !this.same(calculation.arguments[1], destination))
             continue;
           const prefix = pieces.some((value) => {
             if (!ts13.isCallExpression(value) || value.arguments.length !== 1)
               return false;
             const access7 = member(value.expression), argument = unwrap4(value.arguments[0]);
-            if (!access7 || access7.name !== "startsWith" || !this.same(access7.base, relative10))
+            if (!access7 || access7.name !== "startsWith" || !this.same(access7.base, relative11))
               return false;
             if (!ts13.isBinaryExpression(argument) || argument.operatorToken.kind !== ts13.SyntaxKind.PlusToken || !ts13.isStringLiteralLike(unwrap4(argument.left)) || unwrap4(argument.left).text !== "..")
               return false;
             const separator = this.binding(argument.right);
             return separator?.module === "path" && separator.closed && separator.members.join(".") === "sep";
           });
-          const absolute = pieces.some((value) => ts13.isCallExpression(value) && this.native(value, "isAbsolute") && value.arguments.length === 1 && this.same(value.arguments[0], relative10));
+          const absolute = pieces.some((value) => ts13.isCallExpression(value) && this.native(value, "isAbsolute") && value.arguments.length === 1 && this.same(value.arguments[0], relative11));
           if (prefix && absolute) {
             const statements2 = statement.parent.statements;
             if (statements2.indexOf(prior) + 1 === statements2.indexOf(statement))
@@ -226450,9 +226450,9 @@ function validMode(value) {
 async function ensureSafeDirectory(directory2) {
   const absolute = resolve7(directory2);
   const root = resolve7(absolute, sep3);
-  const relative10 = absolute.slice(root.length).split(sep3).filter(Boolean);
+  const relative11 = absolute.slice(root.length).split(sep3).filter(Boolean);
   let current = root;
-  for (const component of relative10) {
+  for (const component of relative11) {
     current = resolve7(current, component);
     let stats;
     try {
@@ -229538,8 +229538,8 @@ function prepare(input) {
   };
 }
 async function workerPath() {
-  for (const relative10 of ["../../workers/schemathesis/worker.py", "../workers/schemathesis/worker.py"]) {
-    const path2 = fileURLToPath2(new URL(relative10, import.meta.url)), stat2 = await lstat15(path2).catch(() => void 0);
+  for (const relative11 of ["../../workers/schemathesis/worker.py", "../workers/schemathesis/worker.py"]) {
+    const path2 = fileURLToPath2(new URL(relative11, import.meta.url)), stat2 = await lstat15(path2).catch(() => void 0);
     if (stat2?.isFile() && !stat2.isSymbolicLink())
       return path2;
   }
@@ -229973,8 +229973,8 @@ function errorCheck4(code, message, extra = {}) {
   return [{ id: LIVE_CHECK_ID, status: "error", findings: [], notes: [SCOPE_NOTE3, message], metrics: { requestCount: 0, errorCode: code, ...extra } }];
 }
 async function workerScript() {
-  for (const relative10 of ["../../workers/schemathesis/worker.py", "../workers/schemathesis/worker.py"]) {
-    const path2 = fileURLToPath3(new URL(relative10, import.meta.url));
+  for (const relative11 of ["../../workers/schemathesis/worker.py", "../workers/schemathesis/worker.py"]) {
+    const path2 = fileURLToPath3(new URL(relative11, import.meta.url));
     const stats = await lstat16(path2).catch(() => void 0);
     if (stats?.isFile() && !stats.isSymbolicLink())
       return path2;
@@ -232238,6 +232238,15 @@ function classify(path2) {
   if (TEXT_EXTENSIONS.has(ext))
     return "text";
   return void 0;
+}
+function sourcePathCategory(path2) {
+  return classify(path2);
+}
+function sourceDirectoryIgnored(name) {
+  return IGNORED_DIRECTORIES.has(name.toLowerCase());
+}
+function sourceOutputFileIgnored(name) {
+  return IGNORED_OUTPUT_FILES.has(name.toLowerCase());
 }
 function isFatalIssue(code) {
   return code !== "unsupported_file";
@@ -244806,7 +244815,7 @@ init_collection_budget();
 init_analysis_budget();
 init_process();
 import { access as access4, constants as constants5, lstat as lstat6, readdir as readdir4, stat } from "node:fs/promises";
-import { join as join6, resolve as resolve9 } from "node:path";
+import { extname, join as join6, relative as relative7, resolve as resolve9, sep as sep5 } from "node:path";
 var DEFAULT_TOOLS = ["gitleaks", "osv", "trivy"];
 var TOOL_NAMES = /* @__PURE__ */ new Set(["gitleaks", "osv", "trivy", "bandit"]);
 var SKIPPED_DIRECTORIES = /* @__PURE__ */ new Set([
@@ -244836,6 +244845,33 @@ var SKIPPED_DIRECTORIES = /* @__PURE__ */ new Set([
 ]);
 var MAX_INVENTORY_FILES = 2e4;
 var MAX_INVENTORY_DIRECTORIES = 5e3;
+var CODE_LANGUAGES2 = {
+  ".js": "javascript",
+  ".jsx": "javascript",
+  ".mjs": "javascript",
+  ".cjs": "javascript",
+  ".ts": "typescript",
+  ".tsx": "typescript",
+  ".mts": "typescript",
+  ".cts": "typescript",
+  ".py": "python",
+  ".c": "c",
+  ".h": "c",
+  ".cc": "cpp",
+  ".cpp": "cpp",
+  ".hh": "cpp",
+  ".hpp": "cpp",
+  ".cs": "csharp",
+  ".go": "go",
+  ".java": "java",
+  ".kt": "kotlin",
+  ".php": "php",
+  ".rb": "ruby",
+  ".rs": "rust",
+  ".sh": "shell",
+  ".swift": "swift",
+  ".vue": "vue"
+};
 async function doctorMain(argv = process.argv.slice(2)) {
   let options;
   try {
@@ -244862,7 +244898,13 @@ async function doctorMain(argv = process.argv.slice(2)) {
     return 2;
   }
   const inventory = await inspectTree(source);
-  const toolStatuses = await inspectTools(options.tools, inventory);
+  const collectionBudget = resolveCollectionBudget({ maxFiles: options.sourceMaxFiles, maxBytes: options.sourceMaxBytes });
+  const codeMetadata = await inspectCodeMetadata(source, collectionBudget);
+  const toolStatuses = await inspectTools(options.tools, {
+    ...inventory,
+    pythonFiles: Math.max(inventory.pythonFiles, codeMetadata.languages.get("python") ?? 0)
+  });
+  const codeAnalysisReadiness = codeReadiness(codeMetadata, options.tools, toolStatuses);
   const expectedTransfers = toolStatuses.filter((tool) => tool.availability === "missing" && tool.applicability !== "not_applicable").map((tool) => tool.name === "bandit" ? "separately prepared trusted Bandit executable or Python environment (the native archive installer does not provide Bandit)" : `pinned ${tool.name} release archive (installer verifies the upstream SHA-256 before extraction)`);
   const runtimeNetwork = [];
   if (options.tools.includes("osv") && inventory.dependencyManifests > 0) {
@@ -244879,7 +244921,8 @@ async function doctorMain(argv = process.argv.slice(2)) {
     inventory,
     requireCodeAnalysis: options.requireCodeAnalysis === true,
     inventoryBasis: "metadata_estimate_not_collector_coverage",
-    collectionBudget: resolveCollectionBudget({ maxFiles: options.sourceMaxFiles, maxBytes: options.sourceMaxBytes }),
+    collectionBudget,
+    codeAnalysisReadiness,
     tools: toolStatuses,
     expectedTransfers,
     runtimeNetwork,
@@ -244894,6 +244937,8 @@ async function doctorMain(argv = process.argv.slice(2)) {
     process.stdout.write(renderDoctorText(result3));
   }
   if (options.strict && (inventory.truncated || toolStatuses.some((tool) => tool.availability === "missing" && tool.applicability !== "not_applicable")))
+    return 2;
+  if (options.strict && options.requireCodeAnalysis && codeAnalysisReadiness.state !== "ready")
     return 2;
   if (options.strict && dast && (dast.nuclei.availability !== "available" || dast.nucleiTemplates.availability !== "available" || dast.schemathesisPython.availability !== "available"))
     return 2;
@@ -245044,6 +245089,7 @@ function doctorUsage() {
     "                              [--dast [--nuclei PATH] [--nuclei-templates DIR] [--schemathesis-python PATH]]",
     "",
     "Read-only inventory: no target code, package scripts, scanner, or network request is executed.",
+    "With --require-code-analysis --strict, blocked or unknown metadata readiness exits 2; ready does not prove analysis completion.",
     ""
   ].join("\n");
 }
@@ -245125,6 +245171,111 @@ async function inspectTree(source) {
   await visit(source);
   return inventory;
 }
+async function inspectCodeMetadata(source, budget2) {
+  const result3 = { languages: /* @__PURE__ */ new Map(), incomplete: false, budgetExceeded: false };
+  let entriesSeen = 0, selectedFiles = 0, selectedBytes = 0;
+  const visit = async (directory2, depth) => {
+    if (depth > COLLECTION_MAX_DIRECTORY_DEPTH) {
+      result3.budgetExceeded = true;
+      return;
+    }
+    let entries;
+    try {
+      entries = await readdir4(directory2, { withFileTypes: true });
+    } catch {
+      result3.incomplete = true;
+      return;
+    }
+    entries.sort((left, right) => left.name.localeCompare(right.name));
+    for (const entry of entries) {
+      if (++entriesSeen > budget2.limits.maxEntries) {
+        result3.budgetExceeded = true;
+        return;
+      }
+      if (entry.isDirectory() && sourceDirectoryIgnored(entry.name))
+        continue;
+      if (!entry.isDirectory() && !entry.isSymbolicLink() && sourceOutputFileIgnored(entry.name))
+        continue;
+      const path2 = join6(directory2, entry.name);
+      let info;
+      try {
+        info = await lstat6(path2);
+      } catch {
+        result3.incomplete = true;
+        continue;
+      }
+      if (info.isSymbolicLink()) {
+        result3.incomplete = true;
+        continue;
+      }
+      if (entry.isDirectory()) {
+        if (!info.isDirectory()) {
+          result3.incomplete = true;
+          continue;
+        }
+        await visit(path2, depth + 1);
+        continue;
+      }
+      if (!info.isFile() || info.nlink > 1) {
+        result3.incomplete = true;
+        continue;
+      }
+      const category = sourcePathCategory(relative7(source, path2).split(sep5).join("/"));
+      if (!category)
+        continue;
+      if (++selectedFiles > budget2.limits.maxFiles) {
+        result3.budgetExceeded = true;
+        return;
+      }
+      if (info.size > budget2.limits.maxFileBytes || selectedBytes + info.size > budget2.limits.maxBytes) {
+        result3.budgetExceeded = true;
+        continue;
+      }
+      selectedBytes += info.size;
+      if (category !== "code")
+        continue;
+      const language = CODE_LANGUAGES2[extname(entry.name).toLowerCase()];
+      if (!language) {
+        result3.incomplete = true;
+        continue;
+      }
+      result3.languages.set(language, (result3.languages.get(language) ?? 0) + 1);
+    }
+  };
+  await visit(source, 0);
+  return result3;
+}
+function codeReadiness(metadata, selected, tools) {
+  const reasons = /* @__PURE__ */ new Set();
+  if (metadata.incomplete)
+    reasons.add("metadata_incomplete");
+  if (metadata.budgetExceeded)
+    reasons.add("collection_budget_exceeded");
+  const languages = [...new Set(Object.values(CODE_LANGUAGES2))].flatMap((language) => {
+    const observedFiles = metadata.languages.get(language);
+    if (!observedFiles)
+      return [];
+    const selectedProviders = language === "javascript" || language === "typescript" ? ["builtin_ast"] : language === "python" && selected.includes("bandit") ? ["bandit"] : [];
+    if (!selectedProviders.length)
+      reasons.add("unsupported_language");
+    if (selectedProviders.includes("bandit") && tools.find((tool) => tool.name === "bandit")?.availability !== "available")
+      reasons.add("provider_missing");
+    return [{ language, observedFiles, selectedProviders }];
+  });
+  if (!languages.length && !metadata.incomplete && !metadata.budgetExceeded)
+    reasons.add("no_code_inputs");
+  return {
+    basis: "metadata_estimate_not_collector_coverage",
+    state: metadata.incomplete || metadata.budgetExceeded ? "unknown" : reasons.size ? "blocked" : "ready",
+    languages,
+    reasons: [...reasons],
+    limitations: [
+      "Observed file names and sizes follow collector selection policy; source contents are not read and files are not collected.",
+      "Ready means selected providers are available for observed language inputs; parsing, decoded sizes and analysis completion remain unknown until scan.",
+      "This is neither completed code coverage nor a prediction that the scan gate will pass."
+    ]
+  };
+}
 async function inspectTools(selected, inventory) {
   const result3 = [];
   for (const name of selected) {
@@ -245156,6 +245307,10 @@ function renderDoctorText(result3) {
     `Inventory estimate (metadata; not collector coverage): ${result3.inventory.files} files, ${result3.inventory.bytes} bytes; Python ${result3.inventory.pythonFiles}; dependency manifests ${result3.inventory.dependencyManifests}; config files ${result3.inventory.configFiles}${result3.inventory.truncated ? "; truncated" : ""}`,
     `Selected collection limits: ${result3.collectionBudget.limits.maxFiles} files; ${result3.collectionBudget.limits.maxBytes} total bytes; ${result3.collectionBudget.limits.maxFileBytes} bytes per file; ${result3.collectionBudget.limits.maxEntries} directory entries.`,
     "Metadata totals include files outside the collector allowlist and do not predict analysis completion.",
+    `Code analysis readiness (metadata only): ${result3.codeAnalysisReadiness.state}${result3.codeAnalysisReadiness.reasons.length ? ` (${result3.codeAnalysisReadiness.reasons.join(", ")})` : ""}`,
+    ...result3.codeAnalysisReadiness.languages.map((row) => `Observed ${row.language}: ${row.observedFiles} files; selected providers: ${row.selectedProviders.join(", ") || "none"}`),
+    ...result3.codeAnalysisReadiness.languages.some((row) => row.language === "python" && !row.selectedProviders.length) ? ["Python code analysis requires explicitly selecting a separately prepared trusted Bandit executable (--tools bandit)."] : [],
+    ...result3.codeAnalysisReadiness.limitations,
     "Target execution: none; network: none; package manager: none",
     ...result3.tools.map((tool) => `Tool ${tool.name}: ${tool.availability} (${tool.applicability})${tool.path ? ` at ${tool.path}` : ""}`),
     `Expected transfers: ${result3.expectedTransfers.length > 0 ? result3.expectedTransfers.join("; ") : "none"}`,
@@ -245177,7 +245332,7 @@ function renderDoctorText(result3) {
 init_collection_budget();
 init_analysis_budget();
 import { lstat as lstat7, mkdir as mkdir5, writeFile as writeFile4 } from "node:fs/promises";
-import { isAbsolute as isAbsolute7, join as join7, relative as relative7, resolve as resolve10 } from "node:path";
+import { isAbsolute as isAbsolute7, join as join7, relative as relative8, resolve as resolve10 } from "node:path";
 var CHECKOUT_SHA = "11d5960a326750d5838078e36cf38b85af677262";
 var SETUP_NODE_SHA = "49933ea5288caeca8642d1e84afbd3f7d6820020";
 var UPLOAD_ARTIFACT_SHA = "ea165f8d65b6e75b540449e92b4886f43607fa02";
@@ -245507,7 +245662,7 @@ function yamlQuote(value) {
   return JSON.stringify(value);
 }
 function isWithin(root, candidate) {
-  const path2 = relative7(root, candidate);
+  const path2 = relative8(root, candidate);
   return path2 === "" || !path2.startsWith("..") && !isAbsolute7(path2);
 }
 async function ensureParentDirectories(file) {
@@ -245649,7 +245804,7 @@ async function planMain(argv) {
 // build/src/repair.js
 init_process();
 init_json_input();
-import { dirname as dirname7, join as join9, relative as relative8, resolve as resolve11, sep as sep5 } from "node:path";
+import { dirname as dirname7, join as join9, relative as relative9, resolve as resolve11, sep as sep6 } from "node:path";
 import { constants as constants7 } from "node:fs";
 import { createHash as createHash13, randomUUID } from "node:crypto";
 import { lstat as lstat9, mkdir as mkdir6, mkdtemp as mkdtemp3, open as open5, realpath as realpath3, rm as rm3, writeFile as writeFile6 } from "node:fs/promises";
@@ -245819,7 +245974,7 @@ async function providerProposal(agent, command, directory2, deadline, files, ins
 // build/src/repair.js
 var digest4 = (data) => createHash13("sha256").update(data).digest("hex");
 var SHA = /^[a-f0-9]{64}$/;
-var inside2 = (root, path2) => path2 === root || path2.startsWith(root.endsWith(sep5) ? root : root + sep5);
+var inside2 = (root, path2) => path2 === root || path2.startsWith(root.endsWith(sep6) ? root : root + sep6);
 var object8 = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
 function exact4(v, keys6) {
   if (!object8(v) || Object.keys(v).length !== keys6.length || keys6.some((k) => !Object.hasOwn(v, k)))
@@ -246017,7 +246172,7 @@ async function repairMain(args) {
   try {
     const options = parse2(args);
     const source = await realpath3(options.source);
-    const output = join9(await realpath3(dirname7(options.out)), relative8(dirname7(options.out), options.out));
+    const output = join9(await realpath3(dirname7(options.out)), relative9(dirname7(options.out), options.out));
     if (!(await lstat9(options.source)).isDirectory() || inside2(source, output))
       throw new Error("invalid");
     await mkdir6(output, { mode: 448 });
@@ -247730,7 +247885,7 @@ async function apiWriteStateMain(argv) {
 import { constants as constants11 } from "node:fs";
 import { createHash as createHash16, randomUUID as randomUUID4 } from "node:crypto";
 import { link as link2, lstat as lstat14, mkdir as mkdir10, open as open9, realpath as realpath6, unlink as unlink3, writeFile as writeFile8 } from "node:fs/promises";
-import { dirname as dirname11, join as join13, relative as relative9, resolve as resolve15, sep as sep6 } from "node:path";
+import { dirname as dirname11, join as join13, relative as relative10, resolve as resolve15, sep as sep7 } from "node:path";
 init_report();
 init_analysis_budget();
 init_collection_budget();
@@ -247750,7 +247905,7 @@ Use the original scan command separately to produce the after report.
 var SHA2 = /^[a-f0-9]{64}$/;
 var digest6 = (bytes) => createHash16("sha256").update(bytes).digest("hex");
 var equal = (left, right) => JSON.stringify(left) === JSON.stringify(right);
-var outside = (root, path2) => path2 !== root && !path2.startsWith(root.endsWith(sep6) ? root : root + sep6);
+var outside = (root, path2) => path2 !== root && !path2.startsWith(root.endsWith(sep7) ? root : root + sep7);
 var fixedChecks = ["source.inventory", "source.builtin-ast", "source.framework"];
 var verification2 = { vulnerabilityConfirmed: false, remediationVerified: false, securityControl: "not_run", normalControl: "not_run" };
 var limitations = [
@@ -247794,7 +247949,7 @@ function parse4(args) {
 async function directory(path2) {
   const target = resolve15(path2), root = resolve15(target, "/");
   let current = root;
-  for (const part of target.slice(root.length).split(sep6).filter(Boolean)) {
+  for (const part of target.slice(root.length).split(sep7).filter(Boolean)) {
     current = join13(current, part);
     const info = await lstat14(current);
     if (info.isSymbolicLink()) {
@@ -247986,7 +248141,7 @@ async function handoffMain(args) {
     const options = parse4(args);
     operation = options.operation;
     const source = await directory(options.source), reportDir = await directory(options.report), parent = await directory(dirname11(options.out));
-    const output = join13(parent, relative9(dirname11(options.out), options.out));
+    const output = join13(parent, relative10(dirname11(options.out), options.out));
     const handoffDir = options.handoff ? await directory(options.handoff) : void 0;
     if (![reportDir, output, ...handoffDir ? [handoffDir] : []].every((path2) => outside(source, path2)))
       fail6("unsafe_path");

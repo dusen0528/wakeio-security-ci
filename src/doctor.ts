@@ -1,9 +1,11 @@
-import { COLLECTION_MAX_FILES, COLLECTION_MAX_BYTES, parseCollectionLimit, resolveCollectionBudget } from './source/collection-budget.js';
+import { COLLECTION_MAX_FILES, COLLECTION_MAX_BYTES, COLLECTION_MAX_DIRECTORY_DEPTH, parseCollectionLimit, resolveCollectionBudget } from './source/collection-budget.js';
 import { resolveAnalysisBudget } from './source/analysis-budget.js';
 import { access, constants, lstat, readdir, stat } from "node:fs/promises";
-import { join, resolve } from "node:path";
+import { extname, join, relative, resolve, sep } from "node:path";
 import type { Dirent } from "node:fs";
+import type { CodeLanguage, CodeProvider } from './contracts.js';
 import { findExecutable as findScannerExecutable } from "./source/process.js";
+import { sourceDirectoryIgnored, sourceOutputFileIgnored, sourcePathCategory } from './source/collector.js';
 
 const DEFAULT_TOOLS = ["gitleaks", "osv", "trivy"] as const;
 const TOOL_NAMES = new Set(["gitleaks", "osv", "trivy", "bandit"]);
@@ -75,6 +77,28 @@ export interface DoctorToolStatus {
   path?: string;
 }
 
+export interface DoctorCodeAnalysisReadiness {
+  basis: 'metadata_estimate_not_collector_coverage';
+  state: 'ready' | 'blocked' | 'unknown';
+  languages: { language: CodeLanguage; observedFiles: number; selectedProviders: CodeProvider[] }[];
+  reasons: ('no_code_inputs' | 'unsupported_language' | 'provider_missing' | 'metadata_incomplete' | 'collection_budget_exceeded')[];
+  limitations: string[];
+}
+
+const CODE_LANGUAGES: Record<string, CodeLanguage> = {
+  '.js': 'javascript', '.jsx': 'javascript', '.mjs': 'javascript', '.cjs': 'javascript',
+  '.ts': 'typescript', '.tsx': 'typescript', '.mts': 'typescript', '.cts': 'typescript',
+  '.py': 'python', '.c': 'c', '.h': 'c', '.cc': 'cpp', '.cpp': 'cpp', '.hh': 'cpp', '.hpp': 'cpp',
+  '.cs': 'csharp', '.go': 'go', '.java': 'java', '.kt': 'kotlin', '.php': 'php', '.rb': 'ruby',
+  '.rs': 'rust', '.sh': 'shell', '.swift': 'swift', '.vue': 'vue',
+};
+
+interface CodeMetadata {
+  languages: Map<CodeLanguage, number>;
+  incomplete: boolean;
+  budgetExceeded: boolean;
+}
+
 /**
  * Read-only environment and scope inspection for a planned scan.
  *
@@ -109,7 +133,11 @@ export async function doctorMain(argv: readonly string[] = process.argv.slice(2)
   }
 
   const inventory = await inspectTree(source);
-  const toolStatuses = await inspectTools(options.tools, inventory);
+  const collectionBudget = resolveCollectionBudget({ maxFiles: options.sourceMaxFiles, maxBytes: options.sourceMaxBytes });
+  const codeMetadata = await inspectCodeMetadata(source, collectionBudget);
+  const toolStatuses = await inspectTools(options.tools, { ...inventory,
+    pythonFiles: Math.max(inventory.pythonFiles, codeMetadata.languages.get('python') ?? 0) });
+  const codeAnalysisReadiness = codeReadiness(codeMetadata, options.tools, toolStatuses);
   const expectedTransfers = toolStatuses
     .filter((tool) => tool.availability === "missing" && tool.applicability !== "not_applicable")
     .map((tool) => tool.name === "bandit"
@@ -130,7 +158,8 @@ export async function doctorMain(argv: readonly string[] = process.argv.slice(2)
     inventory,
     requireCodeAnalysis: options.requireCodeAnalysis === true,
     inventoryBasis: 'metadata_estimate_not_collector_coverage' as const,
-    collectionBudget: resolveCollectionBudget({ maxFiles: options.sourceMaxFiles, maxBytes: options.sourceMaxBytes }),
+    collectionBudget,
+    codeAnalysisReadiness,
     tools: toolStatuses,
     expectedTransfers,
     runtimeNetwork,
@@ -146,6 +175,7 @@ export async function doctorMain(argv: readonly string[] = process.argv.slice(2)
   }
 
   if (options.strict && (inventory.truncated || toolStatuses.some((tool) => tool.availability === "missing" && tool.applicability !== "not_applicable"))) return 2;
+  if (options.strict && options.requireCodeAnalysis && codeAnalysisReadiness.state !== 'ready') return 2;
   if (options.strict && dast && (dast.nuclei.availability !== "available" || dast.nucleiTemplates.availability !== "available" || dast.schemathesisPython.availability !== "available")) return 2;
   return 0;
 }
@@ -263,6 +293,7 @@ export function doctorUsage(): string {
     "                              [--dast [--nuclei PATH] [--nuclei-templates DIR] [--schemathesis-python PATH]]",
     "",
     "Read-only inventory: no target code, package scripts, scanner, or network request is executed.",
+    "With --require-code-analysis --strict, blocked or unknown metadata readiness exits 2; ready does not prove analysis completion.",
     "",
   ].join("\n");
 }
@@ -316,6 +347,73 @@ export async function inspectTree(source: string): Promise<Inventory> {
   return inventory;
 }
 
+/** Mirrors collector name and size selection without opening source contents. */
+async function inspectCodeMetadata(source: string, budget: ReturnType<typeof resolveCollectionBudget>): Promise<CodeMetadata> {
+  const result: CodeMetadata = { languages: new Map(), incomplete: false, budgetExceeded: false };
+  let entriesSeen = 0, selectedFiles = 0, selectedBytes = 0;
+  const visit = async (directory: string, depth: number): Promise<void> => {
+    if (depth > COLLECTION_MAX_DIRECTORY_DEPTH) { result.budgetExceeded = true; return; }
+    let entries: Dirent[];
+    try { entries = await readdir(directory, { withFileTypes: true }); }
+    catch { result.incomplete = true; return; }
+    entries.sort((left, right) => left.name.localeCompare(right.name));
+    for (const entry of entries) {
+      if (++entriesSeen > budget.limits.maxEntries) { result.budgetExceeded = true; return; }
+      if (entry.isDirectory() && sourceDirectoryIgnored(entry.name)) continue;
+      if (!entry.isDirectory() && !entry.isSymbolicLink() && sourceOutputFileIgnored(entry.name)) continue;
+      const path = join(directory, entry.name);
+      let info;
+      try { info = await lstat(path); }
+      catch { result.incomplete = true; continue; }
+      if (info.isSymbolicLink()) { result.incomplete = true; continue; }
+      if (entry.isDirectory()) {
+        if (!info.isDirectory()) { result.incomplete = true; continue; }
+        await visit(path, depth + 1); continue;
+      }
+      if (!info.isFile() || info.nlink > 1) { result.incomplete = true; continue; }
+      const category = sourcePathCategory(relative(source, path).split(sep).join('/'));
+      if (!category) continue;
+      if (++selectedFiles > budget.limits.maxFiles) { result.budgetExceeded = true; return; }
+      if (info.size > budget.limits.maxFileBytes || selectedBytes + info.size > budget.limits.maxBytes) {
+        result.budgetExceeded = true; continue;
+      }
+      selectedBytes += info.size;
+      if (category !== 'code') continue;
+      const language = CODE_LANGUAGES[extname(entry.name).toLowerCase()];
+      if (!language) { result.incomplete = true; continue; }
+      result.languages.set(language, (result.languages.get(language) ?? 0) + 1);
+    }
+  };
+  await visit(source, 0);
+  return result;
+}
+
+function codeReadiness(metadata: CodeMetadata, selected: string[], tools: DoctorToolStatus[]): DoctorCodeAnalysisReadiness {
+  const reasons = new Set<DoctorCodeAnalysisReadiness['reasons'][number]>();
+  if (metadata.incomplete) reasons.add('metadata_incomplete');
+  if (metadata.budgetExceeded) reasons.add('collection_budget_exceeded');
+  const languages = [...new Set(Object.values(CODE_LANGUAGES))].flatMap(language => {
+    const observedFiles = metadata.languages.get(language);
+    if (!observedFiles) return [];
+    const selectedProviders: CodeProvider[] = language === 'javascript' || language === 'typescript'
+      ? ['builtin_ast'] : language === 'python' && selected.includes('bandit') ? ['bandit'] : [];
+    if (!selectedProviders.length) reasons.add('unsupported_language');
+    if (selectedProviders.includes('bandit') && tools.find(tool => tool.name === 'bandit')?.availability !== 'available') reasons.add('provider_missing');
+    return [{ language, observedFiles, selectedProviders }];
+  });
+  if (!languages.length && !metadata.incomplete && !metadata.budgetExceeded) reasons.add('no_code_inputs');
+  return {
+    basis: 'metadata_estimate_not_collector_coverage',
+    state: metadata.incomplete || metadata.budgetExceeded ? 'unknown' : reasons.size ? 'blocked' : 'ready',
+    languages, reasons: [...reasons],
+    limitations: [
+      'Observed file names and sizes follow collector selection policy; source contents are not read and files are not collected.',
+      'Ready means selected providers are available for observed language inputs; parsing, decoded sizes and analysis completion remain unknown until scan.',
+      'This is neither completed code coverage nor a prediction that the scan gate will pass.',
+    ],
+  };
+}
+
 async function inspectTools(selected: string[], inventory: Inventory): Promise<DoctorToolStatus[]> {
   const result: DoctorToolStatus[] = [];
   for (const name of selected) {
@@ -351,7 +449,7 @@ function shellQuote(value: string): string {
   return `'${value.replace(/'/g, `'\\''`)}'`;
 }
 
-function renderDoctorText(result: { source: string; inventory: Inventory; collectionBudget: ReturnType<typeof resolveCollectionBudget>; tools: DoctorToolStatus[]; expectedTransfers: string[]; runtimeNetwork: string[]; databaseCaches: { osv: string; trivy: string }; nextCommand: string; activeDast?: DoctorDastStatus }): string {
+function renderDoctorText(result: { source: string; inventory: Inventory; collectionBudget: ReturnType<typeof resolveCollectionBudget>; codeAnalysisReadiness: DoctorCodeAnalysisReadiness; tools: DoctorToolStatus[]; expectedTransfers: string[]; runtimeNetwork: string[]; databaseCaches: { osv: string; trivy: string }; nextCommand: string; activeDast?: DoctorDastStatus }): string {
   const dast = result.activeDast;
   const lines = [
     "Wakeio doctor (read-only)",
@@ -359,6 +457,11 @@ function renderDoctorText(result: { source: string; inventory: Inventory; collec
     `Inventory estimate (metadata; not collector coverage): ${result.inventory.files} files, ${result.inventory.bytes} bytes; Python ${result.inventory.pythonFiles}; dependency manifests ${result.inventory.dependencyManifests}; config files ${result.inventory.configFiles}${result.inventory.truncated ? "; truncated" : ""}`,
     `Selected collection limits: ${result.collectionBudget.limits.maxFiles} files; ${result.collectionBudget.limits.maxBytes} total bytes; ${result.collectionBudget.limits.maxFileBytes} bytes per file; ${result.collectionBudget.limits.maxEntries} directory entries.`,
     "Metadata totals include files outside the collector allowlist and do not predict analysis completion.",
+    `Code analysis readiness (metadata only): ${result.codeAnalysisReadiness.state}${result.codeAnalysisReadiness.reasons.length ? ` (${result.codeAnalysisReadiness.reasons.join(', ')})` : ''}`,
+    ...result.codeAnalysisReadiness.languages.map(row => `Observed ${row.language}: ${row.observedFiles} files; selected providers: ${row.selectedProviders.join(', ') || 'none'}`),
+    ...(result.codeAnalysisReadiness.languages.some(row => row.language === 'python' && !row.selectedProviders.length)
+      ? ['Python code analysis requires explicitly selecting a separately prepared trusted Bandit executable (--tools bandit).'] : []),
+    ...result.codeAnalysisReadiness.limitations,
     "Target execution: none; network: none; package manager: none",
     ...result.tools.map((tool) => `Tool ${tool.name}: ${tool.availability} (${tool.applicability})${tool.path ? ` at ${tool.path}` : ""}`),
     `Expected transfers: ${result.expectedTransfers.length > 0 ? result.expectedTransfers.join("; ") : "none"}`,

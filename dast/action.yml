@@ -117,20 +117,26 @@ outputs:
     description: Absolute report directory used by the scanner
     value: ${{ steps.wakeio-dast.outputs.report-dir }}
   report-json:
-    description: Absolute JSON report path
+    description: Fresh current JSON report path; empty when unavailable
     value: ${{ steps.wakeio-dast.outputs.report-json }}
   report-sarif:
-    description: Absolute SARIF report path
+    description: Fresh current SARIF report path; empty when missing, stale or unavailable
     value: ${{ steps.wakeio-dast.outputs.report-sarif }}
   report-markdown:
-    description: Absolute Markdown report path
+    description: Fresh current Markdown report path; empty when missing, stale or unavailable
     value: ${{ steps.wakeio-dast.outputs.report-markdown }}
   report-agent:
     description: Absolute agent report path when its digest matches this run's report.json
     value: ${{ steps.wakeio-dast.outputs.report-agent }}
   exit-code:
-    description: 0 completed, 1 findings at the threshold, 2 refused, incomplete or failed
+    description: Final Action gate; 0 completed, 1 threshold findings, 2 refused, incomplete or setup/delivery failure
     value: ${{ steps.wakeio-dast.outputs.exit-code }}
+  scan-exit-code:
+    description: Observed scanner child exit code 0, 1 or 2; empty when unavailable, separate from final Action gate
+    value: ${{ steps.wakeio-dast.outputs.scan-exit-code }}
+  delivery-status:
+    description: delivered or failed for status artifact and configured Action output writes; does not imply scan success
+    value: ${{ steps.wakeio-dast.outputs.delivery-status }}
   finding-count:
     description: Number of findings in report.json
     value: ${{ steps.wakeio-dast.outputs.finding-count }}
