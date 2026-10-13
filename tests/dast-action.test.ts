@@ -488,7 +488,8 @@ for (const mode of ["dast", "source"] as const) {
         assert.equal(status.cancellationSignal, signal);
         assert.equal(status.incompleteCount, 1);
         const summary = await readFile(paths.summary, "utf8");
-        assert.match(summary, /Scan: \*\*incomplete\*\* \(exit code 2\)/);
+        assert.match(summary, /Scan: \*\*incomplete\*\*/);
+        assert.match(summary, /Final Action exit: \*\*2\*\*/);
         assert.match(summary, /scan\.cancelled: partial/);
       } finally {
         running?.child.kill("SIGKILL");

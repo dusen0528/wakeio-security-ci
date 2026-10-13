@@ -140,6 +140,8 @@ jobs:
 
 Copy-ready version: [`examples/github-action.yml`](examples/github-action.yml). The Action provisions Node.js 22, reads target source without installing or running target scripts, writes a Job Summary, and leaves `report.md`, `report.json`, `report.sarif`, `agent-report.json`, and `action-status.json` in the fresh output directory. Artifact upload success does not change the scan gate.
 
+See the [Action delivery contract](docs/action-delivery.md) for scanner versus final Action exits, delivery failures, and current report paths.
+
 With the newer source CLI, generate this layout explicitly:
 
 ```sh
