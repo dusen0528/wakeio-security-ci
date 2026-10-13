@@ -19,6 +19,36 @@ const spawnAsync = promisify(spawnProcess);
 const TOOL_NAMES = new Set(['gitleaks', 'osv', 'trivy', 'bandit']);
 const INCOMPLETE_STATUSES = new Set(['partial', 'error', 'skipped']);
 const STABLE_SYSTEM_ALIASES = new Set(['/tmp', '/var']);
+// Leave time for the CLI to flush valid partial evidence, then bound shutdown
+// even when an installer or scanner ignores the forwarded signal.
+const CANCELLATION_GRACE_MS = 1500;
+const CANCELLATION_KILL_WAIT_MS = 1000;
+const cancellation = new AbortController();
+let cancellationSignal;
+
+function cancel(signal) {
+  if (cancellation.signal.aborted) return;
+  cancellationSignal = signal;
+  process.exitCode = 2;
+  cancellation.abort();
+}
+
+function throwIfCancelled() {
+  if (cancellation.signal.aborted) throw new Error('action cancelled');
+}
+
+function markCancelled(state) {
+  if (!cancellation.signal.aborted) return;
+  state.exitCode = 2;
+  state.cancellationSignal = cancellationSignal;
+  if (state.setupStatus !== 'success') {
+    state.setupStatus = 'failure';
+    state.failurePhase = 'setup';
+  } else {
+    state.scanStatus = 'incomplete';
+    state.failurePhase = 'scan';
+  }
+}
 
 async function main() {
   const env = process.env;
@@ -69,9 +99,9 @@ async function main() {
     cacheMetadata: {},
     failurePhase: undefined,
   };
-  let reportSummary;
 
   try {
+    throwIfCancelled();
     state.setupStatus = 'running';
     const cliEntry = await findCliEntry(actionPath);
     state.selectedTools = parseToolList(tools);
@@ -86,6 +116,7 @@ async function main() {
       toolPaths.paths.bandit = resolve(workspace, banditPath);
     }
     state.cacheMetadata = toolPaths.metadata ?? {};
+    throwIfCancelled();
     state.setupStatus = 'success';
 
     const args = [cliEntry, 'scan'];
@@ -140,36 +171,8 @@ async function main() {
     process.stderr.write(`wakeio-security-ci ${state.failurePhase} failed; no raw scanner output was retained.\n`);
     void error;
   } finally {
-    try {
-      reportSummary = await readReportSummary(reportDirectory, previousReport);
-    } catch {
-      reportSummary = undefined;
-    }
-    if (state.setupStatus === 'success' && state.scanStatus !== 'not-run' && !reportSummary) {
-      // A prior report must never be surfaced as this run's result. A scan
-      // without a newly written report is therefore incomplete even when the
-      // child happened to return a clean status.
-      state.exitCode = 2;
-      state.scanStatus = 'failure';
-    }
-    try {
-      await writeStatusArtifact(reportDirectory, state, reportSummary);
-    } catch {
-      process.stderr.write('wakeio-security-ci could not write its bounded status artifact.\n');
-      if (state.exitCode === 0) state.exitCode = 2;
-    }
-    try {
-      await writeActionOutputs(env, reportDirectory, state, reportSummary);
-    } catch {
-      process.stderr.write('wakeio-security-ci could not write GitHub Action outputs.\n');
-      if (state.exitCode === 0) state.exitCode = 2;
-    }
-    try {
-      await writeStepSummary(env, reportDirectory, state, reportSummary);
-    } catch {
-      process.stderr.write('wakeio-security-ci could not write the GitHub job summary.\n');
-    }
     await rm(toolsRoot, { recursive: true, force: true }).catch(() => undefined);
+    await finalizeAction(env, reportDirectory, state, previousReport);
   }
   process.exitCode = state.exitCode;
 }
@@ -188,10 +191,11 @@ async function dastMain(env) {
   try { previousReport = await reportFingerprint(reportDirectory); } catch { previousReport = undefined; }
   const toolsRoot = await mkdtemp(join(tmpdir(), 'wakeio-security-ci-dast-'));
   const state = { exitCode: 2, setupStatus: 'not-run', scanStatus: 'not-run', selectedTools: [], cacheMetadata: {}, failurePhase: undefined };
-  let reportSummary;
   let plan;
   try {
+    throwIfCancelled();
     plan = await dastPolicy(env);
+    throwIfCancelled();
     if (plan.refusal) {
       state.setupStatus = 'refused';
       state.failurePhase = 'policy';
@@ -236,6 +240,7 @@ async function dastMain(env) {
     if (asBoolean(env.WAKEIO_ALLOW_PRIVATE)) args.push('--allow-private');
     const projectId = value(env.WAKEIO_PROJECT_ID) || value(env.GITHUB_REPOSITORY);
     if (projectId) args.push('--project-id', projectId);
+    throwIfCancelled();
     state.setupStatus = 'success';
     state.scanStatus = 'running';
     const result = await runCommand(process.execPath, args, { cwd: workspace, env, inherit: true, acceptedStatuses: [0, 1, 2] });
@@ -248,18 +253,35 @@ async function dastMain(env) {
     process.stderr.write(`wakeio-security-ci DAST ${state.failurePhase} failed; no raw scanner output was retained.\n`);
     void error;
   } finally {
-    try { reportSummary = await readReportSummary(reportDirectory, previousReport); } catch { reportSummary = undefined; }
-    if (state.setupStatus === 'success' && state.scanStatus !== 'not-run' && !reportSummary) { state.exitCode = 2; state.scanStatus = 'failure'; }
+    await rm(toolsRoot, { recursive: true, force: true }).catch(() => undefined);
+    await finalizeAction(env, reportDirectory, state, previousReport, plan);
+    // Set inside finally: a policy refusal returns early and must still exit 2.
+    process.exitCode = state.exitCode;
+  }
+}
+
+async function finalizeAction(env, reportDirectory, state, previousReport, plan) {
+  let reportSummary;
+  try { reportSummary = await readReportSummary(reportDirectory, previousReport); } catch { reportSummary = undefined; }
+  if (state.setupStatus === 'success' && state.scanStatus !== 'not-run' && !reportSummary) {
+    // A prior report must never be surfaced as this run's result.
+    state.exitCode = 2;
+    state.scanStatus = 'failure';
+  }
+  let observedCancellation;
+  do {
+    observedCancellation = cancellation.signal.aborted;
+    markCancelled(state);
     try { await writeStatusArtifact(reportDirectory, state, reportSummary); }
     catch { process.stderr.write('wakeio-security-ci could not write its bounded status artifact.\n'); if (state.exitCode === 0) state.exitCode = 2; }
     try { await writeActionOutputs(env, reportDirectory, state, reportSummary); }
     catch { process.stderr.write('wakeio-security-ci could not write GitHub Action outputs.\n'); if (state.exitCode === 0) state.exitCode = 2; }
     try { await writeStepSummary(env, reportDirectory, state, reportSummary, plan); }
     catch { process.stderr.write('wakeio-security-ci could not write the GitHub job summary.\n'); }
-    await rm(toolsRoot, { recursive: true, force: true }).catch(() => undefined);
-    // Set inside finally: a policy refusal returns early and must still exit 2.
-    process.exitCode = state.exitCode;
-  }
+    // Cancellation may arrive after a successful status was serialized. There
+    // is only one false -> true transition; overwrite that receipt and append
+    // the corrected outputs before exit, without discarding partial reports.
+  } while (observedCancellation !== cancellation.signal.aborted);
 }
 
 /**
@@ -500,6 +522,7 @@ async function writeStatusArtifact(reportDirectory, state, reportSummary) {
     setupStatus: state.setupStatus,
     scanStatus: state.scanStatus,
     exitCode: state.exitCode,
+    cancellationSignal: state.cancellationSignal,
     findingCount: reportSummary?.findingCount ?? 0,
     incompleteCount: reportSummary?.incompleteCount ?? 0,
     nativeArchiveCache: cacheStatus(state.cacheMetadata),
@@ -592,26 +615,70 @@ function emitAnnotation(level, message) {
 }
 
 function spawnProcess(command, args, options, callback) {
+  // Check here as well as in runCommand: no setup/scan child may start after
+  // cancellation, including the gap between asynchronous setup stages.
+  if (cancellation.signal.aborted) { callback(new Error('action cancelled')); return; }
+  const useProcessGroup = process.platform !== 'win32';
   const child = spawn(command, args, {
     cwd: options.cwd,
     env: options.env,
     stdio: options.capture ? ['ignore', 'pipe', 'inherit'] : options.inherit === false ? 'pipe' : 'inherit',
     shell: false,
+    detached: useProcessGroup,
   });
   let stdout = '';
   if (child.stdout) child.stdout.setEncoding('utf8').on('data', (chunk) => { stdout += chunk; });
   let settled = false;
+  let graceTimer;
+  let killTimer;
+  const signalChild = (signal) => {
+    if (child.pid === undefined) return;
+    try {
+      if (useProcessGroup) process.kill(-child.pid, signal);
+      else if (child.exitCode === null && child.signalCode === null) child.kill(signal);
+    } catch (error) {
+      if (error?.code !== 'ESRCH') {
+        try { child.kill(signal); } catch { /* bounded shutdown still runs */ }
+      }
+    }
+  };
   const finish = (error, result) => {
     if (settled) return;
     settled = true;
+    clearTimeout(graceTimer);
+    clearTimeout(killTimer);
+    cancellation.signal.removeEventListener('abort', stop);
+    // A cooperative parent may leave an uncooperative descendant behind.
+    if (cancellation.signal.aborted) signalChild('SIGKILL');
     callback(error, result);
   };
-  child.on('error', (error) => finish(error));
-  child.on('close', (status, signal) => finish(null, { status: status ?? 2, signal, stdout }));
+  const stop = () => {
+    if (settled || graceTimer) return;
+    signalChild(cancellationSignal);
+    graceTimer = setTimeout(() => {
+      signalChild('SIGKILL');
+      killTimer = setTimeout(() => {
+        // Escaped descendants can retain pipes after the owned group dies.
+        // Do not let their handles prevent final fail-closed receipts/exit.
+        child.stdout?.destroy();
+        child.stderr?.destroy();
+        child.stdin?.destroy();
+        child.unref();
+        finish(new Error('cancelled child did not close'));
+      }, CANCELLATION_KILL_WAIT_MS);
+    }, CANCELLATION_GRACE_MS);
+  };
+  child.once('error', (error) => finish(error));
+  child.once('close', (status, signal) => finish(null, { status: status ?? 2, signal, stdout }));
+  cancellation.signal.addEventListener('abort', stop, { once: true });
+  if (cancellation.signal.aborted) stop();
 }
 
 async function runCommand(command, args, options = {}) {
+  throwIfCancelled();
   const result = await spawnAsync(command, args, options);
+  // Even a child that handles cancellation and exits zero is incomplete.
+  throwIfCancelled();
   const accepted = options.acceptedStatuses || [0];
   if (!accepted.includes(result.status)) throw new Error(`${command} exited with status ${result.status}`);
   return result;
@@ -643,7 +710,14 @@ async function ensureSafeDirectory(directory) {
 // This file is the Action's dedicated process entrypoint; run it directly.
 // Avoid comparing /var and /private/var spellings because macOS may expose
 // the extracted source archive through either stable alias.
+const onSigint = () => cancel('SIGINT');
+const onSigterm = () => cancel('SIGTERM');
+process.on('SIGINT', onSigint);
+process.on('SIGTERM', onSigterm);
 main().catch(() => {
   process.stderr.write('wakeio-security-ci action failed before a report could be finalized.\n');
   process.exitCode = 2;
+}).finally(() => {
+  process.removeListener('SIGINT', onSigint);
+  process.removeListener('SIGTERM', onSigterm);
 });

@@ -5,8 +5,9 @@ JavaScript가 함께 있는 저장소에서 내장 JavaScript 분석이 완료�
 완료된 것은 아닙니다. `source.code-coverage`는 수집한 코드의 언어별 분석 범위를
 항상 보고하고, `--require-code-analysis`는 미분석 코드를 CI에서 막는 별도 선택입니다.
 
-현재 0.5.0 소스 프리뷰의 계약입니다. 공개 npm의 새 배포나 현재 구현의 최종 검증
-통과를 뜻하지 않습니다. 아래 예시는 검토한 source checkout의 빌드된 CLI 기준입니다.
+현재 0.5.0 소스 프리뷰에 구현된 계약입니다. 아래 예시는 검토한 source checkout의
+빌드된 CLI 기준이며 공개 npm의 새 배포를 뜻하지 않습니다. 로컬 검증 범위와 후속
+배포 검증 단계는 문서 마지막에서 구분합니다.
 
 ```mermaid
 flowchart LR
@@ -111,9 +112,27 @@ check 결과도 strict flag와 coverage 근거를 유지해야 하며, scope가 
 check 전체를 삭제하면 원 strict 의도를 추론할 수 없습니다. Advice policy 8은 진단용
 enum·수치 범위만 전달하며 도구 설치·추가 실행 권한을 부여하지 않습니다.
 
-이 문서의 검증 상태는 구현 계약 동결 전 초안입니다. 실제 acceptance·배포 전달
-검증 결과는 해당 커밋의 CI receipt에서 확인하세요. 이 기능은 Python 취약점 탐지,
-외부 앱 취약점 확인 또는 프로젝트 전체 안전성 인증이 아닙니다.
+## 로컬 검증과 후속 delivery 단계
+
+2026-10-13의 동결된 소스에서 통합 required-engine suite는 1051/1051로
+통과했고 failed·skipped·cancelled·todo는 모두 0이었습니다. 실행 전후 source
+snapshot도 같았습니다. 이 suite에는 기존 기능과 cancellation 회귀 대조가 포함되며,
+새 coverage 수용 기준의 개수나 실제 프로젝트 탐지율로 해석하지 않습니다. 별도의
+focused 검증은 31/31, 관련 support 검증은 18개가 통과했습니다. 준비한 실제 Bandit을
+사용한 SDK의 자체 4개 사례도 입력·완료 coverage 대조를 통과했습니다.
+
+[독립 수용 기준과 동결 이력](research/code-coverage-acceptance-2026-10-13.md) 및
+[CI receipt의 검증 범위](verification-ci-2026-10-05.md)를 함께 확인하세요. CI receipt는
+해당 snapshot과 실행 환경의 결과이며 이후 커밋에 자동 승계되는 성공 기록이 아닙니다.
+
+2026-10-13 이 문서의 동결 단계는 위 로컬 검증 완료 후, fresh package/source
+archive consumer와 hosted GitHub 검증 전입니다. 후속 delivery 결과는 사용하려는
+커밋의 PR·CI receipt에서 따로 확인하세요. npm 신규 publication이나 live policy-8
+모델 호출은 이 근거에 포함되지 않습니다.
+
+Coverage 기능은 새 언어 탐지 규칙을 추가하지 않습니다. 선택한 Bandit의 개별
+finding과 이 기능의 분석 완료 accounting은 서로 다른 근거입니다. 자체 대조의 성공은
+외부 앱 취약점 확인, 프로젝트 전체 안전성 또는 상용 탐지 성능을 입증하지 않습니다.
 
 [수집 한도](source-collection.md), [AST 범위](source-flow.md),
 [agent 보고서](agent-report.md)를 함께 읽으세요.

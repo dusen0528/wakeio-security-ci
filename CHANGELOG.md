@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- Close outstanding DAST target requests on cancellation, gate close or engine
+  disconnect, and await HTTP/CONNECT connection cleanup while retaining tunnel caps.
+- Forward Action SIGINT/SIGTERM through setup, native policy preflight and scan
+  subprocesses with bounded process-group cleanup. Preserve fresh partial evidence
+  and write non-success scan receipts instead of retaining stale successful status.
+- Require cancellation and teardown regressions in the real-engine zero-skip gate.
+
 ## 0.5.0 — GitHub source preview
 
 Source and the checked-in Action are versioned 0.5.0. The latest published npm

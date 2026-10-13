@@ -242375,7 +242375,22 @@ async function startEgressGate(policy) {
   const token = randomBytes2(18).toString("base64url");
   const expected = Buffer.from(`Basic ${Buffer.from(`wakeio:${token}`).toString("base64")}`);
   const counters = { forwarded: 0, tunnels: 0, blockedOrigin: 0, blockedMethod: 0, blockedBudget: 0, upstreamErrors: 0, rejectedEncoding: 0, responseBytes: 0 };
-  const sockets = /* @__PURE__ */ new Set();
+  const sockets = /* @__PURE__ */ new Map();
+  const upstreams = /* @__PURE__ */ new Map();
+  let closing = false;
+  let closePromise;
+  const trackSocket = (socket) => {
+    if (!sockets.has(socket)) {
+      sockets.set(socket, new Promise((resolve17) => {
+        socket.once("close", () => {
+          sockets.delete(socket);
+          resolve17();
+        });
+      }));
+    }
+    if (closing || policy.signal.aborted)
+      socket.destroy();
+  };
   const listeners = [];
   let stopped;
   const stop = (reason) => {
@@ -242421,7 +242436,7 @@ async function startEgressGate(policy) {
       refuse(response, 405);
       return;
     }
-    if (stopped || policy.signal.aborted || counters.forwarded >= policy.maxRequests) {
+    if (closing || stopped || policy.signal.aborted || counters.forwarded >= policy.maxRequests) {
       counters.blockedBudget += 1;
       if (counters.forwarded >= policy.maxRequests)
         stop("request_limit");
@@ -242432,7 +242447,7 @@ async function startEgressGate(policy) {
     counters.forwarded += 1;
     let failed = false;
     const fail6 = () => {
-      if (!failed) {
+      if (!failed && !closing && !response.destroyed) {
         failed = true;
         counters.upstreamErrors += 1;
       }
@@ -242494,6 +242509,14 @@ async function startEgressGate(policy) {
       });
       incoming.on("error", fail6);
     });
+    upstreams.set(upstream, new Promise((resolve17) => {
+      upstream.once("close", () => {
+        upstreams.delete(upstream);
+        resolve17();
+      });
+    }));
+    upstream.once("socket", trackSocket);
+    response.once("close", () => upstream.destroy());
     upstream.once("timeout", () => upstream.destroy(new Error("timeout")));
     upstream.on("error", fail6);
     request2.on("error", () => upstream.destroy());
@@ -242510,10 +242533,7 @@ async function startEgressGate(policy) {
     request2.once("end", () => upstream.end());
   };
   const server2 = createServer2({ maxHeaderSize: 16 * 1024 }, onRequest);
-  server2.on("connection", (socket) => {
-    sockets.add(socket);
-    socket.once("close", () => sockets.delete(socket));
-  });
+  server2.on("connection", trackSocket);
   server2.on("connect", (request2, client) => {
     const reject = (status) => {
       client.end(`HTTP/1.1 ${status}\r
@@ -242531,7 +242551,7 @@ content-length: 0\r
       reject("502 Bad Gateway");
       return;
     }
-    if (stopped || policy.signal.aborted || counters.tunnels >= policy.maxRequests) {
+    if (closing || stopped || policy.signal.aborted || counters.tunnels >= policy.maxRequests) {
       counters.blockedBudget += 1;
       if (counters.tunnels >= policy.maxRequests)
         stop("request_limit");
@@ -242540,8 +242560,7 @@ content-length: 0\r
     }
     counters.tunnels += 1;
     const upstream = connect({ host: policy.address.address, port: Number(defaultPort(policy.origin)), family: policy.address.family, timeout: remaining() });
-    sockets.add(upstream);
-    upstream.once("close", () => sockets.delete(upstream));
+    trackSocket(upstream);
     upstream.once("connect", () => {
       if (!sameAddress2(upstream.remoteAddress, policy.address.address)) {
         counters.upstreamErrors += 1;
@@ -242575,7 +242594,10 @@ content-length: 0\r
     client.once("close", () => upstream.destroy());
   });
   const closeAll = () => {
-    for (const socket of sockets)
+    closing = true;
+    for (const upstream of upstreams.keys())
+      upstream.destroy();
+    for (const socket of sockets.keys())
       socket.destroy();
   };
   policy.signal.addEventListener("abort", closeAll, { once: true });
@@ -242596,9 +242618,13 @@ content-length: 0\r
         listener(stopped);
     },
     close() {
+      if (closePromise)
+        return closePromise;
       policy.signal.removeEventListener("abort", closeAll);
+      const pending = [...upstreams.values(), ...sockets.values()];
       closeAll();
-      return new Promise((resolve17) => server2.close(() => resolve17()));
+      closePromise = Promise.all([...pending, new Promise((resolve17) => server2.close(() => resolve17()))]).then(() => void 0);
+      return closePromise;
     }
   };
 }

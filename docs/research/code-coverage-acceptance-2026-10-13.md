@@ -167,6 +167,19 @@ After the snapshot completed, root authorized adding object, array, null and
 numeric provider status mutations to group5. Each must render without throwing,
 with partial JSON status, agent/evaluate gate2, Markdown incomplete2 and SARIF
 executionSuccessful=false. All old outcomes remain. Producer's string-enum
-fix and root rerun are pending at this lock; no author execution occurred.
+fix and root rerun were pending at this lock; no author execution occurred.
 Fifth test SHA256 submitted for lock:
 `88eae3e6ae0704cef8d2335adf294315a647bc52bc5e18ed4c7a69b87a2035f8`.
+
+Final integrated evidence, 2026-10-13: root reports focused31/31 and the required
+engine suite passed1051/1051, zero failures/skips, including v5, the string-enum
+fix and the separate devd2279 cancellation21 cases. The directly inspected
+receipt is `artifacts/ci/required-engine-T9y2XG/receipt.json`, status passed,
+exit0, started07:52:05.946Z and finished07:53:56.107Z. Its sourceBefore/sourceAfter
+SHA256 is unchanged at
+`151e642b939ad293a3e4303ea48c9d669cd6c401dc196d61f1d3ceb4ee4ebbf7`.
+This validates the raw integrated build before final Git/package steps, not a
+published release or fresh package consumer. Packaging and final archive
+verification remain pending at this documentation freeze. Earlier failures,
+reproductions and locks above remain evidence; no test assertion was weakened
+and no author runtime execution occurred.
