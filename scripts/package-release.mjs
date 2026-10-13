@@ -53,6 +53,7 @@ const SOURCE_ALLOWLIST = [
   'package-lock.json',
   'package.json',
   'scripts',
+  'schemas',
   'src',
   'tests',
   'tsconfig.json',

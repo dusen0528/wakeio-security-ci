@@ -1,0 +1,95 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "wakeio.worker-result/v1",
+  "title": "Wakeio agent-dast worker result",
+  "description": "The only value a worker script may print to stdout. Reference contract for docs and tests; the runtime validator is src/agent-dast/result.ts. Serialized size must not exceed 2048 bytes. Runtime additionally enforces identity binding, safe-integer sums, executed+skipped<=planned, completed executed==planned, severity sum==candidate, finding_ids count<=candidate and unique gap reasons. Only an error may use zero planned placeholder counts. A worker may not mark its own result truncated; the runner error fallback may do so.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "run_id", "task_id", "category", "status", "coverage", "findings", "finding_ids", "gaps", "next_hint", "duration_ms", "truncated"],
+  "properties": {
+    "schema": { "const": "wakeio.worker-result/v1" },
+    "run_id": { "type": "string", "pattern": "^r-[0-9a-z-]{1,40}$" },
+    "task_id": { "type": "string", "pattern": "^t-[0-9a-z-]{1,60}$" },
+    "category": { "enum": ["recon", "injection", "authz", "config", "verify"] },
+    "status": { "enum": ["completed", "partial", "error", "skipped"] },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["planned", "executed", "skipped"],
+      "properties": {
+        "planned": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
+        "executed": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
+        "skipped": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 }
+      }
+    },
+    "findings": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["candidate", "by_severity"],
+      "properties": {
+        "candidate": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
+        "by_severity": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "critical": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
+            "high": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
+            "medium": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
+            "low": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
+            "info": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 }
+          }
+        }
+      }
+    },
+    "finding_ids": {
+      "type": "array",
+      "maxItems": 20,
+      "uniqueItems": true,
+      "items": { "type": "string", "pattern": "^f-[0-9a-z-]{1,40}$" }
+    },
+    "gaps": {
+      "type": "array",
+      "maxItems": 10,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["reason", "count"],
+        "properties": {
+          "reason": { "enum": ["auth_required", "timeout", "budget_exhausted", "out_of_scope", "tool_error", "unsupported"] },
+          "count": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 }
+        }
+      }
+    },
+    "next_hint": { "enum": ["verify", "retry", "none"] },
+    "duration_ms": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
+    "truncated": { "type": "boolean" }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "status": { "enum": ["partial", "error", "skipped"] } } },
+      "then": { "properties": { "gaps": { "minItems": 1 } } }
+    },
+    {
+      "if": { "properties": { "status": { "const": "completed" } } },
+      "then": { "properties": {
+        "coverage": { "properties": { "planned": { "minimum": 1 }, "skipped": { "const": 0 } } },
+        "gaps": { "maxItems": 0 },
+        "truncated": { "const": false }
+      } }
+    },
+    {
+      "if": { "properties": { "status": { "enum": ["completed", "partial", "skipped"] } } },
+      "then": { "properties": { "coverage": { "properties": { "planned": { "minimum": 1 } } } } }
+    },
+    {
+      "if": { "properties": { "status": { "const": "skipped" } } },
+      "then": { "properties": {
+        "coverage": { "properties": { "executed": { "const": 0 } } },
+        "findings": { "properties": { "candidate": { "const": 0 }, "by_severity": { "properties": {
+          "critical": { "const": 0 }, "high": { "const": 0 }, "medium": { "const": 0 }, "low": { "const": 0 }, "info": { "const": 0 }
+        } } } },
+        "finding_ids": { "maxItems": 0 }
+      } }
+    }
+  ]
+}

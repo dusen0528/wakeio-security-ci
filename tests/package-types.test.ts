@@ -36,6 +36,8 @@ test('release npm archive exposes root and contracts types to strict TypeScript 
     assert.deepEqual(packedPackage.exports, {
       '.': { types: './build/src/index.d.ts', default: './build/src/index.js' },
       './contracts': { types: './build/src/contracts.d.ts', default: './build/src/contracts.js' },
+      './agent-dast': { types: './build/src/agent-dast/index.d.ts', default: './build/src/agent-dast/index.js' },
+      './schemas/worker-result.v1.json': './schemas/worker-result.v1.json',
     });
 
     // Supply only this Node consumer's type dependencies, copied rather than
@@ -47,6 +49,17 @@ test('release npm archive exposes root and contracts types to strict TypeScript 
     await writeFile(join(consumer, 'consumer.ts'), `
 import { runSource, buildOpenApiPolicy, runOpenApiPolicy, preflightApiPolicy, preflightOpenApiPolicy, type ApiPreflightResult, type OpenApiPolicyInput, type ApiProtectedExpectation, type UrlOptions, type SourceOptions, type CheckResult } from 'wakeio-security-ci';
 import type { SourceOptions as ContractSourceOptions } from 'wakeio-security-ci/contracts';
+import { openRunStore, parseWorkerResult, type NewTask, type WorkerResultV1 } from 'wakeio-security-ci/agent-dast';
+
+function checkedWorkerOutput(stdout: string, task: NewTask): WorkerResultV1 | undefined {
+  const parsed = parseWorkerResult(stdout, { runId: task.runId, taskId: task.taskId, category: task.category });
+  return parsed.ok ? parsed.result : undefined;
+}
+function assignedCoverage(task: NewTask): Array<{ surfaceId: string; check: string }> { return task.coveragePlan; }
+const storeOpening: ReturnType<typeof openRunStore> = openRunStore(':memory:');
+void [checkedWorkerOutput, assignedCoverage, storeOpening];
+// @ts-expect-error Experimental SDK categories remain a closed contract.
+parseWorkerResult('{}', { runId: 'r-owned', taskId: 't-owned', category: 'unrestricted' });
 
 const options = { root: '.', tools: [], analysisProfile: 'extended' } satisfies SourceOptions;
 const contractOptions: ContractSourceOptions = options;
