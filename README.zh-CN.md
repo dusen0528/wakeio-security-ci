@@ -10,6 +10,8 @@ Wakeio Security CI 是一个免费的开源 CLI 和 GitHub Action。它让开发
 
 GitHub 源码版本为 **0.5.0**，npm 已发布的最新版本为 **0.4.0**。要使用 0.5.0 的新功能，请从 [`dusen0528/wakeio-security-ci`](https://github.com/dusen0528/wakeio-security-ci) 获取经过审查的 Git checkout，并运行 `npm run build`。npm 0.5.0 尚未发布。功能和发布状态的详细说明请参阅[英文版](README.md)或[韩文版](README.ko.md)。
 
+独立的[自有 PATCH state pilot](docs/api-write-state.md)检查固定合成 loopback fixture 的实际存储变化和正常 owner control。SDK、CLI 与专用 Action 要求明确同意并保留原 phase gate，不接受外部 API target。
+
 ## 可以检查什么
 
 | 输入 | 检查内容 | 这个预览版无法证明的内容 |

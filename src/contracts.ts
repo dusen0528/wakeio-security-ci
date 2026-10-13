@@ -193,6 +193,7 @@ export interface CheckResult {
   analysisGaps?: AnalysisGaps;
   /** Owned fixture observations only; not authentication of arbitrary external evidence. */
   apiStateEvidence?: ApiStateEvidence;
+  apiWriteStateEvidence?: ApiWriteStateEvidence;
   apiExecution?: ApiExecutionLedger;
   /** Bounded native differential metadata; not independent exploit verification. */
   dastExecution?: DastExecution;
@@ -234,6 +235,34 @@ export interface ApiStateEvidence {
   /** Optional opt-in repeated owned-fixture observation; not a reliability proof. */
   repetition?: { rounds: 2; completedPhases: number; consistency: 'consistent' | 'inconsistent' | 'incomplete'; phaseReportSha256: string[] };
   nextEvidence: 'review_owned_fixture' | 'review_execution' | 'retry_delivery_only';
+}
+/** Independent persisted-state observation of fixed author-owned PATCH fixtures only. */
+export interface ApiWriteStateEvidence {
+  version: 1;
+  scope: 'owned-synthetic-resource-patch-write';
+  phase: 'baseline' | 'candidate' | 'comparison';
+  execution: 'completed' | 'partial' | 'error';
+  effect: 'observed' | 'not_observed' | 'unknown';
+  normal: 'passed' | 'failed' | 'unknown';
+  verification: 'not_evaluated' | 'scoped_fix_effect_observed' | 'effect_persists' | 'normal_regression' | 'inconclusive';
+  cleanup: 'confirmed' | 'unknown' | 'not_run';
+  reasons: string[];
+  counts: { plannedRequests: number; httpAttempts: number; patchAttempts: number; capturedResponses: number; stateObservations: number };
+  lineage: { runId: string; handlerSha256?: string; baselineHandlerSha256?: string; patchSha256?: string; observerSha256?: string;
+    manifestSha256?: string; stateBeforeSha256?: string; stateAfterSha256?: string; beforeReportSha256?: string; afterReportSha256?: string; runtimeVersion?: string;
+    observerBasis?: 'compiled-observer-module' | 'bundled-runtime' };
+  ledger?: ApiWriteExecutionLedger;
+  nextEvidence: 'review_owned_fixture' | 'review_execution' | 'retry_delivery_only';
+}
+export interface ApiWriteExecutionLedger {
+  version: 1;
+  basis: 'declared-owned-write-execution';
+  status: 'complete' | 'partial';
+  maximumHttpAttempts: 36;
+  maximumPatchAttempts: 12;
+  steps: Array<{ ordinal: number; method: 'GET' | 'PATCH'; actorIndex: 0 | 1 | 2; resourceIndex?: 0 | 1;
+    action: 'identity-before' | 'read-before' | 'owner-write' | 'read-normal' | 'peer-write' | 'read-peer' | 'anonymous-write' | 'read-anonymous' | 'identity-after';
+    attempted: boolean; outcome: 'evaluated' | 'inconclusive' | 'not_attempted'; httpStatus: number | null }>;
 }
 export interface SourceOptions {
   analysisProfile?: AnalysisProfile;
@@ -431,6 +460,7 @@ export interface AgentReport {
     sourceSnapshot?: SourceSnapshotEvidence;
     analysisGaps?: AnalysisGaps;
     apiStateEvidence?: ApiStateEvidence;
+    apiWriteStateEvidence?: ApiWriteStateEvidence;
     apiExecution?: ApiExecutionLedger;
     /** Bounded native differential metadata; not independent exploit verification. */
     dastExecution?: DastExecution;

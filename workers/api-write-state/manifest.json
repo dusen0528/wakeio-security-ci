@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "files": {
+    "all-deny.mjs": "f354afc738007fab303a763b20e82802204551b0d4d29858070435781bc436e0",
+    "fixed.mjs": "a3146ba05d503321bbd459f65a4cecd33f17da423f92efe06ac1193b4daf9647",
+    "ineffective.mjs": "2d87af9a849d3dfc2f14f2e457c533c17e6f2cfbab071b6ef7a752df088c76d7",
+    "normal-regression.mjs": "96c8f39f08e54258add52e960ed7f0a7082b3935149b435e188973bb743b28df",
+    "status-only.mjs": "d4e74728bdeb2292b75bc6b68e5c06e5d9f55f35dc4f94c295304fdc44232202",
+    "vulnerable.mjs": "4de60e48657d90be6b3be1a73b38853d836221b7c14ed36ea7982a4acda81e6e",
+    "wrong-object.mjs": "2f90b59ffe256f97df4d6bfe31404d60f7fca7bc540e1110872ab30a0225f259"
+  }
+}

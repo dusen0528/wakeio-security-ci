@@ -1,0 +1,106 @@
+name: Wakeio owned API write-state pilot
+description: Verify persisted PATCH effects and normal controls on fixed author-owned loopback fixtures only
+inputs:
+  candidate:
+    description: fixed, ineffective, all-deny, normal-regression, status-only, or wrong-object
+    default: fixed
+  active-consent:
+    description: Must be exactly true to permit the owned synthetic PATCH requests
+    default: 'false'
+  timeout-ms:
+    description: Shared cooperative run deadline, integer 1..30000 milliseconds
+    default: '30000'
+  out:
+    description: Fresh workspace-relative output directory; no absolute or dot-segment paths
+    default: wakeio-api-write-reports
+outputs:
+  exit-code:
+    description: Final wrapper result; 0 scoped comparison passes, 1 observed effect, 2 incomplete or delivery failure
+    value: ${{ steps.run.outputs.exit-code || steps.validate.outputs.exit-code }}
+  before-exit-code:
+    description: Original baseline gate, or unknown when unavailable
+    value: ${{ steps.run.outputs.before-exit-code || 'unknown' }}
+  after-exit-code:
+    description: Original candidate gate, or unknown when unavailable
+    value: ${{ steps.run.outputs.after-exit-code || 'unknown' }}
+  verification-exit-code:
+    description: Separate comparison gate, or 2 when unavailable
+    value: ${{ steps.run.outputs.verification-exit-code || '2' }}
+  delivery-status:
+    description: Delivered only after current CLI process and publication hashes agree; does not mean security pass
+    value: ${{ steps.run.outputs.delivery-status || 'unknown' }}
+  command-status:
+    description: completed, cancelled, refused, or error
+    value: ${{ steps.run.outputs.command-status || 'refused' }}
+  report-dir:
+    description: Current unique run and delivery-attempt directory, empty when unacknowledged
+    value: ${{ steps.run.outputs.report-dir }}
+  before-report:
+    description: Original baseline report.json path
+    value: ${{ steps.run.outputs.before-report }}
+  after-report:
+    description: Original candidate report.json path
+    value: ${{ steps.run.outputs.after-report }}
+  verification-report:
+    description: Comparison report.json path
+    value: ${{ steps.run.outputs.verification-report }}
+  report-agent:
+    description: Digest-bound comparison agent-report.json path; not final CI success proof
+    value: ${{ steps.run.outputs.report-agent }}
+  publication-marker:
+    description: Current publication-only marker; caller acknowledgement and process exit remain separate
+    value: ${{ steps.run.outputs.publication-marker }}
+  receipt:
+    description: Wrapper publication receipt bound to this child process; final Action outcome must also be checked
+    value: ${{ steps.run.outputs.receipt }}
+  run-id:
+    value: ${{ steps.run.outputs.run-id }}
+    description: Current owned run identifier
+  delivery-attempt-id:
+    value: ${{ steps.run.outputs.delivery-attempt-id }}
+    description: Current delivery attempt identifier
+runs:
+  using: composite
+  steps:
+    - name: Validate owned mutation consent before setup
+      id: validate
+      shell: bash
+      env:
+        WAKEIO_WRITE_CANDIDATE: ${{ inputs.candidate }}
+        WAKEIO_WRITE_ACTIVE_CONSENT: ${{ inputs.active-consent }}
+        WAKEIO_WRITE_TIMEOUT_MS: ${{ inputs.timeout-ms }}
+        WAKEIO_WRITE_OUT: ${{ inputs.out }}
+      run: |
+        refuse() {
+          echo 'exit-code=2' >> "$GITHUB_OUTPUT"
+          echo 'ready=false' >> "$GITHUB_OUTPUT"
+          echo 'Owned API write-state refused: exact consent and bounded inputs are required.' >&2
+          exit 2
+        }
+        [[ "$WAKEIO_WRITE_ACTIVE_CONSENT" == true ]] || refuse
+        case "$WAKEIO_WRITE_CANDIDATE" in
+          fixed|ineffective|all-deny|normal-regression|status-only|wrong-object) ;;
+          *) refuse ;;
+        esac
+        [[ "$WAKEIO_WRITE_TIMEOUT_MS" =~ ^[1-9][0-9]{0,4}$ ]] || refuse
+        [[ "$WAKEIO_WRITE_TIMEOUT_MS" -le 30000 ]] || refuse
+        [[ "$WAKEIO_WRITE_OUT" =~ ^[A-Za-z0-9_./-]{1,200}$ ]] || refuse
+        [[ "$WAKEIO_WRITE_OUT" != /* && "$WAKEIO_WRITE_OUT" != */ ]] || refuse
+        [[ "/$WAKEIO_WRITE_OUT/" != */../* && "/$WAKEIO_WRITE_OUT/" != */./* && "$WAKEIO_WRITE_OUT" != *//* ]] || refuse
+        echo 'ready=true' >> "$GITHUB_OUTPUT"
+    - name: Set up Node.js 22
+      if: steps.validate.outputs.ready == 'true'
+      uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+      with:
+        node-version: '22'
+    - name: Run bundled owned write-state pilot
+      if: steps.validate.outputs.ready == 'true'
+      id: run
+      shell: bash
+      env:
+        WAKEIO_ACTION_PATH: ${{ github.action_path }}
+        WAKEIO_WRITE_CANDIDATE: ${{ inputs.candidate }}
+        WAKEIO_WRITE_ACTIVE_CONSENT: ${{ inputs.active-consent }}
+        WAKEIO_WRITE_TIMEOUT_MS: ${{ inputs.timeout-ms }}
+        WAKEIO_WRITE_OUT: ${{ inputs.out }}
+      run: node "$WAKEIO_ACTION_PATH/run.mjs"

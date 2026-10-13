@@ -1,6 +1,7 @@
 import { sanitiseAnalysisBudget, sameAnalysisBudget } from './source/analysis-budget.js';
 import { sanitiseCollectionBudget, sanitiseCollectionEvidence, sameCollectionBudget } from './source/collection-budget.js';
 import { sanitiseSourceSnapshotEvidence } from './source/snapshot-evidence.js';
+import { parseApiWriteStateEvidence } from './api-write-observer.js';
 import { types as utilTypes } from 'node:util';
 import { sanitiseStaticContext } from './static-context.js';
 import { sanitizeDastExecution, isDastObservedEvidence, isLegacyDastExecution } from './dast-execution.js';
@@ -77,6 +78,9 @@ export function parseScanReport(input: unknown): ScanReport {
       nativeExecution = execution;
     }
     checkIds.add(check.id);
+    const writeEvidence = collectionField(check, 'apiWriteStateEvidence');
+    if (writeEvidence.present && (!writeEvidence.valid || check.id !== 'api.owned-write-state-oracle'
+      || !parseApiWriteStateEvidence(writeEvidence.value))) return invalid();
     count += check.findings.length;
     if (count > 50_000 || (check.status === 'not_applicable' && check.findings.length)) return invalid();
     for (const finding of check.findings) {
@@ -150,6 +154,11 @@ export function compareReports(beforeInput: ScanReport, afterInput: ScanReport):
   const before = parseScanReport(beforeInput);
   const after = parseScanReport(afterInput);
   const reasons: string[] = [];
+  for (const id of new Set([...before.checks, ...after.checks].map(check => check.id))) {
+    const oldWrite = before.checks.find(check => check.id === id)?.apiWriteStateEvidence;
+    const newWrite = after.checks.find(check => check.id === id)?.apiWriteStateEvidence;
+    if ((oldWrite || newWrite) && JSON.stringify(oldWrite) !== JSON.stringify(newWrite)) reasons.push('Owned write evidence, execution plan or persisted-state scope changed or is missing; independent observer comparison is required.');
+  }
   if (!before.scope || !after.scope) reasons.push('Declared scan scope is missing; older reports cannot establish comparable scope.');
   else {
     if (before.scope.projectId !== after.scope.projectId) {

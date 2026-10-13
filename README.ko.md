@@ -17,6 +17,8 @@ API preview는 redacted index 기반 실행 ledger로 판정한 단계, 불확�
 [소유 API pilot](docs/api-state-oracle.md)은 명시적으로 두 번 검증을 선택할 수 있다.
 정상 기능 대조를 반복하고 결과가 다르면 불확실로 남긴다.
 
+별도의 [소유 PATCH state pilot](docs/api-write-state.md)은 고정 자체 loopback fixture에서 실제 저장 변경과 정상 owner 대조를 확인합니다. SDK·CLI·전용 Action은 명시적 동의를 요구하고 원 phase gate를 보존하며 외부 API를 입력받지 않습니다.
+
 ## 무엇을 검사하나요?
 
 | 범위 | 확인할 수 있는 내용 | 기억해야 할 한계 |

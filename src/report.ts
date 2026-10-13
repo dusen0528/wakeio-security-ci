@@ -7,6 +7,7 @@ import { sanitiseCollectionBudget, sanitiseCollectionEvidence } from './source/c
 import { sanitiseSourceSnapshotEvidence } from './source/snapshot-evidence.js';
 import { sanitiseStaticContext } from './static-context.js';
 import { sanitiseApiStateEvidence } from './api-state-observer.js';
+import { sanitiseApiWriteStateEvidence } from './api-write-observer.js';
 import { projectReportSummary } from './report-summary.js';
 import { createHash } from 'node:crypto';
 import { constants as fsConstants } from 'node:fs';
@@ -279,6 +280,7 @@ function projectAgentReport(report: ScanReport, failOn: FailOn): AgentReport {
       ...(check.sourceSnapshot ? { sourceSnapshot: check.sourceSnapshot } : {}),
       ...(check.analysisGaps ? { analysisGaps: check.analysisGaps } : {}),
       ...(check.apiStateEvidence ? { apiStateEvidence: check.apiStateEvidence } : {}),
+      ...(check.apiWriteStateEvidence ? { apiWriteStateEvidence: check.apiWriteStateEvidence } : {}),
       ...(check.apiExecution ? { apiExecution: check.apiExecution } : {}),
       ...(check.dastExecution ? { dastExecution: check.dastExecution } : {}),
     })),
@@ -449,6 +451,10 @@ export function toSarif(report: ScanReport): SarifLog {
             apiStateEvidence: safeReport.checks.flatMap((check, checkIndex) => check.apiStateEvidence
               ? [{ checkIndex, checkId: check.id, apiStateEvidence: check.apiStateEvidence }] : []),
           } : {}),
+          ...(safeReport.checks.some(check => check.apiWriteStateEvidence) ? {
+            apiWriteStateEvidence: safeReport.checks.flatMap((check, checkIndex) => check.apiWriteStateEvidence
+              ? [{ checkIndex, checkId: check.id, apiWriteStateEvidence: check.apiWriteStateEvidence }] : []),
+          } : {}),
           ...(safeReport.checks.some((check) => check.analysisGaps) ? {
             analysisGaps: safeReport.checks.flatMap((check, checkIndex) => check.analysisGaps
               ? [{ checkIndex, checkId: check.id, analysisGaps: check.analysisGaps }] : []),
@@ -531,6 +537,12 @@ export function toMarkdown(report: ScanReport, failOn: FailOn = 'high'): string 
           `  - API requests=${e.counts.apiRequests ?? 'unknown'}; next evidence=${e.nextEvidence}. Finding verification is unchanged; this is not whole-app security proof.`);
         if (e.controlOutcomes) lines.push(`  - Independent logical control outcomes (0–11): ${e.controlOutcomes.join(', ')}.`);
         if (e.repetition) lines.push(`  - Owned repetition: requested rounds=2; completed phases=${e.repetition.completedPhases}/4; consistency=${e.repetition.consistency}. Bounded observations, not statistical or production verification.`);
+      }
+      if (check.apiWriteStateEvidence) {
+        const e = check.apiWriteStateEvidence;
+        lines.push(`  - Owned synthetic PATCH state (${e.phase}): execution=${e.execution}, persisted unauthorized effect=${e.effect}, normal=${e.normal}, verification=${e.verification}, cleanup=${e.cleanup}.`,
+          `  - HTTP attempts=${e.counts.httpAttempts}/${e.counts.plannedRequests}; PATCH attempts=${e.counts.patchAttempts}; mutation snapshots=${e.counts.stateObservations}. Writes are never retried.`,
+          `  - Reasons: ${e.reasons.length ? e.reasons.join(', ') : 'none'}. Observer basis=${e.lineage.observerBasis ?? 'unknown'}; next evidence=${e.nextEvidence}. Owned scope only; HTTP status and production fix verification are distinct.`);
       }
       if (check.analysisGaps) {
         const gaps = check.analysisGaps;
@@ -751,6 +763,10 @@ function sanitiseCheck(input: CheckResult): CheckResult {
   if (dastExecution && !isLegacyDastExecution(dastExecution) && isDastObservedEvidence(dastExecution)
     && (!Array.isArray(input.findings) || input.findings.length !== 1) && status !== 'error') status = 'partial';
   const apiStateEvidence = input?.apiStateEvidence === undefined ? undefined : sanitiseApiStateEvidence(input.apiStateEvidence);
+  const writeField = ownDataField(input, 'apiWriteStateEvidence');
+  const needsWriteEvidence = writeField.present || input?.id === 'api.owned-write-state-oracle';
+  const apiWriteStateEvidence = needsWriteEvidence ? sanitiseApiWriteStateEvidence(writeField.valid ? writeField.value : undefined) : undefined;
+  if (needsWriteEvidence && (input?.id !== 'api.owned-write-state-oracle' || apiWriteStateEvidence?.execution !== 'completed') && status !== 'error') status = 'partial';
   if (input?.id === 'api.owned-state-oracle' && apiStateEvidence?.execution !== undefined && apiStateEvidence.execution !== 'completed' && status === 'completed') status = 'partial';
   const analysisBudget = sanitiseAnalysisBudget(input?.analysisBudget);
   const budgetField = ownDataField(input, 'collectionBudget');
@@ -775,6 +791,14 @@ function sanitiseCheck(input: CheckResult): CheckResult {
         ...(dastExecution && !isLegacyDastExecution(dastExecution) ? { confidence: dastExecution.status === 'complete' && status === 'completed'
           && finding.confidence !== 'low' ? 'medium' as const : 'low' as const } : {}) } : finding)
     : [];
+  if (input?.id === 'api.owned-write-state-oracle' && apiWriteStateEvidence?.execution === 'completed') {
+    const effects = findings.filter(finding => finding.ruleId === 'api.owned-write-state-effect_persists');
+    const matchingEffect = effects.length === 1 && effects[0].severity === 'high' && effects[0].kind === 'observation' && effects[0].confidence === 'high';
+    if ((apiWriteStateEvidence.effect === 'observed' ? !matchingEffect : effects.length > 0)
+      || findings.some(finding => finding.ruleId === 'api.owned-write-state-normal_regression') && apiWriteStateEvidence.normal === 'passed') {
+      if (status !== 'error') status = 'partial';
+    }
+  }
   if (Array.isArray(input?.findings) && input.findings.some(finding => ownDataField(finding, 'staticContext').present)
     && (status === 'completed' || status === 'not_applicable')) status = 'partial';
   if (Array.isArray(input?.findings) && input.findings.some(finding => {
@@ -816,6 +840,7 @@ function sanitiseCheck(input: CheckResult): CheckResult {
     ...(sourceSnapshot ? { sourceSnapshot } : {}),
     ...(analysisGaps ? { analysisGaps } : {}),
     ...(apiStateEvidence ? { apiStateEvidence } : {}),
+    ...(apiWriteStateEvidence ? { apiWriteStateEvidence } : {}),
     ...(apiExecution ? { apiExecution } : {}),
     ...(dastExecution ? { dastExecution } : {}),
   };
