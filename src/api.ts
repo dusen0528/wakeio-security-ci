@@ -211,6 +211,7 @@ interface SessionDiagnostics {
 
 interface RequestContextState {
   execution: ApiExecutionLedger;
+  abortCause?: 'deadline' | 'cancelled';
   requestOffset: number;
   activeStep?: ApiExecutionStep;
   actorIndexes: Map<string, number>;
@@ -865,6 +866,8 @@ async function requestApi(
 }
 
 function requestFailureReason(code: string, state: RequestContextState): ApiExecutionStep['reason'] {
+  // Record the first abort source; timers and later wall-clock reads can disagree.
+  if (state.abortCause) return state.abortCause;
   if (Date.now() >= state.context.deadlineAt) return 'deadline';
   if (state.context.signal.aborted) return 'cancelled';
   if (['body_limit', 'total_body_limit'].includes(code)) return state.ownedCapture?.budget ? 'shared_body_budget' : 'body_budget';
@@ -1307,6 +1310,9 @@ export async function runApiPolicy(options: ApiRunOptions): Promise<CheckResult[
     bodyBudgetExhausted: false,
     bodyReadIncomplete: false,
   };
+  const captureAbortCause = () => { state.abortCause ??= signal?.aborted ? 'cancelled' : 'deadline'; };
+  if (controller.signal.aborted) captureAbortCause();
+  else controller.signal.addEventListener('abort', captureAbortCause, { once: true });
   let incomplete = parsed.legacy;
   let controlsPassed = 0;
   let identityControlsPassed = 0;
@@ -1378,10 +1384,11 @@ export async function runApiPolicy(options: ApiRunOptions): Promise<CheckResult[
       }
     }
   } finally {
+    controller.signal.removeEventListener('abort', captureAbortCause);
     controller.dispose();
   }
   if (controller.signal.aborted || Date.now() >= state.context.deadlineAt) {
-    addNote(notes, signal?.aborted
+    addNote(notes, state.abortCause === 'cancelled' || (!state.abortCause && signal?.aborted)
       ? "The API policy was cancelled; the authorization preview is incomplete."
       : "The API policy time budget elapsed; the authorization preview is incomplete.");
     incomplete = true;

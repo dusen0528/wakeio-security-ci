@@ -227251,6 +227251,8 @@ async function requestApi(url, authorization, state) {
   }
 }
 function requestFailureReason(code, state) {
+  if (state.abortCause)
+    return state.abortCause;
   if (Date.now() >= state.context.deadlineAt)
     return "deadline";
   if (state.context.signal.aborted)
@@ -227641,6 +227643,13 @@ async function runApiPolicy(options) {
     bodyBudgetExhausted: false,
     bodyReadIncomplete: false
   };
+  const captureAbortCause = () => {
+    state.abortCause ??= signal?.aborted ? "cancelled" : "deadline";
+  };
+  if (controller.signal.aborted)
+    captureAbortCause();
+  else
+    controller.signal.addEventListener("abort", captureAbortCause, { once: true });
   let incomplete = parsed.legacy;
   let controlsPassed = 0;
   let identityControlsPassed = 0;
@@ -227715,10 +227724,11 @@ async function runApiPolicy(options) {
       }
     }
   } finally {
+    controller.signal.removeEventListener("abort", captureAbortCause);
     controller.dispose();
   }
   if (controller.signal.aborted || Date.now() >= state.context.deadlineAt) {
-    addNote2(notes, signal?.aborted ? "The API policy was cancelled; the authorization preview is incomplete." : "The API policy time budget elapsed; the authorization preview is incomplete.");
+    addNote2(notes, state.abortCause === "cancelled" || !state.abortCause && signal?.aborted ? "The API policy was cancelled; the authorization preview is incomplete." : "The API policy time budget elapsed; the authorization preview is incomplete.");
     incomplete = true;
   }
   const apiExecution = finishApiExecutionLedger(state.execution, incomplete);
