@@ -11,6 +11,7 @@ import { mergeHttpRoles } from './http-role.js';
 import { mergeStaticContexts } from '../static-context.js';
 import { mergeProcessRoles, PROCESS_METHODS } from './process-role.js';
 import { mergeBrowserLocationRoles } from './browser-location-role.js';
+import { mergeNodeResponseUses } from './node-response-role.js';
 
 interface AstFile {
   file: CollectedFile;
@@ -261,7 +262,23 @@ function observeFile(astFile: AstFile, flowUses: ReadonlyMap<ts.Node, InputFlowU
     if (ts.isCallExpression(node)) {
       const name = callName(node.expression);
       const use = flowUses.get(node);
-      if (use?.archiveWrite) {
+      if (use?.nodeHtml?.inputRelated && !['non_html', 'text_only'].includes(use.nodeHtml.outcome)) {
+        const role = use.nodeHtml;
+        const knownUrl = role.outcome === 'url_attribute_input';
+        const fixedPrefix = role.urlAttributeKinds.includes('fixed_prefix');
+        pushObservation(observations, file, sourceFile, node,
+          knownUrl ? 'ast:html-url-input-sink' : 'ast:html-output-context-unknown',
+          knownUrl ? 'Input reaches a quoted URL attribute in a declared HTML response'
+            : 'Input reaches a declared response with unresolved HTML rendering context',
+          knownUrl ? `An input-related hole appears in a quoted URL attribute of the collected HTML template. ${fixedPrefix
+            ? 'A literal prefix precedes at least one hole; this does not prove input control of the URL scheme. Attribute escaping remains unverified.'
+            : 'URL scheme restrictions and attribute escaping require separate review.'} Callback scheduling, MIME at runtime, receiver identity and browser behavior remain conditional; exploitability is unverified.`
+            : role.uncertainty === 'encoding' ? 'Input appears in a text position of the collected HTML template, but encoding is unverified. This is not a claim that input controls a URL attribute or that HTML text is safe. Runtime rendering and exploitability are unverified.'
+              : 'Input-related data reaches a declared response, but MIME, markup, provenance or preceding streamed fragments leave its rendering context unresolved. This is not a claim that input controls a URL attribute. Runtime rendering and exploitability are unverified.',
+          'medium', knownUrl ? 'Review the declared caller and response headers. Keep allowed URL schemes and destinations fixed, and encode values for the exact attribute context; HTML text escaping alone does not establish URL scheme safety.'
+            : 'Review the response binding, complete output sequence, headers and input provenance. Apply encoding for the actual output context; do not treat missing context as a safe HTML or URL certificate.', 'low');
+        observations.at(-1)!.staticFlow = role.staticFlow;
+      } else if (use?.archiveWrite) {
         const role = use.archiveWrite;
         if (role.outcome !== 'lexically_contained' && role.staticFlow) {
           pushObservation(observations, file, sourceFile, node, 'ast:archive-path-write',
@@ -505,6 +522,7 @@ export function runBuiltinAst(snapshot: SourceSnapshot, hasOtherSecurityCheck = 
     const responseAuthorities = [prior, use].filter(value => value.htmlResponse === 'express')
       .map(value => value.htmlResponseAuthority ?? 'unqualified_response');
     const merged: InputFlowUse = { ...prior, staticContext, htmlResponse: prior.htmlResponse ?? use.htmlResponse, htmlResponseAuthority: responseAuthorities.length ? staticContext || responseAuthorities.includes('unqualified_response') ? 'unqualified_response' : 'registered_express' : undefined, htmlResponseMime: prior.htmlResponseMime === "unknown" || use.htmlResponseMime === "unknown" ? "unknown" : prior.htmlResponseMime ?? use.htmlResponseMime, argumentFlows: [...argumentsByIndex.values()].sort((a, b) => a.index - b.index), localForkCall: prior.localForkCall && use.localForkCall ? {complete:prior.localForkCall.complete && use.localForkCall.complete} : undefined, localProcessCall: prior.localProcessCall && use.localProcessCall ? {complete:prior.localProcessCall.complete && use.localProcessCall.complete} : undefined, forkRole: prior.forkRole?.identity === 'unresolved' || use.forkRole?.identity === 'unresolved' ? {identity:'unresolved' as const} : prior.forkRole ?? use.forkRole, processRole: mergeProcessRoles(prior.processRole, use.processRole), sqlRole:mergeSqlRoles(prior.sqlRole,use.sqlRole), nosqlRole:mergeNoSqlRoles(prior.nosqlRole,use.nosqlRole), httpRole: mergeHttpRoles(prior.httpRole, use.httpRole) };
+    merged.nodeHtml = mergeNodeResponseUses(prior.nodeHtml, use.nodeHtml);
     const filesystemRoles = [prior.filesystemProcess, use.filesystemProcess].filter((role): role is NonNullable<InputFlowUse['filesystemProcess']> => !!role);
     merged.browserLocationRole = mergeBrowserLocationRoles(prior.browserLocationRole, use.browserLocationRole);
     const filesystemRank = { argv_shell_input: 4, argv_shell_unknown: 3, direct_argv_interpreter_unknown: 2, argv_only_shell_disabled: 0 };
@@ -556,10 +574,11 @@ export function runBuiltinAst(snapshot: SourceSnapshot, hasOtherSecurityCheck = 
     ...(analysis.analysisGaps ? { analysisGaps: analysis.analysisGaps } : {}),
     notes: [
       `Built-in AST checks parsed ${astFiles.length} JavaScript or TypeScript file${astFiles.length === 1 ? "" : "s"}.`,
-      "Declared flow model: request-shaped entry parameters, same-function assignments, statically bound local functions/immutable const arrows, named relative ESM imports and constant static CommonJS destructuring exports within the collected snapshot. Source/sink API shapes are candidates, not runtime framework or database identity proof.",
+      "Declared flow model: request-shaped entry parameters, same-function assignments, statically bound local functions/immutable const arrows, named relative ESM imports and constant static CommonJS destructuring exports within the collected snapshot. Unique ESM named/star function re-exports retain lexical authority for relative-only paths; any snapshot-configured alias edge carries conditional body authority, not runtime module identity or negative safety proof. Source/sink API shapes are candidates, not runtime framework or database identity proof.",
       "Express entry positions are additionally recognized for a bounded same-file lexical import/require, immutable app/Router and route-registration subset. Request/response parameter spelling is irrelevant inside that subset; dynamic dispatch, upstream middleware state and runtime package identity remain unverified.",
       "Koa middleware's first context parameter is recognized only through a same-file immutable default/default-as ESM import, no-argument Application construction and app.use(callback) binding; approved context/request query, URL/path and incoming header reads supply request-source traces regardless of parameter spelling. This is a declared API candidate, not runtime package or middleware identity proof: next()/middleware-chain effects remain unknown, and CommonJS, routers, body parsers, response body/headers and application state are outside this request-source subset.",
-      "Dynamic/package imports, namespace/default/re-exports, mutable exports and arbitrary class dispatch remain model limitations beyond the separately declared narrow constructor/capture and legacy-driver lanes. A canonical relative CommonJS local class singleton supports receiver-bound actual/body dispatch; opaque native dynamic loading retains only a declared possible body with low-confidence input and partial coverage, without return safety or runtime identity proof. Unknown external calls are not trusted sanitizers and do not alone make declared coverage incomplete. Resolved callees are not freshly seeded unless explicitly exported or passed as a callback to an unresolved/external call; callback execution and runtime entry reachability are not proven.",
+      "Dynamic/package imports without a supported collected path mapping, namespace/default exports, mutable exports and arbitrary class dispatch remain model limitations beyond the separately declared narrow constructor/capture and legacy-driver lanes. A canonical relative CommonJS local class singleton supports receiver-bound actual/body dispatch; opaque native dynamic loading retains only a declared possible body with low-confidence input and partial coverage, without return safety or runtime identity proof. Unknown external calls are not trusted sanitizers and do not alone make declared coverage incomplete. Resolved callees are not freshly seeded unless explicitly exported or passed as a callback to an unresolved/external call; callback execution and runtime entry reachability are not proven.",
+      'Observed collected configuration overrides or unsupported nearest configuration for recognized native package loads conservatively veto snapshot-wide negative native certificates, while retaining input seeds and conditional candidates. This does not resolve or execute replacement packages. Configured graph counts describe adopted paths configurations, file/specifier/target tuples, call sites and analysis contexts; they are not runtime coverage or detection rates.',
       "Outbound destination qualifier covers only canonical literal HTTP(S) origin/path plus native encoded query, direct const params record/toString/append/set and scalar local transfer. Object containers, alias/escape, modified or shadowed native intrinsics and opaque options retain candidates. Options support absent or plain literal method/fixed non-Host headers only. This is initial destination control, not redirect, DNS, proxy, remote query processing or runtime SSRF safety proof.",
       'Axios request config role model separates a closed fixed INITIAL url field from payload-only input under the declared v1.13.2 API contract. Lexical imports/static require bindings and indexed snapshot validation do not authenticate runtime packages or external side effects. Defaults/interceptors/custom transport, alias/mutation, incomplete scope and opaque target roles retain low-confidence candidates; unknown is not safe. No body source is asserted to control URL authority.',
       'Closed local/relative CommonJS function constructors support actual allocation, own arrow methods, immutable binding-identity capture frames and bounded scalar return/callback transfer. Unmaterialized owned roots, mutation/escape, unsupported captures, cycles and identity failures retain partial coverage. These frames do not establish runtime entry reachability or general callable safety.',

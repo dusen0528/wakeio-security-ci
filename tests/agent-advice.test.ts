@@ -2,6 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
+import { watch } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import { join } from 'node:path';
 import { createReport, toAgentReport, writeReports } from '../src/report.js';
 import { adviseMain } from '../src/agent-advice.js';
@@ -364,34 +366,80 @@ test('owned process group kills TERM-ignoring descendant after normal agent exit
 });
 
 test('agent cancellation sends TERM then KILL to an owned descendant group', async () => {
-  const top = await mkdtemp(join(tmpdir(), 'wakeio-advice-cancel-'));
-  try {
-    const pidPath = join(top, 'child.pid');
-    const parent = join(top, 'parent');
-    await writeFile(parent, `#!/usr/bin/env node
-const cp=require('child_process'), fs=require('fs');
-const child=cp.spawn(process.execPath,['-e','process.on("SIGTERM",()=>{}); setInterval(()=>{},1000)'],{detached:false,stdio:'ignore'});
-fs.writeFileSync(${JSON.stringify(pidPath)},String(child.pid));
-setInterval(()=>{},1000);
-`, { mode: 0o700 });
+  // The delayed control exceeds the old ~1s PID polling window without changing
+  // the supervisor's 4s deadline. Ready means both TERM handlers are installed.
+  for (const bootDelayMs of [0, 1200]) {
+    const top = await mkdtemp(join(tmpdir(), 'wakeio-advice-cancel-'));
     const controller = new AbortController();
-    const pending = runProcess(parent, [], { cwd: top, home: top, timeoutMs: 4000, maxOutputBytes: 1024,
-      supervision: 'agent', signal: controller.signal });
-    let pid = 0;
-    for (let attempt = 0; attempt < 50; attempt++) {
-      try { pid = Number(await readFile(pidPath, 'utf8')); if (pid > 0) break; }
-      catch { await new Promise(resolve => setTimeout(resolve, 20)); }
+    let pending: ReturnType<typeof runProcess> | undefined;
+    let watcher: ReturnType<typeof watch> | undefined;
+    try {
+      const readyPath = join(top, 'ready.json'), termPath = join(top, 'term.log');
+      const parent = join(top, 'parent.cjs');
+      const childScript = `const fs=require('fs');
+process.on('SIGTERM',()=>fs.appendFileSync(${JSON.stringify(termPath)},'child:'+process.pid+'\\n'));
+process.send({kind:'ready',pid:process.pid});
+setInterval(()=>{},1000);`;
+      await writeFile(parent, `const cp=require('child_process'),fs=require('fs');
+process.on('SIGTERM',()=>fs.appendFileSync(${JSON.stringify(termPath)},'parent:'+process.pid+'\\n'));
+setTimeout(()=>{
+  const child=cp.spawn(process.execPath,['-e',${JSON.stringify(childScript)}],{detached:false,stdio:['ignore','ignore','ignore','ipc']});
+  child.once('error',()=>process.exit(1));
+  child.once('message',message=>{
+    if(message.kind!=='ready'||message.pid!==child.pid)process.exit(1);
+    fs.writeFileSync(${JSON.stringify(readyPath + '.tmp')},JSON.stringify({parentPid:process.pid,childPid:message.pid}));
+    fs.renameSync(${JSON.stringify(readyPath + '.tmp')},${JSON.stringify(readyPath)});
+  });
+},${bootDelayMs});
+setInterval(()=>{},1000);`);
+      const ready = new Promise<{ parentPid: number; childPid: number }>((resolve, reject) => {
+        watcher = watch(top, (_event, filename) => {
+          if (filename !== 'ready.json') return;
+          void readFile(readyPath, 'utf8').then(text => resolve(JSON.parse(text))).catch(reject);
+        });
+      });
+      pending = runProcess(process.execPath, [parent], { cwd: top, home: top, timeoutMs: 4000,
+        maxOutputBytes: 1024, supervision: 'agent', signal: controller.signal });
+      const { parentPid, childPid } = await Promise.race([ready, pending.then(outcome => {
+        throw new Error(`owned fixture ended before IPC readiness: ${JSON.stringify(outcome)}`);
+      })]);
+      watcher?.close(); watcher = undefined;
+      assert.ok(Number.isSafeInteger(parentPid) && parentPid > 0);
+      assert.ok(Number.isSafeInteger(childPid) && childPid > 0 && childPid !== parentPid);
+      const members = execFileSync('/bin/ps', ['-o', 'pid=,pgid=,stat=', '-p', `${parentPid},${childPid}`],
+        { encoding: 'utf8', timeout: 1000, maxBuffer: 4096 }).trim().split('\n')
+        .map(line => line.trim().split(/\s+/));
+      for (const pid of [parentPid, childPid]) {
+        const row = members.find(fields => Number(fields[0]) === pid); assert.ok(row);
+        assert.equal(Number(row[1]), parentPid, 'both live processes belong to the supervised root group');
+        assert.equal(row[2].startsWith('Z'), false);
+      }
+      controller.abort();
+      const outcome = await pending;
+      assert.equal(outcome.cancelled, true);
+      assert.equal(outcome.stopReason, 'cancelled');
+      assert.equal(outcome.timedOut, false);
+      assert.equal(outcome.signal, 'SIGKILL', 'TERM-ignoring root requires actual escalation');
+      assert.equal(outcome.closeConfirmed, true);
+      assert.equal(outcome.cleanupConfirmed, true);
+      const acknowledged = (await readFile(termPath, 'utf8')).trim().split('\n');
+      assert.ok(acknowledged.includes(`parent:${parentPid}`));
+      assert.ok(acknowledged.includes(`child:${childPid}`), 'the installed descendant handler received TERM');
+      let state = '';
+      try {
+        state = execFileSync('/bin/ps', ['-o', 'stat=', '-p', String(childPid)],
+          { encoding: 'utf8', timeout: 1000, maxBuffer: 4096, stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+      } catch (error) {
+        const ended = error as { status?: number; stdout?: string };
+        assert.equal(ended.status, 1, 'only the explicit absent-process ps result is accepted');
+        assert.equal(ended.stdout?.trim(), '');
+      }
+      assert.ok(!state || state.startsWith('Z'), `descendant still alive: ${state}`);
+    } finally {
+      watcher?.close(); controller.abort(); await pending;
+      await rm(top, { recursive: true, force: true });
     }
-    assert.ok(pid > 0);
-    controller.abort();
-    const outcome = await pending;
-    assert.equal(outcome.cancelled, true);
-    assert.equal(outcome.cleanupConfirmed, true);
-    let state = '';
-    try { state = (await import('node:child_process')).execFileSync('/bin/ps', ['-o', 'stat=', '-p', String(pid)], { encoding: 'utf8' }).trim(); }
-    catch { /* No process remains. */ }
-    assert.ok(!state || state.startsWith('Z'), `descendant still alive: ${state}`);
-  } finally { await rm(top, { recursive: true, force: true }); }
+  }
 });
 
 test('SIGTERM during a response publishes an incomplete cancellation receipt', async () => {

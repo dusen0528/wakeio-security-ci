@@ -1,11 +1,11 @@
 # Local source handoff
 
 The reviewed 0.5.0 source preview provides a data-only packet for handing a
-source candidate to a human or an explicitly authorised coding agent. The
+source candidate or incomplete source-check diagnostics to a human or an explicitly authorised coding agent. The
 published npm 0.4.0 package does not provide these commands. Use the CLI from
 your reviewed source build or its locally prepared package.
 
-`handoff create` reads a source report pair, binds one finding to the currently
+`handoff create` reads a source report pair, binds one finding or diagnostic check to the currently
 collected source strings, and writes a new private packet. `handoff finish`
 reads a separately produced after report and records the existing comparison
 and the full after scan gate. Neither command scans, invokes a model, generates
@@ -22,7 +22,7 @@ flowchart TD
   F --> G[Four after reports in a new directory]
   G --> H[handoff finish: validate after snapshot and compare]
   D --> H
-  H --> I[Selected state + comparison gate + full after gate]
+  H --> I[Selected finding or reported check progress + full after gate]
 ```
 
 ## Where reports and packets go
@@ -126,6 +126,60 @@ wakeio-security-ci handoff finish \
 V1 accepts only source-only scans with `tools=none`, the fixed built-in
 inventory/AST/framework check set, known revisions and coherent typed budgets.
 URL/API/native/external-engine or legacy unknown binding is unsupported.
+Diagnostic v2 uses the same report-pair, current tool/ruleset, budget and complete
+snapshot requirements. Older rulesets are refused even when their source strings
+still match; do not alter the recorded version to obtain a packet.
+
+## Diagnostic review without a finding
+
+When `summary.nextRead` points to an incomplete check, omit `--finding` and use
+that check's zero-based index. This does not create a synthetic finding:
+
+```sh
+wakeio-security-ci handoff create \
+  --report /path/outside/your-app/before \
+  --source /path/to/your-app \
+  --check-index 1 \
+  --out /path/outside/your-app/diagnostic-review
+```
+
+Only `source.builtin-ast`, `source.framework` or `source.code-coverage` with
+status `partial`, `error` or `skipped` can be selected. The optional coverage
+check must actually exist. Inventory, completed/not-applicable checks, missing or
+duplicate check identities and external-engine scopes are refused. Source
+collection must still be complete; AST incompleteness does not bypass binding.
+
+The new `handoff.json` has version `2` and
+`selected: {kind: "diagnostic_check", checkIndex, checkId}`. Its `diagnostic`
+contains the original selected check's status and available typed analysis gaps,
+analysis budget and code coverage. The exact original pair is copied privately,
+and Markdown lists only retained reported gap positions for local navigation.
+Gap events are weighted observations, not unique sites or uncovered-file counts.
+Unknown/truncated accounting remains explicit; dropped locations and exact
+unsupported coverage cannot be reconstructed. No source content is copied.
+
+Run the original scan separately with the same options to create after reports,
+then call the existing `handoff finish` command with this diagnostic packet.
+V2 separates three records:
+
+- `comparison` keeps the existing strict finding comparison, including
+  unverified output caused by an incomplete before scan. It is not weakened.
+- `scopeComparison` checks declared source identity, current version/ruleset,
+  unique check set, policy, coherent budgets and known engine/data provenance.
+  Reported completion status and input content may change; identity may not.
+- `selectedCheckProgress` reports before/after status and the after check index.
+  Its state is `reported_completed`, `still_incomplete` or `unverified`.
+  An after `not_applicable` selected check is unverified and keeps exit `2`.
+
+For diagnostic v2, scope mismatch or unverified selected-check progress keeps
+exit `2`; otherwise finish follows the **full after scan gate**. A completed
+selected check can still contain threshold findings or coexist with other
+incomplete checks. Thus progress can be `reported_completed` while finish is
+`1` or `2`. Completion is a reported analysis status, never `fixed`, a confirmed
+vulnerability, disappearance proof or independent remediation verification.
+Finding packets retain version `1` and their existing strict-comparison finish
+gate. Advice still requires its existing finding/index pair; no check-only model
+invocation is added.
 
 `source.inventory.sourceSnapshot` carries one `source-snapshot-v1` SHA-256
 aggregate, with `basis=collected_utf8_strings`, selected file/byte counts,
@@ -148,8 +202,9 @@ collector, stale source, unknown/malformed snapshot, tampered pair or ambiguous
 selection produces exit `2`.
 
 Finish validates the private original pair/selected identity and the fresh
-after pair, binds the current source to the after snapshot, then applies the
-existing strict report comparison. It preserves scope, ruleset, known budget,
+after pair and binds the current source to the after snapshot; v1 applies the
+strict finding-comparison gate, while v2 uses diagnostic declared scope and the
+full after gate and retains strict finding comparison separately. It preserves scope, ruleset, known budget,
 provenance, static-context and ambiguity checks. It cannot repair missing
 execution/delivery receipts or authenticate a report's author.
 
@@ -159,11 +214,12 @@ execution/delivery receipts or authenticate a report's author.
 | --- | --- |
 | Create `0` | A bound review packet was created; original scan gate may still be `1` or `2` |
 | Create `2` | Refused, unsupported, changed/unknown input or incomplete delivery |
-| Finish `0` | Comparable declared recheck with a complete after scan and no finding at its selected threshold |
+| Finish `0` | V1 comparable finding recheck, or V2 compatible diagnostic scope with reported selected-check completion; full after scan complete and no threshold finding |
 | Finish `1` | After scan or comparison has a threshold-blocking finding/change; unchanged high findings still block |
-| Finish `2` | Incomplete before/after scan, source/scope/budget/provenance/context drift, ambiguity or delivery failure |
+| Finish `2` | V1 unverified comparison, or V2 incompatible scope/unverified progress; incomplete after scan, source/budget/provenance drift, ambiguity or delivery failure |
 
-Finish applies `2 > 1 > 0` to comparison and the **full after scan gate**. A
+V1 finish applies `2 > 1 > 0` to comparison and the **full after scan gate**;
+V2 uses diagnostic scope/progress eligibility and the same full after gate. A
 selected finding's disappearance cannot hide a new high finding elsewhere.
 `--fail-on none` retains the original policy and never converts incomplete
 work into a pass.

@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Add bounded source-only Node HTML output-context candidates under ruleset
+  `2026-10-14.5`: declared core HTTP/HTTPS request callbacks and a narrow send
+  directory adapter preserve literal/input-hole provenance to quoted URL attributes.
+  Unknown encoding, MIME and streaming remain partial low-confidence candidates;
+  encoder names grant no safety proof. See [scope and gates](docs/html-output-context.md).
+
 - Add the offline agent-DAST evaluation harness (internal, not exported or
   wired to the CLI) under `src/agent-dast/eval` and `benchmarks/agent-eval`:
   a label format with `tuning`/`final` splits, distinct-vulnerability TP/FP/FN
@@ -12,7 +18,10 @@
   (agent selection) is scored from synthetic or recorded results only. Adds a
   run-start record pinning the criteria, final label and shared check-list
   hashes, with `evaluate()` confirming the record and its digest are untampered
-  and each scored finding links to its run.db row and evidence file.
+  and each scored finding links to its run.db row and evidence file. Stored
+  run-plan bundles are linked read-only from DB observation to evidence to the
+  engine finding in the task report; a plain evidence-dir hash check is reported
+  as not-yet-provenance.
 
 - Add an experimental `wakeio-security-ci/agent-dast` SDK with a bounded
   worker-result contract and RunStore v2. Completion requires the declared

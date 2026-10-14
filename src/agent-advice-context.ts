@@ -10,7 +10,7 @@ import { types } from 'node:util';
 export type RecheckRoute = 'repeat_native_same_policy' | 'replay_native_finding_same_policy' | 'replay_api_finding_same_policy'
   | 'review_static_flow_or_budget' | 'review_check_diagnostics' | 'review_scope';
 
-export const ADVICE_PROJECTION_POLICY_VERSION = 12;
+export const ADVICE_PROJECTION_POLICY_VERSION = 13;
 
 export interface AdviceSelection { findingId: string; checkIndex: number }
 

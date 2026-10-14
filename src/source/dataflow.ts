@@ -13,15 +13,19 @@ import { ExpressRoleModel } from './express-role.js';
 import { KoaRoleModel, type KoaRequestRole } from './koa-role.js';
 import { HonoRoleModel, type HonoRequestRole } from './hono-role.js';
 import { NoSqlRoleModel, type NoSqlRoleUse } from './nosql-role.js';
-import { analyzeClosureShape, analyzeConstructedShape, type ClosureShape, type ConstructorShape, type ShapeResult } from './closure-shape.js';
+import { analyzeClosureShape, analyzeRegularClosureShape, analyzeConstructedShape, type RegularClosureShape, type ClosureShape, type ConstructorShape, type ShapeResult } from './closure-shape.js';
 import { MongoRoleModel, type MongoDbRole, type MongoCollectionRole } from './mongo-role.js';
 import type { CollectedFile } from './types.js';
 import { FilesystemRoleModel, type FilesystemStreamRole } from './filesystem-role.js';
 import { ArchiveRoleModel, type ArchiveRole } from './archive-role.js';
 import { BrowserLocationRoleModel, directBrowserLocationReceiver, type BrowserLocationRole } from './browser-location-role.js';
+import { SendRoleModel, type SendStreamRole } from './send-role.js';
+import { htmlConcat, htmlHole, type HtmlFragments, type HtmlBudget } from './html-context.js';
+import { NodeResponseRoleModel, updateNodeResponse, consumeNodeResponse, type NodeResponseState, type NodeResponseUse } from './node-response-role.js';
 
 /** A source-to-sink use found by the bounded, same-function analysis. */
 export interface InputFlowUse {
+  nodeHtml?: NodeResponseUse;
   staticContext?: StaticCandidateContext;
   node: ts.Node;
   kind: "assignment" | "call" | "jsx";
@@ -74,6 +78,7 @@ function joinResponse(left?: ExpressResponseState, right?: ExpressResponseState)
 }
 
 function containResponse(value: FlowValue): void {
+  if (value.nodeResponse) { value.nodeResponse.valid = false; value.nodeResponse.mime = 'unknown'; }
   if (!value.expressResponse) return;
   value.expressResponse.contained = true;
   value.expressResponse.authority = 'unqualified_response';
@@ -81,7 +86,19 @@ function containResponse(value: FlowValue): void {
   if (value.expressResponse.mime !== "html") value.expressResponse.mime = "unknown";
 }
 
+interface RegularCallback {
+  target: RegularClosureShape['target'];
+  captures: ReadonlyMap<ts.Symbol, FlowValue>;
+  valid: boolean;
+}
 interface FlowValue {
+  htmlFragments?: HtmlFragments;
+  regularCallbacks?: readonly RegularCallback[];
+  regularCallbacksComplete?: boolean;
+  sendStream?: SendStreamRole & { request: FlowValue; response?: FlowValue; callbacks: Array<{ callback: RegularCallback; registration: ts.CallExpression }> };
+  nodeResponse?: NodeResponseState;
+  sendIncomingRequest?: boolean;
+  restTuple?: { slots: readonly FlowValue[]; aggregate: FlowValue; valid: boolean; complete: boolean };
   koaRequest?: KoaRequestRole;
   honoRequest?: HonoRequestRole;
   /** Qualified request-return data only; never changes input taint or SQL dispatch. */
@@ -424,7 +441,21 @@ function joinValues(left: FlowValue, right: FlowValue): FlowValue {
     const honoRole = left.honoRequest ?? right.honoRequest;
     result.honoRequest = left.honoRequest?.state === right.honoRequest?.state && left.honoRequest?.stage === right.honoRequest?.stage
       ? left.honoRequest : honoRole ? { ...honoRole, state: { valid: false } } : undefined;
-    return { ...result, sequenceContent, filesystemStream, filesystemContent, expressResponse: joinResponse(left.expressResponse, right.expressResponse), nosqlObject: left.nosqlObject === right.nosqlObject ? left.nosqlObject : undefined, nosqlUnknown, nosqlWhere, mongoDb, mongoCollection, expressObjectBody: left.expressObjectBody === true && right.expressObjectBody === true, ...(properties ? { properties } : {}), sqlFixedText, sqlArray, sqlConfig, sqlScalarUnavailable:left.sqlScalarUnavailable || right.sqlScalarUnavailable, sqlCallback:left.sqlCallback || right.sqlCallback, sqlDataUnavailable:left.sqlDataUnavailable || right.sqlDataUnavailable, httpTargetUnavailable:httpUnavailable([left,right]), urlFragments, nativeQuery: left.nativeQuery === true && right.nativeQuery === true, queryContent: sharedQueryContent, httpConfig };
+    const rest = left.restTuple ?? right.restTuple;
+    const restTuple = left.restTuple === right.restTuple ? left.restTuple : rest
+      ? { slots: [], aggregate: combineValues([left, right]), valid: false, complete: false } : undefined;
+    const frames = [...left.regularCallbacks ?? [], ...right.regularCallbacks ?? []];
+    // One function body can close over different actual values. Only identical
+    // frames are duplicates; selecting a target alone would erase an alternative.
+    const alternatives = [...new Set(frames)];
+    const callbacks = alternatives.slice(0, FLOW_LIMITS.traceSteps);
+    const node = left.nodeResponse ?? right.nodeResponse;
+    const nodeResponse = left.nodeResponse && right.nodeResponse && left.nodeResponse.identity === right.nodeResponse.identity
+      ? { ...node!, mime: left.nodeResponse.mime === right.nodeResponse.mime ? node!.mime : 'unknown' as const, valid: left.nodeResponse.valid && right.nodeResponse.valid, streamed: left.nodeResponse.streamed || right.nodeResponse.streamed }
+      : node ? { ...node, mime: 'unknown' as const, valid: false } : undefined;
+    const htmlFragments = left.htmlFragments === right.htmlFragments ? left.htmlFragments : left.htmlFragments || right.htmlFragments
+      ? { complete: false, inputRelated: isInputRelated(result), parts: [{ kind: 'hole' as const, inputRelated: isInputRelated(result) }] } : undefined;
+    return { ...result, htmlFragments, nodeResponse, regularCallbacks: callbacks.length ? callbacks : undefined, regularCallbacksComplete: alternatives.length <= FLOW_LIMITS.traceSteps && left.regularCallbacksComplete !== false && right.regularCallbacksComplete !== false, sendStream: left.sendStream === right.sendStream ? left.sendStream : undefined, restTuple, sequenceContent, filesystemStream, filesystemContent, expressResponse: joinResponse(left.expressResponse, right.expressResponse), nosqlObject: left.nosqlObject === right.nosqlObject ? left.nosqlObject : undefined, nosqlUnknown, nosqlWhere, mongoDb, mongoCollection, expressObjectBody: left.expressObjectBody === true && right.expressObjectBody === true, ...(properties ? { properties } : {}), sqlFixedText, sqlArray, sqlConfig, sqlScalarUnavailable:left.sqlScalarUnavailable || right.sqlScalarUnavailable, sqlCallback:left.sqlCallback || right.sqlCallback, sqlDataUnavailable:left.sqlDataUnavailable || right.sqlDataUnavailable, httpTargetUnavailable:httpUnavailable([left,right]), urlFragments, nativeQuery: left.nativeQuery === true && right.nativeQuery === true, queryContent: sharedQueryContent, httpConfig };
   };
   if (left.kind === right.kind && (left.kind !== "root" || left.root === right.root)) {
     if (left.kind === "root") return withProperties(left);
@@ -467,6 +498,17 @@ function withoutUrlProof(value: FlowValue): FlowValue {
 }
 
 function projectValue(base: FlowValue, property: string): FlowValue {
+  if (base.restTuple) {
+    const tuple = base.restTuple;
+    if (tuple.valid && tuple.complete) {
+      if (property === 'length') return SAFE;
+      if (/^(0|[1-9]\d*)$/.test(property) && Number.isSafeInteger(Number(property))) {
+        return tuple.slots[Number(property)] ?? UNKNOWN;
+      }
+    }
+    return { ...tuple.aggregate, kind: 'unknown', inputRelated: isInputRelated(tuple.aggregate), traceTruncated: true,
+      sqlScalarUnavailable: true, sqlDataUnavailable: true, httpTargetUnavailable: true };
+  }
   if (base.honoRequest) {
     const known = base.properties?.get(property);
     if (known) return known;
@@ -520,11 +562,14 @@ class FlowEnv {
   clone(): FlowEnv {
     // Copy MIME state per control-flow branch while preserving direct aliases.
     const states = new Map<ExpressResponseState, ExpressResponseState>();
+    const nodeStates = new Map<NodeResponseState, NodeResponseState>();
     const clone = (value: FlowValue): FlowValue => {
-      if (!value.expressResponse) return value;
+      let nodeResponse = value.nodeResponse;
+      if (nodeResponse) { const prior = nodeStates.get(nodeResponse); if (prior) nodeResponse = prior; else { const old = nodeResponse; nodeResponse = { ...old }; nodeStates.set(old, nodeResponse); } }
+      if (!value.expressResponse) return nodeResponse ? { ...value, nodeResponse } : value;
       let state = states.get(value.expressResponse);
       if (!state) { state = { ...value.expressResponse }; states.set(value.expressResponse, state); }
-      return { ...value, expressResponse: state };
+      return { ...value, expressResponse: state, nodeResponse };
     };
     const env = new FlowEnv(this.scopes.map((scope) => new Map([...scope].map(([key, value]) => [key, clone(value)]))), this.symbols.map(scope => new Map(scope)));
     env.terminated = this.terminated;
@@ -572,6 +617,10 @@ class FlowEnv {
     }
     containResponse(value);
     const update = (base: FlowValue, index: number): FlowValue => {
+      if (base.restTuple) {
+        base.restTuple.valid = false;
+        base.restTuple.aggregate = combineValues([base.restTuple.aggregate, value]);
+      }
       const property = path[index];
       const properties = new Map(base.properties ?? []);
       if (index === path.length - 1) {
@@ -595,10 +644,12 @@ class FlowEnv {
       if (base.honoRequest && !benignHonoWrite) base.honoRequest.state.valid = false;
       if (base.honoRequest?.stage === 'request') base.honoRequest.state.jsonDataValid = false;
       if (base.constructed) base.constructed.valid = false;
+      if (base.nodeResponse && property !== 'statusCode') { base.nodeResponse.valid = false; base.nodeResponse.mime = 'unknown'; }
+      if (base.sendStream) base.sendStream.valid = false;
       if (base.archiveRole) base.archiveRole.state.valid = false;
       invalidateMongo(base.mongoDb, 'write');
       invalidateMongo(base.mongoCollection, 'write');
-      return { ...combined, koaRequest: base.koaRequest, honoRequest: base.honoRequest, expressResponse, expressObjectBody: base.expressObjectBody, properties, nosqlObject: base.nosqlObject, constructed: base.constructed, mongoDb: base.mongoDb, mongoCollection: base.mongoCollection };
+      return { ...combined, nodeResponse: base.nodeResponse, sendStream: base.sendStream, restTuple: base.restTuple, koaRequest: base.koaRequest, honoRequest: base.honoRequest, expressResponse, expressObjectBody: base.expressObjectBody, properties, nosqlObject: base.nosqlObject, constructed: base.constructed, mongoDb: base.mongoDb, mongoCollection: base.mongoCollection };
     };
     this.assign(path[0], update(this.resolve(path[0]), 1));
   }
@@ -619,8 +670,10 @@ class FlowEnv {
     if (live.length === 0) { this.terminated = true; return; }
     branches = live;
     const responseStates = new Map<object, ExpressResponseState>();
+    const nodeStates = new Map<object, NodeResponseState>();
     for (const scope of this.scopes) for (const value of scope.values()) {
       if (value.expressResponse) responseStates.set(value.expressResponse.identity, value.expressResponse);
+      if (value.nodeResponse) nodeStates.set(value.nodeResponse.identity, value.nodeResponse);
     }
     for (let depth = 0; depth < this.scopes.length; depth += 1) {
       const names = new Set<string>(this.scopes[depth].keys());
@@ -638,6 +691,7 @@ class FlowEnv {
           responseStates.set(state.identity, state);
           joined.expressResponse = state;
         }
+        if (joined.nodeResponse) { const state = nodeStates.get(joined.nodeResponse.identity) ?? joined.nodeResponse; state.mime = joined.nodeResponse.mime; state.valid = joined.nodeResponse.valid; state.streamed = joined.nodeResponse.streamed; nodeStates.set(state.identity, state); joined.nodeResponse = state; }
         this.scopes[depth].set(name, joined);
       }
     }
@@ -676,8 +730,17 @@ export function observedGapLocation(node: ts.Node, files: ReadonlyMap<string, ts
 }
 
 interface FunctionSummary { returned: FlowValue; }
+interface ConfiguredInspection {
+  call: ts.CallExpression;
+  target: ts.FunctionLikeDeclaration;
+  actuals: readonly FlowValue[];
+  context: StaticCandidateContext;
+  ancestors: readonly string[];
+  identity: string;
+}
 // Mutable content must not be reused through a cached return or skipped side effect.
 function hasMutableQuery(value: FlowValue, seen = new Set<FlowValue>(), depth = 0): boolean {
+  if (value.restTuple || value.regularCallbacks || value.sendStream || value.nodeResponse) return true;
   if (value.koaRequest || value.honoRequest) return true;
   if (value.archiveRole || value.archiveContent) return true;
   if (value.sequenceContent || value.filesystemStream || value.staticContext || value.boundaryInput || value.expressResponse || value.queryContent || value.nosqlObject || value.nosqlUnknown || value.callable || value.constructed || value.mongoDb || value.mongoCollection || seen.has(value) || depth > 16 || seen.size > 128) return true;
@@ -686,7 +749,7 @@ function hasMutableQuery(value: FlowValue, seen = new Set<FlowValue>(), depth = 
 }
 
 function contextValue(value: FlowValue): unknown {
-  return [value.kind, value.root, value.expressResponse ? [value.expressResponse.authority, value.expressResponse.mime, value.expressResponse.valid, value.expressResponse.contained] : undefined, value.expressObjectBody, value.inputRelated, value.trace, value.traceTruncated, value.urlFragments, value.nativeQuery, value.queryContent ? queryContent(value) : undefined,
+  return [value.kind, value.root, value.htmlFragments, value.expressResponse ? [value.expressResponse.authority, value.expressResponse.mime, value.expressResponse.valid, value.expressResponse.contained] : undefined, value.expressObjectBody, value.inputRelated, value.trace, value.traceTruncated, value.urlFragments, value.nativeQuery, value.queryContent ? queryContent(value) : undefined,
     value.httpTargetUnavailable, value.sqlScalarUnavailable, value.sqlFixedText?.maxCharacters, value.sqlCallback, value.sqlDataUnavailable, value.sqlArray ? [value.sqlArray.node.getSourceFile().fileName,value.sqlArray.node.pos,value.sqlArray.closed,value.sqlArray.count] : undefined,
     value.sqlConfig ? [value.sqlConfig.node.getSourceFile().fileName,value.sqlConfig.node.pos,value.sqlConfig.closed,contextValue(value.sqlConfig.text),value.sqlConfig.values ? contextValue(value.sqlConfig.values) : undefined] : undefined,
     value.httpConfig ? [value.httpConfig.node.getSourceFile().fileName, value.httpConfig.node.pos, value.httpConfig.closed,
@@ -714,11 +777,20 @@ class FlowSession {
   readonly koaModel: KoaRoleModel;
   readonly honoModel: HonoRoleModel;
   readonly browserLocationModel: BrowserLocationRoleModel;
+  readonly sendModel: SendRoleModel;
+  readonly nodeResponseModel: NodeResponseRoleModel;
+  private readonly regularShapes = new WeakMap<RegularClosureShape['target'], ShapeResult<RegularClosureShape>>();
+  private readonly callbackInspections: Array<{ callback: RegularCallback; origin: ts.Node; actuals?: readonly FlowValue[]; receiver?: FlowValue; identity: string; ancestors: readonly string[] }> = [];
+  private readonly callbackInspectionKeys = new Set<string>();
+  callbackInspectionsQueued = 0; callbackInspectionsStarted = 0; callbackInspectionsDropped = 0;
   readonly active = new Set<string>();
   readonly cache = new Map<string, FunctionSummary>();
   readonly localForkCalls = new WeakMap<ts.CallExpression, { complete: boolean }>();
   private readonly closureShapes = new WeakMap<ts.ArrowFunction, ShapeResult<ClosureShape>>();
   private readonly constructorShapes = new WeakMap<ts.FunctionLikeDeclaration, ShapeResult<ConstructorShape>>();
+  private readonly restProofs = new WeakMap<ts.ParameterDeclaration, boolean>();
+  private readonly restEscapePaths = new WeakMap<ts.ParameterDeclaration, string[][]>();
+  restBindingsRecognized = 0; restBindingsUnsupported = 0; restSlotsMaterialized = 0;
   private capabilityIdentity = 0;
   indexWork = 0;
   flowWork = 0;
@@ -734,6 +806,14 @@ class FlowSession {
   summaryWork = 0;
   resolvedCalls = 0;
   unsupportedCalls = 0;
+  configuredCallContexts = 0;
+  private readonly configuredInspections: Array<ConfiguredInspection | undefined> = [];
+  private configuredSnapshotValues = 0;
+  configuredInspectionsQueued = 0;
+  configuredInspectionsStarted = 0;
+  configuredInspectionsDropped = 0;
+  configuredInspectionWork = 0;
+  readonly nativeModuleContext?: StaticCandidateContext;
 
   constructor(files: readonly ts.SourceFile[], readonly limits: FlowLimits, parseErrorCount = 0, readonly roleProofScopeComplete = true, parseFiles?: Iterable<ParseFileEvidence>, metadata: readonly CollectedFile[] = []) {
     if (parseFiles === undefined) this.diagnostics.record('parse_error', 'parse', undefined, parseErrorCount);
@@ -751,7 +831,7 @@ class FlowSession {
     }
     this.maxIndexWork = limits.indexWork ?? FLOW_LIMITS.indexWork;
     this.maxFlowWork = limits.flowWork ?? FLOW_LIMITS.flowWork;
-    this.modules = new StaticModules(files, () => this.tick(), limits, (reason) => this.incomplete(reason), roleProofScopeComplete);
+    this.modules = new StaticModules(files, () => this.tick(), limits, (reason) => this.incomplete(reason), roleProofScopeComplete, metadata);
     this.queryModel = new NativeQueryModel(this.modules, () => this.tick(), this.indexComplete);
     this.httpModel = new HttpRoleModel(this.modules, () => this.tick(), roleProofScopeComplete, this.indexComplete);
     this.sqlModel = new SqlRoleModel(this.modules, () => this.tick(), roleProofScopeComplete, this.indexComplete);
@@ -765,8 +845,16 @@ class FlowSession {
     this.koaModel = new KoaRoleModel(this.modules, () => this.tick(), this.indexComplete);
     this.honoModel = new HonoRoleModel(this.modules, () => this.tick(), this.indexComplete, roleProofScopeComplete);
     this.browserLocationModel = new BrowserLocationRoleModel(this.modules, () => this.tick(), roleProofScopeComplete, limits.aliasSteps);
+    this.sendModel = new SendRoleModel(this.modules, () => this.tick());
+    this.nodeResponseModel = new NodeResponseRoleModel(this.modules, () => this.tick(), (node) => this.gap('module_export_unsupported', node), this.indexComplete);
     this.modules.finishIndex(this.indexComplete);
     this.phase = 'flow';
+    this.nodeResponseModel.reportDiagnostics();
+    const nativeLoad = this.modules.configuredNativeLoads.values().next().value as ts.Node | undefined;
+    if (nativeLoad) {
+      this.nativeModuleContext = conditionalContext('configured_module_resolution', nativeLoad);
+      this.gap('module_export_unsupported', nativeLoad);
+    }
   }
 
   private incomplete(reason: string, call?: ts.Node): void {
@@ -806,6 +894,167 @@ class FlowSession {
       captures.set(symbol, captured ?? UNKNOWN);
     }
     return { target, captures, lexicalThis: result.shape.lexicalThis ? lexicalThis : undefined, identity: ++this.capabilityIdentity, staticContext };
+  }
+
+  regularClosure(target: RegularClosureShape['target'], env: FlowEnv): RegularCallback | undefined {
+    if (!this.modules.indexComplete || target.asteriskToken || target.modifiers?.some(item => item.kind === ts.SyntaxKind.AsyncKeyword)) return undefined;
+    let shape = this.regularShapes.get(target);
+    if (!shape) { shape = analyzeRegularClosureShape(target, this.modules, () => this.tick()); this.regularShapes.set(target, shape); }
+    if (shape.kind !== 'supported') { this.gap('module_export_unsupported', target); return undefined; }
+    const captures = new Map<ts.Symbol, FlowValue>();
+    for (const symbol of shape.shape.captures) {
+      if (!this.tick() || captures.size >= this.limits.traceSteps) { this.gap('alias_limit', target); return undefined; }
+      const value = env.captured(symbol) ?? UNKNOWN;
+      // Changed captured data is unknown; a callback target is never a negative certificate.
+      captures.set(symbol, this.modules.mutated.has(symbol) ? this.declaredValue(value) : value);
+    }
+    return { target, captures, valid: true };
+  }
+
+  enqueueCallback(callback: RegularCallback, origin: ts.Node, actuals?: readonly FlowValue[], receiver?: FlowValue): void {
+    const identity = `html-callback:${callback.target.getSourceFile().fileName}:${callback.target.pos}`;
+    if (this.active.has(identity) || this.active.size >= this.limits.callDepth) { this.callbackInspectionsDropped++; this.gap('summary_cycle', origin); return; }
+
+    if (!callback.valid || this.callbackInspectionsQueued >= this.limits.functions || !this.tick()) {
+      this.callbackInspectionsDropped++; this.gap('summary_limit', origin); return;
+    }
+    // Detached, bounded provenance plus inspection-only callback targets. Never
+    // transmit native/callable/sanitizer certificates back to a caller.
+    let copied = 0, complete = true;
+    const seen = new Set<FlowValue>();
+    const nodeStates = new Map<NodeResponseState, NodeResponseState>();
+    const copy = (value: FlowValue, depth = 0): FlowValue => {
+      const plain: FlowValue = { kind: value.kind, root: value.root, inputRelated: isInputRelated(value),
+        trace: value.trace, traceTruncated: true, traceSourceKind: value.traceSourceKind,
+        staticContext: value.staticContext, sendIncomingRequest: value.sendIncomingRequest,
+        sqlScalarUnavailable: true, sqlDataUnavailable: true, httpTargetUnavailable: true };
+      if (depth >= this.limits.callDepth || copied++ >= this.limits.traceSteps || this.configuredSnapshotValues++ >= this.limits.summaryWork || seen.has(value) || !this.tick()) {
+        complete = false; return plain;
+      }
+      seen.add(value);
+      plain.htmlFragments = value.htmlFragments;
+      if (value.nodeResponse) {
+        let state = nodeStates.get(value.nodeResponse);
+        if (!state) {
+          // Callback scheduling is unknown. Retain aliases, but establish MIME
+          // afresh inside the inspected callback rather than reuse outer headers.
+          state = { ...value.nodeResponse, identity: {}, mime: 'unknown' };
+          nodeStates.set(value.nodeResponse, state);
+        }
+        plain.nodeResponse = state;
+      }
+      if (value.properties) {
+        const properties = new Map<string, FlowValue>();
+        for (const [key, child] of value.properties) {
+          if (properties.size >= this.limits.traceSteps) { complete = false; break; }
+          properties.set(key, copy(child, depth + 1));
+        }
+        plain.properties = properties;
+      }
+      if (value.regularCallbacks) plain.regularCallbacks = value.regularCallbacks.slice(0, this.limits.traceSteps).map(frame => ({
+        ...frame, captures: new Map([...frame.captures].slice(0, this.limits.traceSteps).map(([symbol, child]) => [symbol, copy(child, depth + 1)])) }));
+      plain.regularCallbacksComplete = value.regularCallbacksComplete;
+      seen.delete(value); return plain;
+    };
+    const frame: RegularCallback = { ...callback, captures: new Map([...callback.captures].map(([symbol, value]) => [symbol, copy(value)])) };
+    const args = actuals?.map(value => copy(value)), dynamicThis = receiver ? copy(receiver) : undefined;
+    if (!complete) { this.callbackInspectionsDropped++; this.gap('alias_limit', origin); return; }
+    this.callbackInspections.push({ callback: frame, origin, actuals: args, receiver: dynamicThis, identity, ancestors: [...this.active] });
+    this.callbackInspectionsQueued++;
+    this.gap('module_export_unsupported', origin);
+  }
+
+  private inspectCallbacks(): void {
+    for (let cursor = 0; cursor < this.callbackInspections.length; cursor++) {
+      const task = this.callbackInspections[cursor];
+      if (!this.canStartFlow() || this.summaryWork >= this.limits.summaryWork || !this.tick()) {
+        this.callbackInspectionsDropped += this.callbackInspections.length - cursor;
+        this.gap('summary_limit', task.origin); break;
+      }
+      for (const ancestor of task.ancestors) this.active.add(ancestor);
+      if (this.active.has(task.identity) || this.active.size >= this.limits.callDepth) {
+        this.callbackInspectionsDropped++; this.gap('summary_cycle', task.origin); this.active.clear(); continue;
+      }
+      this.active.add(task.identity); this.summaryWork++; this.callbackInspectionsStarted++; this.functionContextsStarted++;
+      const analyzer = new DataflowAnalyzer(task.callback.target.getSourceFile(), this);
+      const context = contexts(conditionalContext('declared_callback_entry', task.origin, task.callback.target),
+        task.receiver ? conditionalContext('declared_package_api', task.origin) : undefined);
+      const returned = analyzer.analyzeFunction(task.callback.target, task.actuals, undefined, true, undefined, context,
+        false, task.callback, task.receiver);
+      for (const nested of returned.regularCallbacks ?? []) this.enqueueCallback(nested, task.callback.target);
+      this.uses.push(...analyzer.output()); this.active.clear(); this.functionContextsPartial++;
+    }
+    this.callbackInspections.length = 0;
+  }
+
+  restPristine(parameter: ts.ParameterDeclaration, target: ts.FunctionLikeDeclaration, actuals: readonly FlowValue[]): boolean {
+    const elementKey = (node: ts.Expression | undefined): string => node &&
+      (ts.isStringLiteralLike(node) || ts.isNumericLiteral(node)) ? node.text : '*';
+    const compound = (value: FlowValue | undefined): boolean => !!value && (!!value.properties || value.kind === 'root'
+      || value.kind === 'unknown' && !isInputRelated(value)
+      || !!value.constructed || !!value.callable || !!value.expressResponse || !!value.koaRequest || !!value.honoRequest
+      || !!value.mongoDb || !!value.mongoCollection || !!value.sequenceContent || !!value.restTuple);
+    const unescaped = (): boolean => {
+      for (const path of this.restEscapePaths.get(parameter) ?? []) {
+        if (!this.tick()) return false;
+        if (path[0] === 'length') continue;
+        if (path.includes('*') && actuals.some(compound)) return false;
+        if (!/^(0|[1-9]\d*)$/.test(path[0])) { if (actuals.some(compound)) return false; continue; }
+        let selected: FlowValue | undefined = actuals[Number(path[0])];
+        for (const key of path.slice(1)) {
+          if (!this.tick()) return false;
+          selected = selected?.properties?.get(key);
+        }
+        if (compound(selected)) return false;
+      }
+      return true;
+    };
+    const cached = this.restProofs.get(parameter); if (cached !== undefined) return cached && unescaped();
+    const escapes: string[][] = [];
+    let valid = this.modules.indexComplete && ts.isIdentifier(parameter.name)
+      && !target.parameters.some(item => item.initializer);
+    const queue: ts.Symbol[] = [], seen = new Set<ts.Symbol>();
+    const add = (name: ts.Identifier): boolean => {
+      const symbol = this.modules.symbol(name);
+      if (!symbol || symbol.declarations?.length !== 1 || this.modules.mutated.has(symbol)) return false;
+      if (!seen.has(symbol)) { seen.add(symbol); queue.push(symbol); }
+      return true;
+    };
+    if (ts.isIdentifier(parameter.name) && !add(parameter.name)) valid = false;
+    for (let cursor = 0; valid && cursor < queue.length; cursor++) {
+      if (!this.tick() || cursor >= this.limits.aliasSteps) { valid = false; break; }
+      for (const reference of this.modules.references.get(queue[cursor]) ?? []) {
+        if (!this.tick()) { valid = false; break; }
+        if (reference.parent === queue[cursor].declarations![0]) continue;
+        if (this.modules.ownerOf(reference) !== target) { valid = false; break; }
+        let node: ts.Node = reference;
+        while (node.parent && (ts.isParenthesizedExpression(node.parent) || ts.isAsExpression(node.parent)
+          || ts.isNonNullExpression(node.parent) || ts.isTypeAssertionExpression(node.parent))) {
+          if (!this.tick()) { valid = false; break; } node = node.parent;
+        }
+        const parent = node.parent;
+        if (parent && ts.isVariableDeclaration(parent) && parent.initializer === node
+          && ts.isIdentifier(parent.name) && parent.parent.flags & ts.NodeFlags.Const && add(parent.name)) continue;
+        if (!parent || !(ts.isElementAccessExpression(parent) || ts.isPropertyAccessExpression(parent))
+          || parent.expression !== node) { valid = false; break; }
+        let member: ts.Node = parent;
+        const path = [ts.isElementAccessExpression(parent) ? elementKey(parent.argumentExpression): parent.name.text];
+        while (member.parent && (ts.isPropertyAccessExpression(member.parent) || ts.isElementAccessExpression(member.parent))
+          && member.parent.expression === member) {
+          if (!this.tick() || path.length >= this.limits.callDepth) { valid = false; break; }
+          member = member.parent;
+          path.push(ts.isPropertyAccessExpression(member) ? member.name.text : elementKey((member as ts.ElementAccessExpression).argumentExpression));
+        }
+        const use = member.parent;
+        // Every terminal compound read may escape through wrappers, assignments
+        // or containers. A scalar leaf is still independently selectable.
+        escapes.push(path);
+        if (use && (ts.isDeleteExpression(use) || ts.isPrefixUnaryExpression(use) || ts.isPostfixUnaryExpression(use)
+          || ts.isBinaryExpression(use) && use.left === member && isAssignmentOperator(use.operatorToken.kind)
+          || ts.isCallExpression(use) && use.expression === member)) { valid = false; break; }
+      }
+    }
+    this.restProofs.set(parameter, valid); this.restEscapePaths.set(parameter, escapes); return valid && unescaped();
   }
 
   opaqueCaptures(target: ts.ArrowFunction, env: FlowEnv): FlowValue {
@@ -888,10 +1137,14 @@ class FlowSession {
     const localFork = ts.isIdentifier(call.expression) && (call.expression.text === 'fork' || PROCESS_METHODS.has(call.expression.text));
     let proof = localFork ? this.localForkCalls.get(call) : undefined;
     if (localFork && !proof) { proof = { complete: true }; this.localForkCalls.set(call, proof); }
-    const observed = (complete: boolean): void => { if (proof) proof.complete &&= complete && this.roleProofScopeComplete && this.modules.indexComplete; };
+    const observed = (complete: boolean): void => { if (proof) proof.complete &&= complete && this.roleProofScopeComplete && this.modules.indexComplete && this.modules.configuredNativeIdentityComplete; };
     const initial: CallResolution = capability && this.modules.indexComplete ? { kind: 'resolved' as const, target: capability.target } : this.modules.resolveCall(call,true,receiver);
     let resolution = initial.kind === 'resolved' || initial.kind === 'declared' ? initial : this.modules.resolveCjsFunctionCall(call) ?? initial;
     let staticContext = contexts(inheritedContext, capability?.staticContext, ...args.map(value => value.staticContext));
+    if ((resolution.kind === 'resolved' || resolution.kind === 'declared') && resolution.configured) {
+      staticContext = contexts(staticContext, conditionalContext('configured_module_resolution', call, resolution.target));
+      this.configuredCallContexts++;
+    }
     if (resolution.kind !== 'resolved' && resolution.kind !== 'declared') {
       const target = this.modules.discoverCjsBody(call);
       if (target) { resolution = { kind: 'declared', target }; staticContext = contexts(staticContext, conditionalContext('unresolved_cjs_dispatch', call, target)); }
@@ -903,6 +1156,33 @@ class FlowSession {
       if (resolution.kind === "export_unsupported") this.unsupportedCalls += 1;
       return undefined;
     }
+    if (resolution.configured) {
+      // This newly discovered body never precedes the existing root inventory.
+      // Its eventual return/capabilities cannot flow back into the caller.
+      observed(false);
+      this.gap('module_export_unsupported', call);
+      const context = staticContext!;
+      const identity = this.invocationIdentity(resolution.target, undefined, true);
+      // Caller fallback covers every already-evaluated argument. Optional body
+      // copy limits must not erase input in an argument omitted from its frame.
+      const callerInput = this.returnInput(args);
+      const snapshots = this.configuredActuals(args, context, call);
+      this.invalidateActuals(args, context);
+      if (this.active.has(identity)) { this.configuredInspectionsDropped++; this.gap('summary_cycle', call); }
+      else if (this.active.size >= this.limits.callDepth) { this.configuredInspectionsDropped++; this.gap('depth_limit', call); }
+      else if (this.configuredInspectionsQueued >= this.limits.functions
+        || this.configuredSnapshotValues >= this.limits.summaryWork) {
+        this.configuredInspectionsDropped++; this.gap('summary_limit', call);
+      } else if (!this.tick()) this.configuredInspectionsDropped++;
+      else {
+        this.configuredInspections.push({ call, target: resolution.target, actuals: snapshots,
+          context, ancestors: [...this.active], identity });
+        this.configuredInspectionsQueued++;
+      }
+      return withContext({ kind: 'unknown', inputRelated: !!callerInput,
+        trace: callerInput?.trace, traceSourceKind: callerInput?.traceSourceKind, traceTruncated: true,
+        sqlScalarUnavailable: true, sqlDataUnavailable: true, httpTargetUnavailable: true }, context);
+    }
     const declared = declaredContext || resolution.kind === 'declared' || !!staticContext;
     const snapshots = new Map<FlowValue, FlowValue>();
     const actualFrame = args.map(value => staticContext ? this.conditionalValue(value, staticContext, 0, snapshots) : declared ? this.declaredValue(value) : value);
@@ -912,7 +1192,10 @@ class FlowSession {
     const target = resolution.target;
     const seeded = actualFrame.map(value => traced(value, call, 'call'));
     const identity = this.invocationIdentity(target,resolution.receiver,declared) + (capability ? `:${capability.identity}` : '');
-    const cacheable = !declared && !capability && !seeded.some((value) => hasMutableQuery(value));
+    const unresolvedRestSpread = target.parameters.some(parameter => parameter.dotDotDotToken)
+      && call.arguments.some(ts.isSpreadElement);
+    const cacheable = !declared && !capability && !target.parameters.some(parameter => parameter.dotDotDotToken)
+      && !seeded.some((value) => hasMutableQuery(value));
     const key = cacheable ? `${identity}:${JSON.stringify(seeded.map((value) => contextValue(value)))}` : undefined;
     const cached = key ? this.cache.get(key) : undefined;
     if (cached) { observed(true); return resolution.receiver ? this.receiverReturned(cached.returned) : this.sqlReturned(target, cached.returned); }
@@ -930,7 +1213,7 @@ class FlowSession {
     const before = this.incompleteEvents;
     this.functionContextsStarted += 1;
     const frame = capability ? { ...capability, staticContext, captures: new Map([...capability.captures].map(([symbol, value]) => [symbol, traced(staticContext ? this.conditionalValue(value, staticContext) : value, call, 'call')])) } : undefined;
-    const returned = analyzer.analyzeFunction(target, seeded,resolution.receiver,declared,frame,staticContext);
+    const returned = analyzer.analyzeFunction(target, seeded,resolution.receiver,declared,frame,staticContext,unresolvedRestSpread);
     observed(this.incompleteEvents === before);
     if (this.incompleteEvents === before) this.functionContextsCompleted += 1;
     else this.functionContextsPartial += 1;
@@ -941,7 +1224,7 @@ class FlowSession {
       if (staticContext) {
         const projected = this.conditionalValue(returned, staticContext);
         const fallback = this.returnInput([...seeded, ...(capability?.boundaryInput ? [capability.boundaryInput] : [])]);
-        if (projected.callable || projected.constructed || projected.mongoDb || projected.mongoCollection) {
+        if (projected.callable || projected.regularCallbacks || projected.constructed || projected.mongoDb || projected.mongoCollection) {
           const boundaryInput = this.returnInput([...(projected.boundaryInput ? [projected.boundaryInput] : []), ...(fallback ? [fallback] : [])]);
           return { ...projected, boundaryInput, ...(projected.callable ? { callable: { ...projected.callable, boundaryInput } } : {}) };
         }
@@ -960,6 +1243,85 @@ class FlowSession {
     return inputs.length ? combineValues(inputs) : undefined;
   }
 
+  /** Detached positive data only: no shared heap cell or negative certificate. */
+  private configuredActuals(values: readonly FlowValue[], context: StaticCandidateContext, call: ts.CallExpression): readonly FlowValue[] {
+    let copied = 0;
+    const seen = new Set<FlowValue>();
+    const snapshot = (value: FlowValue, depth: number): FlowValue => {
+      const current = currentQuery(consumedInput(value));
+      const input = isInputRelated(current);
+      const plain: FlowValue = { kind: input ? current.kind : 'unknown', root: current.root,
+        inputRelated: input, traceTruncated: true, traceSourceKind: current.traceSourceKind,
+        sqlScalarUnavailable: true, sqlDataUnavailable: true, httpTargetUnavailable: true, staticContext: context };
+      if (depth >= this.limits.callDepth || copied >= this.limits.traceSteps
+        || this.configuredSnapshotValues >= this.limits.summaryWork || seen.has(value)) {
+        this.gap('alias_limit', call); return Object.freeze(plain);
+      }
+      if (!this.tick()) return Object.freeze(plain);
+      copied++; this.configuredSnapshotValues++; seen.add(value);
+      if (current.trace) {
+        plain.trace = [];
+        for (const item of current.trace.slice(0, this.limits.traceSteps)) {
+          if (!this.tick()) break;
+          plain.trace.push(Object.freeze({ role: item.role, location: Object.freeze({ ...item.location }) }));
+        }
+        Object.freeze(plain.trace);
+      }
+      if (current.properties) {
+        const properties = new Map<string, FlowValue>();
+        for (const [name, child] of current.properties) {
+          if (copied >= this.limits.traceSteps || this.configuredSnapshotValues >= this.limits.summaryWork) {
+            this.gap('alias_limit', call); break;
+          }
+          properties.set(name, snapshot(child, depth + 1));
+        }
+        plain.properties = properties;
+      }
+      seen.delete(value);
+      return Object.freeze(plain);
+    };
+    const result: FlowValue[] = [];
+    for (const value of values) {
+      if (result.length >= this.limits.traceSteps) { this.gap('alias_limit', call); break; }
+      result.push(snapshot(value, 0));
+    }
+    return Object.freeze(result);
+  }
+
+  private inspectConfiguredBodies(): void {
+    const start = this.flowWork;
+    for (let cursor = 0; cursor < this.configuredInspections.length; cursor++) {
+      const inspection = this.configuredInspections[cursor]!;
+      this.configuredInspections[cursor] = undefined;
+      if (!this.canStartFlow()) {
+        this.configuredInspectionsDropped += this.configuredInspections.length - cursor;
+        this.tick(); break;
+      }
+      if (!this.tick()) { this.configuredInspectionsDropped++; continue; }
+      if (this.summaryWork >= this.limits.summaryWork) {
+        this.configuredInspectionsDropped++; this.gap('summary_limit', inspection.call); continue;
+      }
+      for (const identity of inspection.ancestors) this.active.add(identity);
+      if (this.active.has(inspection.identity) || this.active.size >= this.limits.callDepth) {
+        this.configuredInspectionsDropped++;
+        this.gap(this.active.has(inspection.identity) ? 'summary_cycle' : 'depth_limit', inspection.call);
+        this.active.clear(); continue;
+      }
+      this.active.add(inspection.identity); this.summaryWork++; this.functionContextsStarted++;
+      this.configuredInspectionsStarted++;
+      const before = this.incompleteEvents;
+      const analyzer = new DataflowAnalyzer(inspection.target.getSourceFile(), this);
+      analyzer.analyzeFunction(inspection.target, inspection.actuals.map(value => traced(value, inspection.call, 'call')),
+        undefined, true, undefined, inspection.context, inspection.target.parameters.some(parameter => parameter.dotDotDotToken)
+          && inspection.call.arguments.some(ts.isSpreadElement));
+      this.uses.push(...analyzer.output()); this.active.clear();
+      if (this.incompleteEvents === before) this.functionContextsCompleted++;
+      else this.functionContextsPartial++;
+    }
+    this.configuredInspections.length = 0;
+    this.configuredInspectionWork = this.flowWork - start;
+  }
+
   /** Unknown call effects are applied even when a possible body is inspected. */
   invalidateActuals(values: readonly FlowValue[], staticContext?: StaticCandidateContext): void {
     const seen = new Set<FlowValue>();
@@ -973,6 +1335,8 @@ class FlowSession {
       if (value.koaRequest) { value.koaRequest.state.valid = false; this.gap('module_export_unsupported'); }
       if (value.honoRequest) { invalidateHono(value.honoRequest); this.gap('module_export_unsupported'); }
       invalidateMongo(value.mongoDb, 'opaque'); invalidateMongo(value.mongoCollection, 'opaque');
+      if (value.nodeResponse) { value.nodeResponse.valid = false; value.nodeResponse.mime = 'unknown'; }
+      if (value.sendStream) value.sendStream.valid = false;
       if (value.constructed) { value.constructed.valid = false; value.constructed.staticContext = contexts(value.constructed.staticContext, staticContext); for (const slot of value.constructed.slots.values()) visit(slot, depth + 1); }
       if (value.callable) { value.callable.valid = false; value.callable.staticContext = contexts(value.callable.staticContext, staticContext); for (const captured of value.callable.captures.values()) visit(captured, depth + 1); if (value.callable.lexicalThis) visit(value.callable.lexicalThis, depth + 1); }
       // Preserve a previously recognized response shape, but no MIME exclusion.
@@ -1019,6 +1383,10 @@ class FlowSession {
       captures: new Map([...value.callable.captures].map(([symbol, child]) => [symbol, project(child)])), lexicalThis: value.callable.lexicalThis ? project(value.callable.lexicalThis) : undefined };
     if (value.opaqueClosure) result.opaqueClosure = project(value.opaqueClosure);
     if (value.boundaryInput) result.boundaryInput = project(value.boundaryInput);
+    if (value.htmlFragments) result.htmlFragments = value.htmlFragments;
+    if (value.regularCallbacks) result.regularCallbacks = value.regularCallbacks;
+    result.regularCallbacksComplete = value.regularCallbacksComplete;
+    if (value.nodeResponse) result.nodeResponse = value.nodeResponse;
     return result;
   }
 
@@ -1063,12 +1431,15 @@ class FlowSession {
       const receiver=this.modules.rootReceiver(fn);
       const identity=this.invocationIdentity(fn,receiver);
       this.active.add(identity);
-      analyzer.analyzeFunction(fn,undefined,receiver);
+      const returned = analyzer.analyzeFunction(fn,undefined,receiver);
+      for (const callback of returned.regularCallbacks ?? []) this.enqueueCallback(callback, fn);
       this.active.delete(identity);
       if (this.incompleteEvents === before) { this.entryRootsCompleted += 1; this.functionContextsCompleted += 1; }
       else { this.entryRootsPartial += 1; this.functionContextsPartial += 1; }
       this.uses.push(...analyzer.output());
     }
+    this.inspectCallbacks();
+    this.inspectConfiguredBodies();
   }
 }
 
@@ -1086,6 +1457,50 @@ class DataflowAnalyzer {
   private readonly conditionalActuals = new WeakMap<ts.ConditionalExpression, { env: FlowEnv; value: FlowValue }>();
   private constructedReceiver?: FlowValue;
   private constructorGuards?: ReadonlySet<ts.IfStatement>;
+
+  private htmlBudget(node: ts.Node): HtmlBudget {
+    return { tick: () => this.session?.tick() ?? true, gap: () => this.session?.gap('module_export_unsupported', node),
+      maxParts: this.session?.limits.traceSteps ?? FLOW_LIMITS.traceSteps, maxCharacters: 2048 };
+  }
+  private htmlValue(value: FlowValue, node: ts.Node): HtmlFragments {
+    return value.htmlFragments ?? htmlHole(isInputRelated(value), evidence(traced(value, node, 'intermediate'), node), this.htmlBudget(node));
+  }
+  private htmlConcatenation(values: readonly FlowValue[], node: ts.Node): FlowValue {
+    const value = concatValues(values);
+    return { ...value, htmlFragments: htmlConcat(values.map(item => this.htmlValue(item, node)),
+      { kind: 'hole', inputRelated: isInputRelated(value), staticFlow: evidence(value, node) }, this.htmlBudget(node)) };
+  }
+  private sendRead(call: ts.CallExpression, receiver: FlowValue | undefined, args: readonly FlowValue[]): FlowValue | undefined {
+    if (!this.session) return undefined;
+    if (this.session.sendModel.factory(call)) {
+      this.session.gap('module_export_unsupported', call);
+      const request = args[0] ?? UNKNOWN;
+      return { ...UNKNOWN, staticContext: conditionalContext('declared_package_api', call),
+        sendStream: { origin: call, identity: {}, valid: true, request: request.kind === 'unknown' && !request.properties
+          ? { ...UNKNOWN_INPUT, traceTruncated: true } : request, callbacks: [] } };
+    }
+    const stream = receiver?.sendStream;
+    if (!stream) return undefined;
+    const member = call.expression;
+    const method = ts.isPropertyAccessExpression(member) && !member.questionDotToken && !call.questionDotToken ? member.name.text : undefined;
+    if (stream.valid && method === 'on' && call.arguments.length === 2 && ts.isStringLiteralLike(call.arguments[0])) {
+      if (call.arguments[0].text === 'directory') {
+        if (!args[1]?.regularCallbacks?.length || args[1].regularCallbacksComplete === false) this.session.gap('module_export_unsupported', call);
+        for (const callback of args[1]?.regularCallbacks ?? []) {
+          if (!this.session.tick() || stream.callbacks.length >= this.session.limits.traceSteps) { this.session.gap('alias_limit', call); break; }
+          stream.callbacks.push({ callback, registration: call });
+        }
+      } else this.session.gap('module_export_unsupported', call);
+      return receiver;
+    }
+    if (stream.valid && method === 'pipe' && call.arguments.length === 1 && !call.arguments.some(ts.isSpreadElement)) {
+      const response: FlowValue = { ...UNKNOWN, nodeResponse: { identity: {}, valid: true, mime: 'unknown', authority: 'declared_node_response' } };
+      const dynamicThis: FlowValue = { ...UNKNOWN, properties: new Map([['req', { ...stream.request, sendIncomingRequest: true }]]) };
+      for (const item of stream.callbacks) this.session.enqueueCallback(item.callback, item.registration, [response], dynamicThis);
+      return args[0] ?? UNKNOWN;
+    }
+    stream.valid = false; this.session.gap('module_export_unsupported', call); return UNKNOWN;
+  }
 
   /** Lookup selected callable values without replaying arbitrary callee expressions. */
   private capabilityValue(expression: ts.Expression, env: FlowEnv): FlowValue {
@@ -1118,15 +1533,31 @@ class DataflowAnalyzer {
   private staticContext?: StaticCandidateContext;
 
   constructor(private readonly sourceFile: ts.SourceFile, private readonly session?: FlowSession) {}
+  private certificateAvailable(): boolean {
+    return !this.declared && !this.staticContext && this.session?.modules.configuredNativeIdentityComplete !== false;
+  }
+  private filesystemCertificateAvailable(values: readonly FlowValue[]): boolean {
+    if (this.session?.modules.configuredNativeIdentityComplete === false) return false;
+    // Existing stream/callback provenance does not contradict a separately
+    // qualified shell-disabled primitive argv layout. Configured module
+    // identity (or a truncated context hiding it) still forbids that exclusion.
+    for (const context of [this.staticContext, ...values.map(value => consumedInput(value).staticContext)]) {
+      if (!context) continue;
+      if (this.session && !this.session.tick()) return false;
+      if (context.truncated || context.items.some(item => item.kind === 'configured_module_resolution')) return false;
+    }
+    return true;
+  }
 
   output(): InputFlowUse[] {
     return this.uses.map(use => {
-      const staticContext = contexts(this.staticContext, use.staticContext);
+      const staticContext = contexts(this.staticContext, use.staticContext, this.session?.nativeModuleContext);
       if (!staticContext) return use;
       if (staticContext.truncated) this.session?.gap('module_export_unsupported', use.node);
       const conditionalFlow = (flow: StaticFlow | undefined) => flow ? { ...flow, truncated: true } : undefined;
       return { ...use, staticContext,
         argumentFlows: use.argumentFlows?.map(flow => ({ ...flow, certainty: 'unknown' as const, fixedDestination: false, staticFlow: conditionalFlow(flow.staticFlow) })),
+        ...(use.nodeHtml ? { nodeHtml: { ...use.nodeHtml, staticFlow: conditionalFlow(use.nodeHtml.staticFlow) } } : {}),
         ...(use.nosqlRole ? { nosqlRole: { ...use.nosqlRole, certainty: 'unknown' as const, staticFlow: conditionalFlow(use.nosqlRole.staticFlow) } } : {}),
         ...(use.sqlRole ? { sqlRole: { ...use.sqlRole, certainty: 'unknown' as const, staticFlow: conditionalFlow(use.sqlRole.staticFlow) } } : {}),
         ...(use.httpRole ? { httpRole: { ...use.httpRole, certainty: 'unknown' as const, staticFlow: conditionalFlow(use.httpRole.staticFlow) } } : {}),
@@ -1147,22 +1578,31 @@ class DataflowAnalyzer {
     return this.uses;
   }
 
-  analyzeFunction(functionLike: ts.FunctionLikeDeclaration, actuals?: readonly FlowValue[], receiver?: SingletonReceiver, declared=false, capability?: FlowValue['callable'], inheritedContext?: StaticCandidateContext): FlowValue {
+  analyzeFunction(functionLike: ts.FunctionLikeDeclaration, actuals?: readonly FlowValue[], receiver?: SingletonReceiver, declared=false, capability?: FlowValue['callable'], inheritedContext?: StaticCandidateContext, unresolvedSpread = false, regular?: RegularCallback, dynamicReceiver?: FlowValue): FlowValue {
     this.staticContext = contexts(inheritedContext, capability?.staticContext);
     if (this.staticContext?.truncated) this.session?.gap('module_export_unsupported', functionLike);
     this.receiver=receiver; this.declared=declared || !!this.staticContext;
     const env = new FlowEnv();
     if (!actuals && !capability && ts.isArrowFunction(functionLike)) this.session?.declaredOwnedRoot(functionLike);
-    this.constructedReceiver = capability?.lexicalThis;
-    for (const [symbol, value] of capability?.captures ?? []) env.declare(symbol.name, value, true, symbol);
+    this.constructedReceiver = dynamicReceiver ?? capability?.lexicalThis;
+    for (const [symbol, value] of regular?.captures ?? capability?.captures ?? []) env.declare(symbol.name, value, true, symbol);
     const expressEntry = this.session?.expressModel.entry(functionLike);
+    const nodeEntry = this.session?.nodeResponseModel.entry(functionLike);
+    if (nodeEntry) { this.staticContext = contexts(this.staticContext, conditionalContext('declared_package_api', nodeEntry.origin, functionLike)); this.declared = true; this.session?.gap('module_export_unsupported', nodeEntry.origin); }
     const koaEntry = this.session?.koaModel.entry(functionLike);
     const koaState = { valid: true };
     const honoEntry = this.session?.honoModel.entry(functionLike);
     const honoState = { valid: true, jsonDataValid: this.session?.honoModel.isolatedJsonEntry(functionLike) === true };
     const mongoEntry = actuals ? undefined : this.session?.mongoModel.entry(functionLike);
     for (const [index, parameter] of functionLike.parameters.entries()) {
-      if (actuals) this.declareBinding(parameter.name, traced(actuals[index] ?? UNKNOWN, parameter, "parameter"), env, true);
+      if (actuals && parameter.dotDotDotToken) {
+        this.declareBinding(parameter.name, this.restActual(parameter, functionLike, unresolvedSpread ? actuals : actuals.slice(index), unresolvedSpread), env, true);
+      } else if (actuals && unresolvedSpread) {
+        this.session?.gap('module_export_unsupported', parameter);
+        this.declareBinding(parameter.name, this.restFallback(actuals, parameter), env, true);
+      } else if (actuals) this.declareBinding(parameter.name, traced(actuals[index] ?? UNKNOWN, parameter, "parameter"), env, true);
+      else if (nodeEntry) this.declareBinding(parameter.name, index === 0 ? rootValue('request') : index === 1
+        ? { ...UNKNOWN, nodeResponse: { identity: {}, valid: true, mime: 'unknown', authority: 'declared_node_response' } } : UNKNOWN, env, true);
       else if (honoEntry) this.declareBinding(parameter.name, index === 0
         ? { ...UNKNOWN, honoRequest: { stage: 'context', state: honoState } }
           : { ...UNKNOWN, honoRequest: { stage: 'next', state: honoState } }, env, true);
@@ -1194,7 +1634,12 @@ class DataflowAnalyzer {
     this.staticContext = staticContext; this.declared = !!staticContext;
     const env = new FlowEnv();
     for (const [symbol, value] of captures) env.declare(symbol.name, value, true, symbol);
-    for (const [index, parameter] of shape.target.parameters.entries()) this.declareBinding(parameter.name, traced(args[index] ?? UNKNOWN, parameter, 'parameter'), env, true);
+    for (const [index, parameter] of shape.target.parameters.entries()) {
+      if (parameter.dotDotDotToken) {
+        this.session?.gap('module_export_unsupported', parameter);
+        this.declareBinding(parameter.name, this.restFallback(args.slice(index), parameter), env, true);
+      } else this.declareBinding(parameter.name, traced(args[index] ?? UNKNOWN, parameter, 'parameter'), env, true);
+    }
     this.constructedReceiver = { ...UNKNOWN, staticContext, constructed: { valid: true, shape, slots: new Map(), staticContext } };
     this.constructorGuards = staticContext ? undefined : new Set(shape.guards);
     this.analyzeStatement(shape.target.body!, env);
@@ -1226,6 +1671,53 @@ class DataflowAnalyzer {
       return;
     }
     this.declareBinding(parameter.name, UNKNOWN, env, true);
+  }
+
+  private restFallback(values: readonly FlowValue[], parameter: ts.ParameterDeclaration): FlowValue {
+    const combined = combineValues(values.map(consumedInput));
+    return traced({ kind: 'unknown', inputRelated: isInputRelated(combined), trace: combined.trace,
+      traceSourceKind: combined.traceSourceKind, traceTruncated: true, staticContext: combined.staticContext,
+      sqlScalarUnavailable: true, sqlDataUnavailable: true, httpTargetUnavailable: true }, parameter, 'parameter');
+  }
+
+  private restActual(parameter: ts.ParameterDeclaration, target: ts.FunctionLikeDeclaration,
+    values: readonly FlowValue[], unresolved: boolean): FlowValue {
+    // Fresh positional data only: reuse traceSteps as the charged copy cap, never copy safety/callable capabilities.
+    const aggregate = this.restFallback(values, parameter);
+    let complete = values.length <= (this.session?.limits.traceSteps ?? FLOW_LIMITS.traceSteps);
+    const valid = complete && !unresolved && this.session?.restPristine(parameter, target, values) === true;
+    const slots: FlowValue[] = [];
+    let copied = 0;
+    const seen = new Set<FlowValue>();
+    const copy = (value: FlowValue, depth: number): FlowValue => {
+      const current = currentQuery(consumedInput(value));
+      const result: FlowValue = { kind: current.kind, root: current.root, inputRelated: isInputRelated(current),
+        trace: current.trace, traceTruncated: current.traceTruncated, traceSourceKind: current.traceSourceKind,
+        staticContext: current.staticContext, sqlScalarUnavailable: true, sqlDataUnavailable: true, httpTargetUnavailable: true };
+      if (seen.has(value) || depth >= (this.session?.limits.callDepth ?? FLOW_LIMITS.callDepth)
+        || copied >= (this.session?.limits.traceSteps ?? FLOW_LIMITS.traceSteps)) { complete = false; return result; }
+      if (this.session && !this.session.tick()) { complete = false; return result; }
+      copied++; seen.add(value);
+      if (current.properties) {
+        const properties = new Map<string, FlowValue>();
+        for (const [name, child] of current.properties) {
+          if (copied >= (this.session?.limits.traceSteps ?? FLOW_LIMITS.traceSteps)) { complete = false; break; }
+          properties.set(name, copy(child, depth + 1));
+        }
+        result.properties = properties;
+      }
+      seen.delete(value); return result;
+    };
+    if (valid) for (const value of values) {
+      if (!complete) break;
+      slots.push(traced(copy(value, 0), parameter, 'parameter'));
+    }
+    if (!valid || !complete) {
+      this.session?.gap(complete ? 'module_export_unsupported' : 'alias_limit', parameter);
+      if (this.session) this.session.restBindingsUnsupported++;
+    } else if (this.session) { this.session.restBindingsRecognized++; this.session.restSlotsMaterialized += slots.length; }
+    return { ...aggregate, kind: isInputRelated(aggregate) ? 'tainted' : 'unknown', traceTruncated: !valid || !complete,
+      restTuple: { slots, aggregate, valid, complete } };
   }
 
   private declareBinding(name: ts.BindingName, value: FlowValue, env: FlowEnv, blockScoped: boolean): void {
@@ -1629,18 +2121,26 @@ class DataflowAnalyzer {
         this.honoDataReads ??= new WeakMap();
         this.honoDataReads.set(expression, { env, value: honoRead });
       }
-      const applied = koaRegistration || honoRegistration ? UNKNOWN : honoRead ?? (archiveOpen ? { ...UNKNOWN, archiveRole: archiveOpen }
+      const sendRead = this.sendRead(expression, response, args);
+      const nodeKnown = response?.nodeResponse ? updateNodeResponse(expression, response.nodeResponse, () => this.session?.tick() ?? true, () => this.session?.gap('module_export_unsupported', expression)) : false;
+      const nodeHtml = response?.nodeResponse ? consumeNodeResponse(expression, response.nodeResponse, args[0] ? this.htmlValue(args[0], expression) : undefined, this.htmlBudget(expression)) : undefined;
+      if (response?.nodeResponse && !nodeKnown && !nodeHtml) {
+        response.nodeResponse.valid = false; response.nodeResponse.mime = 'unknown';
+        this.session?.gap('module_export_unsupported', expression);
+      }
+      if (nodeHtml?.staticFlow) { const trace = nodeHtml.staticFlow; const value: FlowValue = { ...UNKNOWN_INPUT, trace: trace.steps.filter(item => item.role !== 'sink'), traceTruncated: true }; nodeHtml.staticFlow = evidence(value, expression); }
+      const applied = sendRead ?? (nodeKnown || nodeHtml ? UNKNOWN : undefined) ?? (koaRegistration || honoRegistration ? UNKNOWN : honoRead ?? (archiveOpen ? { ...UNKNOWN, archiveRole: archiveOpen }
         : archivePathCall ? archivePathCall === 'predicate' ? SAFE : traced(combineValues(args), expression, 'call')
         : archiveWriter ? UNKNOWN : filesystemStream ? { ...UNKNOWN, filesystemStream }
         : arrayMutation ? cell.closed && cell.valid ? SAFE : UNKNOWN // Only qualified arrays have a length return; opaque methods remain unknown.
         : filesystemEvent ? { ...UNKNOWN, filesystemStream: response!.filesystemStream }
         : mongoCollection ? { ...UNKNOWN, mongoCollection } : selectedCallable.opaqueClosure ? traced({ ...selectedCallable.opaqueClosure, traceTruncated: true }, expression, 'call')
-        : this.session?.invoke(expression, args,this.receiver,this.declared,callable,this.staticContext));
-      const invoked = !archiveOpen && !archiveWriter && !arrayMutation && !filesystemStream && !filesystemEvent
+        : this.session?.invoke(expression, args,this.receiver,this.declared,callable,this.staticContext)));
+      const invoked = !sendRead && !nodeKnown && !nodeHtml && !archiveOpen && !archiveWriter && !arrayMutation && !filesystemStream && !filesystemEvent
         && applied?.kind === 'unknown' && !applied.inputRelated && !applied.constructed && !applied.callable && !applied.mongoCollection && !applied.mongoDb && args.some(isInputRelated)
         ? { ...traced(combineValues(args), expression, 'call'), kind: 'unknown' as const, inputRelated: true, traceTruncated: true, httpTargetUnavailable: httpUnavailable([applied, ...args]) } : applied;
-      if (invoked || selectedCallable.opaqueClosure) this.callableActuals.set(expression, { env, value: invoked });
-      if (invoked === undefined && !filesystemWrapper?.qualified && !archiveOpen && !archivePathCall && !archiveWriter) {
+      if (applied || invoked || selectedCallable.opaqueClosure) this.callableActuals.set(expression, { env, value: invoked ?? applied });
+      if (applied === undefined && invoked === undefined && !filesystemWrapper?.qualified && !archiveOpen && !archivePathCall && !archiveWriter) {
         // An opaque consumer may change headers; never reuse a stale non-HTML
         // exclusion after the response capability escapes to that consumer.
         for (const value of args) if (value.expressResponse) { value.expressResponse.mime = "unknown"; value.expressResponse.authority = 'unqualified_response'; }
@@ -1659,6 +2159,8 @@ class DataflowAnalyzer {
               value.nosqlObject.modified = true;
             }
             if (value.constructed) value.constructed.valid = false;
+            if (value.nodeResponse) { value.nodeResponse.valid = false; value.nodeResponse.mime = 'unknown'; this.session?.gap('module_export_unsupported', expression); }
+            if (value.sendStream) { value.sendStream.valid = false; this.session?.gap('module_export_unsupported', expression); }
             invalidateMongo(value.mongoDb, 'opaque');
             invalidateMongo(value.mongoCollection, 'opaque');
             for (const child of value.properties?.values() ?? []) invalidate(child, depth + 1);
@@ -1678,7 +2180,10 @@ class DataflowAnalyzer {
       const argumentFlows: NonNullable<InputFlowUse["argumentFlows"]> = [];
       for (let index = 0; index < expression.arguments.length; index += 1) {
         const value = consumedInput(args[index]);
-        if (isInputRelated(value)) argumentFlows.push({ index, certainty: !this.declared && value.kind === "tainted" ? "tainted" : "unknown", staticFlow: evidence(value, expression), fixedDestination: !this.declared && fixedQueryDestination(value.urlFragments) });
+        if (isInputRelated(value)) argumentFlows.push({ index, certainty: !this.declared && value.kind === "tainted" ? "tainted" : "unknown", staticFlow: evidence(value, expression), fixedDestination: this.certificateAvailable() && fixedQueryDestination(value.urlFragments) });
+      }
+      if (responseState?.valid && !this.certificateAvailable()) {
+        responseState.mime = 'unknown'; responseState.authority = 'unqualified_response';
       }
       const responseMethod = ts.isPropertyAccessExpression(callee) ? callee.name.text : undefined;
       const htmlResponse = responseState?.valid && expression.arguments.length === 1
@@ -1699,7 +2204,7 @@ class DataflowAnalyzer {
       const filesystemProcess = filename && filesystemWrapper ? {
         outcome: filesystemWrapper.shell === 'enabled' ? 'argv_shell_input' as const
           : filesystemWrapper.shell === 'disabled' && filesystemWrapper.interpreter ? 'direct_argv_interpreter_unknown' as const
-          : filesystemWrapper.shell === 'disabled' && args[1]?.sequenceContent?.closed && args[1].sequenceContent.valid ? 'argv_only_shell_disabled' as const : 'argv_shell_unknown' as const,
+          : this.filesystemCertificateAvailable([filename, ...args]) && filesystemWrapper.shell === 'disabled' && args[1]?.sequenceContent?.closed && args[1].sequenceContent.valid ? 'argv_only_shell_disabled' as const : 'argv_shell_unknown' as const,
         staticFlow: evidence(filename, expression),
       } : undefined;
       const filesystemContext = filesystemProcess ? contexts(filename?.staticContext, conditionalContext('declared_process_wrapper', expression)) : undefined;
@@ -1707,7 +2212,7 @@ class DataflowAnalyzer {
       if (archive && archiveWriter && !archiveWriter.options) this.session!.archiveModel.unsupported(expression);
       const archiveWrite = archive && archiveWriter ? {
         outcome: !archiveWriter.options ? 'path_role_unknown' as const
-          : archiveWriter.closed && this.session?.archiveModel.contained(expression) ? 'lexically_contained' as const : 'path_input' as const,
+          : this.certificateAvailable() && archiveWriter.closed && this.session?.archiveModel.contained(expression) ? 'lexically_contained' as const : 'path_input' as const,
         staticFlow: evidence(archive, expression),
       } : undefined;
       if (archiveWrite?.outcome === 'lexically_contained') this.session!.archiveModel.lexicalExclusions++;
@@ -1715,7 +2220,7 @@ class DataflowAnalyzer {
       if (filesystemProcess) this.session?.gap('module_export_unsupported', expression);
       if (argumentFlows.length > 0 || httpRole || sqlRole || nosqlRole || forkRole || processRole || filesystemProcess || archiveWrite) this.uses.push({ node: expression, kind: "call", argumentFlows, archiveWrite,
         staticContext: contexts(this.staticContext, filesystemContext, selectedCallable.staticContext, response?.staticContext, ...args.map(value => value.staticContext)),
-        localCall: this.session?.modules.localCallable(expression), ...(htmlResponse ? { htmlResponse, htmlResponseMime, htmlResponseAuthority } : {}), ...(httpRole ? { httpRole } : {}), ...(sqlRole ? { sqlRole } : {}), ...(nosqlRole ? { nosqlRole } : {}), ...(forkRole ? { forkRole } : {}), ...(processRole ? { processRole } : {}), ...(filesystemProcess ? { filesystemProcess } : {}), localForkCall: this.session?.localForkCalls.get(expression), localProcessCall: this.session?.localForkCalls.get(expression) });
+        localCall: this.session?.modules.localCallable(expression), ...(nodeHtml ? { nodeHtml } : {}), ...(htmlResponse ? { htmlResponse, htmlResponseMime, htmlResponseAuthority } : {}), ...(httpRole ? { httpRole } : {}), ...(sqlRole ? { sqlRole } : {}), ...(nosqlRole ? { nosqlRole } : {}), ...(forkRole ? { forkRole } : {}), ...(processRole ? { processRole } : {}), ...(filesystemProcess ? { filesystemProcess } : {}), localForkCall: this.session?.localForkCalls.get(expression), localProcessCall: this.session?.localForkCalls.get(expression) });
       return;
     }
     if (ts.isNewExpression(expression)) {
@@ -1933,7 +2438,7 @@ class DataflowAnalyzer {
     if (!bound && !legacyAxiosRequest(call)) return undefined;
     const inputRelated = value ? isInputRelated(value) : false;
     const config = value?.httpConfig;
-    if (this.declared && inputRelated) return {bound,inputRelated,outcome:'unknown_role',certainty:'unknown',...(value ? {staticFlow:evidence(value,call)} : {})};
+    if (!this.certificateAvailable() && inputRelated) return {bound,inputRelated,outcome:'unknown_role',certainty:'unknown',...(value ? {staticFlow:evidence(value,call)} : {})};
     if (bound && model?.canQualify(call) && config?.closed && !config.target.httpTargetUnavailable) {
       if (config.encodedQueryInitialUrl && fixedQueryDestination(config.target.urlFragments)) return { bound, inputRelated, outcome: 'encoded_query_fixed_initial_url' };
       if (isInputRelated(config.target)) return { bound, inputRelated: true, outcome: 'target_input',
@@ -1946,7 +2451,8 @@ class DataflowAnalyzer {
   }
 
   private processRole(call: ts.CallExpression, args: readonly FlowValue[], binding: ChildProcessBindingUse): ProcessRoleUse {
-    const layout = this.session!.processModel.layout(call, binding);
+    const modeled = this.session!.processModel.layout(call, binding);
+    const layout = { ...modeled, qualified: modeled.qualified && this.certificateAvailable() };
     const base = { api: binding.method, identity: binding.identity, shell: layout.shell };
     const selected = (value: FlowValue, outcome: ProcessRoleUse['outcome'], index: number, executable = false, known = false): ProcessRoleUse => {
       const certain = known && !this.declared && !this.staticContext && value.kind === 'tainted';
@@ -1978,7 +2484,7 @@ class DataflowAnalyzer {
     const model=this.session?.sqlModel; if (!model?.bound(call)) return undefined;
     const config=args[0]?.sqlConfig;
     const inputRelated=args.some(isInputRelated);
-    if (this.declared && inputRelated) { const value=args.find(isInputRelated)!; return {bound:true,inputRelated,outcome:'unknown_role',certainty:'unknown',staticFlow:evidence(value,call)}; }
+    if (!this.certificateAvailable() && inputRelated) { const value=args.find(isInputRelated)!; return {bound:true,inputRelated,outcome:'unknown_role',certainty:'unknown',staticFlow:evidence(value,call)}; }
     const text=config?.text ?? args[0];
     const values=config?.values ?? args[1];
     const shape=config ? config.closed && call.arguments.length===1
@@ -2018,7 +2524,7 @@ class DataflowAnalyzer {
     const candidate = (value: FlowValue, outcome: NoSqlRoleUse['outcome']): NoSqlRoleUse => ({ inputRelated: true, outcome, api,
       certainty: !this.declared && value.kind === 'tainted' && outcome !== 'unknown_role' ? 'tainted' : 'unknown',
       staticFlow: evidence(value, call) });
-    if (this.declared || selector.staticContext || !(mongoBound ? mongo!.valid && mongo!.db.valid : model!.qualified(call)) || modified) {
+    if (!this.certificateAvailable() || selector.staticContext || !(mongoBound ? mongo!.valid && mongo!.db.valid : model!.qualified(call)) || modified) {
       if (mongoBound) this.session?.gap('module_export_unsupported', call);
       if (selector.nosqlWhere && isInputRelated(selector.nosqlWhere.value)) return { ...candidate(selector.nosqlWhere.value, 'unknown_role'), operatorNode: selector.nosqlWhere.node };
       return candidate(observed, 'unknown_role');
@@ -2153,13 +2659,14 @@ class DataflowAnalyzer {
   private evalExpression(expression: ts.Expression, env: FlowEnv): FlowValue {
     if (this.session && !this.session.tick()) return UNKNOWN;
     if (ts.isIdentifier(expression)) {
+      if (!env.has(expression.text) && this.session) { const symbol = this.session.modules.symbol(expression); const declaration = symbol?.declarations?.length === 1 ? symbol.declarations[0] : undefined; if (declaration && ts.isFunctionDeclaration(declaration) && !this.session.modules.mutated.has(symbol!)) { const callback = this.session.regularClosure(declaration, env); if (callback) return { ...UNKNOWN, sqlCallback: true, regularCallbacks: [callback], regularCallbacksComplete: true }; } }
       if (!env.has(expression.text) && this.session?.sqlModel.callbackArgument(expression)) return { ...UNKNOWN, sqlCallback:true };
       if (!env.has(expression.text) && this.session?.modules.symbol(expression)) return UNKNOWN;
       const current = consumedInput(currentQuery(env.resolve(expression.text)));
       const value = current.properties && this.session?.sqlModel.dataIdentifierUnavailable(expression) ? {...current,sqlDataUnavailable:true} : current;
       return value.kind === "root" && !value.trace?.some(item => item.role === "source") ? traced(value, expression, "source") : value;
     }
-    if (ts.isStringLiteral(expression) || ts.isNoSubstitutionTemplateLiteral(expression)) return literalValue(expression.text);
+    if (ts.isStringLiteral(expression) || ts.isNoSubstitutionTemplateLiteral(expression)) return { ...literalValue(expression.text), htmlFragments: { parts: expression.text.length <= 2048 ? [{ kind: 'literal', text: expression.text }] : [], complete: expression.text.length <= 2048, inputRelated: false } };
     if (ts.isNumericLiteral(expression) || ts.isBigIntLiteral(expression) || ts.isRegularExpressionLiteral(expression)) return SAFE;
     if (expression.kind === ts.SyntaxKind.TrueKeyword || expression.kind === ts.SyntaxKind.FalseKeyword || expression.kind === ts.SyntaxKind.NullKeyword || expression.kind === ts.SyntaxKind.UndefinedKeyword) return SAFE;
     if (ts.isAwaitExpression(expression)) {
@@ -2176,6 +2683,7 @@ class DataflowAnalyzer {
     if (expression.kind === ts.SyntaxKind.ThisKeyword) return this.constructedReceiver ?? UNKNOWN;
     if (ts.isPropertyAccessExpression(expression)) {
       const receiver = this.evalExpression(expression.expression, env);
+      if (receiver.restTuple && expression.name.text !== 'length') this.session?.gap('module_export_unsupported', expression);
       if (receiver.archiveRole?.state.valid && receiver.archiveRole.stage === 'entry' && expression.name.text === 'path') {
         this.session!.archiveModel.entryPaths++;
         return traced(withContext({ ...UNKNOWN_INPUT, traceSourceKind: 'archive_entry_path' },
@@ -2183,14 +2691,19 @@ class DataflowAnalyzer {
       }
       if (receiver.constructed) return receiver.constructed.valid ? receiver.constructed.slots.get(expression.name.text) ?? UNKNOWN : UNKNOWN;
       const projected = currentQuery(projectValue(receiver, expression.name.text));
+      if (projected.sendIncomingRequest && isInputRelated(projected)) return traced(projected, expression, 'source');
       if (receiver.koaRequest && !receiver.koaRequest.state.valid) this.session?.gap('module_export_unsupported', expression);
       if (receiver.honoRequest && !receiver.honoRequest.state.valid) this.session?.gap('module_export_unsupported', expression);
       if (receiver.honoRequest?.stage === 'request' && !['query','param','json'].includes(expression.name.text)) receiver.honoRequest.state.jsonDataValid = false;
       return receiver.koaRequest && isInputRelated(projected) && !projected.trace?.some(step => step.role === 'source') ? traced(projected, expression, 'source') : projected;
     }
     if (ts.isElementAccessExpression(expression)) {
-      const key = propertyName(expression.argumentExpression);
       const base = this.evalExpression(expression.expression, env);
+      const argument = expression.argumentExpression;
+      const key = base.restTuple ? argument && (ts.isStringLiteralLike(argument) || ts.isNumericLiteral(argument))
+        ? argument.text : undefined : propertyName(argument);
+      if (base.restTuple && (key === undefined || key !== 'length'
+        && (!/^(0|[1-9]\d*)$/.test(key) || !Number.isSafeInteger(Number(key))))) this.session?.gap('module_export_unsupported', expression);
       if (base.archiveRole?.state.valid && base.archiveRole.stage === 'entry' && key === 'path') {
         this.session!.archiveModel.entryPaths++;
         return traced(withContext({ ...UNKNOWN_INPUT, traceSourceKind: 'archive_entry_path' },
@@ -2208,6 +2721,12 @@ class DataflowAnalyzer {
       const keyValue = expression.argumentExpression
         ? this.evalExpression(expression.argumentExpression, env)
         : UNKNOWN;
+      if (base.restTuple) {
+        const combined = combineValues([base.restTuple.aggregate, consumedInput(keyValue)]);
+        return { kind: 'unknown', inputRelated: isInputRelated(combined), trace: combined.trace,
+          traceSourceKind: combined.traceSourceKind, traceTruncated: true, staticContext: combined.staticContext,
+          sqlScalarUnavailable: true, sqlDataUnavailable: true, httpTargetUnavailable: true };
+      }
       const value=isInputRelated(base) || isInputRelated(keyValue)
         ? inheritTrace(base.kind === "tainted" ? TAINTED : UNKNOWN_INPUT, [base, keyValue])
         : UNKNOWN;
@@ -2295,7 +2814,8 @@ class DataflowAnalyzer {
         encodedQueryInitialUrl: !target.httpTargetUnavailable && fixedQueryDestination(target.urlFragments), target } } : {}) };
     }
     if (ts.isTemplateExpression(expression)) {
-      return concatValues([literalValue(expression.head.text), ...expression.templateSpans.flatMap((span) => [this.evalExpression(span.expression, env), literalValue(span.literal.text)])]);
+      const literal = (text: string): FlowValue => ({ ...literalValue(text), htmlFragments: { parts: text.length <= 2048 ? [{ kind: 'literal', text }] : [], complete: text.length <= 2048, inputRelated: false } });
+      return this.htmlConcatenation([literal(expression.head.text), ...expression.templateSpans.flatMap(span => [this.evalExpression(span.expression, env), literal(span.literal.text)])], expression);
     }
     if (ts.isNoSubstitutionTemplateLiteral(expression)) return SAFE;
     if (ts.isConditionalExpression(expression)) {
@@ -2307,7 +2827,7 @@ class DataflowAnalyzer {
         if (isSimpleAssignment(expression.operatorToken.kind)) return this.evalExpression(expression.right, env);
         return combineValues([ts.isIdentifier(expression.left) ? env.resolve(expression.left.text) : UNKNOWN, this.evalExpression(expression.right, env)]);
       }
-      if (expression.operatorToken.kind === ts.SyntaxKind.PlusToken) return concatValues([this.evalExpression(expression.left, env), this.evalExpression(expression.right, env)]);
+      if (expression.operatorToken.kind === ts.SyntaxKind.PlusToken) return this.htmlConcatenation([this.evalExpression(expression.left, env), this.evalExpression(expression.right, env)], expression);
       if ([
         ts.SyntaxKind.AmpersandAmpersandToken,
         ts.SyntaxKind.BarBarToken,
@@ -2379,7 +2899,10 @@ class DataflowAnalyzer {
       const callable = this.session?.closure(expression, env, this.constructedReceiver, this.staticContext);
       return { ...SAFE, staticContext: this.staticContext, sqlCallback: true, callable, ...(!callable && this.session ? { opaqueClosure: this.session.opaqueCaptures(expression, env) } : {}) };
     }
-    if (ts.isFunctionExpression(expression)) return {...SAFE,sqlCallback:true};
+    if (ts.isFunctionExpression(expression)) {
+      const callback = this.session?.regularClosure(expression, env);
+      return { ...SAFE, sqlCallback: true, regularCallbacks: callback ? [callback] : undefined, regularCallbacksComplete: !!callback };
+    }
     if (ts.isClassExpression(expression)) return SAFE;
     return UNKNOWN;
   }
@@ -2430,6 +2953,29 @@ export function findSnapshotInputFlows(files: readonly ts.SourceFile[], limits: 
     summaryWork: session.summaryWork, summariesCached: session.cache.size,
     resolvedCalls: session.resolvedCalls, unsupportedCalls: session.unsupportedCalls,
     moduleEdges: session.modules.moduleEdges.size,
+    moduleGraphModel: 'snapshot-configured-esm-functions-v1',
+    moduleConfigurationsObserved: session.modules.moduleConfigurations.observed,
+    moduleConfigurationsSupported: session.modules.moduleConfigurations.supported,
+    moduleConfigurationsUnsupported: session.modules.moduleConfigurations.unsupported,
+    moduleConfigurationBytes: session.modules.moduleConfigurations.bytes,
+    configuredModuleTargets: session.modules.configuredModuleTargets.size,
+    configuredModuleCallSites: session.modules.configuredCallSites.size,
+    configuredModuleCallContexts: session.configuredCallContexts,
+    configuredBodyInspectionsQueued: session.configuredInspectionsQueued,
+    configuredBodyInspectionsStarted: session.configuredInspectionsStarted,
+    configuredBodyInspectionsDropped: session.configuredInspectionsDropped,
+    configuredBodyInspectionFlowWork: session.configuredInspectionWork,
+    htmlCallbackInspectionsQueued: session.callbackInspectionsQueued,
+    htmlCallbackInspectionsStarted: session.callbackInspectionsStarted,
+    htmlCallbackInspectionsDropped: session.callbackInspectionsDropped,
+    nodeResponseSemanticGapsObserved: session.nodeResponseModel.semanticGapsObserved,
+    nodeResponseSemanticGapLocationsOmitted: session.nodeResponseModel.semanticGapLocationsOmitted,
+    restBindingsRecognized: session.restBindingsRecognized,
+    restBindingsUnsupported: session.restBindingsUnsupported,
+    restSlotsMaterialized: session.restSlotsMaterialized,
+    barrelFunctionTargets: session.modules.barrelFunctionTargets.size,
+    configuredNativeIdentityComplete: session.modules.configuredNativeIdentityComplete,
+    configuredNativeIdentityVetoes: session.modules.configuredNativeLoads.size,
     maxNodeVisits: limits.nodeVisits, maxFunctions: limits.functions, maxSummaryWork: limits.summaryWork,
     maxCallDepth: limits.callDepth, maxModuleEdges: limits.moduleEdges, maxAliasSteps: limits.aliasSteps, maxTraceSteps: FLOW_LIMITS.traceSteps,
     analysisIncomplete: session.reasons.size > 0, incompleteReasons: [...session.reasons].sort().join(","),

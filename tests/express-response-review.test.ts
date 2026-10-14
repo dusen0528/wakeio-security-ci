@@ -162,7 +162,7 @@ test('raw, JSON, agent, SARIF and advice preserve the same response rule and sta
 
 test('response ruleset migration leaves comparison unverified rather than certifying an old HTML warning as fixed', () => {
   const check = scan('function route(req,res){res.send(req.query.message)}');
-  assert.equal(RULESET_VERSION, '2026-10-14.2');
+  assert.equal(RULESET_VERSION, '2026-10-14.5');
   const scope = { fingerprint: 'a'.repeat(64), ruleset: RULESET_VERSION, analysisBudget: check.analysisBudget };
   const current = createReport([check], 'source', new Date(0), scope);
   const legacy = createReport([{ ...check, findings: check.findings.map(row => {
