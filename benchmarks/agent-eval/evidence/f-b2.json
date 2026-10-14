@@ -1,1 +1,1 @@
-{"schema":"wakeio.evidence/v1","finding_id":"f-b2","run_id":"r-b-01","task_id":"t-authz","redacted":true,"observation":"owner vs other-user access: other_user retrieved an object owned by user","request_count":3}
+{"version":1,"taskId":"t-authz","reportPath":"tasks/t-authz/report.json","findingId":"engine-f-b2","ruleId":"example.authz","severity":"high","kind":"candidate"}

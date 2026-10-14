@@ -25,17 +25,23 @@ const rawResults = readJson(arg('--results'));
 const bundle = parseResultsBundle(rawResults);
 
 // Optional: when an evidence directory is given, each finding's evidence file
-// must exist and match its recorded hash. Reads are confined to that directory.
+// must exist and match its recorded hash. This alone does not verify the DB/report link.
 const evidenceDir = arg('--evidence-dir', '');
-const evidenceChecked = evidenceDir !== '';
-const readEvidence = evidenceChecked
+const runA = arg('--run-a', ''), runB = arg('--run-b', '');
+if (!!runA !== !!runB || (runA && evidenceDir)) throw new Error('provide both --run-a/--run-b, or --evidence-dir alone');
+const stored = runA ? await import('../../build/src/agent-dast/eval/stored-results.js') : null;
+const readers = stored ? { A: stored.storedRunReader(runA), B: stored.storedRunReader(runB) } : null;
+const readerFor = finding => readers[bundle.armA.findings.includes(finding) ? 'A' : 'B'];
+const evidenceChecked = evidenceDir !== '' || readers !== null;
+const readEvidence = readers ? (relPath, finding) => readerFor(finding).readEvidence(relPath) : evidenceDir
   ? relPath => {
       const resolved = normalize(join(evidenceDir, relPath.replace(/^evidence\//, '')));
       try { return readFileSync(resolved); } catch { return null; }
     }
   : undefined;
 
-const result = evaluate({ manifest, bundle, labels, criteria, checklist, readEvidence, evidenceChecked });
+const verifyStoredFinding = readers ? (finding, evidence) => readerFor(finding).verifyStoredFinding(finding, evidence) : undefined;
+const result = evaluate({ manifest, bundle, labels, criteria, checklist, readEvidence, verifyStoredFinding, evidenceChecked });
 console.log(JSON.stringify({
   target: manifest.target,
   commit: manifest.commit,

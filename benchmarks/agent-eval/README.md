@@ -111,16 +111,31 @@ digest is referenced by the results.
   against a 4-cell record no longer passes.
 - The results bundle carries `manifestDigest`; a bundle that references a
   different record is refused.
-- Each scored finding carries `runRef` (run.db run/task) and `evidenceRef`
-  (`evidence/<findingId>.json`). With `--evidence-dir`, provenance is more than a
-  byte-hash match: the evidence file must parse as the stored evidence JSON and
-  its `finding_id` / `run_id` / `task_id` must equal the finding's own ids and
-  `runRef`. A file whose hash matches but whose contents name a different
-  finding/run/task is `evidence_content_mismatch`; a non-JSON file is
-  `evidence_unreadable`. The result reports `refOk`, `hashOk` and `contentOk`
-  separately, so a hash-only pass is never counted as verified provenance.
-  Without `--evidence-dir`, a present, well-formed reference is reported as
-  `evidence_unchecked` and does not fail the run.
+- `EvalFinding.findingId` is the database **observation ID** used in the
+  evidence filename. It can differ from the deduplicated canonical finding ID.
+  The actual runner evidence contains `version`, `taskId`, `reportPath`,
+  `findingId` (the **engine/report ID**), `ruleId`, `severity` and `kind`.
+  It contains no `run_id`. The earlier snake_case example was a synthetic
+  format, not the runner's stored format; it is no longer accepted.
+- With `--run-a DIR --run-b DIR`, each owner-selected directory supplies an
+  existing run-plan bundle. The reader opens `run.db` read-only, locates
+  `finding_observations.observation_id`, and checks its task/run, surface,
+  rule, severity and evidence reference. It then follows the evidence's
+  `reportPath` and engine `findingId` into the task report and compares rule,
+  severity and kind. This supports identical observation filenames in separate
+  runs, and observations deduplicated under a different canonical finding ID.
+- With `--evidence-dir` alone, the reader can check bytes and the runner JSON
+  shape, but cannot bind the run or report. It returns `hash_ok_unverified`,
+  `contentOk: false`, and exit 2. Without either option it reports
+  `evidence_unchecked`; this is a reference-only preview, not provenance proof.
+  `refOk`, `hashChecked`, `hashOk` and `contentOk` describe the checks separately.
+- Both manifest construction and file parsing use the same coverage-cell
+  validator. Duplicate `(surface, checkId)` cells are rejected on either path.
+
+The checked-in example files are synthetic evidence-only inputs, so this command
+intentionally returns exit 2 (`hash_ok_unverified`). For stored bundles replace
+`--evidence-dir` with `--run-a /path/to/A-output --run-b /path/to/B-output` and
+supply results referencing those bundles.
 
 ```sh
 npm run build
@@ -162,19 +177,13 @@ follow-up execution layer must still bind:
 The exact numeric thresholds are set once the real label set exists; the example
 criteria file is a shape placeholder, not the committed bar.
 
-## Run the aggregator
+## Offline regression test
 
-```sh
-npm run build
-node benchmarks/agent-eval/aggregate.mjs \
-  --labels   benchmarks/agent-eval/labels/example.labels.json \
-  --criteria benchmarks/agent-eval/criteria.example.json \
-  --results  benchmarks/agent-eval/results.example.json
-```
-
-The example bundle is synthetic and exercises the counting only: B detects both
-final vulnerabilities (A detects one) within the shared 64-request cap across
-three rounds (26 + 10 + 18 = 54), so `qualityHeld` is true. Exit code is 2 if
-either arm overran the shared cap. `tests/agent-dast-eval.test.ts` checks the
-distinct-vulnerability counting, de-duplication, round-budget summation, the
-coverage denominator rule, and the tuning / final and criteria-binding guards.
+`tests/agent-dast-eval-stored.test.ts` replaces only the scanner engine with a
+synthetic result in an isolated Node process. The actual `runExecutionPlan`
+writes SQLite, evidence, task reports and publication metadata. The test then
+reads that bundle through the verifier and CLI, with zero admitted target
+requests. It checks distinct observation/engine IDs and rejects an unrelated
+run, surface or altered report rule. It is storage compatibility evidence, not
+a live detection test. The regular evaluation tests cover duplicate manifest
+cells, malformed evidence and the arithmetic gates.

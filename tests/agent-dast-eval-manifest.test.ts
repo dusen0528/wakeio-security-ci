@@ -35,7 +35,7 @@ function setup() {
   return { labels, criteria, manifest, digest: manifestDigest(manifest) };
 }
 
-const evidence = Buffer.from(JSON.stringify({ schema: 'wakeio.evidence/v1', finding_id: 'f-1', run_id: 'r-01', task_id: 't-injection', redacted: true }));
+const evidence = Buffer.from(JSON.stringify({ version: 1, findingId: 'engine-1', taskId: 't-injection', reportPath: 'tasks/t-injection/report.json', ruleId: 'native.sql', severity: 'high', kind: 'candidate' }));
 const evidenceSha = createHash('sha256').update(evidence).digest('hex');
 
 function finding(over: Partial<EvalFinding> = {}): EvalFinding {
@@ -47,8 +47,8 @@ function finding(over: Partial<EvalFinding> = {}): EvalFinding {
 }
 const arm = (name: 'A' | 'B', findings: EvalFinding[]): Arm => ({ name, findings, rounds: [{ round: 1, kind: 'initial', requestCount: 20 }], coverage: { plannedCells: 2, executedCells: 2 }, durationMs: 1 });
 
-const evidenceDoc = (over: Partial<{ finding_id: string; run_id: string; task_id: string }> = {}) =>
-  Buffer.from(JSON.stringify({ schema: 'wakeio.evidence/v1', finding_id: 'f-1', run_id: 'r-01', task_id: 't-injection', redacted: true, ...over }));
+const evidenceDoc = (over: Partial<{ findingId: string; taskId: string }> = {}) =>
+  Buffer.from(JSON.stringify({ version: 1, findingId: 'engine-1', taskId: 't-injection', reportPath: 'tasks/t-injection/report.json', ruleId: 'native.sql', severity: 'high', kind: 'candidate', ...over }));
 
 test('the run-start record pins and cross-checks the three input hashes', () => {
   const { labels, criteria, manifest } = setup();
@@ -85,7 +85,7 @@ test('finding provenance requires a run ref and a correct evidence ref, and chec
   assert.equal(verifyFindingProvenance(finding({ runRef: undefined })).status, 'missing_run_ref');
   assert.equal(verifyFindingProvenance(finding({ evidenceRef: undefined })).status, 'missing_ref');
   const read = (rel: string) => rel === 'evidence/f-1.json' ? evidence : null;
-  assert.equal(verifyFindingProvenance(finding(), read).status, 'ok');
+  assert.equal(verifyFindingProvenance(finding(), read).status, 'hash_ok_unverified');
   assert.equal(verifyFindingProvenance(finding(), () => null).status, 'evidence_absent');
   assert.equal(verifyFindingProvenance(finding({ evidenceSha256: 'a'.repeat(64) }), read).status, 'evidence_mismatch');
 });
@@ -95,15 +95,15 @@ test('evaluate ties manifest, provenance and comparison; results must reference 
   const fa = finding({ findingId: 'f-a', evidenceRef: 'evidence/f-a.json', runRef: { runId: 'r-a', taskId: 't-injection' } });
   const fb = finding({ findingId: 'f-b', evidenceRef: 'evidence/f-b.json', runRef: { runId: 'r-b', taskId: 't-injection' } });
   const docs: Record<string, Buffer> = {
-    'evidence/f-a.json': evidenceDoc({ finding_id: 'f-a', run_id: 'r-a' }),
-    'evidence/f-b.json': evidenceDoc({ finding_id: 'f-b', run_id: 'r-b' }),
+    'evidence/f-a.json': evidenceDoc({ findingId: 'engine-a' }),
+    'evidence/f-b.json': evidenceDoc({ findingId: 'engine-b' }),
   };
   const withHash = (f: EvalFinding) => ({ ...f, evidenceSha256: createHash('sha256').update(docs[f.evidenceRef!]).digest('hex') });
   const bundle: ResultsBundle = { manifestDigest: digest, armA: arm('A', [withHash(fa)]), armB: arm('B', [withHash(fb)]) };
   const read = (rel: string) => docs[rel] ?? null;
   const ev = evaluate({ manifest, bundle, labels, criteria, checklist, readEvidence: read, evidenceChecked: true });
   assert.equal(ev.manifestVerified, true);
-  assert.equal(ev.provenance.allOk, true);
+  assert.equal(ev.provenance.allOk, false); // files alone cannot bind run.db and task report identities
   assert.equal(ev.comparison.qualityHeld, true);
 
   // A bundle that references a different record is refused.
@@ -155,9 +155,9 @@ test('regression: a coverage cell naming a check outside the shared list is refu
 });
 
 test('regression: a wrong run/task reference is caught even when the evidence hash matches', () => {
-  // finding points at an unrelated run/task; its evidence file names the real one.
+  // Evidence binds the task; the stored-bundle test separately checks the run through SQLite.
   const f = finding({ runRef: { runId: 'r-unrelated', taskId: 't-unrelated' } });
-  const bytes = evidenceDoc(); // names r-01 / t-injection, not the finding's r-unrelated
+  const bytes = evidenceDoc(); // names t-injection, not t-unrelated
   const correctHash = createHash('sha256').update(bytes).digest('hex');
   const result = verifyFindingProvenance({ ...f, evidenceSha256: correctHash }, () => bytes);
   assert.equal(result.hashOk, true);          // byte hash matches…
@@ -172,8 +172,24 @@ test('regression: a non-JSON evidence file with a matching hash is not accepted 
   assert.equal(result.hashOk, true);
   assert.equal(result.status, 'evidence_unreadable');
   assert.equal(result.contentOk, false);
-  // The matching-content case is the only 'ok'.
+  // Matching file fields still require the DB/report reader for a verified link.
   const good = evidenceDoc();
   const goodHash = createHash('sha256').update(good).digest('hex');
-  assert.equal(verifyFindingProvenance(finding({ evidenceSha256: goodHash }), () => good).status, 'ok');
+  assert.equal(verifyFindingProvenance(finding({ evidenceSha256: goodHash }), () => good).status, 'hash_ok_unverified');
+});
+
+test('file parser and direct verifier reject duplicate coverage cells just like the builder', () => {
+  const { manifest, labels, criteria } = setup();
+  const duplicated = { ...manifest, coverageCells: [coverageCells[0], coverageCells[0]] };
+  assert.throws(() => parseRunManifest(JSON.parse(JSON.stringify(duplicated))), /duplicate/);
+  assert.throws(() => verifyManifest(duplicated, manifestDigest(duplicated), { labels, criteria, checklist }), /duplicate/);
+});
+
+test('runner evidence uses engine findingId, not the database observation ID; hash alone stays unverified', () => {
+  const bytes = Buffer.from(JSON.stringify({ version: 1, taskId: 't-injection', reportPath: 'tasks/t-injection/report.json',
+    findingId: 'engine-finding-1', ruleId: 'native.sql', severity: 'high', kind: 'candidate' }));
+  const result = verifyFindingProvenance(finding({ evidenceSha256: createHash('sha256').update(bytes).digest('hex') }), () => bytes);
+  assert.equal(result.status, 'hash_ok_unverified');
+  assert.equal(result.hashOk, true);
+  assert.equal(result.contentOk, false);
 });

@@ -106,7 +106,7 @@ export interface RunManifest {
   basis: PassCriteria['basis'];
 }
 
-function parseCoverageCells(raw: unknown, checkIds: ReadonlySet<string>): CoverageCell[] {
+function parseCoverageCells(raw: unknown, checkIds?: ReadonlySet<string>): CoverageCell[] {
   if (!Array.isArray(raw) || raw.length === 0) throw new ManifestError('manifest_invalid', 'coverageCells');
   const seen = new Set<string>();
   return raw.map((c, i): CoverageCell => {
@@ -116,7 +116,7 @@ function parseCoverageCells(raw: unknown, checkIds: ReadonlySet<string>): Covera
     if (typeof cell.surface !== 'string' || !cell.surface || cell.surface.length > 512) throw new ManifestError('manifest_invalid', `${p}.surface`);
     if (typeof cell.checkId !== 'string' || !CHECK_ID.test(cell.checkId)) throw new ManifestError('manifest_invalid', `${p}.checkId`);
     // Every coverage cell must name a check from the shared list.
-    if (!checkIds.has(cell.checkId)) throw new ManifestError('manifest_invalid', `${p}.checkId not in checklist`);
+    if (checkIds && !checkIds.has(cell.checkId)) throw new ManifestError('manifest_invalid', `${p}.checkId not in checklist`);
     const key = `${cell.surface}\u0000${cell.checkId}`;
     if (seen.has(key)) throw new ManifestError('manifest_invalid', `${p} duplicate`);
     seen.add(key);
@@ -180,13 +180,7 @@ export function parseRunManifest(raw: unknown): RunManifest {
   if (typeof r.commit !== 'string' || !/^[0-9a-f]{7,64}$/.test(r.commit)) throw new ManifestError('manifest_invalid', 'commit');
   if (!Number.isSafeInteger(r.sharedRequestCap) || (r.sharedRequestCap as number) < 1) throw new ManifestError('manifest_invalid', 'sharedRequestCap');
   if (r.basis !== 'candidate' && r.basis !== 'confirmed') throw new ManifestError('manifest_invalid', 'basis');
-  // Cells are validated against the check list in verifyManifest; shape-check only here.
-  if (!Array.isArray(r.coverageCells) || r.coverageCells.length === 0) throw new ManifestError('manifest_invalid', 'coverageCells');
-  const coverageCells = r.coverageCells.map((c, i): CoverageCell => {
-    const cell = c as Record<string, unknown>;
-    if (cell === null || typeof cell !== 'object' || typeof cell.surface !== 'string' || !cell.surface || cell.surface.length > 512 || typeof cell.checkId !== 'string' || !CHECK_ID.test(cell.checkId)) throw new ManifestError('manifest_invalid', `coverageCells[${i}]`);
-    return { surface: cell.surface, checkId: cell.checkId };
-  });
+  const coverageCells = parseCoverageCells(r.coverageCells);
   return {
     version: 1, runId: r.runId, createdAt: r.createdAt, target: r.target, commit: r.commit,
     criteriaHash: hex('criteriaHash'), finalLabelHash: hex('finalLabelHash'), checklistHash: hex('checklistHash'),
@@ -215,7 +209,5 @@ export function verifyManifest(manifest: RunManifest, expectedDigest: string, in
   if (manifest.basis !== inputs.criteria.basis) throw new ManifestError('field_mismatch', `basis ${manifest.basis} vs criteria ${inputs.criteria.basis}`);
   // Every coverage cell must name a check from the shared list.
   const checkIds = new Set(inputs.checklist.entries.map(e => e.checkId));
-  for (const cell of manifest.coverageCells) {
-    if (!checkIds.has(cell.checkId)) throw new ManifestError('field_mismatch', `coverage cell check ${cell.checkId} not in checklist`);
-  }
+  parseCoverageCells(manifest.coverageCells, checkIds);
 }

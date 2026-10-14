@@ -1,1 +1,1 @@
-{"schema":"wakeio.evidence/v1","finding_id":"f-b1","run_id":"r-b-01","task_id":"t-injection","redacted":true,"observation":"boolean-based differential at the login email parameter","request_count":4}
+{"version":1,"taskId":"t-injection","reportPath":"tasks/t-injection/report.json","findingId":"engine-f-b1","ruleId":"example.sqli","severity":"high","kind":"candidate"}

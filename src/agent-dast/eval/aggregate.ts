@@ -34,7 +34,7 @@ export interface EvalFinding {
   authState: AuthState;
   /** 1-based round the finding first appeared in. For reporting only; identity is the site. */
   round: number;
-  /** run.db reference this finding came from. Required when a run manifest is bound. */
+  /** run.db reference this finding came from. findingId is the observation ID (evidence filename), not the engine ID. Required when a run manifest is bound. */
   runRef?: { runId: string; taskId: string };
   /** `evidence/<findingId>.json` path recorded in run.db. Required when a manifest is bound. */
   evidenceRef?: string;
@@ -412,7 +412,7 @@ export type ProvenanceStatus =
   | 'evidence_absent' | 'evidence_mismatch'   // file missing / byte hash wrong
   | 'evidence_unreadable'   // not the stored evidence JSON format
   | 'evidence_content_mismatch'  // JSON present and hash-correct, but names a different finding/run/task
-  | 'hash_ok_unverified'    // byte hash matched but content was not cross-checked (no reader for content)
+  | 'hash_ok_unverified'    // byte hash/format matched; DB/report linkage was not checked
   | 'evidence_unchecked';   // reference present and well-formed; no evidence read at all
 
 /** What was actually confirmed, so a hash-only check is never reported as provenance. */
@@ -422,29 +422,35 @@ export interface ProvenanceResult {
   refOk: boolean;
   hashChecked: boolean;
   hashOk: boolean;
-  /** True only when the evidence JSON names this finding and its run/task. */
+  /** True only when stored DB observation, evidence and task report agree. */
   contentOk: boolean;
 }
 
 /** The minimal stored-evidence shape the harness cross-checks against a finding. */
-interface EvidenceDoc { finding_id: string; run_id: string; task_id: string }
+export interface EvidenceDoc { version: 1; findingId: string; taskId: string; reportPath: string; ruleId: string; severity: Severity; kind: 'candidate' | 'observation' | 'advisory' }
+export type VerifyStoredFinding = (finding: EvalFinding, evidence: EvidenceDoc) => boolean;
 
 function parseEvidenceDoc(bytes: Buffer): EvidenceDoc | null {
   let value: unknown;
   try { value = JSON.parse(bytes.toString('utf8')); } catch { return null; }
   if (!record(value)) return null;
-  if (typeof value.finding_id !== 'string' || typeof value.run_id !== 'string' || typeof value.task_id !== 'string') return null;
-  return { finding_id: value.finding_id, run_id: value.run_id, task_id: value.task_id };
+  if (value.version !== 1 || typeof value.findingId !== 'string' || !value.findingId
+    || typeof value.taskId !== 'string' || !/^t-[0-9a-z-]{1,60}$/.test(value.taskId)
+    || value.reportPath !== `tasks/${value.taskId}/report.json`
+    || typeof value.ruleId !== 'string' || !value.ruleId
+    || !SEVERITIES.includes(value.severity as Severity)
+    || !['candidate', 'observation', 'advisory'].includes(value.kind as string)) return null;
+  return value as unknown as EvidenceDoc;
 }
 
 /**
  * Check one finding's link to recorded evidence. A byte-hash match alone is not
  * provenance: when the evidence file is read it is also parsed as the stored
- * evidence JSON and its finding_id / run_id / task_id are cross-checked against
- * the finding's own ids. The result reports ref, hash and content separately so
+ * evidence JSON and its taskId and engine findingId are linked through run.db observations and the
+ * referenced task report; the file itself contains no run ID. The result reports ref, hash and content separately so
  * a hash-only pass can never be read as a verified source.
  */
-export function verifyFindingProvenance(finding: EvalFinding, readEvidence?: (relPath: string) => Buffer | null): ProvenanceResult {
+export function verifyFindingProvenance(finding: EvalFinding, readEvidence?: (relPath: string) => Buffer | null, verifyStoredFinding?: VerifyStoredFinding): ProvenanceResult {
   const id = finding.findingId;
   const base = { findingId: id, refOk: false, hashChecked: false, hashOk: false, contentOk: false };
   if (!finding.runRef) return { ...base, status: 'missing_run_ref' };
@@ -459,16 +465,17 @@ export function verifyFindingProvenance(finding: EvalFinding, readEvidence?: (re
   if (!base.hashOk) return { ...base, status: 'evidence_mismatch' };
   const doc = parseEvidenceDoc(bytes);
   if (!doc) return { ...base, status: 'evidence_unreadable' };
-  // The hash matched the bytes; now the bytes must name THIS finding and its run/task.
-  base.contentOk = doc.finding_id === id && doc.run_id === finding.runRef.runId && doc.task_id === finding.runRef.taskId;
+  if (doc.taskId !== finding.runRef.taskId || doc.severity !== finding.severity) return { ...base, status: 'evidence_content_mismatch' };
+  if (!verifyStoredFinding) return { ...base, status: 'hash_ok_unverified' };
+  base.contentOk = verifyStoredFinding(finding, doc);
   if (!base.contentOk) return { ...base, status: 'evidence_content_mismatch' };
   return { ...base, status: 'ok' };
 }
 
 export interface ArmProvenance { name: 'A' | 'B'; findings: ProvenanceResult[]; allOk: boolean }
 
-function armProvenance(arm: Arm, readEvidence?: (relPath: string) => Buffer | null): ArmProvenance {
-  const findings = arm.findings.map(f => verifyFindingProvenance(f, readEvidence));
+function armProvenance(arm: Arm, readEvidence?: (relPath: string, finding: EvalFinding) => Buffer | null, verifyStoredFinding?: VerifyStoredFinding): ArmProvenance {
+  const findings = arm.findings.map(f => verifyFindingProvenance(f, readEvidence ? path => readEvidence(path, f) : undefined, verifyStoredFinding));
   return { name: arm.name, findings, allOk: findings.every(r => r.status === 'ok') };
 }
 
@@ -496,7 +503,8 @@ export function evaluate(input: {
   labels: FinalLabels;
   criteria: PassCriteria;
   checklist: Checklist;
-  readEvidence?: (relPath: string) => Buffer | null;
+  readEvidence?: (relPath: string, finding: EvalFinding) => Buffer | null;
+  verifyStoredFinding?: VerifyStoredFinding;
   evidenceChecked: boolean;
 }): Evaluation {
   const digest = manifestDigest(input.manifest);
@@ -515,8 +523,8 @@ export function evaluate(input: {
   }
 
   const read = input.evidenceChecked ? input.readEvidence : undefined;
-  const a = armProvenance(input.bundle.armA, read);
-  const b = armProvenance(input.bundle.armB, read);
+  const a = armProvenance(input.bundle.armA, read, input.verifyStoredFinding);
+  const b = armProvenance(input.bundle.armB, read, input.verifyStoredFinding);
   // Without an evidence directory only the reference shape is confirmed; a
   // hash-only or unchecked state is not accepted as provenance when checking is on.
   const accept = (s: ProvenanceStatus) => s === 'ok' || (!input.evidenceChecked && s === 'evidence_unchecked');
