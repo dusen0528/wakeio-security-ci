@@ -53,7 +53,8 @@ for (const provider of ['codex','claude'] as const) {
     const { createAgent } = await import(`../src/agent-dast/providers/${provider}.js`);
     await assert.rejects(createAgent({ template, recordDir: '/unused', live: false }), /agent_live_disabled/);
   });
-  test(`${provider}: optional live schema smoke`, { skip: process.env.WAKEIO_AGENT_LIVE !== '1' }, async () => {
+  // The required-engine receipt forbids skipped tests; live smoke belongs only to the opt-in provider suite.
+  if (process.env.WAKEIO_REQUIRE_SCHEMATHESIS !== '1') test(`${provider}: optional live schema smoke`, { skip: process.env.WAKEIO_AGENT_LIVE !== '1' }, async () => {
     const root = await mkdtemp(join(tmpdir(), 'wakeio-provider-live-'));
     try {
       const { createAgent } = await import(`../src/agent-dast/providers/${provider}.js`);
