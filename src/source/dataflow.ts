@@ -30,6 +30,8 @@ export interface InputFlowUse {
   /** Internal sink shape only; framework identity and runtime rendering stay unverified. */
   htmlResponse?: "express" | "web";
   htmlResponseMime?: "default" | "html" | "unknown";
+  /** Entry-model authority only; never runtime request or response identity. */
+  htmlResponseAuthority?: 'registered_express' | 'unqualified_response';
   httpRole?: HttpRoleUse;
   browserLocationRole?: BrowserLocationRole;
   sqlRole?: SqlRoleUse;
@@ -58,6 +60,7 @@ type RootKind =
 type ExpressMime = "default" | "html" | "non_html" | "unknown";
 interface ExpressResponseState {
   readonly identity: object;
+  authority: 'registered_express' | 'unqualified_response';
   mime: ExpressMime;
   valid: boolean;
   /** General container/heap alias effects are outside the MIME exclusion proof. */
@@ -66,13 +69,14 @@ interface ExpressResponseState {
 
 function joinResponse(left?: ExpressResponseState, right?: ExpressResponseState): ExpressResponseState | undefined {
   return left && right && left.identity === right.identity
-    ? { identity: left.identity, mime: left.mime === right.mime ? left.mime : "unknown", valid: left.valid && right.valid, contained: left.contained || right.contained }
+    ? { identity: left.identity, authority: left.authority === 'registered_express' && right.authority === 'registered_express' ? 'registered_express' : 'unqualified_response', mime: left.mime === right.mime ? left.mime : "unknown", valid: left.valid && right.valid, contained: left.contained || right.contained }
     : undefined;
 }
 
 function containResponse(value: FlowValue): void {
   if (!value.expressResponse) return;
   value.expressResponse.contained = true;
+  value.expressResponse.authority = 'unqualified_response';
   // Retain the positive HTML candidate, but never a stale non-HTML exclusion.
   if (value.expressResponse.mime !== "html") value.expressResponse.mime = "unknown";
 }
@@ -629,6 +633,7 @@ class FlowEnv {
         if (joined.expressResponse) {
           const state = responseStates.get(joined.expressResponse.identity) ?? joined.expressResponse;
           state.mime = joined.expressResponse.mime; state.valid = joined.expressResponse.valid;
+          state.authority = joined.expressResponse.authority;
           state.contained = joined.expressResponse.contained;
           responseStates.set(state.identity, state);
           joined.expressResponse = state;
@@ -681,7 +686,7 @@ function hasMutableQuery(value: FlowValue, seen = new Set<FlowValue>(), depth = 
 }
 
 function contextValue(value: FlowValue): unknown {
-  return [value.kind, value.root, value.expressResponse ? [value.expressResponse.mime, value.expressResponse.valid, value.expressResponse.contained] : undefined, value.expressObjectBody, value.inputRelated, value.trace, value.traceTruncated, value.urlFragments, value.nativeQuery, value.queryContent ? queryContent(value) : undefined,
+  return [value.kind, value.root, value.expressResponse ? [value.expressResponse.authority, value.expressResponse.mime, value.expressResponse.valid, value.expressResponse.contained] : undefined, value.expressObjectBody, value.inputRelated, value.trace, value.traceTruncated, value.urlFragments, value.nativeQuery, value.queryContent ? queryContent(value) : undefined,
     value.httpTargetUnavailable, value.sqlScalarUnavailable, value.sqlFixedText?.maxCharacters, value.sqlCallback, value.sqlDataUnavailable, value.sqlArray ? [value.sqlArray.node.getSourceFile().fileName,value.sqlArray.node.pos,value.sqlArray.closed,value.sqlArray.count] : undefined,
     value.sqlConfig ? [value.sqlConfig.node.getSourceFile().fileName,value.sqlConfig.node.pos,value.sqlConfig.closed,contextValue(value.sqlConfig.text),value.sqlConfig.values ? contextValue(value.sqlConfig.values) : undefined] : undefined,
     value.httpConfig ? [value.httpConfig.node.getSourceFile().fileName, value.httpConfig.node.pos, value.httpConfig.closed,
@@ -972,7 +977,7 @@ class FlowSession {
       if (value.callable) { value.callable.valid = false; value.callable.staticContext = contexts(value.callable.staticContext, staticContext); for (const captured of value.callable.captures.values()) visit(captured, depth + 1); if (value.callable.lexicalThis) visit(value.callable.lexicalThis, depth + 1); }
       // Preserve a previously recognized response shape, but no MIME exclusion.
       // Concrete member writes already invalidate the shared response separately.
-      if (value.expressResponse) value.expressResponse.mime = 'unknown';
+      if (value.expressResponse) { value.expressResponse.mime = 'unknown'; value.expressResponse.authority = 'unqualified_response'; }
       if (value.nosqlObject) { value.nosqlObject.modified = true; value.nosqlObject.value = combineValues([value.nosqlObject.value, ...values.map(consumedInput)]); }
       for (const child of value.properties?.values() ?? []) visit(child, depth + 1);
     };
@@ -1165,12 +1170,12 @@ class DataflowAnalyzer {
       else if (mongoEntry && index === 1) this.declareBinding(parameter.name, { ...UNKNOWN, mongoDb: mongoEntry }, env, true);
       else if (expressEntry) this.declareBinding(parameter.name,
         index === expressEntry.request ? rootValue('request')
-          : index === expressEntry.response ? { ...UNKNOWN, expressResponse: { identity: {}, mime: 'default', valid: true } }
+          : index === expressEntry.response ? { ...UNKNOWN, expressResponse: { identity: {}, authority: 'registered_express', mime: 'default', valid: true } }
             : UNKNOWN, env, true);
       else if (index === 1 && ts.isIdentifier(parameter.name) && /^(res|response)$/.test(parameter.name.text)
         && functionLike.parameters[0] && ts.isIdentifier(functionLike.parameters[0].name)
         && /^(req|request)$/.test(functionLike.parameters[0].name.text)) {
-        this.declareBinding(parameter.name, { ...UNKNOWN, expressResponse: { identity: {}, mime: "default", valid: true } }, env, true);
+        this.declareBinding(parameter.name, { ...UNKNOWN, expressResponse: { identity: {}, authority: 'unqualified_response', mime: "default", valid: true } }, env, true);
       } else this.declareParameter(parameter, env);
     }
     const body = functionBody(functionLike);
@@ -1638,7 +1643,7 @@ class DataflowAnalyzer {
       if (invoked === undefined && !filesystemWrapper?.qualified && !archiveOpen && !archivePathCall && !archiveWriter) {
         // An opaque consumer may change headers; never reuse a stale non-HTML
         // exclusion after the response capability escapes to that consumer.
-        for (const value of args) if (value.expressResponse) value.expressResponse.mime = "unknown";
+        for (const value of args) if (value.expressResponse) { value.expressResponse.mime = "unknown"; value.expressResponse.authority = 'unqualified_response'; }
         if (!this.session?.nosqlModel.bound(expression) && !this.session?.mongoModel.selector(expression, response?.mongoCollection)) {
           const seen = new Set<FlowValue>();
           const invalidate = (value: FlowValue, depth = 0): void => {
@@ -1665,7 +1670,10 @@ class DataflowAnalyzer {
           else if (value.opaqueClosure) this.session?.gap('module_export_unsupported', expression);
         }
         if (responseState?.valid && ts.isPropertyAccessExpression(callee)
-          && !["send", "json", "status", "type", "contentType", "set", "header", "setHeader", "append", "removeHeader"].includes(callee.name.text)) responseState.mime = "unknown";
+          && !["send", "json", "status", "type", "contentType", "set", "header", "setHeader", "append", "removeHeader"].includes(callee.name.text)) {
+          responseState.mime = "unknown";
+          responseState.authority = 'unqualified_response';
+        }
       }
       const argumentFlows: NonNullable<InputFlowUse["argumentFlows"]> = [];
       for (let index = 0; index < expression.arguments.length; index += 1) {
@@ -1679,6 +1687,9 @@ class DataflowAnalyzer {
           || responseMethod === "send" && responseState.mime === "default" && !args[0]?.expressObjectBody)
         ? "express" as const : undefined;
       const htmlResponseMime = htmlResponse && responseState?.mime !== "non_html" ? responseState?.mime : undefined;
+      const htmlResponseAuthority = htmlResponse === 'express'
+        ? this.declared || this.staticContext || response?.staticContext ? 'unqualified_response' as const : responseState?.authority
+        : undefined;
       const httpRole = this.httpRole(expression, args[0]);
       const sqlRole = this.sqlRole(expression, args);
       const nosqlRole = this.nosqlRole(expression, args[0] ? consumedInput(args[0]) : undefined, response?.mongoCollection);
@@ -1704,7 +1715,7 @@ class DataflowAnalyzer {
       if (filesystemProcess) this.session?.gap('module_export_unsupported', expression);
       if (argumentFlows.length > 0 || httpRole || sqlRole || nosqlRole || forkRole || processRole || filesystemProcess || archiveWrite) this.uses.push({ node: expression, kind: "call", argumentFlows, archiveWrite,
         staticContext: contexts(this.staticContext, filesystemContext, selectedCallable.staticContext, response?.staticContext, ...args.map(value => value.staticContext)),
-        localCall: this.session?.modules.localCallable(expression), ...(htmlResponse ? { htmlResponse, htmlResponseMime } : {}), ...(httpRole ? { httpRole } : {}), ...(sqlRole ? { sqlRole } : {}), ...(nosqlRole ? { nosqlRole } : {}), ...(forkRole ? { forkRole } : {}), ...(processRole ? { processRole } : {}), ...(filesystemProcess ? { filesystemProcess } : {}), localForkCall: this.session?.localForkCalls.get(expression), localProcessCall: this.session?.localForkCalls.get(expression) });
+        localCall: this.session?.modules.localCallable(expression), ...(htmlResponse ? { htmlResponse, htmlResponseMime, htmlResponseAuthority } : {}), ...(httpRole ? { httpRole } : {}), ...(sqlRole ? { sqlRole } : {}), ...(nosqlRole ? { nosqlRole } : {}), ...(forkRole ? { forkRole } : {}), ...(processRole ? { processRole } : {}), ...(filesystemProcess ? { filesystemProcess } : {}), localForkCall: this.session?.localForkCalls.get(expression), localProcessCall: this.session?.localForkCalls.get(expression) });
       return;
     }
     if (ts.isNewExpression(expression)) {

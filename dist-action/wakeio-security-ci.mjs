@@ -218647,12 +218647,13 @@ var init_browser_location_role = __esm({
 
 // build/src/source/dataflow.js
 function joinResponse(left, right) {
-  return left && right && left.identity === right.identity ? { identity: left.identity, mime: left.mime === right.mime ? left.mime : "unknown", valid: left.valid && right.valid, contained: left.contained || right.contained } : void 0;
+  return left && right && left.identity === right.identity ? { identity: left.identity, authority: left.authority === "registered_express" && right.authority === "registered_express" ? "registered_express" : "unqualified_response", mime: left.mime === right.mime ? left.mime : "unknown", valid: left.valid && right.valid, contained: left.contained || right.contained } : void 0;
 }
 function containResponse(value) {
   if (!value.expressResponse)
     return;
   value.expressResponse.contained = true;
+  value.expressResponse.authority = "unqualified_response";
   if (value.expressResponse.mime !== "html")
     value.expressResponse.mime = "unknown";
 }
@@ -219054,7 +219055,7 @@ function contextValue(value) {
   return [
     value.kind,
     value.root,
-    value.expressResponse ? [value.expressResponse.mime, value.expressResponse.valid, value.expressResponse.contained] : void 0,
+    value.expressResponse ? [value.expressResponse.authority, value.expressResponse.mime, value.expressResponse.valid, value.expressResponse.contained] : void 0,
     value.expressObjectBody,
     value.inputRelated,
     value.trace,
@@ -219342,6 +219343,7 @@ var init_dataflow = __esm({
               const state = responseStates.get(joined.expressResponse.identity) ?? joined.expressResponse;
               state.mime = joined.expressResponse.mime;
               state.valid = joined.expressResponse.valid;
+              state.authority = joined.expressResponse.authority;
               state.contained = joined.expressResponse.contained;
               responseStates.set(state.identity, state);
               joined.expressResponse = state;
@@ -219760,8 +219762,10 @@ var init_dataflow = __esm({
             if (value.callable.lexicalThis)
               visit(value.callable.lexicalThis, depth + 1);
           }
-          if (value.expressResponse)
+          if (value.expressResponse) {
             value.expressResponse.mime = "unknown";
+            value.expressResponse.authority = "unqualified_response";
+          }
           if (value.nosqlObject) {
             value.nosqlObject.modified = true;
             value.nosqlObject.value = combineValues([value.nosqlObject.value, ...values.map(consumedInput)]);
@@ -220032,9 +220036,9 @@ var init_dataflow = __esm({
           else if (mongoEntry && index === 1)
             this.declareBinding(parameter.name, { ...UNKNOWN, mongoDb: mongoEntry }, env, true);
           else if (expressEntry)
-            this.declareBinding(parameter.name, index === expressEntry.request ? rootValue("request") : index === expressEntry.response ? { ...UNKNOWN, expressResponse: { identity: {}, mime: "default", valid: true } } : UNKNOWN, env, true);
+            this.declareBinding(parameter.name, index === expressEntry.request ? rootValue("request") : index === expressEntry.response ? { ...UNKNOWN, expressResponse: { identity: {}, authority: "registered_express", mime: "default", valid: true } } : UNKNOWN, env, true);
           else if (index === 1 && ts16.isIdentifier(parameter.name) && /^(res|response)$/.test(parameter.name.text) && functionLike.parameters[0] && ts16.isIdentifier(functionLike.parameters[0].name) && /^(req|request)$/.test(functionLike.parameters[0].name.text)) {
-            this.declareBinding(parameter.name, { ...UNKNOWN, expressResponse: { identity: {}, mime: "default", valid: true } }, env, true);
+            this.declareBinding(parameter.name, { ...UNKNOWN, expressResponse: { identity: {}, authority: "unqualified_response", mime: "default", valid: true } }, env, true);
           } else
             this.declareParameter(parameter, env);
         }
@@ -220513,8 +220517,10 @@ var init_dataflow = __esm({
             this.callableActuals.set(expression, { env, value: invoked });
           if (invoked === void 0 && !filesystemWrapper?.qualified && !archiveOpen && !archivePathCall && !archiveWriter) {
             for (const value of args)
-              if (value.expressResponse)
+              if (value.expressResponse) {
                 value.expressResponse.mime = "unknown";
+                value.expressResponse.authority = "unqualified_response";
+              }
             if (!this.session?.nosqlModel.bound(expression) && !this.session?.mongoModel.selector(expression, response?.mongoCollection)) {
               const seen = /* @__PURE__ */ new Set();
               const invalidate = (value, depth = 0) => {
@@ -220557,8 +220563,10 @@ var init_dataflow = __esm({
               else if (value.opaqueClosure)
                 this.session?.gap("module_export_unsupported", expression);
             }
-            if (responseState?.valid && ts16.isPropertyAccessExpression(callee) && !["send", "json", "status", "type", "contentType", "set", "header", "setHeader", "append", "removeHeader"].includes(callee.name.text))
+            if (responseState?.valid && ts16.isPropertyAccessExpression(callee) && !["send", "json", "status", "type", "contentType", "set", "header", "setHeader", "append", "removeHeader"].includes(callee.name.text)) {
               responseState.mime = "unknown";
+              responseState.authority = "unqualified_response";
+            }
           }
           const argumentFlows = [];
           for (let index = 0; index < expression.arguments.length; index += 1) {
@@ -220569,6 +220577,7 @@ var init_dataflow = __esm({
           const responseMethod = ts16.isPropertyAccessExpression(callee) ? callee.name.text : void 0;
           const htmlResponse = responseState?.valid && expression.arguments.length === 1 && (responseMethod === "send" || responseMethod === "json") && (responseState.mime === "html" || responseState.mime === "unknown" || responseMethod === "send" && responseState.mime === "default" && !args[0]?.expressObjectBody) ? "express" : void 0;
           const htmlResponseMime = htmlResponse && responseState?.mime !== "non_html" ? responseState?.mime : void 0;
+          const htmlResponseAuthority = htmlResponse === "express" ? this.declared || this.staticContext || response?.staticContext ? "unqualified_response" : responseState?.authority : void 0;
           const httpRole = this.httpRole(expression, args[0]);
           const sqlRole = this.sqlRole(expression, args);
           const nosqlRole = this.nosqlRole(expression, args[0] ? consumedInput(args[0]) : void 0, response?.mongoCollection);
@@ -220601,7 +220610,7 @@ var init_dataflow = __esm({
               archiveWrite,
               staticContext: contexts(this.staticContext, filesystemContext, selectedCallable.staticContext, response?.staticContext, ...args.map((value) => value.staticContext)),
               localCall: this.session?.modules.localCallable(expression),
-              ...htmlResponse ? { htmlResponse, htmlResponseMime } : {},
+              ...htmlResponse ? { htmlResponse, htmlResponseMime, htmlResponseAuthority } : {},
               ...httpRole ? { httpRole } : {},
               ...sqlRole ? { sqlRole } : {},
               ...nosqlRole ? { nosqlRole } : {},
@@ -221678,7 +221687,11 @@ function observeFile(astFile, flowUses, files) {
         observations2.push(dynamicCodeObservation(astFile, node, use));
       } else if (use?.htmlResponse === "express" && flowConfidence(use, 0)) {
         const json3 = ts17.isPropertyAccessExpression(node.expression) && node.expression.name.text === "json";
-        pushObservation(observations2, file, sourceFile, node, "ast:html-input-sink", json3 ? "Request input reaches JSON with HTML or unknown MIME; set application/json" : "Request input reaches res.send; encode HTML or set a non-HTML type", "Input reaches a response-shaped body whose MIME can render HTML. JSON serialization does not reset an existing Content-Type. Confirm the binding, headers and encoding before assessing exploitability.", "high", "For JSON data, explicitly set application/json before res.json; for HTML, contextually encode untrusted text. Review custom header changes.", use.htmlResponseMime === "unknown" ? "low" : flowConfidence(use, 0));
+        const qualified = use.htmlResponseAuthority === "registered_express" && !use.staticContext;
+        if (!qualified)
+          pushObservation(observations2, file, sourceFile, node, "ast:response-input-sink", "Input-related value reaches a response-shaped call; dispatch and MIME unresolved", "Input-related data reaches a send/json-shaped call. Receiver binding, payload type and dispatch, MIME, and runtime request origin are not established by this analysis. Parameter names alone do not prove Express or HTML rendering.", "high", "First verify the receiver binding and caller origin, payload type and dispatch, and response headers. If the actual response renders HTML, contextually encode untrusted text; if it returns JSON data, review serialization and its Content-Type.", "low");
+        else
+          pushObservation(observations2, file, sourceFile, node, "ast:html-input-sink", json3 ? "Request input reaches JSON with HTML or unknown MIME; set application/json" : "Request input reaches res.send; encode HTML or set a non-HTML type", "Input reaches a response-shaped body whose MIME can render HTML. JSON serialization does not reset an existing Content-Type. Confirm the binding, headers and encoding before assessing exploitability.", "high", "For JSON data, explicitly set application/json before res.json; for HTML, contextually encode untrusted text. Review custom header changes.", use.htmlResponseMime === "unknown" ? "low" : flowConfidence(use, 0));
       } else if (use?.kind === "call" && HTML_SINK.test(name) && (use.argumentFlows?.length ?? 0) > 0) {
         const confidence = use.argumentFlows?.some((flow) => flow.certainty === "unknown") ? "low" : "medium";
         pushObservation(observations2, file, sourceFile, node, "ast:html-input-sink", "Request input reaches an HTML sink", "Untrusted request or URL input appears to flow into an HTML rendering sink.", "high", "Validate and contextually encode untrusted values before rendering them.", confidence);
@@ -221848,7 +221861,8 @@ function runBuiltinAst(snapshot4, hasOtherSecurityCheck2 = false, limits = FLOW_
       }
     }
     const staticContext = mergeStaticContexts(prior.staticContext, use.staticContext);
-    const merged = { ...prior, staticContext, htmlResponse: prior.htmlResponse ?? use.htmlResponse, htmlResponseMime: prior.htmlResponseMime === "unknown" || use.htmlResponseMime === "unknown" ? "unknown" : prior.htmlResponseMime ?? use.htmlResponseMime, argumentFlows: [...argumentsByIndex.values()].sort((a, b) => a.index - b.index), localForkCall: prior.localForkCall && use.localForkCall ? { complete: prior.localForkCall.complete && use.localForkCall.complete } : void 0, localProcessCall: prior.localProcessCall && use.localProcessCall ? { complete: prior.localProcessCall.complete && use.localProcessCall.complete } : void 0, forkRole: prior.forkRole?.identity === "unresolved" || use.forkRole?.identity === "unresolved" ? { identity: "unresolved" } : prior.forkRole ?? use.forkRole, processRole: mergeProcessRoles(prior.processRole, use.processRole), sqlRole: mergeSqlRoles(prior.sqlRole, use.sqlRole), nosqlRole: mergeNoSqlRoles(prior.nosqlRole, use.nosqlRole), httpRole: mergeHttpRoles(prior.httpRole, use.httpRole) };
+    const responseAuthorities = [prior, use].filter((value) => value.htmlResponse === "express").map((value) => value.htmlResponseAuthority ?? "unqualified_response");
+    const merged = { ...prior, staticContext, htmlResponse: prior.htmlResponse ?? use.htmlResponse, htmlResponseAuthority: responseAuthorities.length ? staticContext || responseAuthorities.includes("unqualified_response") ? "unqualified_response" : "registered_express" : void 0, htmlResponseMime: prior.htmlResponseMime === "unknown" || use.htmlResponseMime === "unknown" ? "unknown" : prior.htmlResponseMime ?? use.htmlResponseMime, argumentFlows: [...argumentsByIndex.values()].sort((a, b) => a.index - b.index), localForkCall: prior.localForkCall && use.localForkCall ? { complete: prior.localForkCall.complete && use.localForkCall.complete } : void 0, localProcessCall: prior.localProcessCall && use.localProcessCall ? { complete: prior.localProcessCall.complete && use.localProcessCall.complete } : void 0, forkRole: prior.forkRole?.identity === "unresolved" || use.forkRole?.identity === "unresolved" ? { identity: "unresolved" } : prior.forkRole ?? use.forkRole, processRole: mergeProcessRoles(prior.processRole, use.processRole), sqlRole: mergeSqlRoles(prior.sqlRole, use.sqlRole), nosqlRole: mergeNoSqlRoles(prior.nosqlRole, use.nosqlRole), httpRole: mergeHttpRoles(prior.httpRole, use.httpRole) };
     const filesystemRoles = [prior.filesystemProcess, use.filesystemProcess].filter((role) => !!role);
     merged.browserLocationRole = mergeBrowserLocationRoles(prior.browserLocationRole, use.browserLocationRole);
     const filesystemRank = { argv_shell_input: 4, argv_shell_unknown: 3, direct_argv_interpreter_unknown: 2, argv_only_shell_disabled: 0 };
@@ -227228,7 +227242,7 @@ var init_report = __esm({
     init_analysis_gaps();
     REPORT_SCHEMA_VERSION = "1.0.0";
     REPORT_TOOL_VERSION = "0.5.0";
-    RULESET_VERSION = "2026-10-14.1";
+    RULESET_VERSION = "2026-10-14.2";
     SEVERITIES2 = [
       "info",
       "low",
@@ -228735,6 +228749,8 @@ function stopReason(error, abortCause, deadlineAt) {
   if (Date.now() >= deadlineAt)
     return "deadline";
   const code = error instanceof UrlNetworkError ? error.code : "transport_error";
+  if (code === "timeout")
+    return "deadline";
   if (code === "request_limit")
     return "request_budget";
   if (/body|decompress|encoding/.test(code))

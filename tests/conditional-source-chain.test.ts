@@ -89,13 +89,13 @@ test('a benign possible body cannot certify the caller receiver still returns a 
 test('opaque receiver effects reach owned callable captures instead of retaining a stale response MIME proof', () => {
   const app = "const noop=require('./noop');function Holder(res){this.leak=()=>res}function route(req,res){res.type('text/plain');const holder=new Holder(res);BOUNDARYres.send(req.query.message)}";
   const fixed = run({ 'app.js': app.replace('BOUNDARY', ''), 'noop.js': 'function noop(holder){}module.exports=noop;' });
-  assert.equal(fixed.findings.filter(f => f.ruleId === 'ast:html-input-sink').length, 0);
+  assert.equal(fixed.findings.filter(f => ['ast:html-input-sink', 'ast:response-input-sink'].includes(f.ruleId)).length, 0);
   const escaped = run({ 'app.js': app.replace('BOUNDARY', 'noop(holder);'), 'noop.js': 'function noop(holder){}module.exports=noop;', 'loader.js': 'require(selectedExtension);' });
   partial(escaped);
-  assert.equal(escaped.findings.filter(f => f.ruleId === 'ast:html-input-sink').length, 1);
+  assert.equal(escaped.findings.filter(f => f.ruleId === 'ast:response-input-sink').length, 1);
   const replaced = run({ 'app.js': app.replace('BOUNDARY', 'res.send=replacement;noop(holder);'), 'noop.js': 'function noop(holder){}module.exports=noop;', 'loader.js': 'require(selectedExtension);' });
   partial(replaced);
-  assert.equal(replaced.findings.filter(f => f.ruleId === 'ast:html-input-sink').length, 0); // Opaque exposure cannot revive a concrete response-member write.
+  assert.equal(replaced.findings.filter(f => ['ast:html-input-sink', 'ast:response-input-sink'].includes(f.ruleId)).length, 0); // Opaque exposure cannot revive a concrete response-member write.
 });
 
 test('context overflow retains conditional authority and a persistent incomplete gap without raising modeled limits', () => {

@@ -84,3 +84,24 @@ separates baseline misses from current results and production-source review.
 Historical 50-case measurements remain v3 results; a before/after v4 measurement
 must run both engines on all 56 fixed inputs. Known-miss and strict-mode policies
 are unchanged.
+
+## Corpus v5: response-binding classification migration
+
+Corpus `2026-10-14.synthetic-js-ts.v5` retains all **56 fixture sources**, the
+28 expected findings, support labels and unchanged known miss from v4. Only the
+expected rule IDs for `express-send-direct-vulnerable`,
+`express-send-template-vulnerable`, `express-send-receiver-vulnerable` and
+`express-status-send-vulnerable` move from `ast:html-input-sink` to
+`ast:response-input-sink`. Their parameter names suggest a response-shaped call,
+but these standalone fixtures do not establish an Express registration or
+runtime binding. The new rule asks the consumer to confirm the receiver,
+payload dispatch and MIME before choosing a repair. Qualified Express HTML
+candidates and the other sink classifications retain their rules.
+
+This is a classification migration, not a detection improvement. A frozen v4
+baseline and v5 result use different raw expectations. Preserve both reports;
+compare finding sites and coverage only after applying the four declared rule
+mappings. Do not call the raw results a same-corpus comparison or treat changed
+finding identities as remediation. The production OSS manifest remains
+unchanged. See [the response classification evaluation](../docs/research/express-response-semantics-2026-10-14.md)
+for the frozen inputs, full-row comparison and remaining limitations.

@@ -179,17 +179,29 @@ local-call model. Each entry starts with the existing response MIME convention;
 upstream middleware header changes are not composed across registrations.
 The earlier request-shaped-name heuristic remains available outside this subset;
 absence of a finding for an unsupported renamed callback is not a safety verdict.
+As of ruleset `2026-10-14.2`, supported registration contributes the internal
+`registered_express` response authority. Names alone contribute
+`unqualified_response`: emitted uses have the dedicated machine-readable
+`ast:response-input-sink` rule, high severity, candidate kind and low confidence.
+Its receiver identity, payload dispatch, MIME and runtime caller origin remain
+unresolved. Aliases preserve authority; mixed authority contexts and opaque
+response effects conservatively retain unqualified authority. A branch that only
+joins HTML/plain MIME for the same registered receiver preserves that receiver's
+authority and retains an HTML candidate with low confidence for unknown MIME.
+Verify the receiver,
+caller, dispatch and headers before applying HTML-specific remediation.
 
 The model follows the official [routing guide](https://expressjs.com/en/guide/routing/),
 [middleware guide](https://expressjs.com/en/guide/using-middleware/) and
 [router arity dispatch](https://github.com/pillarjs/router/blob/master/lib/layer.js).
-New regression tests are separate from the unchanged 50-case synthetic benchmark;
-its remaining Koa miss stays in the denominator.
+The original registration regression was separate from the then-current v3
+50-case synthetic benchmark. The current corpus and its unchanged known Koa miss
+are documented in the [benchmark README](../benchmarks/README.md).
 
 ## Express/Next response and local class subset (ruleset 2026-10-05.18)
 
 - Request/response-shaped handlers with first parameter `req`/`request` and
-  second `res`/`response` now track response binding through direct aliases,
+  second `res`/`response` track a response convention through direct aliases,
   supported helper arguments, documented `locals`/`statusCode`/`statusMessage`
   writes, and documented response chains. Same-response literal `type`, `set`,
   `header` and `setHeader` calls track HTML versus plain-text/JSON MIME; direct
@@ -200,9 +212,21 @@ its remaining Koa miss stays in the denominator.
   in object/array containers or property slots permanently disables MIME exclusions
   for that response in the current analysis; general heap aliases are not resolved. Default JSON,
   known non-HTML MIME and static bodies are excluded under this API convention.
-  Source type, framework registration and overridden APIs are not proven;
+  Supported same-file Express registration keeps the `ast:html-input-sink`
+  lane under this convention. Name-only response uses emit
+  `ast:response-input-sink` with low confidence and verification-first guidance;
+  this rule distinguishes an unresolved response call from an established HTML
+  interpretation. Source type and overridden APIs are not proven;
   reflection and general object/heap aliasing are not a binding-closure proof. Arbitrary fluent chains and opaque object returns are not covered by this addition.
-  Renamed parameters are supported only by the separately bounded registration model below.
+  Renamed parameters are supported only by the separately bounded registration model above.
+- Ruleset `2026-10-14.2` reclassifies existing name-only warnings; it does not
+  establish boolean/container safety, reduce measured false positives or fix an
+  application. The rule/title change also changes deterministic finding IDs and
+  semantic comparison keys. Compare reports across the `.1`→`.2` ruleset change
+  remains unverified with exit 2; disappearance of the previous HTML rule must
+  not be read as a verified remediation. JSON, agent-report, SARIF and advice
+  preserve the response rule ID; SAST candidates retain runtime verification
+  `not_run` and remediation `not_verified`.
 - Global `new Response` and a named `NextResponse` import from `next/server`
   report input bodies only with a closed literal `text/html` header. JSON/plain
   responses, shadowed constructors, spread/dynamic headers and duplicate header

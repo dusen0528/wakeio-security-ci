@@ -14,6 +14,7 @@ function scan(text: string) {
   return runBuiltinAst(snapshot, false);
 }
 const html = (text: string) => scan(text).findings.filter(f => f.ruleId === 'ast:html-input-sink');
+const responses = (text: string) => scan(text).findings.filter(f => ['ast:html-input-sink', 'ast:response-input-sink'].includes(f.ruleId));
 const prefix = "import express from 'express';const router=express.Router();";
 const handler = '(incoming,outgoing)=>outgoing.send(incoming.query.syntheticRegistrationMarker)';
 
@@ -57,10 +58,10 @@ test('directly default-exported routers retain same-file renamed-handler candida
   const found = html(source);
   assert.equal(found.length, 1); assert.equal(found[0].location.line, 4);
   assert.equal(found[0].kind, 'candidate'); assert.equal(found[0].confidence, 'medium');
-  assert.equal(html(source.replace('outgoing.send(`<h2>Welcome ${incoming.query.name}</h2>`)', 'outgoing.json({name:incoming.query.name})')).length, 0);
-  assert.equal(html(source.replace("from 'express'", "from 'custom'" )).length, 0);
-  assert.equal(html(source.replace('export default router;', 'opaque(router);export default router;')).length, 0);
-  assert.equal(html(source.replace('export default router;', 'export default {router};')).length, 0);
+  assert.equal(responses(source.replace('outgoing.send(`<h2>Welcome ${incoming.query.name}</h2>`)', 'outgoing.json({name:incoming.query.name})')).length, 0);
+  assert.equal(responses(source.replace("from 'express'", "from 'custom'" )).length, 0);
+  assert.equal(responses(source.replace('export default router;', 'opaque(router);export default router;')).length, 0);
+  assert.equal(responses(source.replace('export default router;', 'export default {router};')).length, 0);
 });
 
 test('Express HTTP registrations, route chains and middleware use the correct argument positions', () => {
@@ -80,15 +81,17 @@ test('Express HTTP registrations, route chains and middleware use the correct ar
 test('registered callback MIME and actual-argument safeguards are unchanged', () => {
   for (const body of ["outgoing.type('text/plain').send(incoming.query.value)", 'outgoing.json(incoming.query.value)',
     'outgoing.send({value:incoming.query.value})', "outgoing.send('fixed')", 'outgoing={send(){}};outgoing.send(incoming.query.value)']) {
-    assert.equal(html(prefix + `router.get('/x',(incoming,outgoing)=>{${body}})`).length, 0, body);
+    assert.equal(responses(prefix + `router.get('/x',(incoming,outgoing)=>{${body}})`).length, 0, body);
   }
   for (const body of ["outgoing.type('html').json({value:incoming.query.value})",
     "outgoing.type('text/plain');opaque(outgoing);outgoing.send(incoming.query.value)",
     "const bag={reply:outgoing};outgoing.type('text/plain');opaque(bag);outgoing.send(incoming.query.value)"]) {
-    assert.equal(html(prefix + `router.get('/x',(incoming,outgoing)=>{${body}})`).length, 1, body);
+    const check = scan(prefix + `router.get('/x',(incoming,outgoing)=>{${body}})`);
+    const rule = body.includes('opaque(') ? 'ast:response-input-sink' : 'ast:html-input-sink';
+    assert.equal(check.findings.filter(finding => finding.ruleId === rule).length, 1, body);
   }
   assert.equal(html(prefix + "function write(output,value){output.send(value)}router.get('/x',(incoming,outgoing)=>write(outgoing,incoming.query.value))").length, 1);
-  assert.equal(html(prefix + "function write(output,value){output.send(value)}router.get('/x',(incoming,outgoing)=>write({send(){}},incoming.query.value))").length, 0);
+  assert.equal(responses(prefix + "function write(output,value){output.send(value)}router.get('/x',(incoming,outgoing)=>write({send(){}},incoming.query.value))").length, 0);
 });
 
 test('arbitrary callbacks, fake packages, shadowed bindings and non-handler Express arguments stay unseeded', () => {
@@ -106,7 +109,7 @@ test('arbitrary callbacks, fake packages, shadowed bindings and non-handler Expr
     prefix + `router.get('/x',factory(${handler}))`,
     prefix + `router.get()`, prefix + `router.use()`, prefix + `router.route('/x').get()`,
     prefix + `router.use({},${handler})`, prefix + `router.get('/x',null,${handler})`,
-  ]) assert.equal(html(text).length, 0, text);
+  ]) assert.equal(responses(text).length, 0, text);
 });
 
 test('mutations and opaque escapes revoke positional registration identity through aliases', () => {
@@ -115,17 +118,17 @@ test('mutations and opaque escapes revoke positional registration identity throu
     'opaque(router);', 'const bag={router};opaque(bag);', 'express.Router=replacement;',
     'express.application.get=replacement;', 'const factory=express;factory.Router=replacement;',
     "const alias=router.get('/first',auth);alias.get=replacement;", "opaque(router.get('/first',auth));",
-  ]) assert.equal(html(prefix + change + `router.get('/x',${handler})`).length, 0, change);
-  assert.equal(html("import express from 'express';let router=express();router=fake;" + `router.get('/x',${handler})`).length, 0);
-  assert.equal(html(prefix + "let render=" + handler + ";render=other;router.get('/x',render)").length, 0);
-  assert.equal(html(prefix + "import * as ns from 'express';ns.default.application.get=fake;" + `router.get('/x',${handler})`).length, 0);
-  assert.equal(html(prefix + "import {Router} from 'express';Router.prototype.get=fake;" + `router.get('/x',${handler})`).length, 0);
-  assert.equal(html("import express from 'express';const router=express();const alias=router.set('x','y');alias.get=fake;" + `router.get('/x',${handler})`).length, 0);
-  assert.equal(html(prefix + `const handlers=[${handler}];handlers.pop();router.get('/x',handlers)`).length, 0);
-  assert.equal(html(prefix + `const render=${handler};Object.defineProperty(render,'length',{value:4});router.get('/x',render)`).length, 0);
-  assert.equal(html(`require=()=>()=>({get(){}});const express=require('express');const router=express();router.get('/x',${handler})`).length, 0);
-  assert.equal(html(prefix + "const rogue=express.Router();rogue.__proto__.get=fake;" + `router.get('/x',${handler})`).length, 0);
-  assert.equal(html(prefix + "import('express').then(x=>x.default.application.get=fake);" + `router.get('/x',${handler})`).length, 0);
+  ]) assert.equal(responses(prefix + change + `router.get('/x',${handler})`).length, 0, change);
+  assert.equal(responses("import express from 'express';let router=express();router=fake;" + `router.get('/x',${handler})`).length, 0);
+  assert.equal(responses(prefix + "let render=" + handler + ";render=other;router.get('/x',render)").length, 0);
+  assert.equal(responses(prefix + "import * as ns from 'express';ns.default.application.get=fake;" + `router.get('/x',${handler})`).length, 0);
+  assert.equal(responses(prefix + "import {Router} from 'express';Router.prototype.get=fake;" + `router.get('/x',${handler})`).length, 0);
+  assert.equal(responses("import express from 'express';const router=express();const alias=router.set('x','y');alias.get=fake;" + `router.get('/x',${handler})`).length, 0);
+  assert.equal(responses(prefix + `const handlers=[${handler}];handlers.pop();router.get('/x',handlers)`).length, 0);
+  assert.equal(responses(prefix + `const render=${handler};Object.defineProperty(render,'length',{value:4});router.get('/x',render)`).length, 0);
+  assert.equal(responses(`require=()=>()=>({get(){}});const express=require('express');const router=express();router.get('/x',${handler})`).length, 0);
+  assert.equal(responses(prefix + "const rogue=express.Router();rogue.__proto__.get=fake;" + `router.get('/x',${handler})`).length, 0);
+  assert.equal(responses(prefix + "import('express').then(x=>x.default.application.get=fake);" + `router.get('/x',${handler})`).length, 0);
 });
 
 test('positional registration ignores error, next and unrelated parameter names as request inputs', () => {
@@ -135,7 +138,7 @@ test('positional registration ignores error, next and unrelated parameter names 
     '(incoming,outgoing,...extra)=>outgoing.send(incoming.query.value)',
     '(failure,incoming,outgoing,next=()=>{})=>outgoing.send(incoming.query.value)',
     'function(this:any,incoming,outgoing){outgoing.send(incoming.query.value)}',
-  ]) assert.equal(html(prefix + `router.use(${declaration})`).length, 0, declaration);
+  ]) assert.equal(responses(prefix + `router.use(${declaration})`).length, 0, declaration);
 });
 
 test('Express positional identity cannot cross file scope or const initialization order', () => {
@@ -144,11 +147,11 @@ test('Express positional identity cannot cross file scope or const initializatio
     `const router=express();const express=require('express');router.get('/x',${handler});`,
     prefix + "router.get('/x',render);const render=" + handler,
     prefix + `router.get('/x',...handlers,${handler});`,
-  ]) assert.equal(html(code).length, 0, code);
+  ]) assert.equal(responses(code).length, 0, code);
   const texts = { 'owner.js': "const express=require('express');const router=express();", 'other.js': `router.get('/x',${handler});` };
   const files = Object.entries(texts).map(([path,text]) => ({path,text,bytes:text.length,category:'code' as const,sensitive:false}));
   const check = runBuiltinAst({root:'/never-read',files,issues:[],complete:true,ignoredFiles:0,totalBytes:files.reduce((n,f)=>n+f.bytes,0)}, false);
-  assert.equal(check.findings.filter(f=>f.ruleId==='ast:html-input-sink').length, 0);
+  assert.equal(check.findings.filter(f=>['ast:html-input-sink','ast:response-input-sink'].includes(f.ruleId)).length, 0);
 });
 
 test('early and late index exhaustion never reuse positional entry proof', () => {
