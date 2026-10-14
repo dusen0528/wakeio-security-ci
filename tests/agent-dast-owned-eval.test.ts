@@ -20,3 +20,26 @@ test('owned evaluation fixture requires consent and separates positive, negative
     assert.deepEqual(await (await fetch(fixture.origin + '/items?id=1')).json(), { count: 1 });
   } finally { await fixture.close(); }
 });
+
+test('owned runner projection preserves admitted requests, source observations and predefined coverage', async () => {
+  const { mkdtemp, rm } = await import('node:fs/promises');
+  const { tmpdir } = await import('node:os');
+  const { join } = await import('node:path');
+  const base = new URL('../../benchmarks/agent-eval/targets/local-sqlite/', import.meta.url);
+  const { startFixture } = await import(new URL('fixture.mjs', base).href);
+  const { prepare, runArm } = await import(new URL('run.mjs', base).href);
+  const { projectArm } = await import(new URL('score.mjs', base).href);
+  const fixture = await startFixture({ activeConsent: true });
+  const out = await mkdtemp(join(tmpdir(), 'owned-eval-test-'));
+  try {
+    const plan = await prepare(fixture, join(out, 'inputs'), ['/catalog','/inventory']);
+    const run = await runArm('A', fixture, plan, join(out, 'A'));
+    assert.equal(run.exitCode, 1); assert.equal(run.actualRequests, 16);
+    const arm = await projectArm(run);
+    assert.deepEqual(arm.coverage, { plannedCells: 2, executedCells: 2 });
+    assert.equal(arm.findings.length, 1); assert.equal(arm.findings[0].path, '/catalog');
+    assert.equal(arm.findings[0].state, 'candidate'); assert.equal(arm.rounds[0].requestCount, 16);
+    await assert.rejects(projectArm({ ...run, actualRequests: 0 }));
+    await assert.rejects(projectArm({ ...run, rounds: [...run.rounds, ...run.rounds] }), /multi_round_cli_support_required/);
+  } finally { await fixture.close(); await rm(out, { recursive: true, force: true }); }
+});

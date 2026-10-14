@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "repeats": 5,
+  "sharedRequestCap": 64,
+  "maxRounds": 8,
+  "basis": "candidate",
+  "expectedBaseline": {
+    "tp": 1,
+    "fp": 0,
+    "fn": 0,
+    "coverage": 1
+  },
+  "quality": "Every pair preserves A detections, adds no false-positive sites and preserves predefined coverage, with both arms completing inside the same cap.",
+  "value": "After quality holds for every pair, mean B requests or total elapsed time must be lower; otherwise defer the agent loop on this fixture.",
+  "limitations": "One final positive and one final negative; five repetitions are a pilot, not evidence of broad DAST performance. No price inferred from subscription tokens."
+}
