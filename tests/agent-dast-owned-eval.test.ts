@@ -65,3 +65,22 @@ test('owned evaluation preserves provider setup failures as incomplete arms', as
     await rm(out, { recursive: true, force: true });
   }
 });
+
+
+test('incomplete loop retains admissions even when no child report was delivered', async () => {
+  const { execFileSync } = await import('node:child_process');
+  execFileSync(process.execPath, ['--experimental-test-module-mocks', '--input-type=module', '-e', `
+    import { mock } from 'node:test';
+    import assert from 'node:assert/strict';
+    mock.module('./build/src/agent-dast/providers/codex.js', { namedExports: { createAgent: async () => ({}) } });
+    mock.module('./build/src/agent-dast/loop/loop.js', { namedExports: { runAgentLoop: async () => ({
+      status: 'partial', reason: 'ledger_mismatch', requestCount: 2,
+      rounds: [{ round: 1, requestCount: 2, outDir: '/missing-owned-report', ledgerVerified: false }]
+    }) } });
+    const { runArm } = await import('./benchmarks/agent-eval/targets/local-sqlite/run.mjs');
+    const result = await runArm('B', { origin: 'http://127.0.0.1:1', requests: [1,2], reset() {} },
+      { plan: { tasks: [] }, coverageCells: [], inputs: {} }, '/unused');
+    assert.equal(result.exitCode, 2); assert.equal(result.requestCount, 2);
+    assert.equal(result.rounds[0].ledgerVerified, false); assert.equal(result.reason, 'ledger_mismatch');
+  `], { stdio: 'pipe' });
+});
