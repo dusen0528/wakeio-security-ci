@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "inputs": [
+    {
+      "id": "search_normal",
+      "path": "schema-normal.json",
+      "sha256": "8888234c659180072cc206525341a146808f8f8cd9b82adf63beadddcc310820"
+    },
+    {
+      "id": "search_error",
+      "path": "schema-error.json",
+      "sha256": "4de8f223c2f64144d51ea3ce7db496bd71dec4f67ac6d576cb517fbd32d5a602"
+    }
+  ]
+}
