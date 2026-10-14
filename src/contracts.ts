@@ -18,7 +18,7 @@ export interface StaticCandidateContext {
   authority: 'conditional';
   items: Array<{
     kind: 'unresolved_cjs_dispatch' | 'constructor_continuation' | 'declared_callback_entry' | 'unqualified_mongo_origin'
-      | 'declared_filesystem_stream_origin' | 'declared_stream_callback_schedule' | 'conditional_array_accumulator' | 'declared_process_wrapper' | 'declared_package_api';
+      | 'declared_filesystem_stream_origin' | 'declared_stream_callback_schedule' | 'conditional_array_accumulator' | 'declared_process_wrapper' | 'declared_package_api' | 'configured_module_resolution';
     location: { path: string; line: number; column: number };
     target?: { path: string; line: number; column: number };
   }>;

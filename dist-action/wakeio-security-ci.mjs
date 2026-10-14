@@ -344,7 +344,7 @@ var init_report_path = __esm({
 // node_modules/typescript/lib/typescript.js
 var require_typescript = __commonJS({
   "node_modules/typescript/lib/typescript.js"(exports, module) {
-    var ts21 = {};
+    var ts22 = {};
     ((module2) => {
       "use strict";
       var __defProp2 = Object.defineProperty;
@@ -1639,7 +1639,7 @@ var require_typescript = __commonJS({
         isEntityName: () => isEntityName,
         isEntityNameExpression: () => isEntityNameExpression,
         isEnumConst: () => isEnumConst,
-        isEnumDeclaration: () => isEnumDeclaration,
+        isEnumDeclaration: () => isEnumDeclaration2,
         isEnumMember: () => isEnumMember,
         isEqualityOperatorKind: () => isEqualityOperatorKind,
         isEqualsGreaterThanToken: () => isEqualsGreaterThanToken,
@@ -1762,7 +1762,7 @@ var require_typescript = __commonJS({
         isInsideTemplateLiteral: () => isInsideTemplateLiteral,
         isInstanceOfExpression: () => isInstanceOfExpression,
         isInstantiatedModule: () => isInstantiatedModule,
-        isInterfaceDeclaration: () => isInterfaceDeclaration,
+        isInterfaceDeclaration: () => isInterfaceDeclaration2,
         isInternalDeclaration: () => isInternalDeclaration,
         isInternalModuleImportEqualsDeclaration: () => isInternalModuleImportEqualsDeclaration,
         isInternalName: () => isInternalName,
@@ -1887,7 +1887,7 @@ var require_typescript = __commonJS({
         isModuleAugmentationExternal: () => isModuleAugmentationExternal,
         isModuleBlock: () => isModuleBlock,
         isModuleBody: () => isModuleBody,
-        isModuleDeclaration: () => isModuleDeclaration,
+        isModuleDeclaration: () => isModuleDeclaration2,
         isModuleExportName: () => isModuleExportName,
         isModuleExportsAccessExpression: () => isModuleExportsAccessExpression,
         isModuleIdentifier: () => isModuleIdentifier,
@@ -1904,11 +1904,11 @@ var require_typescript = __commonJS({
         isNamedExportBindings: () => isNamedExportBindings,
         isNamedExports: () => isNamedExports2,
         isNamedImportBindings: () => isNamedImportBindings,
-        isNamedImports: () => isNamedImports7,
+        isNamedImports: () => isNamedImports8,
         isNamedImportsOrExports: () => isNamedImportsOrExports,
         isNamedTupleMember: () => isNamedTupleMember,
         isNamespaceBody: () => isNamespaceBody,
-        isNamespaceExport: () => isNamespaceExport,
+        isNamespaceExport: () => isNamespaceExport2,
         isNamespaceExportDeclaration: () => isNamespaceExportDeclaration,
         isNamespaceImport: () => isNamespaceImport10,
         isNamespaceReexportDeclaration: () => isNamespaceReexportDeclaration,
@@ -2101,7 +2101,7 @@ var require_typescript = __commonJS({
         isTryStatement: () => isTryStatement2,
         isTupleTypeNode: () => isTupleTypeNode,
         isTypeAlias: () => isTypeAlias,
-        isTypeAliasDeclaration: () => isTypeAliasDeclaration,
+        isTypeAliasDeclaration: () => isTypeAliasDeclaration2,
         isTypeAssertionExpression: () => isTypeAssertionExpression14,
         isTypeDeclaration: () => isTypeDeclaration,
         isTypeElement: () => isTypeElement,
@@ -2263,7 +2263,7 @@ var require_typescript = __commonJS({
         parseBuildCommand: () => parseBuildCommand,
         parseCommandLine: () => parseCommandLine,
         parseCommandLineWorker: () => parseCommandLineWorker,
-        parseConfigFileTextToJson: () => parseConfigFileTextToJson,
+        parseConfigFileTextToJson: () => parseConfigFileTextToJson2,
         parseConfigFileWithSystem: () => parseConfigFileWithSystem,
         parseConfigHostFromCompilerHostLike: () => parseConfigHostFromCompilerHostLike,
         parseCustomTypeOption: () => parseCustomTypeOption,
@@ -3465,11 +3465,11 @@ var require_typescript = __commonJS({
         }
         return result3;
       }
-      function clone(object12) {
+      function clone(object13) {
         const result3 = {};
-        for (const id in object12) {
-          if (hasOwnProperty.call(object12, id)) {
-            result3[id] = object12[id];
+        for (const id in object13) {
+          if (hasOwnProperty.call(object13, id)) {
+            result3[id] = object13[id];
           }
         }
         return result3;
@@ -17430,7 +17430,7 @@ ${lanes.join("\n")}
         return !!findAncestor(node, isJSDocTypeExpression);
       }
       function isExportNamespaceAsDefaultDeclaration(node) {
-        return !!(isExportDeclaration4(node) && node.exportClause && isNamespaceExport(node.exportClause) && moduleExportNameIsDefault(node.exportClause.name));
+        return !!(isExportDeclaration4(node) && node.exportClause && isNamespaceExport2(node.exportClause) && moduleExportNameIsDefault(node.exportClause.name));
       }
       function moduleExportNameTextUnescaped(node) {
         return node.kind === 11 ? node.text : unescapeLeadingUnderscores(node.escapedText);
@@ -18084,16 +18084,16 @@ ${lanes.join("\n")}
         return node.kind === 261 && node.parent.kind === 300;
       }
       function isAmbientModule(node) {
-        return isModuleDeclaration(node) && (node.name.kind === 11 || isGlobalScopeAugmentation(node));
+        return isModuleDeclaration2(node) && (node.name.kind === 11 || isGlobalScopeAugmentation(node));
       }
       function isModuleWithStringLiteralName(node) {
-        return isModuleDeclaration(node) && node.name.kind === 11;
+        return isModuleDeclaration2(node) && node.name.kind === 11;
       }
       function isNonGlobalAmbientModule(node) {
-        return isModuleDeclaration(node) && isStringLiteral7(node.name);
+        return isModuleDeclaration2(node) && isStringLiteral7(node.name);
       }
       function isEffectiveModuleDeclaration(node) {
-        return isModuleDeclaration(node) || isIdentifier19(node);
+        return isModuleDeclaration2(node) || isIdentifier19(node);
       }
       function isShorthandAmbientModuleSymbol(moduleSymbol) {
         return isShorthandAmbientModule(moduleSymbol.valueDeclaration);
@@ -18121,7 +18121,7 @@ ${lanes.join("\n")}
       }
       function getNonAugmentationDeclaration(symbol) {
         var _a2;
-        return (_a2 = symbol.declarations) == null ? void 0 : _a2.find((d) => !isExternalModuleAugmentation(d) && !(isModuleDeclaration(d) && isGlobalScopeAugmentation(d)));
+        return (_a2 = symbol.declarations) == null ? void 0 : _a2.find((d) => !isExternalModuleAugmentation(d) && !(isModuleDeclaration2(d) && isGlobalScopeAugmentation(d)));
       }
       function isCommonJSContainingModuleKind(kind) {
         return kind === 1 || 100 <= kind && kind <= 199;
@@ -18256,7 +18256,7 @@ ${lanes.join("\n")}
         }
       }
       function hasPossibleExternalModuleReference(node) {
-        return isAnyImportOrReExport(node) || isModuleDeclaration(node) || isImportTypeNode(node) || isImportCall(node);
+        return isAnyImportOrReExport(node) || isModuleDeclaration2(node) || isImportTypeNode(node) || isImportCall(node);
       }
       function isAnyImportOrReExport(node) {
         return isAnyImportSyntax(node) || isExportDeclaration4(node);
@@ -19293,7 +19293,7 @@ ${lanes.join("\n")}
         return node.kind === 187;
       }
       function isNamespaceReexportDeclaration(node) {
-        return isNamespaceExport(node) && !!node.parent.moduleSpecifier;
+        return isNamespaceExport2(node) && !!node.parent.moduleSpecifier;
       }
       function isExternalModuleImportEqualsDeclaration(node) {
         return node.kind === 272 && node.moduleReference.kind === 284;
@@ -19716,7 +19716,7 @@ ${lanes.join("\n")}
           case 272:
             return node;
           case 279:
-            return node.exportClause && tryCast(node.exportClause, isNamespaceExport);
+            return node.exportClause && tryCast(node.exportClause, isNamespaceExport2);
           default:
             return Debug.assertNever(node);
         }
@@ -19756,7 +19756,7 @@ ${lanes.join("\n")}
         return node.kind === 347 || node.kind === 339 || node.kind === 341;
       }
       function isTypeAlias(node) {
-        return isJSDocTypeAlias(node) || isTypeAliasDeclaration(node);
+        return isJSDocTypeAlias(node) || isTypeAliasDeclaration2(node);
       }
       function getSourceOfAssignment(node) {
         return isExpressionStatement10(node) && isBinaryExpression13(node.expression) && node.expression.operatorToken.kind === 64 ? getRightMostAssignedExpression(node.expression) : void 0;
@@ -19779,7 +19779,7 @@ ${lanes.join("\n")}
         return isVariableStatement10(node) ? firstOrUndefined(node.declarationList.declarations) : void 0;
       }
       function getNestedModuleDeclaration(node) {
-        return isModuleDeclaration(node) && node.body && node.body.kind === 268 ? node.body : void 0;
+        return isModuleDeclaration2(node) && node.body && node.body.kind === 268 ? node.body : void 0;
       }
       function canHaveFlowNode(node) {
         if (node.kind >= 244 && node.kind <= 260) {
@@ -20259,7 +20259,7 @@ ${lanes.join("\n")}
         }
       }
       function getAllSuperTypeNodes(node) {
-        return isInterfaceDeclaration(node) ? getInterfaceBaseTypeNodes(node) || emptyArray : isClassLike(node) ? concatenate(singleElementArray(getEffectiveBaseTypeNode(node)), getEffectiveImplementsTypeNodes(node)) || emptyArray : emptyArray;
+        return isInterfaceDeclaration2(node) ? getInterfaceBaseTypeNodes(node) || emptyArray : isClassLike(node) ? concatenate(singleElementArray(getEffectiveBaseTypeNode(node)), getEffectiveImplementsTypeNodes(node)) || emptyArray : emptyArray;
       }
       function getInterfaceBaseTypeNodes(node) {
         const heritageClause = getHeritageClause(
@@ -21373,7 +21373,7 @@ ${lanes.join("\n")}
       }
       function getEffectiveTypeAnnotationNode(node) {
         if (!isInJSFile(node) && isFunctionDeclaration10(node)) return void 0;
-        if (isTypeAliasDeclaration(node)) return void 0;
+        if (isTypeAliasDeclaration2(node)) return void 0;
         const type = node.type;
         if (type || !isInJSFile(node)) return type;
         return isJSDocPropertyLikeTag(node) ? node.typeExpression && node.typeExpression.type : getJSDocType(node);
@@ -21979,7 +21979,7 @@ ${lanes.join("\n")}
         if (!jsonText) return void 0;
         let result3 = tryParseJson(jsonText);
         if (result3 === void 0) {
-          const looseResult = parseConfigFileTextToJson(path2, jsonText);
+          const looseResult = parseConfigFileTextToJson2(path2, jsonText);
           if (!looseResult.error) {
             result3 = looseResult.config;
           }
@@ -22313,7 +22313,7 @@ ${lanes.join("\n")}
         return true;
       }
       function isObjectTypeDeclaration(node) {
-        return isClassLike(node) || isInterfaceDeclaration(node) || isTypeLiteralNode(node);
+        return isClassLike(node) || isInterfaceDeclaration2(node) || isTypeLiteralNode(node);
       }
       function isTypeNodeKind(kind) {
         return kind >= 183 && kind <= 206 || kind === 133 || kind === 159 || kind === 150 || kind === 163 || kind === 151 || kind === 136 || kind === 154 || kind === 155 || kind === 116 || kind === 157 || kind === 146 || kind === 141 || kind === 234 || kind === 313 || kind === 314 || kind === 315 || kind === 316 || kind === 317 || kind === 318 || kind === 319;
@@ -24221,7 +24221,7 @@ ${lanes.join("\n")}
         }
       }
       function canHaveExportModifier(node) {
-        return isEnumDeclaration(node) || isVariableStatement10(node) || isFunctionDeclaration10(node) || isClassDeclaration5(node) || isInterfaceDeclaration(node) || isTypeDeclaration(node) || isModuleDeclaration(node) && !isExternalModuleAugmentation(node) && !isGlobalScopeAugmentation(node);
+        return isEnumDeclaration2(node) || isVariableStatement10(node) || isFunctionDeclaration10(node) || isClassDeclaration5(node) || isInterfaceDeclaration2(node) || isTypeDeclaration(node) || isModuleDeclaration2(node) && !isExternalModuleAugmentation(node) && !isGlobalScopeAugmentation(node);
       }
       function isOptionalJSDocPropertyLikeTag(node) {
         if (!isJSDocPropertyLikeTag(node)) {
@@ -24627,7 +24627,7 @@ ${lanes.join("\n")}
                 // falls through
                 case 268:
                   const moduleExports = ((_a2 = getSymbolOfDeclaration(location2)) == null ? void 0 : _a2.exports) || emptySymbols;
-                  if (location2.kind === 308 || isModuleDeclaration(location2) && location2.flags & 33554432 && !isGlobalScopeAugmentation(location2)) {
+                  if (location2.kind === 308 || isModuleDeclaration2(location2) && location2.flags & 33554432 && !isGlobalScopeAugmentation(location2)) {
                     if (result3 = moduleExports.get(
                       "default"
                       /* Default */
@@ -30429,11 +30429,11 @@ ${lanes.join("\n")}
         function createIsNotTypeCheck(value, tag) {
           return tag === "null" ? factory2.createStrictInequality(value, createNull()) : tag === "undefined" ? factory2.createStrictInequality(value, createVoidZero()) : factory2.createStrictInequality(createTypeOfExpression(value), createStringLiteral(tag));
         }
-        function createMethodCall(object12, methodName, argumentsList) {
-          if (isCallChain(object12)) {
+        function createMethodCall(object13, methodName, argumentsList) {
+          if (isCallChain(object13)) {
             return createCallChain(
               createPropertyAccessChain(
-                object12,
+                object13,
                 /*questionDotToken*/
                 void 0,
                 methodName
@@ -30446,7 +30446,7 @@ ${lanes.join("\n")}
             );
           }
           return createCallExpression(
-            createPropertyAccessExpression(object12, methodName),
+            createPropertyAccessExpression(object13, methodName),
             /*typeArguments*/
             void 0,
             argumentsList
@@ -30835,7 +30835,7 @@ ${lanes.join("\n")}
           } else {
             modifierArray = modifiers;
           }
-          return isTypeParameterDeclaration(node) ? updateTypeParameterDeclaration(node, modifierArray, node.name, node.constraint, node.default) : isParameter6(node) ? updateParameterDeclaration(node, modifierArray, node.dotDotDotToken, node.name, node.questionToken, node.type, node.initializer) : isConstructorTypeNode(node) ? updateConstructorTypeNode1(node, modifierArray, node.typeParameters, node.parameters, node.type) : isPropertySignature(node) ? updatePropertySignature(node, modifierArray, node.name, node.questionToken, node.type) : isPropertyDeclaration5(node) ? updatePropertyDeclaration2(node, modifierArray, node.name, node.questionToken ?? node.exclamationToken, node.type, node.initializer) : isMethodSignature(node) ? updateMethodSignature(node, modifierArray, node.name, node.questionToken, node.typeParameters, node.parameters, node.type) : isMethodDeclaration8(node) ? updateMethodDeclaration(node, modifierArray, node.asteriskToken, node.name, node.questionToken, node.typeParameters, node.parameters, node.type, node.body) : isConstructorDeclaration4(node) ? updateConstructorDeclaration(node, modifierArray, node.parameters, node.body) : isGetAccessorDeclaration6(node) ? updateGetAccessorDeclaration(node, modifierArray, node.name, node.parameters, node.type, node.body) : isSetAccessorDeclaration6(node) ? updateSetAccessorDeclaration(node, modifierArray, node.name, node.parameters, node.body) : isIndexSignatureDeclaration(node) ? updateIndexSignature(node, modifierArray, node.parameters, node.type) : isFunctionExpression13(node) ? updateFunctionExpression(node, modifierArray, node.asteriskToken, node.name, node.typeParameters, node.parameters, node.type, node.body) : isArrowFunction13(node) ? updateArrowFunction(node, modifierArray, node.typeParameters, node.parameters, node.type, node.equalsGreaterThanToken, node.body) : isClassExpression3(node) ? updateClassExpression(node, modifierArray, node.name, node.typeParameters, node.heritageClauses, node.members) : isVariableStatement10(node) ? updateVariableStatement(node, modifierArray, node.declarationList) : isFunctionDeclaration10(node) ? updateFunctionDeclaration(node, modifierArray, node.asteriskToken, node.name, node.typeParameters, node.parameters, node.type, node.body) : isClassDeclaration5(node) ? updateClassDeclaration(node, modifierArray, node.name, node.typeParameters, node.heritageClauses, node.members) : isInterfaceDeclaration(node) ? updateInterfaceDeclaration(node, modifierArray, node.name, node.typeParameters, node.heritageClauses, node.members) : isTypeAliasDeclaration(node) ? updateTypeAliasDeclaration(node, modifierArray, node.name, node.typeParameters, node.type) : isEnumDeclaration(node) ? updateEnumDeclaration(node, modifierArray, node.name, node.members) : isModuleDeclaration(node) ? updateModuleDeclaration(node, modifierArray, node.name, node.body) : isImportEqualsDeclaration3(node) ? updateImportEqualsDeclaration(node, modifierArray, node.isTypeOnly, node.name, node.moduleReference) : isImportDeclaration9(node) ? updateImportDeclaration(node, modifierArray, node.importClause, node.moduleSpecifier, node.attributes) : isExportAssignment5(node) ? updateExportAssignment(node, modifierArray, node.expression) : isExportDeclaration4(node) ? updateExportDeclaration(node, modifierArray, node.isTypeOnly, node.exportClause, node.moduleSpecifier, node.attributes) : Debug.assertNever(node);
+          return isTypeParameterDeclaration(node) ? updateTypeParameterDeclaration(node, modifierArray, node.name, node.constraint, node.default) : isParameter6(node) ? updateParameterDeclaration(node, modifierArray, node.dotDotDotToken, node.name, node.questionToken, node.type, node.initializer) : isConstructorTypeNode(node) ? updateConstructorTypeNode1(node, modifierArray, node.typeParameters, node.parameters, node.type) : isPropertySignature(node) ? updatePropertySignature(node, modifierArray, node.name, node.questionToken, node.type) : isPropertyDeclaration5(node) ? updatePropertyDeclaration2(node, modifierArray, node.name, node.questionToken ?? node.exclamationToken, node.type, node.initializer) : isMethodSignature(node) ? updateMethodSignature(node, modifierArray, node.name, node.questionToken, node.typeParameters, node.parameters, node.type) : isMethodDeclaration8(node) ? updateMethodDeclaration(node, modifierArray, node.asteriskToken, node.name, node.questionToken, node.typeParameters, node.parameters, node.type, node.body) : isConstructorDeclaration4(node) ? updateConstructorDeclaration(node, modifierArray, node.parameters, node.body) : isGetAccessorDeclaration6(node) ? updateGetAccessorDeclaration(node, modifierArray, node.name, node.parameters, node.type, node.body) : isSetAccessorDeclaration6(node) ? updateSetAccessorDeclaration(node, modifierArray, node.name, node.parameters, node.body) : isIndexSignatureDeclaration(node) ? updateIndexSignature(node, modifierArray, node.parameters, node.type) : isFunctionExpression13(node) ? updateFunctionExpression(node, modifierArray, node.asteriskToken, node.name, node.typeParameters, node.parameters, node.type, node.body) : isArrowFunction13(node) ? updateArrowFunction(node, modifierArray, node.typeParameters, node.parameters, node.type, node.equalsGreaterThanToken, node.body) : isClassExpression3(node) ? updateClassExpression(node, modifierArray, node.name, node.typeParameters, node.heritageClauses, node.members) : isVariableStatement10(node) ? updateVariableStatement(node, modifierArray, node.declarationList) : isFunctionDeclaration10(node) ? updateFunctionDeclaration(node, modifierArray, node.asteriskToken, node.name, node.typeParameters, node.parameters, node.type, node.body) : isClassDeclaration5(node) ? updateClassDeclaration(node, modifierArray, node.name, node.typeParameters, node.heritageClauses, node.members) : isInterfaceDeclaration2(node) ? updateInterfaceDeclaration(node, modifierArray, node.name, node.typeParameters, node.heritageClauses, node.members) : isTypeAliasDeclaration2(node) ? updateTypeAliasDeclaration(node, modifierArray, node.name, node.typeParameters, node.type) : isEnumDeclaration2(node) ? updateEnumDeclaration(node, modifierArray, node.name, node.members) : isModuleDeclaration2(node) ? updateModuleDeclaration(node, modifierArray, node.name, node.body) : isImportEqualsDeclaration3(node) ? updateImportEqualsDeclaration(node, modifierArray, node.isTypeOnly, node.name, node.moduleReference) : isImportDeclaration9(node) ? updateImportDeclaration(node, modifierArray, node.importClause, node.moduleSpecifier, node.attributes) : isExportAssignment5(node) ? updateExportAssignment(node, modifierArray, node.expression) : isExportDeclaration4(node) ? updateExportDeclaration(node, modifierArray, node.isTypeOnly, node.exportClause, node.moduleSpecifier, node.attributes) : Debug.assertNever(node);
         }
         function replaceDecoratorsAndModifiers(node, modifierArray) {
           return isParameter6(node) ? updateParameterDeclaration(node, modifierArray, node.dotDotDotToken, node.name, node.questionToken, node.type, node.initializer) : isPropertyDeclaration5(node) ? updatePropertyDeclaration2(node, modifierArray, node.name, node.questionToken ?? node.exclamationToken, node.type, node.initializer) : isMethodDeclaration8(node) ? updateMethodDeclaration(node, modifierArray, node.asteriskToken, node.name, node.questionToken, node.typeParameters, node.parameters, node.type, node.body) : isGetAccessorDeclaration6(node) ? updateGetAccessorDeclaration(node, modifierArray, node.name, node.parameters, node.type, node.body) : isSetAccessorDeclaration6(node) ? updateSetAccessorDeclaration(node, modifierArray, node.name, node.parameters, node.body) : isClassExpression3(node) ? updateClassExpression(node, modifierArray, node.name, node.typeParameters, node.heritageClauses, node.members) : isClassDeclaration5(node) ? updateClassDeclaration(node, modifierArray, node.name, node.typeParameters, node.heritageClauses, node.members) : Debug.assertNever(node);
@@ -32917,16 +32917,16 @@ ${lanes.join("\n")}
       function isClassDeclaration5(node) {
         return node.kind === 264;
       }
-      function isInterfaceDeclaration(node) {
+      function isInterfaceDeclaration2(node) {
         return node.kind === 265;
       }
-      function isTypeAliasDeclaration(node) {
+      function isTypeAliasDeclaration2(node) {
         return node.kind === 266;
       }
-      function isEnumDeclaration(node) {
+      function isEnumDeclaration2(node) {
         return node.kind === 267;
       }
-      function isModuleDeclaration(node) {
+      function isModuleDeclaration2(node) {
         return node.kind === 268;
       }
       function isModuleBlock(node) {
@@ -32965,10 +32965,10 @@ ${lanes.join("\n")}
       function isNamespaceImport10(node) {
         return node.kind === 275;
       }
-      function isNamespaceExport(node) {
+      function isNamespaceExport2(node) {
         return node.kind === 281;
       }
-      function isNamedImports7(node) {
+      function isNamedImports8(node) {
         return node.kind === 276;
       }
       function isImportSpecifier10(node) {
@@ -45937,9 +45937,9 @@ ${lanes.join("\n")}
       }
       function readConfigFile(fileName, readFile6) {
         const textOrDiagnostic = tryReadFile(fileName, readFile6);
-        return isString(textOrDiagnostic) ? parseConfigFileTextToJson(fileName, textOrDiagnostic) : { config: {}, error: textOrDiagnostic };
+        return isString(textOrDiagnostic) ? parseConfigFileTextToJson2(fileName, textOrDiagnostic) : { config: {}, error: textOrDiagnostic };
       }
-      function parseConfigFileTextToJson(fileName, jsonText) {
+      function parseConfigFileTextToJson2(fileName, jsonText) {
         const jsonSourceFile = parseJsonText(fileName, jsonText);
         return {
           config: convertConfigFileToObject(
@@ -50652,7 +50652,7 @@ ${lanes.join("\n")}
                   }
                 }
                 const relatedInformation = [];
-                if (isTypeAliasDeclaration(node) && nodeIsMissing(node.type) && hasSyntacticModifier(
+                if (isTypeAliasDeclaration2(node) && nodeIsMissing(node.type) && hasSyntacticModifier(
                   node,
                   32
                   /* Export */
@@ -50736,7 +50736,7 @@ ${lanes.join("\n")}
           }
         }
         function jsdocTreatAsExported(node) {
-          if (node.parent && isModuleDeclaration(node)) {
+          if (node.parent && isModuleDeclaration2(node)) {
             node = node.parent;
           }
           if (!isJSDocTypeAlias(node)) return false;
@@ -52745,7 +52745,7 @@ ${lanes.join("\n")}
               0
               /* None */
             );
-          } else if (isNamespaceExport(node.exportClause)) {
+          } else if (isNamespaceExport2(node.exportClause)) {
             setParent(node.exportClause, node);
             declareSymbol(
               container.symbol.exports,
@@ -54333,7 +54333,7 @@ ${lanes.join("\n")}
         }
         const ambientModuleDeclareCandidates = mapDefined(moduleSymbol.declarations, (d) => {
           var _a22, _b, _c, _d;
-          if (!isModuleDeclaration(d)) return;
+          if (!isModuleDeclaration2(d)) return;
           const topNamespace = getTopNamespace(d);
           if (!(((_a22 = topNamespace == null ? void 0 : topNamespace.parent) == null ? void 0 : _a22.parent) && isModuleBlock(topNamespace.parent) && isAmbientModule(topNamespace.parent.parent) && isSourceFile8(topNamespace.parent.parent.parent))) return;
           const exportAssignment = (_d = (_c = (_b = topNamespace.parent.parent.symbol.exports) == null ? void 0 : _b.get("export=")) == null ? void 0 : _c.valueDeclaration) == null ? void 0 : _d.expression;
@@ -57262,7 +57262,7 @@ ${lanes.join("\n")}
             node,
             2048
             /* Default */
-          ) || isExportSpecifier(node) || isNamespaceExport(node);
+          ) || isExportSpecifier(node) || isNamespaceExport2(node);
         }
         function getEmitSyntaxForModuleSpecifierExpression(usage) {
           return isStringLiteralLike15(usage) ? host.getEmitSyntaxForUsageLocation(getSourceFileOfNode(usage), usage) : void 0;
@@ -58201,7 +58201,7 @@ ${lanes.join("\n")}
             return ambientModule;
           }
           const currentSourceFile = getSourceFileOfNode(location2);
-          const contextSpecifier = isStringLiteralLike15(location2) ? location2 : ((_a2 = isModuleDeclaration(location2) ? location2 : location2.parent && isModuleDeclaration(location2.parent) && location2.parent.name === location2 ? location2.parent : void 0) == null ? void 0 : _a2.name) || ((_b = isLiteralImportTypeNode(location2) ? location2 : void 0) == null ? void 0 : _b.argument.literal) || (isVariableDeclaration18(location2) && location2.initializer && isRequireCall(
+          const contextSpecifier = isStringLiteralLike15(location2) ? location2 : ((_a2 = isModuleDeclaration2(location2) ? location2 : location2.parent && isModuleDeclaration2(location2.parent) && location2.parent.name === location2 ? location2.parent : void 0) == null ? void 0 : _a2.name) || ((_b = isLiteralImportTypeNode(location2) ? location2 : void 0) == null ? void 0 : _b.argument.literal) || (isVariableDeclaration18(location2) && location2.initializer && isRequireCall(
             location2.initializer,
             /*requireStringLiteralLikeArgument*/
             true
@@ -59924,11 +59924,11 @@ ${lanes.join("\n")}
                 case 264:
                   return simplifyClassDeclaration(node, symbol);
                 case 267:
-                  return simplifyModifiers(node, isEnumDeclaration, symbol);
+                  return simplifyModifiers(node, isEnumDeclaration2, symbol);
                 case 265:
                   return simplifyInterfaceDeclaration(node, symbol, meaning);
                 case 268:
-                  return simplifyModifiers(node, isModuleDeclaration, symbol);
+                  return simplifyModifiers(node, isModuleDeclaration2, symbol);
                 default:
                   return void 0;
               }
@@ -59962,7 +59962,7 @@ ${lanes.join("\n")}
             if (!(meaning & 64)) {
               return void 0;
             }
-            return simplifyModifiers(interfaceDecl, isInterfaceDeclaration, symbol);
+            return simplifyModifiers(interfaceDecl, isInterfaceDeclaration2, symbol);
           }
           function symbolToDeclarationsWorker(symbol, context) {
             const type = getDeclaredTypeOfSymbol(symbol);
@@ -62867,7 +62867,7 @@ ${lanes.join("\n")}
             }
             function flattenExportAssignedNamespace(statements2) {
               const exportAssignment = find(statements2, isExportAssignment5);
-              const nsIndex = findIndex(statements2, isModuleDeclaration);
+              const nsIndex = findIndex(statements2, isModuleDeclaration2);
               let ns = nsIndex !== -1 ? statements2[nsIndex] : void 0;
               if (ns && exportAssignment && exportAssignment.isExportEquals && isIdentifier19(exportAssignment.expression) && isIdentifier19(ns.name) && idText(ns.name) === idText(exportAssignment.expression) && ns.body && isModuleBlock(ns.body)) {
                 const excessExports = filter(statements2, (s) => !!(getEffectiveModifierFlags(s) & 32));
@@ -63001,7 +63001,7 @@ ${lanes.join("\n")}
               statements2 = flattenExportAssignedNamespace(statements2);
               statements2 = mergeExportDeclarations(statements2);
               statements2 = inlineExportModifiers(statements2);
-              if (enclosingDeclaration && (isSourceFile8(enclosingDeclaration) && isExternalOrCommonJsModule(enclosingDeclaration) || isModuleDeclaration(enclosingDeclaration)) && (!some(statements2, isExternalModuleIndicator) || !hasScopeMarker(statements2) && some(statements2, needsScopeMarker))) {
+              if (enclosingDeclaration && (isSourceFile8(enclosingDeclaration) && isExternalOrCommonJsModule(enclosingDeclaration) || isModuleDeclaration2(enclosingDeclaration)) && (!some(statements2, isExternalModuleIndicator) || !hasScopeMarker(statements2) && some(statements2, needsScopeMarker))) {
                 statements2.push(createEmptyExports(factory));
               }
               return statements2;
@@ -63276,7 +63276,7 @@ ${lanes.join("\n")}
               if (some(symbol.declarations, isPartOfParameterDeclaration)) return;
               Debug.assertIsDefined(deferredPrivatesStack[deferredPrivatesStack.length - 1]);
               getUnusedName(unescapeLeadingUnderscores(symbol.escapedName), symbol);
-              const isExternalImportAlias = !!(symbol.flags & 2097152) && !some(symbol.declarations, (d) => !!findAncestor(d, isExportDeclaration4) || isNamespaceExport(d) || isImportEqualsDeclaration3(d) && !isExternalModuleReference3(d.moduleReference));
+              const isExternalImportAlias = !!(symbol.flags & 2097152) && !some(symbol.declarations, (d) => !!findAncestor(d, isExportDeclaration4) || isNamespaceExport2(d) || isImportEqualsDeclaration3(d) && !isExternalModuleReference3(d.moduleReference));
               deferredPrivatesStack[isExternalImportAlias ? 0 : deferredPrivatesStack.length - 1].set(getSymbolId(symbol), symbol);
             }
             function isExportingScope(enclosingDeclaration2) {
@@ -63287,13 +63287,13 @@ ${lanes.join("\n")}
                 const oldModifierFlags = getEffectiveModifierFlags(node);
                 let newModifierFlags = 0;
                 const enclosingDeclaration2 = context.enclosingDeclaration && (isJSDocTypeAlias(context.enclosingDeclaration) ? getSourceFileOfNode(context.enclosingDeclaration) : context.enclosingDeclaration);
-                if (additionalModifierFlags & 32 && enclosingDeclaration2 && (isExportingScope(enclosingDeclaration2) || isModuleDeclaration(enclosingDeclaration2)) && canHaveExportModifier(node)) {
+                if (additionalModifierFlags & 32 && enclosingDeclaration2 && (isExportingScope(enclosingDeclaration2) || isModuleDeclaration2(enclosingDeclaration2)) && canHaveExportModifier(node)) {
                   newModifierFlags |= 32;
                 }
-                if (addingDeclare && !(newModifierFlags & 32) && (!enclosingDeclaration2 || !(enclosingDeclaration2.flags & 33554432)) && (isEnumDeclaration(node) || isVariableStatement10(node) || isFunctionDeclaration10(node) || isClassDeclaration5(node) || isModuleDeclaration(node))) {
+                if (addingDeclare && !(newModifierFlags & 32) && (!enclosingDeclaration2 || !(enclosingDeclaration2.flags & 33554432)) && (isEnumDeclaration2(node) || isVariableStatement10(node) || isFunctionDeclaration10(node) || isClassDeclaration5(node) || isModuleDeclaration2(node))) {
                   newModifierFlags |= 128;
                 }
-                if (additionalModifierFlags & 2048 && (isClassDeclaration5(node) || isInterfaceDeclaration(node) || isFunctionDeclaration10(node))) {
+                if (additionalModifierFlags & 2048 && (isClassDeclaration5(node) || isInterfaceDeclaration2(node) || isFunctionDeclaration10(node))) {
                   newModifierFlags |= 2048;
                 }
                 if (newModifierFlags) {
@@ -64739,7 +64739,7 @@ ${lanes.join("\n")}
         function getTypeAliasForTypeLiteral(type) {
           if (type.symbol && type.symbol.flags & 2048 && type.symbol.declarations) {
             const node = walkUpParenthesizedTypes(type.symbol.declarations[0].parent);
-            if (isTypeAliasDeclaration(node)) {
+            if (isTypeAliasDeclaration2(node)) {
               return getSymbolOfDeclaration(node);
             }
           }
@@ -66004,7 +66004,7 @@ ${lanes.join("\n")}
               /*reportErrors*/
               true
             );
-          } else if (isEnumDeclaration(declaration)) {
+          } else if (isEnumDeclaration2(declaration)) {
             type = getTypeOfFuncClassEnumModule(symbol);
           } else if (isEnumMember(declaration)) {
             type = getTypeOfEnumMember(symbol);
@@ -70214,7 +70214,7 @@ ${lanes.join("\n")}
           if (symbol) {
             getDeclaredTypeOfSymbol(symbol);
             if (length(getSymbolLinks(symbol).typeParameters) !== arity) {
-              const decl = symbol.declarations && find(symbol.declarations, isTypeAliasDeclaration);
+              const decl = symbol.declarations && find(symbol.declarations, isTypeAliasDeclaration2);
               error2(decl, Diagnostics.Global_type_0_must_have_1_type_parameter_s, symbolName(symbol), arity);
               return void 0;
             }
@@ -79393,7 +79393,7 @@ ${lanes.join("\n")}
           return links.resolvedSymbol;
         }
         function isInAmbientOrTypeNode(node) {
-          return !!(node.flags & 33554432 || findAncestor(node, (n) => isInterfaceDeclaration(n) || isTypeAliasDeclaration(n) || isTypeLiteralNode(n)));
+          return !!(node.flags & 33554432 || findAncestor(node, (n) => isInterfaceDeclaration2(n) || isTypeAliasDeclaration2(n) || isTypeLiteralNode(n)));
         }
         function getFlowCacheKey(node, declaredType, initialType, flowContainer) {
           switch (node.kind) {
@@ -84401,7 +84401,7 @@ ${lanes.join("\n")}
         function checkComputedPropertyName(node) {
           const links = getNodeLinks(node.expression);
           if (!links.resolvedType) {
-            if ((isTypeLiteralNode(node.parent.parent) || isClassLike(node.parent.parent) || isInterfaceDeclaration(node.parent.parent)) && isBinaryExpression13(node.expression) && node.expression.operatorToken.kind === 103 && node.parent.kind !== 178 && node.parent.kind !== 179) {
+            if ((isTypeLiteralNode(node.parent.parent) || isClassLike(node.parent.parent) || isInterfaceDeclaration2(node.parent.parent)) && isBinaryExpression13(node.expression) && node.expression.operatorToken.kind === 103 && node.parent.kind !== 178 && node.parent.kind !== 179) {
               return links.resolvedType = errorType;
             }
             links.resolvedType = checkExpression(node.expression);
@@ -92186,12 +92186,12 @@ ${lanes.join("\n")}
         }
         function checkTypeParameterDeferred(node) {
           var _a2, _b;
-          if (isInterfaceDeclaration(node.parent) || isClassLike(node.parent) || isTypeAliasDeclaration(node.parent)) {
+          if (isInterfaceDeclaration2(node.parent) || isClassLike(node.parent) || isTypeAliasDeclaration2(node.parent)) {
             const typeParameter = getDeclaredTypeOfTypeParameter(getSymbolOfDeclaration(node));
             const modifiers = getTypeParameterModifiers(typeParameter) & (8192 | 16384);
             if (modifiers) {
               const symbol = getSymbolOfDeclaration(node.parent);
-              if (isTypeAliasDeclaration(node.parent) && !(getObjectFlags(getDeclaredTypeOfSymbol(symbol)) & (16 | 32))) {
+              if (isTypeAliasDeclaration2(node.parent) && !(getObjectFlags(getDeclaredTypeOfSymbol(symbol)) & (16 | 32))) {
                 error2(node, Diagnostics.Variance_annotations_are_only_supported_in_type_aliases_for_object_function_constructor_and_mapped_types);
               } else if (modifiers === 8192 || modifiers === 16384) {
                 (_a2 = tracing) == null ? void 0 : _a2.push(tracing.Phase.CheckTypes, "checkTypeParameterDeferred", { parent: getTypeId(getDeclaredTypeOfSymbol(symbol)), id: getTypeId(typeParameter) });
@@ -93032,7 +93032,7 @@ ${lanes.join("\n")}
           let flags = getCombinedModifierFlagsCached(n);
           if (n.parent.kind !== 265 && n.parent.kind !== 264 && n.parent.kind !== 232 && n.flags & 33554432) {
             const container = getEnclosingContainer(n);
-            if (container && container.flags & 128 && !(flags & 128) && !(isModuleBlock(n.parent) && isModuleDeclaration(n.parent.parent) && isGlobalScopeAugmentation(n.parent.parent))) {
+            if (container && container.flags & 128 && !(flags & 128) && !(isModuleBlock(n.parent) && isModuleDeclaration2(n.parent.parent) && isGlobalScopeAugmentation(n.parent.parent))) {
               flags |= 32;
             }
             flags |= 128;
@@ -94414,7 +94414,7 @@ ${lanes.join("\n")}
           if (!name || !needCollisionCheckForIdentifier(node, name, "require") && !needCollisionCheckForIdentifier(node, name, "exports")) {
             return;
           }
-          if (isModuleDeclaration(node) && getModuleInstanceState(node) !== 1) {
+          if (isModuleDeclaration2(node) && getModuleInstanceState(node) !== 1) {
             return;
           }
           const parent2 = getDeclarationContainer(node);
@@ -94426,7 +94426,7 @@ ${lanes.join("\n")}
           if (!name || languageVersion >= 4 || !needCollisionCheckForIdentifier(node, name, "Promise")) {
             return;
           }
-          if (isModuleDeclaration(node) && getModuleInstanceState(node) !== 1) {
+          if (isModuleDeclaration2(node) && getModuleInstanceState(node) !== 1) {
             return;
           }
           const parent2 = getDeclarationContainer(node);
@@ -94486,7 +94486,7 @@ ${lanes.join("\n")}
             if (!(node.flags & 33554432)) {
               checkClassNameCollisionWithObject(name);
             }
-          } else if (isEnumDeclaration(node)) {
+          } else if (isEnumDeclaration2(node)) {
             checkTypeNameIsReserved(name, Diagnostics.Enum_name_cannot_be_0);
           }
         }
@@ -96659,7 +96659,7 @@ ${lanes.join("\n")}
           }
         }
         function isPropertyAbstractOrInterface(declaration, baseDeclarationFlags) {
-          return baseDeclarationFlags & 64 && (!isPropertyDeclaration5(declaration) || !declaration.initializer) || isInterfaceDeclaration(declaration.parent);
+          return baseDeclarationFlags & 64 && (!isPropertyDeclaration5(declaration) || !declaration.initializer) || isInterfaceDeclaration2(declaration.parent);
         }
         function getNonInheritedProperties(type, baseTypes, properties) {
           if (!length(baseTypes)) {
@@ -97030,7 +97030,7 @@ ${lanes.join("\n")}
             if (enumSymbol.declarations && enumSymbol.declarations.length > 1) {
               const enumIsConst = isEnumConst(node);
               forEach(enumSymbol.declarations, (decl) => {
-                if (isEnumDeclaration(decl) && isEnumConst(decl) !== enumIsConst) {
+                if (isEnumDeclaration2(decl) && isEnumConst(decl) !== enumIsConst) {
                   error2(getNameOfDeclaration(decl), Diagnostics.Enum_declarations_must_all_be_const_or_non_const);
                 }
               });
@@ -97590,7 +97590,7 @@ ${lanes.join("\n")}
           }
           checkGrammarExportDeclaration(node);
           if (!node.moduleSpecifier || checkExternalImportOrExportDeclaration(node)) {
-            if (node.exportClause && !isNamespaceExport(node.exportClause)) {
+            if (node.exportClause && !isNamespaceExport2(node.exportClause)) {
               forEach(node.exportClause.elements, checkExportSpecifier);
               const inAmbientExternalModule = node.parent.kind === 269 && isAmbientModule(node.parent.parent);
               const inAmbientNamespaceDeclaration = !inAmbientExternalModule && node.parent.kind === 269 && !node.moduleSpecifier && node.flags & 33554432;
@@ -97827,7 +97827,7 @@ ${lanes.join("\n")}
                 if (flags & (1920 | 384)) {
                   return;
                 }
-                const exportedDeclarationsCount = countWhere(declarations, and(isNotOverloadAndNotAccessor, not(isInterfaceDeclaration)));
+                const exportedDeclarationsCount = countWhere(declarations, and(isNotOverloadAndNotAccessor, not(isInterfaceDeclaration2)));
                 if (flags & 524288 && exportedDeclarationsCount <= 2) {
                   return;
                 }
@@ -98677,7 +98677,7 @@ ${lanes.join("\n")}
                 getHostSignatureFromJSDoc(name)
               );
               if (!result3 && isJSDoc2) {
-                const container = findAncestor(name, or(isClassLike, isInterfaceDeclaration));
+                const container = findAncestor(name, or(isClassLike, isInterfaceDeclaration2));
                 if (container) {
                   return resolveJSDocMemberName(
                     name,
@@ -99311,7 +99311,7 @@ ${lanes.join("\n")}
               );
             case 279:
               const exportClause = node.exportClause;
-              return !!exportClause && (isNamespaceExport(exportClause) || some(exportClause.elements, isValueAliasDeclaration));
+              return !!exportClause && (isNamespaceExport2(exportClause) || some(exportClause.elements, isValueAliasDeclaration));
             case 278:
               return node.expression && node.expression.kind === 80 ? isAliasResolvedToValue(
                 getSymbolOfDeclaration(node),
@@ -100691,7 +100691,7 @@ ${lanes.join("\n")}
                   const inOutFlag = modifier.kind === 103 ? 8192 : 16384;
                   const inOutText = modifier.kind === 103 ? "in" : "out";
                   const parent2 = isJSDocTemplateTag(node.parent) && (getEffectiveJSDocHost(node.parent) || find((_a2 = getJSDocRoot(node.parent)) == null ? void 0 : _a2.tags, isJSDocTypedefTag)) || node.parent;
-                  if (node.kind !== 169 || parent2 && !(isInterfaceDeclaration(parent2) || isClassLike(parent2) || isTypeAliasDeclaration(parent2) || isJSDocTypedefTag(parent2))) {
+                  if (node.kind !== 169 || parent2 && !(isInterfaceDeclaration2(parent2) || isClassLike(parent2) || isTypeAliasDeclaration2(parent2) || isJSDocTypedefTag(parent2))) {
                     return grammarErrorOnNode(modifier, Diagnostics._0_modifier_can_only_appear_on_a_type_parameter_of_a_class_interface_or_type_alias, inOutText);
                   }
                   if (flags & inOutFlag) {
@@ -104459,7 +104459,7 @@ ${lanes.join("\n")}
       }
       function containsDefaultReference(node) {
         if (!node) return false;
-        if (!isNamedImports7(node) && !isNamedExports2(node)) return false;
+        if (!isNamedImports8(node) && !isNamedExports2(node)) return false;
         return some(node.elements, isNamedDefaultReference);
       }
       function isNamedDefaultReference(e) {
@@ -104485,7 +104485,7 @@ ${lanes.join("\n")}
         if (!bindings) {
           return false;
         }
-        if (!isNamedImports7(bindings)) return false;
+        if (!isNamedImports8(bindings)) return false;
         let defaultRefCount = 0;
         for (const binding of bindings.elements) {
           if (isNamedDefaultReference(binding)) {
@@ -104495,7 +104495,7 @@ ${lanes.join("\n")}
         return defaultRefCount > 0 && defaultRefCount !== bindings.elements.length || !!(bindings.elements.length - defaultRefCount) && isDefaultImport(node);
       }
       function getImportNeedsImportDefaultHelper(node) {
-        return !getImportNeedsImportStarHelper(node) && (isDefaultImport(node) || !!node.importClause && isNamedImports7(node.importClause.namedBindings) && containsDefaultReference(node.importClause.namedBindings));
+        return !getImportNeedsImportStarHelper(node) && (isDefaultImport(node) || !!node.importClause && isNamedImports8(node.importClause.namedBindings) && containsDefaultReference(node.importClause.namedBindings));
       }
       function collectExternalModuleInfo(context, sourceFile) {
         const resolver = context.getEmitResolver();
@@ -107139,7 +107139,7 @@ ${lanes.join("\n")}
           }
         }
         function shouldEmitModuleDeclaration(nodeIn) {
-          const node = getParseTreeNode(nodeIn, isModuleDeclaration);
+          const node = getParseTreeNode(nodeIn, isModuleDeclaration2);
           if (!node) {
             return true;
           }
@@ -107387,7 +107387,7 @@ ${lanes.join("\n")}
           if (node.isTypeOnly) {
             return void 0;
           }
-          if (!node.exportClause || isNamespaceExport(node.exportClause)) {
+          if (!node.exportClause || isNamespaceExport2(node.exportClause)) {
             return factory2.updateExportDeclaration(
               node,
               node.modifiers,
@@ -107421,7 +107421,7 @@ ${lanes.join("\n")}
           return factory2.updateNamespaceExport(node, Debug.checkDefined(visitNode(node.name, visitor, isIdentifier19)));
         }
         function visitNamedExportBindings(node, allowEmpty) {
-          return isNamespaceExport(node) ? visitNamespaceExports(node) : visitNamedExports(node, allowEmpty);
+          return isNamespaceExport2(node) ? visitNamespaceExports(node) : visitNamedExports(node, allowEmpty);
         }
         function visitExportSpecifier(node) {
           return !node.isTypeOnly && (compilerOptions.verbatimModuleSyntax || resolver.isValueAliasDeclaration(node)) ? node : void 0;
@@ -126807,7 +126807,7 @@ ${lanes.join("\n")}
         }
         function visitExportDeclaration(node) {
           const updatedModuleSpecifier = rewriteModuleSpecifier(node.moduleSpecifier, compilerOptions);
-          if (compilerOptions.module !== void 0 && compilerOptions.module > 5 || !node.exportClause || !isNamespaceExport(node.exportClause) || !node.moduleSpecifier) {
+          if (compilerOptions.module !== void 0 && compilerOptions.module > 5 || !node.exportClause || !isNamespaceExport2(node.exportClause) || !node.moduleSpecifier) {
             return !node.moduleSpecifier || updatedModuleSpecifier === node.moduleSpecifier ? node : factory2.updateExportDeclaration(
               node,
               node.modifiers,
@@ -126965,7 +126965,7 @@ ${lanes.join("\n")}
         }
       }
       function canProduceDiagnostics(node) {
-        return isVariableDeclaration18(node) || isPropertyDeclaration5(node) || isPropertySignature(node) || isBindingElement8(node) || isSetAccessor(node) || isGetAccessor(node) || isConstructSignatureDeclaration(node) || isCallSignatureDeclaration(node) || isMethodDeclaration8(node) || isMethodSignature(node) || isFunctionDeclaration10(node) || isParameter6(node) || isTypeParameterDeclaration(node) || isExpressionWithTypeArguments(node) || isImportEqualsDeclaration3(node) || isTypeAliasDeclaration(node) || isConstructorDeclaration4(node) || isIndexSignatureDeclaration(node) || isPropertyAccessExpression18(node) || isElementAccessExpression13(node) || isBinaryExpression13(node) || isJSDocTypeAlias(node);
+        return isVariableDeclaration18(node) || isPropertyDeclaration5(node) || isPropertySignature(node) || isBindingElement8(node) || isSetAccessor(node) || isGetAccessor(node) || isConstructSignatureDeclaration(node) || isCallSignatureDeclaration(node) || isMethodDeclaration8(node) || isMethodSignature(node) || isFunctionDeclaration10(node) || isParameter6(node) || isTypeParameterDeclaration(node) || isExpressionWithTypeArguments(node) || isImportEqualsDeclaration3(node) || isTypeAliasDeclaration2(node) || isConstructorDeclaration4(node) || isIndexSignatureDeclaration(node) || isPropertyAccessExpression18(node) || isElementAccessExpression13(node) || isBinaryExpression13(node) || isJSDocTypeAlias(node);
       }
       function createGetSymbolAccessibilityDiagnosticForNodeName(node) {
         if (isSetAccessor(node) || isGetAccessor(node)) {
@@ -127032,7 +127032,7 @@ ${lanes.join("\n")}
           return getHeritageClauseVisibilityError;
         } else if (isImportEqualsDeclaration3(node)) {
           return getImportEntityNameVisibilityError;
-        } else if (isTypeAliasDeclaration(node) || isJSDocTypeAlias(node)) {
+        } else if (isTypeAliasDeclaration2(node) || isJSDocTypeAlias(node)) {
           return getTypeAliasDeclarationVisibilityError;
         } else {
           return Debug.assertNever(node, `Attempted to set a declaration diagnostic context for unhandled node kind: ${Debug.formatSyntaxKind(node.kind)}`);
@@ -128077,7 +128077,7 @@ ${lanes.join("\n")}
           ) ? void 0 : visitNodes2(params, visitDeclarationSubtree, isTypeParameterDeclaration);
         }
         function isEnclosingDeclaration(node) {
-          return isSourceFile8(node) || isTypeAliasDeclaration(node) || isModuleDeclaration(node) || isClassDeclaration5(node) || isInterfaceDeclaration(node) || isFunctionLike3(node) || isIndexSignatureDeclaration(node) || isMappedTypeNode(node);
+          return isSourceFile8(node) || isTypeAliasDeclaration2(node) || isModuleDeclaration2(node) || isClassDeclaration5(node) || isInterfaceDeclaration2(node) || isFunctionLike3(node) || isIndexSignatureDeclaration(node) || isMappedTypeNode(node);
         }
         function checkEntityNameVisibility(entityName, enclosingDeclaration2) {
           const visibilityResult = resolver.isEntityNameVisible(entityName, enclosingDeclaration2);
@@ -128244,7 +128244,7 @@ ${lanes.join("\n")}
                     return;
                   } else if (
                     // Type declarations just need to double-check that the input computed name is an entity name expression
-                    (isInterfaceDeclaration(input.parent) || isTypeLiteralNode(input.parent)) && !isEntityNameExpression(input.name.expression)
+                    (isInterfaceDeclaration2(input.parent) || isTypeLiteralNode(input.parent)) && !isEntityNameExpression(input.name.expression)
                   ) {
                     context.addDiagnostic(createDiagnosticForNode(input, Diagnostics.Computed_properties_must_be_number_or_string_literals_variables_or_dotted_expressions_with_isolatedDeclarations));
                     return;
@@ -132680,7 +132680,7 @@ ${lanes.join("\n")}
           emit(node.name);
           let body = node.body;
           if (!body) return writeTrailingSemicolon();
-          while (body && isModuleDeclaration(body)) {
+          while (body && isModuleDeclaration2(body)) {
             writePunctuation(".");
             emit(body.name);
             body = body.body;
@@ -137936,7 +137936,7 @@ ${lanes.join("\n")}
                   }
                 }
               }
-            } else if (isModuleDeclaration(node)) {
+            } else if (isModuleDeclaration2(node)) {
               if (isAmbientModule(node) && (inAmbientModule || hasSyntacticModifier(
                 node,
                 128
@@ -149397,7 +149397,7 @@ ${lanes.join("\n")}
       }
       function isNameOfModuleDeclaration(node) {
         var _a2;
-        return ((_a2 = tryCast(node.parent, isModuleDeclaration)) == null ? void 0 : _a2.name) === node;
+        return ((_a2 = tryCast(node.parent, isModuleDeclaration2)) == null ? void 0 : _a2.name) === node;
       }
       function isNameOfFunctionDeclaration(node) {
         var _a2;
@@ -149820,7 +149820,7 @@ ${lanes.join("\n")}
             return node.importClause.name;
           }
           if (node.importClause.namedBindings) {
-            if (isNamedImports7(node.importClause.namedBindings)) {
+            if (isNamedImports8(node.importClause.namedBindings)) {
               const onlyBinding = singleOrUndefined(node.importClause.namedBindings.elements);
               if (!onlyBinding) {
                 return;
@@ -149843,7 +149843,7 @@ ${lanes.join("\n")}
               return;
             }
             return node.exportClause.elements[0].name;
-          } else if (isNamespaceExport(node.exportClause)) {
+          } else if (isNamespaceExport2(node.exportClause)) {
             return node.exportClause.name;
           }
         }
@@ -149858,7 +149858,7 @@ ${lanes.join("\n")}
       }
       function getAdjustedLocation(node, forRename) {
         const { parent: parent2 } = node;
-        if (isModifier(node) && (forRename || node.kind !== 90) ? canHaveModifiers2(parent2) && contains(parent2.modifiers, node) : node.kind === 86 ? isClassDeclaration5(parent2) || isClassExpression3(node) : node.kind === 100 ? isFunctionDeclaration10(parent2) || isFunctionExpression13(node) : node.kind === 120 ? isInterfaceDeclaration(parent2) : node.kind === 94 ? isEnumDeclaration(parent2) : node.kind === 156 ? isTypeAliasDeclaration(parent2) : node.kind === 145 || node.kind === 144 ? isModuleDeclaration(parent2) : node.kind === 102 ? isImportEqualsDeclaration3(parent2) : node.kind === 139 ? isGetAccessorDeclaration6(parent2) : node.kind === 153 && isSetAccessorDeclaration6(parent2)) {
+        if (isModifier(node) && (forRename || node.kind !== 90) ? canHaveModifiers2(parent2) && contains(parent2.modifiers, node) : node.kind === 86 ? isClassDeclaration5(parent2) || isClassExpression3(node) : node.kind === 100 ? isFunctionDeclaration10(parent2) || isFunctionExpression13(node) : node.kind === 120 ? isInterfaceDeclaration2(parent2) : node.kind === 94 ? isEnumDeclaration2(parent2) : node.kind === 156 ? isTypeAliasDeclaration2(parent2) : node.kind === 145 || node.kind === 144 ? isModuleDeclaration2(parent2) : node.kind === 102 ? isImportEqualsDeclaration3(parent2) : node.kind === 139 ? isGetAccessorDeclaration6(parent2) : node.kind === 153 && isSetAccessorDeclaration6(parent2)) {
           const location2 = getAdjustedLocationForDeclaration(parent2, forRename);
           if (location2) {
             return location2;
@@ -149885,10 +149885,10 @@ ${lanes.join("\n")}
           }
         }
         if (node.kind === 130) {
-          if (isImportSpecifier10(parent2) && parent2.propertyName || isExportSpecifier(parent2) && parent2.propertyName || isNamespaceImport10(parent2) || isNamespaceExport(parent2)) {
+          if (isImportSpecifier10(parent2) && parent2.propertyName || isExportSpecifier(parent2) && parent2.propertyName || isNamespaceImport10(parent2) || isNamespaceExport2(parent2)) {
             return parent2.name;
           }
-          if (isExportDeclaration4(parent2) && parent2.exportClause && isNamespaceExport(parent2.exportClause)) {
+          if (isExportDeclaration4(parent2) && parent2.exportClause && isNamespaceExport2(parent2.exportClause)) {
             return parent2.exportClause.name;
           }
         }
@@ -152949,7 +152949,7 @@ ${lanes.join("\n")}
       function hasValueSideModule(symbol) {
         return some(
           symbol.declarations,
-          (declaration) => isModuleDeclaration(declaration) && getModuleInstanceState(declaration) === 1
+          (declaration) => isModuleDeclaration2(declaration) && getModuleInstanceState(declaration) === 1
           /* Instantiated */
         );
       }
@@ -153909,7 +153909,7 @@ ${lanes.join("\n")}
         }
         function traverseWithoutCrossingFunction(node, cb) {
           cb(node);
-          if (!isFunctionLike3(node) && !isClassLike(node) && !isInterfaceDeclaration(node) && !isModuleDeclaration(node) && !isTypeAliasDeclaration(node) && !isTypeNode5(node)) {
+          if (!isFunctionLike3(node) && !isClassLike(node) && !isInterfaceDeclaration2(node) && !isModuleDeclaration2(node) && !isTypeAliasDeclaration2(node) && !isTypeNode5(node)) {
             forEachChild5(node, (child) => traverseWithoutCrossingFunction(child, cb));
           }
         }
@@ -156427,7 +156427,7 @@ interface Symbol {
         return result3.join(".");
       }
       function getInteriorModule(decl) {
-        return decl.body && isModuleDeclaration(decl.body) ? getInteriorModule(decl.body) : decl;
+        return decl.body && isModuleDeclaration2(decl.body) ? getInteriorModule(decl.body) : decl;
       }
       function isComputedProperty(member3) {
         return !member3.name || member3.name.kind === 168;
@@ -158214,7 +158214,7 @@ interface Symbol {
         const existingLocals = /* @__PURE__ */ new Set();
         for (const moduleSpecifier of sourceFile.imports) {
           const declaration = importFromModuleSpecifier(moduleSpecifier);
-          if (isImportDeclaration9(declaration) && declaration.importClause && declaration.importClause.namedBindings && isNamedImports7(declaration.importClause.namedBindings)) {
+          if (isImportDeclaration9(declaration) && declaration.importClause && declaration.importClause.namedBindings && isNamedImports8(declaration.importClause.namedBindings)) {
             for (const e of declaration.importClause.namedBindings.elements) {
               const symbol = checker.getSymbolAtLocation(e.propertyName || e.name);
               if (symbol) {
@@ -159348,7 +159348,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         return false;
       }
       function isValidMethodSignature(node) {
-        return isMethodSignature(node) && (isInterfaceDeclaration(node.parent) || isTypeLiteralNode(node.parent));
+        return isMethodSignature(node) && (isInterfaceDeclaration2(node.parent) || isTypeLiteralNode(node.parent));
       }
       function isValidFunctionDeclaration(functionDeclaration, checker) {
         var _a2;
@@ -164552,11 +164552,11 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         return void 0;
       }
       function getSymbolAtLocationForQuickInfo(node, checker) {
-        const object12 = getContainingObjectLiteralElement(node);
-        if (object12) {
-          const contextualType = checker.getContextualType(object12.parent);
+        const object13 = getContainingObjectLiteralElement(node);
+        if (object13) {
+          const contextualType = checker.getContextualType(object13.parent);
           const properties = contextualType && getPropertySymbolsFromContextualType(
-            object12,
+            object13,
             checker,
             contextualType,
             /*unionSymbolOk*/
@@ -165138,10 +165138,10 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         return (isFunctionExpression13(node) || isArrowFunction13(node) || isClassExpression3(node)) && isVariableLike2(node.parent) && node === node.parent.initializer && isIdentifier19(node.parent.name) && (!!(getCombinedNodeFlags(node.parent) & 2) || isPropertyDeclaration5(node.parent));
       }
       function isPossibleCallHierarchyDeclaration(node) {
-        return isSourceFile8(node) || isModuleDeclaration(node) || isFunctionDeclaration10(node) || isFunctionExpression13(node) || isClassDeclaration5(node) || isClassExpression3(node) || isClassStaticBlockDeclaration(node) || isMethodDeclaration8(node) || isMethodSignature(node) || isGetAccessorDeclaration6(node) || isSetAccessorDeclaration6(node);
+        return isSourceFile8(node) || isModuleDeclaration2(node) || isFunctionDeclaration10(node) || isFunctionExpression13(node) || isClassDeclaration5(node) || isClassExpression3(node) || isClassStaticBlockDeclaration(node) || isMethodDeclaration8(node) || isMethodSignature(node) || isGetAccessorDeclaration6(node) || isSetAccessorDeclaration6(node);
       }
       function isValidCallHierarchyDeclaration(node) {
-        return isSourceFile8(node) || isModuleDeclaration(node) && isIdentifier19(node.name) || isFunctionDeclaration10(node) || isClassDeclaration5(node) || isClassStaticBlockDeclaration(node) || isMethodDeclaration8(node) || isMethodSignature(node) || isGetAccessorDeclaration6(node) || isSetAccessorDeclaration6(node) || isNamedExpression(node) || isAssignedExpression(node);
+        return isSourceFile8(node) || isModuleDeclaration2(node) && isIdentifier19(node.name) || isFunctionDeclaration10(node) || isClassDeclaration5(node) || isClassStaticBlockDeclaration(node) || isMethodDeclaration8(node) || isMethodSignature(node) || isGetAccessorDeclaration6(node) || isSetAccessorDeclaration6(node) || isNamedExpression(node) || isAssignedExpression(node);
       }
       function getCallHierarchyDeclarationReferenceNode(node) {
         if (isSourceFile8(node)) return node;
@@ -165379,7 +165379,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         return createCallHierarchyIncomingCall(createCallHierarchyItem(program, entries[0].declaration), map(entries, (entry) => createTextSpanFromRange(entry.range)));
       }
       function getIncomingCalls(program, declaration, cancellationToken) {
-        if (isSourceFile8(declaration) || isModuleDeclaration(declaration) || isClassStaticBlockDeclaration(declaration)) {
+        if (isSourceFile8(declaration) || isModuleDeclaration2(declaration) || isClassStaticBlockDeclaration(declaration)) {
           return [];
         }
         const location2 = getCallHierarchyDeclarationReferenceNode(declaration);
@@ -167869,8 +167869,8 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         }
         return false;
       }
-      function tryChangeModuleExportsObject(object12, useSitesToUnqualify) {
-        const statements2 = mapAllOrFail(object12.properties, (prop) => {
+      function tryChangeModuleExportsObject(object13, useSitesToUnqualify) {
+        const statements2 = mapAllOrFail(object13.properties, (prop) => {
           switch (prop.kind) {
             case 178:
             case 179:
@@ -169195,7 +169195,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
                   !addToExisting.has(d.importClause) && // no default, or default is being removed
                   (!((_a22 = d.importClause) == null ? void 0 : _a22.name) || removeExisting.has(d.importClause)) && // no namespace import, or namespace import is being removed
                   (!tryCast((_b2 = d.importClause) == null ? void 0 : _b2.namedBindings, isNamespaceImport10) || removeExisting.has(d.importClause.namedBindings)) && // no named imports, or all named imports are being removed
-                  (!tryCast((_c = d.importClause) == null ? void 0 : _c.namedBindings, isNamedImports7) || every(d.importClause.namedBindings.elements, (e) => removeExisting.has(e)))
+                  (!tryCast((_c = d.importClause) == null ? void 0 : _c.namedBindings, isNamedImports8) || every(d.importClause.namedBindings.elements, (e) => removeExisting.has(e)))
                 );
               }
             );
@@ -169323,7 +169323,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
                     d.importClause,
                     d.importClause.phaseModifier,
                     verbatimImports.has(d.importClause) ? d.importClause.name : void 0,
-                    verbatimImports.has(d.importClause.namedBindings) ? d.importClause.namedBindings : ((_a2 = tryCast(d.importClause.namedBindings, isNamedImports7)) == null ? void 0 : _a2.elements.some((e) => verbatimImports.has(e))) ? factory.updateNamedImports(
+                    verbatimImports.has(d.importClause.namedBindings) ? d.importClause.namedBindings : ((_a2 = tryCast(d.importClause.namedBindings, isNamedImports8)) == null ? void 0 : _a2.elements.some((e) => verbatimImports.has(e))) ? factory.updateNamedImports(
                       d.importClause.namedBindings,
                       d.importClause.namedBindings.elements.filter((e) => verbatimImports.has(e))
                     ) : void 0
@@ -170159,7 +170159,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
             }
           }
           if (convertExistingToTypeOnly) {
-            const namedImports = tryCast(importClause.namedBindings, isNamedImports7);
+            const namedImports = tryCast(importClause.namedBindings, isNamedImports8);
             if (namedImports && namedImports.elements.length > 1) {
               const sortState = ts_OrganizeImports_exports.getNamedImportSpecifierComparerWithDetection(importClause.parent, preferences, sourceFile);
               if (sortState.isSorted !== false && aliasDeclaration.kind === 277 && namedImports.elements.indexOf(aliasDeclaration) !== 0) {
@@ -170214,7 +170214,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           (i) => (i == null ? void 0 : i.addAsTypeOnly) === 4
           /* NotAllowed */
         );
-        const existingSpecifiers = clause.namedBindings && ((_a2 = tryCast(clause.namedBindings, isNamedImports7)) == null ? void 0 : _a2.elements);
+        const existingSpecifiers = clause.namedBindings && ((_a2 = tryCast(clause.namedBindings, isNamedImports8)) == null ? void 0 : _a2.elements);
         if (defaultImport) {
           Debug.assert(!clause.name, "Cannot add a default import to an import clause that already has one");
           changes.insertNodeAt(sourceFile, clause.getStart(sourceFile), factory.createIdentifier(defaultImport.name), { suffix: ", " });
@@ -171422,7 +171422,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
                 if (call && !isPrivateIdentifier2(token)) {
                   addMethodDeclaration(context, changes, call, token, modifierFlags & 256, parentDeclaration, declSourceFile);
                 } else {
-                  if (isJSFile && !isInterfaceDeclaration(parentDeclaration) && !isTypeLiteralNode(parentDeclaration)) {
+                  if (isJSFile && !isInterfaceDeclaration2(parentDeclaration) && !isTypeLiteralNode(parentDeclaration)) {
                     addMissingMemberInJs(changes, declSourceFile, parentDeclaration, token, !!(modifierFlags & 256));
                   } else {
                     const typeNode = getTypeNode2(checker, parentDeclaration, token);
@@ -171521,7 +171521,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         const symbol = leftExpressionType.symbol;
         if (!symbol || !symbol.declarations) return void 0;
         if (isIdentifier19(token) && isCallExpression19(parent2.parent)) {
-          const moduleDeclaration = find(symbol.declarations, isModuleDeclaration);
+          const moduleDeclaration = find(symbol.declarations, isModuleDeclaration2);
           const moduleDeclarationSourceFile = moduleDeclaration == null ? void 0 : moduleDeclaration.getSourceFile();
           if (moduleDeclaration && moduleDeclarationSourceFile && !isSourceFileFromLibrary(program, moduleDeclarationSourceFile)) {
             return { kind: 2, token, call: parent2.parent, sourceFile: moduleDeclarationSourceFile, modifierFlags: 32, parentDeclaration: moduleDeclaration };
@@ -171534,17 +171534,17 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         }
         const classDeclaration = find(symbol.declarations, isClassLike);
         if (!classDeclaration && isPrivateIdentifier2(token)) return void 0;
-        const declaration = classDeclaration || find(symbol.declarations, (d) => isInterfaceDeclaration(d) || isTypeLiteralNode(d));
+        const declaration = classDeclaration || find(symbol.declarations, (d) => isInterfaceDeclaration2(d) || isTypeLiteralNode(d));
         if (declaration && !isSourceFileFromLibrary(program, declaration.getSourceFile())) {
           const makeStatic = !isTypeLiteralNode(declaration) && (leftExpressionType.target || leftExpressionType) !== checker.getDeclaredTypeOfSymbol(symbol);
-          if (makeStatic && (isPrivateIdentifier2(token) || isInterfaceDeclaration(declaration))) return void 0;
+          if (makeStatic && (isPrivateIdentifier2(token) || isInterfaceDeclaration2(declaration))) return void 0;
           const declSourceFile = declaration.getSourceFile();
           const modifierFlags = isTypeLiteralNode(declaration) ? 0 : (makeStatic ? 256 : 0) | (startsWithUnderscore(token.text) ? 2 : 0);
           const isJSFile = isSourceFileJS(declSourceFile);
           const call = tryCast(parent2.parent, isCallExpression19);
           return { kind: 0, token, call, modifierFlags, parentDeclaration: declaration, declSourceFile, isJSFile };
         }
-        const enumDeclaration = find(symbol.declarations, isEnumDeclaration);
+        const enumDeclaration = find(symbol.declarations, isEnumDeclaration2);
         if (enumDeclaration && !(leftExpressionType.flags & 1056) && !isPrivateIdentifier2(token) && !isSourceFileFromLibrary(program, enumDeclaration.getSourceFile())) {
           return { kind: 1, token, parentDeclaration: enumDeclaration };
         }
@@ -171554,7 +171554,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         return info.isJSFile ? singleElementArray(createActionForAddMissingMemberInJavascriptFile(context, info)) : createActionsForAddMissingMemberInTypeScriptFile(context, info);
       }
       function createActionForAddMissingMemberInJavascriptFile(context, { parentDeclaration, declSourceFile, modifierFlags, token }) {
-        if (isInterfaceDeclaration(parentDeclaration) || isTypeLiteralNode(parentDeclaration)) {
+        if (isInterfaceDeclaration2(parentDeclaration) || isTypeLiteralNode(parentDeclaration)) {
           return void 0;
         }
         const changes = ts_textChanges_exports.ChangeTracker.with(context, (t) => addMissingMemberInJs(t, declSourceFile, parentDeclaration, token, !!(modifierFlags & 256)));
@@ -177196,7 +177196,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         const token = getTokenAtPosition(sourceFile, pos);
         const indexSignature = tryCast(token.parent.parent, isIndexSignatureDeclaration);
         if (!indexSignature) return void 0;
-        const container = isInterfaceDeclaration(indexSignature.parent) ? indexSignature.parent : tryCast(indexSignature.parent.parent, isTypeAliasDeclaration);
+        const container = isInterfaceDeclaration2(indexSignature.parent) ? indexSignature.parent : tryCast(indexSignature.parent.parent, isTypeAliasDeclaration2);
         if (!container) return void 0;
         return { indexSignature, container };
       }
@@ -177204,7 +177204,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         return factory.createTypeAliasDeclaration(declaration.modifiers, declaration.name, declaration.typeParameters, type);
       }
       function doChange39(changes, sourceFile, { indexSignature, container }) {
-        const members = isInterfaceDeclaration(container) ? container.members : container.type.members;
+        const members = isInterfaceDeclaration2(container) ? container.members : container.type.members;
         const otherMembers = members.filter((member3) => !isIndexSignatureDeclaration(member3));
         const parameter = first(indexSignature.parameters);
         const mappedTypeParameter = factory.createTypeParameterDeclaration(
@@ -179988,7 +179988,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           const isTypeLocation = isImportType && !node.isTypeOf || isPartOfTypeNode(node.parent) || isPossiblyTypeArgumentPosition(contextToken, sourceFile, typeChecker);
           const isRhsOfImportDeclaration = isInRightSideOfInternalImportEqualsDeclaration(node);
           if (isEntityName(node) || isImportType || isPropertyAccessExpression18(node)) {
-            const isNamespaceName = isModuleDeclaration(node.parent);
+            const isNamespaceName = isModuleDeclaration2(node.parent);
             if (isNamespaceName) {
               isNewIdentifierLocation = true;
               defaultCommitCharacters = [];
@@ -180744,7 +180744,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           if (!namedExports) {
             return 0;
           }
-          const localsContainer = findAncestor(namedExports, or(isSourceFile8, isModuleDeclaration));
+          const localsContainer = findAncestor(namedExports, or(isSourceFile8, isModuleDeclaration2));
           completionKind = 5;
           isNewIdentifierLocation = false;
           (_a2 = localsContainer.locals) == null ? void 0 : _a2.forEach((symbol, name) => {
@@ -181002,7 +181002,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
               return true;
             }
           }
-          return isDeclarationName(contextToken2) && !isShorthandPropertyAssignment10(contextToken2.parent) && !isJsxAttribute3(contextToken2.parent) && !((isClassLike(contextToken2.parent) || isInterfaceDeclaration(contextToken2.parent) || isTypeParameterDeclaration(contextToken2.parent)) && (contextToken2 !== previousToken || position2 > previousToken.end));
+          return isDeclarationName(contextToken2) && !isShorthandPropertyAssignment10(contextToken2.parent) && !isJsxAttribute3(contextToken2.parent) && !((isClassLike(contextToken2.parent) || isInterfaceDeclaration2(contextToken2.parent) || isTypeParameterDeclaration(contextToken2.parent)) && (contextToken2 !== previousToken || position2 > previousToken.end));
         }
         function isPreviousPropertyDeclarationTerminated(contextToken2, position22) {
           return contextToken2.kind !== 64 && (contextToken2.kind === 27 || !positionsAreOnSameLine(contextToken2.end, position22, sourceFile));
@@ -181607,7 +181607,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           if (couldBeTypeOnlyImportSpecifier(parent2, contextToken) && canCompleteFromNamedBindings(parent2.parent)) {
             return parent2;
           }
-          if (isNamedImports7(parent2) || isNamespaceImport10(parent2)) {
+          if (isNamedImports8(parent2) || isNamespaceImport10(parent2)) {
             if (!parent2.parent.isTypeOnly && (contextToken.kind === 19 || contextToken.kind === 102 || contextToken.kind === 28)) {
               keywordCompletion = 156;
             }
@@ -181661,7 +181661,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
       function getPotentiallyInvalidImportSpecifier(namedBindings) {
         var _a2;
         return find(
-          (_a2 = tryCast(namedBindings, isNamedImports7)) == null ? void 0 : _a2.elements,
+          (_a2 = tryCast(namedBindings, isNamedImports8)) == null ? void 0 : _a2.elements,
           (e) => {
             var _a22;
             return !e.propertyName && isStringANonContextualKeyword(e.name.text) && ((_a22 = findPrecedingToken(e.name.pos, namedBindings.getSourceFile(), namedBindings)) == null ? void 0 : _a22.kind) !== 28;
@@ -181675,7 +181675,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         if (!isModuleSpecifierMissingOrEmpty(namedBindings.parent.parent.moduleSpecifier) || namedBindings.parent.name) {
           return false;
         }
-        if (isNamedImports7(namedBindings)) {
+        if (isNamedImports8(namedBindings)) {
           const invalidNamedImport = getPotentiallyInvalidImportSpecifier(namedBindings);
           const validImports = invalidNamedImport ? namedBindings.elements.indexOf(invalidNamedImport) : namedBindings.elements.length;
           return validImports < 2;
@@ -183253,7 +183253,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
               } else {
                 return exportInfo(symbol, getExportKindForDeclaration(exportNode));
               }
-            } else if (isNamespaceExport(parent2)) {
+            } else if (isNamespaceExport2(parent2)) {
               return exportInfo(
                 symbol,
                 0
@@ -184304,7 +184304,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         })(SpecialSearchKind || (SpecialSearchKind = {}));
         function getNonModuleSymbolOfMergedModuleSymbol(symbol) {
           if (!(symbol.flags & (1536 | 33554432))) return void 0;
-          const decl = symbol.declarations && find(symbol.declarations, (d) => !isSourceFile8(d) && !isModuleDeclaration(d));
+          const decl = symbol.declarations && find(symbol.declarations, (d) => !isSourceFile8(d) && !isModuleDeclaration2(d));
           return decl && decl.symbol;
         }
         class State2 {
@@ -184974,7 +184974,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
           }
         }
         function getContainingNodeIfInHeritageClause(node) {
-          return isIdentifier19(node) || isPropertyAccessExpression18(node) ? getContainingNodeIfInHeritageClause(node.parent) : isExpressionWithTypeArguments(node) ? tryCast(node.parent.parent, or(isClassLike, isInterfaceDeclaration)) : void 0;
+          return isIdentifier19(node) || isPropertyAccessExpression18(node) ? getContainingNodeIfInHeritageClause(node.parent) : isExpressionWithTypeArguments(node) ? tryCast(node.parent.parent, or(isClassLike, isInterfaceDeclaration2)) : void 0;
         }
         function isImplementationExpression(node) {
           switch (node.kind) {
@@ -185376,7 +185376,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         }
         Core2.getIntersectingMeaningFromDeclarations = getIntersectingMeaningFromDeclarations;
         function isImplementation(node) {
-          return !!(node.flags & 33554432) ? !(isInterfaceDeclaration(node) || isTypeAliasDeclaration(node)) : isVariableLike(node) ? hasInitializer(node) : isFunctionLikeDeclaration(node) ? !!node.body : isClassLike(node) || isModuleOrEnumDeclaration(node);
+          return !!(node.flags & 33554432) ? !(isInterfaceDeclaration2(node) || isTypeAliasDeclaration2(node)) : isVariableLike(node) ? hasInitializer(node) : isFunctionLikeDeclaration(node) ? !!node.body : isClassLike(node) || isModuleOrEnumDeclaration(node);
         }
         function getReferenceEntriesForShorthandPropertyAssignment(node, checker, addReference2) {
           const refSymbol = checker.getSymbolAtLocation(node);
@@ -185711,7 +185711,7 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         }
         if (getObjectFlags(type) & 32 && type.target && shouldUnwrapFirstTypeArgumentTypeDefinitionFromAlias(typeChecker, type.target)) {
           const declaration = (_b = (_a2 = type.aliasSymbol) == null ? void 0 : _a2.declarations) == null ? void 0 : _b[0];
-          if (declaration && isTypeAliasDeclaration(declaration) && isTypeReferenceNode3(declaration.type) && declaration.type.typeArguments) {
+          if (declaration && isTypeAliasDeclaration2(declaration) && isTypeReferenceNode3(declaration.type) && declaration.type.typeArguments) {
             return definitionFromType(typeChecker.getTypeAtLocation(declaration.type.typeArguments[0]), typeChecker, node, failedAliasResolution);
           }
         }
@@ -187305,11 +187305,11 @@ ${content}
       function placeClassNodeGroup(originalFile, changeTracker, changes, focusLocations) {
         let classOrInterface;
         if (!focusLocations || !focusLocations.length) {
-          classOrInterface = find(originalFile.statements, or(isClassLike, isInterfaceDeclaration));
+          classOrInterface = find(originalFile.statements, or(isClassLike, isInterfaceDeclaration2));
         } else {
           classOrInterface = forEach(focusLocations, (location2) => findAncestor(
             getTokenAtPosition(originalFile, location2.start),
-            or(isClassLike, isInterfaceDeclaration)
+            or(isClassLike, isInterfaceDeclaration2)
           ));
         }
         if (!classOrInterface) {
@@ -187897,7 +187897,7 @@ ${content}
       }
       function tryGetNamedBindingElements(namedImport) {
         var _a2;
-        return ((_a2 = namedImport.importClause) == null ? void 0 : _a2.namedBindings) && isNamedImports7(namedImport.importClause.namedBindings) ? namedImport.importClause.namedBindings.elements : void 0;
+        return ((_a2 = namedImport.importClause) == null ? void 0 : _a2.namedBindings) && isNamedImports8(namedImport.importClause.namedBindings) ? namedImport.importClause.namedBindings.elements : void 0;
       }
       function detectModuleSpecifierCaseBySort(importDeclsByGroup, comparersToTest) {
         const moduleSpecifiersByGroup = [];
@@ -187910,7 +187910,7 @@ ${content}
         let bothNamedImports = false;
         const importDeclsWithNamed = originalGroups.filter((i) => {
           var _a2, _b;
-          const namedImports = (_b = tryCast((_a2 = i.importClause) == null ? void 0 : _a2.namedBindings, isNamedImports7)) == null ? void 0 : _b.elements;
+          const namedImports = (_b = tryCast((_a2 = i.importClause) == null ? void 0 : _a2.namedBindings, isNamedImports8)) == null ? void 0 : _b.elements;
           if (!(namedImports == null ? void 0 : namedImports.length)) return false;
           if (!bothNamedImports && namedImports.some((n) => n.isTypeOnly) && namedImports.some((n) => !n.isTypeOnly)) {
             bothNamedImports = true;
@@ -187920,7 +187920,7 @@ ${content}
         if (importDeclsWithNamed.length === 0) return;
         const namedImportsByDecl = importDeclsWithNamed.map((importDecl) => {
           var _a2, _b;
-          return (_b = tryCast((_a2 = importDecl.importClause) == null ? void 0 : _a2.namedBindings, isNamedImports7)) == null ? void 0 : _b.elements;
+          return (_b = tryCast((_a2 = importDecl.importClause) == null ? void 0 : _a2.namedBindings, isNamedImports8)) == null ? void 0 : _b.elements;
         }).filter((elements) => elements !== void 0);
         if (!bothNamedImports || typesToTest.length === 0) {
           const sortState = detectCaseSensitivityBySort(namedImportsByDecl.map((i) => i.map((n) => n.name.text)), comparersToTest);
@@ -188136,7 +188136,7 @@ ${content}
           if (isBlock7(n2) || isModuleBlock(n2)) {
             addOutliningForLeadingCommentsForPos(n2.statements.end, sourceFile, cancellationToken, out);
           }
-          if (isClassLike(n2) || isInterfaceDeclaration(n2)) {
+          if (isClassLike(n2) || isInterfaceDeclaration2(n2)) {
             addOutliningForLeadingCommentsForPos(n2.members.end, sourceFile, cancellationToken, out);
           }
           const span = getOutliningSpanForNode(n2, sourceFile);
@@ -189797,7 +189797,7 @@ ${content}
         if (symbolFlags & 384) {
           prefixNextMeaning();
           if (!tryExpandSymbol(symbol, semanticMeaning)) {
-            if (some(symbol.declarations, (d) => isEnumDeclaration(d) && isEnumConst(d))) {
+            if (some(symbol.declarations, (d) => isEnumDeclaration2(d) && isEnumConst(d))) {
               displayParts.push(keywordPart(
                 87
                 /* ConstKeyword */
@@ -189878,7 +189878,7 @@ ${content}
                   32
                   /* WriteTypeArgumentsOfSignature */
                 ));
-              } else if (isTypeAliasDeclaration(declaration)) {
+              } else if (isTypeAliasDeclaration2(declaration)) {
                 addInPrefix();
                 displayParts.push(keywordPart(
                   156
@@ -190840,7 +190840,7 @@ ${content}
             return { suffix: ", " };
           } else if (isParameter6(before)) {
             return isParameter6(inserted) ? { suffix: ", " } : {};
-          } else if (isStringLiteral7(before) && isImportDeclaration9(before.parent) || isNamedImports7(before)) {
+          } else if (isStringLiteral7(before) && isImportDeclaration9(before.parent) || isNamedImports8(before)) {
             return { suffix: ", " };
           } else if (isImportSpecifier10(before)) {
             return { suffix: "," + (blankLineBetween ? this.newLineCharacter : " ") };
@@ -190933,7 +190933,7 @@ ${content}
           return {
             indentation,
             prefix: (insertLeadingComma ? "," : "") + this.newLineCharacter,
-            suffix: insertTrailingComma ? "," : isInterfaceDeclaration(node) && isEmpty ? ";" : ""
+            suffix: insertTrailingComma ? "," : isInterfaceDeclaration2(node) && isEmpty ? ";" : ""
           };
         }
         insertNodeAfterComma(sourceFile, after, newNode) {
@@ -197142,7 +197142,7 @@ ${options.prefix}` : "\n" : options.prefix
         isEntityName: () => isEntityName,
         isEntityNameExpression: () => isEntityNameExpression,
         isEnumConst: () => isEnumConst,
-        isEnumDeclaration: () => isEnumDeclaration,
+        isEnumDeclaration: () => isEnumDeclaration2,
         isEnumMember: () => isEnumMember,
         isEqualityOperatorKind: () => isEqualityOperatorKind,
         isEqualsGreaterThanToken: () => isEqualsGreaterThanToken,
@@ -197265,7 +197265,7 @@ ${options.prefix}` : "\n" : options.prefix
         isInsideTemplateLiteral: () => isInsideTemplateLiteral,
         isInstanceOfExpression: () => isInstanceOfExpression,
         isInstantiatedModule: () => isInstantiatedModule,
-        isInterfaceDeclaration: () => isInterfaceDeclaration,
+        isInterfaceDeclaration: () => isInterfaceDeclaration2,
         isInternalDeclaration: () => isInternalDeclaration,
         isInternalModuleImportEqualsDeclaration: () => isInternalModuleImportEqualsDeclaration,
         isInternalName: () => isInternalName,
@@ -197390,7 +197390,7 @@ ${options.prefix}` : "\n" : options.prefix
         isModuleAugmentationExternal: () => isModuleAugmentationExternal,
         isModuleBlock: () => isModuleBlock,
         isModuleBody: () => isModuleBody,
-        isModuleDeclaration: () => isModuleDeclaration,
+        isModuleDeclaration: () => isModuleDeclaration2,
         isModuleExportName: () => isModuleExportName,
         isModuleExportsAccessExpression: () => isModuleExportsAccessExpression,
         isModuleIdentifier: () => isModuleIdentifier,
@@ -197407,11 +197407,11 @@ ${options.prefix}` : "\n" : options.prefix
         isNamedExportBindings: () => isNamedExportBindings,
         isNamedExports: () => isNamedExports2,
         isNamedImportBindings: () => isNamedImportBindings,
-        isNamedImports: () => isNamedImports7,
+        isNamedImports: () => isNamedImports8,
         isNamedImportsOrExports: () => isNamedImportsOrExports,
         isNamedTupleMember: () => isNamedTupleMember,
         isNamespaceBody: () => isNamespaceBody,
-        isNamespaceExport: () => isNamespaceExport,
+        isNamespaceExport: () => isNamespaceExport2,
         isNamespaceExportDeclaration: () => isNamespaceExportDeclaration,
         isNamespaceImport: () => isNamespaceImport10,
         isNamespaceReexportDeclaration: () => isNamespaceReexportDeclaration,
@@ -197604,7 +197604,7 @@ ${options.prefix}` : "\n" : options.prefix
         isTryStatement: () => isTryStatement2,
         isTupleTypeNode: () => isTupleTypeNode,
         isTypeAlias: () => isTypeAlias,
-        isTypeAliasDeclaration: () => isTypeAliasDeclaration,
+        isTypeAliasDeclaration: () => isTypeAliasDeclaration2,
         isTypeAssertionExpression: () => isTypeAssertionExpression14,
         isTypeDeclaration: () => isTypeDeclaration,
         isTypeElement: () => isTypeElement,
@@ -197766,7 +197766,7 @@ ${options.prefix}` : "\n" : options.prefix
         parseBuildCommand: () => parseBuildCommand,
         parseCommandLine: () => parseCommandLine,
         parseCommandLineWorker: () => parseCommandLineWorker,
-        parseConfigFileTextToJson: () => parseConfigFileTextToJson,
+        parseConfigFileTextToJson: () => parseConfigFileTextToJson2,
         parseConfigFileWithSystem: () => parseConfigFileWithSystem,
         parseConfigHostFromCompilerHostLike: () => parseConfigHostFromCompilerHostLike,
         parseCustomTypeOption: () => parseCustomTypeOption,
@@ -211072,9 +211072,9 @@ Additional information: BADCLIENT: Bad error code, ${badCode} not found in range
         };
       }
     })({ get exports() {
-      return ts21;
+      return ts22;
     }, set exports(v) {
-      ts21 = v;
+      ts22 = v;
       if (typeof module !== "undefined" && module.exports) {
         module.exports = v;
       }
@@ -212088,7 +212088,8 @@ var init_static_context = __esm({
       "declared_stream_callback_schedule",
       "conditional_array_accumulator",
       "declared_process_wrapper",
-      "declared_package_api"
+      "declared_package_api",
+      "configured_module_resolution"
     ]);
   }
 });
@@ -212372,25 +212373,202 @@ var init_analysis_gaps = __esm({
   }
 });
 
-// build/src/source/modules.js
+// build/src/source/module-config.js
 import { posix as posix2 } from "node:path";
+function object3(value) {
+  if (value === null || typeof value !== "object" || Array.isArray(value))
+    return false;
+  const prototype = Object.getPrototypeOf(value);
+  return prototype === Object.prototype || prototype === null;
+}
+function boundedPath(base, value) {
+  if (!value || value.includes("\\") || /[\u0000-\u001f\u007f]/.test(value) || posix2.isAbsolute(value))
+    return void 0;
+  const path2 = posix2.normalize(posix2.join(base, value));
+  return path2 === ".." || path2.startsWith("../") || posix2.isAbsolute(path2) ? void 0 : path2;
+}
+var ts3, MAX_CONFIG_BYTES, MAX_CONFIGS, MAX_TOTAL_CONFIG_BYTES, ModuleConfigurations;
+var init_module_config = __esm({
+  "build/src/source/module-config.js"() {
+    "use strict";
+    ts3 = __toESM(require_typescript(), 1);
+    MAX_CONFIG_BYTES = 64 * 1024;
+    MAX_CONFIGS = 128;
+    MAX_TOTAL_CONFIG_BYTES = 1024 * 1024;
+    ModuleConfigurations = class {
+      tick;
+      configurations = /* @__PURE__ */ new Map();
+      complete = true;
+      observed;
+      supported = 0;
+      unsupported = 0;
+      bytes = 0;
+      constructor(metadata, tick) {
+        this.tick = tick;
+        const files = [];
+        for (const file of metadata) {
+          if (!this.tick()) {
+            this.complete = false;
+            break;
+          }
+          if (["tsconfig.json", "jsconfig.json"].includes(posix2.basename(file.path)))
+            files.push(file);
+        }
+        this.observed = files.length;
+        if (files.length > MAX_CONFIGS) {
+          this.complete = false;
+          this.unsupported = files.length;
+          return;
+        }
+        for (const file of files) {
+          if (!this.tick()) {
+            this.complete = false;
+            break;
+          }
+          const configuration = { path: file.path, base: posix2.dirname(file.path), mappings: [], supported: false };
+          const duplicate = this.configurations.get(file.path);
+          if (duplicate) {
+            if (duplicate.supported) {
+              this.supported--;
+              this.unsupported++;
+            }
+            duplicate.supported = false;
+            this.unsupported++;
+            continue;
+          }
+          this.configurations.set(file.path, configuration);
+          const bytes = Buffer.byteLength(file.text);
+          this.bytes += bytes;
+          if (bytes > MAX_CONFIG_BYTES || this.bytes > MAX_TOTAL_CONFIG_BYTES) {
+            this.unsupported++;
+            continue;
+          }
+          let charged = true;
+          for (let offset = 0; offset < bytes; offset += 64)
+            if (!this.tick()) {
+              charged = false;
+              this.complete = false;
+              break;
+            }
+          if (!charged)
+            break;
+          const parsed = ts3.parseConfigFileTextToJson(file.path, file.text);
+          const data = parsed.config;
+          const options = object3(data) && Object.hasOwn(data, "compilerOptions") && object3(data.compilerOptions) ? data.compilerOptions : void 0;
+          if (parsed.error || !object3(data) || Object.hasOwn(data, "extends") || Object.hasOwn(data, "references") || Object.hasOwn(data, "compilerOptions") && !options || options && ["rootDirs", "moduleSuffixes"].some((key2) => Object.hasOwn(options, key2))) {
+            this.unsupported++;
+            continue;
+          }
+          if (options?.baseUrl !== void 0) {
+            const base = typeof options.baseUrl === "string" ? boundedPath(posix2.dirname(file.path), options.baseUrl) : void 0;
+            if (base === void 0) {
+              this.unsupported++;
+              continue;
+            }
+            configuration.base = base;
+          }
+          if (options?.paths !== void 0 && !object3(options.paths)) {
+            this.unsupported++;
+            continue;
+          }
+          let valid = true;
+          for (const [key2, values] of Object.entries(options?.paths ?? {})) {
+            if (!this.tick()) {
+              valid = false;
+              this.complete = false;
+              break;
+            }
+            if (!key2 || key2.includes("\\") || key2.startsWith(".") || key2.startsWith("/") || /[\u0000-\u001f\u007f]/.test(key2) || key2.split("*").length > 2 || !Array.isArray(values) || values.length !== 1 || typeof values[0] !== "string" || values[0].split("*").length > 2) {
+              valid = false;
+              break;
+            }
+            const target = values[0];
+            if (boundedPath(configuration.base, target.replace("*", "owned")) === void 0) {
+              valid = false;
+              break;
+            }
+            const star = key2.indexOf("*");
+            configuration.mappings.push(star < 0 ? { key: key2, target } : { key: key2, target, prefix: key2.slice(0, star), suffix: key2.slice(star + 1) });
+          }
+          configuration.supported = valid;
+          if (valid)
+            this.supported++;
+          else
+            this.unsupported++;
+        }
+      }
+      resolve(file, specifier) {
+        if (!this.complete)
+          return { kind: "unsupported" };
+        if (!this.configurations.size)
+          return { kind: "external" };
+        if (file.startsWith("/") || file.includes("\\") || file === ".." || file.startsWith("../"))
+          return { kind: "unsupported" };
+        let directory2 = posix2.dirname(file), configuration;
+        for (; ; ) {
+          if (!this.tick())
+            return { kind: "unsupported" };
+          const prefix = directory2 === "." ? "" : directory2 + "/";
+          configuration = this.configurations.get(prefix + "tsconfig.json") ?? this.configurations.get(prefix + "jsconfig.json");
+          if (configuration || directory2 === ".")
+            break;
+          directory2 = posix2.dirname(directory2);
+        }
+        if (!configuration)
+          return { kind: "external" };
+        if (!configuration.supported)
+          return { kind: "unsupported" };
+        let selected;
+        for (const mapping of configuration.mappings) {
+          if (!this.tick())
+            return { kind: "unsupported" };
+          if (mapping.prefix === void 0 && mapping.key === specifier) {
+            selected = mapping;
+            break;
+          }
+        }
+        if (!selected)
+          for (const mapping of configuration.mappings) {
+            if (!this.tick())
+              return { kind: "unsupported" };
+            if (mapping.prefix === void 0 || !specifier.startsWith(mapping.prefix) || !specifier.endsWith(mapping.suffix) || specifier.length < mapping.prefix.length + mapping.suffix.length)
+              continue;
+            if (!selected || mapping.prefix.length > selected.prefix.length)
+              selected = mapping;
+          }
+        if (!selected)
+          return { kind: "external" };
+        const captured = selected.prefix === void 0 ? void 0 : specifier.slice(selected.prefix.length, specifier.length - selected.suffix.length);
+        const target = captured ? selected.target.replace("*", captured) : selected.target;
+        if (target.includes("*"))
+          return { kind: "unsupported" };
+        const path2 = boundedPath(configuration.base, target);
+        return path2 === void 0 ? { kind: "unsupported" } : { kind: "mapped", path: path2 };
+      }
+    };
+  }
+});
+
+// build/src/source/modules.js
+import { posix as posix3 } from "node:path";
 function isFlowFunction(node) {
-  return ts3.isFunctionDeclaration(node) || ts3.isFunctionExpression(node) || ts3.isArrowFunction(node) || ts3.isMethodDeclaration(node) || ts3.isGetAccessorDeclaration(node) || ts3.isSetAccessorDeclaration(node) || ts3.isConstructorDeclaration(node);
+  return ts4.isFunctionDeclaration(node) || ts4.isFunctionExpression(node) || ts4.isArrowFunction(node) || ts4.isMethodDeclaration(node) || ts4.isGetAccessorDeclaration(node) || ts4.isSetAccessorDeclaration(node) || ts4.isConstructorDeclaration(node);
 }
 function nameOf(node) {
-  return node && (ts3.isIdentifier(node) || ts3.isStringLiteralLike(node)) ? node.text : void 0;
+  return node && (ts4.isIdentifier(node) || ts4.isStringLiteralLike(node)) ? node.text : void 0;
 }
 function variableOf(node) {
   let current = node;
-  while (current && !ts3.isVariableDeclaration(current))
+  while (current && !ts4.isVariableDeclaration(current))
     current = current.parent;
-  return current && ts3.isVariableDeclaration(current) ? current : void 0;
+  return current && ts4.isVariableDeclaration(current) ? current : void 0;
 }
-var ts3, FLOW_LIMITS, BROWSER_LOCATION_EVALUATION_NAMES, StaticModules;
+var ts4, FLOW_LIMITS, BROWSER_LOCATION_EVALUATION_NAMES, NATIVE_CERTIFICATE_FAMILIES, StaticModules;
 var init_modules = __esm({
   "build/src/source/modules.js"() {
     "use strict";
-    ts3 = __toESM(require_typescript(), 1);
+    ts4 = __toESM(require_typescript(), 1);
+    init_module_config();
     FLOW_LIMITS = Object.freeze({
       nodeVisits: 5e5,
       // Aggregate cap; legacy callers can override independently.
@@ -212414,6 +212592,26 @@ var init_modules = __esm({
       "runInNewContext",
       "compileFunction"
     ]);
+    NATIVE_CERTIFICATE_FAMILIES = /* @__PURE__ */ new Set([
+      "pg",
+      "pg-pool",
+      "pg-native",
+      "axios",
+      "child_process",
+      "url",
+      "fs",
+      "path",
+      "glob",
+      "minipass",
+      "unzipper",
+      "foreground-child",
+      "marsdb",
+      "mongodb",
+      "hono",
+      "koa",
+      "express",
+      "next"
+    ]);
     StaticModules = class {
       tick;
       limits;
@@ -212426,9 +212624,18 @@ var init_modules = __esm({
       checker;
       files;
       moduleEdges = /* @__PURE__ */ new Set();
+      moduleConfigurations;
+      configuredModuleTargets = /* @__PURE__ */ new Set();
+      configuredCallSites = /* @__PURE__ */ new Set();
+      barrelFunctionTargets = /* @__PURE__ */ new Set();
+      configuredNativeIdentityComplete = true;
+      configuredNativeLoads = /* @__PURE__ */ new Set();
       mutated = /* @__PURE__ */ new Set();
       mutatedMembers = /* @__PURE__ */ new Set();
       exports = /* @__PURE__ */ new Map();
+      reExports = /* @__PURE__ */ new Map();
+      exportedFunctionCache = /* @__PURE__ */ new Map();
+      exportNamesIncomplete = /* @__PURE__ */ new Set();
       cjsExportFiles = /* @__PURE__ */ new Set();
       esmFiles = /* @__PURE__ */ new Set();
       cjsShadowScopes = /* @__PURE__ */ new Map();
@@ -212498,12 +212705,13 @@ var init_modules = __esm({
       ownerOf(node) {
         return this.owners.get(node) ?? node.getSourceFile();
       }
-      constructor(files, tick, limits, incomplete, objectScopeComplete = true) {
+      constructor(files, tick, limits, incomplete, objectScopeComplete = true, metadata = []) {
         this.tick = tick;
         this.limits = limits;
         this.incomplete = incomplete;
         this.objectScopeComplete = objectScopeComplete;
         this.files = new Map(files.map((file) => [file.fileName, file]));
+        this.moduleConfigurations = new ModuleConfigurations(metadata, tick);
         const lookup = (name) => this.files.get(name.replace(/^\//, ""));
         const host = {
           getSourceFile: (name) => lookup(name),
@@ -212519,58 +212727,58 @@ var init_modules = __esm({
           getNewLine: () => "\n",
           directoryExists: () => false
         };
-        const program = ts3.createProgram([...this.files.keys()], {
+        const program = ts4.createProgram([...this.files.keys()], {
           allowJs: true,
           noLib: true,
           noResolve: true,
           noEmit: true,
-          target: ts3.ScriptTarget.Latest,
-          module: ts3.ModuleKind.ESNext
+          target: ts4.ScriptTarget.Latest,
+          module: ts4.ModuleKind.ESNext
         }, host);
         this.checker = program.getTypeChecker();
         const markWrite = (target) => {
           if (!this.tick())
             return;
-          if (ts3.isIdentifier(target)) {
+          if (ts4.isIdentifier(target)) {
             const symbol = this.symbol(target);
             if (symbol) {
               this.mutated.add(symbol);
               this.mutated.add(this.checker.getExportSymbolOfSymbol(symbol));
             }
-          } else if (ts3.isParenthesizedExpression(target) || ts3.isAsExpression(target) || ts3.isTypeAssertionExpression(target) || ts3.isNonNullExpression(target)) {
+          } else if (ts4.isParenthesizedExpression(target) || ts4.isAsExpression(target) || ts4.isTypeAssertionExpression(target) || ts4.isNonNullExpression(target)) {
             markWrite(target.expression);
-          } else if (ts3.isBinaryExpression(target) && target.operatorToken.kind === ts3.SyntaxKind.EqualsToken) {
+          } else if (ts4.isBinaryExpression(target) && target.operatorToken.kind === ts4.SyntaxKind.EqualsToken) {
             markWrite(target.left);
-          } else if (ts3.isArrayLiteralExpression(target) || ts3.isArrayBindingPattern(target)) {
+          } else if (ts4.isArrayLiteralExpression(target) || ts4.isArrayBindingPattern(target)) {
             for (const element of target.elements)
-              if (!ts3.isOmittedExpression(element))
+              if (!ts4.isOmittedExpression(element))
                 markWrite(element);
-          } else if (ts3.isObjectLiteralExpression(target) || ts3.isObjectBindingPattern(target)) {
-            for (const property of ts3.isObjectLiteralExpression(target) ? target.properties : target.elements) {
-              if (ts3.isPropertyAssignment(property))
+          } else if (ts4.isObjectLiteralExpression(target) || ts4.isObjectBindingPattern(target)) {
+            for (const property of ts4.isObjectLiteralExpression(target) ? target.properties : target.elements) {
+              if (ts4.isPropertyAssignment(property))
                 markWrite(property.initializer);
-              else if (ts3.isShorthandPropertyAssignment(property))
+              else if (ts4.isShorthandPropertyAssignment(property))
                 markWrite(property.name);
-              else if (ts3.isSpreadAssignment(property))
+              else if (ts4.isSpreadAssignment(property))
                 markWrite(property.expression);
-              else if (ts3.isBindingElement(property))
+              else if (ts4.isBindingElement(property))
                 markWrite(property.name);
             }
-          } else if (ts3.isSpreadElement(target))
+          } else if (ts4.isSpreadElement(target))
             markWrite(target.expression);
-          else if (ts3.isBindingElement(target))
+          else if (ts4.isBindingElement(target))
             markWrite(target.name);
-          else if (ts3.isVariableDeclarationList(target)) {
+          else if (ts4.isVariableDeclarationList(target)) {
             for (const declaration of target.declarations)
               markWrite(declaration.name);
-          } else if ((ts3.isPropertyAccessExpression(target) || ts3.isElementAccessExpression(target)) && ts3.isIdentifier(target.expression)) {
+          } else if ((ts4.isPropertyAccessExpression(target) || ts4.isElementAccessExpression(target)) && ts4.isIdentifier(target.expression)) {
             const symbol = this.symbol(target.expression);
             if (symbol)
               this.mutatedMembers.add(symbol);
           }
         };
         const staticLoadExpression = (expression) => {
-          while (ts3.isParenthesizedExpression(expression) || ts3.isAsExpression(expression) || ts3.isTypeAssertionExpression(expression) || ts3.isNonNullExpression(expression)) {
+          while (ts4.isParenthesizedExpression(expression) || ts4.isAsExpression(expression) || ts4.isTypeAssertionExpression(expression) || ts4.isNonNullExpression(expression)) {
             if (!this.tick())
               return void 0;
             expression = expression.expression;
@@ -212585,45 +212793,45 @@ var init_modules = __esm({
           }
           this.indexedAstNodes += 1;
           this.owners.set(node, owner);
-          if ((ts3.isIdentifier(node) || ts3.isStringLiteralLike(node)) && BROWSER_LOCATION_EVALUATION_NAMES.has(node.text) || ts3.isComputedPropertyName(node) && ts3.isBindingElement(node.parent))
+          if ((ts4.isIdentifier(node) || ts4.isStringLiteralLike(node)) && BROWSER_LOCATION_EVALUATION_NAMES.has(node.text) || ts4.isComputedPropertyName(node) && ts4.isBindingElement(node.parent))
             this.browserLocationBoundaryNodes.push(node);
-          if (ts3.isClassDeclaration(node) && ts3.isSourceFile(node.parent))
+          if (ts4.isClassDeclaration(node) && ts4.isSourceFile(node.parent))
             this.classes.add(node);
-          if (ts3.isImportDeclaration(node)) {
+          if (ts4.isImportDeclaration(node)) {
             this.importDeclarations.push(node);
-            if (ts3.isStringLiteralLike(node.moduleSpecifier) && /^(?:node:)?child_process$/.test(node.moduleSpecifier.text))
+            if (ts4.isStringLiteralLike(node.moduleSpecifier) && /^(?:node:)?child_process$/.test(node.moduleSpecifier.text))
               this.forkLoads.push(node);
-            if (ts3.isStringLiteralLike(node.moduleSpecifier) && /^(pg(?:\/|$)|pg-native$|pg-pool$)/.test(node.moduleSpecifier.text))
+            if (ts4.isStringLiteralLike(node.moduleSpecifier) && /^(pg(?:\/|$)|pg-native$|pg-pool$)/.test(node.moduleSpecifier.text))
               this.sqlLoads.push({ specifier: node.moduleSpecifier.text, node });
           }
-          if (ts3.isCallExpression(node) && node.expression.kind === ts3.SyntaxKind.ImportKeyword) {
+          if (ts4.isCallExpression(node) && node.expression.kind === ts4.SyntaxKind.ImportKeyword) {
             const specifier = node.arguments.length === 1 ? staticLoadExpression(node.arguments[0]) : void 0;
-            if (specifier && ts3.isStringLiteralLike(specifier) && specifier.text === "express")
+            if (specifier && ts4.isStringLiteralLike(specifier) && specifier.text === "express")
               this.expressOpaqueLoads.push(node);
-            if (specifier && ts3.isStringLiteralLike(specifier) && specifier.text === "koa")
+            if (specifier && ts4.isStringLiteralLike(specifier) && specifier.text === "koa")
               this.koaOpaqueLoads.push(node);
-            this.unsupportedObjectLoads.push({ node, specifier: specifier && ts3.isStringLiteralLike(specifier) ? specifier.text : void 0 });
+            this.unsupportedObjectLoads.push({ node, specifier: specifier && ts4.isStringLiteralLike(specifier) ? specifier.text : void 0 });
           }
-          if (ts3.isExportDeclaration(node) && node.moduleSpecifier)
+          if (ts4.isExportDeclaration(node) && node.moduleSpecifier)
             this.unsupportedObjectLoads.push({
               node,
-              specifier: ts3.isStringLiteralLike(node.moduleSpecifier) ? node.moduleSpecifier.text : void 0
+              specifier: ts4.isStringLiteralLike(node.moduleSpecifier) ? node.moduleSpecifier.text : void 0
             });
-          if (ts3.isExportDeclaration(node) && node.moduleSpecifier && ts3.isStringLiteralLike(node.moduleSpecifier) && node.moduleSpecifier.text === "koa")
+          if (ts4.isExportDeclaration(node) && node.moduleSpecifier && ts4.isStringLiteralLike(node.moduleSpecifier) && node.moduleSpecifier.text === "koa")
             this.koaOpaqueLoads.push(node);
-          if (ts3.isImportEqualsDeclaration(node) && ts3.isExternalModuleReference(node.moduleReference)) {
+          if (ts4.isImportEqualsDeclaration(node) && ts4.isExternalModuleReference(node.moduleReference)) {
             const specifier = node.moduleReference.expression;
-            if (specifier && ts3.isStringLiteralLike(specifier) && specifier.text === "express")
+            if (specifier && ts4.isStringLiteralLike(specifier) && specifier.text === "express")
               this.expressOpaqueLoads.push(node);
-            if (specifier && ts3.isStringLiteralLike(specifier) && specifier.text === "koa")
+            if (specifier && ts4.isStringLiteralLike(specifier) && specifier.text === "koa")
               this.koaOpaqueLoads.push(node);
-            this.unsupportedObjectLoads.push({ node, specifier: specifier && ts3.isStringLiteralLike(specifier) ? specifier.text : void 0 });
+            this.unsupportedObjectLoads.push({ node, specifier: specifier && ts4.isStringLiteralLike(specifier) ? specifier.text : void 0 });
           }
-          if (ts3.isCallExpression(node) && node.arguments.length >= 1) {
+          if (ts4.isCallExpression(node) && node.arguments.length >= 1) {
             const callee = staticLoadExpression(node.expression);
-            if (callee && (callee.kind === ts3.SyntaxKind.ImportKeyword || ts3.isIdentifier(callee) && callee.text === "require")) {
+            if (callee && (callee.kind === ts4.SyntaxKind.ImportKeyword || ts4.isIdentifier(callee) && callee.text === "require")) {
               const specifier = staticLoadExpression(node.arguments[0]);
-              if (specifier && ts3.isStringLiteralLike(specifier)) {
+              if (specifier && ts4.isStringLiteralLike(specifier)) {
                 if (/^(?:node:)?child_process$/.test(specifier.text))
                   this.forkLoads.push(node);
                 if (specifier.text === "axios")
@@ -212633,35 +212841,35 @@ var init_modules = __esm({
               }
             }
           }
-          if (ts3.isImportEqualsDeclaration(node) && ts3.isExternalModuleReference(node.moduleReference) && node.moduleReference.expression && ts3.isStringLiteralLike(node.moduleReference.expression) && node.moduleReference.expression.text === "axios")
+          if (ts4.isImportEqualsDeclaration(node) && ts4.isExternalModuleReference(node.moduleReference) && node.moduleReference.expression && ts4.isStringLiteralLike(node.moduleReference.expression) && node.moduleReference.expression.text === "axios")
             this.axiosLoads.push(node);
-          if (ts3.isExportDeclaration(node) && node.moduleSpecifier && ts3.isStringLiteralLike(node.moduleSpecifier) && node.moduleSpecifier.text === "axios")
+          if (ts4.isExportDeclaration(node) && node.moduleSpecifier && ts4.isStringLiteralLike(node.moduleSpecifier) && node.moduleSpecifier.text === "axios")
             this.axiosLoads.push(node);
-          if (ts3.isExportDeclaration(node) && node.moduleSpecifier)
+          if (ts4.isExportDeclaration(node) && node.moduleSpecifier)
             this.exportDeclarations.push(node);
-          if (ts3.isPropertyAccessExpression(node) && ["constructor", "prototype", "__proto__"].includes(node.name.text))
+          if (ts4.isPropertyAccessExpression(node) && ["constructor", "prototype", "__proto__"].includes(node.name.text))
             this.archiveIntrinsicBoundaryNodes.push(node);
-          else if (ts3.isElementAccessExpression(node)) {
+          else if (ts4.isElementAccessExpression(node)) {
             const key2 = node.argumentExpression;
-            const opaque = !key2 || !ts3.isStringLiteralLike(key2) && !ts3.isNumericLiteral(key2);
-            const prototype = key2 && ts3.isStringLiteralLike(key2) && ["constructor", "prototype", "__proto__"].includes(key2.text);
+            const opaque = !key2 || !ts4.isStringLiteralLike(key2) && !ts4.isNumericLiteral(key2);
+            const prototype = key2 && ts4.isStringLiteralLike(key2) && ["constructor", "prototype", "__proto__"].includes(key2.text);
             if (opaque || prototype)
               this.archiveIntrinsicBoundaryNodes.push(node);
           }
-          if (ts3.isImportEqualsDeclaration(node) && ts3.isExternalModuleReference(node.moduleReference) && node.moduleReference.expression && ts3.isStringLiteralLike(node.moduleReference.expression) && /^(?:node:)?child_process$/.test(node.moduleReference.expression.text))
+          if (ts4.isImportEqualsDeclaration(node) && ts4.isExternalModuleReference(node.moduleReference) && node.moduleReference.expression && ts4.isStringLiteralLike(node.moduleReference.expression) && /^(?:node:)?child_process$/.test(node.moduleReference.expression.text))
             this.forkLoads.push(node);
-          if (ts3.isExportDeclaration(node) && node.moduleSpecifier && ts3.isStringLiteralLike(node.moduleSpecifier) && /^(?:node:)?child_process$/.test(node.moduleSpecifier.text))
+          if (ts4.isExportDeclaration(node) && node.moduleSpecifier && ts4.isStringLiteralLike(node.moduleSpecifier) && /^(?:node:)?child_process$/.test(node.moduleSpecifier.text))
             this.forkLoads.push(node);
-          if (ts3.isVariableDeclaration(node) && node.initializer && ts3.isCallExpression(node.initializer) && ts3.isIdentifier(node.initializer.expression) && node.initializer.expression.text === "require" && node.initializer.arguments.length === 1 && ts3.isStringLiteralLike(node.initializer.arguments[0]))
+          if (ts4.isVariableDeclaration(node) && node.initializer && ts4.isCallExpression(node.initializer) && ts4.isIdentifier(node.initializer.expression) && node.initializer.expression.text === "require" && node.initializer.arguments.length === 1 && ts4.isStringLiteralLike(node.initializer.arguments[0]))
             this.requireDeclarations.push(node);
-          if (ts3.isImportEqualsDeclaration(node) && ts3.isExternalModuleReference(node.moduleReference) && node.moduleReference.expression && ts3.isStringLiteralLike(node.moduleReference.expression) && /^(pg(?:\/|$)|pg-native$|pg-pool$)/.test(node.moduleReference.expression.text))
+          if (ts4.isImportEqualsDeclaration(node) && ts4.isExternalModuleReference(node.moduleReference) && node.moduleReference.expression && ts4.isStringLiteralLike(node.moduleReference.expression) && /^(pg(?:\/|$)|pg-native$|pg-pool$)/.test(node.moduleReference.expression.text))
             this.sqlLoads.push({ specifier: node.moduleReference.expression.text, node });
-          if (ts3.isExportDeclaration(node) && node.moduleSpecifier && ts3.isStringLiteralLike(node.moduleSpecifier) && /^(pg(?:\/|$)|pg-native$|pg-pool$)/.test(node.moduleSpecifier.text))
+          if (ts4.isExportDeclaration(node) && node.moduleSpecifier && ts4.isStringLiteralLike(node.moduleSpecifier) && /^(pg(?:\/|$)|pg-native$|pg-pool$)/.test(node.moduleSpecifier.text))
             this.sqlLoads.push({ specifier: node.moduleSpecifier.text, node });
-          if (ts3.isIdentifier(node)) {
+          if (ts4.isIdentifier(node)) {
             if (["JSON", "Request", "globalThis"].includes(node.text))
               this.honoJsonBoundaryNodes.push(node);
-            if (node.text === "require" && !(ts3.isPropertyAccessExpression(node.parent) && node.parent.name === node))
+            if (node.text === "require" && !(ts4.isPropertyAccessExpression(node.parent) && node.parent.name === node))
               this.requireReferences.push(node);
             if (node.text === "eval" || node.text === "Function")
               this.opaqueClassScopeFiles.add(node.getSourceFile());
@@ -212672,7 +212880,7 @@ var init_modules = __esm({
               this.references.set(symbol, references2);
               this.identifierReferences += 1;
             }
-            if (["module", "exports"].includes(node.text) && !(ts3.isPropertyAccessExpression(node.parent) && node.parent.name === node)) {
+            if (["module", "exports"].includes(node.text) && !(ts4.isPropertyAccessExpression(node.parent) && node.parent.name === node)) {
               const file = node.getSourceFile();
               const references2 = this.cjsReferences.get(file) ?? [];
               references2.push(node);
@@ -212687,16 +212895,16 @@ var init_modules = __esm({
             if (node.text === "require")
               this.loaderReferences.push(node);
           }
-          if (ts3.isElementAccessExpression(node) && ts3.isIdentifier(node.expression) && node.expression.text === "globalThis" && ts3.isStringLiteralLike(node.argumentExpression) && ["JSON", "Request"].includes(node.argumentExpression.text))
+          if (ts4.isElementAccessExpression(node) && ts4.isIdentifier(node.expression) && node.expression.text === "globalThis" && ts4.isStringLiteralLike(node.argumentExpression) && ["JSON", "Request"].includes(node.argumentExpression.text))
             this.honoJsonBoundaryNodes.push(node);
-          if (ts3.isWithStatement(node)) {
+          if (ts4.isWithStatement(node)) {
             this.opaqueClassScopeFiles.add(node.getSourceFile());
             this.browserLocationBoundaryNodes.push(node);
           }
-          if (node.kind === ts3.SyntaxKind.ThisKeyword || node.kind === ts3.SyntaxKind.SuperKeyword) {
+          if (node.kind === ts4.SyntaxKind.ThisKeyword || node.kind === ts4.SyntaxKind.SuperKeyword) {
             let parent = node.parent;
             let classRecorded = false;
-            for (let depth = 0; parent && !ts3.isSourceFile(parent); depth += 1, parent = parent.parent) {
+            for (let depth = 0; parent && !ts4.isSourceFile(parent); depth += 1, parent = parent.parent) {
               if (!this.tick()) {
                 walkComplete = false;
                 break;
@@ -212707,7 +212915,7 @@ var init_modules = __esm({
               }
               if (isFlowFunction(parent))
                 this.receiverDependent.add(parent);
-              if (!classRecorded && ts3.isClassDeclaration(parent)) {
+              if (!classRecorded && ts4.isClassDeclaration(parent)) {
                 const refs = this.classThis.get(parent) ?? [];
                 refs.push(node);
                 this.classThis.set(parent, refs);
@@ -212715,9 +212923,9 @@ var init_modules = __esm({
               }
             }
           }
-          if (ts3.isElementAccessExpression(node) && node.argumentExpression && ts3.isStringLiteralLike(node.argumentExpression) && node.argumentExpression.text === "URLSearchParams")
+          if (ts4.isElementAccessExpression(node) && node.argumentExpression && ts4.isStringLiteralLike(node.argumentExpression) && node.argumentExpression.text === "URLSearchParams")
             this.nativeBoundaryNodes.push(node);
-          if (ts3.isNewExpression(node))
+          if (ts4.isNewExpression(node))
             this.newExpressions.push(node);
           if (isFlowFunction(node) && node.body) {
             if (this.functions.length < this.limits.functions) {
@@ -212726,21 +212934,21 @@ var init_modules = __esm({
             } else
               this.incomplete("function_limit");
           }
-          if (ts3.isCallExpression(node))
+          if (ts4.isCallExpression(node))
             this.calls.push(node);
-          if (ts3.isPropertyDeclaration(node) && node.initializer)
+          if (ts4.isPropertyDeclaration(node) && node.initializer)
             this.instanceFieldWrites.push(node);
-          if (ts3.isBinaryExpression(node) && node.operatorToken.kind >= ts3.SyntaxKind.FirstAssignment && node.operatorToken.kind <= ts3.SyntaxKind.LastAssignment) {
+          if (ts4.isBinaryExpression(node) && node.operatorToken.kind >= ts4.SyntaxKind.FirstAssignment && node.operatorToken.kind <= ts4.SyntaxKind.LastAssignment) {
             this.instanceFieldWrites.push(node);
             markWrite(node.left);
           }
-          if (ts3.isDeleteExpression(node))
+          if (ts4.isDeleteExpression(node))
             this.instanceFieldWrites.push(node);
-          if (ts3.isForInStatement(node) || ts3.isForOfStatement(node)) {
+          if (ts4.isForInStatement(node) || ts4.isForOfStatement(node)) {
             this.instanceFieldWrites.push(node);
             markWrite(node.initializer);
           }
-          if ((ts3.isPrefixUnaryExpression(node) || ts3.isPostfixUnaryExpression(node)) && (node.operator === ts3.SyntaxKind.PlusPlusToken || node.operator === ts3.SyntaxKind.MinusMinusToken)) {
+          if ((ts4.isPrefixUnaryExpression(node) || ts4.isPostfixUnaryExpression(node)) && (node.operator === ts4.SyntaxKind.PlusPlusToken || node.operator === ts4.SyntaxKind.MinusMinusToken)) {
             this.instanceFieldWrites.push(node);
             markWrite(node.operand);
           }
@@ -212814,6 +213022,53 @@ var init_modules = __esm({
             }
           }
         }
+        this.auditConfiguredNativeLoads();
+      }
+      auditConfiguredNativeLoads() {
+        if (!this.moduleConfigurations.observed)
+          return;
+        const inspect = (node, specifier) => {
+          const family = specifier.replace(/^node:/, "").split("/")[0];
+          if (!NATIVE_CERTIFICATE_FAMILIES.has(family))
+            return;
+          if (this.moduleConfigurations.resolve(node.getSourceFile().fileName, specifier).kind !== "external") {
+            this.configuredNativeIdentityComplete = false;
+            this.configuredNativeLoads.add(node);
+          }
+        };
+        for (const load of this.importDeclarations) {
+          if (!this.tick()) {
+            this.configuredNativeIdentityComplete = false;
+            return;
+          }
+          const clause = load.importClause;
+          if (clause?.isTypeOnly || clause && !clause.name && clause.namedBindings && ts4.isNamedImports(clause.namedBindings) && clause.namedBindings.elements.length > 0 && clause.namedBindings.elements.every((specifier) => specifier.isTypeOnly))
+            continue;
+          if (ts4.isStringLiteralLike(load.moduleSpecifier))
+            inspect(load, load.moduleSpecifier.text);
+        }
+        for (const call of this.calls) {
+          if (!this.tick()) {
+            this.configuredNativeIdentityComplete = false;
+            return;
+          }
+          if (call.arguments.length !== 1 || !ts4.isStringLiteralLike(call.arguments[0]))
+            continue;
+          if (call.expression.kind === ts4.SyntaxKind.ImportKeyword || ts4.isIdentifier(call.expression) && call.expression.text === "require" && this.cjsGlobal(call.expression))
+            inspect(call, call.arguments[0].text);
+        }
+        for (const load of this.unsupportedObjectLoads) {
+          if (!this.tick()) {
+            this.configuredNativeIdentityComplete = false;
+            return;
+          }
+          if (ts4.isImportEqualsDeclaration(load.node) && load.node.isTypeOnly)
+            continue;
+          if (ts4.isExportDeclaration(load.node) && (load.node.isTypeOnly || load.node.exportClause && ts4.isNamedExports(load.node.exportClause) && load.node.exportClause.elements.length > 0 && load.node.exportClause.elements.every((specifier) => specifier.isTypeOnly)))
+            continue;
+          if (load.specifier)
+            inspect(load.node, load.specifier);
+        }
       }
       symbol(node) {
         if (this.symbols.has(node))
@@ -212821,13 +213076,13 @@ var init_modules = __esm({
         if (!this.tick())
           return void 0;
         this.symbolLookups += 1;
-        const symbol = ts3.isIdentifier(node) && ts3.isShorthandPropertyAssignment(node.parent) && node.parent.name === node ? this.checker.getShorthandAssignmentValueSymbol(node.parent) : this.checker.getSymbolAtLocation(node);
+        const symbol = ts4.isIdentifier(node) && ts4.isShorthandPropertyAssignment(node.parent) && node.parent.name === node ? this.checker.getShorthandAssignmentValueSymbol(node.parent) : this.checker.getSymbolAtLocation(node);
         this.symbols.set(node, symbol);
         return symbol;
       }
       cjsGlobal(node) {
         const symbol = this.symbol(node);
-        return !symbol || !symbol.declarations?.length || symbol.declarations.every((declaration) => ts3.isSourceFile(declaration) || ts3.isIdentifier(declaration) && ts3.isPropertyAccessExpression(declaration.parent) && declaration.parent.expression === declaration || ts3.isPropertyAccessExpression(declaration) && ts3.isIdentifier(declaration.expression) && declaration.expression.text === node.text || ts3.isBinaryExpression(declaration) && declaration.operatorToken.kind === ts3.SyntaxKind.EqualsToken && ts3.isPropertyAccessExpression(declaration.left) && ts3.isIdentifier(declaration.left.expression) && declaration.left.expression.text === node.text && declaration.left.name.text === "exports" && ts3.isObjectLiteralExpression(declaration.right));
+        return !symbol || !symbol.declarations?.length || symbol.declarations.every((declaration) => ts4.isSourceFile(declaration) || ts4.isIdentifier(declaration) && ts4.isPropertyAccessExpression(declaration.parent) && declaration.parent.expression === declaration || ts4.isPropertyAccessExpression(declaration) && ts4.isIdentifier(declaration.expression) && declaration.expression.text === node.text || ts4.isBinaryExpression(declaration) && declaration.operatorToken.kind === ts4.SyntaxKind.EqualsToken && ts4.isPropertyAccessExpression(declaration.left) && ts4.isIdentifier(declaration.left.expression) && declaration.left.expression.text === node.text && declaration.left.name.text === "exports" && ts4.isObjectLiteralExpression(declaration.right));
       }
       functionOf(node, initializedBefore) {
         const seen = /* @__PURE__ */ new Set();
@@ -212841,12 +213096,12 @@ var init_modules = __esm({
           seen.add(node);
           if (isFlowFunction(node) && node.body) {
             const name = "name" in node ? node.name : void 0;
-            const symbol = name && ts3.isIdentifier(name) ? this.symbol(name) : void 0;
+            const symbol = name && ts4.isIdentifier(name) ? this.symbol(name) : void 0;
             if (symbol && this.mutated.has(symbol))
               return void 0;
             return this.functionSet.has(node) ? node : void 0;
           }
-          if (ts3.isVariableDeclaration(node) && ts3.isIdentifier(node.name) && node.initializer && (node.parent.flags & ts3.NodeFlags.Const) !== 0) {
+          if (ts4.isVariableDeclaration(node) && ts4.isIdentifier(node.name) && node.initializer && (node.parent.flags & ts4.NodeFlags.Const) !== 0) {
             if (initializedBefore !== void 0 && node.pos >= initializedBefore)
               return void 0;
             if (initializedBefore !== void 0)
@@ -212857,7 +213112,7 @@ var init_modules = __esm({
             node = node.initializer;
             continue;
           }
-          if (ts3.isIdentifier(node)) {
+          if (ts4.isIdentifier(node)) {
             const symbol = this.symbol(node);
             const declaration = symbol && this.singleRuntimeDeclaration(symbol);
             if (symbol && !this.mutated.has(symbol) && declaration) {
@@ -212875,7 +213130,7 @@ var init_modules = __esm({
           return declarations[0];
         let implementation;
         for (const declaration of declarations) {
-          if (!this.tick() || !ts3.isFunctionDeclaration(declaration) || !declaration.name || this.symbol(declaration.name) !== symbol)
+          if (!this.tick() || !ts4.isFunctionDeclaration(declaration) || !declaration.name || this.symbol(declaration.name) !== symbol)
             return void 0;
           if (declaration.body) {
             if (implementation)
@@ -212888,33 +213143,69 @@ var init_modules = __esm({
       // Pure ESM remains independent of the closed CommonJS object proof.
       collectExports(file) {
         const output = /* @__PURE__ */ new Map();
+        const reExports = [];
+        let complete = true;
+        const work = () => {
+          if (this.tick())
+            return true;
+          complete = false;
+          return false;
+        };
         const put = (name, value) => {
           if (!name)
             return;
           const fn = this.functionOf(value);
           output.set(name, output.has(name) ? null : fn ?? null);
         };
+        const putBinding = (name, depth = 0) => {
+          if (!work())
+            return;
+          if (depth >= this.limits.aliasSteps) {
+            complete = false;
+            this.incomplete("alias_limit");
+            return;
+          }
+          if (ts4.isIdentifier(name)) {
+            put(name.text, void 0);
+            return;
+          }
+          for (const element of name.elements) {
+            if (!work())
+              return;
+            if (!ts4.isOmittedExpression(element))
+              putBinding(element.name, depth + 1);
+          }
+        };
         for (const statement of file.statements) {
-          if (!this.tick())
+          if (!work())
             break;
-          const modifiers = ts3.canHaveModifiers(statement) ? ts3.getModifiers(statement) : void 0;
-          if (ts3.isImportDeclaration(statement) || ts3.isExportDeclaration(statement) || ts3.isExportAssignment(statement) || ts3.isImportEqualsDeclaration(statement) || modifiers?.some((modifier) => modifier.kind === ts3.SyntaxKind.ExportKeyword)) {
+          const modifiers = ts4.canHaveModifiers(statement) ? ts4.getModifiers(statement) : void 0;
+          if (ts4.isImportDeclaration(statement) || ts4.isExportDeclaration(statement) || ts4.isExportAssignment(statement) || ts4.isImportEqualsDeclaration(statement) || modifiers?.some((modifier) => modifier.kind === ts4.SyntaxKind.ExportKeyword)) {
             this.esmFiles.add(file);
           }
-          const exported = modifiers?.some((modifier) => modifier.kind === ts3.SyntaxKind.ExportKeyword) && !modifiers?.some((modifier) => modifier.kind === ts3.SyntaxKind.DefaultKeyword);
-          if (exported && ts3.isFunctionDeclaration(statement) && statement.body)
+          const exported = modifiers?.some((modifier) => modifier.kind === ts4.SyntaxKind.ExportKeyword) && !modifiers?.some((modifier) => modifier.kind === ts4.SyntaxKind.DefaultKeyword);
+          if (ts4.isExportAssignment(statement) && statement.isExportEquals || exported && ts4.isImportEqualsDeclaration(statement) && !statement.isTypeOnly)
+            complete = false;
+          if (exported && !ts4.isFunctionDeclaration(statement) && !ts4.isVariableStatement(statement) && !ts4.isClassDeclaration(statement) && !ts4.isEnumDeclaration(statement) && !ts4.isModuleDeclaration(statement) && !ts4.isInterfaceDeclaration(statement) && !ts4.isTypeAliasDeclaration(statement) && !(ts4.isImportEqualsDeclaration(statement) && statement.isTypeOnly))
+            complete = false;
+          if (exported && ts4.isFunctionDeclaration(statement) && statement.body)
             put(statement.name?.text, statement);
-          if (exported && ts3.isVariableStatement(statement)) {
+          if (exported && ts4.isVariableStatement(statement)) {
             for (const declaration of statement.declarationList.declarations) {
-              if (!this.tick())
+              if (!work())
                 break;
-              if (ts3.isIdentifier(declaration.name))
+              if (ts4.isIdentifier(declaration.name))
                 put(declaration.name.text, declaration);
+              else
+                putBinding(declaration.name);
             }
           }
-          if (ts3.isExportDeclaration(statement) && !statement.moduleSpecifier && statement.exportClause && ts3.isNamedExports(statement.exportClause)) {
+          if (exported && (ts4.isClassDeclaration(statement) || ts4.isEnumDeclaration(statement) || ts4.isModuleDeclaration(statement))) {
+            put(statement.name?.text, void 0);
+          }
+          if (ts4.isExportDeclaration(statement) && !statement.moduleSpecifier && statement.exportClause && ts4.isNamedExports(statement.exportClause)) {
             for (const specifier of statement.exportClause.elements) {
-              if (!this.tick())
+              if (!work())
                 break;
               if (statement.isTypeOnly || specifier.isTypeOnly)
                 continue;
@@ -212924,8 +213215,28 @@ var init_modules = __esm({
               put(specifier.name.text, local ? this.singleRuntimeDeclaration(local) : void 0);
             }
           }
+          if (ts4.isExportDeclaration(statement) && !statement.isTypeOnly && statement.moduleSpecifier && ts4.isStringLiteralLike(statement.moduleSpecifier)) {
+            if (!statement.exportClause)
+              reExports.push({ specifier: statement.moduleSpecifier.text });
+            else if (ts4.isNamedExports(statement.exportClause))
+              for (const specifier of statement.exportClause.elements) {
+                if (!work())
+                  break;
+                if (!specifier.isTypeOnly)
+                  reExports.push({
+                    specifier: statement.moduleSpecifier.text,
+                    imported: (specifier.propertyName ?? specifier.name).text,
+                    exported: specifier.name.text
+                  });
+              }
+            else if (ts4.isNamespaceExport(statement.exportClause))
+              put(statement.exportClause.name.text, void 0);
+          }
         }
         this.exports.set(file.fileName, output);
+        this.reExports.set(file.fileName, reExports);
+        if (!complete)
+          this.exportNamesIncomplete.add(file);
       }
       /** Budgeted snapshot-only resolution shared by role models. */
       resolveSourceModule(file, specifier) {
@@ -212943,16 +213254,16 @@ var init_modules = __esm({
       /** Separate new-expression lane: receiver-dependent constructors are never
        * granted ordinary function dispatch by this certificate. */
       resolveConstruct(node) {
-        if (!this.proofsReady || !this.objectScopeComplete || !this.tick() || !ts3.isIdentifier(node.expression))
+        if (!this.proofsReady || !this.objectScopeComplete || !this.tick() || !ts4.isIdentifier(node.expression))
           return void 0;
         const helper = this.independentHelperConstructs.get(node);
         if (helper?.valid && this.singletonEligibility.get(helper) === "closed")
           return void 0;
         const target = this.cjsOrLocalBinding(node.expression);
-        if (!target || !(ts3.isFunctionDeclaration(target) || ts3.isFunctionExpression(target)) || !this.constructorIntrinsicsClosed()) {
+        if (!target || !(ts4.isFunctionDeclaration(target) || ts4.isFunctionExpression(target)) || !this.constructorIntrinsicsClosed()) {
           const declaration = this.symbol(node.expression)?.declarations?.[0];
-          const init = declaration && ts3.isVariableDeclaration(declaration) ? declaration.initializer : void 0;
-          const recognized = declaration && ts3.isFunctionDeclaration(declaration) || init && (ts3.isFunctionExpression(init) || ts3.isCallExpression(init) && ts3.isIdentifier(init.expression) && init.expression.text === "require" && init.arguments.length === 1 && ts3.isStringLiteralLike(init.arguments[0]) && init.arguments[0].text.startsWith(".") || ts3.isPropertyAccessExpression(init) && ts3.isCallExpression(init.expression) && ts3.isIdentifier(init.expression.expression) && init.expression.expression.text === "require" && init.expression.arguments.length === 1 && ts3.isStringLiteralLike(init.expression.arguments[0]) && init.expression.arguments[0].text.startsWith("."));
+          const init = declaration && ts4.isVariableDeclaration(declaration) ? declaration.initializer : void 0;
+          const recognized = declaration && ts4.isFunctionDeclaration(declaration) || init && (ts4.isFunctionExpression(init) || ts4.isCallExpression(init) && ts4.isIdentifier(init.expression) && init.expression.text === "require" && init.arguments.length === 1 && ts4.isStringLiteralLike(init.arguments[0]) && init.arguments[0].text.startsWith(".") || ts4.isPropertyAccessExpression(init) && ts4.isCallExpression(init.expression) && ts4.isIdentifier(init.expression.expression) && init.expression.expression.text === "require" && init.expression.arguments.length === 1 && ts4.isStringLiteralLike(init.expression.arguments[0]) && init.expression.arguments[0].text.startsWith("."));
           if (recognized)
             this.incomplete("module_export_unsupported");
           return void 0;
@@ -212960,21 +213271,21 @@ var init_modules = __esm({
         return target;
       }
       resolveCjsFunctionCall(call) {
-        if (!this.proofsReady || !this.objectScopeComplete || !this.tick() || !ts3.isIdentifier(call.expression))
+        if (!this.proofsReady || !this.objectScopeComplete || !this.tick() || !ts4.isIdentifier(call.expression))
           return void 0;
         const target = this.cjsOrLocalBinding(call.expression, true);
         return target && !this.receiverDependent.has(target) ? { kind: "resolved", target } : void 0;
       }
       /** A source-body hypothesis only. It never satisfies the strict dispatcher. */
       discoverCjsBody(node) {
-        if (!this.proofsReady || !this.objectScopeComplete || !this.tick() || !ts3.isIdentifier(node.expression))
+        if (!this.proofsReady || !this.objectScopeComplete || !this.tick() || !ts4.isIdentifier(node.expression))
           return void 0;
         const declaration = this.symbol(node.expression)?.declarations?.[0];
         if (!declaration || this.beforeInitialization(node, declaration))
           return void 0;
-        const callOnly = ts3.isCallExpression(node);
+        const callOnly = ts4.isCallExpression(node);
         const target = this.cjsOrLocalBinding(node.expression, callOnly, true);
-        if (!target || callOnly && this.receiverDependent.has(target) || !callOnly && (!(ts3.isFunctionDeclaration(target) || ts3.isFunctionExpression(target)) || !this.constructorIntrinsicsClosed()))
+        if (!target || callOnly && this.receiverDependent.has(target) || !callOnly && (!(ts4.isFunctionDeclaration(target) || ts4.isFunctionExpression(target)) || !this.constructorIntrinsicsClosed()))
           return void 0;
         return target;
       }
@@ -212982,13 +213293,13 @@ var init_modules = __esm({
         const symbol = this.symbol(identifier3), declaration = symbol?.declarations?.length === 1 ? symbol.declarations[0] : void 0;
         if (!symbol || !declaration || this.mutated.has(symbol) || this.mutatedMembers.has(symbol))
           return void 0;
-        let initializer = ts3.isVariableDeclaration(declaration) && declaration.initializer && !!(declaration.parent.flags & ts3.NodeFlags.Const) ? declaration.initializer : void 0;
+        let initializer = ts4.isVariableDeclaration(declaration) && declaration.initializer && !!(declaration.parent.flags & ts4.NodeFlags.Const) ? declaration.initializer : void 0;
         let key2 = "";
-        if (initializer && ts3.isPropertyAccessExpression(initializer)) {
+        if (initializer && ts4.isPropertyAccessExpression(initializer)) {
           key2 = initializer.name.text;
           initializer = initializer.expression;
         }
-        if (initializer && ts3.isCallExpression(initializer) && ts3.isIdentifier(initializer.expression) && initializer.expression.text === "require" && this.cjsGlobal(initializer.expression) && initializer.arguments.length === 1 && ts3.isStringLiteralLike(initializer.arguments[0])) {
+        if (initializer && ts4.isCallExpression(initializer) && ts4.isIdentifier(initializer.expression) && initializer.expression.text === "require" && this.cjsGlobal(initializer.expression) && initializer.arguments.length === 1 && ts4.isStringLiteralLike(initializer.arguments[0])) {
           const file = this.importedFile(identifier3.getSourceFile(), initializer.arguments[0].text, true);
           if (file.kind !== "file" || !this.bindingInvocationRefs(symbol, callOnly))
             return void 0;
@@ -213004,13 +213315,13 @@ var init_modules = __esm({
           if (!this.tick())
             return false;
           const parent = reference2.parent;
-          if (reference2 === exportValue || (ts3.isVariableDeclaration(parent) || ts3.isFunctionDeclaration(parent) || ts3.isFunctionExpression(parent)) && parent.name === reference2)
+          if (reference2 === exportValue || (ts4.isVariableDeclaration(parent) || ts4.isFunctionDeclaration(parent) || ts4.isFunctionExpression(parent)) && parent.name === reference2)
             continue;
-          if (ts3.isNewExpression(parent) && parent.expression === reference2 && !callOnly)
+          if (ts4.isNewExpression(parent) && parent.expression === reference2 && !callOnly)
             continue;
-          if (ts3.isCallExpression(parent) && parent.expression === reference2 && callOnly)
+          if (ts4.isCallExpression(parent) && parent.expression === reference2 && callOnly)
             continue;
-          if (!callOnly && ts3.isBinaryExpression(parent) && parent.operatorToken.kind === ts3.SyntaxKind.InstanceOfKeyword && parent.right === reference2)
+          if (!callOnly && ts4.isBinaryExpression(parent) && parent.operatorToken.kind === ts4.SyntaxKind.InstanceOfKeyword && parent.right === reference2)
             continue;
           return false;
         }
@@ -213030,14 +213341,14 @@ var init_modules = __esm({
         for (const statement of file.statements) {
           if (!this.tick())
             return void 0;
-          if (!ts3.isExpressionStatement(statement) || !ts3.isBinaryExpression(statement.expression) || statement.expression.operatorToken.kind !== ts3.SyntaxKind.EqualsToken)
+          if (!ts4.isExpressionStatement(statement) || !ts4.isBinaryExpression(statement.expression) || statement.expression.operatorToken.kind !== ts4.SyntaxKind.EqualsToken)
             continue;
           const assignment = statement.expression, left = assignment.left;
           let root, slot;
-          if (ts3.isPropertyAccessExpression(left) && ts3.isIdentifier(left.expression) && left.expression.text === "module" && left.name.text === "exports") {
+          if (ts4.isPropertyAccessExpression(left) && ts4.isIdentifier(left.expression) && left.expression.text === "module" && left.name.text === "exports") {
             root = left.expression;
             slot = "";
-          } else if (ts3.isPropertyAccessExpression(left) && ts3.isPropertyAccessExpression(left.expression) && left.expression.name.text === "exports" && ts3.isIdentifier(left.expression.expression) && left.expression.expression.text === "module") {
+          } else if (ts4.isPropertyAccessExpression(left) && ts4.isPropertyAccessExpression(left.expression) && left.expression.name.text === "exports" && ts4.isIdentifier(left.expression.expression) && left.expression.expression.text === "module") {
             root = left.expression.expression;
             slot = left.name.text;
           }
@@ -213061,12 +213372,12 @@ var init_modules = __esm({
         const target = this.functionOf(value);
         if (!target || target.getSourceFile() !== file)
           return void 0;
-        if (conditional && ts3.isIdentifier(value)) {
-          const original = ts3.isVariableDeclaration(target.parent) && ts3.isIdentifier(target.parent.name) ? target.parent.name : "name" in target && target.name && ts3.isIdentifier(target.name) ? target.name : void 0;
+        if (conditional && ts4.isIdentifier(value)) {
+          const original = ts4.isVariableDeclaration(target.parent) && ts4.isIdentifier(target.parent.name) ? target.parent.name : "name" in target && target.name && ts4.isIdentifier(target.name) ? target.name : void 0;
           if (!original || this.symbol(original) !== this.symbol(value))
             return void 0;
         }
-        const binding = ts3.isIdentifier(value) ? value : "name" in target && target.name && ts3.isIdentifier(target.name) ? target.name : ts3.isVariableDeclaration(target.parent) && ts3.isIdentifier(target.parent.name) ? target.parent.name : void 0;
+        const binding = ts4.isIdentifier(value) ? value : "name" in target && target.name && ts4.isIdentifier(target.name) ? target.name : ts4.isVariableDeclaration(target.parent) && ts4.isIdentifier(target.parent.name) ? target.parent.name : void 0;
         const symbol = binding ? this.symbol(binding) : void 0;
         if (!symbol || !this.bindingInvocationRefs(symbol, callOnly, value) || !(conditional ? this.conditionalConsumersUnchanged(file, key2, callOnly) : this.cjsConsumersClosed(file, key2, callOnly)))
           return void 0;
@@ -213084,14 +213395,14 @@ var init_modules = __esm({
           if (!this.cjsGlobal(ref))
             continue;
           const parent = ref.parent;
-          if (ts3.isCallExpression(parent) && parent.expression === ref) {
-            if (parent.arguments.some((argument) => ts3.isStringLiteralLike(argument) && ["module", "node:module"].includes(argument.text)))
+          if (ts4.isCallExpression(parent) && parent.expression === ref) {
+            if (parent.arguments.some((argument) => ts4.isStringLiteralLike(argument) && ["module", "node:module"].includes(argument.text)))
               return false;
             continue;
           }
-          if (ts3.isTypeOfExpression(parent))
+          if (ts4.isTypeOfExpression(parent))
             continue;
-          if (ts3.isPropertyAccessExpression(parent) && parent.expression === ref && parent.name.text === "resolve" && ts3.isCallExpression(parent.parent) && parent.parent.expression === parent)
+          if (ts4.isPropertyAccessExpression(parent) && parent.expression === ref && parent.name.text === "resolve" && ts4.isCallExpression(parent.parent) && parent.parent.expression === parent)
             continue;
           return false;
         }
@@ -213101,7 +213412,7 @@ var init_modules = __esm({
               return false;
             if (ref.text !== "module" || !this.cjsFunctionGlobal(ref))
               continue;
-            if (ts3.isPropertyAccessExpression(ref.parent) && ref.parent.expression === ref && ref.parent.name.text === "exports")
+            if (ts4.isPropertyAccessExpression(ref.parent) && ref.parent.expression === ref && ref.parent.name.text === "exports")
               continue;
             if (this.loaderObservation(ref))
               continue;
@@ -213110,7 +213421,7 @@ var init_modules = __esm({
         for (const load of [...this.importDeclarations, ...this.exportDeclarations]) {
           if (!this.tick())
             return false;
-          if (load.moduleSpecifier && ts3.isStringLiteralLike(load.moduleSpecifier) && ["module", "node:module"].includes(load.moduleSpecifier.text))
+          if (load.moduleSpecifier && ts4.isStringLiteralLike(load.moduleSpecifier) && ["module", "node:module"].includes(load.moduleSpecifier.text))
             return false;
         }
         for (const load of this.unsupportedObjectLoads) {
@@ -213129,17 +213440,17 @@ var init_modules = __esm({
         for (const load of [...this.importDeclarations, ...this.exportDeclarations]) {
           if (!this.tick())
             return false;
-          if (!load.moduleSpecifier || !ts3.isStringLiteralLike(load.moduleSpecifier) || !load.moduleSpecifier.text.startsWith("."))
+          if (!load.moduleSpecifier || !ts4.isStringLiteralLike(load.moduleSpecifier) || !load.moduleSpecifier.text.startsWith("."))
             continue;
           const resolved = this.importedFile(load.getSourceFile(), load.moduleSpecifier.text, true);
-          const typeOnly = ts3.isExportDeclaration(load) ? load.isTypeOnly : load.importClause?.isTypeOnly;
+          const typeOnly = ts4.isExportDeclaration(load) ? load.isTypeOnly : load.importClause?.isTypeOnly;
           if (resolved.kind === "file" && resolved.file === file && !typeOnly)
             unchanged = false;
         }
         for (const call of this.calls) {
           if (!this.tick())
             return false;
-          if (call.expression.kind !== ts3.SyntaxKind.ImportKeyword || call.arguments.length !== 1 || !ts3.isStringLiteralLike(call.arguments[0]))
+          if (call.expression.kind !== ts4.SyntaxKind.ImportKeyword || call.arguments.length !== 1 || !ts4.isStringLiteralLike(call.arguments[0]))
             continue;
           const resolved = this.importedFile(call.getSourceFile(), call.arguments[0].text, true);
           if (resolved.kind === "file" && resolved.file === file)
@@ -213160,14 +213471,14 @@ var init_modules = __esm({
           if (!this.cjsGlobal(reference2))
             continue;
           const load = reference2.parent;
-          if (!ts3.isCallExpression(load) || load.expression !== reference2 || load.arguments.length !== 1 || !ts3.isStringLiteralLike(load.arguments[0]) || !load.arguments[0].text.startsWith("."))
+          if (!ts4.isCallExpression(load) || load.expression !== reference2 || load.arguments.length !== 1 || !ts4.isStringLiteralLike(load.arguments[0]) || !load.arguments[0].text.startsWith("."))
             continue;
           const resolved = this.importedFile(load.getSourceFile(), load.arguments[0].text, true);
           if (resolved.kind !== "file" || resolved.file !== file)
             continue;
           let value = load;
           if (key2) {
-            if (!ts3.isPropertyAccessExpression(load.parent) || load.parent.expression !== load) {
+            if (!ts4.isPropertyAccessExpression(load.parent) || load.parent.expression !== load) {
               unchanged = false;
               continue;
             }
@@ -213176,7 +213487,7 @@ var init_modules = __esm({
             value = load.parent;
           }
           const declaration = value.parent;
-          if (!ts3.isVariableDeclaration(declaration) || declaration.initializer !== value || !ts3.isIdentifier(declaration.name) || !(declaration.parent.flags & ts3.NodeFlags.Const)) {
+          if (!ts4.isVariableDeclaration(declaration) || declaration.initializer !== value || !ts4.isIdentifier(declaration.name) || !(declaration.parent.flags & ts4.NodeFlags.Const)) {
             unchanged = false;
             continue;
           }
@@ -213190,7 +213501,7 @@ var init_modules = __esm({
         for (const load of this.importDeclarations) {
           if (!this.tick())
             return false;
-          if (!ts3.isStringLiteralLike(load.moduleSpecifier) || !load.moduleSpecifier.text.startsWith("."))
+          if (!ts4.isStringLiteralLike(load.moduleSpecifier) || !load.moduleSpecifier.text.startsWith("."))
             continue;
           const resolved = this.importedFile(load.getSourceFile(), load.moduleSpecifier.text, true);
           if (resolved.kind === "file" && resolved.file === file && !load.importClause?.isTypeOnly)
@@ -213199,7 +213510,7 @@ var init_modules = __esm({
         for (const load of this.exportDeclarations) {
           if (!this.tick())
             return false;
-          if (load.isTypeOnly || !load.moduleSpecifier || !ts3.isStringLiteralLike(load.moduleSpecifier) || !load.moduleSpecifier.text.startsWith("."))
+          if (load.isTypeOnly || !load.moduleSpecifier || !ts4.isStringLiteralLike(load.moduleSpecifier) || !load.moduleSpecifier.text.startsWith("."))
             continue;
           const resolved = this.importedFile(load.getSourceFile(), load.moduleSpecifier.text, true);
           if (resolved.kind === "file" && resolved.file === file)
@@ -213208,9 +213519,9 @@ var init_modules = __esm({
         for (const call of this.calls) {
           if (!this.tick())
             return false;
-          if (call.expression.kind !== ts3.SyntaxKind.ImportKeyword)
+          if (call.expression.kind !== ts4.SyntaxKind.ImportKeyword)
             continue;
-          if (call.arguments.length !== 1 || !ts3.isStringLiteralLike(call.arguments[0]))
+          if (call.arguments.length !== 1 || !ts4.isStringLiteralLike(call.arguments[0]))
             return false;
           const resolved = this.importedFile(call.getSourceFile(), call.arguments[0].text, true);
           if (resolved.kind === "file" && resolved.file === file)
@@ -213222,7 +213533,7 @@ var init_modules = __esm({
           if (!this.cjsGlobal(reference2))
             continue;
           const load = reference2.parent;
-          if (!ts3.isCallExpression(load) || load.expression !== reference2 || load.arguments.length !== 1 || !ts3.isStringLiteralLike(load.arguments[0]))
+          if (!ts4.isCallExpression(load) || load.expression !== reference2 || load.arguments.length !== 1 || !ts4.isStringLiteralLike(load.arguments[0]))
             return false;
           if (!load.arguments[0].text.startsWith("."))
             continue;
@@ -213231,14 +213542,14 @@ var init_modules = __esm({
             continue;
           let value = load;
           if (key2) {
-            if (!ts3.isPropertyAccessExpression(load.parent) || load.parent.expression !== load)
+            if (!ts4.isPropertyAccessExpression(load.parent) || load.parent.expression !== load)
               return false;
             if (load.parent.name.text !== key2)
               continue;
             value = load.parent;
           }
           const declaration = value.parent;
-          if (!ts3.isVariableDeclaration(declaration) || declaration.initializer !== value || !ts3.isIdentifier(declaration.name) || !(declaration.parent.flags & ts3.NodeFlags.Const))
+          if (!ts4.isVariableDeclaration(declaration) || declaration.initializer !== value || !ts4.isIdentifier(declaration.name) || !(declaration.parent.flags & ts4.NodeFlags.Const))
             return false;
           const symbol = this.symbol(declaration.name);
           if (!symbol || this.mutated.has(symbol) || this.mutatedMembers.has(symbol) || !this.bindingInvocationRefs(symbol, callOnly))
@@ -213250,7 +213561,7 @@ var init_modules = __esm({
         if (this.cjsGlobal(node))
           return true;
         const symbol = this.symbol(node);
-        return node.text === "module" && symbol?.declarations?.length === 1 && symbol.declarations.every((declaration) => ts3.isBinaryExpression(declaration) && declaration.operatorToken.kind === ts3.SyntaxKind.EqualsToken && ts3.isPropertyAccessExpression(declaration.left) && ts3.isIdentifier(declaration.left.expression) && declaration.left.expression.text === "module" && declaration.left.name.text === "exports" && ts3.isExpressionStatement(declaration.parent) && ts3.isSourceFile(declaration.parent.parent) && declaration.getSourceFile() === node.getSourceFile() && !!this.functionOf(declaration.right));
+        return node.text === "module" && symbol?.declarations?.length === 1 && symbol.declarations.every((declaration) => ts4.isBinaryExpression(declaration) && declaration.operatorToken.kind === ts4.SyntaxKind.EqualsToken && ts4.isPropertyAccessExpression(declaration.left) && ts4.isIdentifier(declaration.left.expression) && declaration.left.expression.text === "module" && declaration.left.name.text === "exports" && ts4.isExpressionStatement(declaration.parent) && ts4.isSourceFile(declaration.parent.parent) && declaration.getSourceFile() === node.getSourceFile() && !!this.functionOf(declaration.right));
       }
       constructorIntrinsicsClosed() {
         if (this.constructorIntrinsics !== void 0)
@@ -213259,37 +213570,45 @@ var init_modules = __esm({
         for (const root of this.constructorBoundaryNodes) {
           if (!this.tick())
             return false;
-          if (this.symbol(root)?.declarations?.length || ts3.isPropertyAccessExpression(root.parent) && root.parent.name === root)
+          if (this.symbol(root)?.declarations?.length || ts4.isPropertyAccessExpression(root.parent) && root.parent.name === root)
             continue;
-          if (ts3.isTypeNode(root.parent))
+          if (ts4.isTypeNode(root.parent))
             continue;
           let member3 = root;
-          while ((ts3.isPropertyAccessExpression(member3.parent) || ts3.isElementAccessExpression(member3.parent)) && member3.parent.expression === member3) {
+          while ((ts4.isPropertyAccessExpression(member3.parent) || ts4.isElementAccessExpression(member3.parent)) && member3.parent.expression === member3) {
             if (!this.tick())
               return false;
-            if (ts3.isElementAccessExpression(member3.parent) && !ts3.isStringLiteralLike(member3.parent.argumentExpression))
+            if (ts4.isElementAccessExpression(member3.parent) && !ts4.isStringLiteralLike(member3.parent.argumentExpression))
               return false;
             member3 = member3.parent;
           }
           if (member3 === root) {
-            if (root.text === "Symbol" && ts3.isCallExpression(root.parent) && root.parent.expression === root)
+            if (root.text === "Symbol" && ts4.isCallExpression(root.parent) && root.parent.expression === root)
               continue;
             return false;
           }
-          if (ts3.isBinaryExpression(member3.parent) && member3.parent.left === member3 || ts3.isDeleteExpression(member3.parent) || ts3.isPrefixUnaryExpression(member3.parent) || ts3.isPostfixUnaryExpression(member3.parent))
+          if (ts4.isBinaryExpression(member3.parent) && member3.parent.left === member3 || ts4.isDeleteExpression(member3.parent) || ts4.isPrefixUnaryExpression(member3.parent) || ts4.isPostfixUnaryExpression(member3.parent))
             return false;
           if (member3.getText().includes("prototype")) {
-            if (ts3.isBinaryExpression(member3.parent) && member3.parent.left === member3 || ts3.isDeleteExpression(member3.parent) || ts3.isVariableDeclaration(member3.parent) || ts3.isCallExpression(member3.parent) || ts3.isReturnStatement(member3.parent))
+            if (ts4.isBinaryExpression(member3.parent) && member3.parent.left === member3 || ts4.isDeleteExpression(member3.parent) || ts4.isVariableDeclaration(member3.parent) || ts4.isCallExpression(member3.parent) || ts4.isReturnStatement(member3.parent))
               return false;
           }
         }
         this.constructorIntrinsics = true;
         return true;
       }
-      importedFile(file, specifier, count5) {
-        if (!specifier.startsWith("./") && !specifier.startsWith("../"))
-          return { kind: "external" };
-        const path2 = posix2.normalize(posix2.join(posix2.dirname(file.fileName), specifier));
+      importedFile(file, specifier, count5, allowConfigured = false) {
+        let path2, configured = false;
+        if (!specifier.startsWith("./") && !specifier.startsWith("../")) {
+          if (!allowConfigured)
+            return { kind: "external" };
+          const mapping = this.moduleConfigurations.resolve(file.fileName, specifier);
+          if (mapping.kind !== "mapped")
+            return { kind: mapping.kind === "external" ? "external" : "export_unsupported" };
+          path2 = mapping.path;
+          configured = true;
+        } else
+          path2 = posix3.normalize(posix3.join(posix3.dirname(file.fileName), specifier));
         if (path2 === ".." || path2.startsWith("../") || path2.startsWith("/") || path2.includes("\\"))
           return { kind: "unsupported" };
         const edge = `${file.fileName}\0${specifier}`;
@@ -213298,17 +213617,17 @@ var init_modules = __esm({
           if (this.moduleEdges.size > this.limits.moduleEdges)
             return { kind: "module_budget" };
         }
-        const directory2 = specifier.endsWith("/");
+        const directory2 = (configured ? path2 : specifier).endsWith("/");
         let directoryLookup = directory2;
         const extensions = [".js", ".ts", ".tsx", ".jsx", ".cjs", ".mjs"];
         let candidates;
         if (directory2)
-          candidates = extensions.map((extension2) => posix2.join(path2, "index") + extension2);
+          candidates = extensions.map((extension2) => posix3.join(path2, "index") + extension2);
         else if (/\.js$/.test(path2))
           candidates = [path2, path2.slice(0, -3) + ".ts", path2.slice(0, -3) + ".tsx"];
         else if (/\.(?:ts|tsx|jsx|mjs|cjs|mts|cts)$/.test(path2))
           candidates = [path2];
-        else if (posix2.extname(path2))
+        else if (posix3.extname(path2))
           return { kind: "unsupported" };
         else
           candidates = extensions.map((extension2) => path2 + extension2);
@@ -213326,9 +213645,9 @@ var init_modules = __esm({
         let matched = select(candidates);
         if (!matched)
           return { kind: "unsupported" };
-        if (!directory2 && !posix2.extname(path2) && matched.length === 0) {
+        if (!directory2 && !posix3.extname(path2) && matched.length === 0) {
           directoryLookup = true;
-          matched = select(extensions.map((extension2) => posix2.join(path2, "index") + extension2));
+          matched = select(extensions.map((extension2) => posix3.join(path2, "index") + extension2));
           if (!matched)
             return { kind: "unsupported" };
         }
@@ -213336,14 +213655,87 @@ var init_modules = __esm({
           return { kind: "missing" };
         if (matched.length !== 1)
           return { kind: "ambiguous" };
-        return { kind: "file", file: matched[0], directory: directoryLookup };
+        if (configured)
+          this.configuredModuleTargets.add(`${file.fileName}\0${specifier}\0${matched[0].fileName}`);
+        return { kind: "file", file: matched[0], directory: directoryLookup, ...configured ? { configured: true } : {} };
       }
-      imported(file, specifier, name, count5, unproved = false) {
-        const result3 = this.importedFile(file, specifier, count5);
+      exportedFunction(file, name, count5, allowConfigured, active = /* @__PURE__ */ new Set(), depth = 0) {
+        if (!this.tick())
+          return { kind: "unsupported" };
+        if (this.exportNamesIncomplete.has(file))
+          return { kind: "export_unsupported" };
+        if (depth >= this.limits.aliasSteps) {
+          this.incomplete("alias_limit");
+          return { kind: "export_unsupported" };
+        }
+        const key2 = `${file.fileName}\0${name}`;
+        if (active.has(key2))
+          return { kind: "export_unsupported" };
+        const cacheKey = `${key2}\0${allowConfigured}`;
+        const cached = count5 && active.size === 0 ? this.exportedFunctionCache.get(cacheKey) : void 0;
+        if (cached)
+          return cached;
+        const next = new Set(active);
+        next.add(key2);
+        const local = this.exports.get(file.fileName);
+        const explicit = (this.reExports.get(file.fileName) ?? []).filter((edge) => edge.exported === name);
+        if (local?.has(name)) {
+          const target = local.get(name);
+          return target && explicit.length === 0 ? { kind: "resolved", target } : { kind: "export_unsupported" };
+        }
+        if (explicit.length > 1)
+          return { kind: "ambiguous" };
+        const edges = explicit.length ? explicit : name === "default" ? [] : (this.reExports.get(file.fileName) ?? []).filter((edge) => edge.exported === void 0);
+        let selected;
+        let failure3;
+        for (const edge of edges) {
+          if (!this.tick())
+            return { kind: "unsupported" };
+          const source = this.importedFile(file, edge.specifier, count5, allowConfigured);
+          if (source.kind !== "file") {
+            failure3 = source;
+            continue;
+          }
+          if (this.cjsExportFiles.has(source.file)) {
+            failure3 = { kind: "export_unsupported" };
+            continue;
+          }
+          const result3 = this.exportedFunction(source.file, edge.imported ?? name, count5, allowConfigured, next, depth + 1);
+          if (result3.kind !== "resolved" && result3.kind !== "declared") {
+            if (result3.kind !== "absent_export" || explicit.length)
+              failure3 = result3;
+            continue;
+          }
+          if (selected && selected.target !== result3.target)
+            return { kind: "ambiguous" };
+          const configured = source.configured || result3.configured || selected?.configured;
+          selected = { kind: configured ? "declared" : "resolved", target: result3.target, ...configured ? { configured: true } : {} };
+        }
+        if (failure3)
+          return failure3.kind === "external" || failure3.kind === "unsupported" || failure3.kind === "absent_export" ? { kind: "export_unsupported" } : failure3;
+        if (!selected)
+          return { kind: "absent_export" };
+        this.barrelFunctionTargets.add(`${key2}\0${selected.target.getSourceFile().fileName}\0${selected.target.pos}`);
+        if (count5 && active.size === 0)
+          this.exportedFunctionCache.set(cacheKey, selected);
+        return selected;
+      }
+      imported(file, specifier, name, count5, unproved = false, allowConfigured = false) {
+        const result3 = this.importedFile(file, specifier, count5, allowConfigured);
         if (result3.kind !== "file")
           return result3;
+        if (unproved)
+          return { kind: "export_unsupported" };
+        if (result3.configured && this.cjsExportFiles.has(result3.file))
+          return { kind: "export_unsupported" };
+        if (!this.cjsExportFiles.has(result3.file)) {
+          const exported = this.exportedFunction(result3.file, name, count5, allowConfigured);
+          if (exported.kind !== "resolved" && exported.kind !== "declared")
+            return exported.kind === "absent_export" ? { kind: "export_unsupported" } : exported;
+          return result3.configured || exported.configured ? { kind: "declared", target: exported.target, configured: true } : exported;
+        }
         const group = this.objectExports.get(result3.file);
-        const target = this.cjsExportFiles.has(result3.file) ? group?.valid && (!group.singletonProof || this.singletonEligibility.get(group) === "closed") && this.objectValidationComplete && this.objectScopeComplete && group.methods.get("")?.get(name) : this.exports.get(result3.file.fileName)?.get(name);
+        const target = this.cjsExportFiles.has(result3.file) ? group?.valid && (!group.singletonProof || this.singletonEligibility.get(group) === "closed") && this.objectValidationComplete && this.objectScopeComplete && group.methods.get("")?.get(name) : void 0;
         return !unproved && target && target.getSourceFile() === result3.file ? { kind: "resolved", target } : { kind: "export_unsupported" };
       }
       /** All CJS own slots share closed file/binding provenance. Synthetic CJS declarations are not local
@@ -213367,19 +213759,19 @@ var init_modules = __esm({
         for (const declaration of symbol?.declarations ?? []) {
           if (!this.tick())
             return false;
-          if (ts3.isVariableDeclaration(declaration) || ts3.isParameter(declaration) || ts3.isBindingElement(declaration) || ts3.isImportSpecifier(declaration) || ts3.isImportClause(declaration) || ts3.isNamespaceImport(declaration) || ts3.isFunctionDeclaration(declaration))
+          if (ts4.isVariableDeclaration(declaration) || ts4.isParameter(declaration) || ts4.isBindingElement(declaration) || ts4.isImportSpecifier(declaration) || ts4.isImportClause(declaration) || ts4.isNamespaceImport(declaration) || ts4.isFunctionDeclaration(declaration))
             return false;
-          if (!ts3.isSourceFile(declaration) && !ts3.isBinaryExpression(declaration) && !ts3.isPropertyAccessExpression(declaration) && !ts3.isIdentifier(declaration))
+          if (!ts4.isSourceFile(declaration) && !ts4.isBinaryExpression(declaration) && !ts4.isPropertyAccessExpression(declaration) && !ts4.isIdentifier(declaration))
             return false;
         }
         return true;
       }
       objectConst(node) {
-        if (!this.tick() || !ts3.isIdentifier(node))
+        if (!this.tick() || !ts4.isIdentifier(node))
           return void 0;
         const symbol = this.symbol(node);
         const declaration = symbol?.declarations?.length === 1 ? symbol.declarations[0] : void 0;
-        return symbol && !this.mutated.has(symbol) && declaration && ts3.isVariableDeclaration(declaration) && ts3.isIdentifier(declaration.name) && ts3.isVariableDeclarationList(declaration.parent) && !!(declaration.parent.flags & ts3.NodeFlags.Const) && ts3.isVariableStatement(declaration.parent.parent) && ts3.isSourceFile(declaration.parent.parent.parent) && declaration.getSourceFile() === node.getSourceFile() ? declaration : void 0;
+        return symbol && !this.mutated.has(symbol) && declaration && ts4.isVariableDeclaration(declaration) && ts4.isIdentifier(declaration.name) && ts4.isVariableDeclarationList(declaration.parent) && !!(declaration.parent.flags & ts4.NodeFlags.Const) && ts4.isVariableStatement(declaration.parent.parent) && ts4.isSourceFile(declaration.parent.parent.parent) && declaration.getSourceFile() === node.getSourceFile() ? declaration : void 0;
       }
       objectMethods(literal) {
         const methods = /* @__PURE__ */ new Map();
@@ -213387,8 +213779,8 @@ var init_modules = __esm({
         for (const property of literal.properties) {
           if (!this.tick())
             return void 0;
-          const key2 = !ts3.isSpreadAssignment(property) ? nameOf(property.name) : void 0;
-          const method = ts3.isMethodDeclaration(property) ? property : ts3.isPropertyAssignment(property) && (ts3.isFunctionExpression(property.initializer) || ts3.isArrowFunction(property.initializer)) ? property.initializer : void 0;
+          const key2 = !ts4.isSpreadAssignment(property) ? nameOf(property.name) : void 0;
+          const method = ts4.isMethodDeclaration(property) ? property : ts4.isPropertyAssignment(property) && (ts4.isFunctionExpression(property.initializer) || ts4.isArrowFunction(property.initializer)) ? property.initializer : void 0;
           if (method && this.functionSet.has(method))
             this.externalEntries.add(method);
           if (!key2 || key2 === "__proto__" || methods.has(key2) || !method?.body || !this.functionSet.has(method) || this.receiverDependent.has(method))
@@ -213401,14 +213793,14 @@ var init_modules = __esm({
       objectRefCall(ref, methods, childSlot) {
         let node = ref;
         const keys6 = [];
-        while (ts3.isPropertyAccessExpression(node.parent) && node.parent.expression === node) {
+        while (ts4.isPropertyAccessExpression(node.parent) && node.parent.expression === node) {
           if (!this.tick() || keys6.length >= 2)
             return void 0;
           keys6.push(node.parent.name.text);
           node = node.parent;
         }
         const call = node.parent;
-        if (!ts3.isCallExpression(call) || call.expression !== node || childSlot !== void 0 && keys6.length !== 1 || childSlot === void 0 && keys6.length !== 1 && keys6.length !== 2)
+        if (!ts4.isCallExpression(call) || call.expression !== node || childSlot !== void 0 && keys6.length !== 1 || childSlot === void 0 && keys6.length !== 1 && keys6.length !== 2)
           return void 0;
         const target = methods.get(childSlot ?? (keys6.length === 1 ? "" : keys6[0]))?.get(keys6.at(-1));
         return target ? { call, target } : void 0;
@@ -213420,7 +213812,7 @@ var init_modules = __esm({
           if (group.allowed.has(ref))
             continue;
           const use = this.objectRefCall(ref, group.methods, childSlot);
-          if (!use || group.receiver && ts3.isPropertyAccessExpression(use.call.expression) && !ts3.isIdentifier(use.call.expression.expression) || declaration && this.beforeInitialization(use.call, declaration))
+          if (!use || group.receiver && ts4.isPropertyAccessExpression(use.call.expression) && !ts4.isIdentifier(use.call.expression.expression) || declaration && this.beforeInitialization(use.call, declaration))
             return false;
           if (childSlot === void 0)
             this.objectCalls.set(use.call, use.target);
@@ -213448,7 +213840,7 @@ var init_modules = __esm({
               return { identity: false, callable: false };
             this.externalEntries.add(node);
             const name = "name" in node ? node.name : void 0;
-            if (name && ts3.isIdentifier(name)) {
+            if (name && ts4.isIdentifier(name)) {
               const symbol = this.symbol(name);
               if (symbol) {
                 group.callableSymbols.add(symbol);
@@ -213457,14 +213849,14 @@ var init_modules = __esm({
               }
             }
             const declaration = variableOf(node);
-            const topLevel = node === value || ts3.isFunctionDeclaration(node) && ts3.isSourceFile(node.parent) || declaration && ts3.isVariableStatement(declaration.parent.parent) && ts3.isSourceFile(declaration.parent.parent.parent);
+            const topLevel = node === value || ts4.isFunctionDeclaration(node) && ts4.isSourceFile(node.parent) || declaration && ts4.isVariableStatement(declaration.parent.parent) && ts4.isSourceFile(declaration.parent.parent.parent);
             return {
               target: node,
               identity: identity && !!topLevel,
               callable: !this.receiverDependent.has(node) && !node.asteriskToken
             };
           }
-          if (ts3.isIdentifier(node)) {
+          if (ts4.isIdentifier(node)) {
             group.allowed.add(node);
             const symbol = this.symbol(node);
             const declarations = symbol?.declarations;
@@ -213475,14 +213867,14 @@ var init_modules = __esm({
             node = declarations[0];
             continue;
           }
-          if (ts3.isVariableDeclaration(node) && ts3.isIdentifier(node.name) && node.initializer) {
+          if (ts4.isVariableDeclaration(node) && ts4.isIdentifier(node.name) && node.initializer) {
             const symbol = this.symbol(node.name);
             group.allowed.add(node.name);
             if (symbol) {
               group.callableSymbols.add(symbol);
               identity &&= !this.mutated.has(symbol);
             }
-            identity &&= !!(node.parent.flags & ts3.NodeFlags.Const) && ts3.isVariableStatement(node.parent.parent) && ts3.isSourceFile(node.parent.parent.parent) && node.pos < position2;
+            identity &&= !!(node.parent.flags & ts4.NodeFlags.Const) && ts4.isVariableStatement(node.parent.parent) && ts4.isSourceFile(node.parent.parent.parent) && node.pos < position2;
             position2 = node.pos;
             node = node.initializer;
             continue;
@@ -213498,14 +213890,14 @@ var init_modules = __esm({
               return false;
             if (group.allowed.has(ref))
               continue;
-            if (ref.getSourceFile() !== group.file || !ts3.isCallExpression(ref.parent) || ref.parent.expression !== ref)
+            if (ref.getSourceFile() !== group.file || !ts4.isCallExpression(ref.parent) || ref.parent.expression !== ref)
               return false;
           }
         }
         return true;
       }
       memberBindingRefs(element, group) {
-        if (!this.tick() || !ts3.isObjectBindingPattern(element.parent) || !ts3.isVariableDeclaration(element.parent.parent) || element.parent.parent.name !== element.parent || element.dotDotDotToken || element.initializer || !ts3.isIdentifier(element.name) || element.propertyName && !ts3.isIdentifier(element.propertyName))
+        if (!this.tick() || !ts4.isObjectBindingPattern(element.parent) || !ts4.isVariableDeclaration(element.parent.parent) || element.parent.parent.name !== element.parent || element.dotDotDotToken || element.initializer || !ts4.isIdentifier(element.name) || element.propertyName && !ts4.isIdentifier(element.propertyName))
           return false;
         const key2 = element.propertyName?.text ?? element.name.text;
         const target = group.methods.get("")?.get(key2);
@@ -213517,7 +213909,7 @@ var init_modules = __esm({
             return false;
           if (ref === element.name)
             continue;
-          if (!ts3.isCallExpression(ref.parent) || ref.parent.expression !== ref)
+          if (!ts4.isCallExpression(ref.parent) || ref.parent.expression !== ref)
             return false;
           this.objectCalls.set(ref.parent, target);
         }
@@ -213535,10 +213927,10 @@ var init_modules = __esm({
             if (!this.tick())
               return false;
             const parent = ref.parent;
-            const binding = (ts3.isVariableDeclaration(parent) || ts3.isParameter(parent) || ts3.isBindingElement(parent) || ts3.isFunctionDeclaration(parent) || ts3.isFunctionExpression(parent) || ts3.isClassDeclaration(parent) || ts3.isClassExpression(parent) || ts3.isImportClause(parent) || ts3.isImportSpecifier(parent) || ts3.isNamespaceImport(parent)) && parent.name === ref;
+            const binding = (ts4.isVariableDeclaration(parent) || ts4.isParameter(parent) || ts4.isBindingElement(parent) || ts4.isFunctionDeclaration(parent) || ts4.isFunctionExpression(parent) || ts4.isClassDeclaration(parent) || ts4.isClassExpression(parent) || ts4.isImportClause(parent) || ts4.isImportSpecifier(parent) || ts4.isNamespaceImport(parent)) && parent.name === ref;
             if (!binding)
               continue;
-            const functionScoped = ts3.isParameter(parent) || ts3.isFunctionExpression(parent);
+            const functionScoped = ts4.isParameter(parent) || ts4.isFunctionExpression(parent);
             let varScoped = false, ancestor = parent;
             for (let depth = 0; ancestor; depth += 1, ancestor = ancestor.parent) {
               if (!this.tick())
@@ -213548,9 +213940,9 @@ var init_modules = __esm({
                 complete = false;
                 break;
               }
-              if (ts3.isVariableDeclarationList(ancestor))
-                varScoped = !(ancestor.flags & ts3.NodeFlags.BlockScoped);
-              if (ts3.isSourceFile(ancestor) || isFlowFunction(ancestor) && (ancestor !== parent || functionScoped) || ts3.isClassExpression(parent) && ancestor === parent || !functionScoped && !varScoped && ancestor !== parent && (ts3.isBlock(ancestor) || ts3.isForStatement(ancestor) || ts3.isForInStatement(ancestor) || ts3.isForOfStatement(ancestor) || ts3.isCaseBlock(ancestor) || ts3.isCatchClause(ancestor))) {
+              if (ts4.isVariableDeclarationList(ancestor))
+                varScoped = !(ancestor.flags & ts4.NodeFlags.BlockScoped);
+              if (ts4.isSourceFile(ancestor) || isFlowFunction(ancestor) && (ancestor !== parent || functionScoped) || ts4.isClassExpression(parent) && ancestor === parent || !functionScoped && !varScoped && ancestor !== parent && (ts4.isBlock(ancestor) || ts4.isForStatement(ancestor) || ts4.isForInStatement(ancestor) || ts4.isForOfStatement(ancestor) || ts4.isCaseBlock(ancestor) || ts4.isCatchClause(ancestor))) {
                 const scopes = byName.get(ref.text) ?? /* @__PURE__ */ new Set();
                 scopes.add(ancestor);
                 byName.set(ref.text, scopes);
@@ -213584,7 +213976,7 @@ var init_modules = __esm({
               group.valid = false;
               return;
             }
-            if (ts3.isStringLiteralLike(value) || ts3.isNumericLiteral(value) || [ts3.SyntaxKind.TrueKeyword, ts3.SyntaxKind.FalseKeyword, ts3.SyntaxKind.NullKeyword].includes(value.kind))
+            if (ts4.isStringLiteralLike(value) || ts4.isNumericLiteral(value) || [ts4.SyntaxKind.TrueKeyword, ts4.SyntaxKind.FalseKeyword, ts4.SyntaxKind.NullKeyword].includes(value.kind))
               return;
             const witness = this.exportCallable(value, group, before);
             if (!witness.identity)
@@ -213598,12 +213990,12 @@ var init_modules = __esm({
               group.valid = false;
               break;
             }
-            if (!ts3.isExpressionStatement(statement) || !ts3.isBinaryExpression(statement.expression) || statement.expression.operatorToken.kind !== ts3.SyntaxKind.EqualsToken)
+            if (!ts4.isExpressionStatement(statement) || !ts4.isBinaryExpression(statement.expression) || statement.expression.operatorToken.kind !== ts4.SyntaxKind.EqualsToken)
               continue;
             const assignment = statement.expression, left = assignment.left;
-            if (!ts3.isPropertyAccessExpression(left))
+            if (!ts4.isPropertyAccessExpression(left))
               continue;
-            const root = ts3.isIdentifier(left.expression) && left.expression.text === "exports" ? left.expression : ts3.isPropertyAccessExpression(left.expression) && left.expression.name.text === "exports" && ts3.isIdentifier(left.expression.expression) && left.expression.expression.text === "module" ? left.expression.expression : void 0;
+            const root = ts4.isIdentifier(left.expression) && left.expression.text === "exports" ? left.expression : ts4.isPropertyAccessExpression(left.expression) && left.expression.name.text === "exports" && ts4.isIdentifier(left.expression.expression) && left.expression.expression.text === "module" ? left.expression.expression : void 0;
             if (root) {
               if (!this.objectGlobal(root))
                 continue;
@@ -213612,7 +214004,7 @@ var init_modules = __esm({
               group.allowed.add(root);
               group.valid &&= this.objectGlobal(root);
               put(left.name.text, assignment.right, statement.pos);
-            } else if (ts3.isIdentifier(left.expression) && left.expression.text === "module" && left.name.text === "exports") {
+            } else if (ts4.isIdentifier(left.expression) && left.expression.text === "module" && left.name.text === "exports") {
               if (!this.objectGlobal(left.expression))
                 continue;
               observed = true;
@@ -213634,7 +214026,7 @@ var init_modules = __esm({
             }
             if (properties)
               group.valid = false;
-            const wrapper = ts3.isIdentifier(whole.right) ? this.objectConst(whole.right) : void 0;
+            const wrapper = ts4.isIdentifier(whole.right) ? this.objectConst(whole.right) : void 0;
             const literal = wrapper?.initializer ?? whole.right;
             if (wrapper) {
               group.allowed.add(wrapper.name);
@@ -213647,7 +214039,7 @@ var init_modules = __esm({
               if (wrapper.pos > whole.pos)
                 group.valid = false;
             }
-            if (!ts3.isObjectLiteralExpression(literal))
+            if (!ts4.isObjectLiteralExpression(literal))
               group.valid = false;
             else
               for (const property of literal.properties) {
@@ -213656,21 +214048,21 @@ var init_modules = __esm({
                   group.valid = false;
                   break;
                 }
-                const key2 = !ts3.isSpreadAssignment(property) ? nameOf(property.name) : void 0;
-                const value = ts3.isShorthandPropertyAssignment(property) ? property.name : ts3.isPropertyAssignment(property) ? property.initializer : ts3.isMethodDeclaration(property) ? property : void 0;
+                const key2 = !ts4.isSpreadAssignment(property) ? nameOf(property.name) : void 0;
+                const value = ts4.isShorthandPropertyAssignment(property) ? property.name : ts4.isPropertyAssignment(property) ? property.initializer : ts4.isMethodDeclaration(property) ? property : void 0;
                 if (!key2 || key2 === "__proto__" || keys6.has(key2))
                   group.valid = false;
                 if (!value) {
                   group.valid = false;
                   continue;
                 }
-                if (ts3.isStringLiteralLike(value) || ts3.isNumericLiteral(value) || [ts3.SyntaxKind.TrueKeyword, ts3.SyntaxKind.FalseKeyword, ts3.SyntaxKind.NullKeyword].includes(value.kind)) {
+                if (ts4.isStringLiteralLike(value) || ts4.isNumericLiteral(value) || [ts4.SyntaxKind.TrueKeyword, ts4.SyntaxKind.FalseKeyword, ts4.SyntaxKind.NullKeyword].includes(value.kind)) {
                   if (key2)
                     keys6.add(key2);
                   continue;
                 }
-                const child = ts3.isIdentifier(value) ? this.objectConst(value) : void 0;
-                if (child?.initializer && ts3.isObjectLiteralExpression(child.initializer)) {
+                const child = ts4.isIdentifier(value) ? this.objectConst(value) : void 0;
+                if (child?.initializer && ts4.isObjectLiteralExpression(child.initializer)) {
                   if (key2)
                     keys6.add(key2);
                   if (child.pos > literal.pos)
@@ -213723,7 +214115,7 @@ var init_modules = __esm({
             }
             if (ref.text !== "module" || !this.objectGlobal(ref))
               continue;
-            if (!ts3.isPropertyAccessExpression(ref.parent) || ref.parent.expression !== ref || ref.parent.name.text !== "exports") {
+            if (!ts4.isPropertyAccessExpression(ref.parent) || ref.parent.expression !== ref || ref.parent.name.text !== "exports") {
               loaderClosed = false;
               if (!this.loaderObservation(ref))
                 singletonLoaderHard = true;
@@ -213735,10 +214127,10 @@ var init_modules = __esm({
             workComplete = false;
             break;
           }
-          if (ts3.isPropertyAccessExpression(ref.parent) && ref.parent.name === ref || !this.objectGlobal(ref))
+          if (ts4.isPropertyAccessExpression(ref.parent) && ref.parent.name === ref || !this.objectGlobal(ref))
             continue;
           let callee = ref;
-          for (let depth = 0; ts3.isParenthesizedExpression(callee.parent) || ts3.isAsExpression(callee.parent) || ts3.isTypeAssertionExpression(callee.parent) || ts3.isNonNullExpression(callee.parent); depth += 1) {
+          for (let depth = 0; ts4.isParenthesizedExpression(callee.parent) || ts4.isAsExpression(callee.parent) || ts4.isTypeAssertionExpression(callee.parent) || ts4.isNonNullExpression(callee.parent); depth += 1) {
             if (!this.tick()) {
               workComplete = false;
               break;
@@ -213751,14 +214143,14 @@ var init_modules = __esm({
             callee = callee.parent;
           }
           const call = callee.parent;
-          if (!ts3.isCallExpression(call) || call.expression !== callee || call.arguments.length !== 1) {
+          if (!ts4.isCallExpression(call) || call.expression !== callee || call.arguments.length !== 1) {
             loaderClosed = false;
             if (!this.loaderObservation(ref))
               singletonLoaderHard = true;
             continue;
           }
           let specifier = call.arguments[0];
-          for (let depth = 0; ts3.isParenthesizedExpression(specifier) || ts3.isAsExpression(specifier) || ts3.isTypeAssertionExpression(specifier) || ts3.isNonNullExpression(specifier); depth += 1) {
+          for (let depth = 0; ts4.isParenthesizedExpression(specifier) || ts4.isAsExpression(specifier) || ts4.isTypeAssertionExpression(specifier) || ts4.isNonNullExpression(specifier); depth += 1) {
             if (!this.tick()) {
               workComplete = false;
               break;
@@ -213770,7 +214162,7 @@ var init_modules = __esm({
             }
             specifier = specifier.expression;
           }
-          if (!ts3.isStringLiteralLike(specifier)) {
+          if (!ts4.isStringLiteralLike(specifier)) {
             loaderClosed = false;
             singletonLoaderOpaque = true;
             continue;
@@ -213794,13 +214186,13 @@ var init_modules = __esm({
           if (!group)
             continue;
           const declaration = call.parent;
-          if (callee !== ref || specifier !== call.arguments[0] || !ts3.isVariableDeclaration(declaration) || declaration.initializer !== call || !ts3.isVariableDeclarationList(declaration.parent) || !(declaration.parent.flags & ts3.NodeFlags.Const)) {
+          if (callee !== ref || specifier !== call.arguments[0] || !ts4.isVariableDeclaration(declaration) || declaration.initializer !== call || !ts4.isVariableDeclarationList(declaration.parent) || !(declaration.parent.flags & ts4.NodeFlags.Const)) {
             group.valid = false;
             if (group.singletonProof)
               group.singletonProof.importersClosed = false;
             continue;
           }
-          if (ts3.isObjectBindingPattern(declaration.name)) {
+          if (ts4.isObjectBindingPattern(declaration.name)) {
             if (group.receiver || group.constructorClass) {
               group.valid = false;
               if (group.singletonProof)
@@ -213809,7 +214201,7 @@ var init_modules = __esm({
               for (const element of declaration.name.elements)
                 if (!this.memberBindingRefs(element, group))
                   group.valid = false;
-          } else if (ts3.isIdentifier(declaration.name)) {
+          } else if (ts4.isIdentifier(declaration.name)) {
             const symbol = this.symbol(declaration.name);
             group.allowed.add(declaration.name);
             if (!symbol || this.mutated.has(symbol) || !(group.constructorClass ? this.constructorRefs(symbol, group, declaration) : this.objectRefs(symbol, group, void 0, declaration))) {
@@ -213828,7 +214220,7 @@ var init_modules = __esm({
             workComplete = false;
             break;
           }
-          if (!ts3.isStringLiteralLike(declaration.moduleSpecifier)) {
+          if (!ts4.isStringLiteralLike(declaration.moduleSpecifier)) {
             loaderClosed = false;
             singletonLoaderHard = true;
             continue;
@@ -213981,21 +214373,21 @@ var init_modules = __esm({
         return false;
       }
       primitive(node) {
-        return ts3.isStringLiteralLike(node) || ts3.isNumericLiteral(node) || [ts3.SyntaxKind.TrueKeyword, ts3.SyntaxKind.FalseKeyword, ts3.SyntaxKind.NullKeyword].includes(node.kind);
+        return ts4.isStringLiteralLike(node) || ts4.isNumericLiteral(node) || [ts4.SyntaxKind.TrueKeyword, ts4.SyntaxKind.FalseKeyword, ts4.SyntaxKind.NullKeyword].includes(node.kind);
       }
       /** Initializer identity only: unrelated class effects are deliberately not certified. */
       constructorIdentity(value, consumer) {
-        if (!this.singletonTick() || !consumer.receiver || value.arguments?.length || !ts3.isIdentifier(value.expression))
+        if (!this.singletonTick() || !consumer.receiver || value.arguments?.length || !ts4.isIdentifier(value.expression))
           return void 0;
         const symbol = this.symbol(value.expression), declaration = symbol?.declarations?.length === 1 ? symbol.declarations[0] : void 0;
         if (!symbol || this.mutated.has(symbol) || !declaration || declaration.end > consumer.receiver.exportNode.pos || this.ownerOf(declaration) !== consumer.file)
           return void 0;
-        if (ts3.isClassDeclaration(declaration))
+        if (ts4.isClassDeclaration(declaration))
           return this.classes.has(declaration) ? declaration : void 0;
-        if (!ts3.isVariableDeclaration(declaration) || !ts3.isIdentifier(declaration.name) || !ts3.isVariableDeclarationList(declaration.parent) || !(declaration.parent.flags & ts3.NodeFlags.Const))
+        if (!ts4.isVariableDeclaration(declaration) || !ts4.isIdentifier(declaration.name) || !ts4.isVariableDeclarationList(declaration.parent) || !(declaration.parent.flags & ts4.NodeFlags.Const))
           return void 0;
         const load = declaration.initializer;
-        if (!load || !ts3.isCallExpression(load) || !ts3.isIdentifier(load.expression) || load.expression.text !== "require" || !this.objectGlobal(load.expression) || load.arguments.length !== 1 || !ts3.isStringLiteralLike(load.arguments[0]))
+        if (!load || !ts4.isCallExpression(load) || !ts4.isIdentifier(load.expression) || load.expression.text !== "require" || !this.objectGlobal(load.expression) || load.arguments.length !== 1 || !ts4.isStringLiteralLike(load.arguments[0]))
           return void 0;
         const result3 = this.importedFile(consumer.file, load.arguments[0].text, true);
         if (result3.kind !== "file")
@@ -214005,16 +214397,16 @@ var init_modules = __esm({
       }
       literalContainer(value) {
         const keys6 = /* @__PURE__ */ new Set();
-        if (ts3.isArrayLiteralExpression(value)) {
+        if (ts4.isArrayLiteralExpression(value)) {
           for (const item of value.elements)
             if (!this.singletonTick() || !this.primitive(item))
               return false;
           return true;
         }
-        if (!ts3.isObjectLiteralExpression(value))
+        if (!ts4.isObjectLiteralExpression(value))
           return false;
         for (const item of value.properties) {
-          if (!this.singletonTick() || !ts3.isPropertyAssignment(item) || ts3.isComputedPropertyName(item.name))
+          if (!this.singletonTick() || !ts4.isPropertyAssignment(item) || ts4.isComputedPropertyName(item.name))
             return false;
           const key2 = nameOf(item.name);
           if (!key2 || keys6.has(key2) || ["constructor", "prototype", "__proto__"].includes(key2) || !this.primitive(item.initializer))
@@ -214030,9 +214422,9 @@ var init_modules = __esm({
           if (!this.singletonTick())
             return { ok: false, arrow };
           let owner = this.ownerOf(node);
-          if (ts3.isConstructorDeclaration(owner) && owner.parent === classNode)
+          if (ts4.isConstructorDeclaration(owner) && owner.parent === classNode)
             continue;
-          for (let depth = 0; ts3.isArrowFunction(owner); depth += 1) {
+          for (let depth = 0; ts4.isArrowFunction(owner); depth += 1) {
             if (!allowArrow || !this.singletonTick())
               return { ok: false, arrow };
             if (depth >= this.limits.aliasSteps) {
@@ -214044,25 +214436,25 @@ var init_modules = __esm({
             owner = this.ownerOf(owner.parent);
           }
           const property = node.parent;
-          if (node.kind !== ts3.SyntaxKind.ThisKeyword || !ts3.isMethodDeclaration(owner) || owner.parent !== classNode || !ts3.isPropertyAccessExpression(property) || property.expression !== node || ["constructor", "prototype", "__proto__"].includes(property.name.text))
+          if (node.kind !== ts4.SyntaxKind.ThisKeyword || !ts4.isMethodDeclaration(owner) || owner.parent !== classNode || !ts4.isPropertyAccessExpression(property) || property.expression !== node || ["constructor", "prototype", "__proto__"].includes(property.name.text))
             return { ok: false, arrow };
           const use = property.parent;
-          if (ts3.isBinaryExpression(use) && use.left === property && use.operatorToken.kind >= ts3.SyntaxKind.FirstAssignment && use.operatorToken.kind <= ts3.SyntaxKind.LastAssignment || ts3.isDeleteExpression(use) || ts3.isPrefixUnaryExpression(use) && [ts3.SyntaxKind.PlusPlusToken, ts3.SyntaxKind.MinusMinusToken].includes(use.operator) || ts3.isPostfixUnaryExpression(use))
+          if (ts4.isBinaryExpression(use) && use.left === property && use.operatorToken.kind >= ts4.SyntaxKind.FirstAssignment && use.operatorToken.kind <= ts4.SyntaxKind.LastAssignment || ts4.isDeleteExpression(use) || ts4.isPrefixUnaryExpression(use) && [ts4.SyntaxKind.PlusPlusToken, ts4.SyntaxKind.MinusMinusToken].includes(use.operator) || ts4.isPostfixUnaryExpression(use))
             return { ok: false, arrow };
           if (methods.has(property.name.text)) {
-            if (!ts3.isCallExpression(use) || use.expression !== property)
+            if (!ts4.isCallExpression(use) || use.expression !== property)
               return { ok: false, arrow };
             continue;
           }
           const kind = fields.get(property.name.text);
           if (kind === "primitive") {
-            if (ts3.isPropertyAccessExpression(use) || ts3.isElementAccessExpression(use))
+            if (ts4.isPropertyAccessExpression(use) || ts4.isElementAccessExpression(use))
               return { ok: false, arrow };
             continue;
           }
-          if (kind === "container" && ts3.isForOfStatement(use) && use.expression === property)
+          if (kind === "container" && ts4.isForOfStatement(use) && use.expression === property)
             continue;
-          if (kind === "instance" && ts3.isPropertyAccessExpression(use) && use.expression === property && !["constructor", "prototype", "__proto__"].includes(use.name.text) && instances.get(property.name.text)?.has(use.name.text) && ts3.isCallExpression(use.parent) && use.parent.expression === use)
+          if (kind === "instance" && ts4.isPropertyAccessExpression(use) && use.expression === property && !["constructor", "prototype", "__proto__"].includes(use.name.text) && instances.get(property.name.text)?.has(use.name.text) && ts4.isCallExpression(use.parent) && use.parent.expression === use)
             continue;
           return { ok: false, arrow };
         }
@@ -214083,15 +214475,15 @@ var init_modules = __esm({
         for (const member3 of classNode.members) {
           if (!this.singletonTick())
             return { ok: false, soft };
-          if (!ts3.isConstructorDeclaration(member3))
+          if (!ts4.isConstructorDeclaration(member3))
             continue;
           if (!member3.body || member3.parameters.length || member3.modifiers?.length)
             return { ok: false, soft };
           for (const statement of member3.body.statements) {
-            if (!this.singletonTick() || !ts3.isExpressionStatement(statement) || !ts3.isBinaryExpression(statement.expression) || statement.expression.operatorToken.kind !== ts3.SyntaxKind.EqualsToken)
+            if (!this.singletonTick() || !ts4.isExpressionStatement(statement) || !ts4.isBinaryExpression(statement.expression) || statement.expression.operatorToken.kind !== ts4.SyntaxKind.EqualsToken)
               return { ok: false, soft };
             const { left, right } = statement.expression;
-            if (!ts3.isPropertyAccessExpression(left) || left.expression.kind !== ts3.SyntaxKind.ThisKeyword || ["constructor", "prototype", "__proto__"].includes(left.name.text) || methods.has(left.name.text) || fields.has(left.name.text))
+            if (!ts4.isPropertyAccessExpression(left) || left.expression.kind !== ts4.SyntaxKind.ThisKeyword || ["constructor", "prototype", "__proto__"].includes(left.name.text) || methods.has(left.name.text) || fields.has(left.name.text))
               return { ok: false, soft };
             if (this.primitive(right))
               fields.set(left.name.text, "primitive");
@@ -214101,7 +214493,7 @@ var init_modules = __esm({
               const reasons = this.singletonReasons.get(group) ?? /* @__PURE__ */ new Set();
               reasons.add("other_consumer_container_effect");
               this.singletonReasons.set(group, reasons);
-            } else if (ts3.isNewExpression(right)) {
+            } else if (ts4.isNewExpression(right)) {
               const helper = this.constructorIdentity(right, group);
               if (!helper || helper === classNode)
                 return { ok: false, soft };
@@ -214110,9 +214502,9 @@ var init_modules = __esm({
               for (const member4 of helper.members) {
                 if (!this.singletonTick())
                   return { ok: false, soft };
-                if (ts3.isMethodDeclaration(member4)) {
+                if (ts4.isMethodDeclaration(member4)) {
                   const key2 = nameOf(member4.name);
-                  if (key2 && !ts3.isComputedPropertyName(member4.name))
+                  if (key2 && !ts4.isComputedPropertyName(member4.name))
                     keys6.add(key2);
                 }
               }
@@ -214157,14 +214549,14 @@ var init_modules = __esm({
           for (const member3 of classNode.members) {
             if (!this.singletonTick())
               return rejected;
-            if (ts3.isMethodDeclaration(member3)) {
+            if (ts4.isMethodDeclaration(member3)) {
               const key2 = nameOf(member3.name);
               if (key2)
                 methods.add(key2);
             }
-            if (ts3.isConstructorDeclaration(member3))
+            if (ts4.isConstructorDeclaration(member3))
               for (const statement of member3.body?.statements ?? []) {
-                if (!this.singletonTick() || !ts3.isExpressionStatement(statement) || !ts3.isBinaryExpression(statement.expression) || !ts3.isPropertyAccessExpression(statement.expression.left) || !this.primitive(statement.expression.right))
+                if (!this.singletonTick() || !ts4.isExpressionStatement(statement) || !ts4.isBinaryExpression(statement.expression) || !ts4.isPropertyAccessExpression(statement.expression.left) || !this.primitive(statement.expression.right))
                   return rejected;
                 fields.set(statement.expression.left.name.text, "primitive");
               }
@@ -214247,7 +214639,7 @@ var init_modules = __esm({
       }
       /** Primitive UMD observations do not expose a loader capability. */
       loaderObservation(ref) {
-        if (ts3.isTypeOfExpression(ref.parent) && ref.parent.expression === ref)
+        if (ts4.isTypeOfExpression(ref.parent) && ref.parent.expression === ref)
           return this.tick();
         if (ref.text !== "module")
           return false;
@@ -214256,15 +214648,15 @@ var init_modules = __esm({
           if (!this.tick())
             return false;
           const parent = node.parent;
-          if (ts3.isParenthesizedExpression(parent) && parent.expression === node) {
+          if (ts4.isParenthesizedExpression(parent) && parent.expression === node) {
             node = parent;
             continue;
           }
-          if (ts3.isBinaryExpression(parent) && [ts3.SyntaxKind.AmpersandAmpersandToken, ts3.SyntaxKind.BarBarToken].includes(parent.operatorToken.kind)) {
+          if (ts4.isBinaryExpression(parent) && [ts4.SyntaxKind.AmpersandAmpersandToken, ts4.SyntaxKind.BarBarToken].includes(parent.operatorToken.kind)) {
             node = parent;
             continue;
           }
-          return ts3.isIfStatement(parent) && parent.expression === node || ts3.isConditionalExpression(parent) && parent.condition === node;
+          return ts4.isIfStatement(parent) && parent.expression === node || ts4.isConditionalExpression(parent) && parent.condition === node;
         }
         this.incomplete("alias_limit");
         return false;
@@ -214276,16 +214668,16 @@ var init_modules = __esm({
           if (group.allowed.has(ref) || declaration?.name === ref)
             continue;
           const parent = ref.parent;
-          if (!ts3.isNewExpression(parent) || parent.expression !== ref || parent.arguments?.length || declaration && this.beforeInitialization(parent, declaration) || group.constructorClass && this.ownerOf(parent) === this.ownerOf(group.constructorClass) && parent.pos < group.constructorClass.end)
+          if (!ts4.isNewExpression(parent) || parent.expression !== ref || parent.arguments?.length || declaration && this.beforeInitialization(parent, declaration) || group.constructorClass && this.ownerOf(parent) === this.ownerOf(group.constructorClass) && parent.pos < group.constructorClass.end)
             return false;
           if (group.receiver)
             return false;
           const assignment = parent.parent, statement = assignment?.parent;
           const owner = this.ownerOf(parent);
-          const singleton = ts3.isConstructorDeclaration(owner) && ts3.isClassDeclaration(owner.parent) ? this.objectExports.get(owner.getSourceFile()) : void 0;
-          if (!ts3.isBinaryExpression(assignment) || assignment.right !== parent || assignment.operatorToken.kind !== ts3.SyntaxKind.EqualsToken || !ts3.isPropertyAccessExpression(assignment.left) || assignment.left.expression.kind !== ts3.SyntaxKind.ThisKeyword || !ts3.isExpressionStatement(statement) || !singleton?.receiver || singleton.receiver.classNode !== owner.parent)
+          const singleton = ts4.isConstructorDeclaration(owner) && ts4.isClassDeclaration(owner.parent) ? this.objectExports.get(owner.getSourceFile()) : void 0;
+          if (!ts4.isBinaryExpression(assignment) || assignment.right !== parent || assignment.operatorToken.kind !== ts4.SyntaxKind.EqualsToken || !ts4.isPropertyAccessExpression(assignment.left) || assignment.left.expression.kind !== ts4.SyntaxKind.ThisKeyword || !ts4.isExpressionStatement(statement) || !singleton?.receiver || singleton.receiver.classNode !== owner.parent)
             return false;
-          const helperClass = group.constructorClass ?? symbol.declarations?.find(ts3.isClassDeclaration);
+          const helperClass = group.constructorClass ?? symbol.declarations?.find(ts4.isClassDeclaration);
           if (helperClass) {
             const consumers = this.constructorConsumers.get(helperClass) ?? /* @__PURE__ */ new Set();
             consumers.add(singleton);
@@ -214300,19 +214692,19 @@ var init_modules = __esm({
           for (const statement of file.statements) {
             if (!this.tick())
               return;
-            if (!ts3.isExpressionStatement(statement) || !ts3.isBinaryExpression(statement.expression) || statement.expression.operatorToken.kind !== ts3.SyntaxKind.EqualsToken)
+            if (!ts4.isExpressionStatement(statement) || !ts4.isBinaryExpression(statement.expression) || statement.expression.operatorToken.kind !== ts4.SyntaxKind.EqualsToken)
               continue;
             const assignment = statement.expression, left = assignment.left;
-            if (!ts3.isPropertyAccessExpression(left) || left.name.text !== "exports" || !ts3.isIdentifier(left.expression) || left.expression.text !== "module" || !this.objectGlobal(left.expression))
+            if (!ts4.isPropertyAccessExpression(left) || left.name.text !== "exports" || !ts4.isIdentifier(left.expression) || left.expression.text !== "module" || !this.objectGlobal(left.expression))
               continue;
             const value = assignment.right;
-            const name = ts3.isNewExpression(value) && ts3.isIdentifier(value.expression) ? value.expression : ts3.isIdentifier(value) ? value : void 0;
+            const name = ts4.isNewExpression(value) && ts4.isIdentifier(value.expression) ? value.expression : ts4.isIdentifier(value) ? value : void 0;
             const symbol = name ? this.symbol(name) : void 0;
-            const classNode = symbol?.declarations?.length === 1 && ts3.isClassDeclaration(symbol.declarations[0]) ? symbol.declarations[0] : void 0;
+            const classNode = symbol?.declarations?.length === 1 && ts4.isClassDeclaration(symbol.declarations[0]) ? symbol.declarations[0] : void 0;
             if (!classNode || !this.classes.has(classNode) || classNode.getSourceFile() !== file)
               continue;
             const group = { file, methods: /* @__PURE__ */ new Map([["", /* @__PURE__ */ new Map()]]), allowed: /* @__PURE__ */ new Set([left.expression, name, classNode.name]), symbols: [], callableSymbols: /* @__PURE__ */ new Set(), valid: true, dependencies: [] };
-            if (ts3.isNewExpression(value))
+            if (ts4.isNewExpression(value))
               group.receiver = { file, classNode, exportNode: value };
             else
               group.constructorClass = classNode;
@@ -214328,7 +214720,7 @@ var init_modules = __esm({
             }
             if (previous?.receiver || previous?.constructorClass)
               group.valid = false;
-            if (ts3.isNewExpression(value) && value.arguments?.length)
+            if (ts4.isNewExpression(value) && value.arguments?.length)
               group.valid = false;
             const exportClosed = group.valid;
             const keys6 = /* @__PURE__ */ new Set();
@@ -214339,12 +214731,12 @@ var init_modules = __esm({
                 group.valid = false;
                 break;
               }
-              if (ts3.isConstructorDeclaration(member3))
+              if (ts4.isConstructorDeclaration(member3))
                 continue;
-              if (ts3.isMethodDeclaration(member3) && this.functionSet.has(member3))
+              if (ts4.isMethodDeclaration(member3) && this.functionSet.has(member3))
                 this.externalEntries.add(member3);
-              const key2 = ts3.isMethodDeclaration(member3) ? nameOf(member3.name) : void 0;
-              if (!ts3.isMethodDeclaration(member3) || !member3.body || !key2 || ts3.isComputedPropertyName(member3.name) || ["constructor", "prototype", "__proto__"].includes(key2) || keys6.has(key2) || member3.asteriskToken || member3.modifiers?.some((m) => m.kind !== ts3.SyntaxKind.AsyncKeyword)) {
+              const key2 = ts4.isMethodDeclaration(member3) ? nameOf(member3.name) : void 0;
+              if (!ts4.isMethodDeclaration(member3) || !member3.body || !key2 || ts4.isComputedPropertyName(member3.name) || ["constructor", "prototype", "__proto__"].includes(key2) || keys6.has(key2) || member3.asteriskToken || member3.modifiers?.some((m) => m.kind !== ts4.SyntaxKind.AsyncKeyword)) {
                 group.valid = false;
                 continue;
               }
@@ -214377,30 +214769,30 @@ var init_modules = __esm({
                 break;
               }
               const owner = this.ownerOf(node);
-              if (ts3.isConstructorDeclaration(owner))
+              if (ts4.isConstructorDeclaration(owner))
                 continue;
               const property = node.parent;
-              if (node.kind !== ts3.SyntaxKind.ThisKeyword || !ts3.isMethodDeclaration(owner) || owner.parent !== classNode || !ts3.isPropertyAccessExpression(property) || property.expression !== node || ["constructor", "prototype", "__proto__"].includes(property.name.text)) {
+              if (node.kind !== ts4.SyntaxKind.ThisKeyword || !ts4.isMethodDeclaration(owner) || owner.parent !== classNode || !ts4.isPropertyAccessExpression(property) || property.expression !== node || ["constructor", "prototype", "__proto__"].includes(property.name.text)) {
                 group.valid = false;
                 group.receiverProof = false;
                 continue;
               }
               const consumer = property.parent;
-              if (ts3.isBinaryExpression(consumer) && consumer.left === property && consumer.operatorToken.kind >= ts3.SyntaxKind.FirstAssignment && consumer.operatorToken.kind <= ts3.SyntaxKind.LastAssignment || ts3.isDeleteExpression(consumer) || ts3.isPrefixUnaryExpression(consumer) || ts3.isPostfixUnaryExpression(consumer)) {
+              if (ts4.isBinaryExpression(consumer) && consumer.left === property && consumer.operatorToken.kind >= ts4.SyntaxKind.FirstAssignment && consumer.operatorToken.kind <= ts4.SyntaxKind.LastAssignment || ts4.isDeleteExpression(consumer) || ts4.isPrefixUnaryExpression(consumer) || ts4.isPostfixUnaryExpression(consumer)) {
                 group.valid = false;
                 group.receiverProof = false;
               }
-              if (group.methods.get("").has(property.name.text) && (!ts3.isCallExpression(consumer) || consumer.expression !== property)) {
+              if (group.methods.get("").has(property.name.text) && (!ts4.isCallExpression(consumer) || consumer.expression !== property)) {
                 group.valid = false;
                 group.receiverProof = false;
               }
               if (!group.methods.get("").has(property.name.text)) {
-                if (ts3.isReturnStatement(consumer) || ts3.isVariableDeclaration(consumer) || ts3.isCallExpression(consumer) && consumer.expression !== property || ts3.isBinaryExpression(consumer) && consumer.right === property) {
+                if (ts4.isReturnStatement(consumer) || ts4.isVariableDeclaration(consumer) || ts4.isCallExpression(consumer) && consumer.expression !== property || ts4.isBinaryExpression(consumer) && consumer.right === property) {
                   group.valid = false;
                   group.receiverProof = false;
                 }
                 let outer = property;
-                for (let depth = 0; ts3.isPropertyAccessExpression(outer.parent) && outer.parent.expression === outer; depth += 1) {
+                for (let depth = 0; ts4.isPropertyAccessExpression(outer.parent) && outer.parent.expression === outer; depth += 1) {
                   if (!this.tick() || depth >= this.limits.aliasSteps) {
                     group.valid = false;
                     group.receiverProof = false;
@@ -214408,7 +214800,7 @@ var init_modules = __esm({
                   }
                   outer = outer.parent;
                 }
-                if (ts3.isBinaryExpression(outer.parent) && outer.parent.left === outer || ts3.isDeleteExpression(outer.parent)) {
+                if (ts4.isBinaryExpression(outer.parent) && outer.parent.left === outer || ts4.isDeleteExpression(outer.parent)) {
                   group.valid = false;
                   group.receiverProof = false;
                 }
@@ -214434,12 +214826,12 @@ var init_modules = __esm({
         for (const member3 of classNode.members) {
           if (!this.tick())
             return false;
-          if (ts3.isConstructorDeclaration(member3)) {
+          if (ts4.isConstructorDeclaration(member3)) {
             constructors.push(member3);
             continue;
           }
-          const key2 = ts3.isMethodDeclaration(member3) ? nameOf(member3.name) : void 0;
-          if (!ts3.isMethodDeclaration(member3) || !key2 || ts3.isComputedPropertyName(member3.name) || names.has(key2) || member3.modifiers?.some((m) => m.kind !== ts3.SyntaxKind.AsyncKeyword) || member3.asteriskToken)
+          const key2 = ts4.isMethodDeclaration(member3) ? nameOf(member3.name) : void 0;
+          if (!ts4.isMethodDeclaration(member3) || !key2 || ts4.isComputedPropertyName(member3.name) || names.has(key2) || member3.modifiers?.some((m) => m.kind !== ts4.SyntaxKind.AsyncKeyword) || member3.asteriskToken)
             return false;
           names.add(key2);
         }
@@ -214456,24 +214848,24 @@ var init_modules = __esm({
         for (const statement of ctor.body.statements) {
           if (!this.tick())
             return false;
-          if (!ts3.isExpressionStatement(statement) || !ts3.isBinaryExpression(statement.expression) || statement.expression.operatorToken.kind !== ts3.SyntaxKind.EqualsToken)
+          if (!ts4.isExpressionStatement(statement) || !ts4.isBinaryExpression(statement.expression) || statement.expression.operatorToken.kind !== ts4.SyntaxKind.EqualsToken)
             return false;
           const { left, right } = statement.expression;
-          if (!ts3.isPropertyAccessExpression(left) || left.expression.kind !== ts3.SyntaxKind.ThisKeyword || ["constructor", "prototype", "__proto__"].includes(left.name.text) || fields.has(left.name.text) || group.methods.get("")?.has(left.name.text))
+          if (!ts4.isPropertyAccessExpression(left) || left.expression.kind !== ts4.SyntaxKind.ThisKeyword || ["constructor", "prototype", "__proto__"].includes(left.name.text) || fields.has(left.name.text) || group.methods.get("")?.has(left.name.text))
             return false;
           fields.add(left.name.text);
-          if (ts3.isStringLiteralLike(right) || ts3.isNumericLiteral(right) || [ts3.SyntaxKind.TrueKeyword, ts3.SyntaxKind.FalseKeyword, ts3.SyntaxKind.NullKeyword].includes(right.kind))
+          if (ts4.isStringLiteralLike(right) || ts4.isNumericLiteral(right) || [ts4.SyntaxKind.TrueKeyword, ts4.SyntaxKind.FalseKeyword, ts4.SyntaxKind.NullKeyword].includes(right.kind))
             continue;
-          if (!group.receiver || !ts3.isNewExpression(right) || right.arguments?.length || !ts3.isIdentifier(right.expression))
+          if (!group.receiver || !ts4.isNewExpression(right) || right.arguments?.length || !ts4.isIdentifier(right.expression))
             return false;
           const symbol = this.symbol(right.expression);
           const declaration = symbol?.declarations?.length === 1 ? symbol.declarations[0] : void 0;
           let helper, dependency;
-          if (declaration && ts3.isClassDeclaration(declaration) && declaration.getSourceFile() === classNode.getSourceFile() && declaration.end <= group.receiver.exportNode.pos)
+          if (declaration && ts4.isClassDeclaration(declaration) && declaration.getSourceFile() === classNode.getSourceFile() && declaration.end <= group.receiver.exportNode.pos)
             helper = declaration;
-          else if (declaration && ts3.isVariableDeclaration(declaration) && declaration.initializer && ts3.isVariableDeclarationList(declaration.parent) && declaration.parent.flags & ts3.NodeFlags.Const && !this.mutated.has(symbol) && this.ownerOf(declaration) === classNode.getSourceFile() && declaration.end <= group.receiver.exportNode.pos) {
+          else if (declaration && ts4.isVariableDeclaration(declaration) && declaration.initializer && ts4.isVariableDeclarationList(declaration.parent) && declaration.parent.flags & ts4.NodeFlags.Const && !this.mutated.has(symbol) && this.ownerOf(declaration) === classNode.getSourceFile() && declaration.end <= group.receiver.exportNode.pos) {
             const load = declaration.initializer;
-            if (ts3.isCallExpression(load) && ts3.isIdentifier(load.expression) && load.expression.text === "require" && this.objectGlobal(load.expression) && load.arguments.length === 1 && ts3.isStringLiteralLike(load.arguments[0])) {
+            if (ts4.isCallExpression(load) && ts4.isIdentifier(load.expression) && load.expression.text === "require" && this.objectGlobal(load.expression) && load.arguments.length === 1 && ts4.isStringLiteralLike(load.arguments[0])) {
               const resolution = this.importedFile(classNode.getSourceFile(), load.arguments[0].text, true);
               if (resolution.kind === "file") {
                 dependency = this.objectExports.get(resolution.file);
@@ -214506,24 +214898,24 @@ var init_modules = __esm({
       }
       objectCall(call, count5) {
         const expression = call.expression;
-        if (!ts3.isPropertyAccessExpression(expression))
+        if (!ts4.isPropertyAccessExpression(expression))
           return { kind: "unsupported" };
-        const receiver = ts3.isIdentifier(expression.expression) ? expression.expression : ts3.isPropertyAccessExpression(expression.expression) && ts3.isIdentifier(expression.expression.expression) ? expression.expression.expression : void 0;
+        const receiver = ts4.isIdentifier(expression.expression) ? expression.expression : ts4.isPropertyAccessExpression(expression.expression) && ts4.isIdentifier(expression.expression.expression) ? expression.expression.expression : void 0;
         if (!receiver)
           return { kind: "unsupported" };
         const symbol = this.symbol(receiver);
         const declaration = symbol?.declarations?.length === 1 ? symbol.declarations[0] : void 0;
-        if (!declaration || !ts3.isVariableDeclaration(declaration) || !declaration.initializer)
+        if (!declaration || !ts4.isVariableDeclaration(declaration) || !declaration.initializer)
           return { kind: "unsupported" };
         const load = declaration.initializer;
-        if (!ts3.isCallExpression(load) || !ts3.isIdentifier(load.expression) || load.expression.text !== "require" || !this.objectGlobal(load.expression) || load.arguments.length !== 1 || !ts3.isStringLiteralLike(load.arguments[0]))
+        if (!ts4.isCallExpression(load) || !ts4.isIdentifier(load.expression) || load.expression.text !== "require" || !this.objectGlobal(load.expression) || load.arguments.length !== 1 || !ts4.isStringLiteralLike(load.arguments[0]))
           return { kind: "unsupported" };
         const result3 = this.importedFile(call.getSourceFile(), load.arguments[0].text, count5);
         if (result3.kind !== "file")
           return result3;
         const group = this.objectExports.get(result3.file);
         const target = this.objectCalls.get(call);
-        const keysMatch = ts3.isIdentifier(expression.expression) ? group?.methods.get("")?.get(expression.name.text) === target : ts3.isPropertyAccessExpression(expression.expression) && group?.methods.get(expression.expression.name.text)?.get(expression.name.text) === target;
+        const keysMatch = ts4.isIdentifier(expression.expression) ? group?.methods.get("")?.get(expression.name.text) === target : ts4.isPropertyAccessExpression(expression.expression) && group?.methods.get(expression.expression.name.text)?.get(expression.name.text) === target;
         const mode = group?.singletonProof ? this.singletonEligibility.get(group) : group?.valid ? "closed" : "rejected";
         return this.objectScopeComplete && this.objectValidationComplete && (!count5 || this.proofsReady) && !this.mutated.has(symbol) && !this.beforeInitialization(call, declaration) && group && mode !== "rejected" && mode !== void 0 && target && keysMatch && target.getSourceFile() === result3.file ? { kind: mode === "conditional" ? "declared" : "resolved", target, ...group.receiver ? { receiver: group.receiver } : {} } : { kind: "export_unsupported" };
       }
@@ -214549,21 +214941,21 @@ var init_modules = __esm({
           for (const member3 of classNode.members) {
             if (!this.tick())
               return;
-            if (ts3.isConstructorDeclaration(member3)) {
+            if (ts4.isConstructorDeclaration(member3)) {
               constructors += 1;
               if (constructors > 1 || !member3.body || member3.body.statements.length || member3.parameters.length || member3.modifiers?.length)
                 valid = false;
               continue;
             }
-            const key2 = ts3.isMethodDeclaration(member3) ? nameOf(member3.name) : void 0;
-            if (!ts3.isMethodDeclaration(member3) || !member3.body || !this.functionSet.has(member3) || !key2 || ts3.isComputedPropertyName(member3.name) || methods.has(key2) || ["constructor", "prototype", "__proto__"].includes(key2) || member3.asteriskToken || member3.questionToken || member3.modifiers?.some((modifier) => modifier.kind !== ts3.SyntaxKind.AsyncKeyword) || this.receiverDependent.has(member3)) {
+            const key2 = ts4.isMethodDeclaration(member3) ? nameOf(member3.name) : void 0;
+            if (!ts4.isMethodDeclaration(member3) || !member3.body || !this.functionSet.has(member3) || !key2 || ts4.isComputedPropertyName(member3.name) || methods.has(key2) || ["constructor", "prototype", "__proto__"].includes(key2) || member3.asteriskToken || member3.questionToken || member3.modifiers?.some((modifier) => modifier.kind !== ts4.SyntaxKind.AsyncKeyword) || this.receiverDependent.has(member3)) {
               valid = false;
               continue;
             }
             for (const parameter of member3.parameters) {
               if (!this.tick())
                 return;
-              if (parameter.modifiers?.length || ts3.isIdentifier(parameter.name) && parameter.name.text === "this")
+              if (parameter.modifiers?.length || ts4.isIdentifier(parameter.name) && parameter.name.text === "this")
                 valid = false;
             }
             methods.set(key2, member3);
@@ -214577,14 +214969,14 @@ var init_modules = __esm({
             if (ref === classNode.name)
               continue;
             const creation = ref.parent;
-            const declaration = ts3.isNewExpression(creation) ? creation.parent : void 0;
-            if (ref.getSourceFile() !== file || !ts3.isNewExpression(creation) || creation.expression !== ref || creation.arguments?.length || classNode.end > creation.pos || !declaration || !ts3.isVariableDeclaration(declaration) || declaration.initializer !== creation || this.objectConst(declaration.name) !== declaration) {
+            const declaration = ts4.isNewExpression(creation) ? creation.parent : void 0;
+            if (ref.getSourceFile() !== file || !ts4.isNewExpression(creation) || creation.expression !== ref || creation.arguments?.length || classNode.end > creation.pos || !declaration || !ts4.isVariableDeclaration(declaration) || declaration.initializer !== creation || this.objectConst(declaration.name) !== declaration) {
               valid = false;
               break;
             }
             const symbol = this.symbol(declaration.name);
             const statement = declaration.parent.parent;
-            if (!symbol || this.mutatedMembers.has(symbol) || this.localExportBindings.has(symbol) || !ts3.isVariableStatement(statement) || statement.modifiers?.length) {
+            if (!symbol || this.mutatedMembers.has(symbol) || this.localExportBindings.has(symbol) || !ts4.isVariableStatement(statement) || statement.modifiers?.length) {
               valid = false;
               break;
             }
@@ -214600,9 +214992,9 @@ var init_modules = __esm({
               if (ref === declaration.name)
                 continue;
               const access7 = ref.parent;
-              const call = ts3.isPropertyAccessExpression(access7) ? access7.parent : void 0;
-              const target = ts3.isPropertyAccessExpression(access7) ? methods.get(access7.name.text) : void 0;
-              if (ref.getSourceFile() !== file || !ts3.isPropertyAccessExpression(access7) || access7.expression !== ref || access7.questionDotToken || !call || !ts3.isCallExpression(call) || call.expression !== access7 || call.questionDotToken || !target || this.beforeInitialization(call, declaration)) {
+              const call = ts4.isPropertyAccessExpression(access7) ? access7.parent : void 0;
+              const target = ts4.isPropertyAccessExpression(access7) ? methods.get(access7.name.text) : void 0;
+              if (ref.getSourceFile() !== file || !ts4.isPropertyAccessExpression(access7) || access7.expression !== ref || access7.questionDotToken || !call || !ts4.isCallExpression(call) || call.expression !== access7 || call.questionDotToken || !target || this.beforeInitialization(call, declaration)) {
                 valid = false;
                 break;
               }
@@ -214624,7 +215016,7 @@ var init_modules = __esm({
           return { kind: "unsupported" };
         if (count5 && !this.tick())
           return { kind: "unsupported" };
-        if (ts3.isPropertyAccessExpression(call.expression) && call.expression.expression.kind === ts3.SyntaxKind.ThisKeyword) {
+        if (ts4.isPropertyAccessExpression(call.expression) && call.expression.expression.kind === ts4.SyntaxKind.ThisKeyword) {
           const owner = this.ownerOf(call);
           const group = this.methodReceivers.get(owner);
           if (!group)
@@ -214633,7 +215025,7 @@ var init_modules = __esm({
           const mode = this.singletonEligibility.get(group);
           return receiver && group.receiver === receiver && mode !== void 0 && mode !== "rejected" && this.objectValidationComplete && this.objectScopeComplete && target2 ? { kind: mode === "conditional" ? "declared" : "resolved", target: target2, receiver } : { kind: "export_unsupported" };
         }
-        if (!ts3.isIdentifier(call.expression)) {
+        if (!ts4.isIdentifier(call.expression)) {
           const target2 = this.localClassCalls.get(call);
           return target2 ? { kind: "resolved", target: target2 } : this.objectCall(call, count5);
         }
@@ -214644,31 +215036,34 @@ var init_modules = __esm({
         for (const declaration2 of symbol.declarations ?? []) {
           if (!this.tick())
             return { kind: "unsupported" };
-          if (ts3.isImportSpecifier(declaration2) && (declaration2.isTypeOnly || declaration2.parent.parent.isTypeOnly) || ts3.isImportClause(declaration2) && declaration2.isTypeOnly || ts3.isNamespaceImport(declaration2) && declaration2.parent.isTypeOnly || ts3.isImportEqualsDeclaration(declaration2) && declaration2.isTypeOnly)
+          if (ts4.isImportSpecifier(declaration2) && (declaration2.isTypeOnly || declaration2.parent.parent.isTypeOnly) || ts4.isImportClause(declaration2) && declaration2.isTypeOnly || ts4.isNamespaceImport(declaration2) && declaration2.parent.isTypeOnly || ts4.isImportEqualsDeclaration(declaration2) && declaration2.isTypeOnly)
             continue;
           declarations.push(declaration2);
         }
         if (declarations.length !== 1) {
-          const implementations = declarations.filter((declaration2) => ts3.isFunctionDeclaration(declaration2) && !!declaration2.body);
-          if (implementations.length !== 1 || declarations.some((declaration2) => !ts3.isFunctionDeclaration(declaration2) || !declaration2.name || this.symbol(declaration2.name) !== symbol))
+          const implementations = declarations.filter((declaration2) => ts4.isFunctionDeclaration(declaration2) && !!declaration2.body);
+          if (implementations.length !== 1 || declarations.some((declaration2) => !ts4.isFunctionDeclaration(declaration2) || !declaration2.name || this.symbol(declaration2.name) !== symbol))
             return { kind: "unsupported" };
           declarations.splice(0, declarations.length, implementations[0]);
         }
-        if (symbol.declarations?.length !== 1 && !ts3.isFunctionDeclaration(declarations[0]))
+        if (symbol.declarations?.length !== 1 && !ts4.isFunctionDeclaration(declarations[0]))
           return { kind: "unsupported" };
         const unproved = this.mutated.has(symbol);
         const declaration = declarations[0];
-        if (ts3.isImportSpecifier(declaration)) {
+        if (ts4.isImportSpecifier(declaration)) {
           const importDeclaration = declaration.parent.parent.parent;
-          if (!ts3.isImportDeclaration(importDeclaration) || !ts3.isStringLiteral(importDeclaration.moduleSpecifier) || declaration.isTypeOnly || importDeclaration.importClause?.isTypeOnly)
+          if (!ts4.isImportDeclaration(importDeclaration) || !ts4.isStringLiteral(importDeclaration.moduleSpecifier) || declaration.isTypeOnly || importDeclaration.importClause?.isTypeOnly)
             return { kind: "unsupported" };
-          return this.imported(call.getSourceFile(), importDeclaration.moduleSpecifier.text, (declaration.propertyName ?? declaration.name).text, count5, unproved);
+          const imported = this.imported(call.getSourceFile(), importDeclaration.moduleSpecifier.text, (declaration.propertyName ?? declaration.name).text, count5, unproved, true);
+          if ((imported.kind === "declared" || imported.kind === "resolved") && imported.configured)
+            this.configuredCallSites.add(call);
+          return imported;
         }
-        if (ts3.isBindingElement(declaration)) {
+        if (ts4.isBindingElement(declaration)) {
           const variable = variableOf(declaration);
           const initializer = variable?.initializer;
-          if (variable && (variable.parent.flags & ts3.NodeFlags.Const) !== 0 && initializer && ts3.isCallExpression(initializer) && ts3.isIdentifier(initializer.expression) && initializer.expression.text === "require" && this.cjsGlobal(initializer.expression) && initializer.arguments.length === 1 && ts3.isStringLiteral(initializer.arguments[0])) {
-            return this.imported(call.getSourceFile(), initializer.arguments[0].text, nameOf(declaration.propertyName) ?? (ts3.isIdentifier(declaration.name) ? declaration.name.text : ""), count5, unproved || !ts3.isObjectBindingPattern(declaration.parent) || declaration.parent !== variable.name || declaration.dotDotDotToken !== void 0 || declaration.initializer !== void 0 || !ts3.isIdentifier(declaration.name) || declaration.propertyName !== void 0 && !ts3.isIdentifier(declaration.propertyName) || this.beforeInitialization(call, variable));
+          if (variable && (variable.parent.flags & ts4.NodeFlags.Const) !== 0 && initializer && ts4.isCallExpression(initializer) && ts4.isIdentifier(initializer.expression) && initializer.expression.text === "require" && this.cjsGlobal(initializer.expression) && initializer.arguments.length === 1 && ts4.isStringLiteral(initializer.arguments[0])) {
+            return this.imported(call.getSourceFile(), initializer.arguments[0].text, nameOf(declaration.propertyName) ?? (ts4.isIdentifier(declaration.name) ? declaration.name.text : ""), count5, unproved || !ts4.isObjectBindingPattern(declaration.parent) || declaration.parent !== variable.name || declaration.dotDotDotToken !== void 0 || declaration.initializer !== void 0 || !ts4.isIdentifier(declaration.name) || declaration.propertyName !== void 0 && !ts4.isIdentifier(declaration.propertyName) || this.beforeInitialization(call, variable));
           }
         }
         if (unproved)
@@ -214676,7 +215071,7 @@ var init_modules = __esm({
         const target = this.functionOf(declaration);
         if (!target || target.getSourceFile() !== call.getSourceFile())
           return { kind: "unsupported" };
-        if (ts3.isVariableDeclaration(declaration) && this.beforeInitialization(call, declaration))
+        if (ts4.isVariableDeclaration(declaration) && this.beforeInitialization(call, declaration))
           return { kind: "unsupported" };
         return { kind: "resolved", target };
       }
@@ -214686,28 +215081,28 @@ var init_modules = __esm({
           return false;
         if (this.localClassCalls.has(call))
           return true;
-        if (ts3.isIdentifier(call.expression)) {
+        if (ts4.isIdentifier(call.expression)) {
           const declarations = this.symbol(call.expression)?.declarations;
-          if (declarations?.some((declaration2) => ts3.isFunctionDeclaration(declaration2) || ts3.isVariableDeclaration(declaration2) && !!this.functionOf(declaration2) || ts3.isImportSpecifier(declaration2) || ts3.isBindingElement(declaration2)))
+          if (declarations?.some((declaration2) => ts4.isFunctionDeclaration(declaration2) || ts4.isVariableDeclaration(declaration2) && !!this.functionOf(declaration2) || ts4.isImportSpecifier(declaration2) || ts4.isBindingElement(declaration2)))
             return true;
           const declaration = declarations?.length === 1 ? declarations[0] : void 0;
-          if (!declaration || !ts3.isVariableDeclaration(declaration) || !(declaration.parent.flags & ts3.NodeFlags.Const))
+          if (!declaration || !ts4.isVariableDeclaration(declaration) || !(declaration.parent.flags & ts4.NodeFlags.Const))
             return false;
           const initializer = declaration.initializer;
-          const load = initializer && ts3.isPropertyAccessExpression(initializer) ? initializer.expression : initializer;
-          if (!load || !ts3.isCallExpression(load) || !ts3.isIdentifier(load.expression) || load.expression.text !== "require" || load.arguments.length !== 1 || !ts3.isStringLiteralLike(load.arguments[0]) || !load.arguments[0].text.startsWith("."))
+          const load = initializer && ts4.isPropertyAccessExpression(initializer) ? initializer.expression : initializer;
+          if (!load || !ts4.isCallExpression(load) || !ts4.isIdentifier(load.expression) || load.expression.text !== "require" || load.arguments.length !== 1 || !ts4.isStringLiteralLike(load.arguments[0]) || !load.arguments[0].text.startsWith("."))
             return false;
           return this.resolveCjsFunctionCall(call)?.kind === "resolved";
         }
-        if (ts3.isPropertyAccessExpression(call.expression) && ts3.isIdentifier(call.expression.expression)) {
+        if (ts4.isPropertyAccessExpression(call.expression) && ts4.isIdentifier(call.expression.expression)) {
           const receiver = this.symbol(call.expression.expression);
           if (!receiver || this.mutated.has(receiver) || this.mutatedMembers.has(receiver))
             return false;
           const declaration = receiver.declarations?.length === 1 ? receiver.declarations[0] : void 0;
-          if (!declaration || !ts3.isVariableDeclaration(declaration) || !declaration.initializer || !ts3.isObjectLiteralExpression(declaration.initializer))
+          if (!declaration || !ts4.isVariableDeclaration(declaration) || !declaration.initializer || !ts4.isObjectLiteralExpression(declaration.initializer))
             return false;
-          const member3 = declaration.initializer.properties.find((property) => !ts3.isSpreadAssignment(property) && nameOf(property.name) === call.expression.name.text);
-          return !!member3 && (ts3.isMethodDeclaration(member3) && !!member3.body || ts3.isPropertyAssignment(member3) && (ts3.isArrowFunction(member3.initializer) || ts3.isFunctionExpression(member3.initializer)));
+          const member3 = declaration.initializer.properties.find((property) => !ts4.isSpreadAssignment(property) && nameOf(property.name) === call.expression.name.text);
+          return !!member3 && (ts4.isMethodDeclaration(member3) && !!member3.body || ts4.isPropertyAssignment(member3) && (ts4.isArrowFunction(member3.initializer) || ts4.isFunctionExpression(member3.initializer)));
         }
         return false;
       }
@@ -214756,13 +215151,13 @@ function fixedQueryDestination(parts) {
   return parts.slice(1).every((part) => "encodedQuery" in part || /^[&=A-Za-z0-9_.~%+-]*$/.test(part.literal));
 }
 function record(node) {
-  return Boolean(node && ts4.isObjectLiteralExpression(node) && node.properties.every((property) => ts4.isPropertyAssignment(property) && !ts4.isComputedPropertyName(property.name) || ts4.isShorthandPropertyAssignment(property) && !property.objectAssignmentInitializer));
+  return Boolean(node && ts5.isObjectLiteralExpression(node) && node.properties.every((property) => ts5.isPropertyAssignment(property) && !ts5.isComputedPropertyName(property.name) || ts5.isShorthandPropertyAssignment(property) && !property.objectAssignmentInitializer));
 }
-var ts4, URL_SHAPE_LIMITS, NativeQueryModel;
+var ts5, URL_SHAPE_LIMITS, NativeQueryModel;
 var init_url_destination = __esm({
   "build/src/source/url-destination.js"() {
     "use strict";
-    ts4 = __toESM(require_typescript(), 1);
+    ts5 = __toESM(require_typescript(), 1);
     URL_SHAPE_LIMITS = { fragments: 16, literalCharacters: 2048 };
     NativeQueryModel = class {
       modules;
@@ -214777,14 +215172,14 @@ var init_url_destination = __esm({
             pristine = false;
             break;
           }
-          if (ts4.isElementAccessExpression(node)) {
+          if (ts5.isElementAccessExpression(node)) {
             pristine = false;
             continue;
           }
-          if (ts4.isIdentifier(node) && node.text === "URLSearchParams") {
-            if (!modules.symbol(node) && !(ts4.isNewExpression(node.parent) && node.parent.expression === node && (node.parent.arguments?.length === 0 || node.parent.arguments?.length === 1 && record(node.parent.arguments[0]))))
+          if (ts5.isIdentifier(node) && node.text === "URLSearchParams") {
+            if (!modules.symbol(node) && !(ts5.isNewExpression(node.parent) && node.parent.expression === node && (node.parent.arguments?.length === 0 || node.parent.arguments?.length === 1 && record(node.parent.arguments[0]))))
               pristine = false;
-            if (ts4.isPropertyAccessExpression(node.parent))
+            if (ts5.isPropertyAccessExpression(node.parent))
               pristine = false;
           }
         }
@@ -214793,17 +215188,17 @@ var init_url_destination = __esm({
         for (const node of modules.newExpressions) {
           if (!tick())
             return;
-          if (!ts4.isIdentifier(node.expression) || node.expression.text !== "URLSearchParams" || modules.symbol(node.expression))
+          if (!ts5.isIdentifier(node.expression) || node.expression.text !== "URLSearchParams" || modules.symbol(node.expression))
             continue;
           if (!(node.arguments?.length === 0 || node.arguments?.length === 1 && record(node.arguments[0])))
             continue;
           const member3 = node.parent;
-          if (ts4.isPropertyAccessExpression(member3) && member3.expression === node && member3.name.text === "toString" && ts4.isCallExpression(member3.parent) && member3.parent.expression === member3 && member3.parent.arguments.length === 0) {
+          if (ts5.isPropertyAccessExpression(member3) && member3.expression === node && member3.name.text === "toString" && ts5.isCallExpression(member3.parent) && member3.parent.expression === member3 && member3.parent.arguments.length === 0) {
             this.supported.add(node);
             continue;
           }
           const declaration = node.parent;
-          if (!ts4.isVariableDeclaration(declaration) || declaration.initializer !== node || !ts4.isIdentifier(declaration.name) || !ts4.isVariableDeclarationList(declaration.parent) || !(declaration.parent.flags & ts4.NodeFlags.Const))
+          if (!ts5.isVariableDeclaration(declaration) || declaration.initializer !== node || !ts5.isIdentifier(declaration.name) || !ts5.isVariableDeclarationList(declaration.parent) || !(declaration.parent.flags & ts5.NodeFlags.Const))
             continue;
           const symbol = modules.symbol(declaration.name);
           if (!symbol)
@@ -214822,10 +215217,10 @@ var init_url_destination = __esm({
             if (modules.symbol(reference2) !== symbol)
               return true;
             const member4 = reference2.parent;
-            if (modules.ownerOf(reference2) !== modules.ownerOf(node) || !ts4.isPropertyAccessExpression(member4) || member4.expression !== reference2)
+            if (modules.ownerOf(reference2) !== modules.ownerOf(node) || !ts5.isPropertyAccessExpression(member4) || member4.expression !== reference2)
               return false;
             const call = member4.parent;
-            return ts4.isCallExpression(call) && call.expression === member4 && (member4.name.text === "toString" && call.arguments.length === 0 || ["append", "set"].includes(member4.name.text) && call.arguments.length === 2 && !call.arguments.some(ts4.isSpreadElement));
+            return ts5.isCallExpression(call) && call.expression === member4 && (member4.name.text === "toString" && call.arguments.length === 0 || ["append", "set"].includes(member4.name.text) && call.arguments.length === 2 && !call.arguments.some(ts5.isSpreadElement));
           });
           if (valid && declared)
             this.supported.add(node);
@@ -214839,11 +215234,11 @@ var init_url_destination = __esm({
 });
 
 // build/src/source/fork-role.js
-var ts5, packageName, ChildProcessBindings, ForkRoleModel;
+var ts6, packageName, ChildProcessBindings, ForkRoleModel;
 var init_fork_role = __esm({
   "build/src/source/fork-role.js"() {
     "use strict";
-    ts5 = __toESM(require_typescript(), 1);
+    ts6 = __toESM(require_typescript(), 1);
     packageName = (name) => name === "child_process" || name === "node:child_process";
     ChildProcessBindings = class {
       modules;
@@ -214865,14 +215260,14 @@ var init_fork_role = __esm({
         for (const declaration of modules.importDeclarations) {
           if (!tick())
             break;
-          if (!ts5.isStringLiteralLike(declaration.moduleSpecifier) || !packageName(declaration.moduleSpecifier.text))
+          if (!ts6.isStringLiteralLike(declaration.moduleSpecifier) || !packageName(declaration.moduleSpecifier.text))
             continue;
           const clause = declaration.importClause;
           const named = clause?.namedBindings;
           if (extended && clause?.name && !clause.isTypeOnly)
             this.add(clause.name, true, clause);
           if (!clause?.isTypeOnly && named) {
-            if (ts5.isNamespaceImport(named)) {
+            if (ts6.isNamespaceImport(named)) {
               this.add(named.name, true, named);
               if (!clause?.name || extended)
                 this.supportedLoads.add(declaration);
@@ -214903,13 +215298,13 @@ var init_fork_role = __esm({
           const initializer = declaration.initializer;
           if (!packageName(initializer.arguments[0].text) || !modules.cjsGlobal(initializer.expression))
             continue;
-          const immutable2 = Boolean(declaration.parent.flags & ts5.NodeFlags.Const);
-          if (ts5.isIdentifier(declaration.name)) {
+          const immutable2 = Boolean(declaration.parent.flags & ts6.NodeFlags.Const);
+          if (ts6.isIdentifier(declaration.name)) {
             this.add(declaration.name, true, declaration);
             if (immutable2)
               this.supportedLoads.add(initializer);
-          } else if (ts5.isObjectBindingPattern(declaration.name)) {
-            const forkElement = (element) => !element.dotDotDotToken && !element.initializer && ts5.isIdentifier(element.name) && (element.propertyName ? ts5.isIdentifier(element.propertyName) || ts5.isStringLiteralLike(element.propertyName) : true) && methods.has((element.propertyName ?? element.name).getText().replace(/^['"]|['"]$/g, ""));
+          } else if (ts6.isObjectBindingPattern(declaration.name)) {
+            const forkElement = (element) => !element.dotDotDotToken && !element.initializer && ts6.isIdentifier(element.name) && (element.propertyName ? ts6.isIdentifier(element.propertyName) || ts6.isStringLiteralLike(element.propertyName) : true) && methods.has((element.propertyName ?? element.name).getText().replace(/^['"]|['"]$/g, ""));
             let supported2 = immutable2;
             for (const element of declaration.name.elements) {
               if (!tick()) {
@@ -214930,15 +215325,15 @@ var init_fork_role = __esm({
           for (const load of modules.forkLoads) {
             if (!tick())
               break;
-            if (!ts5.isCallExpression(load) || !this.exactLoad(load))
+            if (!ts6.isCallExpression(load) || !this.exactLoad(load))
               continue;
             const member3 = load.parent;
-            if (!ts5.isPropertyAccessExpression(member3) || member3.expression !== load || !methods.has(member3.name.text))
+            if (!ts6.isPropertyAccessExpression(member3) || member3.expression !== load || !methods.has(member3.name.text))
               continue;
             const declaration = member3.parent;
-            if (ts5.isVariableDeclaration(declaration) && declaration.initializer === member3 && ts5.isIdentifier(declaration.name)) {
+            if (ts6.isVariableDeclaration(declaration) && declaration.initializer === member3 && ts6.isIdentifier(declaration.name)) {
               this.add(declaration.name, false, declaration, member3.name.text);
-              if (declaration.parent.flags & ts5.NodeFlags.Const)
+              if (declaration.parent.flags & ts6.NodeFlags.Const)
                 this.supportedLoads.add(load);
             }
           }
@@ -214949,10 +215344,10 @@ var init_fork_role = __esm({
               if (!tick())
                 break;
               const member3 = reference2.parent;
-              if (!ts5.isPropertyAccessExpression(member3) || member3.expression !== reference2 || !methods.has(member3.name.text))
+              if (!ts6.isPropertyAccessExpression(member3) || member3.expression !== reference2 || !methods.has(member3.name.text))
                 continue;
               const declaration = member3.parent;
-              if (ts5.isVariableDeclaration(declaration) && declaration.initializer === member3 && ts5.isIdentifier(declaration.name)) {
+              if (ts6.isVariableDeclaration(declaration) && declaration.initializer === member3 && ts6.isIdentifier(declaration.name)) {
                 this.add(declaration.name, false, declaration, member3.name.text);
               }
             }
@@ -214961,9 +215356,9 @@ var init_fork_role = __esm({
         for (const load of modules.forkLoads) {
           if (!tick())
             break;
-          if (ts5.isCallExpression(load)) {
+          if (ts6.isCallExpression(load)) {
             const callee = this.unwrap(load.expression);
-            if (callee && ts5.isIdentifier(callee) && callee.text === "require" && !modules.cjsGlobal(callee))
+            if (callee && ts6.isIdentifier(callee) && callee.text === "require" && !modules.cjsGlobal(callee))
               continue;
             if (this.inlineLoad(load)) {
               this.supportedLoads.add(load);
@@ -214991,7 +215386,7 @@ var init_fork_role = __esm({
         }
       }
       unwrap(expression) {
-        while (ts5.isParenthesizedExpression(expression) || ts5.isAsExpression(expression) || ts5.isTypeAssertionExpression(expression) || ts5.isNonNullExpression(expression)) {
+        while (ts6.isParenthesizedExpression(expression) || ts6.isAsExpression(expression) || ts6.isTypeAssertionExpression(expression) || ts6.isNonNullExpression(expression)) {
           if (!this.tick())
             return void 0;
           expression = expression.expression;
@@ -215010,22 +215405,22 @@ var init_fork_role = __esm({
         if (ref.parent === entry.declaration)
           return true;
         if (!entry.namespace)
-          return ts5.isCallExpression(ref.parent) && ref.parent.expression === ref;
+          return ts6.isCallExpression(ref.parent) && ref.parent.expression === ref;
         const member3 = ref.parent;
-        if (!ts5.isPropertyAccessExpression(member3) || member3.expression !== ref || !this.methods.has(member3.name.text))
+        if (!ts6.isPropertyAccessExpression(member3) || member3.expression !== ref || !this.methods.has(member3.name.text))
           return false;
-        if (ts5.isCallExpression(member3.parent) && member3.parent.expression === member3)
+        if (ts6.isCallExpression(member3.parent) && member3.parent.expression === member3)
           return true;
         const declaration = member3.parent;
-        return this.extended && ts5.isVariableDeclaration(declaration) && declaration.initializer === member3 && Boolean(declaration.parent.flags & ts5.NodeFlags.Const) && ts5.isIdentifier(declaration.name) && this.bindings.get(this.modules.symbol(declaration.name))?.some((binding) => binding.declaration === declaration) === true;
+        return this.extended && ts6.isVariableDeclaration(declaration) && declaration.initializer === member3 && Boolean(declaration.parent.flags & ts6.NodeFlags.Const) && ts6.isIdentifier(declaration.name) && this.bindings.get(this.modules.symbol(declaration.name))?.some((binding) => binding.declaration === declaration) === true;
       }
       exactLoad(load) {
         const callee = this.unwrap(load.expression);
         const specifier = load.arguments.length === 1 ? this.unwrap(load.arguments[0]) : void 0;
-        return !!callee && ts5.isIdentifier(callee) && callee.text === "require" && this.modules.cjsGlobal(callee) && !!specifier && ts5.isStringLiteralLike(specifier) && packageName(specifier.text);
+        return !!callee && ts6.isIdentifier(callee) && callee.text === "require" && this.modules.cjsGlobal(callee) && !!specifier && ts6.isStringLiteralLike(specifier) && packageName(specifier.text);
       }
       inlineLoad(load) {
-        return this.exactLoad(load) && ts5.isPropertyAccessExpression(load.parent) && load.parent.expression === load && this.methods.has(load.parent.name.text) && ts5.isCallExpression(load.parent.parent) && load.parent.parent.expression === load.parent;
+        return this.exactLoad(load) && ts6.isPropertyAccessExpression(load.parent) && load.parent.expression === load && this.methods.has(load.parent.name.text) && ts6.isCallExpression(load.parent.parent) && load.parent.parent.expression === load.parent;
       }
       binding(call) {
         if (!this.tick())
@@ -215036,14 +215431,14 @@ var init_fork_role = __esm({
         let entry;
         let recognized = false;
         let method;
-        if (ts5.isIdentifier(expression))
+        if (ts6.isIdentifier(expression))
           entry = this.bindings.get(this.modules.symbol(expression))?.find((item) => !item.namespace && item.file === call.getSourceFile());
-        else if (ts5.isPropertyAccessExpression(expression) && this.methods.has(expression.name.text)) {
+        else if (ts6.isPropertyAccessExpression(expression) && this.methods.has(expression.name.text)) {
           method = expression.name.text;
           const receiver = this.unwrap(expression.expression);
-          if (receiver && ts5.isIdentifier(receiver))
+          if (receiver && ts6.isIdentifier(receiver))
             entry = this.bindings.get(this.modules.symbol(receiver))?.find((item) => item.namespace && item.file === call.getSourceFile());
-          else if (receiver && ts5.isCallExpression(receiver))
+          else if (receiver && ts6.isCallExpression(receiver))
             recognized = this.inlineLoad(receiver);
         }
         if (!entry && !recognized)
@@ -215051,8 +215446,8 @@ var init_fork_role = __esm({
         method ??= entry?.method;
         if (!method)
           return void 0;
-        const initialized = !entry || !ts5.isVariableDeclaration(entry.declaration) && !ts5.isBindingElement(entry.declaration) || this.modules.ownerOf(call) !== this.modules.ownerOf(entry.declaration) || entry.declaration.pos < call.pos;
-        const immutable2 = !entry || !this.extended || !ts5.isVariableDeclaration(entry.declaration) || Boolean(entry.declaration.parent.flags & ts5.NodeFlags.Const);
+        const initialized = !entry || !ts6.isVariableDeclaration(entry.declaration) && !ts6.isBindingElement(entry.declaration) || this.modules.ownerOf(call) !== this.modules.ownerOf(entry.declaration) || entry.declaration.pos < call.pos;
+        const immutable2 = !entry || !this.extended || !ts6.isVariableDeclaration(entry.declaration) || Boolean(entry.declaration.parent.flags & ts6.NodeFlags.Const);
         return { method, identity: this.scopeComplete && this.indexAvailable && this.modules.indexComplete && this.familyPristine && (!entry || entry.pristine) && initialized && immutable2 ? "native" : "unresolved" };
       }
     };
@@ -215076,11 +215471,11 @@ function mergeProcessRoles(left, right) {
   const preferred = candidate(left) !== candidate(right) ? candidate(right) ? right : left : left.inputRelated !== right.inputRelated ? right.inputRelated ? right : left : rank[right.outcome] > rank[left.outcome] || rank[right.outcome] === rank[left.outcome] && left.certainty === "unknown" && right.certainty === "tainted" ? right : left;
   return { ...preferred, inputRelated: left.inputRelated || right.inputRelated };
 }
-var ts6, PROCESS_METHODS, ProcessRoleModel;
+var ts7, PROCESS_METHODS, ProcessRoleModel;
 var init_process_role = __esm({
   "build/src/source/process-role.js"() {
     "use strict";
-    ts6 = __toESM(require_typescript(), 1);
+    ts7 = __toESM(require_typescript(), 1);
     init_fork_role();
     PROCESS_METHODS = /* @__PURE__ */ new Set(["exec", "execSync", "execFile", "execFileSync", "spawn", "spawnSync"]);
     ProcessRoleModel = class {
@@ -215102,7 +215497,7 @@ var init_process_role = __esm({
         return use && PROCESS_METHODS.has(use.method) ? use : void 0;
       }
       unwrap(expression) {
-        while (ts6.isParenthesizedExpression(expression) || ts6.isAsExpression(expression) || ts6.isTypeAssertionExpression(expression) || ts6.isNonNullExpression(expression)) {
+        while (ts7.isParenthesizedExpression(expression) || ts7.isAsExpression(expression) || ts7.isTypeAssertionExpression(expression) || ts7.isNonNullExpression(expression)) {
           if (!this.tick())
             return void 0;
           expression = expression.expression;
@@ -215116,16 +215511,16 @@ var init_process_role = __esm({
         const cached = this.literals.get(unwrapped3);
         if (cached)
           return cached;
-        if (!ts6.isIdentifier(unwrapped3))
+        if (!ts7.isIdentifier(unwrapped3))
           return { node: unwrapped3, readonly: true };
         const symbol = this.modules.symbol(unwrapped3);
         const declaration = symbol?.declarations?.length === 1 ? symbol.declarations[0] : void 0;
-        if (!declaration || !ts6.isVariableDeclaration(declaration) || !declaration.initializer || !ts6.isIdentifier(declaration.name))
+        if (!declaration || !ts7.isVariableDeclaration(declaration) || !declaration.initializer || !ts7.isIdentifier(declaration.name))
           return void 0;
         const node = this.unwrap(declaration.initializer);
         if (!node)
           return void 0;
-        let readonly = Boolean(declaration.parent.flags & ts6.NodeFlags.Const) && !this.modules.mutated.has(symbol) && !this.modules.mutatedMembers.has(symbol);
+        let readonly = Boolean(declaration.parent.flags & ts7.NodeFlags.Const) && !this.modules.mutated.has(symbol) && !this.modules.mutatedMembers.has(symbol);
         for (const reference2 of this.modules.references.get(symbol) ?? []) {
           if (!this.tick()) {
             readonly = false;
@@ -215134,7 +215529,7 @@ var init_process_role = __esm({
           if (reference2 === declaration.name)
             continue;
           const call = reference2.parent;
-          if (!ts6.isCallExpression(call) || !this.binding(call) || ![1, 2].some((index) => call.arguments[index] === reference2) || this.modules.ownerOf(call) === this.modules.ownerOf(declaration) && call.pos < declaration.pos)
+          if (!ts7.isCallExpression(call) || !this.binding(call) || ![1, 2].some((index) => call.arguments[index] === reference2) || this.modules.ownerOf(call) === this.modules.ownerOf(declaration) && call.pos < declaration.pos)
             readonly = false;
         }
         const result3 = { node, readonly };
@@ -215145,13 +215540,13 @@ var init_process_role = __esm({
         if (!expression)
           return false;
         const node = this.unwrap(expression);
-        return !!node && (ts6.isArrowFunction(node) || ts6.isFunctionExpression(node));
+        return !!node && (ts7.isArrowFunction(node) || ts7.isFunctionExpression(node));
       }
       absent(expression) {
         if (!expression)
           return true;
         const node = this.unwrap(expression);
-        return !!node && (node.kind === ts6.SyntaxKind.NullKeyword || ts6.isIdentifier(node) && node.text === "undefined" && !this.modules.symbol(node)?.declarations?.length);
+        return !!node && (node.kind === ts7.SyntaxKind.NullKeyword || ts7.isIdentifier(node) && node.text === "undefined" && !this.modules.symbol(node)?.declarations?.length);
       }
       layout(call, binding) {
         const command = binding.method === "exec" || binding.method === "execSync";
@@ -215161,7 +215556,7 @@ var init_process_role = __esm({
             qualified = false;
             break;
           }
-          if (ts6.isSpreadElement(argument))
+          if (ts7.isSpreadElement(argument))
             qualified = false;
         }
         let argvIndex, optionsIndex;
@@ -215172,7 +215567,7 @@ var init_process_role = __esm({
             optionsIndex = 1;
           if (call.arguments.length > (binding.method === "exec" ? 3 : 2))
             qualified = false;
-        } else if (literal && ts6.isArrayLiteralExpression(literal.node)) {
+        } else if (literal && ts7.isArrayLiteralExpression(literal.node)) {
           argvIndex = 1;
           qualified &&= literal.readonly;
           for (const element of literal.node.elements) {
@@ -215180,7 +215575,7 @@ var init_process_role = __esm({
               qualified = false;
               break;
             }
-            if (ts6.isSpreadElement(element) || ts6.isOmittedExpression(element))
+            if (ts7.isSpreadElement(element) || ts7.isOmittedExpression(element))
               qualified = false;
           }
           if (call.arguments[2] && !(binding.method === "execFile" && this.callback(call.arguments[2])) && !this.absent(call.arguments[2]))
@@ -215190,7 +215585,7 @@ var init_process_role = __esm({
             optionsIndex = 2;
         } else if (!(binding.method === "execFile" && this.callback(second))) {
           optionsIndex = 1;
-          if (!literal || !ts6.isObjectLiteralExpression(literal.node)) {
+          if (!literal || !ts7.isObjectLiteralExpression(literal.node)) {
             argvIndex = 1;
             qualified = false;
           }
@@ -215201,7 +215596,7 @@ var init_process_role = __esm({
         let shellField = false;
         if (optionsIndex !== void 0) {
           const options = this.literal(call.arguments[optionsIndex]);
-          if (!options || !ts6.isObjectLiteralExpression(options.node))
+          if (!options || !ts7.isObjectLiteralExpression(options.node))
             qualified = false;
           else {
             qualified &&= options.readonly;
@@ -215212,7 +215607,7 @@ var init_process_role = __esm({
                 qualified = false;
                 break;
               }
-              if (!ts6.isPropertyAssignment(property) || ts6.isComputedPropertyName(property.name) || !(ts6.isIdentifier(property.name) || ts6.isStringLiteralLike(property.name)) || ["__proto__", "constructor", "prototype"].includes(property.name.text)) {
+              if (!ts7.isPropertyAssignment(property) || ts7.isComputedPropertyName(property.name) || !(ts7.isIdentifier(property.name) || ts7.isStringLiteralLike(property.name)) || ["__proto__", "constructor", "prototype"].includes(property.name.text)) {
                 qualified = false;
                 continue;
               }
@@ -215227,13 +215622,13 @@ var init_process_role = __esm({
                 qualified = false;
                 continue;
               }
-              if (ts6.isStringLiteralLike(value))
+              if (ts7.isStringLiteralLike(value))
                 shell = value.text.length ? "enabled" : "disabled";
-              else if (command && (value.kind === ts6.SyntaxKind.TrueKeyword || value.kind === ts6.SyntaxKind.FalseKeyword || value.kind === ts6.SyntaxKind.NullKeyword || ts6.isNumericLiteral(value) || ts6.isObjectLiteralExpression(value)))
+              else if (command && (value.kind === ts7.SyntaxKind.TrueKeyword || value.kind === ts7.SyntaxKind.FalseKeyword || value.kind === ts7.SyntaxKind.NullKeyword || ts7.isNumericLiteral(value) || ts7.isObjectLiteralExpression(value)))
                 shell = "enabled";
-              else if (value.kind === ts6.SyntaxKind.TrueKeyword)
+              else if (value.kind === ts7.SyntaxKind.TrueKeyword)
                 shell = "enabled";
-              else if (value.kind === ts6.SyntaxKind.FalseKeyword || value.kind === ts6.SyntaxKind.NullKeyword)
+              else if (value.kind === ts7.SyntaxKind.FalseKeyword || value.kind === ts7.SyntaxKind.NullKeyword)
                 shell = "disabled";
               else
                 shell = "unresolved";
@@ -215247,7 +215642,7 @@ var init_process_role = __esm({
         const visit = (node, depth) => {
           if (++work > 128 || depth > 16 || !this.tick())
             return false;
-          if (ts6.isCallExpression(node) || ts6.isNewExpression(node) || ts6.isAwaitExpression(node) || ts6.isYieldExpression(node) || ts6.isSpreadAssignment(node) || ts6.isSpreadElement(node) || ts6.isGetAccessorDeclaration(node) || ts6.isSetAccessorDeclaration(node) || ts6.isMethodDeclaration(node) || ts6.isFunctionExpression(node) || ts6.isArrowFunction(node) || ts6.isDeleteExpression(node) || ts6.isBinaryExpression(node) && node.operatorToken.kind >= ts6.SyntaxKind.FirstAssignment && node.operatorToken.kind <= ts6.SyntaxKind.LastAssignment || (ts6.isPrefixUnaryExpression(node) || ts6.isPostfixUnaryExpression(node)) && [ts6.SyntaxKind.PlusPlusToken, ts6.SyntaxKind.MinusMinusToken].includes(node.operator))
+          if (ts7.isCallExpression(node) || ts7.isNewExpression(node) || ts7.isAwaitExpression(node) || ts7.isYieldExpression(node) || ts7.isSpreadAssignment(node) || ts7.isSpreadElement(node) || ts7.isGetAccessorDeclaration(node) || ts7.isSetAccessorDeclaration(node) || ts7.isMethodDeclaration(node) || ts7.isFunctionExpression(node) || ts7.isArrowFunction(node) || ts7.isDeleteExpression(node) || ts7.isBinaryExpression(node) && node.operatorToken.kind >= ts7.SyntaxKind.FirstAssignment && node.operatorToken.kind <= ts7.SyntaxKind.LastAssignment || (ts7.isPrefixUnaryExpression(node) || ts7.isPostfixUnaryExpression(node)) && [ts7.SyntaxKind.PlusPlusToken, ts7.SyntaxKind.MinusMinusToken].includes(node.operator))
             return false;
           let valid = true;
           node.forEachChild((child) => {
@@ -215274,15 +215669,15 @@ function mergeHttpRoles(left, right) {
   return { ...preferred, bound: left.bound || right.bound, inputRelated: left.inputRelated || right.inputRelated };
 }
 function unwrapped(node) {
-  while (ts7.isParenthesizedExpression(node) || ts7.isAsExpression(node) || ts7.isTypeAssertionExpression(node) || ts7.isNonNullExpression(node))
+  while (ts8.isParenthesizedExpression(node) || ts8.isAsExpression(node) || ts8.isTypeAssertionExpression(node) || ts8.isNonNullExpression(node))
     node = node.expression;
   return node;
 }
 function requestReceiver(call) {
   const callee = unwrapped(call.expression);
-  if (ts7.isPropertyAccessExpression(callee) && callee.name.text === "request" && ts7.isIdentifier(callee.expression))
+  if (ts8.isPropertyAccessExpression(callee) && callee.name.text === "request" && ts8.isIdentifier(callee.expression))
     return callee.expression;
-  if (ts7.isElementAccessExpression(callee) && ts7.isIdentifier(callee.expression) && ts7.isStringLiteralLike(callee.argumentExpression) && callee.argumentExpression.text === "request")
+  if (ts8.isElementAccessExpression(callee) && ts8.isIdentifier(callee.expression) && ts8.isStringLiteralLike(callee.argumentExpression) && callee.argumentExpression.text === "request")
     return callee.expression;
   return void 0;
 }
@@ -215305,11 +215700,11 @@ function fixedInitialHttpUrl(parts) {
     return false;
   }
 }
-var ts7, METHODS, HttpRoleModel;
+var ts8, METHODS, HttpRoleModel;
 var init_http_role = __esm({
   "build/src/source/http-role.js"() {
     "use strict";
-    ts7 = __toESM(require_typescript(), 1);
+    ts8 = __toESM(require_typescript(), 1);
     METHODS = /* @__PURE__ */ new Set(["request", "get", "post", "put", "patch", "delete", "head", "options"]);
     HttpRoleModel = class {
       modules;
@@ -215329,7 +215724,7 @@ var init_http_role = __esm({
             this.pristine = false;
             break;
           }
-          if (!ts7.isStringLiteralLike(declaration.moduleSpecifier) || declaration.moduleSpecifier.text !== "axios")
+          if (!ts8.isStringLiteralLike(declaration.moduleSpecifier) || declaration.moduleSpecifier.text !== "axios")
             continue;
           const clause = declaration.importClause;
           if (!clause || clause.isTypeOnly) {
@@ -215340,7 +215735,7 @@ var init_http_role = __esm({
           if (clause.name)
             names.push(clause.name);
           if (clause.namedBindings) {
-            if (ts7.isNamedImports(clause.namedBindings)) {
+            if (ts8.isNamedImports(clause.namedBindings)) {
               for (const specifier of clause.namedBindings.elements) {
                 if (!specifier.isTypeOnly && (specifier.propertyName ?? specifier.name).text === "default")
                   names.push(specifier.name);
@@ -215363,7 +215758,7 @@ var init_http_role = __esm({
           if (init.arguments[0].text !== "axios")
             continue;
           const list = declaration.parent;
-          if (!ts7.isIdentifier(declaration.name) || !ts7.isVariableDeclarationList(list) || !(list.flags & ts7.NodeFlags.Const) || !ts7.isVariableStatement(list.parent) || !ts7.isSourceFile(list.parent.parent) || !modules.cjsGlobal(init.expression)) {
+          if (!ts8.isIdentifier(declaration.name) || !ts8.isVariableDeclarationList(list) || !(list.flags & ts8.NodeFlags.Const) || !ts8.isVariableStatement(list.parent) || !ts8.isSourceFile(list.parent.parent) || !modules.cjsGlobal(init.expression)) {
             this.pristine = false;
             continue;
           }
@@ -215375,7 +215770,7 @@ var init_http_role = __esm({
             this.pristine = false;
             break;
           }
-          if (!ts7.isCallExpression(load) || !supportedRequires.has(load))
+          if (!ts8.isCallExpression(load) || !supportedRequires.has(load))
             this.pristine = false;
         }
         for (const symbol of this.bindings.keys()) {
@@ -215388,9 +215783,9 @@ var init_http_role = __esm({
               break;
             }
             const parent = reference2.parent;
-            if (ts7.isImportClause(parent) && parent.name === reference2 || ts7.isImportSpecifier(parent) && parent.name === reference2 || ts7.isVariableDeclaration(parent) && parent.name === reference2)
+            if (ts8.isImportClause(parent) && parent.name === reference2 || ts8.isImportSpecifier(parent) && parent.name === reference2 || ts8.isVariableDeclaration(parent) && parent.name === reference2)
               continue;
-            if (ts7.isPropertyAccessExpression(parent) && parent.expression === reference2 && METHODS.has(parent.name.text) && ts7.isCallExpression(parent.parent) && parent.parent.expression === parent)
+            if (ts8.isPropertyAccessExpression(parent) && parent.expression === reference2 && METHODS.has(parent.name.text) && ts8.isCallExpression(parent.parent) && parent.parent.expression === parent)
               continue;
             this.pristine = false;
           }
@@ -215413,7 +215808,7 @@ var init_http_role = __esm({
         return Boolean(receiver && this.bindings.get(this.modules.symbol(receiver))?.has(call.getSourceFile()));
       }
       canQualify(call) {
-        return this.scopeComplete && this.pristine && this.modules.indexComplete && this.bound(call) && ts7.isPropertyAccessExpression(unwrapped(call.expression)) && call.arguments.length === 1;
+        return this.scopeComplete && this.pristine && this.modules.indexComplete && this.bound(call) && ts8.isPropertyAccessExpression(unwrapped(call.expression)) && call.arguments.length === 1;
       }
       /** Syntax/reference validation memoized per construction; values are captured elsewhere. */
       closedShape(node) {
@@ -215433,7 +215828,7 @@ var init_http_role = __esm({
         for (const property of node.properties) {
           if (!this.tick())
             return finish(false);
-          if (ts7.isShorthandPropertyAssignment(property)) {
+          if (ts8.isShorthandPropertyAssignment(property)) {
             const key3 = property.name.text;
             if (property.objectAssignmentInitializer || !["url", "data"].includes(key3) || keys6.has(key3))
               return finish(false);
@@ -215442,7 +215837,7 @@ var init_http_role = __esm({
               hasUrl = true;
             continue;
           }
-          if (!ts7.isPropertyAssignment(property) || ts7.isComputedPropertyName(property.name) || !(ts7.isIdentifier(property.name) || ts7.isStringLiteralLike(property.name)))
+          if (!ts8.isPropertyAssignment(property) || ts8.isComputedPropertyName(property.name) || !(ts8.isIdentifier(property.name) || ts8.isStringLiteralLike(property.name)))
             return finish(false);
           const key2 = property.name.text;
           if (keys6.has(key2))
@@ -215456,16 +215851,16 @@ var init_http_role = __esm({
             if (!this.sideEffectFree(property.initializer))
               return finish(false);
           } else if (key2 === "method") {
-            if (!ts7.isStringLiteralLike(property.initializer) || !/^(GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)$/i.test(property.initializer.text))
+            if (!ts8.isStringLiteralLike(property.initializer) || !/^(GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)$/i.test(property.initializer.text))
               return finish(false);
           } else if (key2 === "headers") {
-            if (!ts7.isObjectLiteralExpression(property.initializer) || property.initializer.properties.length > 16)
+            if (!ts8.isObjectLiteralExpression(property.initializer) || property.initializer.properties.length > 16)
               return finish(false);
             const headers = /* @__PURE__ */ new Set();
             for (const header of property.initializer.properties) {
               if (!this.tick())
                 return finish(false);
-              if (!ts7.isPropertyAssignment(header) || ts7.isComputedPropertyName(header.name) || !(ts7.isIdentifier(header.name) || ts7.isStringLiteralLike(header.name)) || /^(host|:authority)$/i.test(header.name.text) || headers.has(header.name.text.toLowerCase()) || !ts7.isStringLiteralLike(header.initializer))
+              if (!ts8.isPropertyAssignment(header) || ts8.isComputedPropertyName(header.name) || !(ts8.isIdentifier(header.name) || ts8.isStringLiteralLike(header.name)) || /^(host|:authority)$/i.test(header.name.text) || headers.has(header.name.text.toLowerCase()) || !ts8.isStringLiteralLike(header.initializer))
                 return finish(false);
               headers.add(header.name.text.toLowerCase());
             }
@@ -215475,12 +215870,12 @@ var init_http_role = __esm({
         if (!hasUrl)
           return finish(false);
         let parent = node;
-        while (parent.parent && (ts7.isParenthesizedExpression(parent.parent) || ts7.isAsExpression(parent.parent) || ts7.isTypeAssertionExpression(parent.parent) || ts7.isNonNullExpression(parent.parent)))
+        while (parent.parent && (ts8.isParenthesizedExpression(parent.parent) || ts8.isAsExpression(parent.parent) || ts8.isTypeAssertionExpression(parent.parent) || ts8.isNonNullExpression(parent.parent)))
           parent = parent.parent;
-        if (ts7.isCallExpression(parent.parent) && parent.parent.arguments[0] === parent)
+        if (ts8.isCallExpression(parent.parent) && parent.parent.arguments[0] === parent)
           return finish(this.bound(parent.parent));
         const declaration = parent.parent;
-        if (!ts7.isVariableDeclaration(declaration) || declaration.initializer !== parent || !ts7.isIdentifier(declaration.name) || !ts7.isVariableDeclarationList(declaration.parent) || !(declaration.parent.flags & ts7.NodeFlags.Const))
+        if (!ts8.isVariableDeclaration(declaration) || declaration.initializer !== parent || !ts8.isIdentifier(declaration.name) || !ts8.isVariableDeclarationList(declaration.parent) || !(declaration.parent.flags & ts8.NodeFlags.Const))
           return finish(false);
         const symbol = this.modules.symbol(declaration.name);
         const references2 = symbol && this.modules.references.get(symbol);
@@ -215492,7 +215887,7 @@ var init_http_role = __esm({
           if (reference2 === declaration.name)
             continue;
           const call = reference2.parent;
-          if (!ts7.isCallExpression(call) || call.arguments[0] !== reference2 || !this.bound(call) || this.modules.ownerOf(call) !== this.modules.ownerOf(declaration))
+          if (!ts8.isCallExpression(call) || call.arguments[0] !== reference2 || !this.bound(call) || this.modules.ownerOf(call) !== this.modules.ownerOf(declaration))
             return finish(false);
         }
         return finish(true);
@@ -215502,7 +215897,7 @@ var init_http_role = __esm({
         const visit = (node, depth) => {
           if (++work > 128 || depth > 16 || !this.tick())
             return false;
-          if (ts7.isCallExpression(node) || ts7.isNewExpression(node) || ts7.isAwaitExpression(node) || ts7.isYieldExpression(node) || ts7.isSpreadAssignment(node) || ts7.isSpreadElement(node) || ts7.isGetAccessorDeclaration(node) || ts7.isSetAccessorDeclaration(node) || ts7.isMethodDeclaration(node) || ts7.isFunctionExpression(node) || ts7.isArrowFunction(node) || ts7.isDeleteExpression(node) || ts7.isBinaryExpression(node) && node.operatorToken.kind >= ts7.SyntaxKind.FirstAssignment && node.operatorToken.kind <= ts7.SyntaxKind.LastAssignment || (ts7.isPrefixUnaryExpression(node) || ts7.isPostfixUnaryExpression(node)) && [ts7.SyntaxKind.PlusPlusToken, ts7.SyntaxKind.MinusMinusToken].includes(node.operator))
+          if (ts8.isCallExpression(node) || ts8.isNewExpression(node) || ts8.isAwaitExpression(node) || ts8.isYieldExpression(node) || ts8.isSpreadAssignment(node) || ts8.isSpreadElement(node) || ts8.isGetAccessorDeclaration(node) || ts8.isSetAccessorDeclaration(node) || ts8.isMethodDeclaration(node) || ts8.isFunctionExpression(node) || ts8.isArrowFunction(node) || ts8.isDeleteExpression(node) || ts8.isBinaryExpression(node) && node.operatorToken.kind >= ts8.SyntaxKind.FirstAssignment && node.operatorToken.kind <= ts8.SyntaxKind.LastAssignment || (ts8.isPrefixUnaryExpression(node) || ts8.isPostfixUnaryExpression(node)) && [ts8.SyntaxKind.PlusPlusToken, ts8.SyntaxKind.MinusMinusToken].includes(node.operator))
             return false;
           let valid = true;
           node.forEachChild((child) => {
@@ -215518,11 +215913,11 @@ var init_http_role = __esm({
 });
 
 // build/src/source/express-role.js
-var ts8, HTTP_METHODS, INSTANCE_CALLS, FACTORY_CALLS, SELF_RETURNING, ExpressRoleModel;
+var ts9, HTTP_METHODS, INSTANCE_CALLS, FACTORY_CALLS, SELF_RETURNING, ExpressRoleModel;
 var init_express_role = __esm({
   "build/src/source/express-role.js"() {
     "use strict";
-    ts8 = __toESM(require_typescript(), 1);
+    ts9 = __toESM(require_typescript(), 1);
     init_modules();
     HTTP_METHODS = /* @__PURE__ */ new Set(["get", "post", "put", "patch", "delete", "head", "options", "all"]);
     INSTANCE_CALLS = /* @__PURE__ */ new Set([...HTTP_METHODS, "use", "route", "param", "listen", "set", "engine", "enable", "disable", "enabled", "disabled"]);
@@ -215554,18 +215949,18 @@ var init_express_role = __esm({
           if (!modules.cjsGlobal(reference2))
             continue;
           let node = reference2;
-          while (node.parent && (ts8.isParenthesizedExpression(node.parent) || ts8.isAsExpression(node.parent) || ts8.isTypeAssertionExpression(node.parent) || ts8.isNonNullExpression(node.parent))) {
+          while (node.parent && (ts9.isParenthesizedExpression(node.parent) || ts9.isAsExpression(node.parent) || ts9.isTypeAssertionExpression(node.parent) || ts9.isNonNullExpression(node.parent))) {
             if (!this.work())
               break;
             node = node.parent;
           }
-          if (!ts8.isCallExpression(node.parent) || node.parent.expression !== node)
+          if (!ts9.isCallExpression(node.parent) || node.parent.expression !== node)
             this.requirePristine = false;
         }
         for (const declaration of modules.importDeclarations) {
           if (!this.work())
             break;
-          if (!ts8.isStringLiteralLike(declaration.moduleSpecifier) || declaration.moduleSpecifier.text !== "express")
+          if (!ts9.isStringLiteralLike(declaration.moduleSpecifier) || declaration.moduleSpecifier.text !== "express")
             continue;
           const clause = declaration.importClause;
           if (!clause || clause.isTypeOnly)
@@ -215573,7 +215968,7 @@ var init_express_role = __esm({
           if (clause.name)
             this.bind(clause.name, clause, this.factory);
           const named = clause.namedBindings;
-          if (named && ts8.isNamespaceImport(named))
+          if (named && ts9.isNamespaceImport(named))
             this.bind(named.name, named, this.namespace);
           else if (named)
             for (const element of named.elements) {
@@ -215598,12 +215993,12 @@ var init_express_role = __esm({
           const returned = this.identity(call);
           if (returned && ["app", "router", "route"].includes(returned.role)) {
             let use = call;
-            while (use.parent && (ts8.isParenthesizedExpression(use.parent) || ts8.isAsExpression(use.parent) || ts8.isTypeAssertionExpression(use.parent) || ts8.isNonNullExpression(use.parent))) {
+            while (use.parent && (ts9.isParenthesizedExpression(use.parent) || ts9.isAsExpression(use.parent) || ts9.isTypeAssertionExpression(use.parent) || ts9.isNonNullExpression(use.parent))) {
               if (!this.work())
                 break;
               use = use.parent;
             }
-            if (!ts8.isExpressionStatement(use.parent) && !this.allowedUse(call, returned, 0))
+            if (!ts9.isExpressionStatement(use.parent) && !this.allowedUse(call, returned, 0))
               this.invalidate(returned, true);
           }
         }
@@ -215646,7 +216041,7 @@ var init_express_role = __esm({
           this.factory.valid = false;
       }
       unwrap(expression) {
-        while (ts8.isParenthesizedExpression(expression) || ts8.isAsExpression(expression) || ts8.isTypeAssertionExpression(expression) || ts8.isNonNullExpression(expression)) {
+        while (ts9.isParenthesizedExpression(expression) || ts9.isAsExpression(expression) || ts9.isTypeAssertionExpression(expression) || ts9.isNonNullExpression(expression)) {
           if (!this.work())
             return void 0;
           expression = expression.expression;
@@ -215662,7 +216057,7 @@ var init_express_role = __esm({
       }
       expressLoad(call) {
         const callee = this.unwrap(call.expression);
-        return this.requirePristine && !!callee && ts8.isIdentifier(callee) && callee.text === "require" && this.modules.cjsGlobal(callee) && !this.modules.mutated.has(this.modules.symbol(callee)) && call.arguments.length === 1 && ts8.isStringLiteralLike(call.arguments[0]) && call.arguments[0].text === "express";
+        return this.requirePristine && !!callee && ts9.isIdentifier(callee) && callee.text === "require" && this.modules.cjsGlobal(callee) && !this.modules.mutated.has(this.modules.symbol(callee)) && call.arguments.length === 1 && ts9.isStringLiteralLike(call.arguments[0]) && call.arguments[0].text === "express";
       }
       available(declaration, reference2) {
         return declaration.getSourceFile() === reference2.getSourceFile() && (declaration.end <= reference2.pos || this.modules.ownerOf(declaration) !== this.modules.ownerOf(reference2));
@@ -215676,22 +216071,22 @@ var init_express_role = __esm({
         if (this.expressions.has(node))
           return this.expressions.get(node);
         let result3;
-        if (ts8.isIdentifier(node)) {
+        if (ts9.isIdentifier(node)) {
           const symbol = this.modules.symbol(node);
           const binding = symbol && this.bindings.get(symbol);
           const declaration = symbol?.declarations?.length === 1 ? symbol.declarations[0] : void 0;
-          if (binding && binding.file === node.getSourceFile() && (!ts8.isVariableDeclaration(binding.declaration) || this.available(binding.declaration, node)))
+          if (binding && binding.file === node.getSourceFile() && (!ts9.isVariableDeclaration(binding.declaration) || this.available(binding.declaration, node)))
             result3 = binding.identity;
           else if (symbol && declaration && !this.resolving.has(symbol) && !this.modules.mutated.has(symbol) && declaration.getSourceFile() === node.getSourceFile()) {
             this.resolving.add(symbol);
-            if (ts8.isVariableDeclaration(declaration) && declaration.initializer && ts8.isIdentifier(declaration.name) && declaration.parent.flags & ts8.NodeFlags.Const && this.available(declaration, node)) {
+            if (ts9.isVariableDeclaration(declaration) && declaration.initializer && ts9.isIdentifier(declaration.name) && declaration.parent.flags & ts9.NodeFlags.Const && this.available(declaration, node)) {
               const identity = this.identity(declaration.initializer, depth + 1);
               if (identity)
                 result3 = this.bind(declaration.name, declaration, identity);
-            } else if (ts8.isBindingElement(declaration) && !declaration.dotDotDotToken && !declaration.initializer && ts8.isIdentifier(declaration.name) && ts8.isObjectBindingPattern(declaration.parent) && ts8.isVariableDeclaration(declaration.parent.parent)) {
+            } else if (ts9.isBindingElement(declaration) && !declaration.dotDotDotToken && !declaration.initializer && ts9.isIdentifier(declaration.name) && ts9.isObjectBindingPattern(declaration.parent) && ts9.isVariableDeclaration(declaration.parent.parent)) {
               const variable = declaration.parent.parent;
               const key2 = declaration.propertyName ?? declaration.name;
-              if (variable.initializer && variable.parent.flags & ts8.NodeFlags.Const && this.available(variable, node) && (ts8.isIdentifier(key2) || ts8.isStringLiteralLike(key2)) && key2.text === "Router") {
+              if (variable.initializer && variable.parent.flags & ts9.NodeFlags.Const && this.available(variable, node) && (ts9.isIdentifier(key2) || ts9.isStringLiteralLike(key2)) && key2.text === "Router") {
                 const owner = this.identity(variable.initializer, depth + 1);
                 if (owner?.role === "factory" || owner?.role === "namespace")
                   result3 = this.bind(declaration.name, declaration, this.routerFactory);
@@ -215699,11 +216094,11 @@ var init_express_role = __esm({
             }
             this.resolving.delete(symbol);
           }
-        } else if (ts8.isPropertyAccessExpression(node) && node.name.text === "Router") {
+        } else if (ts9.isPropertyAccessExpression(node) && node.name.text === "Router") {
           const owner = this.identity(node.expression, depth + 1);
           if (owner?.role === "factory" || owner?.role === "namespace")
             result3 = this.routerFactory;
-        } else if (ts8.isCallExpression(node) && !node.questionDotToken && !node.arguments.some(ts8.isSpreadElement)) {
+        } else if (ts9.isCallExpression(node) && !node.questionDotToken && !node.arguments.some(ts9.isSpreadElement)) {
           if (this.expressLoad(node))
             result3 = this.factory;
           else {
@@ -215714,7 +216109,7 @@ var init_express_role = __esm({
               result3 = { role: "router", valid: true, parent: callee };
             else {
               const member3 = this.unwrap(node.expression);
-              if (member3 && ts8.isPropertyAccessExpression(member3) && !member3.questionDotToken) {
+              if (member3 && ts9.isPropertyAccessExpression(member3) && !member3.questionDotToken) {
                 const owner = this.identity(member3.expression, depth + 1);
                 if (owner && ["app", "router"].includes(owner.role) && member3.name.text === "route" && node.arguments.length === 1 && this.path(node.arguments[0], 0))
                   result3 = { role: "route", valid: true, parent: owner };
@@ -215735,15 +216130,15 @@ var init_express_role = __esm({
         const node = this.unwrap(expression);
         if (!node)
           return false;
-        if (ts8.isStringLiteralLike(node) || ts8.isRegularExpressionLiteral(node))
+        if (ts9.isStringLiteralLike(node) || ts9.isRegularExpressionLiteral(node))
           return true;
-        return ts8.isArrayLiteralExpression(node) && node.elements.length > 0 && node.elements.length <= 32 && node.elements.every((element) => this.path(element, depth + 1));
+        return ts9.isArrayLiteralExpression(node) && node.elements.length > 0 && node.elements.length <= 32 && node.elements.every((element) => this.path(element, depth + 1));
       }
       registration(call, depth) {
-        if (!this.work() || depth > FLOW_LIMITS.aliasSteps || call.questionDotToken || call.arguments.some(ts8.isSpreadElement))
+        if (!this.work() || depth > FLOW_LIMITS.aliasSteps || call.questionDotToken || call.arguments.some(ts9.isSpreadElement))
           return void 0;
         const callee = this.unwrap(call.expression);
-        if (!callee || !ts8.isPropertyAccessExpression(callee) || callee.questionDotToken)
+        if (!callee || !ts9.isPropertyAccessExpression(callee) || callee.questionDotToken)
           return void 0;
         const method = callee.name.text;
         if (!HTTP_METHODS.has(method) && method !== "use")
@@ -215762,46 +216157,46 @@ var init_express_role = __esm({
         const node = this.unwrap(expression);
         if (!node)
           return false;
-        if (ts8.isArrayLiteralExpression(node))
+        if (ts9.isArrayLiteralExpression(node))
           return node.elements.length <= 32 && node.elements.every((element) => this.handlerShape(element, depth + 1));
-        return ts8.isIdentifier(node) || ts8.isArrowFunction(node) || ts8.isFunctionExpression(node) || ts8.isCallExpression(node) || ts8.isPropertyAccessExpression(node);
+        return ts9.isIdentifier(node) || ts9.isArrowFunction(node) || ts9.isFunctionExpression(node) || ts9.isCallExpression(node) || ts9.isPropertyAccessExpression(node);
       }
       allowedUse(expression, identity, depth) {
         if (!this.work() || depth > FLOW_LIMITS.aliasSteps)
           return false;
         let node = expression;
-        while (node.parent && (ts8.isParenthesizedExpression(node.parent) || ts8.isAsExpression(node.parent) || ts8.isTypeAssertionExpression(node.parent) || ts8.isNonNullExpression(node.parent))) {
+        while (node.parent && (ts9.isParenthesizedExpression(node.parent) || ts9.isAsExpression(node.parent) || ts9.isTypeAssertionExpression(node.parent) || ts9.isNonNullExpression(node.parent))) {
           if (!this.work())
             return false;
           node = node.parent;
         }
         const parent = node.parent;
-        if (ts8.isExportAssignment(parent) && !parent.isExportEquals && parent.expression === node && (identity.role === "app" || identity.role === "router"))
+        if (ts9.isExportAssignment(parent) && !parent.isExportEquals && parent.expression === node && (identity.role === "app" || identity.role === "router"))
           return true;
-        if (ts8.isVariableDeclaration(parent) && parent.initializer === node && parent.parent.flags & ts8.NodeFlags.Const) {
-          if (ts8.isIdentifier(parent.name))
+        if (ts9.isVariableDeclaration(parent) && parent.initializer === node && parent.parent.flags & ts9.NodeFlags.Const) {
+          if (ts9.isIdentifier(parent.name))
             return this.bind(parent.name, parent, identity) !== void 0;
-          if (ts8.isObjectBindingPattern(parent.name) && (identity.role === "factory" || identity.role === "namespace")) {
+          if (ts9.isObjectBindingPattern(parent.name) && (identity.role === "factory" || identity.role === "namespace")) {
             return parent.name.elements.every((element) => {
               if (!this.work())
                 return false;
               const key2 = element.propertyName ?? element.name;
-              return !element.initializer && !element.dotDotDotToken && ts8.isIdentifier(element.name) && (ts8.isIdentifier(key2) || ts8.isStringLiteralLike(key2)) && key2.text === "Router" && this.bind(element.name, element, this.routerFactory) !== void 0;
+              return !element.initializer && !element.dotDotDotToken && ts9.isIdentifier(element.name) && (ts9.isIdentifier(key2) || ts9.isStringLiteralLike(key2)) && key2.text === "Router" && this.bind(element.name, element, this.routerFactory) !== void 0;
             });
           }
           return false;
         }
-        if (ts8.isPropertyAccessExpression(parent) && parent.expression === node && !parent.questionDotToken) {
+        if (ts9.isPropertyAccessExpression(parent) && parent.expression === node && !parent.questionDotToken) {
           if ((identity.role === "factory" || identity.role === "namespace") && parent.name.text === "Router")
             return this.allowedUse(parent, this.routerFactory, depth + 1);
           const methods = identity.role === "factory" || identity.role === "namespace" ? FACTORY_CALLS : INSTANCE_CALLS;
-          return methods.has(parent.name.text) && ts8.isCallExpression(parent.parent) && parent.parent.expression === parent;
+          return methods.has(parent.name.text) && ts9.isCallExpression(parent.parent) && parent.parent.expression === parent;
         }
-        if (ts8.isCallExpression(parent) && parent.expression === node)
+        if (ts9.isCallExpression(parent) && parent.expression === node)
           return identity.role === "factory" || identity.role === "routerFactory";
-        if (ts8.isCallExpression(parent) && parent.arguments.includes(node) && (identity.role === "app" || identity.role === "router")) {
+        if (ts9.isCallExpression(parent) && parent.arguments.includes(node) && (identity.role === "app" || identity.role === "router")) {
           const callee = this.unwrap(parent.expression);
-          return !!callee && ts8.isPropertyAccessExpression(callee) && callee.name.text === "use" && !!this.registration(parent, depth + 1);
+          return !!callee && ts9.isPropertyAccessExpression(callee) && callee.name.text === "use" && !!this.registration(parent, depth + 1);
         }
         return false;
       }
@@ -215814,7 +216209,7 @@ var init_express_role = __esm({
         const node = this.unwrap(expression);
         if (!node)
           return;
-        if (ts8.isArrayLiteralExpression(node)) {
+        if (ts9.isArrayLiteralExpression(node)) {
           if (node.elements.length > 32)
             return;
           for (const element of node.elements) {
@@ -215824,26 +216219,26 @@ var init_express_role = __esm({
           }
           return;
         }
-        if (ts8.isIdentifier(node)) {
+        if (ts9.isIdentifier(node)) {
           const symbol = this.modules.symbol(node);
           const declaration = symbol?.declarations?.length === 1 ? symbol.declarations[0] : void 0;
           if (!symbol || this.modules.mutated.has(symbol) || this.modules.mutatedMembers.has(symbol) || !declaration || declaration.getSourceFile() !== node.getSourceFile())
             return;
-          if (ts8.isFunctionDeclaration(declaration))
+          if (ts9.isFunctionDeclaration(declaration))
             this.addFunction(declaration);
-          else if (ts8.isVariableDeclaration(declaration) && declaration.initializer && declaration.parent.flags & ts8.NodeFlags.Const && this.available(declaration, node)) {
+          else if (ts9.isVariableDeclaration(declaration) && declaration.initializer && declaration.parent.flags & ts9.NodeFlags.Const && this.available(declaration, node)) {
             const initializer = this.unwrap(declaration.initializer);
-            if (initializer && !ts8.isArrayLiteralExpression(initializer))
+            if (initializer && !ts9.isArrayLiteralExpression(initializer))
               this.addHandler(initializer, depth + 1);
           }
-        } else if (ts8.isArrowFunction(node) || ts8.isFunctionExpression(node))
+        } else if (ts9.isArrowFunction(node) || ts9.isFunctionExpression(node))
           this.addFunction(node);
       }
       addFunction(fn) {
         if (!this.work() || !this.modules.functionSet.has(fn) || !fn.body || fn.parameters.length < 1 || fn.parameters.length > 4 || "asteriskToken" in fn && fn.asteriskToken)
           return;
         for (const parameter of fn.parameters) {
-          if (!this.work() || parameter.dotDotDotToken || parameter.initializer || ts8.isIdentifier(parameter.name) && parameter.name.text === "this")
+          if (!this.work() || parameter.dotDotDotToken || parameter.initializer || ts9.isIdentifier(parameter.name) && parameter.name.text === "this")
             return;
         }
         if (!this.handlerPristine(fn))
@@ -215868,15 +216263,15 @@ var init_express_role = __esm({
           }
           return true;
         };
-        if (fn.name && ts8.isIdentifier(fn.name) && !add2(fn.name))
+        if (fn.name && ts9.isIdentifier(fn.name) && !add2(fn.name))
           return false;
         let owner = fn;
-        while (owner.parent && (ts8.isParenthesizedExpression(owner.parent) || ts8.isAsExpression(owner.parent) || ts8.isTypeAssertionExpression(owner.parent) || ts8.isNonNullExpression(owner.parent))) {
+        while (owner.parent && (ts9.isParenthesizedExpression(owner.parent) || ts9.isAsExpression(owner.parent) || ts9.isTypeAssertionExpression(owner.parent) || ts9.isNonNullExpression(owner.parent))) {
           if (!this.work())
             return false;
           owner = owner.parent;
         }
-        if (ts8.isVariableDeclaration(owner.parent) && ts8.isIdentifier(owner.parent.name) && !add2(owner.parent.name))
+        if (ts9.isVariableDeclaration(owner.parent) && ts9.isIdentifier(owner.parent.name) && !add2(owner.parent.name))
           return false;
         let valid = true;
         for (let index = 0; index < queue.length && valid; index++) {
@@ -215893,7 +216288,7 @@ var init_express_role = __esm({
             if (reference2.parent === symbol.declarations[0])
               continue;
             let node = reference2;
-            while (node.parent && (ts8.isParenthesizedExpression(node.parent) || ts8.isAsExpression(node.parent) || ts8.isTypeAssertionExpression(node.parent) || ts8.isNonNullExpression(node.parent) || ts8.isArrayLiteralExpression(node.parent))) {
+            while (node.parent && (ts9.isParenthesizedExpression(node.parent) || ts9.isAsExpression(node.parent) || ts9.isTypeAssertionExpression(node.parent) || ts9.isNonNullExpression(node.parent) || ts9.isArrayLiteralExpression(node.parent))) {
               if (!this.work()) {
                 valid = false;
                 break;
@@ -215905,11 +216300,11 @@ var init_express_role = __esm({
               valid = false;
               break;
             }
-            if (ts8.isVariableDeclaration(parent) && parent.initializer === node && ts8.isIdentifier(parent.name) && parent.parent.flags & ts8.NodeFlags.Const && !ts8.isArrayLiteralExpression(node) && add2(parent.name))
+            if (ts9.isVariableDeclaration(parent) && parent.initializer === node && ts9.isIdentifier(parent.name) && parent.parent.flags & ts9.NodeFlags.Const && !ts9.isArrayLiteralExpression(node) && add2(parent.name))
               continue;
-            if (ts8.isCallExpression(parent) && parent.expression === node)
+            if (ts9.isCallExpression(parent) && parent.expression === node)
               continue;
-            if (ts8.isCallExpression(parent)) {
+            if (ts9.isCallExpression(parent)) {
               const registration = this.registration(parent, 0);
               if (registration?.handlers.includes(node) && this.valid(registration.identity))
                 continue;
@@ -215929,11 +216324,11 @@ var init_express_role = __esm({
 });
 
 // build/src/source/koa-role.js
-var ts9, KoaRoleModel;
+var ts10, KoaRoleModel;
 var init_koa_role = __esm({
   "build/src/source/koa-role.js"() {
     "use strict";
-    ts9 = __toESM(require_typescript(), 1);
+    ts10 = __toESM(require_typescript(), 1);
     init_modules();
     KoaRoleModel = class {
       modules;
@@ -215953,7 +216348,7 @@ var init_koa_role = __esm({
         for (const declaration of modules.importDeclarations) {
           if (!this.work())
             return;
-          if (!ts9.isStringLiteralLike(declaration.moduleSpecifier) || declaration.moduleSpecifier.text !== "koa")
+          if (!ts10.isStringLiteralLike(declaration.moduleSpecifier) || declaration.moduleSpecifier.text !== "koa")
             continue;
           const clause = declaration.importClause;
           if (!clause || clause.isTypeOnly)
@@ -215961,9 +216356,9 @@ var init_koa_role = __esm({
           if (clause.name)
             this.bind(clause.name, clause, this.factory);
           const named = clause.namedBindings;
-          if (named && ts9.isNamespaceImport(named))
+          if (named && ts10.isNamespaceImport(named))
             this.factory.valid = false;
-          if (named && ts9.isNamedImports(named))
+          if (named && ts10.isNamedImports(named))
             for (const element of named.elements) {
               if (!this.work())
                 return;
@@ -215983,8 +216378,8 @@ var init_koa_role = __esm({
           if (!this.work())
             return;
           const callee = this.unwrap(call.expression);
-          const load = callee && ts9.isIdentifier(callee) && callee.text === "require" && call.arguments.length === 1 ? this.unwrap(call.arguments[0]) : void 0;
-          if (callee && ts9.isIdentifier(callee) && callee.text === "require" && modules.cjsGlobal(callee) && load && ts9.isStringLiteralLike(load) && load.text === "koa")
+          const load = callee && ts10.isIdentifier(callee) && callee.text === "require" && call.arguments.length === 1 ? this.unwrap(call.arguments[0]) : void 0;
+          if (callee && ts10.isIdentifier(callee) && callee.text === "require" && modules.cjsGlobal(callee) && load && ts10.isStringLiteralLike(load) && load.text === "koa")
             this.factory.valid = false;
           const handler = this.handlerAt(call);
           if (handler)
@@ -215992,12 +216387,12 @@ var init_koa_role = __esm({
           const returned = this.identity(call);
           if (returned?.kind === "app") {
             let use = call;
-            while (use.parent && (ts9.isParenthesizedExpression(use.parent) || ts9.isAsExpression(use.parent) || ts9.isTypeAssertionExpression(use.parent) || ts9.isNonNullExpression(use.parent))) {
+            while (use.parent && (ts10.isParenthesizedExpression(use.parent) || ts10.isAsExpression(use.parent) || ts10.isTypeAssertionExpression(use.parent) || ts10.isNonNullExpression(use.parent))) {
               if (!this.work())
                 return;
               use = use.parent;
             }
-            if (!ts9.isExpressionStatement(use.parent) && !this.allowedUse(call, returned, 0)) {
+            if (!ts10.isExpressionStatement(use.parent) && !this.allowedUse(call, returned, 0)) {
               returned.valid = false;
               this.factory.valid = false;
             }
@@ -216037,322 +216432,6 @@ var init_koa_role = __esm({
           }
           this.entries.add(fn);
           modules.externalEntries.add(fn);
-        }
-      }
-      work() {
-        if (!this.tick()) {
-          this.complete = false;
-          return false;
-        }
-        return true;
-      }
-      unwrap(expression) {
-        while (ts9.isParenthesizedExpression(expression) || ts9.isAsExpression(expression) || ts9.isTypeAssertionExpression(expression) || ts9.isNonNullExpression(expression)) {
-          if (!this.work())
-            return void 0;
-          expression = expression.expression;
-        }
-        return expression;
-      }
-      bind(name, declaration, identity) {
-        const symbol = this.modules.symbol(name);
-        if (!symbol || symbol.declarations?.length !== 1 || symbol.declarations[0] !== declaration)
-          return void 0;
-        this.bindings.set(symbol, { declaration, identity });
-        return identity;
-      }
-      available(declaration, reference2) {
-        return declaration.getSourceFile() === reference2.getSourceFile() && (declaration.end <= reference2.pos || this.modules.ownerOf(declaration) !== this.modules.ownerOf(reference2));
-      }
-      identity(expression, depth = 0) {
-        if (!this.work() || depth > FLOW_LIMITS.aliasSteps)
-          return void 0;
-        const node = this.unwrap(expression);
-        if (!node)
-          return void 0;
-        if (this.expressions.has(node))
-          return this.expressions.get(node);
-        let result3;
-        if (ts9.isIdentifier(node)) {
-          const symbol = this.modules.symbol(node), known = symbol && this.bindings.get(symbol);
-          const declaration = symbol?.declarations?.length === 1 ? symbol.declarations[0] : void 0;
-          if (known && (!ts9.isVariableDeclaration(known.declaration) || this.available(known.declaration, node)))
-            result3 = known.identity;
-          else if (symbol && declaration && !this.resolving.has(symbol) && !this.modules.mutated.has(symbol) && ts9.isVariableDeclaration(declaration) && ts9.isIdentifier(declaration.name) && declaration.initializer && declaration.parent.flags & ts9.NodeFlags.Const && this.available(declaration, node)) {
-            this.resolving.add(symbol);
-            const identity = this.identity(declaration.initializer, depth + 1);
-            if (identity)
-              result3 = this.bind(declaration.name, declaration, identity);
-            this.resolving.delete(symbol);
-          }
-        } else if (ts9.isNewExpression(node) && !node.arguments?.length) {
-          const parent = this.identity(node.expression, depth + 1);
-          if (parent?.kind === "constructor")
-            result3 = { kind: "app", valid: true, parent };
-        } else if (ts9.isCallExpression(node)) {
-          const app = this.appAt(node, depth + 1);
-          if (app && this.handlerAt(node, depth + 1))
-            result3 = app;
-        }
-        this.expressions.set(node, result3);
-        return result3;
-      }
-      appAt(call, depth = 0) {
-        if (!this.work() || call.questionDotToken || call.arguments.some(ts9.isSpreadElement))
-          return void 0;
-        const callee = this.unwrap(call.expression);
-        if (!callee || !ts9.isPropertyAccessExpression(callee) || callee.questionDotToken || callee.name.text !== "use")
-          return void 0;
-        const identity = this.identity(callee.expression, depth + 1);
-        return identity?.kind === "app" ? identity : void 0;
-      }
-      handlerAt(call, depth = 0) {
-        if (!this.work() || depth > FLOW_LIMITS.aliasSteps || call.arguments.length !== 1 || !this.appAt(call, depth + 1))
-          return void 0;
-        return this.handler(call.arguments[0], depth + 1);
-      }
-      handler(expression, depth) {
-        if (!this.work() || depth > FLOW_LIMITS.aliasSteps)
-          return void 0;
-        const node = this.unwrap(expression);
-        if (!node)
-          return void 0;
-        let fn;
-        if (ts9.isArrowFunction(node) || ts9.isFunctionExpression(node))
-          fn = node;
-        else if (ts9.isIdentifier(node)) {
-          const symbol = this.modules.symbol(node), declaration = symbol?.declarations?.length === 1 ? symbol.declarations[0] : void 0;
-          if (!symbol || !declaration || this.modules.mutated.has(symbol) || this.modules.mutatedMembers.has(symbol) || declaration.getSourceFile() !== node.getSourceFile())
-            return void 0;
-          if (ts9.isFunctionDeclaration(declaration))
-            fn = declaration;
-          else if (ts9.isVariableDeclaration(declaration) && declaration.initializer && declaration.parent.flags & ts9.NodeFlags.Const && this.available(declaration, node))
-            return this.handler(declaration.initializer, depth + 1);
-        }
-        return fn && this.modules.functionSet.has(fn) && fn.body && fn.parameters.length >= 1 && fn.parameters.length <= 2 && !("asteriskToken" in fn && fn.asteriskToken) && fn.parameters.every((parameter) => !parameter.dotDotDotToken && !parameter.initializer && !(ts9.isIdentifier(parameter.name) && parameter.name.text === "this")) ? fn : void 0;
-      }
-      valid(identity, depth = 0) {
-        return this.work() && depth <= FLOW_LIMITS.aliasSteps && !!identity?.valid && (!identity.parent || this.valid(identity.parent, depth + 1));
-      }
-      allowedUse(expression, identity, depth) {
-        if (!this.work() || depth > FLOW_LIMITS.aliasSteps)
-          return false;
-        let node = expression;
-        while (node.parent && (ts9.isParenthesizedExpression(node.parent) || ts9.isAsExpression(node.parent) || ts9.isTypeAssertionExpression(node.parent) || ts9.isNonNullExpression(node.parent))) {
-          if (!this.work())
-            return false;
-          node = node.parent;
-        }
-        const parent = node.parent;
-        if (ts9.isVariableDeclaration(parent) && parent.initializer === node && parent.parent.flags & ts9.NodeFlags.Const && ts9.isIdentifier(parent.name))
-          return !!this.bind(parent.name, parent, identity);
-        if (identity.kind === "constructor")
-          return ts9.isNewExpression(parent) && parent.expression === node && !parent.arguments?.length;
-        if (ts9.isExportAssignment(parent) && !parent.isExportEquals && parent.expression === node)
-          return true;
-        if (ts9.isPropertyAccessExpression(parent) && parent.expression === node && !parent.questionDotToken && ts9.isCallExpression(parent.parent) && parent.parent.expression === parent) {
-          if (parent.name.text === "use")
-            return !!this.handlerAt(parent.parent, depth + 1);
-          return parent.name.text === "listen" || parent.name.text === "callback";
-        }
-        return false;
-      }
-      handlerPristine(fn) {
-        const queue = [], seen = /* @__PURE__ */ new Set();
-        const add2 = (name) => {
-          const symbol = this.modules.symbol(name);
-          if (!symbol || symbol.declarations?.length !== 1 || this.modules.mutated.has(symbol) || this.modules.mutatedMembers.has(symbol))
-            return false;
-          if (!seen.has(symbol)) {
-            seen.add(symbol);
-            queue.push(symbol);
-          }
-          return true;
-        };
-        if (fn.name && ts9.isIdentifier(fn.name) && !add2(fn.name))
-          return false;
-        let owner = fn;
-        while (owner.parent && (ts9.isParenthesizedExpression(owner.parent) || ts9.isAsExpression(owner.parent) || ts9.isTypeAssertionExpression(owner.parent) || ts9.isNonNullExpression(owner.parent))) {
-          if (!this.work())
-            return false;
-          owner = owner.parent;
-        }
-        if (ts9.isVariableDeclaration(owner.parent) && ts9.isIdentifier(owner.parent.name) && !add2(owner.parent.name))
-          return false;
-        for (let index = 0; index < queue.length; index++) {
-          if (!this.work() || index > FLOW_LIMITS.aliasSteps)
-            return false;
-          for (const reference2 of this.modules.references.get(queue[index]) ?? []) {
-            if (!this.work())
-              return false;
-            if (reference2.parent === queue[index].declarations[0])
-              continue;
-            let node = reference2;
-            while (node.parent && (ts9.isParenthesizedExpression(node.parent) || ts9.isAsExpression(node.parent) || ts9.isTypeAssertionExpression(node.parent) || ts9.isNonNullExpression(node.parent))) {
-              if (!this.work())
-                return false;
-              node = node.parent;
-            }
-            const parent = node.parent;
-            if (reference2.getSourceFile() !== fn.getSourceFile())
-              return false;
-            if (ts9.isVariableDeclaration(parent) && parent.initializer === node && parent.parent.flags & ts9.NodeFlags.Const && ts9.isIdentifier(parent.name) && add2(parent.name))
-              continue;
-            if (ts9.isCallExpression(parent) && parent.expression === node)
-              continue;
-            if (ts9.isCallExpression(parent) && this.registrations.get(parent) === fn)
-              continue;
-            return false;
-          }
-        }
-        return true;
-      }
-      entry(fn) {
-        return this.complete && this.indexAvailable && this.modules.indexComplete && this.entries.has(fn);
-      }
-      registration(call) {
-        return this.complete && this.indexAvailable && this.modules.indexComplete && this.registrations.has(call);
-      }
-    };
-  }
-});
-
-// build/src/source/hono-role.js
-var ts10, METHODS2, HonoRoleModel;
-var init_hono_role = __esm({
-  "build/src/source/hono-role.js"() {
-    "use strict";
-    ts10 = __toESM(require_typescript(), 1);
-    init_modules();
-    METHODS2 = /* @__PURE__ */ new Set(["get", "post", "put", "patch", "delete", "head", "options", "all"]);
-    HonoRoleModel = class {
-      modules;
-      tick;
-      indexAvailable;
-      scopeComplete;
-      factory = { kind: "constructor", valid: true };
-      bindings = /* @__PURE__ */ new Map();
-      expressions = /* @__PURE__ */ new WeakMap();
-      resolving = /* @__PURE__ */ new Set();
-      registrations = /* @__PURE__ */ new Map();
-      entries = /* @__PURE__ */ new Set();
-      jsonEntries = /* @__PURE__ */ new Set();
-      complete = true;
-      constructor(modules, tick, indexAvailable, scopeComplete) {
-        this.modules = modules;
-        this.tick = tick;
-        this.indexAvailable = indexAvailable;
-        this.scopeComplete = scopeComplete;
-        if (!indexAvailable || !scopeComplete)
-          return;
-        for (const declaration of modules.importDeclarations) {
-          if (!this.work())
-            return;
-          if (!ts10.isStringLiteralLike(declaration.moduleSpecifier) || !/^hono(?:\/|$)/.test(declaration.moduleSpecifier.text))
-            continue;
-          const clause = declaration.importClause;
-          if (clause?.isTypeOnly)
-            continue;
-          const named = clause?.namedBindings;
-          const runtime = !clause || !!clause.name || !!named && (ts10.isNamespaceImport(named) || ts10.isNamedImports(named) && named.elements.some((specifier) => !specifier.isTypeOnly));
-          if (declaration.moduleSpecifier.text !== "hono") {
-            if (runtime)
-              this.factory.valid = false;
-            continue;
-          }
-          if (!clause) {
-            this.factory.valid = false;
-            continue;
-          }
-          if (clause.name || named && ts10.isNamespaceImport(named))
-            this.factory.valid = false;
-          if (named && ts10.isNamedImports(named))
-            for (const specifier of named.elements) {
-              if (!this.work())
-                return;
-              if (!specifier.isTypeOnly) {
-                if ((specifier.propertyName ?? specifier.name).text === "Hono")
-                  this.bind(specifier.name, specifier, this.factory);
-                else
-                  this.factory.valid = false;
-              }
-            }
-        }
-        if (!this.bindings.size)
-          return;
-        for (const call of modules.calls) {
-          if (!this.work())
-            return;
-          const callee = this.unwrap(call.expression), load = call.arguments[0] && this.unwrap(call.arguments[0]);
-          if (callee && (callee.kind === ts10.SyntaxKind.ImportKeyword || ts10.isIdentifier(callee) && callee.text === "require") && load && ts10.isStringLiteralLike(load) && /^hono(?:\/|$)/.test(load.text))
-            this.factory.valid = false;
-          const handler = this.handlerAt(call);
-          if (handler)
-            this.registrations.set(call, handler);
-          const returned = this.identity(call);
-          if (returned?.kind === "app") {
-            let use = call;
-            while (use.parent && (ts10.isParenthesizedExpression(use.parent) || ts10.isAsExpression(use.parent) || ts10.isTypeAssertionExpression(use.parent) || ts10.isNonNullExpression(use.parent))) {
-              if (!this.work())
-                return;
-              use = use.parent;
-            }
-            if (!ts10.isExpressionStatement(use.parent) && !this.allowedUse(call, returned, 0))
-              this.factory.valid = returned.valid = false;
-          }
-        }
-        for (const allocation of modules.newExpressions) {
-          if (!this.work())
-            return;
-          const identity = this.identity(allocation);
-          if (identity?.kind === "app" && !this.allowedUse(allocation, identity, 0))
-            this.factory.valid = identity.valid = false;
-        }
-        for (const [symbol, binding] of this.bindings) {
-          if (!this.work())
-            return;
-          if (modules.mutated.has(symbol) || modules.mutatedMembers.has(symbol))
-            this.factory.valid = binding.identity.valid = false;
-          for (const reference2 of modules.references.get(symbol) ?? []) {
-            if (!this.work())
-              return;
-            if (reference2.parent === binding.declaration)
-              continue;
-            if (reference2.getSourceFile() !== binding.declaration.getSourceFile() || !this.allowedUse(reference2, binding.identity, 0)) {
-              this.factory.valid = binding.identity.valid = false;
-            }
-          }
-        }
-        const registrationsObserved = this.registrations.size;
-        for (const [call, fn] of this.registrations) {
-          if (!this.work())
-            return;
-          if (!this.valid(this.appAt(call)) || !this.handlerPristine(fn)) {
-            this.registrations.delete(call);
-            continue;
-          }
-          this.entries.add(fn);
-          modules.externalEntries.add(fn);
-        }
-        let jsonReads = 0;
-        for (const call of modules.calls) {
-          if (!this.work())
-            return;
-          const callee = this.unwrap(call.expression);
-          const method = callee && (ts10.isPropertyAccessExpression(callee) ? callee.name.text : ts10.isElementAccessExpression(callee) && ts10.isStringLiteralLike(callee.argumentExpression) ? callee.argumentExpression.text : void 0);
-          if (method !== "json")
-            continue;
-          const owner = modules.ownerOf(call);
-          const parameter = !ts10.isSourceFile(owner) && owner.parameters[0]?.name;
-          if (!ts10.isSourceFile(owner) && this.entries.has(owner) && parameter && ts10.isIdentifier(parameter) && callee && ts10.isPropertyAccessExpression(callee) && ts10.isIdentifier(callee.expression) && modules.symbol(callee.expression) === modules.symbol(parameter))
-            continue;
-          if (++jsonReads > 1)
-            break;
-        }
-        if (jsonReads === 1 && registrationsObserved === 1 && this.jsonIntrinsicsPristine()) {
-          for (const fn of this.entries)
-            if (this.jsonContextPristine(fn))
-              this.jsonEntries.add(fn);
         }
       }
       work() {
@@ -216405,24 +216484,27 @@ var init_hono_role = __esm({
           const parent = this.identity(node.expression, depth + 1);
           if (parent?.kind === "constructor")
             result3 = { kind: "app", valid: true, parent };
-        } else if (ts10.isCallExpression(node) && this.handlerAt(node, depth + 1))
-          result3 = this.appAt(node, depth + 1);
+        } else if (ts10.isCallExpression(node)) {
+          const app = this.appAt(node, depth + 1);
+          if (app && this.handlerAt(node, depth + 1))
+            result3 = app;
+        }
         this.expressions.set(node, result3);
         return result3;
       }
       appAt(call, depth = 0) {
-        if (!this.work() || depth > FLOW_LIMITS.aliasSteps || call.questionDotToken || call.arguments.some(ts10.isSpreadElement))
+        if (!this.work() || call.questionDotToken || call.arguments.some(ts10.isSpreadElement))
           return void 0;
         const callee = this.unwrap(call.expression);
-        if (!callee || !ts10.isPropertyAccessExpression(callee) || callee.questionDotToken || !METHODS2.has(callee.name.text))
+        if (!callee || !ts10.isPropertyAccessExpression(callee) || callee.questionDotToken || callee.name.text !== "use")
           return void 0;
         const identity = this.identity(callee.expression, depth + 1);
         return identity?.kind === "app" ? identity : void 0;
       }
       handlerAt(call, depth = 0) {
-        if (!this.work() || depth > FLOW_LIMITS.aliasSteps || call.arguments.length !== 2 || !ts10.isStringLiteralLike(call.arguments[0]) || !this.appAt(call, depth + 1))
+        if (!this.work() || depth > FLOW_LIMITS.aliasSteps || call.arguments.length !== 1 || !this.appAt(call, depth + 1))
           return void 0;
-        return this.handler(call.arguments[1], depth + 1);
+        return this.handler(call.arguments[0], depth + 1);
       }
       handler(expression, depth) {
         if (!this.work() || depth > FLOW_LIMITS.aliasSteps)
@@ -216463,12 +216545,10 @@ var init_hono_role = __esm({
           return ts10.isNewExpression(parent) && parent.expression === node && !parent.arguments?.length;
         if (ts10.isExportAssignment(parent) && !parent.isExportEquals && parent.expression === node)
           return true;
-        if (ts10.isPropertyAccessExpression(parent) && parent.expression === node && !parent.questionDotToken) {
-          if (parent.name.text === "fetch") {
-            const use = parent.parent;
-            return !(ts10.isBinaryExpression(use) && use.left === parent || ts10.isDeleteExpression(use) || ts10.isPrefixUnaryExpression(use) || ts10.isPostfixUnaryExpression(use));
-          }
-          return ts10.isCallExpression(parent.parent) && parent.parent.expression === parent && !!this.handlerAt(parent.parent, depth + 1);
+        if (ts10.isPropertyAccessExpression(parent) && parent.expression === node && !parent.questionDotToken && ts10.isCallExpression(parent.parent) && parent.parent.expression === parent) {
+          if (parent.name.text === "use")
+            return !!this.handlerAt(parent.parent, depth + 1);
+          return parent.name.text === "listen" || parent.name.text === "callback";
         }
         return false;
       }
@@ -216522,9 +216602,324 @@ var init_hono_role = __esm({
         }
         return true;
       }
+      entry(fn) {
+        return this.complete && this.indexAvailable && this.modules.indexComplete && this.entries.has(fn);
+      }
+      registration(call) {
+        return this.complete && this.indexAvailable && this.modules.indexComplete && this.registrations.has(call);
+      }
+    };
+  }
+});
+
+// build/src/source/hono-role.js
+var ts11, METHODS2, HonoRoleModel;
+var init_hono_role = __esm({
+  "build/src/source/hono-role.js"() {
+    "use strict";
+    ts11 = __toESM(require_typescript(), 1);
+    init_modules();
+    METHODS2 = /* @__PURE__ */ new Set(["get", "post", "put", "patch", "delete", "head", "options", "all"]);
+    HonoRoleModel = class {
+      modules;
+      tick;
+      indexAvailable;
+      scopeComplete;
+      factory = { kind: "constructor", valid: true };
+      bindings = /* @__PURE__ */ new Map();
+      expressions = /* @__PURE__ */ new WeakMap();
+      resolving = /* @__PURE__ */ new Set();
+      registrations = /* @__PURE__ */ new Map();
+      entries = /* @__PURE__ */ new Set();
+      jsonEntries = /* @__PURE__ */ new Set();
+      complete = true;
+      constructor(modules, tick, indexAvailable, scopeComplete) {
+        this.modules = modules;
+        this.tick = tick;
+        this.indexAvailable = indexAvailable;
+        this.scopeComplete = scopeComplete;
+        if (!indexAvailable || !scopeComplete)
+          return;
+        for (const declaration of modules.importDeclarations) {
+          if (!this.work())
+            return;
+          if (!ts11.isStringLiteralLike(declaration.moduleSpecifier) || !/^hono(?:\/|$)/.test(declaration.moduleSpecifier.text))
+            continue;
+          const clause = declaration.importClause;
+          if (clause?.isTypeOnly)
+            continue;
+          const named = clause?.namedBindings;
+          const runtime = !clause || !!clause.name || !!named && (ts11.isNamespaceImport(named) || ts11.isNamedImports(named) && named.elements.some((specifier) => !specifier.isTypeOnly));
+          if (declaration.moduleSpecifier.text !== "hono") {
+            if (runtime)
+              this.factory.valid = false;
+            continue;
+          }
+          if (!clause) {
+            this.factory.valid = false;
+            continue;
+          }
+          if (clause.name || named && ts11.isNamespaceImport(named))
+            this.factory.valid = false;
+          if (named && ts11.isNamedImports(named))
+            for (const specifier of named.elements) {
+              if (!this.work())
+                return;
+              if (!specifier.isTypeOnly) {
+                if ((specifier.propertyName ?? specifier.name).text === "Hono")
+                  this.bind(specifier.name, specifier, this.factory);
+                else
+                  this.factory.valid = false;
+              }
+            }
+        }
+        if (!this.bindings.size)
+          return;
+        for (const call of modules.calls) {
+          if (!this.work())
+            return;
+          const callee = this.unwrap(call.expression), load = call.arguments[0] && this.unwrap(call.arguments[0]);
+          if (callee && (callee.kind === ts11.SyntaxKind.ImportKeyword || ts11.isIdentifier(callee) && callee.text === "require") && load && ts11.isStringLiteralLike(load) && /^hono(?:\/|$)/.test(load.text))
+            this.factory.valid = false;
+          const handler = this.handlerAt(call);
+          if (handler)
+            this.registrations.set(call, handler);
+          const returned = this.identity(call);
+          if (returned?.kind === "app") {
+            let use = call;
+            while (use.parent && (ts11.isParenthesizedExpression(use.parent) || ts11.isAsExpression(use.parent) || ts11.isTypeAssertionExpression(use.parent) || ts11.isNonNullExpression(use.parent))) {
+              if (!this.work())
+                return;
+              use = use.parent;
+            }
+            if (!ts11.isExpressionStatement(use.parent) && !this.allowedUse(call, returned, 0))
+              this.factory.valid = returned.valid = false;
+          }
+        }
+        for (const allocation of modules.newExpressions) {
+          if (!this.work())
+            return;
+          const identity = this.identity(allocation);
+          if (identity?.kind === "app" && !this.allowedUse(allocation, identity, 0))
+            this.factory.valid = identity.valid = false;
+        }
+        for (const [symbol, binding] of this.bindings) {
+          if (!this.work())
+            return;
+          if (modules.mutated.has(symbol) || modules.mutatedMembers.has(symbol))
+            this.factory.valid = binding.identity.valid = false;
+          for (const reference2 of modules.references.get(symbol) ?? []) {
+            if (!this.work())
+              return;
+            if (reference2.parent === binding.declaration)
+              continue;
+            if (reference2.getSourceFile() !== binding.declaration.getSourceFile() || !this.allowedUse(reference2, binding.identity, 0)) {
+              this.factory.valid = binding.identity.valid = false;
+            }
+          }
+        }
+        const registrationsObserved = this.registrations.size;
+        for (const [call, fn] of this.registrations) {
+          if (!this.work())
+            return;
+          if (!this.valid(this.appAt(call)) || !this.handlerPristine(fn)) {
+            this.registrations.delete(call);
+            continue;
+          }
+          this.entries.add(fn);
+          modules.externalEntries.add(fn);
+        }
+        let jsonReads = 0;
+        for (const call of modules.calls) {
+          if (!this.work())
+            return;
+          const callee = this.unwrap(call.expression);
+          const method = callee && (ts11.isPropertyAccessExpression(callee) ? callee.name.text : ts11.isElementAccessExpression(callee) && ts11.isStringLiteralLike(callee.argumentExpression) ? callee.argumentExpression.text : void 0);
+          if (method !== "json")
+            continue;
+          const owner = modules.ownerOf(call);
+          const parameter = !ts11.isSourceFile(owner) && owner.parameters[0]?.name;
+          if (!ts11.isSourceFile(owner) && this.entries.has(owner) && parameter && ts11.isIdentifier(parameter) && callee && ts11.isPropertyAccessExpression(callee) && ts11.isIdentifier(callee.expression) && modules.symbol(callee.expression) === modules.symbol(parameter))
+            continue;
+          if (++jsonReads > 1)
+            break;
+        }
+        if (jsonReads === 1 && registrationsObserved === 1 && this.jsonIntrinsicsPristine()) {
+          for (const fn of this.entries)
+            if (this.jsonContextPristine(fn))
+              this.jsonEntries.add(fn);
+        }
+      }
+      work() {
+        if (!this.tick()) {
+          this.complete = false;
+          return false;
+        }
+        return true;
+      }
+      unwrap(expression) {
+        while (ts11.isParenthesizedExpression(expression) || ts11.isAsExpression(expression) || ts11.isTypeAssertionExpression(expression) || ts11.isNonNullExpression(expression)) {
+          if (!this.work())
+            return void 0;
+          expression = expression.expression;
+        }
+        return expression;
+      }
+      bind(name, declaration, identity) {
+        const symbol = this.modules.symbol(name);
+        if (!symbol || symbol.declarations?.length !== 1 || symbol.declarations[0] !== declaration)
+          return void 0;
+        this.bindings.set(symbol, { declaration, identity });
+        return identity;
+      }
+      available(declaration, reference2) {
+        return declaration.getSourceFile() === reference2.getSourceFile() && (declaration.end <= reference2.pos || this.modules.ownerOf(declaration) !== this.modules.ownerOf(reference2));
+      }
+      identity(expression, depth = 0) {
+        if (!this.work() || depth > FLOW_LIMITS.aliasSteps)
+          return void 0;
+        const node = this.unwrap(expression);
+        if (!node)
+          return void 0;
+        if (this.expressions.has(node))
+          return this.expressions.get(node);
+        let result3;
+        if (ts11.isIdentifier(node)) {
+          const symbol = this.modules.symbol(node), known = symbol && this.bindings.get(symbol);
+          const declaration = symbol?.declarations?.length === 1 ? symbol.declarations[0] : void 0;
+          if (known && (!ts11.isVariableDeclaration(known.declaration) || this.available(known.declaration, node)))
+            result3 = known.identity;
+          else if (symbol && declaration && !this.resolving.has(symbol) && !this.modules.mutated.has(symbol) && ts11.isVariableDeclaration(declaration) && ts11.isIdentifier(declaration.name) && declaration.initializer && declaration.parent.flags & ts11.NodeFlags.Const && this.available(declaration, node)) {
+            this.resolving.add(symbol);
+            const identity = this.identity(declaration.initializer, depth + 1);
+            if (identity)
+              result3 = this.bind(declaration.name, declaration, identity);
+            this.resolving.delete(symbol);
+          }
+        } else if (ts11.isNewExpression(node) && !node.arguments?.length) {
+          const parent = this.identity(node.expression, depth + 1);
+          if (parent?.kind === "constructor")
+            result3 = { kind: "app", valid: true, parent };
+        } else if (ts11.isCallExpression(node) && this.handlerAt(node, depth + 1))
+          result3 = this.appAt(node, depth + 1);
+        this.expressions.set(node, result3);
+        return result3;
+      }
+      appAt(call, depth = 0) {
+        if (!this.work() || depth > FLOW_LIMITS.aliasSteps || call.questionDotToken || call.arguments.some(ts11.isSpreadElement))
+          return void 0;
+        const callee = this.unwrap(call.expression);
+        if (!callee || !ts11.isPropertyAccessExpression(callee) || callee.questionDotToken || !METHODS2.has(callee.name.text))
+          return void 0;
+        const identity = this.identity(callee.expression, depth + 1);
+        return identity?.kind === "app" ? identity : void 0;
+      }
+      handlerAt(call, depth = 0) {
+        if (!this.work() || depth > FLOW_LIMITS.aliasSteps || call.arguments.length !== 2 || !ts11.isStringLiteralLike(call.arguments[0]) || !this.appAt(call, depth + 1))
+          return void 0;
+        return this.handler(call.arguments[1], depth + 1);
+      }
+      handler(expression, depth) {
+        if (!this.work() || depth > FLOW_LIMITS.aliasSteps)
+          return void 0;
+        const node = this.unwrap(expression);
+        if (!node)
+          return void 0;
+        let fn;
+        if (ts11.isArrowFunction(node) || ts11.isFunctionExpression(node))
+          fn = node;
+        else if (ts11.isIdentifier(node)) {
+          const symbol = this.modules.symbol(node), declaration = symbol?.declarations?.length === 1 ? symbol.declarations[0] : void 0;
+          if (!symbol || !declaration || this.modules.mutated.has(symbol) || this.modules.mutatedMembers.has(symbol) || declaration.getSourceFile() !== node.getSourceFile())
+            return void 0;
+          if (ts11.isFunctionDeclaration(declaration))
+            fn = declaration;
+          else if (ts11.isVariableDeclaration(declaration) && declaration.initializer && declaration.parent.flags & ts11.NodeFlags.Const && this.available(declaration, node))
+            return this.handler(declaration.initializer, depth + 1);
+        }
+        return fn && this.modules.functionSet.has(fn) && fn.body && fn.parameters.length >= 1 && fn.parameters.length <= 2 && !("asteriskToken" in fn && fn.asteriskToken) && fn.parameters.every((parameter) => !parameter.dotDotDotToken && !parameter.initializer && !(ts11.isIdentifier(parameter.name) && parameter.name.text === "this")) ? fn : void 0;
+      }
+      valid(identity, depth = 0) {
+        return this.work() && depth <= FLOW_LIMITS.aliasSteps && !!identity?.valid && (!identity.parent || this.valid(identity.parent, depth + 1));
+      }
+      allowedUse(expression, identity, depth) {
+        if (!this.work() || depth > FLOW_LIMITS.aliasSteps)
+          return false;
+        let node = expression;
+        while (node.parent && (ts11.isParenthesizedExpression(node.parent) || ts11.isAsExpression(node.parent) || ts11.isTypeAssertionExpression(node.parent) || ts11.isNonNullExpression(node.parent))) {
+          if (!this.work())
+            return false;
+          node = node.parent;
+        }
+        const parent = node.parent;
+        if (ts11.isVariableDeclaration(parent) && parent.initializer === node && parent.parent.flags & ts11.NodeFlags.Const && ts11.isIdentifier(parent.name))
+          return !!this.bind(parent.name, parent, identity);
+        if (identity.kind === "constructor")
+          return ts11.isNewExpression(parent) && parent.expression === node && !parent.arguments?.length;
+        if (ts11.isExportAssignment(parent) && !parent.isExportEquals && parent.expression === node)
+          return true;
+        if (ts11.isPropertyAccessExpression(parent) && parent.expression === node && !parent.questionDotToken) {
+          if (parent.name.text === "fetch") {
+            const use = parent.parent;
+            return !(ts11.isBinaryExpression(use) && use.left === parent || ts11.isDeleteExpression(use) || ts11.isPrefixUnaryExpression(use) || ts11.isPostfixUnaryExpression(use));
+          }
+          return ts11.isCallExpression(parent.parent) && parent.parent.expression === parent && !!this.handlerAt(parent.parent, depth + 1);
+        }
+        return false;
+      }
+      handlerPristine(fn) {
+        const queue = [], seen = /* @__PURE__ */ new Set();
+        const add2 = (name) => {
+          const symbol = this.modules.symbol(name);
+          if (!symbol || symbol.declarations?.length !== 1 || this.modules.mutated.has(symbol) || this.modules.mutatedMembers.has(symbol))
+            return false;
+          if (!seen.has(symbol)) {
+            seen.add(symbol);
+            queue.push(symbol);
+          }
+          return true;
+        };
+        if (fn.name && ts11.isIdentifier(fn.name) && !add2(fn.name))
+          return false;
+        let owner = fn;
+        while (owner.parent && (ts11.isParenthesizedExpression(owner.parent) || ts11.isAsExpression(owner.parent) || ts11.isTypeAssertionExpression(owner.parent) || ts11.isNonNullExpression(owner.parent))) {
+          if (!this.work())
+            return false;
+          owner = owner.parent;
+        }
+        if (ts11.isVariableDeclaration(owner.parent) && ts11.isIdentifier(owner.parent.name) && !add2(owner.parent.name))
+          return false;
+        for (let index = 0; index < queue.length; index++) {
+          if (!this.work() || index > FLOW_LIMITS.aliasSteps)
+            return false;
+          for (const reference2 of this.modules.references.get(queue[index]) ?? []) {
+            if (!this.work())
+              return false;
+            if (reference2.parent === queue[index].declarations[0])
+              continue;
+            let node = reference2;
+            while (node.parent && (ts11.isParenthesizedExpression(node.parent) || ts11.isAsExpression(node.parent) || ts11.isTypeAssertionExpression(node.parent) || ts11.isNonNullExpression(node.parent))) {
+              if (!this.work())
+                return false;
+              node = node.parent;
+            }
+            const parent = node.parent;
+            if (reference2.getSourceFile() !== fn.getSourceFile())
+              return false;
+            if (ts11.isVariableDeclaration(parent) && parent.initializer === node && parent.parent.flags & ts11.NodeFlags.Const && ts11.isIdentifier(parent.name) && add2(parent.name))
+              continue;
+            if (ts11.isCallExpression(parent) && parent.expression === node)
+              continue;
+            if (ts11.isCallExpression(parent) && this.registrations.get(parent) === fn)
+              continue;
+            return false;
+          }
+        }
+        return true;
+      }
       jsonContextPristine(fn) {
         const name = fn.parameters[0]?.name;
-        if (!name || !ts10.isIdentifier(name))
+        if (!name || !ts11.isIdentifier(name))
           return false;
         const symbol = this.modules.symbol(name);
         if (!symbol || this.modules.mutated.has(symbol) || this.modules.mutatedMembers.has(symbol))
@@ -216537,23 +216932,23 @@ var init_hono_role = __esm({
           if (this.modules.ownerOf(ref) !== fn)
             return false;
           const property = ref.parent;
-          if (!ts10.isPropertyAccessExpression(property) || property.expression !== ref || property.questionDotToken)
+          if (!ts11.isPropertyAccessExpression(property) || property.expression !== ref || property.questionDotToken)
             return false;
           let callee = property;
           if (property.name.text === "req") {
             const method = property.parent;
-            if (!ts10.isPropertyAccessExpression(method) || method.expression !== property || method.questionDotToken || !["query", "param", "json"].includes(method.name.text))
+            if (!ts11.isPropertyAccessExpression(method) || method.expression !== property || method.questionDotToken || !["query", "param", "json"].includes(method.name.text))
               return false;
             callee = method;
           } else if (!["text", "json", "html", "redirect", "body", "status", "header", "newResponse", "set", "get"].includes(property.name.text))
             return false;
           const call = callee.parent;
-          if (!ts10.isCallExpression(call) || call.expression !== callee || call.questionDotToken || call.arguments.some(ts10.isSpreadElement))
+          if (!ts11.isCallExpression(call) || call.expression !== callee || call.questionDotToken || call.arguments.some(ts11.isSpreadElement))
             return false;
         }
         const next = fn.parameters[1]?.name;
         if (next) {
-          if (!ts10.isIdentifier(next))
+          if (!ts11.isIdentifier(next))
             return false;
           const symbol2 = this.modules.symbol(next);
           if (!symbol2)
@@ -216573,30 +216968,30 @@ var init_hono_role = __esm({
           for (let depth = 0; parent && depth < 16; depth++, parent = parent.parent) {
             if (!this.work())
               return false;
-            if (ts10.isTypeNode(parent)) {
+            if (ts11.isTypeNode(parent)) {
               typeOnly = true;
               break;
             }
-            if (ts10.isStatement(parent) || ts10.isExpression(parent))
+            if (ts11.isStatement(parent) || ts11.isExpression(parent))
               break;
           }
           if (typeOnly)
             continue;
           let root, kind;
-          if (ts10.isIdentifier(node)) {
+          if (ts11.isIdentifier(node)) {
             if (node.text === "globalThis") {
               if (this.modules.symbol(node)?.declarations?.length)
                 continue;
               const member3 = node.parent;
-              if (ts10.isPropertyAccessExpression(member3) && member3.expression === node && !member3.questionDotToken && ["JSON", "Request"].includes(member3.name.text)) {
+              if (ts11.isPropertyAccessExpression(member3) && member3.expression === node && !member3.questionDotToken && ["JSON", "Request"].includes(member3.name.text)) {
                 root = member3;
                 kind = member3.name.text;
-              } else if (ts10.isElementAccessExpression(member3) && member3.expression === node && ts10.isStringLiteralLike(member3.argumentExpression) && ["JSON", "Request"].includes(member3.argumentExpression.text)) {
+              } else if (ts11.isElementAccessExpression(member3) && member3.expression === node && ts11.isStringLiteralLike(member3.argumentExpression) && ["JSON", "Request"].includes(member3.argumentExpression.text)) {
                 root = member3;
                 kind = member3.argumentExpression.text;
               } else
                 return false;
-            } else if (ts10.isPropertyAccessExpression(node.parent) && node.parent.name === node)
+            } else if (ts11.isPropertyAccessExpression(node.parent) && node.parent.name === node)
               continue;
             else {
               if (this.modules.symbol(node)?.declarations?.length)
@@ -216604,7 +216999,7 @@ var init_hono_role = __esm({
               root = node;
               kind = node.text;
             }
-          } else if (ts10.isElementAccessExpression(node)) {
+          } else if (ts11.isElementAccessExpression(node)) {
             if (this.modules.symbol(node.expression)?.declarations?.length)
               continue;
             root = node;
@@ -216613,9 +217008,9 @@ var init_hono_role = __esm({
           if (!root)
             return false;
           const use = root.parent;
-          if (kind === "Request" && ts10.isNewExpression(use) && use.expression === root && !use.arguments?.some(ts10.isSpreadElement))
+          if (kind === "Request" && ts11.isNewExpression(use) && use.expression === root && !use.arguments?.some(ts11.isSpreadElement))
             continue;
-          if (kind === "JSON" && ts10.isPropertyAccessExpression(use) && use.expression === root && !use.questionDotToken && ["parse", "stringify"].includes(use.name.text) && ts10.isCallExpression(use.parent) && use.parent.expression === use && !use.parent.questionDotToken)
+          if (kind === "JSON" && ts11.isPropertyAccessExpression(use) && use.expression === root && !use.questionDotToken && ["parse", "stringify"].includes(use.name.text) && ts11.isCallExpression(use.parent) && use.parent.expression === use && !use.parent.questionDotToken)
             continue;
           return false;
         }
@@ -216638,15 +217033,15 @@ var init_hono_role = __esm({
 // build/src/source/closure-shape.js
 function reference(node) {
   const parent = node.parent;
-  if (ts11.isPropertyAccessExpression(parent) && parent.name === node)
+  if (ts12.isPropertyAccessExpression(parent) && parent.name === node)
     return false;
-  if ((ts11.isPropertyAssignment(parent) || ts11.isMethodDeclaration(parent) || ts11.isPropertyDeclaration(parent)) && parent.name === node)
+  if ((ts12.isPropertyAssignment(parent) || ts12.isMethodDeclaration(parent) || ts12.isPropertyDeclaration(parent)) && parent.name === node)
     return false;
-  if ((ts11.isVariableDeclaration(parent) || ts11.isParameter(parent) || ts11.isBindingElement(parent) || ts11.isFunctionDeclaration(parent) || ts11.isFunctionExpression(parent) || ts11.isClassDeclaration(parent)) && parent.name === node)
+  if ((ts12.isVariableDeclaration(parent) || ts12.isParameter(parent) || ts12.isBindingElement(parent) || ts12.isFunctionDeclaration(parent) || ts12.isFunctionExpression(parent) || ts12.isClassDeclaration(parent)) && parent.name === node)
     return false;
-  if (ts11.isBindingElement(parent) && parent.propertyName === node)
+  if (ts12.isBindingElement(parent) && parent.propertyName === node)
     return false;
-  if (ts11.isLabeledStatement(parent) || ts11.isBreakStatement(parent) || ts11.isContinueStatement(parent))
+  if (ts12.isLabeledStatement(parent) || ts12.isBreakStatement(parent) || ts12.isContinueStatement(parent))
     return false;
   return true;
 }
@@ -216654,18 +217049,18 @@ function immutable(symbol, modules, tick) {
   if (modules.mutated.has(symbol) || modules.mutatedMembers.has(symbol) || symbol.declarations?.length !== 1)
     return "no";
   let declaration = symbol.declarations[0];
-  if (ts11.isBindingElement(declaration)) {
-    while (ts11.isBindingElement(declaration) || ts11.isObjectBindingPattern(declaration) || ts11.isArrayBindingPattern(declaration)) {
+  if (ts12.isBindingElement(declaration)) {
+    while (ts12.isBindingElement(declaration) || ts12.isObjectBindingPattern(declaration) || ts12.isArrayBindingPattern(declaration)) {
       if (!tick())
         return "budget";
       declaration = declaration.parent;
     }
   }
-  return ts11.isParameter(declaration) || ts11.isFunctionDeclaration(declaration) || ts11.isImportSpecifier(declaration) || ts11.isNamespaceImport(declaration) || ts11.isImportClause(declaration) || ts11.isVariableDeclaration(declaration) && !!(declaration.parent.flags & ts11.NodeFlags.Const) ? "yes" : "no";
+  return ts12.isParameter(declaration) || ts12.isFunctionDeclaration(declaration) || ts12.isImportSpecifier(declaration) || ts12.isNamespaceImport(declaration) || ts12.isImportClause(declaration) || ts12.isVariableDeclaration(declaration) && !!(declaration.parent.flags & ts12.NodeFlags.Const) ? "yes" : "no";
 }
 function writeUse(node) {
   const parent = node.parent;
-  return ts11.isDeleteExpression(parent) || ts11.isPrefixUnaryExpression(parent) || ts11.isPostfixUnaryExpression(parent) || ts11.isBinaryExpression(parent) && parent.left === node && parent.operatorToken.kind >= ts11.SyntaxKind.FirstAssignment && parent.operatorToken.kind <= ts11.SyntaxKind.LastAssignment;
+  return ts12.isDeleteExpression(parent) || ts12.isPrefixUnaryExpression(parent) || ts12.isPostfixUnaryExpression(parent) || ts12.isBinaryExpression(parent) && parent.left === node && parent.operatorToken.kind >= ts12.SyntaxKind.FirstAssignment && parent.operatorToken.kind <= ts12.SyntaxKind.LastAssignment;
 }
 function analyzeClosureShape(target, modules, tick) {
   const captures = /* @__PURE__ */ new Set();
@@ -216677,15 +217072,15 @@ function analyzeClosureShape(target, modules, tick) {
       failure3 = { kind: "budget" };
       return;
     }
-    if (ts11.isTypeNode(node))
+    if (ts12.isTypeNode(node))
       return;
-    if (node !== target && (ts11.isFunctionDeclaration(node) || ts11.isFunctionExpression(node) || ts11.isMethodDeclaration(node)))
+    if (node !== target && (ts12.isFunctionDeclaration(node) || ts12.isFunctionExpression(node) || ts12.isMethodDeclaration(node)))
       dynamicThis = true;
-    if (ts11.isWithStatement(node) || ts11.isMetaProperty(node) || node.kind === ts11.SyntaxKind.SuperKeyword) {
+    if (ts12.isWithStatement(node) || ts12.isMetaProperty(node) || node.kind === ts12.SyntaxKind.SuperKeyword) {
       failure3 = unsupported("dynamic_scope");
       return;
     }
-    if (node.kind === ts11.SyntaxKind.ThisKeyword) {
+    if (node.kind === ts12.SyntaxKind.ThisKeyword) {
       if (dynamicThis) {
         failure3 = unsupported("dynamic_this");
         return;
@@ -216693,19 +217088,19 @@ function analyzeClosureShape(target, modules, tick) {
       lexicalThis = true;
       const member3 = node.parent;
       let selected = member3;
-      while (ts11.isPropertyAccessExpression(selected.parent) && selected.parent.expression === selected) {
+      while (ts12.isPropertyAccessExpression(selected.parent) && selected.parent.expression === selected) {
         if (!tick()) {
           failure3 = { kind: "budget" };
           return;
         }
         selected = selected.parent;
       }
-      if (!ts11.isPropertyAccessExpression(member3) || member3.expression !== node || writeUse(selected) || ts11.isElementAccessExpression(selected.parent) && selected.parent.expression === selected) {
+      if (!ts12.isPropertyAccessExpression(member3) || member3.expression !== node || writeUse(selected) || ts12.isElementAccessExpression(selected.parent) && selected.parent.expression === selected) {
         failure3 = unsupported("receiver_escape_or_write");
         return;
       }
     }
-    if (ts11.isIdentifier(node) && reference(node)) {
+    if (ts12.isIdentifier(node) && reference(node)) {
       const symbol = modules.symbol(node);
       if (!tick()) {
         failure3 = { kind: "budget" };
@@ -216728,7 +217123,7 @@ function analyzeClosureShape(target, modules, tick) {
           return;
         }
         const declaration = declarations[0];
-        if ((ts11.isVariableDeclaration(declaration) || ts11.isBindingElement(declaration)) && declaration.pos >= target.pos && modules.ownerOf(declaration) === modules.ownerOf(target)) {
+        if ((ts12.isVariableDeclaration(declaration) || ts12.isBindingElement(declaration)) && declaration.pos >= target.pos && modules.ownerOf(declaration) === modules.ownerOf(target)) {
           failure3 = unsupported("capture_before_initialization");
           return;
         }
@@ -216741,7 +217136,7 @@ function analyzeClosureShape(target, modules, tick) {
   return failure3 ?? { kind: "supported", shape: { target, captures: [...captures], lexicalThis } };
 }
 function unwrapped2(node) {
-  while (ts11.isParenthesizedExpression(node) || ts11.isAsExpression(node) || ts11.isTypeAssertionExpression(node) || ts11.isNonNullExpression(node))
+  while (ts12.isParenthesizedExpression(node) || ts12.isAsExpression(node) || ts12.isTypeAssertionExpression(node) || ts12.isNonNullExpression(node))
     node = node.expression;
   return node;
 }
@@ -216750,33 +217145,33 @@ function constructorGuard(statement, symbol, modules) {
     return false;
   const condition = unwrapped2(statement.expression);
   let test;
-  if (ts11.isBinaryExpression(condition) && condition.operatorToken.kind === ts11.SyntaxKind.EqualsEqualsEqualsToken) {
+  if (ts12.isBinaryExpression(condition) && condition.operatorToken.kind === ts12.SyntaxKind.EqualsEqualsEqualsToken) {
     const left = unwrapped2(condition.left), right = unwrapped2(condition.right);
-    if (left.kind === ts11.SyntaxKind.FalseKeyword)
+    if (left.kind === ts12.SyntaxKind.FalseKeyword)
       test = right;
-    else if (right.kind === ts11.SyntaxKind.FalseKeyword)
+    else if (right.kind === ts12.SyntaxKind.FalseKeyword)
       test = left;
-  } else if (ts11.isPrefixUnaryExpression(condition) && condition.operator === ts11.SyntaxKind.ExclamationToken) {
+  } else if (ts12.isPrefixUnaryExpression(condition) && condition.operator === ts12.SyntaxKind.ExclamationToken) {
     test = unwrapped2(condition.operand);
   }
-  if (!test || !ts11.isBinaryExpression(test) || test.operatorToken.kind !== ts11.SyntaxKind.InstanceOfKeyword || unwrapped2(test.left).kind !== ts11.SyntaxKind.ThisKeyword || !ts11.isIdentifier(unwrapped2(test.right)) || modules.symbol(unwrapped2(test.right)) !== symbol)
+  if (!test || !ts12.isBinaryExpression(test) || test.operatorToken.kind !== ts12.SyntaxKind.InstanceOfKeyword || unwrapped2(test.left).kind !== ts12.SyntaxKind.ThisKeyword || !ts12.isIdentifier(unwrapped2(test.right)) || modules.symbol(unwrapped2(test.right)) !== symbol)
     return false;
-  const statements2 = ts11.isBlock(statement.thenStatement) ? statement.thenStatement.statements : [statement.thenStatement];
+  const statements2 = ts12.isBlock(statement.thenStatement) ? statement.thenStatement.statements : [statement.thenStatement];
   const last = statements2.at(-1);
-  if (!last || !ts11.isReturnStatement(last) || !last.expression)
+  if (!last || !ts12.isReturnStatement(last) || !last.expression)
     return false;
   const value = unwrapped2(last.expression);
-  return ts11.isNewExpression(value) && ts11.isIdentifier(value.expression) && modules.symbol(value.expression) === symbol && statements2.slice(0, -1).every((item) => ts11.isExpressionStatement(item) && ts11.isCallExpression(item.expression));
+  return ts12.isNewExpression(value) && ts12.isIdentifier(value.expression) && modules.symbol(value.expression) === symbol && statements2.slice(0, -1).every((item) => ts12.isExpressionStatement(item) && ts12.isCallExpression(item.expression));
 }
 function analyzeConstructedShape(target, modules, tick) {
-  if (!ts11.isFunctionDeclaration(target) && !ts11.isFunctionExpression(target) || !target.body || target.asteriskToken || target.modifiers?.some((modifier) => modifier.kind === ts11.SyntaxKind.AsyncKeyword)) {
+  if (!ts12.isFunctionDeclaration(target) && !ts12.isFunctionExpression(target) || !target.body || target.asteriskToken || target.modifiers?.some((modifier) => modifier.kind === ts12.SyntaxKind.AsyncKeyword)) {
     return unsupported("constructor_form");
   }
   const ownArrows = /* @__PURE__ */ new Map();
   const initializers = [];
   const effects = [];
   const guards = [];
-  const binding = target.name ?? (ts11.isVariableDeclaration(target.parent) && ts11.isIdentifier(target.parent.name) ? target.parent.name : void 0);
+  const binding = target.name ?? (ts12.isVariableDeclaration(target.parent) && ts12.isIdentifier(target.parent.name) ? target.parent.name : void 0);
   const symbol = binding ? modules.symbol(binding) : void 0;
   if (!tick())
     return { kind: "budget" };
@@ -216788,17 +217183,17 @@ function analyzeConstructedShape(target, modules, tick) {
       failure3 = { kind: "budget" };
       return;
     }
-    if (ts11.isArrowFunction(node) || ts11.isFunctionExpression(node))
+    if (ts12.isArrowFunction(node) || ts12.isFunctionExpression(node))
       return;
-    if (node.kind === ts11.SyntaxKind.ThisKeyword || node.kind === ts11.SyntaxKind.SuperKeyword || ts11.isWithStatement(node) || ts11.isMetaProperty(node)) {
+    if (node.kind === ts12.SyntaxKind.ThisKeyword || node.kind === ts12.SyntaxKind.SuperKeyword || ts12.isWithStatement(node) || ts12.isMetaProperty(node)) {
       failure3 = unsupported("opaque_constructor_receiver");
       return;
     }
-    if (ts11.isCallExpression(node) && ts11.isIdentifier(unwrapped2(node.expression)) && unwrapped2(node.expression).text === "eval") {
+    if (ts12.isCallExpression(node) && ts12.isIdentifier(unwrapped2(node.expression)) && unwrapped2(node.expression).text === "eval") {
       failure3 = unsupported("dynamic_scope");
       return;
     }
-    if (ts11.isCallExpression(node) || ts11.isNewExpression(node))
+    if (ts12.isCallExpression(node) || ts12.isNewExpression(node))
       effects.push(node);
     node.forEachChild(inspectInitializer);
   };
@@ -216811,9 +217206,9 @@ function analyzeConstructedShape(target, modules, tick) {
   for (const statement of target.body.statements) {
     if (!tick())
       return { kind: "budget" };
-    if (ts11.isExpressionStatement(statement) && ts11.isStringLiteral(statement.expression))
+    if (ts12.isExpressionStatement(statement) && ts12.isStringLiteral(statement.expression))
       continue;
-    if (ts11.isVariableStatement(statement) && !!(statement.declarationList.flags & ts11.NodeFlags.Const)) {
+    if (ts12.isVariableStatement(statement) && !!(statement.declarationList.flags & ts12.NodeFlags.Const)) {
       for (const declaration of statement.declarationList.declarations) {
         if (!tick())
           return { kind: "budget" };
@@ -216826,7 +217221,7 @@ function analyzeConstructedShape(target, modules, tick) {
       }
       continue;
     }
-    if (ts11.isIfStatement(statement)) {
+    if (ts12.isIfStatement(statement)) {
       const charge = (node) => {
         if (failure3)
           return;
@@ -216847,10 +217242,10 @@ function analyzeConstructedShape(target, modules, tick) {
       guards.push(statement);
       continue;
     }
-    if (!ts11.isExpressionStatement(statement))
+    if (!ts12.isExpressionStatement(statement))
       return unsupported("constructor_control_flow_or_return");
     const expression = unwrapped2(statement.expression);
-    if (ts11.isBinaryExpression(expression) && expression.operatorToken.kind === ts11.SyntaxKind.EqualsToken && ts11.isPropertyAccessExpression(expression.left) && expression.left.expression.kind === ts11.SyntaxKind.ThisKeyword && ts11.isArrowFunction(expression.right)) {
+    if (ts12.isBinaryExpression(expression) && expression.operatorToken.kind === ts12.SyntaxKind.EqualsToken && ts12.isPropertyAccessExpression(expression.left) && expression.left.expression.kind === ts12.SyntaxKind.ThisKeyword && ts12.isArrowFunction(expression.right)) {
       const key2 = expression.left.name.text;
       if (["constructor", "prototype", "__proto__"].includes(key2) || ownArrows.has(key2))
         return unsupported("duplicate_or_reserved_slot");
@@ -216860,7 +217255,7 @@ function analyzeConstructedShape(target, modules, tick) {
       ownArrows.set(key2, shape.shape);
       continue;
     }
-    if (!ts11.isCallExpression(expression) && !ts11.isNewExpression(expression))
+    if (!ts12.isCallExpression(expression) && !ts12.isNewExpression(expression))
       return unsupported("constructor_slot_or_write");
     inspectInitializer(expression);
     if (failure3)
@@ -216868,18 +217263,18 @@ function analyzeConstructedShape(target, modules, tick) {
   }
   return ownArrows.size ? { kind: "supported", shape: { target, ownArrows, initializers, effects, guards } } : unsupported("no_own_arrows");
 }
-var ts11, unsupported, inside;
+var ts12, unsupported, inside;
 var init_closure_shape = __esm({
   "build/src/source/closure-shape.js"() {
     "use strict";
-    ts11 = __toESM(require_typescript(), 1);
+    ts12 = __toESM(require_typescript(), 1);
     unsupported = (reason) => ({ kind: "unsupported", reason });
     inside = (node, target) => node.getSourceFile() === target.getSourceFile() && node.pos >= target.pos && node.end <= target.end;
   }
 });
 
 // build/src/source/mongo-role.js
-import { posix as posix3 } from "node:path";
+import { posix as posix4 } from "node:path";
 function record2(value) {
   return !!value && typeof value === "object" && !Array.isArray(value);
 }
@@ -216893,11 +217288,11 @@ function satisfies(range2, version) {
     return actual[1] === minimum[1] && actual[2] >= minimum[2];
   return range2 === version;
 }
-var ts12, SELECTORS2, legacyRange, legacyVersion, MongoRoleModel;
+var ts13, SELECTORS2, legacyRange, legacyVersion, MongoRoleModel;
 var init_mongo_role = __esm({
   "build/src/source/mongo-role.js"() {
     "use strict";
-    ts12 = __toESM(require_typescript(), 1);
+    ts13 = __toESM(require_typescript(), 1);
     SELECTORS2 = /* @__PURE__ */ new Set(["find", "findOne", "update", "updateOne", "updateMany", "remove", "deleteOne", "deleteMany", "count"]);
     legacyRange = (value) => typeof value === "string" && /^(?:\^|~)?2\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)$/.test(value);
     legacyVersion = (value) => typeof value === "string" && /^2\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)$/.test(value);
@@ -216924,15 +217319,15 @@ var init_mongo_role = __esm({
         for (const file of files) {
           if (!tick())
             break;
-          const basename5 = posix3.basename(file.path);
+          const basename5 = posix4.basename(file.path);
           if (basename5 === "npm-shrinkwrap.json") {
-            this.shrinkwraps.add(posix3.dirname(file.path));
+            this.shrinkwraps.add(posix4.dirname(file.path));
             continue;
           }
           if (!["package.json", "package-lock.json"].includes(basename5))
             continue;
           const table = basename5 === "package.json" ? this.manifests : this.locks;
-          const directory2 = posix3.dirname(file.path);
+          const directory2 = posix4.dirname(file.path);
           if (table.has(directory2)) {
             table.set(directory2, null);
             continue;
@@ -216950,7 +217345,7 @@ var init_mongo_role = __esm({
         }
       }
       legacy(file) {
-        let directory2 = posix3.dirname(file.fileName);
+        let directory2 = posix4.dirname(file.fileName);
         for (let depth = 0; depth <= 64; depth++) {
           if (!this.tick())
             return false;
@@ -216965,7 +217360,7 @@ var init_mongo_role = __esm({
                 return false;
               if (lockDirectory === "." || lockDirectory === "/")
                 break;
-              lockDirectory = posix3.dirname(lockDirectory);
+              lockDirectory = posix4.dirname(lockDirectory);
             }
             if (this.shrinkwraps.has(lockDirectory))
               return false;
@@ -216985,7 +217380,7 @@ var init_mongo_role = __esm({
           }
           if (directory2 === "." || directory2 === "/" || directory2 === "")
             return false;
-          directory2 = posix3.dirname(directory2);
+          directory2 = posix4.dirname(directory2);
         }
         this.gap("alias_limit");
         return false;
@@ -216999,15 +217394,15 @@ var init_mongo_role = __esm({
           return cached;
         const declaration = symbol.declarations[0];
         let recognized = false;
-        if (ts12.isVariableDeclaration(declaration) && declaration.initializer && declaration.parent.flags & ts12.NodeFlags.Const) {
+        if (ts13.isVariableDeclaration(declaration) && declaration.initializer && declaration.parent.flags & ts13.NodeFlags.Const) {
           const initializer = declaration.initializer;
-          if (ts12.isPropertyAccessExpression(initializer) && initializer.name.text === "MongoClient" && ts12.isCallExpression(initializer.expression)) {
+          if (ts13.isPropertyAccessExpression(initializer) && initializer.name.text === "MongoClient" && ts13.isCallExpression(initializer.expression)) {
             const load = initializer.expression;
-            recognized = ts12.isIdentifier(load.expression) && load.expression.text === "require" && this.modules.cjsGlobal(load.expression) && load.arguments.length === 1 && ts12.isStringLiteralLike(load.arguments[0]) && load.arguments[0].text === "mongodb";
+            recognized = ts13.isIdentifier(load.expression) && load.expression.text === "require" && this.modules.cjsGlobal(load.expression) && load.arguments.length === 1 && ts13.isStringLiteralLike(load.arguments[0]) && load.arguments[0].text === "mongodb";
           }
-        } else if (ts12.isImportSpecifier(declaration) && !declaration.isTypeOnly && (declaration.propertyName ?? declaration.name).text === "MongoClient") {
+        } else if (ts13.isImportSpecifier(declaration) && !declaration.isTypeOnly && (declaration.propertyName ?? declaration.name).text === "MongoClient") {
           const load = declaration.parent.parent.parent;
-          recognized = ts12.isImportDeclaration(load) && !load.importClause?.isTypeOnly && ts12.isStringLiteralLike(load.moduleSpecifier) && load.moduleSpecifier.text === "mongodb";
+          recognized = ts13.isImportDeclaration(load) && !load.importClause?.isTypeOnly && ts13.isStringLiteralLike(load.moduleSpecifier) && load.moduleSpecifier.text === "mongodb";
         }
         if (!recognized)
           return void 0;
@@ -217015,10 +217410,10 @@ var init_mongo_role = __esm({
         for (const reference2 of this.modules.references.get(symbol) ?? []) {
           if (!this.tick())
             return false;
-          if (ts12.isVariableDeclaration(reference2.parent) && reference2.parent.name === reference2 || ts12.isImportSpecifier(reference2.parent))
+          if (ts13.isVariableDeclaration(reference2.parent) && reference2.parent.name === reference2 || ts13.isImportSpecifier(reference2.parent))
             continue;
           const member3 = reference2.parent;
-          if (ts12.isPropertyAccessExpression(member3) && member3.expression === reference2 && member3.name.text === "connect" && ts12.isCallExpression(member3.parent) && member3.parent.expression === member3)
+          if (ts13.isPropertyAccessExpression(member3) && member3.expression === reference2 && member3.name.text === "connect" && ts13.isCallExpression(member3.parent) && member3.parent.expression === member3)
             continue;
           valid = false;
         }
@@ -217032,15 +217427,15 @@ var init_mongo_role = __esm({
         for (const reference2 of this.modules.references.get(symbol) ?? []) {
           if (!this.tick())
             return false;
-          if (ts12.isVariableDeclaration(reference2.parent) && reference2.parent.name === reference2 || ts12.isBindingElement(reference2.parent) && reference2.parent.name === reference2 || ts12.isImportSpecifier(reference2.parent) || ts12.isNamespaceImport(reference2.parent))
+          if (ts13.isVariableDeclaration(reference2.parent) && reference2.parent.name === reference2 || ts13.isBindingElement(reference2.parent) && reference2.parent.name === reference2 || ts13.isImportSpecifier(reference2.parent) || ts13.isNamespaceImport(reference2.parent))
             continue;
           let member3 = reference2.parent;
           if (namespace) {
-            if (!ts12.isPropertyAccessExpression(member3) || member3.expression !== reference2 || member3.name.text !== "MongoClient")
+            if (!ts13.isPropertyAccessExpression(member3) || member3.expression !== reference2 || member3.name.text !== "MongoClient")
               return false;
             member3 = member3.parent;
           }
-          if (!ts12.isPropertyAccessExpression(member3) || member3.name.text !== "connect" || !ts12.isCallExpression(member3.parent) || member3.parent.expression !== member3)
+          if (!ts13.isPropertyAccessExpression(member3) || member3.name.text !== "connect" || !ts13.isCallExpression(member3.parent) || member3.parent.expression !== member3)
             return false;
         }
         return true;
@@ -217052,12 +217447,12 @@ var init_mongo_role = __esm({
         for (const load of this.modules.importDeclarations) {
           if (!this.tick())
             return false;
-          if (!ts12.isStringLiteralLike(load.moduleSpecifier) || load.moduleSpecifier.text !== "mongodb" || load.importClause?.isTypeOnly)
+          if (!ts13.isStringLiteralLike(load.moduleSpecifier) || load.moduleSpecifier.text !== "mongodb" || load.importClause?.isTypeOnly)
             continue;
           const clause = load.importClause;
           if (!clause || clause.name || !clause.namedBindings)
             return false;
-          if (ts12.isNamespaceImport(clause.namedBindings)) {
+          if (ts13.isNamespaceImport(clause.namedBindings)) {
             if (!this.bindingClosed(clause.namedBindings.name, true))
               return false;
           } else
@@ -217073,7 +217468,7 @@ var init_mongo_role = __esm({
         for (const load of this.modules.exportDeclarations) {
           if (!this.tick())
             return false;
-          if (!load.isTypeOnly && load.moduleSpecifier && ts12.isStringLiteralLike(load.moduleSpecifier) && load.moduleSpecifier.text === "mongodb")
+          if (!load.isTypeOnly && load.moduleSpecifier && ts13.isStringLiteralLike(load.moduleSpecifier) && load.moduleSpecifier.text === "mongodb")
             return false;
         }
         for (const reference2 of this.modules.requireReferences) {
@@ -217082,26 +217477,26 @@ var init_mongo_role = __esm({
           if (!this.modules.cjsGlobal(reference2))
             continue;
           const load = reference2.parent;
-          if (!ts12.isCallExpression(load) || load.expression !== reference2 || load.arguments.length !== 1 || !ts12.isStringLiteralLike(load.arguments[0]))
+          if (!ts13.isCallExpression(load) || load.expression !== reference2 || load.arguments.length !== 1 || !ts13.isStringLiteralLike(load.arguments[0]))
             return false;
           if (load.arguments[0].text !== "mongodb")
             continue;
           let value = load;
           let namespace = true;
-          if (ts12.isPropertyAccessExpression(load.parent) && load.parent.expression === load) {
+          if (ts13.isPropertyAccessExpression(load.parent) && load.parent.expression === load) {
             if (load.parent.name.text !== "MongoClient")
               return false;
             value = load.parent;
             namespace = false;
           }
           const declaration = value.parent;
-          if (!ts12.isVariableDeclaration(declaration) || declaration.initializer !== value || !(declaration.parent.flags & ts12.NodeFlags.Const) || !ts12.isIdentifier(declaration.name) || !this.bindingClosed(declaration.name, namespace))
+          if (!ts13.isVariableDeclaration(declaration) || declaration.initializer !== value || !(declaration.parent.flags & ts13.NodeFlags.Const) || !ts13.isIdentifier(declaration.name) || !this.bindingClosed(declaration.name, namespace))
             return false;
         }
         for (const call of this.modules.calls) {
           if (!this.tick())
             return false;
-          if (call.expression.kind === ts12.SyntaxKind.ImportKeyword && (call.arguments.length !== 1 || !ts12.isStringLiteralLike(call.arguments[0]) || call.arguments[0].text === "mongodb"))
+          if (call.expression.kind === ts13.SyntaxKind.ImportKeyword && (call.arguments.length !== 1 || !ts13.isStringLiteralLike(call.arguments[0]) || call.arguments[0].text === "mongodb"))
             return false;
         }
         this.sharedPristine = true;
@@ -217118,16 +217513,16 @@ var init_mongo_role = __esm({
         for (const load of this.modules.importDeclarations) {
           if (!this.tick())
             return false;
-          if (ts12.isStringLiteralLike(load.moduleSpecifier) && ["module", "node:module"].includes(load.moduleSpecifier.text))
+          if (ts13.isStringLiteralLike(load.moduleSpecifier) && ["module", "node:module"].includes(load.moduleSpecifier.text))
             unchanged = false;
-          if (!ts12.isStringLiteralLike(load.moduleSpecifier) || load.moduleSpecifier.text !== "mongodb" || load.importClause?.isTypeOnly)
+          if (!ts13.isStringLiteralLike(load.moduleSpecifier) || load.moduleSpecifier.text !== "mongodb" || load.importClause?.isTypeOnly)
             continue;
           const clause = load.importClause;
           if (!clause || clause.name || !clause.namedBindings) {
             unchanged = false;
             continue;
           }
-          if (ts12.isNamespaceImport(clause.namedBindings))
+          if (ts13.isNamespaceImport(clause.namedBindings))
             unchanged &&= this.bindingClosed(clause.namedBindings.name, true);
           else
             for (const item of clause.namedBindings.elements) {
@@ -217142,16 +217537,16 @@ var init_mongo_role = __esm({
             return false;
           const load = ref.parent;
           if (this.modules.cjsGlobal(ref)) {
-            if (ts12.isCallExpression(load) && load.expression === ref && load.arguments.some((argument) => ts12.isStringLiteralLike(argument) && ["module", "node:module"].includes(argument.text)))
+            if (ts13.isCallExpression(load) && load.expression === ref && load.arguments.some((argument) => ts13.isStringLiteralLike(argument) && ["module", "node:module"].includes(argument.text)))
               unchanged = false;
-            else if (!(ts12.isCallExpression(load) && load.expression === ref) && !ts12.isTypeOfExpression(load) && !(ts12.isPropertyAccessExpression(load) && load.name.text === "resolve" && ts12.isCallExpression(load.parent) && load.parent.expression === load))
+            else if (!(ts13.isCallExpression(load) && load.expression === ref) && !ts13.isTypeOfExpression(load) && !(ts13.isPropertyAccessExpression(load) && load.name.text === "resolve" && ts13.isCallExpression(load.parent) && load.parent.expression === load))
               unchanged = false;
           }
-          if (!this.modules.cjsGlobal(ref) || !ts12.isCallExpression(load) || load.expression !== ref || load.arguments.length !== 1 || !ts12.isStringLiteralLike(load.arguments[0]) || load.arguments[0].text !== "mongodb")
+          if (!this.modules.cjsGlobal(ref) || !ts13.isCallExpression(load) || load.expression !== ref || load.arguments.length !== 1 || !ts13.isStringLiteralLike(load.arguments[0]) || load.arguments[0].text !== "mongodb")
             continue;
           let selected = load;
           let namespace = true;
-          if (ts12.isPropertyAccessExpression(load.parent) && load.parent.expression === load) {
+          if (ts13.isPropertyAccessExpression(load.parent) && load.parent.expression === load) {
             if (load.parent.name.text !== "MongoClient") {
               unchanged = false;
               continue;
@@ -217160,18 +217555,18 @@ var init_mongo_role = __esm({
             namespace = false;
           }
           const declaration = selected.parent;
-          if (!ts12.isVariableDeclaration(declaration) || declaration.initializer !== selected || !(declaration.parent.flags & ts12.NodeFlags.Const)) {
+          if (!ts13.isVariableDeclaration(declaration) || declaration.initializer !== selected || !(declaration.parent.flags & ts13.NodeFlags.Const)) {
             unchanged = false;
             continue;
           }
-          if (ts12.isIdentifier(declaration.name)) {
+          if (ts13.isIdentifier(declaration.name)) {
             if (!this.bindingClosed(declaration.name, namespace))
               unchanged = false;
-          } else if (namespace && ts12.isObjectBindingPattern(declaration.name)) {
+          } else if (namespace && ts13.isObjectBindingPattern(declaration.name)) {
             for (const item of declaration.name.elements) {
               if (!this.tick())
                 return false;
-              if (item.dotDotDotToken || item.initializer || !ts12.isIdentifier(item.name) || item.propertyName && !ts12.isIdentifier(item.propertyName) || (item.propertyName ?? item.name).getText() !== "MongoClient" || !this.bindingClosed(item.name, false))
+              if (item.dotDotDotToken || item.initializer || !ts13.isIdentifier(item.name) || item.propertyName && !ts13.isIdentifier(item.propertyName) || (item.propertyName ?? item.name).getText() !== "MongoClient" || !this.bindingClosed(item.name, false))
                 unchanged = false;
             }
           } else
@@ -217185,10 +217580,10 @@ var init_mongo_role = __esm({
         if (entry === void 0) {
           entry = null;
           const call2 = fn.parent;
-          if (this.modules.indexComplete && ts12.isCallExpression(call2) && [2, 3].includes(call2.arguments.length) && call2.arguments.at(-1) === fn && ts12.isPropertyAccessExpression(call2.expression) && call2.expression.name.text === "connect" && ts12.isIdentifier(call2.expression.expression) && fn.parameters.length >= 2) {
+          if (this.modules.indexComplete && ts13.isCallExpression(call2) && [2, 3].includes(call2.arguments.length) && call2.arguments.at(-1) === fn && ts13.isPropertyAccessExpression(call2.expression) && call2.expression.name.text === "connect" && ts13.isIdentifier(call2.expression.expression) && fn.parameters.length >= 2) {
             const witness = this.client(call2.expression.expression);
             if (witness !== void 0)
-              entry = { legacy: this.legacy(call2.getSourceFile()), qualified: witness && this.scopeComplete && (call2.arguments.length === 2 || ts12.isObjectLiteralExpression(call2.arguments[1]) && call2.arguments[1].properties.length === 0) };
+              entry = { legacy: this.legacy(call2.getSourceFile()), qualified: witness && this.scopeComplete && (call2.arguments.length === 2 || ts13.isObjectLiteralExpression(call2.arguments[1]) && call2.arguments[1].properties.length === 0) };
           }
           this.entries.set(fn, entry);
         }
@@ -217199,45 +217594,45 @@ var init_mongo_role = __esm({
         if (!entry.legacy)
           return void 0;
         const call = fn.parent;
-        const supportedOptions = ts12.isCallExpression(call) && (call.arguments.length === 2 || ts12.isObjectLiteralExpression(call.arguments[1]) && call.arguments[1].properties.length === 0);
+        const supportedOptions = ts13.isCallExpression(call) && (call.arguments.length === 2 || ts13.isObjectLiteralExpression(call.arguments[1]) && call.arguments[1].properties.length === 0);
         const conditionalOrigin = supportedOptions && this.nativeOriginUnchanged();
         return { valid: entry.qualified, conditionalOrigin, origin: fn.parameters[1], ...!entry.qualified ? { invalidReason: conditionalOrigin ? "opaque" : "unsupported" } : {} };
       }
       observe(call) {
-        if (!this.modules.indexComplete || !ts12.isPropertyAccessExpression(call.expression) || call.expression.name.text !== "connect" || !ts12.isIdentifier(call.expression.expression))
+        if (!this.modules.indexComplete || !ts13.isPropertyAccessExpression(call.expression) || call.expression.name.text !== "connect" || !ts13.isIdentifier(call.expression.expression))
           return;
         const witness = this.client(call.expression.expression);
         if (witness === void 0)
           return;
         const callback = call.arguments.at(-1);
-        if (!witness || !this.legacy(call.getSourceFile()) || ![2, 3].includes(call.arguments.length) || !callback || !(ts12.isArrowFunction(callback) || ts12.isFunctionExpression(callback)) || callback.parameters.length < 2 || call.arguments.length === 3 && !(ts12.isObjectLiteralExpression(call.arguments[1]) && call.arguments[1].properties.length === 0))
+        if (!witness || !this.legacy(call.getSourceFile()) || ![2, 3].includes(call.arguments.length) || !callback || !(ts13.isArrowFunction(callback) || ts13.isFunctionExpression(callback)) || callback.parameters.length < 2 || call.arguments.length === 3 && !(ts13.isObjectLiteralExpression(call.arguments[1]) && call.arguments[1].properties.length === 0))
           this.gap("module_export_unsupported", call);
       }
       collection(call, db) {
-        if (!db || !ts12.isPropertyAccessExpression(call.expression) || call.expression.name.text !== "collection")
+        if (!db || !ts13.isPropertyAccessExpression(call.expression) || call.expression.name.text !== "collection")
           return void 0;
-        const supported2 = call.arguments.length === 1 && ts12.isStringLiteralLike(call.arguments[0]);
+        const supported2 = call.arguments.length === 1 && ts13.isStringLiteralLike(call.arguments[0]);
         if (!supported2 || !db.valid)
           this.gap("module_export_unsupported", call);
         return { valid: db.valid && supported2, db, origin: call, ...!db.valid || !supported2 ? { invalidReason: db.invalidReason ?? "unsupported" } : {} };
       }
       selector(call, role) {
-        return !!role && ts12.isPropertyAccessExpression(call.expression) && SELECTORS2.has(call.expression.name.text);
+        return !!role && ts13.isPropertyAccessExpression(call.expression) && SELECTORS2.has(call.expression.name.text);
       }
     };
   }
 });
 
 // build/src/source/filesystem-role.js
-import { posix as posix4 } from "node:path";
-var ts13, object3, unwrap3, FilesystemRoleModel;
+import { posix as posix5 } from "node:path";
+var ts14, object4, unwrap3, FilesystemRoleModel;
 var init_filesystem_role = __esm({
   "build/src/source/filesystem-role.js"() {
     "use strict";
-    ts13 = __toESM(require_typescript(), 1);
-    object3 = (value) => !!value && typeof value === "object" && !Array.isArray(value);
+    ts14 = __toESM(require_typescript(), 1);
+    object4 = (value) => !!value && typeof value === "object" && !Array.isArray(value);
     unwrap3 = (expression) => {
-      while (ts13.isParenthesizedExpression(expression) || ts13.isAsExpression(expression) || ts13.isNonNullExpression(expression) || ts13.isTypeAssertionExpression(expression))
+      while (ts14.isParenthesizedExpression(expression) || ts14.isAsExpression(expression) || ts14.isNonNullExpression(expression) || ts14.isTypeAssertionExpression(expression))
         expression = expression.expression;
       return expression;
     };
@@ -217265,7 +217660,7 @@ var init_filesystem_role = __esm({
         for (const file of metadata) {
           if (!tick())
             break;
-          const name = posix4.basename(file.path), directory2 = posix4.dirname(file.path);
+          const name = posix5.basename(file.path), directory2 = posix5.dirname(file.path);
           if (name === "npm-shrinkwrap.json") {
             this.shrinkwraps.add(directory2);
             continue;
@@ -217279,14 +217674,14 @@ var init_filesystem_role = __esm({
           }
           try {
             const value = JSON.parse(file.text);
-            table.set(directory2, object3(value) ? value : null);
+            table.set(directory2, object4(value) ? value : null);
           } catch {
             table.set(directory2, null);
           }
         }
       }
       metadata(file) {
-        let directory2 = posix4.dirname(file.fileName);
+        let directory2 = posix5.dirname(file.fileName);
         for (let depth = 0; depth <= 64; depth++) {
           if (!this.tick())
             return void 0;
@@ -217297,7 +217692,7 @@ var init_filesystem_role = __esm({
             return { manifest, directory: directory2 };
           if (directory2 === ".")
             break;
-          directory2 = posix4.dirname(directory2);
+          directory2 = posix5.dirname(directory2);
         }
         return void 0;
       }
@@ -217329,20 +217724,20 @@ var init_filesystem_role = __esm({
           }
           if (directory2 === ".")
             break;
-          directory2 = posix4.dirname(directory2);
+          directory2 = posix5.dirname(directory2);
         }
         return false;
       }
       imported(call, name) {
         const callee = unwrap3(call.expression);
-        if (!ts13.isIdentifier(callee))
+        if (!ts14.isIdentifier(callee))
           return void 0;
         const symbol = this.modules.symbol(callee);
         const declaration = symbol?.declarations?.length === 1 ? symbol.declarations[0] : void 0;
-        if (!declaration || !ts13.isImportSpecifier(declaration) || declaration.isTypeOnly || (declaration.propertyName ?? declaration.name).text !== name)
+        if (!declaration || !ts14.isImportSpecifier(declaration) || declaration.isTypeOnly || (declaration.propertyName ?? declaration.name).text !== name)
           return void 0;
         const load = declaration.parent.parent.parent;
-        if (!ts13.isImportDeclaration(load) || load.importClause?.isTypeOnly || !ts13.isStringLiteralLike(load.moduleSpecifier))
+        if (!ts14.isImportDeclaration(load) || load.importClause?.isTypeOnly || !ts14.isStringLiteralLike(load.moduleSpecifier))
           return void 0;
         let valid = this.modules.indexComplete && !this.modules.mutated.has(symbol) && !this.modules.mutatedMembers.has(symbol);
         for (const reference2 of this.modules.references.get(symbol) ?? []) {
@@ -217352,7 +217747,7 @@ var init_filesystem_role = __esm({
           }
           if (reference2 === declaration.name)
             continue;
-          if (!ts13.isCallExpression(reference2.parent) || reference2.parent.expression !== reference2)
+          if (!ts14.isCallExpression(reference2.parent) || reference2.parent.expression !== reference2)
             valid = false;
         }
         return { specifier: load.moduleSpecifier.text, valid };
@@ -217365,22 +217760,22 @@ var init_filesystem_role = __esm({
         for (const reference2 of this.modules.references.get(symbol) ?? []) {
           if (!this.tick())
             return void 0;
-          if (reference2 === ("name" in declaration ? declaration.name : void 0) || this.typeReference(reference2) || ts13.isNewExpression(reference2.parent) && reference2.parent.expression === reference2 || this.declaredRecordExport(reference2))
+          if (reference2 === ("name" in declaration ? declaration.name : void 0) || this.typeReference(reference2) || ts14.isNewExpression(reference2.parent) && reference2.parent.expression === reference2 || this.declaredRecordExport(reference2))
             continue;
           return void 0;
         }
-        if (ts13.isClassDeclaration(declaration))
+        if (ts14.isClassDeclaration(declaration))
           return this.classUnchanged(declaration) ? declaration : void 0;
-        if (!ts13.isImportSpecifier(declaration) || declaration.isTypeOnly)
+        if (!ts14.isImportSpecifier(declaration) || declaration.isTypeOnly)
           return void 0;
         const load = declaration.parent.parent.parent;
-        if (!ts13.isImportDeclaration(load) || load.importClause?.isTypeOnly || !ts13.isStringLiteralLike(load.moduleSpecifier))
+        if (!ts14.isImportDeclaration(load) || load.importClause?.isTypeOnly || !ts14.isStringLiteralLike(load.moduleSpecifier))
           return void 0;
         const module = this.modules.resolveSourceModule(identifier3.getSourceFile(), load.moduleSpecifier.text);
         if (module.kind !== "file")
           return void 0;
         const name = (declaration.propertyName ?? declaration.name).text;
-        const classes = module.file.statements.filter((statement) => ts13.isClassDeclaration(statement) && statement.name?.text === name && ts13.getModifiers(statement)?.some((modifier) => modifier.kind === ts13.SyntaxKind.ExportKeyword) === true);
+        const classes = module.file.statements.filter((statement) => ts14.isClassDeclaration(statement) && statement.name?.text === name && ts14.getModifiers(statement)?.some((modifier) => modifier.kind === ts14.SyntaxKind.ExportKeyword) === true);
         return classes.length === 1 && this.classUnchanged(classes[0]) ? classes[0] : void 0;
       }
       classUnchanged(declaration) {
@@ -217390,7 +217785,7 @@ var init_filesystem_role = __esm({
         for (const reference2 of this.modules.references.get(symbol) ?? []) {
           if (!this.tick())
             return false;
-          if (reference2 === declaration.name || ts13.isNewExpression(reference2.parent) && reference2.parent.expression === reference2)
+          if (reference2 === declaration.name || ts14.isNewExpression(reference2.parent) && reference2.parent.expression === reference2)
             continue;
           if (this.typeReference(reference2) || this.declaredRecordExport(reference2))
             continue;
@@ -217401,17 +217796,17 @@ var init_filesystem_role = __esm({
       /** A declared public data slot is a conditional package boundary, not a runtime identity proof. */
       declaredRecordExport(reference2) {
         const property = reference2.parent;
-        if (!ts13.isShorthandPropertyAssignment(property) || property.name !== reference2 || !ts13.isObjectLiteralExpression(property.parent))
+        if (!ts14.isShorthandPropertyAssignment(property) || property.name !== reference2 || !ts14.isObjectLiteralExpression(property.parent))
           return false;
         const record10 = property.parent, call = record10.parent;
-        if (!ts13.isCallExpression(call) || call.arguments[1] !== record10 || call.arguments.length !== 2 || !ts13.isPropertyAccessExpression(call.expression) || call.expression.name.text !== "assign" || !ts13.isIdentifier(call.expression.expression) || call.expression.expression.text !== "Object" || this.modules.symbol(call.expression.expression)?.declarations?.some((declaration) => this.modules.files.has(declaration.getSourceFile().fileName)))
+        if (!ts14.isCallExpression(call) || call.arguments[1] !== record10 || call.arguments.length !== 2 || !ts14.isPropertyAccessExpression(call.expression) || call.expression.name.text !== "assign" || !ts14.isIdentifier(call.expression.expression) || call.expression.expression.text !== "Object" || this.modules.symbol(call.expression.expression)?.declarations?.some((declaration) => this.modules.files.has(declaration.getSourceFile().fileName)))
           return false;
         for (const entry of record10.properties) {
-          if (!this.tick() || !ts13.isShorthandPropertyAssignment(entry) && !ts13.isPropertyAssignment(entry) || ts13.isComputedPropertyName(entry.name))
+          if (!this.tick() || !ts14.isShorthandPropertyAssignment(entry) && !ts14.isPropertyAssignment(entry) || ts14.isComputedPropertyName(entry.name))
             return false;
         }
         const binding = call.parent;
-        if (!ts13.isVariableDeclaration(binding) || !ts13.isIdentifier(binding.name) || !ts13.isVariableDeclarationList(binding.parent) || !(binding.parent.flags & ts13.NodeFlags.Const) || !ts13.isVariableStatement(binding.parent.parent) || !ts13.getModifiers(binding.parent.parent)?.some((modifier) => modifier.kind === ts13.SyntaxKind.ExportKeyword))
+        if (!ts14.isVariableDeclaration(binding) || !ts14.isIdentifier(binding.name) || !ts14.isVariableDeclarationList(binding.parent) || !(binding.parent.flags & ts14.NodeFlags.Const) || !ts14.isVariableStatement(binding.parent.parent) || !ts14.getModifiers(binding.parent.parent)?.some((modifier) => modifier.kind === ts14.SyntaxKind.ExportKeyword))
           return false;
         const symbol = this.modules.symbol(binding.name);
         for (const use of this.modules.references.get(symbol) ?? []) {
@@ -217419,9 +217814,9 @@ var init_filesystem_role = __esm({
             return false;
           if (use === binding.name)
             continue;
-          if (ts13.isPropertyAccessExpression(use.parent) && use.parent.expression === use && use.parent.name.text !== reference2.text)
+          if (ts14.isPropertyAccessExpression(use.parent) && use.parent.expression === use && use.parent.name.text !== reference2.text)
             continue;
-          if (ts13.isBinaryExpression(use.parent) && use.parent.right === use && ts13.isPropertyAccessExpression(use.parent.left) && use.parent.left.name.text !== reference2.text)
+          if (ts14.isBinaryExpression(use.parent) && use.parent.right === use && ts14.isPropertyAccessExpression(use.parent.left) && use.parent.left.name.text !== reference2.text)
             continue;
           return false;
         }
@@ -217432,33 +217827,33 @@ var init_filesystem_role = __esm({
         for (let depth = 0; node.parent && depth < 16; depth++, node = node.parent) {
           if (!this.tick())
             return false;
-          if (ts13.isTypeNode(node.parent))
+          if (ts14.isTypeNode(node.parent))
             return true;
-          if (ts13.isExpression(node.parent) || ts13.isStatement(node.parent))
+          if (ts14.isExpression(node.parent) || ts14.isStatement(node.parent))
             return false;
         }
         return false;
       }
       localProvider(call) {
         const result3 = this.modules.resolveCall(call);
-        if (result3.kind !== "resolved" || !result3.target.body || !ts13.isBlock(result3.target.body))
+        if (result3.kind !== "resolved" || !result3.target.body || !ts14.isBlock(result3.target.body))
           return void 0;
         const statements2 = result3.target.body.statements;
-        const returned = statements2.length === 1 && ts13.isReturnStatement(statements2[0]) ? statements2[0].expression : void 0;
-        if (!returned || !ts13.isCallExpression(returned) || returned.arguments.length || !ts13.isPropertyAccessExpression(returned.expression) || returned.expression.name.text !== "stream" || !ts13.isNewExpression(returned.expression.expression))
+        const returned = statements2.length === 1 && ts14.isReturnStatement(statements2[0]) ? statements2[0].expression : void 0;
+        if (!returned || !ts14.isCallExpression(returned) || returned.arguments.length || !ts14.isPropertyAccessExpression(returned.expression) || returned.expression.name.text !== "stream" || !ts14.isNewExpression(returned.expression.expression))
           return void 0;
         const constructor = returned.expression.expression.expression;
-        if (!ts13.isIdentifier(constructor))
+        if (!ts14.isIdentifier(constructor))
           return void 0;
         const declared = this.importedClass(constructor);
         if (!declared)
           return void 0;
-        const methods = declared.members.filter((member3) => ts13.isMethodDeclaration(member3) && !!member3.body && ts13.isIdentifier(member3.name) && member3.name.text === "stream");
+        const methods = declared.members.filter((member3) => ts14.isMethodDeclaration(member3) && !!member3.body && ts14.isIdentifier(member3.name) && member3.name.text === "stream");
         if (methods.length !== 1)
           return void 0;
         const methodBody = methods[0].body;
-        const expression = methodBody.statements.length === 1 && ts13.isReturnStatement(methodBody.statements[0]) ? methodBody.statements[0].expression : void 0;
-        if (!expression || !ts13.isCallExpression(expression) || !ts13.isPropertyAccessExpression(expression.expression) || expression.expression.name.text !== "stream" || !ts13.isNewExpression(expression.expression.expression) || !ts13.isIdentifier(expression.expression.expression.expression))
+        const expression = methodBody.statements.length === 1 && ts14.isReturnStatement(methodBody.statements[0]) ? methodBody.statements[0].expression : void 0;
+        if (!expression || !ts14.isCallExpression(expression) || !ts14.isPropertyAccessExpression(expression.expression) || expression.expression.name.text !== "stream" || !ts14.isNewExpression(expression.expression.expression) || !ts14.isIdentifier(expression.expression.expression.expression))
           return void 0;
         const streamClass = this.importedClass(expression.expression.expression.expression);
         if (!streamClass || !this.filesystemProviderGraph(streamClass))
@@ -217467,14 +217862,14 @@ var init_filesystem_role = __esm({
       }
       exactPackageSymbol(identifier3, name, specifier) {
         const symbol = this.modules.symbol(identifier3), declaration = symbol?.declarations?.length === 1 ? symbol.declarations[0] : void 0;
-        if (!declaration || !ts13.isImportSpecifier(declaration) || declaration.isTypeOnly || (declaration.propertyName ?? declaration.name).text !== name || this.modules.mutated.has(symbol) || this.modules.mutatedMembers.has(symbol))
+        if (!declaration || !ts14.isImportSpecifier(declaration) || declaration.isTypeOnly || (declaration.propertyName ?? declaration.name).text !== name || this.modules.mutated.has(symbol) || this.modules.mutatedMembers.has(symbol))
           return false;
         const load = declaration.parent.parent.parent;
-        return ts13.isImportDeclaration(load) && !load.importClause?.isTypeOnly && ts13.isStringLiteralLike(load.moduleSpecifier) && load.moduleSpecifier.text === specifier;
+        return ts14.isImportDeclaration(load) && !load.importClause?.isTypeOnly && ts14.isStringLiteralLike(load.moduleSpecifier) && load.moduleSpecifier.text === specifier;
       }
       filesystemProviderGraph(streamClass) {
-        const baseName = streamClass.heritageClauses?.find((clause) => clause.token === ts13.SyntaxKind.ExtendsKeyword)?.types[0]?.expression;
-        if (!baseName || !ts13.isIdentifier(baseName))
+        const baseName = streamClass.heritageClauses?.find((clause) => clause.token === ts14.SyntaxKind.ExtendsKeyword)?.types[0]?.expression;
+        if (!baseName || !ts14.isIdentifier(baseName))
           return false;
         const base = this.importedClass(baseName);
         if (!base)
@@ -217485,15 +217880,15 @@ var init_filesystem_role = __esm({
           for (const member3 of declaration.members) {
             if (!this.tick())
               return false;
-            if (ts13.isMethodDeclaration(member3) && member3.body && ts13.isIdentifier(member3.name))
+            if (ts14.isMethodDeclaration(member3) && member3.body && ts14.isIdentifier(member3.name))
               methods.set(member3.name.text, member3);
           }
         const stream = methods.get("stream");
         if (!stream)
           return false;
-        const returned = stream.body.statements.filter(ts13.isReturnStatement);
+        const returned = stream.body.statements.filter(ts14.isReturnStatement);
         const result3 = returned.length === 1 ? returned[0].expression : void 0;
-        if (!result3 || !ts13.isPropertyAccessExpression(result3) || result3.expression.kind !== ts13.SyntaxKind.ThisKeyword)
+        if (!result3 || !ts14.isPropertyAccessExpression(result3) || result3.expression.kind !== ts14.SyntaxKind.ThisKeyword)
           return false;
         const resultField = result3.name.text;
         let allocations = 0;
@@ -217502,16 +217897,16 @@ var init_filesystem_role = __esm({
             return false;
           if (!inClass(write, base) && !inClass(write, streamClass))
             continue;
-          const target = ts13.isPropertyDeclaration(write) ? write.name : ts13.isBinaryExpression(write) ? write.left : ts13.isForInStatement(write) || ts13.isForOfStatement(write) ? write.initializer : ts13.isDeleteExpression(write) ? write.expression : ts13.isPrefixUnaryExpression(write) || ts13.isPostfixUnaryExpression(write) ? write.operand : void 0;
-          const touches = ts13.isPropertyDeclaration(write) ? ts13.isComputedPropertyName(write.name) ? !ts13.isStringLiteralLike(unwrap3(write.name.expression)) || unwrap3(write.name.expression).text === resultField : (ts13.isIdentifier(write.name) || ts13.isStringLiteralLike(write.name)) && write.name.text === resultField : target && this.touchesInstanceField(target, resultField);
+          const target = ts14.isPropertyDeclaration(write) ? write.name : ts14.isBinaryExpression(write) ? write.left : ts14.isForInStatement(write) || ts14.isForOfStatement(write) ? write.initializer : ts14.isDeleteExpression(write) ? write.expression : ts14.isPrefixUnaryExpression(write) || ts14.isPostfixUnaryExpression(write) ? write.operand : void 0;
+          const touches = ts14.isPropertyDeclaration(write) ? ts14.isComputedPropertyName(write.name) ? !ts14.isStringLiteralLike(unwrap3(write.name.expression)) || unwrap3(write.name.expression).text === resultField : (ts14.isIdentifier(write.name) || ts14.isStringLiteralLike(write.name)) && write.name.text === resultField : target && this.touchesInstanceField(target, resultField);
           if (!touches)
             continue;
-          const initializer = ts13.isPropertyDeclaration(write) ? write.initializer : ts13.isBinaryExpression(write) && write.operatorToken.kind === ts13.SyntaxKind.EqualsToken ? write.right : void 0;
+          const initializer = ts14.isPropertyDeclaration(write) ? write.initializer : ts14.isBinaryExpression(write) && write.operatorToken.kind === ts14.SyntaxKind.EqualsToken ? write.right : void 0;
           const node = initializer && unwrap3(initializer);
-          const direct = ts13.isPropertyDeclaration(write) ? !ts13.isComputedPropertyName(write.name) || ts13.isStringLiteralLike(unwrap3(write.name.expression)) : target && ts13.isPropertyAccessExpression(target) && target.expression.kind === ts13.SyntaxKind.ThisKeyword && target.name.text === resultField;
-          if (!direct || !node || !ts13.isNewExpression(node) || !ts13.isIdentifier(node.expression) || !this.exactPackageSymbol(node.expression, "Minipass", "minipass") || ++allocations !== 1)
+          const direct = ts14.isPropertyDeclaration(write) ? !ts14.isComputedPropertyName(write.name) || ts14.isStringLiteralLike(unwrap3(write.name.expression)) : target && ts14.isPropertyAccessExpression(target) && target.expression.kind === ts14.SyntaxKind.ThisKeyword && target.name.text === resultField;
+          if (!direct || !node || !ts14.isNewExpression(node) || !ts14.isIdentifier(node.expression) || !this.exactPackageSymbol(node.expression, "Minipass", "minipass") || ++allocations !== 1)
             return false;
-          if (ts13.isBinaryExpression(write) && !ts13.isConstructorDeclaration(this.modules.ownerOf(write)))
+          if (ts14.isBinaryExpression(write) && !ts14.isConstructorDeclaration(this.modules.ownerOf(write)))
             return false;
         }
         if (allocations !== 1)
@@ -217532,11 +217927,11 @@ var init_filesystem_role = __esm({
             while (nested.parent && nested.parent !== method) {
               if (!this.tick())
                 return false;
-              if (ts13.isFunctionDeclaration(nested) || ts13.isFunctionExpression(nested)) {
+              if (ts14.isFunctionDeclaration(nested) || ts14.isFunctionExpression(nested)) {
                 eligible = false;
                 break;
               }
-              if (ts13.isArrowFunction(nested) && (!ts13.isCallExpression(nested.parent) || !nested.parent.arguments.includes(nested))) {
+              if (ts14.isArrowFunction(nested) && (!ts14.isCallExpression(nested.parent) || !nested.parent.arguments.includes(nested))) {
                 eligible = false;
                 break;
               }
@@ -217558,7 +217953,7 @@ var init_filesystem_role = __esm({
             continue;
           reachable.add(method);
           for (const call of calls.get(method) ?? [])
-            if (ts13.isPropertyAccessExpression(call.expression) && call.expression.expression.kind === ts13.SyntaxKind.ThisKeyword) {
+            if (ts14.isPropertyAccessExpression(call.expression) && call.expression.expression.kind === ts14.SyntaxKind.ThisKeyword) {
               const target = methods.get(call.expression.name.text);
               if (target)
                 pending.push(target);
@@ -217570,12 +217965,12 @@ var init_filesystem_role = __esm({
           for (const call of calls.get(method) ?? []) {
             if (!this.tick())
               return false;
-            if (!ts13.isPropertyAccessExpression(call.expression))
+            if (!ts14.isPropertyAccessExpression(call.expression))
               continue;
             const receiver = call.expression.expression;
-            if (call.expression.name.text === "readdirCB" && call.arguments.some(ts13.isArrowFunction) && this.pathReceiver(receiver, method, /* @__PURE__ */ new Set()))
+            if (call.expression.name.text === "readdirCB" && call.arguments.some(ts14.isArrowFunction) && this.pathReceiver(receiver, method, /* @__PURE__ */ new Set()))
               read = true;
-            if (call.expression.name.text === "write" && call.arguments.length === 1 && ts13.isIdentifier(call.arguments[0]) && ts13.isPropertyAccessExpression(receiver) && receiver.expression.kind === ts13.SyntaxKind.ThisKeyword && receiver.name.text === resultField && method.parameters.length === 1 && ts13.isIdentifier(method.parameters[0].name) && this.modules.symbol(method.parameters[0].name) === this.modules.symbol(call.arguments[0]))
+            if (call.expression.name.text === "write" && call.arguments.length === 1 && ts14.isIdentifier(call.arguments[0]) && ts14.isPropertyAccessExpression(receiver) && receiver.expression.kind === ts14.SyntaxKind.ThisKeyword && receiver.name.text === resultField && method.parameters.length === 1 && ts14.isIdentifier(method.parameters[0].name) && this.modules.symbol(method.parameters[0].name) === this.modules.symbol(call.arguments[0]))
               emitters.add(method);
           }
         let pathToEmitter = false;
@@ -217583,7 +217978,7 @@ var init_filesystem_role = __esm({
           for (const call of calls.get(method) ?? []) {
             if (!this.tick())
               return false;
-            if (ts13.isPropertyAccessExpression(call.expression) && call.expression.expression.kind === ts13.SyntaxKind.ThisKeyword && emitters.has(methods.get(call.expression.name.text)) && call.arguments.length === 1 && this.pathDerived(call.arguments[0], method, /* @__PURE__ */ new Set()))
+            if (ts14.isPropertyAccessExpression(call.expression) && call.expression.expression.kind === ts14.SyntaxKind.ThisKeyword && emitters.has(methods.get(call.expression.name.text)) && call.arguments.length === 1 && this.pathDerived(call.arguments[0], method, /* @__PURE__ */ new Set()))
               pathToEmitter = true;
           }
         return read && pathToEmitter && this.version(streamClass.getSourceFile(), "minipass", "7.1.2") && this.version(streamClass.getSourceFile(), "path-scurry", "1.11.1");
@@ -217597,35 +217992,35 @@ var init_filesystem_role = __esm({
           return true;
         }
         const nested = (node) => this.touchesInstanceField(node, field, depth + 1);
-        if (ts13.isPropertyAccessExpression(target))
-          return target.expression.kind === ts13.SyntaxKind.ThisKeyword ? target.name.text === field : nested(target.expression);
-        if (ts13.isElementAccessExpression(target))
-          return target.expression.kind === ts13.SyntaxKind.ThisKeyword ? !ts13.isStringLiteralLike(target.argumentExpression) || target.argumentExpression.text === field : nested(target.expression);
-        if (ts13.isParenthesizedExpression(target) || ts13.isAsExpression(target) || ts13.isNonNullExpression(target) || ts13.isTypeAssertionExpression(target) || ts13.isSpreadElement(target) || ts13.isSpreadAssignment(target))
+        if (ts14.isPropertyAccessExpression(target))
+          return target.expression.kind === ts14.SyntaxKind.ThisKeyword ? target.name.text === field : nested(target.expression);
+        if (ts14.isElementAccessExpression(target))
+          return target.expression.kind === ts14.SyntaxKind.ThisKeyword ? !ts14.isStringLiteralLike(target.argumentExpression) || target.argumentExpression.text === field : nested(target.expression);
+        if (ts14.isParenthesizedExpression(target) || ts14.isAsExpression(target) || ts14.isNonNullExpression(target) || ts14.isTypeAssertionExpression(target) || ts14.isSpreadElement(target) || ts14.isSpreadAssignment(target))
           return nested(target.expression);
-        if (ts13.isBinaryExpression(target))
+        if (ts14.isBinaryExpression(target))
           return nested(target.left);
-        if (ts13.isArrayLiteralExpression(target) || ts13.isArrayBindingPattern(target))
+        if (ts14.isArrayLiteralExpression(target) || ts14.isArrayBindingPattern(target))
           return target.elements.some(nested);
-        if (ts13.isObjectLiteralExpression(target))
-          return target.properties.some((property) => ts13.isPropertyAssignment(property) ? nested(property.initializer) : ts13.isShorthandPropertyAssignment(property) ? nested(property.name) : ts13.isSpreadAssignment(property) ? nested(property.expression) : true);
-        if (ts13.isObjectBindingPattern(target))
+        if (ts14.isObjectLiteralExpression(target))
+          return target.properties.some((property) => ts14.isPropertyAssignment(property) ? nested(property.initializer) : ts14.isShorthandPropertyAssignment(property) ? nested(property.name) : ts14.isSpreadAssignment(property) ? nested(property.expression) : true);
+        if (ts14.isObjectBindingPattern(target))
           return target.elements.some((element) => nested(element.name));
-        if (ts13.isBindingElement(target))
+        if (ts14.isBindingElement(target))
           return nested(target.name);
-        if (ts13.isVariableDeclarationList(target))
+        if (ts14.isVariableDeclarationList(target))
           return target.declarations.some((declaration) => nested(declaration.name));
         return false;
       }
       pathFormalUncontradicted(parameter, method) {
-        if (!ts13.isIdentifier(method.name))
+        if (!ts14.isIdentifier(method.name))
           return false;
         const index = method.parameters.indexOf(parameter);
         let incoming = false;
         for (const call of this.modules.calls) {
           if (!this.tick())
             return false;
-          if (!ts13.isPropertyAccessExpression(call.expression) || call.expression.expression.kind !== ts13.SyntaxKind.ThisKeyword || call.expression.name.text !== method.name.text || !call.arguments[index])
+          if (!ts14.isPropertyAccessExpression(call.expression) || call.expression.expression.kind !== ts14.SyntaxKind.ThisKeyword || call.expression.name.text !== method.name.text || !call.arguments[index])
             continue;
           incoming = true;
           if (this.constantPathContradiction(call.arguments[index], /* @__PURE__ */ new Set()))
@@ -217642,20 +218037,20 @@ var init_filesystem_role = __esm({
           return true;
         }
         expression = unwrap3(expression);
-        if (ts13.isObjectLiteralExpression(expression) || ts13.isArrayLiteralExpression(expression) || ts13.isLiteralExpression(expression) || [ts13.SyntaxKind.NullKeyword, ts13.SyntaxKind.TrueKeyword, ts13.SyntaxKind.FalseKeyword].includes(expression.kind))
+        if (ts14.isObjectLiteralExpression(expression) || ts14.isArrayLiteralExpression(expression) || ts14.isLiteralExpression(expression) || [ts14.SyntaxKind.NullKeyword, ts14.SyntaxKind.TrueKeyword, ts14.SyntaxKind.FalseKeyword].includes(expression.kind))
           return true;
-        if (ts13.isIdentifier(expression)) {
+        if (ts14.isIdentifier(expression)) {
           const symbol = this.modules.symbol(expression), declaration = symbol?.declarations?.length === 1 ? symbol.declarations[0] : void 0;
-          if (!symbol || seen.has(symbol) || !declaration || !ts13.isVariableDeclaration(declaration) || !declaration.initializer)
+          if (!symbol || seen.has(symbol) || !declaration || !ts14.isVariableDeclaration(declaration) || !declaration.initializer)
             return false;
           return this.constantPathContradiction(declaration.initializer, /* @__PURE__ */ new Set([...seen, symbol]), depth + 1);
         }
-        if (ts13.isConditionalExpression(expression))
+        if (ts14.isConditionalExpression(expression))
           return this.constantPathContradiction(expression.whenTrue, seen, depth + 1) || this.constantPathContradiction(expression.whenFalse, seen, depth + 1);
         return false;
       }
       pathType(type) {
-        return !!type && ts13.isTypeReferenceNode(type) && ts13.isIdentifier(type.typeName) && this.exactPackageSymbol(type.typeName, "Path", "path-scurry");
+        return !!type && ts14.isTypeReferenceNode(type) && ts14.isIdentifier(type.typeName) && this.exactPackageSymbol(type.typeName, "Path", "path-scurry");
       }
       /** Narrow declared Path/PathScurry receiver domain, not a method-name source heuristic. */
       pathReceiver(expression, method, seen, depth = 0) {
@@ -217666,29 +218061,29 @@ var init_filesystem_role = __esm({
           return false;
         }
         expression = unwrap3(expression);
-        if (ts13.isPropertyAccessExpression(expression) && expression.name.text === "cwd") {
+        if (ts14.isPropertyAccessExpression(expression) && expression.name.text === "cwd") {
           const allocation = unwrap3(expression.expression);
-          return ts13.isNewExpression(allocation) && ts13.isIdentifier(allocation.expression) && ["PathScurry", "PathScurryPosix", "PathScurryDarwin", "PathScurryWin32"].some((name) => this.exactPackageSymbol(allocation.expression, name, "path-scurry"));
+          return ts14.isNewExpression(allocation) && ts14.isIdentifier(allocation.expression) && ["PathScurry", "PathScurryPosix", "PathScurryDarwin", "PathScurryWin32"].some((name) => this.exactPackageSymbol(allocation.expression, name, "path-scurry"));
         }
-        if (!ts13.isIdentifier(expression))
+        if (!ts14.isIdentifier(expression))
           return false;
         const symbol = this.modules.symbol(expression), declaration = symbol?.declarations?.length === 1 ? symbol.declarations[0] : void 0;
         if (!symbol || seen.has(symbol) || !declaration)
           return false;
         const next = /* @__PURE__ */ new Set([...seen, symbol]);
-        if (ts13.isParameter(declaration) && ts13.isMethodDeclaration(declaration.parent) && this.pathType(declaration.type))
+        if (ts14.isParameter(declaration) && ts14.isMethodDeclaration(declaration.parent) && this.pathType(declaration.type))
           return this.pathFormalUncontradicted(declaration, declaration.parent);
-        if (!ts13.isVariableDeclaration(declaration))
+        if (!ts14.isVariableDeclaration(declaration))
           return false;
         if (declaration.initializer)
           return this.pathReceiver(declaration.initializer, method, next, depth + 1);
-        if (!ts13.isVariableDeclarationList(declaration.parent) || !ts13.isForOfStatement(declaration.parent.parent))
+        if (!ts14.isVariableDeclarationList(declaration.parent) || !ts14.isForOfStatement(declaration.parent.parent))
           return false;
         const iterable = unwrap3(declaration.parent.parent.expression);
-        if (!ts13.isCallExpression(iterable) || !ts13.isPropertyAccessExpression(iterable.expression) || !ts13.isIdentifier(iterable.expression.expression))
+        if (!ts14.isCallExpression(iterable) || !ts14.isPropertyAccessExpression(iterable.expression) || !ts14.isIdentifier(iterable.expression.expression))
           return false;
         const receiver = this.modules.symbol(iterable.expression.expression), parameter = receiver?.declarations?.length === 1 ? receiver.declarations[0] : void 0;
-        if (!parameter || !ts13.isParameter(parameter) || !parameter.type || !ts13.isTypeReferenceNode(parameter.type) || !ts13.isIdentifier(parameter.type.typeName))
+        if (!parameter || !ts14.isParameter(parameter) || !parameter.type || !ts14.isTypeReferenceNode(parameter.type) || !ts14.isIdentifier(parameter.type.typeName))
           return false;
         const declared = this.importedClass(parameter.type.typeName);
         if (!declared)
@@ -217696,9 +218091,9 @@ var init_filesystem_role = __esm({
         for (const member3 of declared.members) {
           if (!this.tick())
             return false;
-          if (ts13.isMethodDeclaration(member3) && member3.body && ts13.isIdentifier(member3.name) && member3.name.text === iterable.expression.name.text && member3.type && ts13.isArrayTypeNode(member3.type) && this.pathType(member3.type.elementType)) {
+          if (ts14.isMethodDeclaration(member3) && member3.body && ts14.isIdentifier(member3.name) && member3.name.text === iterable.expression.name.text && member3.type && ts14.isArrayTypeNode(member3.type) && this.pathType(member3.type.elementType)) {
             for (const statement of member3.body.statements)
-              if (ts13.isReturnStatement(statement) && statement.expression && this.constantPathContradiction(statement.expression, /* @__PURE__ */ new Set()))
+              if (ts14.isReturnStatement(statement) && statement.expression && this.constantPathContradiction(statement.expression, /* @__PURE__ */ new Set()))
                 return false;
             return true;
           }
@@ -217713,38 +218108,38 @@ var init_filesystem_role = __esm({
           return false;
         }
         expression = unwrap3(expression);
-        if (ts13.isCallExpression(expression) && ts13.isPropertyAccessExpression(expression.expression) && ["fullpath", "fullpathPosix", "relative", "relativePosix"].includes(expression.expression.name.text)) {
+        if (ts14.isCallExpression(expression) && ts14.isPropertyAccessExpression(expression.expression) && ["fullpath", "fullpathPosix", "relative", "relativePosix"].includes(expression.expression.name.text)) {
           const receiver = expression.expression.expression;
-          if (!ts13.isIdentifier(receiver))
+          if (!ts14.isIdentifier(receiver))
             return false;
           const symbol = this.modules.symbol(receiver), declaration = symbol?.declarations?.length === 1 ? symbol.declarations[0] : void 0;
           if (!declaration)
             return false;
-          if (ts13.isParameter(declaration) && declaration.parent === method && declaration.type && ts13.isTypeReferenceNode(declaration.type) && ts13.isIdentifier(declaration.type.typeName) && this.exactPackageSymbol(declaration.type.typeName, "Path", "path-scurry"))
+          if (ts14.isParameter(declaration) && declaration.parent === method && declaration.type && ts14.isTypeReferenceNode(declaration.type) && ts14.isIdentifier(declaration.type.typeName) && this.exactPackageSymbol(declaration.type.typeName, "Path", "path-scurry"))
             return this.pathFormalUncontradicted(declaration, method);
-          if (ts13.isVariableDeclaration(declaration) && ts13.isVariableDeclarationList(declaration.parent) && ts13.isForOfStatement(declaration.parent.parent)) {
+          if (ts14.isVariableDeclaration(declaration) && ts14.isVariableDeclarationList(declaration.parent) && ts14.isForOfStatement(declaration.parent.parent)) {
             const iterable = declaration.parent.parent.expression;
-            if (!ts13.isIdentifier(iterable))
+            if (!ts14.isIdentifier(iterable))
               return false;
             const entrySymbol = this.modules.symbol(iterable), entry = entrySymbol?.declarations?.length === 1 ? entrySymbol.declarations[0] : void 0;
-            if (!entry || !ts13.isParameter(entry) || !ts13.isArrowFunction(entry.parent) || entry.parent.parameters[1] !== entry || !ts13.isCallExpression(entry.parent.parent) || !ts13.isPropertyAccessExpression(entry.parent.parent.expression) || entry.parent.parent.expression.name.text !== "readdirCB")
+            if (!entry || !ts14.isParameter(entry) || !ts14.isArrowFunction(entry.parent) || entry.parent.parameters[1] !== entry || !ts14.isCallExpression(entry.parent.parent) || !ts14.isPropertyAccessExpression(entry.parent.parent.expression) || entry.parent.parent.expression.name.text !== "readdirCB")
               return false;
             return this.pathReceiver(entry.parent.parent.expression.expression, method, /* @__PURE__ */ new Set());
           }
           return false;
         }
-        if (ts13.isIdentifier(expression)) {
+        if (ts14.isIdentifier(expression)) {
           const symbol = this.modules.symbol(expression);
           if (!symbol || seen.has(symbol) || this.modules.mutated.has(symbol))
             return false;
           const declaration = symbol.declarations?.length === 1 ? symbol.declarations[0] : void 0;
-          if (!declaration || !ts13.isVariableDeclaration(declaration) || !declaration.initializer || !(declaration.parent.flags & ts13.NodeFlags.Const))
+          if (!declaration || !ts14.isVariableDeclaration(declaration) || !declaration.initializer || !(declaration.parent.flags & ts14.NodeFlags.Const))
             return false;
           return this.pathDerived(declaration.initializer, method, /* @__PURE__ */ new Set([...seen, symbol]), depth + 1);
         }
-        if (ts13.isConditionalExpression(expression))
+        if (ts14.isConditionalExpression(expression))
           return this.pathDerived(expression.whenTrue, method, seen, depth + 1) || this.pathDerived(expression.whenFalse, method, seen, depth + 1);
-        if (ts13.isBinaryExpression(expression) && expression.operatorToken.kind === ts13.SyntaxKind.PlusToken)
+        if (ts14.isBinaryExpression(expression) && expression.operatorToken.kind === ts14.SyntaxKind.PlusToken)
           return this.pathDerived(expression.left, method, seen, depth + 1) || this.pathDerived(expression.right, method, seen, depth + 1);
         return false;
       }
@@ -217762,26 +218157,26 @@ var init_filesystem_role = __esm({
           return void 0;
         }
         const options = call.arguments[1] ? unwrap3(call.arguments[1]) : void 0;
-        let filename = call.arguments.length >= 1 && call.arguments.length <= 2 && !call.arguments.some(ts13.isSpreadElement);
-        if (options && !ts13.isObjectLiteralExpression(options))
+        let filename = call.arguments.length >= 1 && call.arguments.length <= 2 && !call.arguments.some(ts14.isSpreadElement);
+        if (options && !ts14.isObjectLiteralExpression(options))
           filename = false;
-        if (options && ts13.isObjectLiteralExpression(options))
+        if (options && ts14.isObjectLiteralExpression(options))
           for (const property of options.properties) {
             if (!this.tick()) {
               filename = false;
               break;
             }
-            if (!ts13.isPropertyAssignment(property) && !ts13.isShorthandPropertyAssignment(property)) {
+            if (!ts14.isPropertyAssignment(property) && !ts14.isShorthandPropertyAssignment(property)) {
               filename = false;
               break;
             }
-            if (ts13.isComputedPropertyName(property.name)) {
+            if (ts14.isComputedPropertyName(property.name)) {
               filename = false;
               break;
             }
-            if ((ts13.isIdentifier(property.name) || ts13.isStringLiteralLike(property.name)) && ["fs", "scurry"].includes(property.name.text))
+            if ((ts14.isIdentifier(property.name) || ts14.isStringLiteralLike(property.name)) && ["fs", "scurry"].includes(property.name.text))
               filename = false;
-            if ((ts13.isIdentifier(property.name) || ts13.isStringLiteralLike(property.name)) && property.name.text === "withFileTypes" && (!ts13.isPropertyAssignment(property) || unwrap3(property.initializer).kind !== ts13.SyntaxKind.FalseKeyword))
+            if ((ts14.isIdentifier(property.name) || ts14.isStringLiteralLike(property.name)) && property.name.text === "withFileTypes" && (!ts14.isPropertyAssignment(property) || unwrap3(property.initializer).kind !== ts14.SyntaxKind.FalseKeyword))
               filename = false;
           }
         if (!filename) {
@@ -217805,16 +218200,16 @@ var init_filesystem_role = __esm({
             break;
           }
           const member3 = reference2.parent;
-          if (ts13.isPropertyAccessExpression(member3) && member3.expression === reference2 && ["push", "unshift"].includes(member3.name.text) && ts13.isCallExpression(member3.parent) && member3.parent.expression === member3)
+          if (ts14.isPropertyAccessExpression(member3) && member3.expression === reference2 && ["push", "unshift"].includes(member3.name.text) && ts14.isCallExpression(member3.parent) && member3.parent.expression === member3)
             writes = true;
-          else if (ts13.isPropertyAccessExpression(member3) && member3.expression === reference2 && ts13.isCallExpression(member3.parent) && member3.parent.expression === member3)
+          else if (ts14.isPropertyAccessExpression(member3) && member3.expression === reference2 && ts14.isCallExpression(member3.parent) && member3.parent.expression === member3)
             valid = false;
-          if (ts13.isCallExpression(reference2.parent) && reference2.parent.arguments.some((argument) => argument === reference2)) {
+          if (ts14.isCallExpression(reference2.parent) && reference2.parent.arguments.some((argument) => argument === reference2)) {
             const wrapper = this.imported(reference2.parent, "foregroundChild");
             if (!wrapper || wrapper.specifier !== "foreground-child")
               valid = false;
           }
-          if (ts13.isVariableDeclaration(reference2.parent) && reference2.parent.initializer === reference2)
+          if (ts14.isVariableDeclaration(reference2.parent) && reference2.parent.initializer === reference2)
             valid = false;
         }
         if (!writes) {
@@ -217822,8 +218217,8 @@ var init_filesystem_role = __esm({
           return void 0;
         }
         const declaration = declarations?.length === 1 ? declarations[0] : void 0;
-        const initializer = declaration && ts13.isVariableDeclaration(declaration) && declaration.initializer ? unwrap3(declaration.initializer) : void 0;
-        let closed = this.scopeComplete && !!initializer && ts13.isArrayLiteralExpression(initializer) && !initializer.elements.some(ts13.isSpreadElement);
+        const initializer = declaration && ts14.isVariableDeclaration(declaration) && declaration.initializer ? unwrap3(declaration.initializer) : void 0;
+        let closed = this.scopeComplete && !!initializer && ts14.isArrayLiteralExpression(initializer) && !initializer.elements.some(ts14.isSpreadElement);
         for (const node of this.modules.sqlBoundaryNodes) {
           if (!this.tick()) {
             closed = false;
@@ -217840,33 +218235,33 @@ var init_filesystem_role = __esm({
         const imported = this.imported(call, "foregroundChild");
         if (!imported || imported.specifier !== "foreground-child")
           return void 0;
-        const qualified = imported.valid && this.version(call.getSourceFile(), "foreground-child", "3.2.1") && call.arguments.length >= 2 && call.arguments.length <= 3 && !call.arguments.some(ts13.isSpreadElement);
+        const qualified = imported.valid && this.version(call.getSourceFile(), "foreground-child", "3.2.1") && call.arguments.length >= 2 && call.arguments.length <= 3 && !call.arguments.some(ts14.isSpreadElement);
         if (!qualified) {
           this.unsupportedUses++;
           this.gap("module_export_unsupported", call);
         }
         let shell = "disabled";
         const options = call.arguments[2] ? unwrap3(call.arguments[2]) : void 0;
-        if (options && !ts13.isObjectLiteralExpression(options))
+        if (options && !ts14.isObjectLiteralExpression(options))
           shell = "unresolved";
-        if (options && ts13.isObjectLiteralExpression(options))
+        if (options && ts14.isObjectLiteralExpression(options))
           for (const property of options.properties) {
             if (!this.tick()) {
               shell = "unresolved";
               break;
             }
-            if (!ts13.isPropertyAssignment(property) && !ts13.isShorthandPropertyAssignment(property) || ts13.isComputedPropertyName(property.name)) {
+            if (!ts14.isPropertyAssignment(property) && !ts14.isShorthandPropertyAssignment(property) || ts14.isComputedPropertyName(property.name)) {
               shell = "unresolved";
               continue;
             }
-            const name = ts13.isIdentifier(property.name) || ts13.isStringLiteralLike(property.name) ? property.name.text : void 0;
+            const name = ts14.isIdentifier(property.name) || ts14.isStringLiteralLike(property.name) ? property.name.text : void 0;
             if (name !== "shell")
               continue;
-            const value = ts13.isPropertyAssignment(property) ? unwrap3(property.initializer) : void 0;
-            shell = value?.kind === ts13.SyntaxKind.TrueKeyword ? "enabled" : value?.kind === ts13.SyntaxKind.FalseKeyword ? "disabled" : "unresolved";
+            const value = ts14.isPropertyAssignment(property) ? unwrap3(property.initializer) : void 0;
+            shell = value?.kind === ts14.SyntaxKind.TrueKeyword ? "enabled" : value?.kind === ts14.SyntaxKind.FalseKeyword ? "disabled" : "unresolved";
           }
         const program = call.arguments[0] ? unwrap3(call.arguments[0]) : void 0;
-        const interpreter = !program || !ts13.isStringLiteralLike(program) || /(?:^|[\\/])(?:sh|bash|zsh|ksh|fish|cmd|powershell|node|python\d*)$/i.test(program.text);
+        const interpreter = !program || !ts14.isStringLiteralLike(program) || /(?:^|[\\/])(?:sh|bash|zsh|ksh|fish|cmd|powershell|node|python\d*)$/i.test(program.text);
         return { qualified, shell: qualified ? shell : "unresolved", interpreter };
       }
     };
@@ -217874,26 +218269,26 @@ var init_filesystem_role = __esm({
 });
 
 // build/src/source/archive-role.js
-import { posix as posix5 } from "node:path";
+import { posix as posix6 } from "node:path";
 function unwrap4(value) {
-  while (ts14.isParenthesizedExpression(value) || ts14.isAsExpression(value) || ts14.isTypeAssertionExpression(value) || ts14.isNonNullExpression(value))
+  while (ts15.isParenthesizedExpression(value) || ts15.isAsExpression(value) || ts15.isTypeAssertionExpression(value) || ts15.isNonNullExpression(value))
     value = value.expression;
   return value;
 }
 function member(value) {
   value = unwrap4(value);
-  if (ts14.isPropertyAccessExpression(value))
+  if (ts15.isPropertyAccessExpression(value))
     return { base: value.expression, name: value.name.text };
-  if (ts14.isElementAccessExpression(value) && value.argumentExpression && ts14.isStringLiteralLike(value.argumentExpression))
+  if (ts15.isElementAccessExpression(value) && value.argumentExpression && ts15.isStringLiteralLike(value.argumentExpression))
     return { base: value.expression, name: value.argumentExpression.text };
   return void 0;
 }
-var ts14, object4, ArchiveRoleModel;
+var ts15, object5, ArchiveRoleModel;
 var init_archive_role = __esm({
   "build/src/source/archive-role.js"() {
     "use strict";
-    ts14 = __toESM(require_typescript(), 1);
-    object4 = (value) => !!value && typeof value === "object" && !Array.isArray(value);
+    ts15 = __toESM(require_typescript(), 1);
+    object5 = (value) => !!value && typeof value === "object" && !Array.isArray(value);
     ArchiveRoleModel = class {
       modules;
       tick;
@@ -217924,7 +218319,7 @@ var init_archive_role = __esm({
         for (const file of metadata) {
           if (!tick())
             break;
-          const name = posix5.basename(file.path), directory2 = posix5.dirname(file.path);
+          const name = posix6.basename(file.path), directory2 = posix6.dirname(file.path);
           if (name === "npm-shrinkwrap.json") {
             this.shrinkwraps.add(directory2);
             continue;
@@ -217938,7 +218333,7 @@ var init_archive_role = __esm({
           }
           try {
             const value = JSON.parse(file.text);
-            table.set(directory2, object4(value) ? value : null);
+            table.set(directory2, object5(value) ? value : null);
           } catch {
             table.set(directory2, null);
           }
@@ -217958,7 +218353,7 @@ var init_archive_role = __esm({
         if (!this.modules.mutated.has(symbol))
           return false;
         const declaration = name.parent;
-        if (!ts14.isVariableDeclaration(declaration) || !ts14.isVariableDeclarationList(declaration.parent) || !(declaration.parent.flags & ts14.NodeFlags.Const) || !ts14.isForOfStatement(declaration.parent.parent))
+        if (!ts15.isVariableDeclaration(declaration) || !ts15.isVariableDeclarationList(declaration.parent) || !(declaration.parent.flags & ts15.NodeFlags.Const) || !ts15.isForOfStatement(declaration.parent.parent))
           return true;
         for (const reference2 of this.modules.references.get(symbol) ?? []) {
           if (!this.tick())
@@ -217966,19 +218361,19 @@ var init_archive_role = __esm({
           if (reference2 === name)
             continue;
           let target = reference2;
-          while (ts14.isArrayLiteralExpression(target.parent) || ts14.isObjectLiteralExpression(target.parent) || ts14.isPropertyAssignment(target.parent) && target.parent.initializer === target || ts14.isShorthandPropertyAssignment(target.parent) || ts14.isSpreadElement(target.parent) || ts14.isSpreadAssignment(target.parent)) {
+          while (ts15.isArrayLiteralExpression(target.parent) || ts15.isObjectLiteralExpression(target.parent) || ts15.isPropertyAssignment(target.parent) && target.parent.initializer === target || ts15.isShorthandPropertyAssignment(target.parent) || ts15.isSpreadElement(target.parent) || ts15.isSpreadAssignment(target.parent)) {
             if (!this.tick())
               return true;
             target = target.parent;
           }
           const parent = target.parent;
-          if (ts14.isBinaryExpression(parent) && parent.left === target && parent.operatorToken.kind >= ts14.SyntaxKind.FirstAssignment && parent.operatorToken.kind <= ts14.SyntaxKind.LastAssignment || (ts14.isPrefixUnaryExpression(parent) || ts14.isPostfixUnaryExpression(parent)) && [ts14.SyntaxKind.PlusPlusToken, ts14.SyntaxKind.MinusMinusToken].includes(parent.operator) || (ts14.isForOfStatement(parent) || ts14.isForInStatement(parent)) && parent.initializer === target)
+          if (ts15.isBinaryExpression(parent) && parent.left === target && parent.operatorToken.kind >= ts15.SyntaxKind.FirstAssignment && parent.operatorToken.kind <= ts15.SyntaxKind.LastAssignment || (ts15.isPrefixUnaryExpression(parent) || ts15.isPostfixUnaryExpression(parent)) && [ts15.SyntaxKind.PlusPlusToken, ts15.SyntaxKind.MinusMinusToken].includes(parent.operator) || (ts15.isForOfStatement(parent) || ts15.isForInStatement(parent)) && parent.initializer === target)
             return true;
         }
         return false;
       }
       metadata(file) {
-        let directory2 = posix5.dirname(file.fileName);
+        let directory2 = posix6.dirname(file.fileName);
         for (let level = 0; level <= 64; level++) {
           if (!this.tick())
             return false;
@@ -217997,16 +218392,16 @@ var init_archive_role = __esm({
             if (lock) {
               if (![1, 2, 3].includes(lock.lockfileVersion))
                 return false;
-              if (lock.packages !== void 0 && !object4(lock.packages) || lock.dependencies !== void 0 && !object4(lock.dependencies))
+              if (lock.packages !== void 0 && !object5(lock.packages) || lock.dependencies !== void 0 && !object5(lock.dependencies))
                 return false;
               const modern = lock.packages?.["node_modules/unzipper"], old = lock.dependencies?.unzipper;
-              if (modern !== void 0 && !object4(modern) || old !== void 0 && !object4(old))
+              if (modern !== void 0 && !object5(modern) || old !== void 0 && !object5(old))
                 return false;
               const versions = [modern?.version, old?.version].filter((value) => value !== void 0);
               if (!versions.length || versions.some((value) => value !== versions[0]) || versions.some((value) => value !== "0.12.3" && value !== "0.12.5") || declaration === "0.12.3" && versions[0] !== "0.12.3" || modern?.link || modern?.resolved !== void 0 && (typeof modern.resolved !== "string" || modern.resolved.startsWith("file:")) || lock.packages && lock.packages[""]?.dependencies?.unzipper !== declaration)
                 return false;
             }
-            let ancestor = posix5.dirname(directory2), reachedRoot = directory2 === "." || directory2 === "/";
+            let ancestor = posix6.dirname(directory2), reachedRoot = directory2 === "." || directory2 === "/";
             for (let depth = 0; ancestor !== directory2 && depth <= 64; depth++) {
               if (!this.tick())
                 return false;
@@ -218017,7 +218412,7 @@ var init_archive_role = __esm({
                 break;
               }
               directory2 = ancestor;
-              ancestor = posix5.dirname(ancestor);
+              ancestor = posix6.dirname(ancestor);
             }
             if (!reachedRoot)
               this.gap("alias_limit", file);
@@ -218025,7 +218420,7 @@ var init_archive_role = __esm({
           }
           if (directory2 === ".")
             return false;
-          directory2 = posix5.dirname(directory2);
+          directory2 = posix6.dirname(directory2);
         }
         return false;
       }
@@ -218043,19 +218438,19 @@ var init_archive_role = __esm({
         const declaration = symbol.declarations[0];
         let binding;
         let candidate;
-        if (ts14.isImportClause(declaration))
+        if (ts15.isImportClause(declaration))
           candidate = declaration.parent;
-        else if (ts14.isNamespaceImport(declaration))
+        else if (ts15.isNamespaceImport(declaration))
           candidate = declaration.parent.parent;
-        else if (ts14.isImportSpecifier(declaration) && !declaration.isTypeOnly)
+        else if (ts15.isImportSpecifier(declaration) && !declaration.isTypeOnly)
           candidate = declaration.parent.parent.parent;
-        const load = candidate && ts14.isImportDeclaration(candidate) ? candidate : void 0;
-        if (load && !load.importClause?.isTypeOnly && ts14.isStringLiteralLike(load.moduleSpecifier)) {
+        const load = candidate && ts15.isImportDeclaration(candidate) ? candidate : void 0;
+        if (load && !load.importClause?.isTypeOnly && ts15.isStringLiteralLike(load.moduleSpecifier)) {
           const name = load.moduleSpecifier.text.replace(/^node:/, "");
           if (["unzipper", "fs", "path"].includes(name) && (name !== "unzipper" || load.moduleSpecifier.text === "unzipper")) {
-            binding = { module: name, members: ts14.isImportSpecifier(declaration) ? [(declaration.propertyName ?? declaration.name).text] : [], closed: true, state: { valid: true } };
+            binding = { module: name, members: ts15.isImportSpecifier(declaration) ? [(declaration.propertyName ?? declaration.name).text] : [], closed: true, state: { valid: true } };
           }
-        } else if (ts14.isVariableDeclaration(declaration) && ts14.isIdentifier(declaration.name) && declaration.initializer && declaration.parent.flags & ts14.NodeFlags.Const)
+        } else if (ts15.isVariableDeclaration(declaration) && ts15.isIdentifier(declaration.name) && declaration.initializer && declaration.parent.flags & ts15.NodeFlags.Const)
           binding = this.binding(declaration.initializer, depth + 1);
         if (!binding)
           return void 0;
@@ -218072,20 +218467,20 @@ var init_archive_role = __esm({
             return refuse();
           if (reference2 === ("name" in declaration ? declaration.name : void 0))
             continue;
-          if (ts14.isTypeReferenceNode(reference2.parent) || ts14.isTypeQueryNode(reference2.parent))
+          if (ts15.isTypeReferenceNode(reference2.parent) || ts15.isTypeQueryNode(reference2.parent))
             continue;
           let end = reference2;
-          while ((ts14.isPropertyAccessExpression(end.parent) || ts14.isElementAccessExpression(end.parent)) && end.parent.expression === end) {
-            if (!this.tick() || ts14.isElementAccessExpression(end.parent) && (!end.parent.argumentExpression || !ts14.isStringLiteralLike(end.parent.argumentExpression)))
+          while ((ts15.isPropertyAccessExpression(end.parent) || ts15.isElementAccessExpression(end.parent)) && end.parent.expression === end) {
+            if (!this.tick() || ts15.isElementAccessExpression(end.parent) && (!end.parent.argumentExpression || !ts15.isStringLiteralLike(end.parent.argumentExpression)))
               return refuse();
             end = end.parent;
           }
           const read = this.bindingMembers(reference2, end);
           if (binding.module === "path" && [...binding.members, ...read].join(".") === "sep" && !this.writeOrEscape(end))
             continue;
-          if (ts14.isCallExpression(end.parent) && end.parent.expression === end)
+          if (ts15.isCallExpression(end.parent) && end.parent.expression === end)
             continue;
-          if (ts14.isVariableDeclaration(end.parent) && end.parent.initializer === end && ts14.isIdentifier(end.parent.name) && end.parent.parent.flags & ts14.NodeFlags.Const) {
+          if (ts15.isVariableDeclaration(end.parent) && end.parent.initializer === end && ts15.isIdentifier(end.parent.name) && end.parent.parent.flags & ts15.NodeFlags.Const) {
             const alias2 = this.identifier(end.parent.name, depth + 1);
             if (alias2)
               continue;
@@ -218098,28 +218493,28 @@ var init_archive_role = __esm({
       }
       bindingMembers(start, end) {
         const members = [];
-        while (end !== start && (ts14.isPropertyAccessExpression(end) || ts14.isElementAccessExpression(end))) {
-          members.unshift(ts14.isPropertyAccessExpression(end) ? end.name.text : end.argumentExpression.text);
+        while (end !== start && (ts15.isPropertyAccessExpression(end) || ts15.isElementAccessExpression(end))) {
+          members.unshift(ts15.isPropertyAccessExpression(end) ? end.name.text : end.argumentExpression.text);
           end = end.expression;
         }
         return members;
       }
       writeOrEscape(node) {
         const parent = node.parent;
-        return ts14.isBinaryExpression(parent) && parent.left === node && parent.operatorToken.kind >= ts14.SyntaxKind.FirstAssignment && parent.operatorToken.kind <= ts14.SyntaxKind.LastAssignment || ts14.isDeleteExpression(parent) || ts14.isPrefixUnaryExpression(parent) || ts14.isPostfixUnaryExpression(parent) || ts14.isCallExpression(parent) && parent.expression !== node || ts14.isNewExpression(parent);
+        return ts15.isBinaryExpression(parent) && parent.left === node && parent.operatorToken.kind >= ts15.SyntaxKind.FirstAssignment && parent.operatorToken.kind <= ts15.SyntaxKind.LastAssignment || ts15.isDeleteExpression(parent) || ts15.isPrefixUnaryExpression(parent) || ts15.isPostfixUnaryExpression(parent) || ts15.isCallExpression(parent) && parent.expression !== node || ts15.isNewExpression(parent);
       }
       binding(expression, depth = 0) {
         if (!this.tick() || depth > this.aliasSteps)
           return void 0;
         expression = unwrap4(expression);
-        if (ts14.isIdentifier(expression))
+        if (ts15.isIdentifier(expression))
           return this.identifier(expression, depth + 1);
         const access7 = member(expression);
         if (access7) {
           const base = this.binding(access7.base, depth + 1);
           return base ? { ...base, members: [...base.members, access7.name] } : void 0;
         }
-        if (ts14.isCallExpression(expression) && ts14.isIdentifier(expression.expression) && expression.expression.text === "require" && this.modules.cjsGlobal(expression.expression) && expression.arguments.length === 1 && ts14.isStringLiteralLike(expression.arguments[0])) {
+        if (ts15.isCallExpression(expression) && ts15.isIdentifier(expression.expression) && expression.expression.text === "require" && this.modules.cjsGlobal(expression.expression) && expression.arguments.length === 1 && ts15.isStringLiteralLike(expression.arguments[0])) {
           const name = expression.arguments[0].text.replace(/^node:/, "");
           if (["unzipper", "fs", "path"].includes(name) && (name !== "unzipper" || expression.arguments[0].text === "unzipper"))
             return { module: name, members: [], closed: this.modules.indexComplete && this.scopeComplete, state: { valid: true } };
@@ -218174,19 +218569,19 @@ var init_archive_role = __esm({
             }
             let end = reference2;
             const members = [...prefix];
-            while ((ts14.isPropertyAccessExpression(end.parent) || ts14.isElementAccessExpression(end.parent) || ts14.isParenthesizedExpression(end.parent) || ts14.isAsExpression(end.parent) || ts14.isTypeAssertionExpression(end.parent) || ts14.isNonNullExpression(end.parent)) && end.parent.expression === end) {
+            while ((ts15.isPropertyAccessExpression(end.parent) || ts15.isElementAccessExpression(end.parent) || ts15.isParenthesizedExpression(end.parent) || ts15.isAsExpression(end.parent) || ts15.isTypeAssertionExpression(end.parent) || ts15.isNonNullExpression(end.parent)) && end.parent.expression === end) {
               if (!this.tick()) {
                 closed = false;
                 break;
               }
-              if (ts14.isPropertyAccessExpression(end.parent))
+              if (ts15.isPropertyAccessExpression(end.parent))
                 members.push(end.parent.name.text);
-              else if (ts14.isElementAccessExpression(end.parent))
-                members.push(end.parent.argumentExpression && ts14.isStringLiteralLike(end.parent.argumentExpression) ? end.parent.argumentExpression.text : void 0);
+              else if (ts15.isElementAccessExpression(end.parent))
+                members.push(end.parent.argumentExpression && ts15.isStringLiteralLike(end.parent.argumentExpression) ? end.parent.argumentExpression.text : void 0);
               end = end.parent;
             }
             const alias2 = end.parent;
-            if (ts14.isVariableDeclaration(alias2) && alias2.initializer === end && alias2.parent.flags & ts14.NodeFlags.Const)
+            if (ts15.isVariableDeclaration(alias2) && alias2.initializer === end && alias2.parent.flags & ts15.NodeFlags.Const)
               inspectPattern(alias2.name, members, depth + 1);
             const memberTarget = end !== reference2;
             if (this.written(end)) {
@@ -218203,25 +218598,25 @@ var init_archive_role = __esm({
             closed = false;
             return;
           }
-          if (ts14.isIdentifier(pattern)) {
+          if (ts15.isIdentifier(pattern)) {
             inspect(pattern, prefix, depth);
             return;
           }
           closed = false;
-          if (!ts14.isObjectBindingPattern(pattern))
+          if (!ts15.isObjectBindingPattern(pattern))
             return;
           for (const element of pattern.elements) {
             if (!this.tick())
               return;
-            const key2 = element.propertyName ?? (ts14.isIdentifier(element.name) ? element.name : void 0);
-            const name2 = key2 && (ts14.isIdentifier(key2) || ts14.isStringLiteralLike(key2)) ? key2.text : void 0;
+            const key2 = element.propertyName ?? (ts15.isIdentifier(element.name) ? element.name : void 0);
+            const name2 = key2 && (ts15.isIdentifier(key2) || ts15.isStringLiteralLike(key2)) ? key2.text : void 0;
             inspectPattern(element.name, element.dotDotDotToken ? prefix : [...prefix, name2], depth + 1);
           }
         };
         for (const load of this.modules.importDeclarations) {
           if (!this.tick())
             return false;
-          if (!ts14.isStringLiteralLike(load.moduleSpecifier) || load.moduleSpecifier.text.replace(/^node:/, "") !== name || load.importClause?.isTypeOnly)
+          if (!ts15.isStringLiteralLike(load.moduleSpecifier) || load.moduleSpecifier.text.replace(/^node:/, "") !== name || load.importClause?.isTypeOnly)
             continue;
           const clause = load.importClause;
           if (!clause) {
@@ -218231,7 +218626,7 @@ var init_archive_role = __esm({
           if (clause.name)
             inspect(clause.name);
           if (clause.namedBindings) {
-            if (ts14.isNamespaceImport(clause.namedBindings))
+            if (ts15.isNamespaceImport(clause.namedBindings))
               inspect(clause.namedBindings.name);
             else
               for (const item of clause.namedBindings.elements) {
@@ -218260,13 +218655,13 @@ var init_archive_role = __esm({
         return closed;
       }
       written(node) {
-        while (ts14.isArrayLiteralExpression(node.parent) || ts14.isObjectLiteralExpression(node.parent) || (ts14.isParenthesizedExpression(node.parent) || ts14.isAsExpression(node.parent) || ts14.isTypeAssertionExpression(node.parent) || ts14.isNonNullExpression(node.parent)) && node.parent.expression === node || ts14.isPropertyAssignment(node.parent) && node.parent.initializer === node || ts14.isShorthandPropertyAssignment(node.parent) || ts14.isSpreadElement(node.parent) || ts14.isSpreadAssignment(node.parent)) {
+        while (ts15.isArrayLiteralExpression(node.parent) || ts15.isObjectLiteralExpression(node.parent) || (ts15.isParenthesizedExpression(node.parent) || ts15.isAsExpression(node.parent) || ts15.isTypeAssertionExpression(node.parent) || ts15.isNonNullExpression(node.parent)) && node.parent.expression === node || ts15.isPropertyAssignment(node.parent) && node.parent.initializer === node || ts15.isShorthandPropertyAssignment(node.parent) || ts15.isSpreadElement(node.parent) || ts15.isSpreadAssignment(node.parent)) {
           if (!this.tick())
             return true;
           node = node.parent;
         }
         const parent = node.parent;
-        return ts14.isBinaryExpression(parent) && parent.left === node && parent.operatorToken.kind >= ts14.SyntaxKind.FirstAssignment && parent.operatorToken.kind <= ts14.SyntaxKind.LastAssignment || ts14.isDeleteExpression(parent) || (ts14.isPrefixUnaryExpression(parent) || ts14.isPostfixUnaryExpression(parent)) && [ts14.SyntaxKind.PlusPlusToken, ts14.SyntaxKind.MinusMinusToken].includes(parent.operator) || (ts14.isForOfStatement(parent) || ts14.isForInStatement(parent)) && parent.initializer === node;
+        return ts15.isBinaryExpression(parent) && parent.left === node && parent.operatorToken.kind >= ts15.SyntaxKind.FirstAssignment && parent.operatorToken.kind <= ts15.SyntaxKind.LastAssignment || ts15.isDeleteExpression(parent) || (ts15.isPrefixUnaryExpression(parent) || ts15.isPostfixUnaryExpression(parent)) && [ts15.SyntaxKind.PlusPlusToken, ts15.SyntaxKind.MinusMinusToken].includes(parent.operator) || (ts15.isForOfStatement(parent) || ts15.isForInStatement(parent)) && parent.initializer === node;
       }
       /** One charged pass over already indexed require references, shared by all three families. */
       auditSharedLoads() {
@@ -218286,7 +218681,7 @@ var init_archive_role = __esm({
           if (!this.modules.cjsGlobal(reference2))
             continue;
           const load = reference2.parent;
-          if (!ts14.isCallExpression(load) || load.expression !== reference2 || load.arguments.length !== 1 || !ts14.isStringLiteralLike(load.arguments[0])) {
+          if (!ts15.isCallExpression(load) || load.expression !== reference2 || load.arguments.length !== 1 || !ts15.isStringLiteralLike(load.arguments[0])) {
             unknown2();
             continue;
           }
@@ -218296,15 +218691,15 @@ var init_archive_role = __esm({
           const audit = audits.get(name);
           let end = load;
           const members = [];
-          while ((ts14.isPropertyAccessExpression(end.parent) || ts14.isElementAccessExpression(end.parent) || ts14.isParenthesizedExpression(end.parent) || ts14.isAsExpression(end.parent) || ts14.isTypeAssertionExpression(end.parent) || ts14.isNonNullExpression(end.parent)) && end.parent.expression === end) {
+          while ((ts15.isPropertyAccessExpression(end.parent) || ts15.isElementAccessExpression(end.parent) || ts15.isParenthesizedExpression(end.parent) || ts15.isAsExpression(end.parent) || ts15.isTypeAssertionExpression(end.parent) || ts15.isNonNullExpression(end.parent)) && end.parent.expression === end) {
             if (!this.tick()) {
               unknown2();
               break;
             }
-            if (ts14.isPropertyAccessExpression(end.parent))
+            if (ts15.isPropertyAccessExpression(end.parent))
               members.push(end.parent.name.text);
-            else if (ts14.isElementAccessExpression(end.parent))
-              members.push(end.parent.argumentExpression && ts14.isStringLiteralLike(end.parent.argumentExpression) ? end.parent.argumentExpression.text : void 0);
+            else if (ts15.isElementAccessExpression(end.parent))
+              members.push(end.parent.argumentExpression && ts15.isStringLiteralLike(end.parent.argumentExpression) ? end.parent.argumentExpression.text : void 0);
             end = end.parent;
           }
           if (this.written(end)) {
@@ -218313,11 +218708,11 @@ var init_archive_role = __esm({
             continue;
           }
           const parent = end.parent;
-          if (ts14.isVariableDeclaration(parent) && parent.initializer === end) {
-            if (!(parent.parent.flags & ts14.NodeFlags.Const))
+          if (ts15.isVariableDeclaration(parent) && parent.initializer === end) {
+            if (!(parent.parent.flags & ts15.NodeFlags.Const))
               audit.closed = false;
             audit.aliases.push({ name: parent.name, members });
-          } else if (!(ts14.isCallExpression(parent) && parent.expression === end) || members.some((value) => value === void 0))
+          } else if (!(ts15.isCallExpression(parent) && parent.expression === end) || members.some((value) => value === void 0))
             audit.closed = false;
         }
         return audits;
@@ -218329,7 +218724,7 @@ var init_archive_role = __esm({
             this.unsupported(call);
           return void 0;
         }
-        if (call.arguments.length !== 1 || ts14.isSpreadElement(call.arguments[0]) || !this.metadata(call.getSourceFile())) {
+        if (call.arguments.length !== 1 || ts15.isSpreadElement(call.arguments[0]) || !this.metadata(call.getSourceFile())) {
           this.unsupported(call);
           return void 0;
         }
@@ -218342,13 +218737,13 @@ var init_archive_role = __esm({
         const method = member(call.expression);
         if (method?.name !== "buffer") {
           const callee = unwrap4(call.expression);
-          if (!ts14.isIdentifier(callee))
+          if (!ts15.isIdentifier(callee))
             return false;
           const symbol = this.modules.symbol(callee), declaration = symbol?.declarations?.length === 1 ? symbol.declarations[0] : void 0;
-          if (!declaration || !ts14.isVariableDeclaration(declaration) || !declaration.initializer || !(declaration.parent.flags & ts14.NodeFlags.Const))
+          if (!declaration || !ts15.isVariableDeclaration(declaration) || !declaration.initializer || !(declaration.parent.flags & ts15.NodeFlags.Const))
             return false;
           const initializer = unwrap4(declaration.initializer);
-          if (!ts14.isIdentifier(initializer) && member(initializer)?.name !== "buffer")
+          if (!ts15.isIdentifier(initializer) && member(initializer)?.name !== "buffer")
             return false;
           return this.declaredUnzipper(callee)?.join(".") === "Open.buffer";
         }
@@ -218356,19 +218751,19 @@ var init_archive_role = __esm({
           return true;
         const open11 = member(method.base);
         const base = unwrap4(open11?.name === "Open" ? open11.base : method.base);
-        if (!ts14.isIdentifier(base))
+        if (!ts15.isIdentifier(base))
           return false;
         for (const load of this.modules.importDeclarations) {
           if (!this.tick())
             return false;
-          if (load.getSourceFile() !== call.getSourceFile() || !ts14.isStringLiteralLike(load.moduleSpecifier) || load.moduleSpecifier.text !== "unzipper" || !load.importClause || load.importClause.isTypeOnly)
+          if (load.getSourceFile() !== call.getSourceFile() || !ts15.isStringLiteralLike(load.moduleSpecifier) || load.moduleSpecifier.text !== "unzipper" || !load.importClause || load.importClause.isTypeOnly)
             continue;
           const clause = load.importClause;
           if (open11?.name === "Open" && clause.name?.text === base.text)
             return true;
-          if (clause.namedBindings && ts14.isNamespaceImport(clause.namedBindings) && open11?.name === "Open" && clause.namedBindings.name.text === base.text)
+          if (clause.namedBindings && ts15.isNamespaceImport(clause.namedBindings) && open11?.name === "Open" && clause.namedBindings.name.text === base.text)
             return true;
-          if (clause.namedBindings && ts14.isNamedImports(clause.namedBindings) && clause.namedBindings.elements.some((item) => !item.isTypeOnly && (item.propertyName ?? item.name).text === "Open" && item.name.text === base.text))
+          if (clause.namedBindings && ts15.isNamedImports(clause.namedBindings) && clause.namedBindings.elements.some((item) => !item.isTypeOnly && (item.propertyName ?? item.name).text === "Open" && item.name.text === base.text))
             return true;
         }
         return false;
@@ -218382,23 +218777,23 @@ var init_archive_role = __esm({
           const base = this.declaredUnzipper(access7.base, depth + 1);
           return base ? [...base, access7.name] : void 0;
         }
-        if (ts14.isCallExpression(expression) && ts14.isIdentifier(expression.expression) && expression.expression.text === "require" && expression.arguments.length === 1 && ts14.isStringLiteralLike(expression.arguments[0]) && expression.arguments[0].text === "unzipper")
+        if (ts15.isCallExpression(expression) && ts15.isIdentifier(expression.expression) && expression.expression.text === "require" && expression.arguments.length === 1 && ts15.isStringLiteralLike(expression.arguments[0]) && expression.arguments[0].text === "unzipper")
           return [];
-        if (!ts14.isIdentifier(expression))
+        if (!ts15.isIdentifier(expression))
           return void 0;
         const symbol = this.modules.symbol(expression), declaration = symbol?.declarations?.length === 1 ? symbol.declarations[0] : void 0;
         if (!declaration)
           return void 0;
         let candidate;
-        if (ts14.isImportClause(declaration))
+        if (ts15.isImportClause(declaration))
           candidate = declaration.parent;
-        else if (ts14.isNamespaceImport(declaration))
+        else if (ts15.isNamespaceImport(declaration))
           candidate = declaration.parent.parent;
-        else if (ts14.isImportSpecifier(declaration) && !declaration.isTypeOnly)
+        else if (ts15.isImportSpecifier(declaration) && !declaration.isTypeOnly)
           candidate = declaration.parent.parent.parent;
-        if (candidate && ts14.isImportDeclaration(candidate) && !candidate.importClause?.isTypeOnly && ts14.isStringLiteralLike(candidate.moduleSpecifier) && candidate.moduleSpecifier.text === "unzipper")
-          return ts14.isImportSpecifier(declaration) ? [(declaration.propertyName ?? declaration.name).text] : [];
-        if (ts14.isVariableDeclaration(declaration) && declaration.initializer && declaration.parent.flags & ts14.NodeFlags.Const)
+        if (candidate && ts15.isImportDeclaration(candidate) && !candidate.importClause?.isTypeOnly && ts15.isStringLiteralLike(candidate.moduleSpecifier) && candidate.moduleSpecifier.text === "unzipper")
+          return ts15.isImportSpecifier(declaration) ? [(declaration.propertyName ?? declaration.name).text] : [];
+        if (ts15.isVariableDeclaration(declaration) && declaration.initializer && declaration.parent.flags & ts15.NodeFlags.Const)
           return this.declaredUnzipper(declaration.initializer, depth + 1);
         return void 0;
       }
@@ -218412,24 +218807,24 @@ var init_archive_role = __esm({
         const binding = this.classify(call);
         if (binding?.module !== "fs" || binding.members.join(".") !== "createWriteStream")
           return void 0;
-        let options = call.arguments.length === 1 && !ts14.isSpreadElement(call.arguments[0]);
+        let options = call.arguments.length === 1 && !ts15.isSpreadElement(call.arguments[0]);
         if (call.arguments.length === 2) {
           const value = unwrap4(call.arguments[1]);
           const keys6 = /* @__PURE__ */ new Set();
-          options = ts14.isObjectLiteralExpression(value) && value.properties.length <= 16 && value.properties.every((property) => {
-            if (!this.tick() || !ts14.isPropertyAssignment(property) || !(ts14.isIdentifier(property.name) || ts14.isStringLiteralLike(property.name)))
+          options = ts15.isObjectLiteralExpression(value) && value.properties.length <= 16 && value.properties.every((property) => {
+            if (!this.tick() || !ts15.isPropertyAssignment(property) || !(ts15.isIdentifier(property.name) || ts15.isStringLiteralLike(property.name)))
               return false;
             const name = property.name.text, initial = unwrap4(property.initializer);
             if (keys6.has(name))
               return false;
             keys6.add(name);
             if (name === "flags")
-              return ts14.isStringLiteralLike(initial) && ["w", "wx", "w+", "wx+", "a", "ax", "a+", "ax+"].includes(initial.text);
+              return ts15.isStringLiteralLike(initial) && ["w", "wx", "w+", "wx+", "a", "ax", "a+", "ax+"].includes(initial.text);
             if (name === "encoding")
-              return ts14.isStringLiteralLike(initial);
+              return ts15.isStringLiteralLike(initial);
             if (["mode", "start", "highWaterMark"].includes(name))
-              return ts14.isNumericLiteral(initial);
-            return ["autoClose", "emitClose", "flush"].includes(name) && (initial.kind === ts14.SyntaxKind.TrueKeyword || initial.kind === ts14.SyntaxKind.FalseKeyword);
+              return ts15.isNumericLiteral(initial);
+            return ["autoClose", "emitClose", "flush"].includes(name) && (initial.kind === ts15.SyntaxKind.TrueKeyword || initial.kind === ts15.SyntaxKind.FalseKeyword);
           });
         }
         return { options, closed: binding.closed };
@@ -218438,17 +218833,17 @@ var init_archive_role = __esm({
         if (!this.tick() || depth > this.aliasSteps)
           return void 0;
         expression = unwrap4(expression);
-        if (!ts14.isIdentifier(expression))
+        if (!ts15.isIdentifier(expression))
           return expression;
         const symbol = this.modules.symbol(expression), declaration = symbol?.declarations?.length === 1 ? symbol.declarations[0] : void 0;
-        if (!declaration || !ts14.isVariableDeclaration(declaration) || !ts14.isIdentifier(declaration.name) || !declaration.initializer || !(declaration.parent.flags & ts14.NodeFlags.Const) || this.modules.mutated.has(symbol) || this.modules.mutatedMembers.has(symbol))
+        if (!declaration || !ts15.isVariableDeclaration(declaration) || !ts15.isIdentifier(declaration.name) || !declaration.initializer || !(declaration.parent.flags & ts15.NodeFlags.Const) || this.modules.mutated.has(symbol) || this.modules.mutatedMembers.has(symbol))
           return void 0;
         return this.constant(declaration.initializer, depth + 1);
       }
       same(left, right) {
         left = unwrap4(left);
         right = unwrap4(right);
-        return ts14.isIdentifier(left) && ts14.isIdentifier(right) && this.modules.symbol(left) !== void 0 && this.modules.symbol(left) === this.modules.symbol(right) && this.constant(left) !== void 0;
+        return ts15.isIdentifier(left) && ts15.isIdentifier(right) && this.modules.symbol(left) !== void 0 && this.modules.symbol(left) === this.modules.symbol(right) && this.constant(left) !== void 0;
       }
       native(call, method) {
         const binding = this.classify(call);
@@ -218474,39 +218869,39 @@ var init_archive_role = __esm({
         if (!this.intrinsicClosed)
           return false;
         const destination = unwrap4(call.arguments[0]);
-        if (!ts14.isIdentifier(destination))
+        if (!ts15.isIdentifier(destination))
           return false;
         const resolved = this.constant(destination);
-        if (!resolved || !ts14.isCallExpression(resolved) || !this.native(resolved, "resolve") || resolved.arguments.length !== 2)
+        if (!resolved || !ts15.isCallExpression(resolved) || !this.native(resolved, "resolve") || resolved.arguments.length !== 2)
           return false;
         const base = resolved.arguments[0], fixedBase = this.constant(base);
-        if (!ts14.isIdentifier(unwrap4(base)) || !fixedBase || !ts14.isCallExpression(fixedBase) || !this.native(fixedBase, "resolve") || !fixedBase.arguments.length || !fixedBase.arguments.every((value) => ts14.isStringLiteralLike(unwrap4(value))))
+        if (!ts15.isIdentifier(unwrap4(base)) || !fixedBase || !ts15.isCallExpression(fixedBase) || !this.native(fixedBase, "resolve") || !fixedBase.arguments.length || !fixedBase.arguments.every((value) => ts15.isStringLiteralLike(unwrap4(value))))
           return false;
         let statement = call;
-        while (statement.parent && !ts14.isBlock(statement.parent) && !ts14.isSourceFile(statement.parent)) {
-          if (!this.tick() || ts14.isFunctionLike(statement.parent))
+        while (statement.parent && !ts15.isBlock(statement.parent) && !ts15.isSourceFile(statement.parent)) {
+          if (!this.tick() || ts15.isFunctionLike(statement.parent))
             return false;
           statement = statement.parent;
         }
-        if (!statement.parent || !ts14.isBlock(statement.parent))
+        if (!statement.parent || !ts15.isBlock(statement.parent))
           return false;
-        const direct = ts14.isExpressionStatement(statement) && unwrap4(statement.expression) === call || ts14.isVariableStatement(statement) && (statement.declarationList.flags & ts14.NodeFlags.Const) !== 0 && statement.declarationList.declarations.length === 1 && statement.declarationList.declarations[0].initializer === call;
+        const direct = ts15.isExpressionStatement(statement) && unwrap4(statement.expression) === call || ts15.isVariableStatement(statement) && (statement.declarationList.flags & ts15.NodeFlags.Const) !== 0 && statement.declarationList.declarations.length === 1 && statement.declarationList.declarations[0].initializer === call;
         if (!direct)
           return false;
         for (const prior of statement.parent.statements) {
           if (!this.tick() || prior === statement)
             break;
-          if (!ts14.isIfStatement(prior) || prior.elseStatement)
+          if (!ts15.isIfStatement(prior) || prior.elseStatement)
             continue;
-          const body = ts14.isBlock(prior.thenStatement) ? prior.thenStatement.statements : [prior.thenStatement];
-          if (body.length !== 1 || !ts14.isReturnStatement(body[0]) && !ts14.isThrowStatement(body[0]))
+          const body = ts15.isBlock(prior.thenStatement) ? prior.thenStatement.statements : [prior.thenStatement];
+          if (body.length !== 1 || !ts15.isReturnStatement(body[0]) && !ts15.isThrowStatement(body[0]))
             continue;
           const pieces = [];
           const flatten = (value) => {
             if (!this.tick() || pieces.length > 3)
               return false;
             value = unwrap4(value);
-            if (ts14.isBinaryExpression(value) && value.operatorToken.kind === ts14.SyntaxKind.BarBarToken)
+            if (ts15.isBinaryExpression(value) && value.operatorToken.kind === ts15.SyntaxKind.BarBarToken)
               return flatten(value.left) && flatten(value.right);
             pieces.push(value);
             return true;
@@ -218514,25 +218909,25 @@ var init_archive_role = __esm({
           if (!flatten(prior.expression) || pieces.length !== 3)
             continue;
           let relative11;
-          const equality = pieces.find((value) => ts14.isBinaryExpression(value) && value.operatorToken.kind === ts14.SyntaxKind.EqualsEqualsEqualsToken && (ts14.isStringLiteralLike(unwrap4(value.right)) && unwrap4(value.right).text === ".." || ts14.isStringLiteralLike(unwrap4(value.left)) && unwrap4(value.left).text === ".."));
+          const equality = pieces.find((value) => ts15.isBinaryExpression(value) && value.operatorToken.kind === ts15.SyntaxKind.EqualsEqualsEqualsToken && (ts15.isStringLiteralLike(unwrap4(value.right)) && unwrap4(value.right).text === ".." || ts15.isStringLiteralLike(unwrap4(value.left)) && unwrap4(value.left).text === ".."));
           if (!equality)
             continue;
-          relative11 = ts14.isStringLiteralLike(unwrap4(equality.right)) ? equality.left : equality.right;
+          relative11 = ts15.isStringLiteralLike(unwrap4(equality.right)) ? equality.left : equality.right;
           const calculation = this.constant(relative11);
-          if (!calculation || !ts14.isCallExpression(calculation) || !this.native(calculation, "relative") || calculation.arguments.length !== 2 || !this.same(calculation.arguments[0], base) || !this.same(calculation.arguments[1], destination))
+          if (!calculation || !ts15.isCallExpression(calculation) || !this.native(calculation, "relative") || calculation.arguments.length !== 2 || !this.same(calculation.arguments[0], base) || !this.same(calculation.arguments[1], destination))
             continue;
           const prefix = pieces.some((value) => {
-            if (!ts14.isCallExpression(value) || value.arguments.length !== 1)
+            if (!ts15.isCallExpression(value) || value.arguments.length !== 1)
               return false;
             const access7 = member(value.expression), argument = unwrap4(value.arguments[0]);
             if (!access7 || access7.name !== "startsWith" || !this.same(access7.base, relative11))
               return false;
-            if (!ts14.isBinaryExpression(argument) || argument.operatorToken.kind !== ts14.SyntaxKind.PlusToken || !ts14.isStringLiteralLike(unwrap4(argument.left)) || unwrap4(argument.left).text !== "..")
+            if (!ts15.isBinaryExpression(argument) || argument.operatorToken.kind !== ts15.SyntaxKind.PlusToken || !ts15.isStringLiteralLike(unwrap4(argument.left)) || unwrap4(argument.left).text !== "..")
               return false;
             const separator = this.binding(argument.right);
             return separator?.module === "path" && separator.closed && separator.members.join(".") === "sep";
           });
-          const absolute = pieces.some((value) => ts14.isCallExpression(value) && this.native(value, "isAbsolute") && value.arguments.length === 1 && this.same(value.arguments[0], relative11));
+          const absolute = pieces.some((value) => ts15.isCallExpression(value) && this.native(value, "isAbsolute") && value.arguments.length === 1 && this.same(value.arguments[0], relative11));
           if (prefix && absolute) {
             const statements2 = statement.parent.statements;
             if (statements2.indexOf(prior) + 1 === statements2.indexOf(statement))
@@ -218548,7 +218943,7 @@ var init_archive_role = __esm({
 // build/src/source/browser-location-role.js
 function directBrowserLocationReceiver(node) {
   const target = node.left;
-  if (!ts15.isPropertyAccessExpression(target) || !ts15.isIdentifier(target.expression) || target.expression.text !== "window")
+  if (!ts16.isPropertyAccessExpression(target) || !ts16.isIdentifier(target.expression) || target.expression.text !== "window")
     return void 0;
   return target.name.text === "location" ? target.expression : void 0;
 }
@@ -218559,11 +218954,11 @@ function mergeBrowserLocationRoles(left, right) {
     return "unknown_receiver";
   return left === "global_browser_shape" || right === "global_browser_shape" ? "global_browser_shape" : "closed_local_object";
 }
-var ts15, BrowserLocationRoleModel;
+var ts16, BrowserLocationRoleModel;
 var init_browser_location_role = __esm({
   "build/src/source/browser-location-role.js"() {
     "use strict";
-    ts15 = __toESM(require_typescript(), 1);
+    ts16 = __toESM(require_typescript(), 1);
     BrowserLocationRoleModel = class {
       modules;
       tick;
@@ -218593,12 +218988,12 @@ var init_browser_location_role = __esm({
         if (symbol.declarations?.length !== 1 || this.modules.mutated.has(symbol) || this.modules.isLocalExportBinding(symbol))
           return false;
         const declaration = symbol.declarations[0];
-        if (!ts15.isVariableDeclaration(declaration) || !ts15.isIdentifier(declaration.name) || !ts15.isVariableDeclarationList(declaration.parent) || !(declaration.parent.flags & ts15.NodeFlags.Const) || !declaration.initializer || !ts15.isObjectLiteralExpression(declaration.initializer))
+        if (!ts16.isVariableDeclaration(declaration) || !ts16.isIdentifier(declaration.name) || !ts16.isVariableDeclarationList(declaration.parent) || !(declaration.parent.flags & ts16.NodeFlags.Const) || !declaration.initializer || !ts16.isObjectLiteralExpression(declaration.initializer))
           return false;
         const statement = declaration.parent.parent;
-        if (ts15.isVariableStatement(statement) && statement.modifiers?.some((modifier) => modifier.kind === ts15.SyntaxKind.ExportKeyword))
+        if (ts16.isVariableStatement(statement) && statement.modifiers?.some((modifier) => modifier.kind === ts16.SyntaxKind.ExportKeyword))
           return false;
-        if (ts15.isSourceFile(this.modules.ownerOf(declaration)) && !ts15.isExternalModule(declaration.getSourceFile()))
+        if (ts16.isSourceFile(this.modules.ownerOf(declaration)) && !ts16.isExternalModule(declaration.getSourceFile()))
           return false;
         if (this.modules.browserLocationBoundaryNodes.length || this.modules.constructorBoundaryNodes.length || this.modules.archiveIntrinsicBoundaryNodes.length)
           return false;
@@ -218613,10 +219008,10 @@ var init_browser_location_role = __esm({
           if (reference2 === declaration.name)
             continue;
           const target = reference2.parent;
-          if (!ts15.isPropertyAccessExpression(target) || target.expression !== reference2)
+          if (!ts16.isPropertyAccessExpression(target) || target.expression !== reference2)
             return false;
           const assignment = target.parent;
-          if (!ts15.isBinaryExpression(assignment) || assignment.left !== target || assignment.operatorToken.kind !== ts15.SyntaxKind.EqualsToken || directBrowserLocationReceiver(assignment) !== reference2)
+          if (!ts16.isBinaryExpression(assignment) || assignment.left !== target || assignment.operatorToken.kind !== ts16.SyntaxKind.EqualsToken || directBrowserLocationReceiver(assignment) !== reference2)
             return false;
         }
         return true;
@@ -218624,13 +219019,13 @@ var init_browser_location_role = __esm({
       dataLiteral(node, depth) {
         if (!this.tick() || depth > this.maxDepth)
           return false;
-        if (ts15.isStringLiteralLike(node) || ts15.isNumericLiteral(node) || [ts15.SyntaxKind.TrueKeyword, ts15.SyntaxKind.FalseKeyword, ts15.SyntaxKind.NullKeyword].includes(node.kind))
+        if (ts16.isStringLiteralLike(node) || ts16.isNumericLiteral(node) || [ts16.SyntaxKind.TrueKeyword, ts16.SyntaxKind.FalseKeyword, ts16.SyntaxKind.NullKeyword].includes(node.kind))
           return true;
-        if (!ts15.isObjectLiteralExpression(node))
+        if (!ts16.isObjectLiteralExpression(node))
           return false;
         const names = /* @__PURE__ */ new Set();
         for (const property of node.properties) {
-          if (!this.tick() || !ts15.isPropertyAssignment(property) || !(ts15.isIdentifier(property.name) || ts15.isStringLiteralLike(property.name)))
+          if (!this.tick() || !ts16.isPropertyAssignment(property) || !(ts16.isIdentifier(property.name) || ts16.isStringLiteralLike(property.name)))
             return false;
           const name = property.name.text;
           if (names.has(name) || ["__proto__", "prototype", "constructor"].includes(name))
@@ -218765,10 +219160,10 @@ function evidence(value, node) {
   } : void 0;
 }
 function evaluationShapedCallee(callee, constructor = false) {
-  if (ts16.isIdentifier(callee))
+  if (ts17.isIdentifier(callee))
     return callee.text === "Function" || !constructor && callee.text === "eval";
-  if ((ts16.isPropertyAccessExpression(callee) || !constructor && ts16.isElementAccessExpression(callee)) && ts16.isIdentifier(callee.expression) && callee.expression.text === "window") {
-    const name = ts16.isPropertyAccessExpression(callee) ? callee.name.text : ts16.isStringLiteral(callee.argumentExpression) || ts16.isNoSubstitutionTemplateLiteral(callee.argumentExpression) ? callee.argumentExpression.text : void 0;
+  if ((ts17.isPropertyAccessExpression(callee) || !constructor && ts17.isElementAccessExpression(callee)) && ts17.isIdentifier(callee.expression) && callee.expression.text === "window") {
+    const name = ts17.isPropertyAccessExpression(callee) ? callee.name.text : ts17.isStringLiteral(callee.argumentExpression) || ts17.isNoSubstitutionTemplateLiteral(callee.argumentExpression) ? callee.argumentExpression.text : void 0;
     return name === "Function" || !constructor && name === "eval";
   }
   return false;
@@ -218788,7 +219183,7 @@ function isAssignmentOperator(kind) {
   return ASSIGNMENT_OPERATORS.has(kind);
 }
 function isSimpleAssignment(kind) {
-  return kind === ts16.SyntaxKind.EqualsToken;
+  return kind === ts17.SyntaxKind.EqualsToken;
 }
 function sourceRootForName(name) {
   switch (name) {
@@ -218846,25 +219241,25 @@ function rootProperty(root, property) {
 function propertyName(node) {
   if (!node)
     return void 0;
-  if (ts16.isIdentifier(node) || ts16.isPrivateIdentifier(node))
+  if (ts17.isIdentifier(node) || ts17.isPrivateIdentifier(node))
     return node.text;
-  if (ts16.isStringLiteral(node) || ts16.isNoSubstitutionTemplateLiteral(node) || ts16.isNumericLiteral(node))
+  if (ts17.isStringLiteral(node) || ts17.isNoSubstitutionTemplateLiteral(node) || ts17.isNumericLiteral(node))
     return node.text;
   return void 0;
 }
 function staticMemberPath(expression) {
-  if (ts16.isIdentifier(expression))
+  if (ts17.isIdentifier(expression))
     return [expression.text];
-  if (ts16.isPropertyAccessExpression(expression))
+  if (ts17.isPropertyAccessExpression(expression))
     return [...staticMemberPath(expression.expression), expression.name.text];
-  if (ts16.isElementAccessExpression(expression)) {
+  if (ts17.isElementAccessExpression(expression)) {
     const property = propertyName(expression.argumentExpression);
     return property === void 0 ? [] : [...staticMemberPath(expression.expression), property];
   }
   return [];
 }
 function isFunctionLike2(node) {
-  return ts16.isFunctionDeclaration(node) || ts16.isMethodDeclaration(node) || ts16.isFunctionExpression(node) || ts16.isArrowFunction(node) || ts16.isGetAccessorDeclaration(node) || ts16.isSetAccessorDeclaration(node) || ts16.isConstructorDeclaration(node);
+  return ts17.isFunctionDeclaration(node) || ts17.isMethodDeclaration(node) || ts17.isFunctionExpression(node) || ts17.isArrowFunction(node) || ts17.isGetAccessorDeclaration(node) || ts17.isSetAccessorDeclaration(node) || ts17.isConstructorDeclaration(node);
 }
 function joinValues(left, right) {
   const sharedQueryContent = left.queryContent === right.queryContent ? left.queryContent : void 0;
@@ -219018,13 +219413,13 @@ function functionBody(functionLike) {
   return body;
 }
 function isBindingPattern(node) {
-  return ts16.isObjectBindingPattern(node) || ts16.isArrayBindingPattern(node);
+  return ts17.isObjectBindingPattern(node) || ts17.isArrayBindingPattern(node);
 }
 function isAssignmentPattern(node) {
-  return ts16.isObjectLiteralExpression(node) || ts16.isArrayLiteralExpression(node);
+  return ts17.isObjectLiteralExpression(node) || ts17.isArrayLiteralExpression(node);
 }
 function isSupportedBindingTarget(node) {
-  return ts16.isIdentifier(node) || ts16.isObjectBindingPattern(node) || ts16.isArrayBindingPattern(node) || ts16.isObjectLiteralExpression(node) || ts16.isArrayLiteralExpression(node);
+  return ts17.isIdentifier(node) || ts17.isObjectBindingPattern(node) || ts17.isArrayBindingPattern(node) || ts17.isObjectLiteralExpression(node) || ts17.isArrayLiteralExpression(node);
 }
 function observedGapLocation(node, files) {
   try {
@@ -219139,6 +219534,21 @@ function findSnapshotInputFlows(files, limits = FLOW_LIMITS, parseErrorCount = 0
     resolvedCalls: session.resolvedCalls,
     unsupportedCalls: session.unsupportedCalls,
     moduleEdges: session.modules.moduleEdges.size,
+    moduleGraphModel: "snapshot-configured-esm-functions-v1",
+    moduleConfigurationsObserved: session.modules.moduleConfigurations.observed,
+    moduleConfigurationsSupported: session.modules.moduleConfigurations.supported,
+    moduleConfigurationsUnsupported: session.modules.moduleConfigurations.unsupported,
+    moduleConfigurationBytes: session.modules.moduleConfigurations.bytes,
+    configuredModuleTargets: session.modules.configuredModuleTargets.size,
+    configuredModuleCallSites: session.modules.configuredCallSites.size,
+    configuredModuleCallContexts: session.configuredCallContexts,
+    configuredBodyInspectionsQueued: session.configuredInspectionsQueued,
+    configuredBodyInspectionsStarted: session.configuredInspectionsStarted,
+    configuredBodyInspectionsDropped: session.configuredInspectionsDropped,
+    configuredBodyInspectionFlowWork: session.configuredInspectionWork,
+    barrelFunctionTargets: session.modules.barrelFunctionTargets.size,
+    configuredNativeIdentityComplete: session.modules.configuredNativeIdentityComplete,
+    configuredNativeIdentityVetoes: session.modules.configuredNativeLoads.size,
     maxNodeVisits: limits.nodeVisits,
     maxFunctions: limits.functions,
     maxSummaryWork: limits.summaryWork,
@@ -219160,11 +219570,11 @@ function findSnapshotInputFlows(files, limits = FLOW_LIMITS, parseErrorCount = 0
     archiveUnsupportedUses: session.archiveModel.unsupportedUses
   } };
 }
-var ts16, SAFE, UNKNOWN, TAINTED, UNKNOWN_INPUT, SQL_FIXED_TEXT_CHARACTERS, ASSIGNMENT_OPERATORS, FlowEnv, FlowSession, DataflowAnalyzer;
+var ts17, SAFE, UNKNOWN, TAINTED, UNKNOWN_INPUT, SQL_FIXED_TEXT_CHARACTERS, ASSIGNMENT_OPERATORS, FlowEnv, FlowSession, DataflowAnalyzer;
 var init_dataflow = __esm({
   "build/src/source/dataflow.js"() {
     "use strict";
-    ts16 = __toESM(require_typescript(), 1);
+    ts17 = __toESM(require_typescript(), 1);
     init_static_context();
     init_analysis_gaps();
     init_modules();
@@ -219188,22 +219598,22 @@ var init_dataflow = __esm({
     UNKNOWN_INPUT = { kind: "unknown", inputRelated: true };
     SQL_FIXED_TEXT_CHARACTERS = 2048;
     ASSIGNMENT_OPERATORS = /* @__PURE__ */ new Set([
-      ts16.SyntaxKind.EqualsToken,
-      ts16.SyntaxKind.PlusEqualsToken,
-      ts16.SyntaxKind.MinusEqualsToken,
-      ts16.SyntaxKind.AsteriskEqualsToken,
-      ts16.SyntaxKind.AsteriskAsteriskEqualsToken,
-      ts16.SyntaxKind.SlashEqualsToken,
-      ts16.SyntaxKind.PercentEqualsToken,
-      ts16.SyntaxKind.LessThanLessThanEqualsToken,
-      ts16.SyntaxKind.GreaterThanGreaterThanEqualsToken,
-      ts16.SyntaxKind.GreaterThanGreaterThanGreaterThanEqualsToken,
-      ts16.SyntaxKind.AmpersandEqualsToken,
-      ts16.SyntaxKind.BarEqualsToken,
-      ts16.SyntaxKind.CaretEqualsToken,
-      ts16.SyntaxKind.BarBarEqualsToken,
-      ts16.SyntaxKind.AmpersandAmpersandEqualsToken,
-      ts16.SyntaxKind.QuestionQuestionEqualsToken
+      ts17.SyntaxKind.EqualsToken,
+      ts17.SyntaxKind.PlusEqualsToken,
+      ts17.SyntaxKind.MinusEqualsToken,
+      ts17.SyntaxKind.AsteriskEqualsToken,
+      ts17.SyntaxKind.AsteriskAsteriskEqualsToken,
+      ts17.SyntaxKind.SlashEqualsToken,
+      ts17.SyntaxKind.PercentEqualsToken,
+      ts17.SyntaxKind.LessThanLessThanEqualsToken,
+      ts17.SyntaxKind.GreaterThanGreaterThanEqualsToken,
+      ts17.SyntaxKind.GreaterThanGreaterThanGreaterThanEqualsToken,
+      ts17.SyntaxKind.AmpersandEqualsToken,
+      ts17.SyntaxKind.BarEqualsToken,
+      ts17.SyntaxKind.CaretEqualsToken,
+      ts17.SyntaxKind.BarBarEqualsToken,
+      ts17.SyntaxKind.AmpersandAmpersandEqualsToken,
+      ts17.SyntaxKind.QuestionQuestionEqualsToken
     ]);
     FlowEnv = class _FlowEnv {
       scopes;
@@ -219404,6 +219814,14 @@ var init_dataflow = __esm({
       summaryWork = 0;
       resolvedCalls = 0;
       unsupportedCalls = 0;
+      configuredCallContexts = 0;
+      configuredInspections = [];
+      configuredSnapshotValues = 0;
+      configuredInspectionsQueued = 0;
+      configuredInspectionsStarted = 0;
+      configuredInspectionsDropped = 0;
+      configuredInspectionWork = 0;
+      nativeModuleContext;
       constructor(files, limits, parseErrorCount = 0, roleProofScopeComplete = true, parseFiles, metadata = []) {
         this.limits = limits;
         this.roleProofScopeComplete = roleProofScopeComplete;
@@ -219427,7 +219845,7 @@ var init_dataflow = __esm({
         }
         this.maxIndexWork = limits.indexWork ?? FLOW_LIMITS.indexWork;
         this.maxFlowWork = limits.flowWork ?? FLOW_LIMITS.flowWork;
-        this.modules = new StaticModules(files, () => this.tick(), limits, (reason) => this.incomplete(reason), roleProofScopeComplete);
+        this.modules = new StaticModules(files, () => this.tick(), limits, (reason) => this.incomplete(reason), roleProofScopeComplete, metadata);
         this.queryModel = new NativeQueryModel(this.modules, () => this.tick(), this.indexComplete);
         this.httpModel = new HttpRoleModel(this.modules, () => this.tick(), roleProofScopeComplete, this.indexComplete);
         this.sqlModel = new SqlRoleModel(this.modules, () => this.tick(), roleProofScopeComplete, this.indexComplete);
@@ -219443,6 +219861,11 @@ var init_dataflow = __esm({
         this.browserLocationModel = new BrowserLocationRoleModel(this.modules, () => this.tick(), roleProofScopeComplete, limits.aliasSteps);
         this.modules.finishIndex(this.indexComplete);
         this.phase = "flow";
+        const nativeLoad = this.modules.configuredNativeLoads.values().next().value;
+        if (nativeLoad) {
+          this.nativeModuleContext = conditionalContext("configured_module_resolution", nativeLoad);
+          this.gap("module_export_unsupported", nativeLoad);
+        }
       }
       incomplete(reason, call) {
         this.reasons.add(reason);
@@ -219492,7 +219915,7 @@ var init_dataflow = __esm({
           if (!this.tick())
             return void 0;
           const captured = env.captured(symbol);
-          if (symbol.declarations?.some((declaration) => ts16.isVariableDeclaration(declaration) && declaration.initializer && declaration.getSourceFile() === target.getSourceFile() && declaration.initializer.pos <= target.pos && declaration.initializer.end >= target.end))
+          if (symbol.declarations?.some((declaration) => ts17.isVariableDeclaration(declaration) && declaration.initializer && declaration.getSourceFile() === target.getSourceFile() && declaration.initializer.pos <= target.pos && declaration.initializer.end >= target.end))
             return void 0;
           if (!captured && sourceRootForName(symbol.name))
             this.incomplete("module_export_unsupported");
@@ -219507,7 +219930,7 @@ var init_dataflow = __esm({
         const visit = (node) => {
           if (!this.tick())
             return;
-          if (ts16.isIdentifier(node)) {
+          if (ts17.isIdentifier(node)) {
             const symbol = this.modules.symbol(node);
             if (symbol && !symbol.declarations?.some((declaration) => declaration.getSourceFile() === target.getSourceFile() && declaration.pos >= target.pos && declaration.end <= target.end)) {
               const value2 = env.captured(symbol);
@@ -219525,7 +219948,7 @@ var init_dataflow = __esm({
         if (!this.modules.indexComplete)
           return;
         const assignment = target.parent;
-        if (!ts16.isBinaryExpression(assignment) || assignment.right !== target || !ts16.isPropertyAccessExpression(assignment.left) || assignment.left.expression.kind !== ts16.SyntaxKind.ThisKeyword)
+        if (!ts17.isBinaryExpression(assignment) || assignment.right !== target || !ts17.isPropertyAccessExpression(assignment.left) || assignment.left.expression.kind !== ts17.SyntaxKind.ThisKeyword)
           return;
         let shape = this.closureShapes.get(target);
         if (!shape) {
@@ -219557,7 +219980,7 @@ var init_dataflow = __esm({
           this.incomplete("module_export_unsupported");
           return void 0;
         }
-        if (target.parameters.slice(args.length).some((parameter) => ts16.isIdentifier(parameter.name) && !!sourceRootForName(parameter.name.text)))
+        if (target.parameters.slice(args.length).some((parameter) => ts17.isIdentifier(parameter.name) && !!sourceRootForName(parameter.name.text)))
           this.incomplete("module_export_unsupported");
         const identity = `new:${target.getSourceFile().fileName}:${target.pos}`;
         if (this.active.has(identity) || this.active.size >= this.limits.callDepth || this.summaryWork >= this.limits.summaryWork) {
@@ -219612,7 +220035,7 @@ var init_dataflow = __esm({
           this.functionContextsPartial += 1;
       }
       invoke(call, args, receiver, declaredContext = false, capability, inheritedContext) {
-        const localFork = ts16.isIdentifier(call.expression) && (call.expression.text === "fork" || PROCESS_METHODS.has(call.expression.text));
+        const localFork = ts17.isIdentifier(call.expression) && (call.expression.text === "fork" || PROCESS_METHODS.has(call.expression.text));
         let proof = localFork ? this.localForkCalls.get(call) : void 0;
         if (localFork && !proof) {
           proof = { complete: true };
@@ -219620,11 +220043,15 @@ var init_dataflow = __esm({
         }
         const observed = (complete) => {
           if (proof)
-            proof.complete &&= complete && this.roleProofScopeComplete && this.modules.indexComplete;
+            proof.complete &&= complete && this.roleProofScopeComplete && this.modules.indexComplete && this.modules.configuredNativeIdentityComplete;
         };
         const initial = capability && this.modules.indexComplete ? { kind: "resolved", target: capability.target } : this.modules.resolveCall(call, true, receiver);
         let resolution = initial.kind === "resolved" || initial.kind === "declared" ? initial : this.modules.resolveCjsFunctionCall(call) ?? initial;
         let staticContext = contexts(inheritedContext, capability?.staticContext, ...args.map((value) => value.staticContext));
+        if ((resolution.kind === "resolved" || resolution.kind === "declared") && resolution.configured) {
+          staticContext = contexts(staticContext, conditionalContext("configured_module_resolution", call, resolution.target));
+          this.configuredCallContexts++;
+        }
         if (resolution.kind !== "resolved" && resolution.kind !== "declared") {
           const target2 = this.modules.discoverCjsBody(call);
           if (target2) {
@@ -219641,6 +220068,47 @@ var init_dataflow = __esm({
           if (resolution.kind === "export_unsupported")
             this.unsupportedCalls += 1;
           return void 0;
+        }
+        if (resolution.configured) {
+          observed(false);
+          this.gap("module_export_unsupported", call);
+          const context = staticContext;
+          const identity2 = this.invocationIdentity(resolution.target, void 0, true);
+          const callerInput = this.returnInput(args);
+          const snapshots2 = this.configuredActuals(args, context, call);
+          this.invalidateActuals(args, context);
+          if (this.active.has(identity2)) {
+            this.configuredInspectionsDropped++;
+            this.gap("summary_cycle", call);
+          } else if (this.active.size >= this.limits.callDepth) {
+            this.configuredInspectionsDropped++;
+            this.gap("depth_limit", call);
+          } else if (this.configuredInspectionsQueued >= this.limits.functions || this.configuredSnapshotValues >= this.limits.summaryWork) {
+            this.configuredInspectionsDropped++;
+            this.gap("summary_limit", call);
+          } else if (!this.tick())
+            this.configuredInspectionsDropped++;
+          else {
+            this.configuredInspections.push({
+              call,
+              target: resolution.target,
+              actuals: snapshots2,
+              context,
+              ancestors: [...this.active],
+              identity: identity2
+            });
+            this.configuredInspectionsQueued++;
+          }
+          return withContext({
+            kind: "unknown",
+            inputRelated: !!callerInput,
+            trace: callerInput?.trace,
+            traceSourceKind: callerInput?.traceSourceKind,
+            traceTruncated: true,
+            sqlScalarUnavailable: true,
+            sqlDataUnavailable: true,
+            httpTargetUnavailable: true
+          }, context);
         }
         const declared = declaredContext || resolution.kind === "declared" || !!staticContext;
         const snapshots = /* @__PURE__ */ new Map();
@@ -219718,6 +220186,110 @@ var init_dataflow = __esm({
       returnInput(values) {
         const inputs2 = values.map(consumedInput).filter(isInputRelated);
         return inputs2.length ? combineValues(inputs2) : void 0;
+      }
+      /** Detached positive data only: no shared heap cell or negative certificate. */
+      configuredActuals(values, context, call) {
+        let copied = 0;
+        const seen = /* @__PURE__ */ new Set();
+        const snapshot4 = (value, depth) => {
+          const current = currentQuery(consumedInput(value));
+          const input = isInputRelated(current);
+          const plain = {
+            kind: input ? current.kind : "unknown",
+            root: current.root,
+            inputRelated: input,
+            traceTruncated: true,
+            traceSourceKind: current.traceSourceKind,
+            sqlScalarUnavailable: true,
+            sqlDataUnavailable: true,
+            httpTargetUnavailable: true,
+            staticContext: context
+          };
+          if (depth >= this.limits.callDepth || copied >= this.limits.traceSteps || this.configuredSnapshotValues >= this.limits.summaryWork || seen.has(value)) {
+            this.gap("alias_limit", call);
+            return Object.freeze(plain);
+          }
+          if (!this.tick())
+            return Object.freeze(plain);
+          copied++;
+          this.configuredSnapshotValues++;
+          seen.add(value);
+          if (current.trace) {
+            plain.trace = [];
+            for (const item of current.trace.slice(0, this.limits.traceSteps)) {
+              if (!this.tick())
+                break;
+              plain.trace.push(Object.freeze({ role: item.role, location: Object.freeze({ ...item.location }) }));
+            }
+            Object.freeze(plain.trace);
+          }
+          if (current.properties) {
+            const properties = /* @__PURE__ */ new Map();
+            for (const [name, child] of current.properties) {
+              if (copied >= this.limits.traceSteps || this.configuredSnapshotValues >= this.limits.summaryWork) {
+                this.gap("alias_limit", call);
+                break;
+              }
+              properties.set(name, snapshot4(child, depth + 1));
+            }
+            plain.properties = properties;
+          }
+          seen.delete(value);
+          return Object.freeze(plain);
+        };
+        const result3 = [];
+        for (const value of values) {
+          if (result3.length >= this.limits.traceSteps) {
+            this.gap("alias_limit", call);
+            break;
+          }
+          result3.push(snapshot4(value, 0));
+        }
+        return Object.freeze(result3);
+      }
+      inspectConfiguredBodies() {
+        const start = this.flowWork;
+        for (let cursor = 0; cursor < this.configuredInspections.length; cursor++) {
+          const inspection = this.configuredInspections[cursor];
+          this.configuredInspections[cursor] = void 0;
+          if (!this.canStartFlow()) {
+            this.configuredInspectionsDropped += this.configuredInspections.length - cursor;
+            this.tick();
+            break;
+          }
+          if (!this.tick()) {
+            this.configuredInspectionsDropped++;
+            continue;
+          }
+          if (this.summaryWork >= this.limits.summaryWork) {
+            this.configuredInspectionsDropped++;
+            this.gap("summary_limit", inspection.call);
+            continue;
+          }
+          for (const identity of inspection.ancestors)
+            this.active.add(identity);
+          if (this.active.has(inspection.identity) || this.active.size >= this.limits.callDepth) {
+            this.configuredInspectionsDropped++;
+            this.gap(this.active.has(inspection.identity) ? "summary_cycle" : "depth_limit", inspection.call);
+            this.active.clear();
+            continue;
+          }
+          this.active.add(inspection.identity);
+          this.summaryWork++;
+          this.functionContextsStarted++;
+          this.configuredInspectionsStarted++;
+          const before = this.incompleteEvents;
+          const analyzer = new DataflowAnalyzer(inspection.target.getSourceFile(), this);
+          analyzer.analyzeFunction(inspection.target, inspection.actuals.map((value) => traced(value, inspection.call, "call")), void 0, true, void 0, inspection.context);
+          this.uses.push(...analyzer.output());
+          this.active.clear();
+          if (this.incompleteEvents === before)
+            this.functionContextsCompleted++;
+          else
+            this.functionContextsPartial++;
+        }
+        this.configuredInspections.length = 0;
+        this.configuredInspectionWork = this.flowWork - start;
       }
       /** Unknown call effects are applied even when a possible body is inspected. */
       invalidateActuals(values, staticContext) {
@@ -219866,7 +220438,7 @@ var init_dataflow = __esm({
         return { ...withoutUrlProof(value), sqlScalarUnavailable: true, httpTargetUnavailable: true };
       }
       sqlReturned(target, value) {
-        const asyncOrGenerator = target.modifiers?.some((m) => m.kind === ts16.SyntaxKind.AsyncKeyword) || "asteriskToken" in target && !!target.asteriskToken;
+        const asyncOrGenerator = target.modifiers?.some((m) => m.kind === ts17.SyntaxKind.AsyncKeyword) || "asteriskToken" in target && !!target.asteriskToken;
         return asyncOrGenerator ? { ...value, sqlFixedText: void 0, sqlConfig: void 0, sqlArray: void 0, sqlScalarUnavailable: true, httpTargetUnavailable: true } : value;
       }
       run(files) {
@@ -219912,6 +220484,7 @@ var init_dataflow = __esm({
           }
           this.uses.push(...analyzer.output());
         }
+        this.inspectConfiguredBodies();
       }
     };
     DataflowAnalyzer = class {
@@ -219934,7 +220507,7 @@ var init_dataflow = __esm({
       capabilityValue(expression, env) {
         if (!this.session?.modules.indexComplete)
           return UNKNOWN;
-        if (ts16.isIdentifier(expression)) {
+        if (ts17.isIdentifier(expression)) {
           const value = env.has(expression.text) ? env.resolve(expression.text) : UNKNOWN;
           return value.callable?.valid === false ? {
             ...UNKNOWN,
@@ -219942,9 +220515,9 @@ var init_dataflow = __esm({
             opaqueClosure: { ...combineValues([...value.callable.captures.values(), ...value.boundaryInput ? [value.boundaryInput] : []]), traceTruncated: true }
           } : value;
         }
-        if (expression.kind === ts16.SyntaxKind.ThisKeyword)
+        if (expression.kind === ts17.SyntaxKind.ThisKeyword)
           return this.constructedReceiver ?? UNKNOWN;
-        if (ts16.isPropertyAccessExpression(expression)) {
+        if (ts17.isPropertyAccessExpression(expression)) {
           const receiver = this.capabilityValue(expression.expression, env);
           if (receiver.constructed) {
             if (!receiver.constructed.valid)
@@ -219960,9 +220533,9 @@ var init_dataflow = __esm({
           }
           return receiver.properties?.get(expression.name.text) ?? UNKNOWN;
         }
-        if (ts16.isCallExpression(expression))
+        if (ts17.isCallExpression(expression))
           return this.callableActuals.get(expression)?.env === env ? this.callableActuals.get(expression).value ?? UNKNOWN : UNKNOWN;
-        if (ts16.isParenthesizedExpression(expression) || ts16.isAsExpression(expression) || ts16.isNonNullExpression(expression))
+        if (ts17.isParenthesizedExpression(expression) || ts17.isAsExpression(expression) || ts17.isNonNullExpression(expression))
           return this.capabilityValue(expression.expression, env);
         return UNKNOWN;
       }
@@ -219973,9 +220546,25 @@ var init_dataflow = __esm({
         this.sourceFile = sourceFile;
         this.session = session;
       }
+      certificateAvailable() {
+        return !this.declared && !this.staticContext && this.session?.modules.configuredNativeIdentityComplete !== false;
+      }
+      filesystemCertificateAvailable(values) {
+        if (this.session?.modules.configuredNativeIdentityComplete === false)
+          return false;
+        for (const context of [this.staticContext, ...values.map((value) => consumedInput(value).staticContext)]) {
+          if (!context)
+            continue;
+          if (this.session && !this.session.tick())
+            return false;
+          if (context.truncated || context.items.some((item) => item.kind === "configured_module_resolution"))
+            return false;
+        }
+        return true;
+      }
       output() {
         return this.uses.map((use) => {
-          const staticContext = contexts(this.staticContext, use.staticContext);
+          const staticContext = contexts(this.staticContext, use.staticContext, this.session?.nativeModuleContext);
           if (!staticContext)
             return use;
           if (staticContext.truncated)
@@ -220015,7 +220604,7 @@ var init_dataflow = __esm({
         this.receiver = receiver;
         this.declared = declared || !!this.staticContext;
         const env = new FlowEnv();
-        if (!actuals && !capability && ts16.isArrowFunction(functionLike))
+        if (!actuals && !capability && ts17.isArrowFunction(functionLike))
           this.session?.declaredOwnedRoot(functionLike);
         this.constructedReceiver = capability?.lexicalThis;
         for (const [symbol, value] of capability?.captures ?? [])
@@ -220037,7 +220626,7 @@ var init_dataflow = __esm({
             this.declareBinding(parameter.name, { ...UNKNOWN, mongoDb: mongoEntry }, env, true);
           else if (expressEntry)
             this.declareBinding(parameter.name, index === expressEntry.request ? rootValue("request") : index === expressEntry.response ? { ...UNKNOWN, expressResponse: { identity: {}, authority: "registered_express", mime: "default", valid: true } } : UNKNOWN, env, true);
-          else if (index === 1 && ts16.isIdentifier(parameter.name) && /^(res|response)$/.test(parameter.name.text) && functionLike.parameters[0] && ts16.isIdentifier(functionLike.parameters[0].name) && /^(req|request)$/.test(functionLike.parameters[0].name.text)) {
+          else if (index === 1 && ts17.isIdentifier(parameter.name) && /^(res|response)$/.test(parameter.name.text) && functionLike.parameters[0] && ts17.isIdentifier(functionLike.parameters[0].name) && /^(req|request)$/.test(functionLike.parameters[0].name.text)) {
             this.declareBinding(parameter.name, { ...UNKNOWN, expressResponse: { identity: {}, authority: "unqualified_response", mime: "default", valid: true } }, env, true);
           } else
             this.declareParameter(parameter, env);
@@ -220045,7 +220634,7 @@ var init_dataflow = __esm({
         const body = functionBody(functionLike);
         if (!body)
           return UNKNOWN;
-        if (ts16.isBlock(body))
+        if (ts17.isBlock(body))
           this.analyzeStatement(body, env);
         else {
           this.analyzeExpression(body, env);
@@ -220069,16 +220658,16 @@ var init_dataflow = __esm({
         return this.constructedReceiver;
       }
       declareParameter(parameter, env) {
-        if (ts16.isIdentifier(parameter.name)) {
+        if (ts17.isIdentifier(parameter.name)) {
           const root = sourceRootForName(parameter.name.text);
           this.declareBinding(parameter.name, withContext(root ? rootValue(root) : UNKNOWN, this.staticContext), env, true);
           return;
         }
-        if (ts16.isObjectBindingPattern(parameter.name)) {
+        if (ts17.isObjectBindingPattern(parameter.name)) {
           for (const element of parameter.name.elements) {
-            if (ts16.isOmittedExpression(element))
+            if (ts17.isOmittedExpression(element))
               continue;
-            const key2 = propertyName(element.propertyName) ?? (ts16.isIdentifier(element.name) ? element.name.text : void 0);
+            const key2 = propertyName(element.propertyName) ?? (ts17.isIdentifier(element.name) ? element.name.text : void 0);
             const root = key2 ? sourceRootForName(key2) : void 0;
             const value = element.dotDotDotToken ? UNKNOWN : root ? rootValue(root) : UNKNOWN;
             this.declareBinding(element.name, value, env, true);
@@ -220088,7 +220677,7 @@ var init_dataflow = __esm({
         this.declareBinding(parameter.name, UNKNOWN, env, true);
       }
       declareBinding(name, value, env, blockScoped) {
-        if (ts16.isIdentifier(name)) {
+        if (ts17.isIdentifier(name)) {
           if (value.archiveRole && this.session) {
             if (this.session.archiveModel.bindingMutated(name)) {
               value.archiveRole.state.valid = false;
@@ -220105,16 +220694,16 @@ var init_dataflow = __esm({
             if (shape)
               value = { ...value, sequenceContent: { ...shape, value: { ...value }, filename: filenamePart(value) ?? UNKNOWN } };
           }
-          if (value.sqlArray && ts16.isParameter(name.parent) && this.session?.sqlModel.arrayParameter(name) !== true)
+          if (value.sqlArray && ts17.isParameter(name.parent) && this.session?.sqlModel.arrayParameter(name) !== true)
             value = { ...value, sqlArray: { ...value.sqlArray, closed: false } };
           env.declare(name.text, value, blockScoped, this.session?.modules.symbol(name));
           return;
         }
-        if (ts16.isObjectBindingPattern(name)) {
+        if (ts17.isObjectBindingPattern(name)) {
           for (const element of name.elements) {
-            if (ts16.isOmittedExpression(element))
+            if (ts17.isOmittedExpression(element))
               continue;
-            const key2 = propertyName(element.propertyName) ?? (ts16.isIdentifier(element.name) ? element.name.text : void 0);
+            const key2 = propertyName(element.propertyName) ?? (ts17.isIdentifier(element.name) ? element.name.text : void 0);
             let elementValue = element.dotDotDotToken ? value : key2 === void 0 ? UNKNOWN : projectValue(value, key2);
             if (value.koaRequest && isInputRelated(elementValue))
               elementValue = traced(elementValue, element.name, "source");
@@ -220124,52 +220713,52 @@ var init_dataflow = __esm({
         }
         for (let index = 0; index < name.elements.length; index += 1) {
           const element = name.elements[index];
-          if (ts16.isOmittedExpression(element))
+          if (ts17.isOmittedExpression(element))
             continue;
           const elementValue = element.dotDotDotToken ? value : projectValue(value, String(index));
           this.declareBinding(element.name, elementValue, env, blockScoped);
         }
       }
       assignBinding(name, value, env) {
-        if (ts16.isIdentifier(name)) {
+        if (ts17.isIdentifier(name)) {
           env.assign(name.text, value);
           return;
         }
-        if (ts16.isObjectBindingPattern(name)) {
+        if (ts17.isObjectBindingPattern(name)) {
           for (const element of name.elements) {
-            const key2 = propertyName(element.propertyName) ?? (ts16.isIdentifier(element.name) ? element.name.text : void 0);
+            const key2 = propertyName(element.propertyName) ?? (ts17.isIdentifier(element.name) ? element.name.text : void 0);
             this.assignBinding(element.name, element.dotDotDotToken ? value : key2 === void 0 ? UNKNOWN : projectValue(value, key2), env);
           }
           return;
         }
-        if (ts16.isArrayBindingPattern(name)) {
+        if (ts17.isArrayBindingPattern(name)) {
           for (let index = 0; index < name.elements.length; index += 1) {
             const element = name.elements[index];
-            if (ts16.isOmittedExpression(element))
+            if (ts17.isOmittedExpression(element))
               continue;
             this.assignBinding(element.name, element.dotDotDotToken ? value : projectValue(value, String(index)), env);
           }
           return;
         }
-        if (ts16.isObjectLiteralExpression(name)) {
+        if (ts17.isObjectLiteralExpression(name)) {
           for (const element of name.properties) {
-            if (ts16.isSpreadAssignment(element)) {
+            if (ts17.isSpreadAssignment(element)) {
               if (isSupportedBindingTarget(element.expression))
                 this.assignBinding(element.expression, value, env);
-            } else if (ts16.isPropertyAssignment(element)) {
+            } else if (ts17.isPropertyAssignment(element)) {
               const key2 = propertyName(element.name);
               if (key2 !== void 0 && isSupportedBindingTarget(element.initializer))
                 this.assignBinding(element.initializer, projectValue(value, key2), env);
-            } else if (ts16.isShorthandPropertyAssignment(element)) {
+            } else if (ts17.isShorthandPropertyAssignment(element)) {
               this.assignBinding(element.name, projectValue(value, element.name.text), env);
             }
           }
           return;
         }
         for (const [index, element] of name.elements.entries()) {
-          if (ts16.isOmittedExpression(element))
+          if (ts17.isOmittedExpression(element))
             continue;
-          if (ts16.isSpreadElement(element)) {
+          if (ts17.isSpreadElement(element)) {
             if (isSupportedBindingTarget(element.expression))
               this.assignBinding(element.expression, value, env);
           } else if (isSupportedBindingTarget(element)) {
@@ -220179,11 +220768,11 @@ var init_dataflow = __esm({
       }
       analyzeStatements(statements2, env) {
         for (const statement of statements2) {
-          if (ts16.isVariableStatement(statement)) {
-            const blockScoped = (statement.declarationList.flags & ts16.NodeFlags.BlockScoped) !== 0;
+          if (ts17.isVariableStatement(statement)) {
+            const blockScoped = (statement.declarationList.flags & ts17.NodeFlags.BlockScoped) !== 0;
             for (const declaration of statement.declarationList.declarations)
               this.declareBinding(declaration.name, UNKNOWN, env, blockScoped);
-          } else if (ts16.isFunctionDeclaration(statement) && statement.name)
+          } else if (ts17.isFunctionDeclaration(statement) && statement.name)
             env.declare(statement.name.text, UNKNOWN, true, this.session?.modules.symbol(statement.name));
         }
         for (const statement of statements2) {
@@ -220197,21 +220786,21 @@ var init_dataflow = __esm({
           return;
         if (isFunctionLike2(statement))
           return;
-        if (ts16.isVariableStatement(statement)) {
+        if (ts17.isVariableStatement(statement)) {
           this.analyzeVariableList(statement.declarationList, env);
           return;
         }
-        if (ts16.isExpressionStatement(statement)) {
+        if (ts17.isExpressionStatement(statement)) {
           this.analyzeExpression(statement.expression, env);
           return;
         }
-        if (ts16.isBlock(statement)) {
+        if (ts17.isBlock(statement)) {
           env.push();
           this.analyzeStatements(statement.statements, env);
           env.pop();
           return;
         }
-        if (ts16.isIfStatement(statement)) {
+        if (ts17.isIfStatement(statement)) {
           if (this.constructorGuards?.has(statement))
             return;
           this.analyzeExpression(statement.expression, env);
@@ -220228,11 +220817,11 @@ var init_dataflow = __esm({
           env.merge(branches);
           return;
         }
-        if (ts16.isForStatement(statement)) {
+        if (ts17.isForStatement(statement)) {
           const loop = env.clone();
           loop.push();
           if (statement.initializer) {
-            if (ts16.isVariableDeclarationList(statement.initializer))
+            if (ts17.isVariableDeclarationList(statement.initializer))
               this.analyzeVariableList(statement.initializer, loop);
             else
               this.analyzeExpression(statement.initializer, loop);
@@ -220246,23 +220835,23 @@ var init_dataflow = __esm({
           env.merge([loop, env.clone()]);
           return;
         }
-        if (ts16.isForInStatement(statement) || ts16.isForOfStatement(statement)) {
+        if (ts17.isForInStatement(statement) || ts17.isForOfStatement(statement)) {
           const loop = env.clone();
           loop.push();
           this.analyzeExpression(statement.expression, loop);
           const iterable = this.evalExpression(statement.expression, loop);
-          if (ts16.isVariableDeclarationList(statement.initializer)) {
-            const blockScoped = (statement.initializer.flags & ts16.NodeFlags.BlockScoped) !== 0;
+          if (ts17.isVariableDeclarationList(statement.initializer)) {
+            const blockScoped = (statement.initializer.flags & ts17.NodeFlags.BlockScoped) !== 0;
             for (const declaration of statement.initializer.declarations) {
-              const elementValue = ts16.isForOfStatement(statement) ? projectValue(iterable, "*") : iterable.archiveRole ? UNKNOWN : projectValue(iterable, "*");
+              const elementValue = ts17.isForOfStatement(statement) ? projectValue(iterable, "*") : iterable.archiveRole ? UNKNOWN : projectValue(iterable, "*");
               if (declaration.initializer)
                 this.analyzeExpression(declaration.initializer, loop);
               this.declareBinding(declaration.name, elementValue, loop, blockScoped);
             }
           } else {
             this.analyzeAssignmentTarget(statement.initializer, loop);
-            const elementValue = ts16.isForOfStatement(statement) ? projectValue(iterable, "*") : iterable.archiveRole ? UNKNOWN : projectValue(iterable, "*");
-            if (ts16.isIdentifier(statement.initializer))
+            const elementValue = ts17.isForOfStatement(statement) ? projectValue(iterable, "*") : iterable.archiveRole ? UNKNOWN : projectValue(iterable, "*");
+            if (ts17.isIdentifier(statement.initializer))
               loop.assign(statement.initializer.text, elementValue);
             else if (isAssignmentPattern(statement.initializer) || isBindingPattern(statement.initializer)) {
               this.assignBinding(statement.initializer, elementValue, loop);
@@ -220275,22 +220864,22 @@ var init_dataflow = __esm({
           env.merge([loop, env.clone()]);
           return;
         }
-        if (ts16.isWhileStatement(statement) || ts16.isDoStatement(statement)) {
-          if (ts16.isWhileStatement(statement))
+        if (ts17.isWhileStatement(statement) || ts17.isDoStatement(statement)) {
+          if (ts17.isWhileStatement(statement))
             this.analyzeExpression(statement.expression, env);
           const body = env.clone();
           this.analyzeStatement(statement.statement, body);
-          if (ts16.isDoStatement(statement))
+          if (ts17.isDoStatement(statement))
             this.analyzeExpression(statement.expression, body);
           env.merge([body, env.clone()]);
           return;
         }
-        if (ts16.isSwitchStatement(statement)) {
+        if (ts17.isSwitchStatement(statement)) {
           this.analyzeExpression(statement.expression, env);
           const branches = [env.clone()];
           for (const clause of statement.caseBlock.clauses) {
             const branch = env.clone();
-            if (ts16.isCaseClause(clause))
+            if (ts17.isCaseClause(clause))
               this.analyzeExpression(clause.expression, branch);
             this.analyzeStatements(clause.statements, branch);
             branches.push(branch);
@@ -220298,7 +220887,7 @@ var init_dataflow = __esm({
           env.merge(branches);
           return;
         }
-        if (ts16.isTryStatement(statement)) {
+        if (ts17.isTryStatement(statement)) {
           const returnsBeforeTry = this.returns.length;
           const tryEnv = env.clone();
           this.analyzeBlockLike(statement.tryBlock, tryEnv);
@@ -220335,26 +220924,26 @@ var init_dataflow = __esm({
           }
           return;
         }
-        if (ts16.isReturnStatement(statement) || ts16.isThrowStatement(statement)) {
+        if (ts17.isReturnStatement(statement) || ts17.isThrowStatement(statement)) {
           if (statement.expression)
             this.analyzeExpression(statement.expression, env);
-          if (ts16.isReturnStatement(statement))
+          if (ts17.isReturnStatement(statement))
             this.returns.push(statement.expression ? traced(this.evalExpression(statement.expression, env), statement, "return") : SAFE);
           env.terminated = true;
           return;
         }
-        if (ts16.isWithStatement(statement)) {
+        if (ts17.isWithStatement(statement)) {
           this.analyzeExpression(statement.expression, env);
           this.analyzeStatement(statement.statement, env);
           return;
         }
-        if (ts16.isLabeledStatement(statement)) {
+        if (ts17.isLabeledStatement(statement)) {
           this.analyzeStatement(statement.statement, env);
           return;
         }
-        if (ts16.isClassDeclaration(statement)) {
+        if (ts17.isClassDeclaration(statement)) {
           for (const member3 of statement.members) {
-            if (ts16.isPropertyDeclaration(member3) && member3.initializer)
+            if (ts17.isPropertyDeclaration(member3) && member3.initializer)
               this.analyzeExpression(member3.initializer, env);
           }
           return;
@@ -220362,9 +220951,9 @@ var init_dataflow = __esm({
         statement.forEachChild((child) => {
           if (isFunctionLike2(child))
             return;
-          if (ts16.isStatement(child))
+          if (ts17.isStatement(child))
             this.analyzeStatement(child, env);
-          else if (ts16.isExpression(child))
+          else if (ts17.isExpression(child))
             this.analyzeExpression(child, env);
         });
       }
@@ -220372,12 +220961,12 @@ var init_dataflow = __esm({
         this.analyzeStatement(block, env);
       }
       analyzeVariableList(list, env) {
-        const blockScoped = (list.flags & ts16.NodeFlags.BlockScoped) !== 0;
+        const blockScoped = (list.flags & ts17.NodeFlags.BlockScoped) !== 0;
         for (const declaration of list.declarations) {
           if (declaration.initializer)
             this.analyzeExpression(declaration.initializer, env);
           const value = declaration.initializer ? this.evalExpression(declaration.initializer, env) : UNKNOWN;
-          if (ts16.isIdentifier(declaration.name)) {
+          if (ts17.isIdentifier(declaration.name)) {
             this.declareBinding(declaration.name, value, env, blockScoped);
           } else {
             this.declareBinding(declaration.name, value, env, blockScoped);
@@ -220389,37 +220978,37 @@ var init_dataflow = __esm({
           return;
         if (isFunctionLike2(expression))
           return;
-        if (ts16.isBinaryExpression(expression) && isAssignmentOperator(expression.operatorToken.kind)) {
+        if (ts17.isBinaryExpression(expression) && isAssignmentOperator(expression.operatorToken.kind)) {
           this.analyzeExpression(expression.right, env);
           this.analyzeAssignmentTarget(expression.left, env);
           const right = this.evalExpression(expression.right, env);
-          if (this.constructedReceiver?.constructed && ts16.isPropertyAccessExpression(expression.left) && expression.left.expression.kind === ts16.SyntaxKind.ThisKeyword && expression.operatorToken.kind === ts16.SyntaxKind.EqualsToken && this.constructedReceiver.constructed.shape.ownArrows.has(expression.left.name.text)) {
+          if (this.constructedReceiver?.constructed && ts17.isPropertyAccessExpression(expression.left) && expression.left.expression.kind === ts17.SyntaxKind.ThisKeyword && expression.operatorToken.kind === ts17.SyntaxKind.EqualsToken && this.constructedReceiver.constructed.shape.ownArrows.has(expression.left.name.text)) {
             this.constructedReceiver.constructed.slots.set(expression.left.name.text, right);
             return;
           }
           if (isSimpleAssignment(expression.operatorToken.kind)) {
             this.recordAssignment(expression, right);
-            if (ts16.isIdentifier(expression.left) || isAssignmentPattern(expression.left) || isBindingPattern(expression.left)) {
+            if (ts17.isIdentifier(expression.left) || isAssignmentPattern(expression.left) || isBindingPattern(expression.left)) {
               this.assignBinding(expression.left, right, env);
             } else {
               this.assignMemberPath(expression.left, right, env);
             }
           } else {
-            const prior = ts16.isIdentifier(expression.left) ? env.resolve(expression.left.text) : UNKNOWN;
+            const prior = ts17.isIdentifier(expression.left) ? env.resolve(expression.left.text) : UNKNOWN;
             const value = combineValues([prior, right]);
             this.recordAssignment(expression, value);
-            if (ts16.isIdentifier(expression.left))
+            if (ts17.isIdentifier(expression.left))
               env.assign(expression.left.text, value);
             else
               this.assignMemberPath(expression.left, value, env);
           }
           return;
         }
-        if (ts16.isCallExpression(expression)) {
+        if (ts17.isCallExpression(expression)) {
           this.analyzeExpression(expression.expression, env);
           const callee = expression.expression;
           const selectedCallable = this.capabilityValue(callee, env);
-          const response = ts16.isPropertyAccessExpression(callee) || ts16.isElementAccessExpression(callee) ? this.evalExpression(callee.expression, env) : void 0;
+          const response = ts17.isPropertyAccessExpression(callee) || ts17.isElementAccessExpression(callee) ? this.evalExpression(callee.expression, env) : void 0;
           const responseState = response?.expressResponse;
           const processBinding = this.session?.processModel.binding(expression);
           const filesystemStream = this.session?.filesystemModel.stream(expression);
@@ -220443,7 +221032,7 @@ var init_dataflow = __esm({
           if (orderedActuals)
             this.evaluationActuals.set(expression, { env, values: args });
           const cell = response?.sequenceContent;
-          const arrayMutation = cell && ts16.isPropertyAccessExpression(callee) && ["push", "unshift"].includes(callee.name.text);
+          const arrayMutation = cell && ts17.isPropertyAccessExpression(callee) && ["push", "unshift"].includes(callee.name.text);
           if (arrayMutation) {
             const appended = combineValues(args.map(consumedInput));
             const parts = args.map(filenamePart).filter((value) => !!value);
@@ -220456,7 +221045,7 @@ var init_dataflow = __esm({
               this.session?.gap("module_export_unsupported", expression);
             }
           }
-          const event = response?.filesystemStream && ts16.isPropertyAccessExpression(callee) && callee.name.text === "on" && expression.arguments.length === 2 && ts16.isStringLiteralLike(expression.arguments[0]) ? expression.arguments[0].text : void 0;
+          const event = response?.filesystemStream && ts17.isPropertyAccessExpression(callee) && callee.name.text === "on" && expression.arguments.length === 2 && ts17.isStringLiteralLike(expression.arguments[0]) ? expression.arguments[0].text : void 0;
           const eventCallback = args[1]?.callable;
           const filesystemEvent = (event === "data" || event === "end") && response?.filesystemStream?.valid && eventCallback;
           if (filesystemEvent) {
@@ -220470,17 +221059,17 @@ var init_dataflow = __esm({
               this.session?.callback({ ...eventCallback, staticContext: contexts(eventCallback.staticContext, context) }, expression, [input]);
             } else
               this.session?.callback({ ...eventCallback, staticContext: contexts(eventCallback.staticContext, context) }, expression, []);
-          } else if (response?.filesystemStream && ts16.isPropertyAccessExpression(callee) && callee.name.text === "on") {
+          } else if (response?.filesystemStream && ts17.isPropertyAccessExpression(callee) && callee.name.text === "on") {
             this.session.filesystemModel.unsupportedUses++;
             this.session?.gap("module_export_unsupported", expression);
           }
-          if (ts16.isPropertyAccessExpression(callee) && ts16.isIdentifier(callee.expression) && ["append", "set"].includes(callee.name.text)) {
+          if (ts17.isPropertyAccessExpression(callee) && ts17.isIdentifier(callee.expression) && ["append", "set"].includes(callee.name.text)) {
             const receiver = env.resolve(callee.expression.text);
             if (receiver.queryContent) {
               receiver.queryContent.value = queryContent(withHttpUnavailable(combineValues([receiver.queryContent.value, ...args]), [receiver]));
             }
           }
-          if (responseState?.valid && ts16.isPropertyAccessExpression(callee)) {
+          if (responseState?.valid && ts17.isPropertyAccessExpression(callee)) {
             this.updateResponseMime(callee.name.text, expression.arguments, responseState);
             if (responseState.contained && responseState.mime !== "html")
               responseState.mime = "unknown";
@@ -220495,7 +221084,7 @@ var init_dataflow = __esm({
             role.state.valid = false;
             this.session?.gap("module_export_unsupported", expression);
           }
-          const archiveMethod = ts16.isPropertyAccessExpression(callee) ? callee.name.text : ts16.isElementAccessExpression(callee) ? propertyName(callee.argumentExpression) : void 0;
+          const archiveMethod = ts17.isPropertyAccessExpression(callee) ? callee.name.text : ts17.isElementAccessExpression(callee) ? propertyName(callee.argumentExpression) : void 0;
           if (response?.archiveRole && !(response.archiveRole.stage === "entry" && archiveMethod === "stream" && expression.arguments.length === 0)) {
             response.archiveRole.state.valid = false;
             this.session?.archiveModel.unsupported(expression);
@@ -220563,7 +221152,7 @@ var init_dataflow = __esm({
               else if (value.opaqueClosure)
                 this.session?.gap("module_export_unsupported", expression);
             }
-            if (responseState?.valid && ts16.isPropertyAccessExpression(callee) && !["send", "json", "status", "type", "contentType", "set", "header", "setHeader", "append", "removeHeader"].includes(callee.name.text)) {
+            if (responseState?.valid && ts17.isPropertyAccessExpression(callee) && !["send", "json", "status", "type", "contentType", "set", "header", "setHeader", "append", "removeHeader"].includes(callee.name.text)) {
               responseState.mime = "unknown";
               responseState.authority = "unqualified_response";
             }
@@ -220572,9 +221161,13 @@ var init_dataflow = __esm({
           for (let index = 0; index < expression.arguments.length; index += 1) {
             const value = consumedInput(args[index]);
             if (isInputRelated(value))
-              argumentFlows.push({ index, certainty: !this.declared && value.kind === "tainted" ? "tainted" : "unknown", staticFlow: evidence(value, expression), fixedDestination: !this.declared && fixedQueryDestination(value.urlFragments) });
+              argumentFlows.push({ index, certainty: !this.declared && value.kind === "tainted" ? "tainted" : "unknown", staticFlow: evidence(value, expression), fixedDestination: this.certificateAvailable() && fixedQueryDestination(value.urlFragments) });
           }
-          const responseMethod = ts16.isPropertyAccessExpression(callee) ? callee.name.text : void 0;
+          if (responseState?.valid && !this.certificateAvailable()) {
+            responseState.mime = "unknown";
+            responseState.authority = "unqualified_response";
+          }
+          const responseMethod = ts17.isPropertyAccessExpression(callee) ? callee.name.text : void 0;
           const htmlResponse = responseState?.valid && expression.arguments.length === 1 && (responseMethod === "send" || responseMethod === "json") && (responseState.mime === "html" || responseState.mime === "unknown" || responseMethod === "send" && responseState.mime === "default" && !args[0]?.expressObjectBody) ? "express" : void 0;
           const htmlResponseMime = htmlResponse && responseState?.mime !== "non_html" ? responseState?.mime : void 0;
           const htmlResponseAuthority = htmlResponse === "express" ? this.declared || this.staticContext || response?.staticContext ? "unqualified_response" : responseState?.authority : void 0;
@@ -220585,7 +221178,7 @@ var init_dataflow = __esm({
           const processRole = processBinding ? this.processRole(expression, args, processBinding) : void 0;
           const filename = args[1] ? filenamePart(args[1]) : void 0;
           const filesystemProcess = filename && filesystemWrapper ? {
-            outcome: filesystemWrapper.shell === "enabled" ? "argv_shell_input" : filesystemWrapper.shell === "disabled" && filesystemWrapper.interpreter ? "direct_argv_interpreter_unknown" : filesystemWrapper.shell === "disabled" && args[1]?.sequenceContent?.closed && args[1].sequenceContent.valid ? "argv_only_shell_disabled" : "argv_shell_unknown",
+            outcome: filesystemWrapper.shell === "enabled" ? "argv_shell_input" : filesystemWrapper.shell === "disabled" && filesystemWrapper.interpreter ? "direct_argv_interpreter_unknown" : this.filesystemCertificateAvailable([filename, ...args]) && filesystemWrapper.shell === "disabled" && args[1]?.sequenceContent?.closed && args[1].sequenceContent.valid ? "argv_only_shell_disabled" : "argv_shell_unknown",
             staticFlow: evidence(filename, expression)
           } : void 0;
           const filesystemContext = filesystemProcess ? contexts(filename?.staticContext, conditionalContext("declared_process_wrapper", expression)) : void 0;
@@ -220593,7 +221186,7 @@ var init_dataflow = __esm({
           if (archive && archiveWriter && !archiveWriter.options)
             this.session.archiveModel.unsupported(expression);
           const archiveWrite = archive && archiveWriter ? {
-            outcome: !archiveWriter.options ? "path_role_unknown" : archiveWriter.closed && this.session?.archiveModel.contained(expression) ? "lexically_contained" : "path_input",
+            outcome: !archiveWriter.options ? "path_role_unknown" : this.certificateAvailable() && archiveWriter.closed && this.session?.archiveModel.contained(expression) ? "lexically_contained" : "path_input",
             staticFlow: evidence(archive, expression)
           } : void 0;
           if (archiveWrite?.outcome === "lexically_contained")
@@ -220622,7 +221215,7 @@ var init_dataflow = __esm({
             });
           return;
         }
-        if (ts16.isNewExpression(expression)) {
+        if (ts17.isNewExpression(expression)) {
           this.analyzeExpression(expression.expression, env);
           const callee = expression.expression;
           if (evaluationShapedCallee(callee, true)) {
@@ -220666,31 +221259,31 @@ var init_dataflow = __esm({
           }
           return;
         }
-        if (ts16.isPrefixUnaryExpression(expression)) {
+        if (ts17.isPrefixUnaryExpression(expression)) {
           this.analyzeExpression(expression.operand, env);
-          if (expression.operator === ts16.SyntaxKind.PlusPlusToken || expression.operator === ts16.SyntaxKind.MinusMinusToken) {
-            if (ts16.isIdentifier(expression.operand))
+          if (expression.operator === ts17.SyntaxKind.PlusPlusToken || expression.operator === ts17.SyntaxKind.MinusMinusToken) {
+            if (ts17.isIdentifier(expression.operand))
               env.assign(expression.operand.text, UNKNOWN);
             else if (env.resolve(staticMemberPath(expression.operand)[0] ?? "").koaRequest || env.resolve(staticMemberPath(expression.operand)[0] ?? "").honoRequest)
               this.assignMemberPath(expression.operand, UNKNOWN, env);
           }
           return;
         }
-        if (ts16.isPostfixUnaryExpression(expression)) {
+        if (ts17.isPostfixUnaryExpression(expression)) {
           this.analyzeExpression(expression.operand, env);
-          if (ts16.isIdentifier(expression.operand))
+          if (ts17.isIdentifier(expression.operand))
             env.assign(expression.operand.text, UNKNOWN);
           else if (env.resolve(staticMemberPath(expression.operand)[0] ?? "").koaRequest || env.resolve(staticMemberPath(expression.operand)[0] ?? "").honoRequest)
             this.assignMemberPath(expression.operand, UNKNOWN, env);
           return;
         }
-        if (ts16.isDeleteExpression(expression)) {
+        if (ts17.isDeleteExpression(expression)) {
           this.analyzeExpression(expression.expression, env);
           if (env.resolve(staticMemberPath(expression.expression)[0] ?? "").koaRequest || env.resolve(staticMemberPath(expression.expression)[0] ?? "").honoRequest)
             this.assignMemberPath(expression.expression, UNKNOWN, env);
           return;
         }
-        if (ts16.isConditionalExpression(expression)) {
+        if (ts17.isConditionalExpression(expression)) {
           this.analyzeExpression(expression.condition, env);
           const whenTrue = env.clone();
           this.analyzeExpression(expression.whenTrue, whenTrue);
@@ -220702,10 +221295,10 @@ var init_dataflow = __esm({
           env.merge([whenTrue, whenFalse]);
           return;
         }
-        if (ts16.isBinaryExpression(expression) && [
-          ts16.SyntaxKind.AmpersandAmpersandToken,
-          ts16.SyntaxKind.BarBarToken,
-          ts16.SyntaxKind.QuestionQuestionToken
+        if (ts17.isBinaryExpression(expression) && [
+          ts17.SyntaxKind.AmpersandAmpersandToken,
+          ts17.SyntaxKind.BarBarToken,
+          ts17.SyntaxKind.QuestionQuestionToken
         ].includes(expression.operatorToken.kind)) {
           this.analyzeExpression(expression.left, env);
           const right = env.clone();
@@ -220713,35 +221306,35 @@ var init_dataflow = __esm({
           env.merge([right, env.clone()]);
           return;
         }
-        if (ts16.isJsxElement(expression)) {
+        if (ts17.isJsxElement(expression)) {
           this.analyzeJsxAttributes(expression.openingElement.attributes, env);
           for (const child of expression.children) {
-            if (ts16.isJsxExpression(child) && child.expression)
+            if (ts17.isJsxExpression(child) && child.expression)
               this.analyzeExpression(child.expression, env);
-            else if (ts16.isJsxElement(child) || ts16.isJsxSelfClosingElement(child))
+            else if (ts17.isJsxElement(child) || ts17.isJsxSelfClosingElement(child))
               this.analyzeExpression(child, env);
           }
           return;
         }
-        if (ts16.isJsxSelfClosingElement(expression)) {
+        if (ts17.isJsxSelfClosingElement(expression)) {
           this.analyzeJsxAttributes(expression.attributes, env);
           return;
         }
-        if (ts16.isObjectLiteralExpression(expression)) {
+        if (ts17.isObjectLiteralExpression(expression)) {
           const values = /* @__PURE__ */ new Map(), keys6 = /* @__PURE__ */ new Map();
           for (const property of expression.properties) {
-            if (ts16.isPropertyAssignment(property)) {
-              if (ts16.isComputedPropertyName(property.name)) {
+            if (ts17.isPropertyAssignment(property)) {
+              if (ts17.isComputedPropertyName(property.name)) {
                 this.analyzeExpression(property.name.expression, env);
                 keys6.set(property, this.evalExpression(property.name.expression, env));
               }
               this.analyzeExpression(property.initializer, env);
               values.set(property, this.evalExpression(property.initializer, env));
-            } else if (ts16.isShorthandPropertyAssignment(property)) {
+            } else if (ts17.isShorthandPropertyAssignment(property)) {
               if (property.objectAssignmentInitializer)
                 this.analyzeExpression(property.objectAssignmentInitializer, env);
               values.set(property, env.resolve(property.name.text));
-            } else if (ts16.isSpreadAssignment(property)) {
+            } else if (ts17.isSpreadAssignment(property)) {
               this.analyzeExpression(property.expression, env);
               values.set(property, this.evalExpression(property.expression, env));
             }
@@ -220749,10 +221342,10 @@ var init_dataflow = __esm({
           this.objectActuals.set(expression, { env, values, keys: keys6 });
           return;
         }
-        if (ts16.isArrayLiteralExpression(expression)) {
+        if (ts17.isArrayLiteralExpression(expression)) {
           const values = /* @__PURE__ */ new Map();
           for (const element of expression.elements) {
-            if (!ts16.isOmittedExpression(element)) {
+            if (!ts17.isOmittedExpression(element)) {
               this.analyzeExpression(element, env);
               values.set(element, this.evalExpression(element, env));
             }
@@ -220760,27 +221353,27 @@ var init_dataflow = __esm({
           this.arrayActuals.set(expression, { env, values });
           return;
         }
-        if (ts16.isPropertyAccessExpression(expression)) {
+        if (ts17.isPropertyAccessExpression(expression)) {
           this.analyzeExpression(expression.expression, env);
           return;
         }
-        if (ts16.isElementAccessExpression(expression)) {
+        if (ts17.isElementAccessExpression(expression)) {
           this.analyzeExpression(expression.expression, env);
           if (expression.argumentExpression)
             this.analyzeExpression(expression.argumentExpression, env);
           return;
         }
-        if (ts16.isTemplateExpression(expression)) {
+        if (ts17.isTemplateExpression(expression)) {
           for (const span of expression.templateSpans)
             this.analyzeExpression(span.expression, env);
           return;
         }
-        if (ts16.isTaggedTemplateExpression(expression)) {
+        if (ts17.isTaggedTemplateExpression(expression)) {
           this.analyzeExpression(expression.tag, env);
           this.analyzeExpression(expression.template, env);
           return;
         }
-        if (ts16.isParenthesizedExpression(expression) || ts16.isAsExpression(expression) || ts16.isTypeAssertionExpression(expression) || ts16.isNonNullExpression(expression) || ts16.isAwaitExpression(expression) || ts16.isYieldExpression(expression)) {
+        if (ts17.isParenthesizedExpression(expression) || ts17.isAsExpression(expression) || ts17.isTypeAssertionExpression(expression) || ts17.isNonNullExpression(expression) || ts17.isAwaitExpression(expression) || ts17.isYieldExpression(expression)) {
           if (expression.expression)
             this.analyzeExpression(expression.expression, env);
           return;
@@ -220788,25 +221381,25 @@ var init_dataflow = __esm({
         expression.forEachChild((child) => {
           if (isFunctionLike2(child))
             return;
-          if (ts16.isExpression(child))
+          if (ts17.isExpression(child))
             this.analyzeExpression(child, env);
         });
       }
       analyzeAssignmentTarget(target, env) {
-        if (ts16.isIdentifier(target))
+        if (ts17.isIdentifier(target))
           return;
         if (isAssignmentPattern(target)) {
           target.forEachChild((child) => {
-            if (ts16.isExpression(child))
+            if (ts17.isExpression(child))
               this.analyzeExpression(child, env);
           });
           return;
         }
-        if (ts16.isPropertyAccessExpression(target)) {
+        if (ts17.isPropertyAccessExpression(target)) {
           this.analyzeExpression(target.expression, env);
           return;
         }
-        if (ts16.isElementAccessExpression(target)) {
+        if (ts17.isElementAccessExpression(target)) {
           this.analyzeExpression(target.expression, env);
           if (target.argumentExpression)
             this.analyzeExpression(target.argumentExpression, env);
@@ -220814,19 +221407,19 @@ var init_dataflow = __esm({
       }
       analyzeJsxAttributes(attributes, env) {
         for (const attribute of attributes.properties) {
-          if (ts16.isJsxSpreadAttribute(attribute)) {
+          if (ts17.isJsxSpreadAttribute(attribute)) {
             this.analyzeExpression(attribute.expression, env);
             continue;
           }
-          if (!ts16.isJsxAttribute(attribute))
+          if (!ts17.isJsxAttribute(attribute))
             continue;
           const initializer = attribute.initializer;
-          if (!initializer || ts16.isStringLiteral(initializer))
+          if (!initializer || ts17.isStringLiteral(initializer))
             continue;
-          if (!ts16.isJsxExpression(initializer) || !initializer.expression)
+          if (!ts17.isJsxExpression(initializer) || !initializer.expression)
             continue;
           this.analyzeExpression(initializer.expression, env);
-          if (ts16.isIdentifier(attribute.name) && attribute.name.text.toLowerCase() === "dangerouslysetinnerhtml") {
+          if (ts17.isIdentifier(attribute.name) && attribute.name.text.toLowerCase() === "dangerouslysetinnerhtml") {
             const value = this.evalExpression(initializer.expression, env);
             if (isInputRelated(value)) {
               this.uses.push({
@@ -220861,7 +221454,7 @@ var init_dataflow = __esm({
           return void 0;
         const inputRelated = value ? isInputRelated(value) : false;
         const config = value?.httpConfig;
-        if (this.declared && inputRelated)
+        if (!this.certificateAvailable() && inputRelated)
           return { bound, inputRelated, outcome: "unknown_role", certainty: "unknown", ...value ? { staticFlow: evidence(value, call) } : {} };
         if (bound && model?.canQualify(call) && config?.closed && !config.target.httpTargetUnavailable) {
           if (config.encodedQueryInitialUrl && fixedQueryDestination(config.target.urlFragments))
@@ -220887,7 +221480,8 @@ var init_dataflow = __esm({
         };
       }
       processRole(call, args, binding) {
-        const layout = this.session.processModel.layout(call, binding);
+        const modeled = this.session.processModel.layout(call, binding);
+        const layout = { ...modeled, qualified: modeled.qualified && this.certificateAvailable() };
         const base = { api: binding.method, identity: binding.identity, shell: layout.shell };
         const selected = (value, outcome, index, executable3 = false, known = false) => {
           const certain = known && !this.declared && !this.staticContext && value.kind === "tainted";
@@ -220928,13 +221522,13 @@ var init_dataflow = __esm({
           return void 0;
         const config = args[0]?.sqlConfig;
         const inputRelated = args.some(isInputRelated);
-        if (this.declared && inputRelated) {
+        if (!this.certificateAvailable() && inputRelated) {
           const value = args.find(isInputRelated);
           return { bound: true, inputRelated, outcome: "unknown_role", certainty: "unknown", staticFlow: evidence(value, call) };
         }
         const text3 = config?.text ?? args[0];
         const values = config?.values ?? args[1];
-        const shape = config ? config.closed && call.arguments.length === 1 : call.arguments.length >= 1 && call.arguments.length <= 2 && text3 && !text3.sqlScalarUnavailable && !args[0]?.properties && !ts16.isObjectLiteralExpression(call.arguments[0]) && !(args.length === 2 && (args[1].sqlCallback || model.callbackArgument(call.arguments[1])));
+        const shape = config ? config.closed && call.arguments.length === 1 : call.arguments.length >= 1 && call.arguments.length <= 2 && text3 && !text3.sqlScalarUnavailable && !args[0]?.properties && !ts17.isObjectLiteralExpression(call.arguments[0]) && !(args.length === 2 && (args[1].sqlCallback || model.callbackArgument(call.arguments[1])));
         if (model.dispatch(call) && shape && text3 && !text3.sqlScalarUnavailable) {
           if (isInputRelated(text3))
             return { bound: true, inputRelated: true, outcome: "statement_input", certainty: text3.kind === "tainted" ? "tainted" : "unknown", staticFlow: evidence(text3, call) };
@@ -220963,11 +221557,11 @@ var init_dataflow = __esm({
             this.session.gap("alias_limit", call);
             return value;
           }
-          const object12 = value.nosqlObject;
-          if (object12?.modified || value.nosqlUnknown)
+          const object13 = value.nosqlObject;
+          if (object13?.modified || value.nosqlUnknown)
             modified = true;
-          const values = [value, ...value.nosqlUnknown ? [value.nosqlUnknown] : [], ...object12?.modified ? [object12.value] : [], ...[...value.properties?.values() ?? []].map((child) => current(child, depth + 1))];
-          return { ...value, ...combineValues(values), properties: value.properties, nosqlObject: object12 };
+          const values = [value, ...value.nosqlUnknown ? [value.nosqlUnknown] : [], ...object13?.modified ? [object13.value] : [], ...[...value.properties?.values() ?? []].map((child) => current(child, depth + 1))];
+          return { ...value, ...combineValues(values), properties: value.properties, nosqlObject: object13 };
         };
         const observed = current(selector);
         const inputRelated = isInputRelated(observed);
@@ -220983,7 +221577,7 @@ var init_dataflow = __esm({
           certainty: !this.declared && value.kind === "tainted" && outcome !== "unknown_role" ? "tainted" : "unknown",
           staticFlow: evidence(value, call)
         });
-        if (this.declared || selector.staticContext || !(mongoBound ? mongo.valid && mongo.db.valid : model.qualified(call)) || modified) {
+        if (!this.certificateAvailable() || selector.staticContext || !(mongoBound ? mongo.valid && mongo.db.valid : model.qualified(call)) || modified) {
           if (mongoBound)
             this.session?.gap("module_export_unsupported", call);
           if (selector.nosqlWhere && isInputRelated(selector.nosqlWhere.value))
@@ -220997,15 +221591,15 @@ var init_dataflow = __esm({
             return candidate(value, "unknown_role");
           if (!isInputRelated(value))
             return void 0;
-          const object12 = value.nosqlObject;
-          if (!object12 || !object12.closed || object12.modified || !value.properties) {
+          const object13 = value.nosqlObject;
+          if (!object13 || !object13.closed || object13.modified || !value.properties) {
             if (expression && model?.stringAt(expression, call))
               return void 0;
-            return candidate(value, object12 ? "unknown_role" : "selector_input");
+            return candidate(value, object13 ? "unknown_role" : "selector_input");
           }
           let selected;
-          for (const property of object12.node.properties) {
-            if (!(ts16.isPropertyAssignment(property) || ts16.isShorthandPropertyAssignment(property)))
+          for (const property of object13.node.properties) {
+            if (!(ts17.isPropertyAssignment(property) || ts17.isShorthandPropertyAssignment(property)))
               return candidate(value, "unknown_role");
             const key2 = propertyName(property.name);
             if (!key2)
@@ -221013,7 +221607,7 @@ var init_dataflow = __esm({
             const field = current(value.properties.get(key2) ?? UNKNOWN);
             if (!isInputRelated(field))
               continue;
-            const result3 = key2 === "$where" ? candidate(field, "where_input") : key2.startsWith("$") ? candidate(field, "unknown_role") : inspect(field, ts16.isPropertyAssignment(property) ? property.initializer : property.name, depth + 1);
+            const result3 = key2 === "$where" ? candidate(field, "where_input") : key2.startsWith("$") ? candidate(field, "unknown_role") : inspect(field, ts17.isPropertyAssignment(property) ? property.initializer : property.name, depth + 1);
             if (result3?.outcome === "where_input")
               return result3;
             if (result3)
@@ -221025,7 +221619,7 @@ var init_dataflow = __esm({
       }
       /** Literal same-response MIME state only; no header values are retained in reports. */
       updateResponseMime(method, args, state) {
-        const literal = (value) => value && ts16.isStringLiteralLike(value) ? value.text.trim().toLowerCase() : void 0;
+        const literal = (value) => value && ts17.isStringLiteralLike(value) ? value.text.trim().toLowerCase() : void 0;
         const mime = (value, extension2 = false) => {
           const text3 = literal(value)?.split(";", 1)[0].trim();
           if (text3 === "text/html" || extension2 && text3 === "html")
@@ -221056,13 +221650,13 @@ var init_dataflow = __esm({
             state.mime = method === "append" ? "unknown" : mime(args[1]);
           return;
         }
-        if ((method === "set" || method === "header") && args.length === 1 && ts16.isObjectLiteralExpression(args[0])) {
+        if ((method === "set" || method === "header") && args.length === 1 && ts17.isObjectLiteralExpression(args[0])) {
           for (const property of args[0].properties) {
             if (this.session && !this.session.tick()) {
               state.mime = "unknown";
               return;
             }
-            if (!ts16.isPropertyAssignment(property) || ts16.isComputedPropertyName(property.name)) {
+            if (!ts17.isPropertyAssignment(property) || ts17.isComputedPropertyName(property.name)) {
               state.mime = "unknown";
               return;
             }
@@ -221075,29 +221669,29 @@ var init_dataflow = __esm({
       }
       /** Closed literal HTML headers only. No inferred MIME type for a plain Response body. */
       isHtmlResponse(node) {
-        if (!ts16.isIdentifier(node.expression) || node.arguments?.length !== 2)
+        if (!ts17.isIdentifier(node.expression) || node.arguments?.length !== 2)
           return false;
         const symbol = this.session?.modules.symbol(node.expression);
         const declaration = symbol?.declarations?.length === 1 ? symbol.declarations[0] : void 0;
-        const nextImport = declaration && ts16.isImportSpecifier(declaration) && !declaration.isTypeOnly && !declaration.parent.parent.isTypeOnly && (declaration.propertyName ?? declaration.name).text === "NextResponse" && ts16.isImportDeclaration(declaration.parent.parent.parent) && ts16.isStringLiteral(declaration.parent.parent.parent.moduleSpecifier) && declaration.parent.parent.parent.moduleSpecifier.text === "next/server";
+        const nextImport = declaration && ts17.isImportSpecifier(declaration) && !declaration.isTypeOnly && !declaration.parent.parent.isTypeOnly && (declaration.propertyName ?? declaration.name).text === "NextResponse" && ts17.isImportDeclaration(declaration.parent.parent.parent) && ts17.isStringLiteral(declaration.parent.parent.parent.moduleSpecifier) && declaration.parent.parent.parent.moduleSpecifier.text === "next/server";
         if (!(node.expression.text === "Response" && !symbol) && !nextImport)
           return false;
         const options = node.arguments[1];
-        if (!ts16.isObjectLiteralExpression(options))
+        if (!ts17.isObjectLiteralExpression(options))
           return false;
         let headers;
         const optionNames = /* @__PURE__ */ new Set();
         for (const property of options.properties) {
           if (this.session && !this.session.tick())
             return false;
-          if (!ts16.isPropertyAssignment(property) || ts16.isComputedPropertyName(property.name))
+          if (!ts17.isPropertyAssignment(property) || ts17.isComputedPropertyName(property.name))
             return false;
           const name = propertyName(property.name);
           if (!name || optionNames.has(name))
             return false;
           optionNames.add(name);
           if (name === "headers") {
-            if (!ts16.isObjectLiteralExpression(property.initializer))
+            if (!ts17.isObjectLiteralExpression(property.initializer))
               return false;
             headers = property.initializer;
           }
@@ -221109,10 +221703,10 @@ var init_dataflow = __esm({
         for (const property of headers.properties) {
           if (this.session && !this.session.tick())
             return false;
-          if (!ts16.isPropertyAssignment(property) || ts16.isComputedPropertyName(property.name))
+          if (!ts17.isPropertyAssignment(property) || ts17.isComputedPropertyName(property.name))
             return false;
           const name = propertyName(property.name)?.toLowerCase();
-          if (!name || names.has(name) || !ts16.isStringLiteralLike(property.initializer))
+          if (!name || names.has(name) || !ts17.isStringLiteralLike(property.initializer))
             return false;
           names.add(name);
           if (name === "content-type")
@@ -221125,12 +221719,12 @@ var init_dataflow = __esm({
         if (!role)
           return void 0;
         const callee = call.expression;
-        const method = ts16.isPropertyAccessExpression(callee) && !callee.questionDotToken ? callee.name.text : void 0;
-        const plain = !call.questionDotToken && !call.arguments.some(ts16.isSpreadElement);
+        const method = ts17.isPropertyAccessExpression(callee) && !callee.questionDotToken ? callee.name.text : void 0;
+        const plain = !call.questionDotToken && !call.arguments.some(ts17.isSpreadElement);
         if (role.state.valid && plain && role.stage === "context" && ["text", "json", "html", "redirect", "body", "status", "header", "newResponse", "set", "get"].includes(method ?? ""))
           return UNKNOWN;
         if (role.state.valid && plain && role.stage === "request") {
-          if ((method === "query" || method === "param") && (call.arguments.length === 0 || call.arguments.length === 1 && ts16.isStringLiteralLike(call.arguments[0])))
+          if ((method === "query" || method === "param") && (call.arguments.length === 0 || call.arguments.length === 1 && ts17.isStringLiteralLike(call.arguments[0])))
             return { ...traced(TAINTED, call, "source"), honoSqlData: "request_data" };
           if (method === "json" && call.arguments.length === 0) {
             role.state.jsonReads = (role.state.jsonReads ?? 0) + 1;
@@ -221149,7 +221743,7 @@ var init_dataflow = __esm({
       evalExpression(expression, env) {
         if (this.session && !this.session.tick())
           return UNKNOWN;
-        if (ts16.isIdentifier(expression)) {
+        if (ts17.isIdentifier(expression)) {
           if (!env.has(expression.text) && this.session?.sqlModel.callbackArgument(expression))
             return { ...UNKNOWN, sqlCallback: true };
           if (!env.has(expression.text) && this.session?.modules.symbol(expression))
@@ -221158,13 +221752,13 @@ var init_dataflow = __esm({
           const value = current.properties && this.session?.sqlModel.dataIdentifierUnavailable(expression) ? { ...current, sqlDataUnavailable: true } : current;
           return value.kind === "root" && !value.trace?.some((item) => item.role === "source") ? traced(value, expression, "source") : value;
         }
-        if (ts16.isStringLiteral(expression) || ts16.isNoSubstitutionTemplateLiteral(expression))
+        if (ts17.isStringLiteral(expression) || ts17.isNoSubstitutionTemplateLiteral(expression))
           return literalValue(expression.text);
-        if (ts16.isNumericLiteral(expression) || ts16.isBigIntLiteral(expression) || ts16.isRegularExpressionLiteral(expression))
+        if (ts17.isNumericLiteral(expression) || ts17.isBigIntLiteral(expression) || ts17.isRegularExpressionLiteral(expression))
           return SAFE;
-        if (expression.kind === ts16.SyntaxKind.TrueKeyword || expression.kind === ts16.SyntaxKind.FalseKeyword || expression.kind === ts16.SyntaxKind.NullKeyword || expression.kind === ts16.SyntaxKind.UndefinedKeyword)
+        if (expression.kind === ts17.SyntaxKind.TrueKeyword || expression.kind === ts17.SyntaxKind.FalseKeyword || expression.kind === ts17.SyntaxKind.NullKeyword || expression.kind === ts17.SyntaxKind.UndefinedKeyword)
           return SAFE;
-        if (ts16.isAwaitExpression(expression)) {
+        if (ts17.isAwaitExpression(expression)) {
           const value = this.evalExpression(expression.expression, env);
           if (value.honoRequest?.stage === "promise") {
             if (!value.honoRequest.state.valid) {
@@ -221175,13 +221769,13 @@ var init_dataflow = __esm({
           }
           return value.archiveRole?.stage === "promise" && value.archiveRole.state.valid ? { ...value, archiveRole: { ...value.archiveRole, stage: "directory" } } : value;
         }
-        if (ts16.isParenthesizedExpression(expression) || ts16.isAsExpression(expression) || ts16.isTypeAssertionExpression(expression) || ts16.isNonNullExpression(expression))
+        if (ts17.isParenthesizedExpression(expression) || ts17.isAsExpression(expression) || ts17.isTypeAssertionExpression(expression) || ts17.isNonNullExpression(expression))
           return this.evalExpression(expression.expression, env);
-        if (ts16.isYieldExpression(expression))
+        if (ts17.isYieldExpression(expression))
           return expression.expression ? this.evalExpression(expression.expression, env) : UNKNOWN;
-        if (expression.kind === ts16.SyntaxKind.ThisKeyword)
+        if (expression.kind === ts17.SyntaxKind.ThisKeyword)
           return this.constructedReceiver ?? UNKNOWN;
-        if (ts16.isPropertyAccessExpression(expression)) {
+        if (ts17.isPropertyAccessExpression(expression)) {
           const receiver = this.evalExpression(expression.expression, env);
           if (receiver.archiveRole?.state.valid && receiver.archiveRole.stage === "entry" && expression.name.text === "path") {
             this.session.archiveModel.entryPaths++;
@@ -221198,7 +221792,7 @@ var init_dataflow = __esm({
             receiver.honoRequest.state.jsonDataValid = false;
           return receiver.koaRequest && isInputRelated(projected) && !projected.trace?.some((step2) => step2.role === "source") ? traced(projected, expression, "source") : projected;
         }
-        if (ts16.isElementAccessExpression(expression)) {
+        if (ts17.isElementAccessExpression(expression)) {
           const key2 = propertyName(expression.argumentExpression);
           const base = this.evalExpression(expression.expression, env);
           if (base.archiveRole?.state.valid && base.archiveRole.stage === "entry" && key2 === "path") {
@@ -221219,13 +221813,13 @@ var init_dataflow = __esm({
           const value = isInputRelated(base) || isInputRelated(keyValue) ? inheritTrace(base.kind === "tainted" ? TAINTED : UNKNOWN_INPUT, [base, keyValue]) : UNKNOWN;
           return { ...value, sqlDataUnavailable: base.sqlDataUnavailable || keyValue.sqlDataUnavailable, httpTargetUnavailable: httpUnavailable([base, keyValue]) };
         }
-        if (ts16.isArrayLiteralExpression(expression)) {
+        if (ts17.isArrayLiteralExpression(expression)) {
           const observed = this.arrayActuals.get(expression);
           const actuals = observed?.env === env ? observed : void 0;
           const properties = /* @__PURE__ */ new Map();
           const values = [];
           expression.elements.forEach((element, index) => {
-            if (ts16.isOmittedExpression(element))
+            if (ts17.isOmittedExpression(element))
               return;
             const value = actuals?.values.get(element) ?? this.evalExpression(element, env);
             properties.set(String(index), withoutUrlProof(value));
@@ -221246,7 +221840,7 @@ var init_dataflow = __esm({
             } : void 0) && !combined.sqlDataUnavailable, count: expression.elements.length } } : {}
           };
         }
-        if (ts16.isObjectLiteralExpression(expression)) {
+        if (ts17.isObjectLiteralExpression(expression)) {
           const observed = this.objectActuals.get(expression);
           const actuals = observed?.env === env ? observed : void 0;
           const properties = /* @__PURE__ */ new Map();
@@ -221255,7 +221849,7 @@ var init_dataflow = __esm({
           let sqlText;
           let sqlValues;
           let nosqlWhere;
-          const dataUnavailable = expression.properties.some((p) => !(ts16.isPropertyAssignment(p) || ts16.isShorthandPropertyAssignment(p)) || ts16.isComputedPropertyName(p.name) || ["toPostgres", "toString", "__proto__"].includes(propertyName(p.name) ?? ""));
+          const dataUnavailable = expression.properties.some((p) => !(ts17.isPropertyAssignment(p) || ts17.isShorthandPropertyAssignment(p)) || ts17.isComputedPropertyName(p.name) || ["toPostgres", "toString", "__proto__"].includes(propertyName(p.name) ?? ""));
           const sqlSnapshot = (value) => ({ kind: value.kind, root: value.root, inputRelated: value.inputRelated, trace: value.trace?.map((s) => ({ role: s.role, location: { ...s.location } })), traceTruncated: value.traceTruncated, traceSourceKind: value.traceSourceKind, httpTargetUnavailable: currentQuery(value).httpTargetUnavailable, urlFragments: value.urlFragments?.map((p) => ({ ...p })), sqlScalarUnavailable: value.sqlScalarUnavailable, sqlFixedText: value.sqlFixedText ? { ...value.sqlFixedText } : void 0, sqlCallback: value.sqlCallback, sqlDataUnavailable: value.sqlDataUnavailable, sqlArray: value.sqlArray ? { ...value.sqlArray } : void 0 });
           const captureTarget = (value) => {
             const current = currentQuery(value);
@@ -221271,10 +221865,10 @@ var init_dataflow = __esm({
             };
           };
           for (const property of expression.properties) {
-            if (ts16.isPropertyAssignment(property)) {
+            if (ts17.isPropertyAssignment(property)) {
               const key2 = propertyName(property.name);
               const value = actuals?.values.get(property) ?? this.evalExpression(property.initializer, env);
-              if (ts16.isComputedPropertyName(property.name))
+              if (ts17.isComputedPropertyName(property.name))
                 values.push(actuals?.keys.get(property) ?? this.evalExpression(property.name.expression, env));
               if (key2 === "url")
                 captureTarget(value);
@@ -221287,7 +221881,7 @@ var init_dataflow = __esm({
               values.push(value);
               if (key2 !== void 0)
                 properties.set(key2, withoutUrlProof(value));
-            } else if (ts16.isShorthandPropertyAssignment(property)) {
+            } else if (ts17.isShorthandPropertyAssignment(property)) {
               const value = actuals?.values.get(property) ?? env.resolve(property.name.text);
               if (property.name.text === "url")
                 captureTarget(value.kind === "root" && !value.trace?.length ? traced(value, property.name, "source") : value);
@@ -221297,7 +221891,7 @@ var init_dataflow = __esm({
                 sqlValues = sqlSnapshot(value);
               values.push(value);
               properties.set(property.name.text, withoutUrlProof(value));
-            } else if (ts16.isSpreadAssignment(property)) {
+            } else if (ts17.isSpreadAssignment(property)) {
               const value = actuals?.values.get(property) ?? this.evalExpression(property.expression, env);
               values.push(value);
               if (value.nosqlObject?.modified)
@@ -221317,7 +221911,7 @@ var init_dataflow = __esm({
             expressObjectBody: true,
             properties,
             nosqlWhere,
-            nosqlObject: { node: expression, value: combined, modified: false, closed: expression.properties.every((property) => (ts16.isPropertyAssignment(property) || ts16.isShorthandPropertyAssignment(property)) && !ts16.isComputedPropertyName(property.name) && !["__proto__"].includes(propertyName(property.name) ?? "")) },
+            nosqlObject: { node: expression, value: combined, modified: false, closed: expression.properties.every((property) => (ts17.isPropertyAssignment(property) || ts17.isShorthandPropertyAssignment(property)) && !ts17.isComputedPropertyName(property.name) && !["__proto__"].includes(propertyName(property.name) ?? "")) },
             sqlDataUnavailable: combined.sqlDataUnavailable || dataUnavailable,
             ...sqlText ? { sqlConfig: { node: expression, closed: this.session?.sqlModel.closedConfig(expression) === true, text: sqlText, values: sqlValues } } : {},
             ...target ? { httpConfig: {
@@ -221329,32 +221923,32 @@ var init_dataflow = __esm({
             } } : {}
           };
         }
-        if (ts16.isTemplateExpression(expression)) {
+        if (ts17.isTemplateExpression(expression)) {
           return concatValues([literalValue(expression.head.text), ...expression.templateSpans.flatMap((span) => [this.evalExpression(span.expression, env), literalValue(span.literal.text)])]);
         }
-        if (ts16.isNoSubstitutionTemplateLiteral(expression))
+        if (ts17.isNoSubstitutionTemplateLiteral(expression))
           return SAFE;
-        if (ts16.isConditionalExpression(expression)) {
+        if (ts17.isConditionalExpression(expression)) {
           const observed = this.conditionalActuals.get(expression);
           return observed?.env === env ? observed.value : joinValues(this.evalExpression(expression.whenTrue, env), this.evalExpression(expression.whenFalse, env));
         }
-        if (ts16.isBinaryExpression(expression)) {
+        if (ts17.isBinaryExpression(expression)) {
           if (isAssignmentOperator(expression.operatorToken.kind)) {
             if (isSimpleAssignment(expression.operatorToken.kind))
               return this.evalExpression(expression.right, env);
-            return combineValues([ts16.isIdentifier(expression.left) ? env.resolve(expression.left.text) : UNKNOWN, this.evalExpression(expression.right, env)]);
+            return combineValues([ts17.isIdentifier(expression.left) ? env.resolve(expression.left.text) : UNKNOWN, this.evalExpression(expression.right, env)]);
           }
-          if (expression.operatorToken.kind === ts16.SyntaxKind.PlusToken)
+          if (expression.operatorToken.kind === ts17.SyntaxKind.PlusToken)
             return concatValues([this.evalExpression(expression.left, env), this.evalExpression(expression.right, env)]);
           if ([
-            ts16.SyntaxKind.AmpersandAmpersandToken,
-            ts16.SyntaxKind.BarBarToken,
-            ts16.SyntaxKind.QuestionQuestionToken
+            ts17.SyntaxKind.AmpersandAmpersandToken,
+            ts17.SyntaxKind.BarBarToken,
+            ts17.SyntaxKind.QuestionQuestionToken
           ].includes(expression.operatorToken.kind))
             return joinValues(this.evalExpression(expression.left, env), this.evalExpression(expression.right, env));
           return UNKNOWN;
         }
-        if (ts16.isCallExpression(expression)) {
+        if (ts17.isCallExpression(expression)) {
           const applied = this.callableActuals.get(expression);
           if (applied?.env === env)
             return applied.value ?? UNKNOWN;
@@ -221367,12 +221961,12 @@ var init_dataflow = __esm({
             }
             return returned.sqlArray && this.session?.sqlModel.returnedArrayUse(expression) !== true ? { ...returned, sqlArray: { ...returned.sqlArray, closed: false } } : returned;
           }
-          const receiver = ts16.isPropertyAccessExpression(expression.expression) ? this.evalExpression(expression.expression.expression, env) : void 0;
-          const method = ts16.isPropertyAccessExpression(expression.expression) ? expression.expression.name.text : void 0;
+          const receiver = ts17.isPropertyAccessExpression(expression.expression) ? this.evalExpression(expression.expression.expression, env) : void 0;
+          const method = ts17.isPropertyAccessExpression(expression.expression) ? expression.expression.name.text : void 0;
           const honoRead = this.honoRead(expression, receiver);
           if (honoRead)
             return honoRead;
-          if (ts16.isIdentifier(expression.expression) && expression.expression.text === "URLSearchParams") {
+          if (ts17.isIdentifier(expression.expression) && expression.expression.text === "URLSearchParams") {
             return withHttpUnavailable(args.some(isInputRelated) ? inheritTrace(rootValue("searchParams"), args) : args.every((value) => value.kind === "safe") ? SAFE : UNKNOWN, args);
           }
           if (method === "toString" && receiver?.queryContent && args.length === 0) {
@@ -221402,13 +221996,13 @@ var init_dataflow = __esm({
             return { ...traced(combineValues(args), expression, "call"), kind: "unknown", inputRelated: true, traceTruncated: true, httpTargetUnavailable: httpUnavailable(receiver ? [receiver, ...args] : args) };
           return withHttpUnavailable(UNKNOWN, receiver ? [receiver, ...args] : args);
         }
-        if (ts16.isNewExpression(expression)) {
+        if (ts17.isNewExpression(expression)) {
           const constructed = this.constructedActuals.get(expression);
           if (constructed?.env === env)
             return constructed.value;
           const observed = this.evaluationActuals.get(expression);
           const values = observed?.env === env ? observed.values : (expression.arguments ?? []).map((argument) => this.evalExpression(argument, env));
-          if (ts16.isIdentifier(expression.expression) && expression.expression.text === "URLSearchParams" && this.session && !this.session.modules.symbol(expression.expression)) {
+          if (ts17.isIdentifier(expression.expression) && expression.expression.text === "URLSearchParams" && this.session && !this.session.modules.symbol(expression.expression)) {
             const content = queryContent(combineValues(values));
             return {
               ...inheritTrace(isInputRelated(content) ? rootValue("searchParams") : SAFE, values),
@@ -221417,24 +222011,24 @@ var init_dataflow = __esm({
               nativeQuery: this.session.queryModel.supports(expression)
             };
           }
-          if (ts16.isIdentifier(expression.expression) && expression.expression.text === "URLSearchParams") {
+          if (ts17.isIdentifier(expression.expression) && expression.expression.text === "URLSearchParams") {
             return withHttpUnavailable(values.some(isInputRelated) ? inheritTrace(rootValue("searchParams"), values) : values.every((value) => value.kind === "safe") ? SAFE : UNKNOWN, values);
           }
           return withHttpUnavailable(values.some(isInputRelated) ? UNKNOWN_INPUT : UNKNOWN, values);
         }
-        if (ts16.isPrefixUnaryExpression(expression) || ts16.isPostfixUnaryExpression(expression))
+        if (ts17.isPrefixUnaryExpression(expression) || ts17.isPostfixUnaryExpression(expression))
           return UNKNOWN;
-        if (ts16.isSpreadElement(expression))
+        if (ts17.isSpreadElement(expression))
           return this.evalExpression(expression.expression, env);
-        if (ts16.isArrowFunction(expression)) {
+        if (ts17.isArrowFunction(expression)) {
           if (!this.session?.modules.indexComplete)
             return { ...SAFE, sqlCallback: true };
           const callable = this.session?.closure(expression, env, this.constructedReceiver, this.staticContext);
           return { ...SAFE, staticContext: this.staticContext, sqlCallback: true, callable, ...!callable && this.session ? { opaqueClosure: this.session.opaqueCaptures(expression, env) } : {} };
         }
-        if (ts16.isFunctionExpression(expression))
+        if (ts17.isFunctionExpression(expression))
           return { ...SAFE, sqlCallback: true };
-        if (ts16.isClassExpression(expression))
+        if (ts17.isClassExpression(expression))
           return SAFE;
         return UNKNOWN;
       }
@@ -221445,23 +222039,23 @@ var init_dataflow = __esm({
 // build/src/source/ast.js
 function scriptKind(path2) {
   if (/\.tsx$/i.test(path2))
-    return ts17.ScriptKind.TSX;
+    return ts18.ScriptKind.TSX;
   if (/\.jsx$/i.test(path2))
-    return ts17.ScriptKind.JSX;
+    return ts18.ScriptKind.JSX;
   if (/\.(?:ts|mts|cts)$/i.test(path2))
-    return ts17.ScriptKind.TS;
-  return ts17.ScriptKind.JS;
+    return ts18.ScriptKind.TS;
+  return ts18.ScriptKind.JS;
 }
 function withoutComments(source) {
-  const scanner = ts17.createScanner(ts17.ScriptTarget.Latest, false, ts17.LanguageVariant.Standard, source);
+  const scanner = ts18.createScanner(ts18.ScriptTarget.Latest, false, ts18.LanguageVariant.Standard, source);
   let token = scanner.scan();
   let cursor = 0;
   let output = "";
-  while (token !== ts17.SyntaxKind.EndOfFileToken) {
+  while (token !== ts18.SyntaxKind.EndOfFileToken) {
     const start = scanner.getTokenPos();
     const end = scanner.getTextPos();
     output += source.slice(cursor, start);
-    if (token === ts17.SyntaxKind.SingleLineCommentTrivia || token === ts17.SyntaxKind.MultiLineCommentTrivia) {
+    if (token === ts18.SyntaxKind.SingleLineCommentTrivia || token === ts18.SyntaxKind.MultiLineCommentTrivia) {
       output += source.slice(start, end).replace(/[^\n\r]/g, " ");
     } else {
       output += source.slice(start, end);
@@ -221495,35 +222089,35 @@ function findingFromObservation(observation) {
   };
 }
 function callName(expression) {
-  if (ts17.isIdentifier(expression))
+  if (ts18.isIdentifier(expression))
     return expression.text;
-  if (ts17.isPropertyAccessExpression(expression))
+  if (ts18.isPropertyAccessExpression(expression))
     return `${callName(expression.expression)}.${expression.name.text}`;
-  if (ts17.isElementAccessExpression(expression)) {
+  if (ts18.isElementAccessExpression(expression)) {
     const property = staticMemberName(expression);
     return property === void 0 ? callName(expression.expression) : `${callName(expression.expression)}.${property}`;
   }
   return expressionName(expression);
 }
 function dynamicCodeShape(node) {
-  if (ts17.isCallExpression(node)) {
+  if (ts18.isCallExpression(node)) {
     const name = callName(node.expression);
     if (name === "eval" || name === "window.eval")
       return "eval";
     if (name === "Function" || name === "window.Function")
       return "function";
-  } else if (ts17.isNewExpression(node) && (ts17.isIdentifier(node.expression) && node.expression.text === "Function" || ts17.isPropertyAccessExpression(node.expression) && ts17.isIdentifier(node.expression.expression) && node.expression.expression.text === "window" && node.expression.name.text === "Function"))
+  } else if (ts18.isNewExpression(node) && (ts18.isIdentifier(node.expression) && node.expression.text === "Function" || ts18.isPropertyAccessExpression(node.expression) && ts18.isIdentifier(node.expression.expression) && node.expression.expression.text === "window" && node.expression.name.text === "Function"))
     return "function";
   return void 0;
 }
 function directDynamicCodeShape(node) {
-  if (!ts17.isCallExpression(node) && !ts17.isNewExpression(node))
+  if (!ts18.isCallExpression(node) && !ts18.isNewExpression(node))
     return void 0;
-  const callee = node.expression, call = ts17.isCallExpression(node);
+  const callee = node.expression, call = ts18.isCallExpression(node);
   let name;
-  if (ts17.isIdentifier(callee))
+  if (ts18.isIdentifier(callee))
     name = callee.text;
-  else if ((ts17.isPropertyAccessExpression(callee) || call && ts17.isElementAccessExpression(callee)) && ts17.isIdentifier(callee.expression) && callee.expression.text === "window")
+  else if ((ts18.isPropertyAccessExpression(callee) || call && ts18.isElementAccessExpression(callee)) && ts18.isIdentifier(callee.expression) && callee.expression.text === "window")
     name = staticMemberName(callee);
   return name === "Function" ? "function" : call && name === "eval" ? "eval" : void 0;
 }
@@ -221535,8 +222129,8 @@ function dynamicCodeObservation(astFile, node, use) {
   const flows = (use?.argumentFlows ?? []).filter((flow2) => relevant(flow2.index));
   const flow = flows.find((candidate) => candidate.certainty === "tainted") ?? flows.reduce((first, candidate) => !first || candidate.index < first.index ? candidate : first, void 0);
   const selected = flow?.certainty === "tainted" ? flows.filter((candidate) => candidate.certainty === "tainted").reduce((first, candidate) => candidate.index < first.index ? candidate : first) : flow;
-  const spread = args.some(ts17.isSpreadElement);
-  const literal = !!direct && !astFile.parseError && !spread && flows.length === 0 && args.every((arg, index) => !relevant(index) || ts17.isStringLiteral(arg) || ts17.isNoSubstitutionTemplateLiteral(arg));
+  const spread = args.some(ts18.isSpreadElement);
+  const literal = !!direct && !astFile.parseError && !spread && flows.length === 0 && args.every((arg, index) => !relevant(index) || ts18.isStringLiteral(arg) || ts18.isNoSubstitutionTemplateLiteral(arg));
   const base = {
     file: astFile.file,
     sourceFile: astFile.sourceFile,
@@ -221568,11 +222162,11 @@ function isSqlSink(name) {
   return SQL_SINK.test(name) || RAW_SQL_SINK.test(name);
 }
 function hasDangerousHtmlProp(expression) {
-  if (!expression || !ts17.isObjectLiteralExpression(expression))
+  if (!expression || !ts18.isObjectLiteralExpression(expression))
     return false;
   return expression.properties.some((property) => {
-    if (ts17.isPropertyAssignment(property) || ts17.isShorthandPropertyAssignment(property)) {
-      return staticMemberName(property.name) === "dangerouslySetInnerHTML" || ts17.isIdentifier(property.name) && property.name.text === "dangerouslySetInnerHTML";
+    if (ts18.isPropertyAssignment(property) || ts18.isShorthandPropertyAssignment(property)) {
+      return staticMemberName(property.name) === "dangerouslySetInnerHTML" || ts18.isIdentifier(property.name) && property.name.text === "dangerouslySetInnerHTML";
     }
     return false;
   });
@@ -221581,24 +222175,24 @@ function pushObservation(output, file, sourceFile, node, ruleId, title, descript
   output.push({ file, sourceFile, node, ruleId, title, description, severity, remediation, confidence });
 }
 function staticMemberName(expression) {
-  if (ts17.isPropertyAccessExpression(expression))
+  if (ts18.isPropertyAccessExpression(expression))
     return expression.name.text;
-  if (ts17.isElementAccessExpression(expression)) {
+  if (ts18.isElementAccessExpression(expression)) {
     const argument = expression.argumentExpression;
-    if (ts17.isStringLiteral(argument) || ts17.isNoSubstitutionTemplateLiteral(argument) || ts17.isNumericLiteral(argument))
+    if (ts18.isStringLiteral(argument) || ts18.isNoSubstitutionTemplateLiteral(argument) || ts18.isNumericLiteral(argument))
       return argument.text;
   }
   return void 0;
 }
 function memberPath(expression) {
-  if (ts17.isIdentifier(expression))
+  if (ts18.isIdentifier(expression))
     return [expression.text];
   const property = staticMemberName(expression);
   if (!property)
     return [];
-  if (ts17.isPropertyAccessExpression(expression))
+  if (ts18.isPropertyAccessExpression(expression))
     return [...memberPath(expression.expression), property];
-  if (ts17.isElementAccessExpression(expression))
+  if (ts18.isElementAccessExpression(expression))
     return [...memberPath(expression.expression), property];
   return [];
 }
@@ -221614,17 +222208,17 @@ function flowConfidence(use, index = 0) {
   return flow ? flow.certainty === "unknown" ? "low" : "medium" : void 0;
 }
 function dataOnlyOptions(node) {
-  if (!ts17.isObjectLiteralExpression(node))
+  if (!ts18.isObjectLiteralExpression(node))
     return false;
   return node.properties.every((property) => {
-    if (!ts17.isPropertyAssignment(property) || ts17.isComputedPropertyName(property.name))
+    if (!ts18.isPropertyAssignment(property) || ts18.isComputedPropertyName(property.name))
       return false;
-    const key2 = ts17.isIdentifier(property.name) || ts17.isStringLiteral(property.name) ? property.name.text : void 0;
+    const key2 = ts18.isIdentifier(property.name) || ts18.isStringLiteral(property.name) ? property.name.text : void 0;
     if (key2 === "method")
-      return ts17.isStringLiteral(property.initializer) && /^(GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)$/i.test(property.initializer.text);
-    if (key2 !== "headers" || !ts17.isObjectLiteralExpression(property.initializer))
+      return ts18.isStringLiteral(property.initializer) && /^(GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)$/i.test(property.initializer.text);
+    if (key2 !== "headers" || !ts18.isObjectLiteralExpression(property.initializer))
       return false;
-    return property.initializer.properties.every((header) => ts17.isPropertyAssignment(header) && !ts17.isComputedPropertyName(header.name) && (ts17.isIdentifier(header.name) || ts17.isStringLiteral(header.name)) && !/^(host|:authority)$/i.test(header.name.text) && ts17.isStringLiteral(header.initializer));
+    return property.initializer.properties.every((header) => ts18.isPropertyAssignment(header) && !ts18.isComputedPropertyName(header.name) && (ts18.isIdentifier(header.name) || ts18.isStringLiteral(header.name)) && !/^(host|:authority)$/i.test(header.name.text) && ts18.isStringLiteral(header.initializer));
   });
 }
 function destinationQualified(use, node) {
@@ -221635,7 +222229,7 @@ function observeFile(astFile, flowUses, files) {
   const { file, sourceFile } = astFile;
   const walk = (node) => {
     const observationStart = observations2.length;
-    if (ts17.isBinaryExpression(node)) {
+    if (ts18.isBinaryExpression(node)) {
       const use = flowUses.get(node);
       const confidence = use ? flowConfidence(use) : void 0;
       if (use?.kind === "assignment" && confidence && isHtmlAssignmentTarget(node.left)) {
@@ -221648,13 +222242,13 @@ function observeFile(astFile, flowUses, files) {
         }
       }
     }
-    if (ts17.isJsxAttribute(node) && ts17.isIdentifier(node.name) && node.name.text.toLowerCase() === "dangerouslysetinnerhtml") {
+    if (ts18.isJsxAttribute(node) && ts18.isIdentifier(node.name) && node.name.text.toLowerCase() === "dangerouslysetinnerhtml") {
       const use = flowUses.get(node);
       if (use?.kind === "jsx" && flowConfidence(use)) {
         pushObservation(observations2, file, sourceFile, node, "ast:html-input-sink", "Request input reaches a React HTML sink", "Untrusted request or URL input appears in a dangerouslySetInnerHTML prop.", "high", "Avoid dangerouslySetInnerHTML or sanitize and contextually encode untrusted values before rendering them.", flowConfidence(use));
       }
     }
-    if (ts17.isCallExpression(node)) {
+    if (ts18.isCallExpression(node)) {
       const name = callName(node.expression);
       const use = flowUses.get(node);
       if (use?.archiveWrite) {
@@ -221686,7 +222280,7 @@ function observeFile(astFile, flowUses, files) {
       } else if ((name === "eval" || name === "window.eval" || name === "Function" || name === "window.Function") && node.arguments.length > 0) {
         observations2.push(dynamicCodeObservation(astFile, node, use));
       } else if (use?.htmlResponse === "express" && flowConfidence(use, 0)) {
-        const json3 = ts17.isPropertyAccessExpression(node.expression) && node.expression.name.text === "json";
+        const json3 = ts18.isPropertyAccessExpression(node.expression) && node.expression.name.text === "json";
         const qualified = use.htmlResponseAuthority === "registered_express" && !use.staticContext;
         if (!qualified)
           pushObservation(observations2, file, sourceFile, node, "ast:response-input-sink", "Input-related value reaches a response-shaped call; dispatch and MIME unresolved", "Input-related data reaches a send/json-shaped call. Receiver binding, payload type and dispatch, MIME, and runtime request origin are not established by this analysis. Parameter names alone do not prove Express or HTML rendering.", "high", "First verify the receiver binding and caller origin, payload type and dispatch, and response headers. If the actual response renders HTML, contextually encode untrusted text; if it returns JSON data, review serialization and its Content-Type.", "low");
@@ -221726,7 +222320,7 @@ function observeFile(astFile, flowUses, files) {
         pushObservation(observations2, file, sourceFile, node, "ast:dynamic-code", "Request input reaches a timer code argument", "Request input appears to reach a timer API that accepts executable code.", "high", "Pass a function reference and validate all inputs before scheduling work.", flowConfidence(use, 0));
       }
     }
-    if (ts17.isNewExpression(node)) {
+    if (ts18.isNewExpression(node)) {
       const observation = dynamicCodeObservation(astFile, node, flowUses.get(node));
       if (observation)
         observations2.push(observation);
@@ -221741,7 +222335,7 @@ function observeFile(astFile, flowUses, files) {
         if (observations2[index].kind !== "observation")
           observations2[index].staticContext = staticContext;
       }
-    ts17.forEachChild(node, walk);
+    ts18.forEachChild(node, walk);
   };
   walk(sourceFile);
   return observations2.map((observation) => {
@@ -221752,7 +222346,7 @@ function observeFile(astFile, flowUses, files) {
       return observation;
     if (use?.processRole && ["ast:shell-input-sink", "ast:process-executable"].includes(observation.ruleId))
       return observation;
-    const index = ts17.isCallExpression(observation.node) && callName(observation.node.expression) === "React.createElement" ? 1 : 0;
+    const index = ts18.isCallExpression(observation.node) && callName(observation.node.expression) === "React.createElement" ? 1 : 0;
     const staticFlow = observation.staticFlow ?? (observation.ruleId === "ast:nosql-input-sink" && use?.nosqlRole ? use.nosqlRole.staticFlow : observation.ruleId === "ast:sql-input-sink" && use?.sqlRole ? use.sqlRole.staticFlow : observation.ruleId === "ast:server-request" && use?.httpRole ? use.httpRole.staticFlow : use?.argumentFlows?.find((argument) => argument.index === index)?.staticFlow);
     return staticFlow ? { ...observation, staticFlow } : observation;
   });
@@ -221823,7 +222417,7 @@ function runBuiltinAst(snapshot4, hasOtherSecurityCheck2 = false, limits = FLOW_
   const astFiles = [];
   const skippedSensitive = snapshot4.files.filter((file) => file.sensitive && file.category === "code").length;
   for (const file of builtinAstFiles(snapshot4)) {
-    const sourceFile = ts17.createSourceFile(file.path, file.text, ts17.ScriptTarget.Latest, true, scriptKind(file.path));
+    const sourceFile = ts18.createSourceFile(file.path, file.text, ts18.ScriptTarget.Latest, true, scriptKind(file.path));
     astFiles.push({ file, sourceFile, parseError: parseDiagnostics(sourceFile).length > 0 });
   }
   if (astFiles.length === 0) {
@@ -221885,7 +222479,7 @@ function runBuiltinAst(snapshot4, hasOtherSecurityCheck2 = false, limits = FLOW_
     }
     flowUses.set(use.node, merged);
   }
-  const outboundUses = [...flowUses.values()].filter((use) => ts17.isCallExpression(use.node) && FETCH_SINK.test(callName(use.node.expression)) && flowConfidence(use, 0));
+  const outboundUses = [...flowUses.values()].filter((use) => ts18.isCallExpression(use.node) && FETCH_SINK.test(callName(use.node.expression)) && flowConfidence(use, 0));
   const outboundFixedDestinationSuppressed = outboundUses.filter((use) => destinationQualified(use, use.node)).length;
   const forkUses = [...flowUses.values()].filter((use) => use.forkRole);
   const forkInputUses = forkUses.filter((use) => flowConfidence(use, 0));
@@ -221918,10 +222512,11 @@ function runBuiltinAst(snapshot4, hasOtherSecurityCheck2 = false, limits = FLOW_
     ...analysis.analysisGaps ? { analysisGaps: analysis.analysisGaps } : {},
     notes: [
       `Built-in AST checks parsed ${astFiles.length} JavaScript or TypeScript file${astFiles.length === 1 ? "" : "s"}.`,
-      "Declared flow model: request-shaped entry parameters, same-function assignments, statically bound local functions/immutable const arrows, named relative ESM imports and constant static CommonJS destructuring exports within the collected snapshot. Source/sink API shapes are candidates, not runtime framework or database identity proof.",
+      "Declared flow model: request-shaped entry parameters, same-function assignments, statically bound local functions/immutable const arrows, named relative ESM imports and constant static CommonJS destructuring exports within the collected snapshot. Unique ESM named/star function re-exports retain lexical authority for relative-only paths; any snapshot-configured alias edge carries conditional body authority, not runtime module identity or negative safety proof. Source/sink API shapes are candidates, not runtime framework or database identity proof.",
       "Express entry positions are additionally recognized for a bounded same-file lexical import/require, immutable app/Router and route-registration subset. Request/response parameter spelling is irrelevant inside that subset; dynamic dispatch, upstream middleware state and runtime package identity remain unverified.",
       "Koa middleware's first context parameter is recognized only through a same-file immutable default/default-as ESM import, no-argument Application construction and app.use(callback) binding; approved context/request query, URL/path and incoming header reads supply request-source traces regardless of parameter spelling. This is a declared API candidate, not runtime package or middleware identity proof: next()/middleware-chain effects remain unknown, and CommonJS, routers, body parsers, response body/headers and application state are outside this request-source subset.",
-      "Dynamic/package imports, namespace/default/re-exports, mutable exports and arbitrary class dispatch remain model limitations beyond the separately declared narrow constructor/capture and legacy-driver lanes. A canonical relative CommonJS local class singleton supports receiver-bound actual/body dispatch; opaque native dynamic loading retains only a declared possible body with low-confidence input and partial coverage, without return safety or runtime identity proof. Unknown external calls are not trusted sanitizers and do not alone make declared coverage incomplete. Resolved callees are not freshly seeded unless explicitly exported or passed as a callback to an unresolved/external call; callback execution and runtime entry reachability are not proven.",
+      "Dynamic/package imports without a supported collected path mapping, namespace/default exports, mutable exports and arbitrary class dispatch remain model limitations beyond the separately declared narrow constructor/capture and legacy-driver lanes. A canonical relative CommonJS local class singleton supports receiver-bound actual/body dispatch; opaque native dynamic loading retains only a declared possible body with low-confidence input and partial coverage, without return safety or runtime identity proof. Unknown external calls are not trusted sanitizers and do not alone make declared coverage incomplete. Resolved callees are not freshly seeded unless explicitly exported or passed as a callback to an unresolved/external call; callback execution and runtime entry reachability are not proven.",
+      "Observed collected configuration overrides or unsupported nearest configuration for recognized native package loads conservatively veto snapshot-wide negative native certificates, while retaining input seeds and conditional candidates. This does not resolve or execute replacement packages. Configured graph counts describe adopted paths configurations, file/specifier/target tuples, call sites and analysis contexts; they are not runtime coverage or detection rates.",
       "Outbound destination qualifier covers only canonical literal HTTP(S) origin/path plus native encoded query, direct const params record/toString/append/set and scalar local transfer. Object containers, alias/escape, modified or shadowed native intrinsics and opaque options retain candidates. Options support absent or plain literal method/fixed non-Host headers only. This is initial destination control, not redirect, DNS, proxy, remote query processing or runtime SSRF safety proof.",
       "Axios request config role model separates a closed fixed INITIAL url field from payload-only input under the declared v1.13.2 API contract. Lexical imports/static require bindings and indexed snapshot validation do not authenticate runtime packages or external side effects. Defaults/interceptors/custom transport, alias/mutation, incomplete scope and opaque target roles retain low-confidence candidates; unknown is not safe. No body source is asserted to control URL authority.",
       "Closed local/relative CommonJS function constructors support actual allocation, own arrow methods, immutable binding-identity capture frames and bounded scalar return/callback transfer. Unmaterialized owned roots, mutation/escape, unsupported captures, cycles and identity failures retain partial coverage. These frames do not establish runtime entry reachability or general callable safety.",
@@ -221987,14 +222582,14 @@ function runBuiltinAst(snapshot4, hasOtherSecurityCheck2 = false, limits = FLOW_
 function sameLimits(a, b) {
   return Object.entries(a).every(([key2, value]) => b[key2] === value);
 }
-var ts17, HTML_SINK, SQL_SINK, RAW_SQL_SINK, REDIRECT_SINK, FETCH_SINK, SHELL_SINK;
+var ts18, HTML_SINK, SQL_SINK, RAW_SQL_SINK, REDIRECT_SINK, FETCH_SINK, SHELL_SINK;
 var init_ast = __esm({
   "build/src/source/ast.js"() {
     "use strict";
     init_report_path();
     init_sql_role();
     init_nosql_role();
-    ts17 = __toESM(require_typescript(), 1);
+    ts18 = __toESM(require_typescript(), 1);
     init_dataflow();
     init_modules();
     init_http_role();
@@ -222555,10 +223150,10 @@ function objectValue(value) {
   return value !== null && typeof value === "object" && !Array.isArray(value) ? value : void 0;
 }
 function requiredObject(value, field) {
-  const object12 = objectValue(value);
-  if (!object12)
+  const object13 = objectValue(value);
+  if (!object13)
     throw new Error(`Bandit output has an invalid ${field} record`);
-  return object12;
+  return object13;
 }
 function requiredArray(value, key2) {
   const child = value[key2];
@@ -222998,7 +223593,7 @@ function fileFor(path2, stage, files) {
   return files.get(local);
 }
 function point(raw, file, cache) {
-  if (!object5(raw) || !exactKeys3(raw, ["line", "col", "offset"]) || !["line", "col", "offset"].every((key2) => Number.isSafeInteger(raw[key2])) || raw.line < 1 || raw.col < 1 || raw.offset < 0)
+  if (!object6(raw) || !exactKeys3(raw, ["line", "col", "offset"]) || !["line", "col", "offset"].every((key2) => Number.isSafeInteger(raw[key2])) || raw.line < 1 || raw.col < 1 || raw.offset < 0)
     throw new Error("position");
   let prepared = cache.get(file.path);
   if (!prepared) {
@@ -223023,7 +223618,7 @@ function point(raw, file, cache) {
   return normal;
 }
 function range(raw, stage, files, cache) {
-  if (!object5(raw) || !exactKeys3(raw, ["path", "start", "end"]))
+  if (!object6(raw) || !exactKeys3(raw, ["path", "start", "end"]))
     throw new Error("location");
   const file = fileFor(raw.path, stage, files);
   if (!file)
@@ -223034,7 +223629,7 @@ function range(raw, stage, files, cache) {
   return { file, start, end };
 }
 function nativeTrace(raw, sink, stage, files, cache) {
-  if (!object5(raw) || !exactKeys3(raw, ["taint_source", "taint_sink", "intermediate_vars"]) || !Array.isArray(raw.intermediate_vars))
+  if (!object6(raw) || !exactKeys3(raw, ["taint_source", "taint_sink", "intermediate_vars"]) || !Array.isArray(raw.intermediate_vars))
     throw new Error("trace schema");
   const steps = [];
   const add2 = (role, loc, content) => {
@@ -223055,7 +223650,7 @@ function nativeTrace(raw, sink, stage, files, cache) {
   if (raw.intermediate_vars.length > 1e4)
     throw new Error("trace budget");
   for (const item of raw.intermediate_vars) {
-    if (!object5(item) || !exactKeys3(item, ["location", "content"]))
+    if (!object6(item) || !exactKeys3(item, ["location", "content"]))
       throw new Error("intermediate");
     add2("intermediate", item.location, item.content);
   }
@@ -223087,7 +223682,7 @@ function parseNativeOutput(stdout, exitCode2, stage, inputFiles) {
   } catch {
     return { id: NATIVE_CHECK_ID, status: "error", findings, notes: ["Native preview returned invalid bounded JSON."], metrics: { ...metrics(), incompleteReasons: "invalid_json" } };
   }
-  if (!object5(parsed) || parsed.version !== OPENGREP_VERSION || !Array.isArray(parsed.results)) {
+  if (!object6(parsed) || parsed.version !== OPENGREP_VERSION || !Array.isArray(parsed.results)) {
     return { id: NATIVE_CHECK_ID, status: "error", findings, notes: ["Native preview protocol or version did not match the selected profile."], metrics: { ...metrics(), incompleteReasons: "invalid_protocol" } };
   }
   if (!Array.isArray(parsed.errors)) {
@@ -223102,7 +223697,7 @@ function parseNativeOutput(stdout, exitCode2, stage, inputFiles) {
     reasons.add("invalid_protocol");
     parsed.interfile_languages_used = [];
   }
-  if (!object5(parsed.paths)) {
+  if (!object6(parsed.paths)) {
     reasons.add("invalid_protocol");
     parsed.paths = {};
   }
@@ -223140,7 +223735,7 @@ function parseNativeOutput(stdout, exitCode2, stage, inputFiles) {
     reasons.add("finding_limit");
   for (const raw of parsed.results.slice(0, 1e4)) {
     try {
-      if (!object5(raw) || typeof raw.check_id !== "string" || !OWN_RULE_IDS.includes(raw.check_id) || !object5(raw.extra))
+      if (!object6(raw) || typeof raw.check_id !== "string" || !OWN_RULE_IDS.includes(raw.check_id) || !object6(raw.extra))
         throw new Error("finding");
       const loc = range({ path: raw.path, start: raw.start, end: raw.end }, stage, files, positionCache);
       const extra = raw.extra;
@@ -223153,7 +223748,7 @@ function parseNativeOutput(stdout, exitCode2, stage, inputFiles) {
         ignored++;
         reasons.add("ignored_finding");
       }
-      if (extra.severity !== "ERROR" || extra.validation_state !== "NO_VALIDATOR" || extra.engine_kind !== "OSS" || !object5(extra.metadata))
+      if (extra.severity !== "ERROR" || extra.validation_state !== "NO_VALIDATOR" || extra.engine_kind !== "OSS" || !object6(extra.metadata))
         reasons.add("finding_state");
       let staticFlow;
       if (extra.dataflow_trace !== void 0 && extra.dataflow_trace !== null) {
@@ -223405,7 +224000,7 @@ async function runNativePreview(snapshot4, options) {
   }
   return check2 ?? failed("native_execution_error");
 }
-var NATIVE_CHECK_ID, NATIVE_DENY_POLICY, MAX_JSON_BYTES, NOTE, object5, exactKeys3, digest, nativeFiles;
+var NATIVE_CHECK_ID, NATIVE_DENY_POLICY, MAX_JSON_BYTES, NOTE, object6, exactKeys3, digest, nativeFiles;
 var init_opengrep = __esm({
   "build/src/source/opengrep.js"() {
     "use strict";
@@ -223415,7 +224010,7 @@ var init_opengrep = __esm({
     NATIVE_DENY_POLICY = "(version 1)\n(allow default)\n(deny network*)\n";
     MAX_JSON_BYTES = 8 * 1024 * 1024;
     NOTE = "Experimental native candidate positions only; binding identity, exploitability and complete dataflow edges are not verified.";
-    object5 = (value) => !!value && typeof value === "object" && !Array.isArray(value);
+    object6 = (value) => !!value && typeof value === "object" && !Array.isArray(value);
     exactKeys3 = (value, allowed) => Object.keys(value).every((key2) => allowed.includes(key2));
     digest = (bytes) => createHash("sha256").update(bytes).digest("hex");
     nativeFiles = (snapshot4) => snapshot4.files.filter((file) => file.category === "code" && !file.sensitive && /\.(?:[cm]?[jt]sx?|py)$/i.test(file.path));
@@ -225337,7 +225932,7 @@ function invalidApiExecutionLedger() {
 function fail4() {
   throw Error("invalid_api_execution");
 }
-function object6(value, keys6) {
+function object7(value, keys6) {
   if (!value || typeof value !== "object" || Array.isArray(value) || Object.keys(value).length !== keys6.length || keys6.some((key2) => !Object.hasOwn(value, key2)))
     fail4();
 }
@@ -225345,7 +225940,7 @@ function integer(value, min, max) {
   return typeof value === "number" && Number.isSafeInteger(value) && value >= min && value <= max;
 }
 function planData(value, version) {
-  object6(value, [
+  object7(value, [
     "actorCount",
     "caseCount",
     "logicalRequests",
@@ -225360,7 +225955,7 @@ function planData(value, version) {
     fail4();
   const steps = value.steps.map((step2, index2) => {
     const identity = step2?.phase === "identity-before" || step2?.phase === "identity-after";
-    object6(step2, ["ordinal", "method", "phase", "actorIndex", ...identity ? [] : ["caseIndex"]]);
+    object7(step2, ["ordinal", "method", "phase", "actorIndex", ...identity ? [] : ["caseIndex"]]);
     if (step2.ordinal !== index2 || step2.method !== "GET" || !integer(step2.actorIndex, 0, value.actorCount - 1) || !["identity-before", "owner-before", "deny", "owner-after", "identity-after"].includes(step2.phase) || !identity && !integer(step2.caseIndex, 0, value.caseCount - 1))
       fail4();
     return {
@@ -225420,7 +226015,7 @@ function planData(value, version) {
 function sanitiseApiExecutionLedger(input) {
   try {
     const value = snapshotJsonData(input);
-    object6(value, ["version", "basis", "status", "policyVersion", "planSha256", "plan", "steps", "counts", "reasons"]);
+    object7(value, ["version", "basis", "status", "policyVersion", "planSha256", "plan", "steps", "counts", "reasons"]);
     if (value.version !== 1 || value.basis !== "declared-api-execution" || ![1, 2].includes(value.policyVersion) || !["complete", "partial"].includes(value.status))
       fail4();
     const plan = planData(value.plan, value.policyVersion);
@@ -225429,7 +226024,7 @@ function sanitiseApiExecutionLedger(input) {
       fail4();
     let offset = 0;
     const steps = value.steps.map((step2, index) => {
-      object6(step2, ["ordinal", "outcome", "reason", "attemptStart", "httpAttempts", "httpStatus"]);
+      object7(step2, ["ordinal", "outcome", "reason", "attemptStart", "httpAttempts", "httpStatus"]);
       if (step2.ordinal !== index || !["evaluated", "inconclusive", "not_attempted"].includes(step2.outcome) || !REASONS3.includes(step2.reason) || step2.attemptStart !== offset || !integer(step2.httpAttempts, 0, 64 - offset) || step2.httpStatus !== null && !integer(step2.httpStatus, 100, 599))
         fail4();
       if (step2.outcome === "evaluated" ? step2.reason !== "evaluated" || step2.httpAttempts < 1 || step2.httpStatus === null : step2.reason === "evaluated")
@@ -225486,7 +226081,7 @@ function sanitiseApiExecutionLedger(input) {
         fail4();
     }
     const expectedCounts = counts(steps);
-    object6(value.counts, Object.keys(expectedCounts));
+    object7(value.counts, Object.keys(expectedCounts));
     if (Object.entries(expectedCounts).some(([key2, count5]) => value.counts[key2] !== count5))
       fail4();
     if (!Array.isArray(value.reasons) || value.reasons.length > 3 || new Set(value.reasons).size !== value.reasons.length || value.reasons.some((r) => !["legacy_policy", "run_incomplete", "incomplete_steps"].includes(r)))
@@ -227242,7 +227837,7 @@ var init_report = __esm({
     init_analysis_gaps();
     REPORT_SCHEMA_VERSION = "1.0.0";
     REPORT_TOOL_VERSION = "0.5.0";
-    RULESET_VERSION = "2026-10-14.2";
+    RULESET_VERSION = "2026-10-14.3";
     SEVERITIES2 = [
       "info",
       "low",
@@ -230152,19 +230747,19 @@ function validateSchemathesisAuthSchema(selection2) {
   const doc = selection2.document;
   const resolve20 = (input) => {
     let v = input, count5 = 0;
-    while (object10(v) && Object.hasOwn(v, "$ref")) {
+    while (object11(v) && Object.hasOwn(v, "$ref")) {
       if (++count5 > 40 || typeof v.$ref !== "string" || !v.$ref.startsWith("#/"))
         fail7();
       let target = doc;
       for (const token of v.$ref.slice(2).split("/")) {
         const key2 = token.replace(/~1/g, "/").replace(/~0/g, "~");
-        if (!object10(target) || !Object.hasOwn(target, key2))
+        if (!object11(target) || !Object.hasOwn(target, key2))
           fail7();
         target = target[key2];
       }
       v = target;
     }
-    if (!object10(v))
+    if (!object11(v))
       fail7();
     return v;
   };
@@ -230200,7 +230795,7 @@ function validateSchemathesisAuthSchema(selection2) {
     if (!Array.isArray(security) || security.length > 32)
       fail7();
     for (const requirement of security) {
-      if (!object10(requirement))
+      if (!object11(requirement))
         fail7();
       for (const name of Object.keys(requirement)) {
         const scheme = resolve20(doc.components?.securitySchemes?.[name]);
@@ -230279,7 +230874,7 @@ function workerOutput(raw, labels, max, expectedHash) {
       invalid6 = true;
       break;
     }
-    if (!object10(event) || event.version !== 3 || finalResult) {
+    if (!object11(event) || event.version !== 3 || finalResult) {
       invalid6 = true;
       break;
     }
@@ -230547,7 +231142,7 @@ async function runSchemathesisAuthenticated(options, runtime) {
     }
   }];
 }
-var OUTPUT_CAP2, NOTE3, object10, keys3, hash, budget;
+var OUTPUT_CAP2, NOTE3, object11, keys3, hash, budget;
 var init_schemathesis_auth_run = __esm({
   "build/src/schemathesis-auth-run.js"() {
     "use strict";
@@ -230562,8 +231157,8 @@ var init_schemathesis_auth_run = __esm({
     init_schemathesis_auth();
     OUTPUT_CAP2 = 256 * 1024;
     NOTE3 = "Authenticated Schemathesis generates bounded GET cases after declared principal and per-operation normal controls. Node injects one credential through a pinned HTTP(S) gate; redacted evidence is diagnostic, not proof of authentication, exploitability, whole-API coverage, or a replay artifact.";
-    object10 = (v) => !!v && typeof v === "object" && !Array.isArray(v);
-    keys3 = (v, wanted) => object10(v) && Object.keys(v).length === wanted.length && wanted.every((k) => Object.hasOwn(v, k));
+    object11 = (v) => !!v && typeof v === "object" && !Array.isArray(v);
+    keys3 = (v, wanted) => object11(v) && Object.keys(v).length === wanted.length && wanted.every((k) => Object.hasOwn(v, k));
     hash = (bytes) => createHash17("sha256").update(bytes).digest("hex");
     budget = (v, fallback, max) => {
       const x = v ?? fallback;
@@ -231266,7 +231861,7 @@ var init_nuclei = __esm({
 function fail8() {
   throw new TypeError("invalid_execution_plan");
 }
-function object11(value) {
+function object12(value) {
   if (!value || typeof value !== "object" || Array.isArray(value))
     fail8();
 }
@@ -231297,13 +231892,13 @@ function executionOrigin(value) {
 }
 function parseExecutionPlan(raw) {
   const value = snapshotJsonData(raw, fail8, fail8);
-  object11(value);
+  object12(value);
   keys4(value, ["version", "kind", "origin", "tasks"]);
   if (value.version !== 1 || value.kind !== EXECUTION_PLAN_KIND || !Array.isArray(value.tasks) || !value.tasks.length || value.tasks.length > EXECUTION_PLAN_MAX_TASKS)
     fail8();
   const origin = executionOrigin(value.origin), seen = /* @__PURE__ */ new Set();
   const tasks = value.tasks.map((item) => {
-    object11(item);
+    object12(item);
     if (typeof item.id !== "string" || !EXECUTION_TASK_ID.test(item.id) || seen.has(item.id))
       fail8();
     seen.add(item.id);
@@ -231345,13 +231940,13 @@ function parseExecutionPlan(raw) {
 }
 function parseExecutionInputs(raw) {
   const value = snapshotJsonData(raw, fail8, fail8);
-  object11(value);
+  object12(value);
   keys4(value, ["version", "inputs"]);
   if (value.version !== 1 || !Array.isArray(value.inputs) || value.inputs.length > 32)
     fail8();
   const seen = /* @__PURE__ */ new Set();
   const inputs2 = value.inputs.map((item) => {
-    object11(item);
+    object12(item);
     keys4(item, ["id", "path", "sha256"]);
     alias(item.id);
     if (seen.has(item.id) || typeof item.path !== "string" || !item.path || item.path.length > 4096 || /[\u0000-\u001f\u007f]/.test(item.path) || typeof item.sha256 !== "string" || !/^[a-f0-9]{64}$/.test(item.sha256))
@@ -231394,8 +231989,8 @@ function snapshot3(input, field) {
 }
 function keys5(value, required, optional, field) {
   check(value !== null && typeof value === "object" && !Array.isArray(value), field);
-  const object12 = value, allowed = [...required, ...optional];
-  check(required.every((key2) => Object.hasOwn(object12, key2)) && Object.keys(object12).every((key2) => allowed.includes(key2)), field);
+  const object13 = value, allowed = [...required, ...optional];
+  check(required.every((key2) => Object.hasOwn(object13, key2)) && Object.keys(object13).every((key2) => allowed.includes(key2)), field);
 }
 function text2(value, maximum, field) {
   check(typeof value === "string" && value.length > 0 && value.length <= maximum && !/[\x00-\x1f\x7f]/.test(value), field);
@@ -231467,7 +232062,7 @@ function preflight(db) {
     throw new RunStoreError("legacy_evidence_untrusted");
   const objects = db.prepare("SELECT name,sql FROM sqlite_master WHERE sql IS NOT NULL ORDER BY name LIMIT 30").all();
   const expectedStatements = schemaStatements(version);
-  if (objects.length !== expectedStatements.size || objects.some((object12) => expectedStatements.get(object12.name) !== canonicalSql(object12.sql)))
+  if (objects.length !== expectedStatements.size || objects.some((object13) => expectedStatements.get(object13.name) !== canonicalSql(object13.sql)))
     throw new RunStoreError("unsupported_version");
   for (const table of expected) {
     const columns = db.prepare(`PRAGMA table_info("${table}")`).all().map((row) => row.name);
@@ -232765,7 +233360,7 @@ init_code_coverage();
 init_analysis_budget();
 init_collection_budget();
 init_snapshot_evidence();
-var ts19 = __toESM(require_typescript(), 1);
+var ts20 = __toESM(require_typescript(), 1);
 init_ast();
 import { types as utilTypes } from "node:util";
 import { createHash as createHash3 } from "node:crypto";
@@ -233175,8 +233770,8 @@ async function stageSnapshot(snapshot4) {
 }
 
 // build/src/source/framework.js
-var ts18 = __toESM(require_typescript(), 1);
-import { posix as posix6 } from "node:path";
+var ts19 = __toESM(require_typescript(), 1);
+import { posix as posix7 } from "node:path";
 var FRONTEND_EXTENSIONS = /\.(?:[cm]?[jt]sx?)$/i;
 var MIGRATION_PATH = /(?:^|\/)supabase\/migrations\/(?:[^/]+\/)*[^/]+\.sql$/i;
 function isMigration(file) {
@@ -233187,12 +233782,12 @@ function isNextConfigPath(path2) {
 }
 function scriptKind2(path2) {
   if (/\.tsx$/i.test(path2))
-    return ts18.ScriptKind.TSX;
+    return ts19.ScriptKind.TSX;
   if (/\.jsx$/i.test(path2))
-    return ts18.ScriptKind.JSX;
+    return ts19.ScriptKind.JSX;
   if (/\.(?:ts|mts|cts)$/i.test(path2))
-    return ts18.ScriptKind.TS;
-  return ts18.ScriptKind.JS;
+    return ts19.ScriptKind.TS;
+  return ts19.ScriptKind.JS;
 }
 function parseError(sourceFile) {
   const diagnostics = sourceFile.parseDiagnostics;
@@ -233200,11 +233795,11 @@ function parseError(sourceFile) {
 }
 function hasUseClientDirective(sourceFile) {
   const first = sourceFile.statements[0];
-  return !!first && ts18.isExpressionStatement(first) && ts18.isStringLiteral(first.expression) && first.expression.text === "use client";
+  return !!first && ts19.isExpressionStatement(first) && ts19.isStringLiteral(first.expression) && first.expression.text === "use client";
 }
 function hasUseServerDirective(sourceFile) {
   const first = sourceFile.statements[0];
-  return !!first && ts18.isExpressionStatement(first) && ts18.isStringLiteral(first.expression) && first.expression.text === "use server";
+  return !!first && ts19.isExpressionStatement(first) && ts19.isStringLiteral(first.expression) && first.expression.text === "use server";
 }
 function isSecretPublicName(name) {
   if (!/^NEXT_PUBLIC_[A-Z0-9_]+$/i.test(name))
@@ -233242,11 +233837,11 @@ function initializerHasActualServerSecret(initializer) {
   const visit = (node) => {
     if (found)
       return;
-    if ((ts18.isStringLiteral(node) || ts18.isNoSubstitutionTemplateLiteral(node)) && isActualServerSecretLiteral(node.text)) {
+    if ((ts19.isStringLiteral(node) || ts19.isNoSubstitutionTemplateLiteral(node)) && isActualServerSecretLiteral(node.text)) {
       found = true;
       return;
     }
-    ts18.forEachChild(node, visit);
+    ts19.forEachChild(node, visit);
   };
   visit(initializer);
   return found;
@@ -233256,47 +233851,47 @@ function initializerHasPublicSupabaseKey(initializer) {
   const visit = (node) => {
     if (found)
       return;
-    if ((ts18.isStringLiteral(node) || ts18.isNoSubstitutionTemplateLiteral(node)) && isPublicSupabaseKeyLiteral(node.text)) {
+    if ((ts19.isStringLiteral(node) || ts19.isNoSubstitutionTemplateLiteral(node)) && isPublicSupabaseKeyLiteral(node.text)) {
       found = true;
       return;
     }
-    ts18.forEachChild(node, visit);
+    ts19.forEachChild(node, visit);
   };
   visit(initializer);
   return found;
 }
 function staticEnvName(node) {
-  if (!ts18.isPropertyAccessExpression(node) && !ts18.isElementAccessExpression(node))
+  if (!ts19.isPropertyAccessExpression(node) && !ts19.isElementAccessExpression(node))
     return void 0;
-  const property = ts18.isPropertyAccessExpression(node) ? node.name.text : ts18.isStringLiteral(node.argumentExpression) || ts18.isNoSubstitutionTemplateLiteral(node.argumentExpression) ? node.argumentExpression.text : void 0;
+  const property = ts19.isPropertyAccessExpression(node) ? node.name.text : ts19.isStringLiteral(node.argumentExpression) || ts19.isNoSubstitutionTemplateLiteral(node.argumentExpression) ? node.argumentExpression.text : void 0;
   if (property === void 0)
     return void 0;
   const receiver = node.expression;
-  if (!ts18.isPropertyAccessExpression(receiver) || !ts18.isIdentifier(receiver.expression) || receiver.expression.text !== "process" || receiver.name.text !== "env")
+  if (!ts19.isPropertyAccessExpression(receiver) || !ts19.isIdentifier(receiver.expression) || receiver.expression.text !== "process" || receiver.name.text !== "env")
     return void 0;
   return property;
 }
 function staticPropertyName(name) {
-  if (ts18.isIdentifier(name) || ts18.isStringLiteral(name) || ts18.isNoSubstitutionTemplateLiteral(name) || ts18.isNumericLiteral(name))
+  if (ts19.isIdentifier(name) || ts19.isStringLiteral(name) || ts19.isNoSubstitutionTemplateLiteral(name) || ts19.isNumericLiteral(name))
     return name.text;
   return void 0;
 }
 function importSpecifier(node) {
-  if (ts18.isImportDeclaration(node) || ts18.isExportDeclaration(node)) {
-    return node.moduleSpecifier && ts18.isStringLiteral(node.moduleSpecifier) ? node.moduleSpecifier.text : void 0;
+  if (ts19.isImportDeclaration(node) || ts19.isExportDeclaration(node)) {
+    return node.moduleSpecifier && ts19.isStringLiteral(node.moduleSpecifier) ? node.moduleSpecifier.text : void 0;
   }
-  if (ts18.isCallExpression(node)) {
+  if (ts19.isCallExpression(node)) {
     const expression = node.expression;
-    const isRequire = ts18.isIdentifier(expression) && expression.text === "require";
-    const isDynamicImport = expression.kind === ts18.SyntaxKind.ImportKeyword;
+    const isRequire = ts19.isIdentifier(expression) && expression.text === "require";
+    const isDynamicImport = expression.kind === ts19.SyntaxKind.ImportKeyword;
     const argument = node.arguments[0];
-    if ((isRequire || isDynamicImport) && argument && ts18.isStringLiteral(argument))
+    if ((isRequire || isDynamicImport) && argument && ts19.isStringLiteral(argument))
       return argument.text;
   }
   return void 0;
 }
 function analyzeFrontend(file) {
-  const sourceFile = ts18.createSourceFile(file.path, file.text, ts18.ScriptTarget.Latest, true, scriptKind2(file.path));
+  const sourceFile = ts19.createSourceFile(file.path, file.text, ts19.ScriptTarget.Latest, true, scriptKind2(file.path));
   const publicSecretDeclarations = [];
   const serverSecretLiterals = [];
   let reactImport = false;
@@ -233304,20 +233899,20 @@ function analyzeFrontend(file) {
   const relativeImports = [];
   const envConfigDeclarations = [];
   const visit = (node) => {
-    if (ts18.isVariableDeclaration(node) && ts18.isIdentifier(node.name) && node.initializer && isSecretPublicName(node.name.text)) {
+    if (ts19.isVariableDeclaration(node) && ts19.isIdentifier(node.name) && node.initializer && isSecretPublicName(node.name.text)) {
       publicSecretDeclarations.push(node);
     }
-    if (ts18.isStringLiteral(node) || ts18.isNoSubstitutionTemplateLiteral(node)) {
+    if (ts19.isStringLiteral(node) || ts19.isNoSubstitutionTemplateLiteral(node)) {
       if (isActualServerSecretLiteral(node.text)) {
         serverSecretLiterals.push(node);
       }
     }
-    if (ts18.isImportDeclaration(node) && ts18.isStringLiteral(node.moduleSpecifier) && /^react(?:\/|$)/i.test(node.moduleSpecifier.text)) {
+    if (ts19.isImportDeclaration(node) && ts19.isStringLiteral(node.moduleSpecifier) && /^react(?:\/|$)/i.test(node.moduleSpecifier.text)) {
       reactImport = true;
     }
-    if (ts18.isCallExpression(node) && ts18.isIdentifier(node.expression) && node.expression.text === "require") {
+    if (ts19.isCallExpression(node) && ts19.isIdentifier(node.expression) && node.expression.text === "require") {
       const first = node.arguments[0];
-      if (first && ts18.isStringLiteral(first) && /^react(?:\/|$)/i.test(first.text))
+      if (first && ts19.isStringLiteral(first) && /^react(?:\/|$)/i.test(first.text))
         reactImport = true;
     }
     if (staticEnvName(node))
@@ -233325,14 +233920,14 @@ function analyzeFrontend(file) {
     const imported = importSpecifier(node);
     if (imported?.startsWith("."))
       relativeImports.push(imported);
-    if (isNextConfigPath(file.path) && ts18.isPropertyAssignment(node)) {
+    if (isNextConfigPath(file.path) && ts19.isPropertyAssignment(node)) {
       const parent = node.parent.parent;
-      const isEnvObject = ts18.isPropertyAssignment(parent) && staticPropertyName(parent.name)?.toLowerCase() === "env" && parent.initializer === node.parent;
+      const isEnvObject = ts19.isPropertyAssignment(parent) && staticPropertyName(parent.name)?.toLowerCase() === "env" && parent.initializer === node.parent;
       if (isEnvObject) {
         envConfigDeclarations.push(node);
       }
     }
-    ts18.forEachChild(node, visit);
+    ts19.forEachChild(node, visit);
   };
   visit(sourceFile);
   return {
@@ -233394,7 +233989,7 @@ function collectStaticEnv(snapshot4) {
   return signals;
 }
 function resolveRelativeImport(fromPath, specifier, available) {
-  const normalized = posix6.normalize(posix6.join(posix6.dirname(fromPath), specifier)).replace(/^\.\//, "");
+  const normalized = posix7.normalize(posix7.join(posix7.dirname(fromPath), specifier)).replace(/^\.\//, "");
   if (normalized.startsWith("../") || normalized === "..")
     return void 0;
   const candidates = [normalized];
@@ -233847,7 +234442,7 @@ function frontendFindings(analysis, available, envSignals) {
   for (const candidate of clientEntry ? reachable : [analysis]) {
     for (const declaration of candidate.publicSecretDeclarations) {
       const actualSecret = !!declaration.initializer && initializerHasActualServerSecret(declaration.initializer);
-      const publicKey = isPublicKeyName(ts18.isIdentifier(declaration.name) ? declaration.name.text : "") || !!declaration.initializer && initializerHasPublicSupabaseKey(declaration.initializer);
+      const publicKey = isPublicKeyName(ts19.isIdentifier(declaration.name) ? declaration.name.text : "") || !!declaration.initializer && initializerHasPublicSupabaseKey(declaration.initializer);
       if (!actualSecret && publicKey)
         continue;
       push({
@@ -233947,8 +234542,8 @@ function runFrameworkRules(snapshot4) {
 
 // build/src/source/parsers.js
 import { isAbsolute as isAbsolute6, relative as relative5, resolve as resolve6 } from "node:path";
-function own(object12, key2) {
-  return Object.prototype.hasOwnProperty.call(object12, key2) ? object12[key2] : void 0;
+function own(object13, key2) {
+  return Object.prototype.hasOwnProperty.call(object13, key2) ? object13[key2] : void 0;
 }
 function objectValue2(value) {
   return value !== null && typeof value === "object" && !Array.isArray(value) ? value : void 0;
@@ -234010,10 +234605,10 @@ function referencesFrom(value) {
   const references2 = value.map((entry) => {
     if (typeof entry === "string")
       return entry.trim();
-    const object12 = objectValue2(entry);
-    if (!object12 || typeof object12.url !== "string" || object12.url.length === 0)
+    const object13 = objectValue2(entry);
+    if (!object13 || typeof object13.url !== "string" || object13.url.length === 0)
       throw new Error("scanner output has an invalid reference");
-    return object12.url.trim();
+    return object13.url.trim();
   }).filter((entry) => /^https?:\/\/[^\s]{1,500}$/i.test(entry)).slice(0, 5);
   return references2.length > 0 ? references2 : void 0;
 }
@@ -234063,10 +234658,10 @@ function requiredArray2(value, key2, tool) {
   return child;
 }
 function requiredObject2(value, field, tool) {
-  const object12 = objectValue2(value);
-  if (!object12)
+  const object13 = objectValue2(value);
+  if (!object13)
     throw new Error(`${tool} output has an invalid ${field} record`);
-  return object12;
+  return object13;
 }
 function requiredPositiveInt(value, key2, tool) {
   const child = own(value, key2);
@@ -234089,15 +234684,15 @@ function parseGitleaksOutput(text3, stageDir, files) {
   const findings = [];
   let unknownLocations = 0;
   for (const entry of entries) {
-    const object12 = requiredObject2(entry, "finding", "Gitleaks");
-    const ruleId = cleanRuleId(requiredString2(object12, "RuleID", "Gitleaks"), "gitleaks.secret");
-    const filePath = requiredString2(object12, "File", "Gitleaks");
+    const object13 = requiredObject2(entry, "finding", "Gitleaks");
+    const ruleId = cleanRuleId(requiredString2(object13, "RuleID", "Gitleaks"), "gitleaks.secret");
+    const filePath = requiredString2(object13, "File", "Gitleaks");
     const path2 = pathFromScanner(filePath, stageDir, allowed);
     if (!path2)
       unknownLocations += 1;
-    const line = requiredPositiveInt(object12, "StartLine", "Gitleaks");
-    const column = requiredPositiveInt(object12, "StartColumn", "Gitleaks");
-    const title = cleanText(requiredString2(object12, "Description", "Gitleaks"), `Secret detected by Gitleaks (${ruleId})`);
+    const line = requiredPositiveInt(object13, "StartLine", "Gitleaks");
+    const column = requiredPositiveInt(object13, "StartColumn", "Gitleaks");
+    const title = cleanText(requiredString2(object13, "Description", "Gitleaks"), `Secret detected by Gitleaks (${ruleId})`);
     const severity = /private[-_ ]?key|password|token|secret|credential|aws|github|slack/i.test(`${ruleId} ${title}`) ? "high" : "medium";
     findings.push(makeFinding({
       ruleId,
@@ -234415,16 +235010,16 @@ var SOURCE_CODE_EXTENSIONS = /\.(?:[cm]?[jt]sx?)$/i;
 var SOURCE_PYTHON_EXTENSION = /\.py$/i;
 var SOURCE_SQL_EXTENSION = /\.sql$/i;
 var SOURCE_LITERAL_TOKENS = /* @__PURE__ */ new Set([
-  ts19.SyntaxKind.StringLiteral,
-  ts19.SyntaxKind.NoSubstitutionTemplateLiteral,
-  ts19.SyntaxKind.NumericLiteral,
-  ts19.SyntaxKind.BigIntLiteral,
-  ts19.SyntaxKind.RegularExpressionLiteral,
-  ts19.SyntaxKind.TemplateHead,
-  ts19.SyntaxKind.TemplateMiddle,
-  ts19.SyntaxKind.TemplateTail,
-  ts19.SyntaxKind.JsxText,
-  ts19.SyntaxKind.JsxTextAllWhiteSpaces
+  ts20.SyntaxKind.StringLiteral,
+  ts20.SyntaxKind.NoSubstitutionTemplateLiteral,
+  ts20.SyntaxKind.NumericLiteral,
+  ts20.SyntaxKind.BigIntLiteral,
+  ts20.SyntaxKind.RegularExpressionLiteral,
+  ts20.SyntaxKind.TemplateHead,
+  ts20.SyntaxKind.TemplateMiddle,
+  ts20.SyntaxKind.TemplateTail,
+  ts20.SyntaxKind.JsxText,
+  ts20.SyntaxKind.JsxTextAllWhiteSpaces
 ]);
 function splitAnchorLines(text3) {
   const lines = [];
@@ -234490,15 +235085,15 @@ function compactAnchorTokens(text3) {
 }
 function scriptKindForSource(path2) {
   if (/\.tsx$/i.test(path2))
-    return ts19.ScriptKind.TSX;
+    return ts20.ScriptKind.TSX;
   if (/\.jsx$/i.test(path2))
-    return ts19.ScriptKind.JSX;
+    return ts20.ScriptKind.JSX;
   if (/\.(?:ts|mts|cts)$/i.test(path2))
-    return ts19.ScriptKind.TS;
-  return ts19.ScriptKind.JS;
+    return ts20.ScriptKind.TS;
+  return ts20.ScriptKind.JS;
 }
 function maskAstLiteralRanges(text3, path2) {
-  const sourceFile = ts19.createSourceFile(path2, text3, ts19.ScriptTarget.Latest, true, scriptKindForSource(path2));
+  const sourceFile = ts20.createSourceFile(path2, text3, ts20.ScriptTarget.Latest, true, scriptKindForSource(path2));
   const output = text3.split("");
   const blankRange = (start, end) => {
     for (let index = Math.max(0, start); index < Math.min(output.length, end); index += 1) {
@@ -234507,16 +235102,16 @@ function maskAstLiteralRanges(text3, path2) {
     }
   };
   const visit = (node) => {
-    if (ts19.isRegularExpressionLiteral(node) || ts19.isJsxText(node))
+    if (ts20.isRegularExpressionLiteral(node) || ts20.isJsxText(node))
       blankRange(node.getStart(sourceFile), node.getEnd());
-    ts19.forEachChild(node, visit);
+    ts20.forEachChild(node, visit);
   };
   visit(sourceFile);
   return output.join("");
 }
 function maskTypeScriptComments(text3, path2) {
   const output = maskAstLiteralRanges(text3, path2).split("");
-  const scanner = ts19.createScanner(ts19.ScriptTarget.Latest, false, /\.(?:tsx|jsx)$/i.test(path2) ? ts19.LanguageVariant.JSX : ts19.LanguageVariant.Standard, output.join(""));
+  const scanner = ts20.createScanner(ts20.ScriptTarget.Latest, false, /\.(?:tsx|jsx)$/i.test(path2) ? ts20.LanguageVariant.JSX : ts20.LanguageVariant.Standard, output.join(""));
   const blankRange = (start, end) => {
     for (let index = Math.max(0, start); index < Math.min(output.length, end); index += 1) {
       if (output[index] !== "\n" && output[index] !== "\r")
@@ -234524,8 +235119,8 @@ function maskTypeScriptComments(text3, path2) {
     }
   };
   let token = scanner.scan();
-  while (token !== ts19.SyntaxKind.EndOfFileToken) {
-    if (token === ts19.SyntaxKind.SingleLineCommentTrivia || token === ts19.SyntaxKind.MultiLineCommentTrivia) {
+  while (token !== ts20.SyntaxKind.EndOfFileToken) {
+    if (token === ts20.SyntaxKind.SingleLineCommentTrivia || token === ts20.SyntaxKind.MultiLineCommentTrivia) {
       blankRange(scanner.getTokenPos(), scanner.getTextPos());
     }
     token = scanner.scan();
@@ -234536,11 +235131,11 @@ function normalizedTypeScriptAnchorLine(prepared, path2, line) {
   const selected = anchorRegion(prepared, line);
   if (selected === void 0)
     return "<file>";
-  const scanner = ts19.createScanner(ts19.ScriptTarget.Latest, false, /\.(?:tsx|jsx)$/i.test(path2) ? ts19.LanguageVariant.JSX : ts19.LanguageVariant.Standard, selected);
+  const scanner = ts20.createScanner(ts20.ScriptTarget.Latest, false, /\.(?:tsx|jsx)$/i.test(path2) ? ts20.LanguageVariant.JSX : ts20.LanguageVariant.Standard, selected);
   const tokens = [];
   let token = scanner.scan();
-  while (token !== ts19.SyntaxKind.EndOfFileToken) {
-    if (token !== ts19.SyntaxKind.WhitespaceTrivia && token !== ts19.SyntaxKind.NewLineTrivia && token !== ts19.SyntaxKind.SingleLineCommentTrivia && token !== ts19.SyntaxKind.MultiLineCommentTrivia && token !== ts19.SyntaxKind.ConflictMarkerTrivia) {
+  while (token !== ts20.SyntaxKind.EndOfFileToken) {
+    if (token !== ts20.SyntaxKind.WhitespaceTrivia && token !== ts20.SyntaxKind.NewLineTrivia && token !== ts20.SyntaxKind.SingleLineCommentTrivia && token !== ts20.SyntaxKind.MultiLineCommentTrivia && token !== ts20.SyntaxKind.ConflictMarkerTrivia) {
       tokens.push(SOURCE_LITERAL_TOKENS.has(token) ? "<literal>" : redactAnchorToken(scanner.getTokenText()));
     }
     token = scanner.scan();
@@ -234792,8 +235387,8 @@ function trivyInputCandidate(path2, text3) {
     const parsed = JSON.parse(text3);
     if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed))
       return false;
-    const object12 = parsed;
-    return typeof object12.apiVersion === "string" && typeof object12.kind === "string";
+    const object13 = parsed;
+    return typeof object13.apiVersion === "string" && typeof object13.kind === "string";
   } catch {
     return false;
   }
@@ -234806,12 +235401,12 @@ function packageManifestHasExplicitlyEmptyDependencies(text3) {
     const parsed = JSON.parse(text3);
     if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed))
       return false;
-    const object12 = parsed;
+    const object13 = parsed;
     const fields = ["dependencies", "devDependencies", "peerDependencies", "optionalDependencies", "bundledDependencies", "bundleDependencies"];
-    if (!fields.some((key2) => Object.prototype.hasOwnProperty.call(object12, key2)))
+    if (!fields.some((key2) => Object.prototype.hasOwnProperty.call(object13, key2)))
       return false;
     for (const key2 of ["dependencies", "devDependencies", "peerDependencies", "optionalDependencies", "bundledDependencies", "bundleDependencies", "require", "require-dev"]) {
-      const value = object12[key2];
+      const value = object13[key2];
       if (Array.isArray(value) && value.length > 0)
         return false;
       if (value !== void 0 && (value === null || typeof value !== "object" || Object.keys(value).length > 0))
@@ -243512,7 +244107,7 @@ function analyzeCsp(values) {
 }
 
 // build/src/url-modules.js
-var ts20 = __toESM(require_typescript(), 1);
+var ts21 = __toESM(require_typescript(), 1);
 var MAX_MODULE_AST_NODES = 2e5;
 var MAX_MODULE_TEXT_LENGTH = 2 * 1024 * 1024;
 function scanModuleReferences(text3) {
@@ -243520,27 +244115,27 @@ function scanModuleReferences(text3) {
   if (text3.length > MAX_MODULE_TEXT_LENGTH)
     return { ...result3, incompleteReason: "ast_limit" };
   try {
-    const source = ts20.createSourceFile("remote-module.js", text3, ts20.ScriptTarget.Latest, false, ts20.ScriptKind.JS);
+    const source = ts21.createSourceFile("remote-module.js", text3, ts21.ScriptTarget.Latest, false, ts21.ScriptKind.JS);
     const diagnostics = source.parseDiagnostics;
     result3.parseDiagnostics = Array.isArray(diagnostics) ? diagnostics.length : 1;
     const pending = [source];
     let scheduled = 1;
     while (pending.length > 0) {
       const node = pending.pop();
-      if (ts20.isImportDeclaration(node) && ts20.isStringLiteral(node.moduleSpecifier)) {
+      if (ts21.isImportDeclaration(node) && ts21.isStringLiteral(node.moduleSpecifier)) {
         result3.staticReferences.push({ specifier: node.moduleSpecifier.text, kind: "import" });
-      } else if (ts20.isExportDeclaration(node) && node.moduleSpecifier && ts20.isStringLiteral(node.moduleSpecifier)) {
+      } else if (ts21.isExportDeclaration(node) && node.moduleSpecifier && ts21.isStringLiteral(node.moduleSpecifier)) {
         result3.staticReferences.push({ specifier: node.moduleSpecifier.text, kind: "export" });
-      } else if (ts20.isImportEqualsDeclaration(node) && ts20.isExternalModuleReference(node.moduleReference) && ts20.isStringLiteral(node.moduleReference.expression)) {
+      } else if (ts21.isImportEqualsDeclaration(node) && ts21.isExternalModuleReference(node.moduleReference) && ts21.isStringLiteral(node.moduleReference.expression)) {
         result3.staticReferences.push({ specifier: node.moduleReference.expression.text, kind: "import" });
-      } else if (ts20.isCallExpression(node) && node.expression.kind === ts20.SyntaxKind.ImportKeyword) {
+      } else if (ts21.isCallExpression(node) && node.expression.kind === ts21.SyntaxKind.ImportKeyword) {
         result3.dynamicImports += 1;
         const argument = node.arguments[0];
-        if (!argument || !ts20.isStringLiteral(argument))
+        if (!argument || !ts21.isStringLiteral(argument))
           result3.computedImports += 1;
       }
       const children = [];
-      ts20.forEachChild(node, (child) => {
+      ts21.forEachChild(node, (child) => {
         if (scheduled >= MAX_MODULE_AST_NODES) {
           result3.incompleteReason = "ast_limit";
           return true;
@@ -244784,9 +245379,7 @@ function indexed(report) {
     }
   return { findings: output, ambiguous };
 }
-function compareReports(beforeInput, afterInput) {
-  const before = parseScanReport(beforeInput);
-  const after = parseScanReport(afterInput);
+function comparisonReasons(before, after, completion) {
   const reasons = [];
   for (const id of new Set([...before.checks, ...after.checks].map((check2) => check2.id))) {
     const oldWrite = before.checks.find((check2) => check2.id === id)?.apiWriteStateEvidence;
@@ -244832,12 +245425,14 @@ function compareReports(beforeInput, afterInput) {
   const afterChecks = after.checks.map((check2) => check2.id).sort();
   if (JSON.stringify(beforeChecks) !== JSON.stringify(afterChecks))
     reasons.push("The set of executed checks changed.");
-  if (exitCode(before, "none") === 2 || exitCode(after, "none") === 2)
-    reasons.push("At least one scan is incomplete or has no applicable checks.");
-  for (const check2 of before.checks) {
-    if (after.checks.find((next) => next.id === check2.id)?.status !== check2.status) {
-      reasons.push("Check applicability or completion changed.");
-      break;
+  if (completion) {
+    if (exitCode(before, "none") === 2 || exitCode(after, "none") === 2)
+      reasons.push("At least one scan is incomplete or has no applicable checks.");
+    for (const check2 of before.checks) {
+      if (after.checks.find((next) => next.id === check2.id)?.status !== check2.status) {
+        reasons.push("Check applicability or completion changed.");
+        break;
+      }
     }
   }
   for (const [report, label] of [[before, "Before"], [after, "After"]]) {
@@ -244866,6 +245461,22 @@ function compareReports(beforeInput, afterInput) {
       reasons.push("Native DAST policy or execution is missing, incomplete, or changed.");
     }
   }
+  return reasons;
+}
+function compareDeclaredSourceScope(beforeInput, afterInput) {
+  const before = parseScanReport(beforeInput), after = parseScanReport(afterInput);
+  const reasons = comparisonReasons(before, after, false);
+  if (before.mode !== "source" || after.mode !== "source")
+    reasons.push("Diagnostic scope requires source-only reports.");
+  if ([before, after].some((report) => new Set(report.checks.map((check2) => check2.id)).size !== report.checks.length)) {
+    reasons.push("Diagnostic check identity is duplicated or ambiguous.");
+  }
+  return { basis: "declared_source_scope", compatible: reasons.length === 0, reasons };
+}
+function compareReports(beforeInput, afterInput) {
+  const before = parseScanReport(beforeInput);
+  const after = parseScanReport(afterInput);
+  const reasons = comparisonReasons(before, after, true);
   const oldIndex = indexed(before);
   const currentIndex = indexed(after);
   for (const id of /* @__PURE__ */ new Set([...oldIndex.findings.keys(), ...currentIndex.findings.keys()])) {
@@ -245172,7 +245783,7 @@ var ID = /^[0-9a-f]{64}$/;
 var RULE = "dast.sql-boolean-differential";
 var TITLE = "SQL boolean response differential observed";
 var digest3 = (value) => createHash10("sha256").update(JSON.stringify(value)).digest("hex");
-var object7 = (value) => value !== null && typeof value === "object" && !Array.isArray(value);
+var object8 = (value) => value !== null && typeof value === "object" && !Array.isArray(value);
 function refused2(findingId, reason, metadata = {}) {
   return { version: 1, kind: "native-dast-finding-replay", outcome: "refused", findingId, reason, ...metadata };
 }
@@ -245233,12 +245844,12 @@ async function replayDastFinding(rawOptions) {
     policySha256,
     profileRevision: dastProfileRevision(policy)
   };
-  const rawChecks = object7(rawReport) && Array.isArray(rawReport.checks) ? rawReport.checks : [];
-  const rawNative = rawChecks.filter((item) => object7(item) && item.id === DAST_CHECK_ID);
-  if (rawNative.length !== 1 || !object7(rawNative[0]) || !Array.isArray(rawNative[0].findings)) {
+  const rawChecks = object8(rawReport) && Array.isArray(rawReport.checks) ? rawReport.checks : [];
+  const rawNative = rawChecks.filter((item) => object8(item) && item.id === DAST_CHECK_ID);
+  if (rawNative.length !== 1 || !object8(rawNative[0]) || !Array.isArray(rawNative[0].findings)) {
     return refused2(findingId, "not_replayable", metadata);
   }
-  const rawSelected = rawNative[0].findings.filter((item) => object7(item) && item.id === findingId);
+  const rawSelected = rawNative[0].findings.filter((item) => object8(item) && item.id === findingId);
   if (rawSelected.length === 0)
     return refused2(findingId, "finding_not_found", metadata);
   if (rawSelected.length !== 1 || rawNative[0].findings.length !== 1)
@@ -246696,9 +247307,9 @@ async function providerProposal(agent, command, directory2, deadline, files, ins
 var digest4 = (data) => createHash13("sha256").update(data).digest("hex");
 var SHA = /^[a-f0-9]{64}$/;
 var inside2 = (root, path2) => path2 === root || path2.startsWith(root.endsWith(sep6) ? root : root + sep6);
-var object8 = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
+var object9 = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
 function exact4(v, keys6) {
-  if (!object8(v) || Object.keys(v).length !== keys6.length || keys6.some((k) => !Object.hasOwn(v, k)))
+  if (!object9(v) || Object.keys(v).length !== keys6.length || keys6.some((k) => !Object.hasOwn(v, k)))
     throw new Error("invalid");
 }
 async function readBounded(path2, cap = 128 * 1024) {
@@ -247278,7 +247889,7 @@ init_dast_execution();
 init_static_context();
 init_schemathesis_auth();
 import { types as types11 } from "node:util";
-var ADVICE_PROJECTION_POLICY_VERSION = 12;
+var ADVICE_PROJECTION_POLICY_VERSION = 13;
 var MAX_CHECKS = 24;
 var MAX_FINDINGS2 = 24;
 var MAX_BYTES2 = 32 * 1024;
@@ -247591,8 +248202,8 @@ No source files, target execution, report changes, patching, or vulnerability/fi
 Output: private agent-advice.json. Exit 0 advice produced; 2 incomplete/error.
 `;
 var digest5 = (data) => createHash15("sha256").update(data).digest("hex");
-var object9 = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
-var exact5 = (v, keys6) => object9(v) && Object.keys(v).length === keys6.length && keys6.every((key2) => Object.hasOwn(v, key2));
+var object10 = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
+var exact5 = (v, keys6) => object10(v) && Object.keys(v).length === keys6.length && keys6.every((key2) => Object.hasOwn(v, key2));
 function parse3(args) {
   const values = /* @__PURE__ */ new Map();
   let upload = false;
@@ -247669,7 +248280,7 @@ async function reportPair(path2) {
   }
   const agent = json(agentBytes);
   const report = json(reportBytes);
-  if (!object9(agent) || agent.schemaVersion !== "1.0.0" || !object9(agent.reportArtifact) || agent.reportArtifact.name !== "report.json" || agent.reportArtifact.algorithm !== "sha256" || agent.reportArtifact.digest !== digest5(reportBytes) || !object9(agent.scanGate) || !["high", "critical", "medium", "low", "info", "none"].includes(String(agent.scanGate.failOn)) || !object9(report))
+  if (!object10(agent) || agent.schemaVersion !== "1.0.0" || !object10(agent.reportArtifact) || agent.reportArtifact.name !== "report.json" || agent.reportArtifact.algorithm !== "sha256" || agent.reportArtifact.digest !== digest5(reportBytes) || !object10(agent.scanGate) || !["high", "critical", "medium", "low", "info", "none"].includes(String(agent.scanGate.failOn)) || !object10(report))
     throw new Error("invalid_report");
   let projected;
   try {
@@ -247681,11 +248292,11 @@ async function reportPair(path2) {
     throw new Error("invalid_report");
   let nativeReplayReportEligible = false;
   const rawChecks = Array.isArray(report.checks) ? report.checks : [];
-  const rawNative = rawChecks.filter((check2) => object9(check2) && check2.id === "url.sql-boolean");
+  const rawNative = rawChecks.filter((check2) => object10(check2) && check2.id === "url.sql-boolean");
   const projectedNative = projected.checks.filter((check2) => check2.checkId === "url.sql-boolean");
   const projectedNativeFindings = projectedNative.length === 1 ? projected.findings.filter((finding2) => finding2.checkIndex === projectedNative[0].checkIndex) : [];
-  const rawFindings = rawNative.length === 1 && object9(rawNative[0]) && Array.isArray(rawNative[0].findings) ? rawNative[0].findings : [];
-  if (rawNative.length === 1 && projectedNative.length === 1 && rawFindings.length === 1 && projectedNativeFindings.length === 1 && object9(rawFindings[0]) && rawFindings[0].id === projectedNativeFindings[0].findingId) {
+  const rawFindings = rawNative.length === 1 && object10(rawNative[0]) && Array.isArray(rawNative[0].findings) ? rawNative[0].findings : [];
+  if (rawNative.length === 1 && projectedNative.length === 1 && rawFindings.length === 1 && projectedNativeFindings.length === 1 && object10(rawFindings[0]) && rawFindings[0].id === projectedNativeFindings[0].findingId) {
     try {
       snapshotJsonData(report);
       parseScanReport(report);
@@ -248642,14 +249253,17 @@ init_collection_budget();
 init_snapshot_evidence();
 init_report_path();
 var HELP4 = `Usage:
-  wakeio-security-ci handoff create --report DIR --source DIR --finding ID --check-index N --out NEW_DIR
+  wakeio-security-ci handoff create --report DIR --source DIR --check-index N [--finding ID] --out NEW_DIR
   wakeio-security-ci handoff finish --handoff DIR --report AFTER_DIR --source DIR --out NEW_DIR
 
 Data-only local review packet for built-in-only source reports. Recollects source as data.
+Without --finding, create selects one incomplete AST/framework/code-coverage check for diagnostic review.
 Report, handoff and output directories must be outside the source; output must be new.
 No scan, target execution, model, network request, patch, source writes or verified-fix claim.
 Create: 0 packet produced (original scan gate retained), 2 refused/incomplete.
-Finish: 0 completed comparable checked scope; 1 threshold findings; 2 unverified/incomplete.
+Finish: finding v1 keeps strict comparison; diagnostic v2 checks declared source scope and full after gate.
+Diagnostic progress is a reported check status, never a verified fix; strict finding comparison remains separate.
+Finish: 0 completed checked scope; 1 threshold findings; 2 unverified/incomplete.
 Use the original scan command separately to produce the after report.
 `;
 var SHA2 = /^[a-f0-9]{64}$/;
@@ -248657,6 +249271,8 @@ var digest6 = (bytes) => createHash16("sha256").update(bytes).digest("hex");
 var equal = (left, right) => JSON.stringify(left) === JSON.stringify(right);
 var outside = (root, path2) => path2 !== root && !path2.startsWith(root.endsWith(sep7) ? root : root + sep7);
 var fixedChecks = ["source.inventory", "source.builtin-ast", "source.framework"];
+var diagnosticChecks = ["source.builtin-ast", "source.framework", "source.code-coverage"];
+var incompleteStatuses = ["partial", "error", "skipped"];
 var verification2 = { vulnerabilityConfirmed: false, remediationVerified: false, securityControl: "not_run", normalControl: "not_run" };
 var limitations = [
   "A review packet and candidate disappearance are not vulnerability or fix verification.",
@@ -248666,6 +249282,7 @@ var limitations = [
   "Security and normal controls are not run. Reuse the original scan command separately; no command is inferred.",
   "Scan gate and packet delivery do not prove the final CI process status without its separate receipt."
 ];
+var diagnosticSelection = (selected) => "kind" in selected;
 function fail6(reason) {
   throw new Error(reason);
 }
@@ -248681,7 +249298,7 @@ function parse4(args) {
       fail6("invalid_arguments");
     values.set(key2, value);
   }
-  if (!permitted.every((key2) => values.has(key2)))
+  if (!permitted.filter((key2) => key2 !== "--finding").every((key2) => values.has(key2)))
     fail6("invalid_arguments");
   const index = values.get("--check-index");
   if (index !== void 0 && (!/^(?:0|[1-9][0-9]*)$/.test(index) || !Number.isSafeInteger(Number(index)) || Number(index) >= 1e3))
@@ -248782,6 +249399,14 @@ function selection(input, index, findingId) {
     ...finding2.comparisonKey ? { comparisonKey: finding2.comparisonKey } : {}
   };
 }
+function checkSelection(input, index) {
+  const check2 = input.report.checks[index];
+  if (!check2 || !diagnosticChecks.includes(check2.id) || !incompleteStatuses.includes(check2.status))
+    fail6("invalid_check");
+  if (input.report.checks.filter((other) => other.id === check2.id).length !== 1)
+    fail6("ambiguous_check");
+  return { kind: "diagnostic_check", checkIndex: index, checkId: check2.id };
+}
 async function currentSnapshot(source, input, checkCancelled, selected) {
   const expected = supported(input);
   const budget2 = input.report.scope.collectionBudget;
@@ -248792,8 +249417,13 @@ async function currentSnapshot(source, input, checkCancelled, selected) {
   if (!observed.complete || !sameSourceSnapshot(expected, observed))
     fail6("source_drift_or_unknown");
   if (selected) {
-    const finding2 = input.report.checks[selected.checkIndex].findings.find((item) => item.id === selected.findingId);
     const paths = new Set(snapshot4.files.map((file) => file.path));
+    if (diagnosticSelection(selected)) {
+      if (input.report.checks[selected.checkIndex].analysisGaps?.items.some((item) => item.location && !paths.has(item.location.path)))
+        fail6("invalid_check");
+      return observed;
+    }
+    const finding2 = input.report.checks[selected.checkIndex].findings.find((item) => item.id === selected.findingId);
     const locations = [
       finding2.location,
       ...finding2.staticFlow?.steps.map((step2) => step2.location) ?? [],
@@ -248805,8 +249435,7 @@ async function currentSnapshot(source, input, checkCancelled, selected) {
   return observed;
 }
 function created(input, selected, sourceBinding) {
-  return {
-    version: 1,
+  const common = {
     operation: "create",
     status: "ready",
     exitCode: 0,
@@ -248819,25 +249448,51 @@ function created(input, selected, sourceBinding) {
     verification: { ...verification2 },
     limitations: [...limitations]
   };
+  if (!diagnosticSelection(selected))
+    return { version: 1, ...common, selected };
+  const check2 = input.report.checks[selected.checkIndex];
+  return { version: 2, ...common, selected, diagnostic: {
+    status: check2.status,
+    ...check2.analysisGaps ? { analysisGaps: check2.analysisGaps } : {},
+    ...check2.analysisBudget ? { analysisBudget: check2.analysisBudget } : {},
+    ...check2.codeCoverage ? { codeCoverage: check2.codeCoverage } : {}
+  } };
 }
 function markdown(receipt, input) {
-  const finding2 = input.report.checks[receipt.selected.checkIndex].findings.find((item) => item.id === receipt.selected.findingId);
   const inline = (value) => value.replace(/[\r\n\t]+/g, " ").replace(/[\\`*_[\]{}()<>#+.!|\-]/g, "\\$&");
+  const selectionLines = [];
+  if (receipt.version === 2) {
+    selectionLines.push(`Selected diagnostic check: ${inline(receipt.selected.checkId)}; check index ${receipt.selected.checkIndex}; original status ${receipt.diagnostic.status}.`);
+    const gaps = receipt.diagnostic.analysisGaps;
+    if (gaps) {
+      selectionLines.push(`Analysis gap accounting: ${gaps.accounting}; observed ${gaps.eventsObserved ?? "unknown"}; dropped ${gaps.eventsDropped ?? "unknown"}; truncated ${gaps.truncated}. Events are observations, not unique sites.`);
+      for (const item of gaps.items)
+        selectionLines.push(`- ${inline(item.reason)}; ${item.phase}/${item.extent}; ${item.observations} observations; ${item.nextReview}${item.location ? `; local evidence ${inline(item.location.path)}:${item.location.line}:${item.location.column}` : "; location not recorded"}.`);
+      selectionLines.push("Only retained reported positions are available; dropped locations and exact unsupported coverage cannot be reconstructed.");
+    } else
+      selectionLines.push("Cause: see the original selected check diagnostics; no recorded analysis-gap positions are available.");
+  } else {
+    const finding2 = input.report.checks[receipt.selected.checkIndex].findings.find((item) => item.id === receipt.selected.findingId);
+    selectionLines.push(`Selected candidate: ${receipt.selected.findingId}; check index ${receipt.selected.checkIndex}; rule ${inline(receipt.selected.ruleId)}.`, `Local evidence: ${inline(finding2.location.path)}:${finding2.location.line ?? "unknown"}:${finding2.location.column ?? "unknown"}.`);
+  }
   return [
     "# Local source review handoff",
     "",
     `Operation: ${receipt.operation}; packet status: ${receipt.status}; command exit: ${receipt.exitCode}.`,
     `Original scan gate: ${receipt.originalScanGate.outcome}; exit ${receipt.originalScanGate.exitCode}; threshold ${receipt.originalScanGate.failOn}.`,
-    `Selected candidate: ${receipt.selected.findingId}; check index ${receipt.selected.checkIndex}; rule ${inline(receipt.selected.ruleId)}.`,
-    `Local evidence: ${inline(finding2.location.path)}:${finding2.location.line ?? "unknown"}:${finding2.location.column ?? "unknown"}.`,
+    ...selectionLines,
     `Before collected string snapshot: ${receipt.sourceBinding.digest}; matched the supplied source when create produced the review packet.`,
     ...receipt.after ? [
       `After scan gate: ${receipt.after.scanGate.outcome}; exit ${receipt.after.scanGate.exitCode}.`,
       `After collected string snapshot: ${receipt.after.sourceBinding.digest}; matched the supplied source during this finish invocation.`,
-      `Comparison: ${receipt.comparison.comparable ? "comparable declared scope" : "unverified"}; selected state: ${receipt.selectedState}.`
+      ...receipt.version === 2 ? [
+        `Diagnostic declared source scope: ${receipt.scopeComparison.compatible ? "compatible" : "unverified"}; selected check progress: ${receipt.selectedCheckProgress.state}; after check index ${receipt.selectedCheckProgress.afterCheckIndex}; reported status ${receipt.selectedCheckProgress.afterStatus}.`,
+        `Strict finding comparison: ${receipt.comparison.comparable ? "comparable" : "unverified"}; preserved separately from diagnostic progress and the full after gate.`,
+        "Check completion is a reported analysis status, not a fix, absence of findings or vulnerability verification."
+      ] : [`Comparison: ${receipt.comparison.comparable ? "comparable declared scope" : "unverified"}; selected state: ${receipt.selectedState}.`]
     ] : [],
     "",
-    "Review the local candidate evidence and its analysis gaps with a separately authorized coding tool. Preserve uncertainty.",
+    receipt.version === 1 ? "Review the local candidate evidence and its analysis gaps with a separately authorized coding tool. Preserve uncertainty." : "Review the selected check diagnostics and retained local positions with a separately authorized coding tool. Preserve uncertainty.",
     "After a separately reviewed change, reuse the original CI scan command and options outside this command, then provide the after report to handoff finish.",
     "Security and normal controls: not_run. Vulnerability confirmed: false. Remediation verified: false.",
     "",
@@ -248882,6 +249537,8 @@ async function handoffMain(args) {
     "source_binding_unknown",
     "invalid_finding",
     "ambiguous_finding",
+    "invalid_check",
+    "ambiguous_check",
     "source_drift_or_unknown",
     "invalid_handoff",
     "threshold_policy_changed",
@@ -248902,16 +249559,16 @@ async function handoffMain(args) {
     let receipt;
     const copies = [];
     if (operation === "create") {
-      const selected = selection(input, options.checkIndex, options.finding);
+      const selected = options.finding === void 0 ? checkSelection(input, options.checkIndex) : selection(input, options.checkIndex, options.finding);
       const sourceBinding = await currentSnapshot(source, input, checkCancelled, selected);
       receipt = created(input, selected, sourceBinding);
       copies.push(["report.json", input.reportBytes], ["agent-report.json", input.agentBytes]);
     } else {
       const previous = json2(await boundedBytes(join13(handoffDir, "handoff.json")));
-      if (!previous || typeof previous !== "object" || previous.operation !== "create" || !previous.selected || !Number.isSafeInteger(previous.selected.checkIndex) || typeof previous.selected.findingId !== "string")
+      if (!previous || typeof previous !== "object" || previous.operation !== "create" || !previous.selected || !Number.isSafeInteger(previous.selected.checkIndex) || previous.selected.checkIndex < 0 || !(previous.version === 1 && typeof previous.selected.findingId === "string" || previous.version === 2 && previous.selected.kind === "diagnostic_check"))
         fail6("invalid_handoff");
       const sourceBinding = supported(input);
-      const selected = selection(input, previous.selected.checkIndex, previous.selected.findingId);
+      const selected = previous.version === 2 ? checkSelection(input, previous.selected.checkIndex) : selection(input, previous.selected.checkIndex, previous.selected.findingId);
       const canonical = created(input, selected, sourceBinding);
       if (!equal(previous, canonical))
         fail6("invalid_handoff");
@@ -248920,18 +249577,46 @@ async function handoffMain(args) {
         fail6("threshold_policy_changed");
       const afterBinding = await currentSnapshot(source, after, checkCancelled);
       const comparison = compareReports(input.report, after.report);
-      const code = Math.max(comparisonExitCode(comparison, input.agent.scanGate.failOn), evaluateGate(after.report, input.agent.scanGate.failOn).exitCode);
-      const entry = comparison.entries.find((item) => item.checkId === selected.checkId && (selected.comparisonKey ? item.finding.comparisonKey === selected.comparisonKey : item.finding.id === selected.findingId));
-      receipt = {
-        ...canonical,
-        operation: "finish",
-        status: "rechecked",
-        exitCode: code,
-        reason: code === 2 ? "comparison_unverified" : code === 1 ? "threshold_findings" : "checked_scope_rechecked",
-        after: { reportSha256: after.reportSha256, agentReportSha256: after.agentReportSha256, sourceBinding: afterBinding, scanGate: after.agent.scanGate },
-        comparison,
-        selectedState: entry?.state ?? "unverified"
-      };
+      const afterGate = evaluateGate(after.report, input.agent.scanGate.failOn).exitCode;
+      const afterFields = { reportSha256: after.reportSha256, agentReportSha256: after.agentReportSha256, sourceBinding: afterBinding, scanGate: after.agent.scanGate };
+      if (canonical.version === 2) {
+        const scopeComparison = compareDeclaredSourceScope(input.report, after.report);
+        const afterCheckIndex = after.report.checks.findIndex((check2) => check2.id === canonical.selected.checkId);
+        const afterCheck = after.report.checks[afterCheckIndex];
+        if (!afterCheck || after.report.checks.filter((check2) => check2.id === canonical.selected.checkId).length !== 1)
+          fail6("ambiguous_check");
+        const progressVerified = scopeComparison.compatible && afterCheck.status !== "not_applicable";
+        const code = progressVerified ? afterGate : 2;
+        receipt = {
+          ...canonical,
+          operation: "finish",
+          status: "rechecked",
+          exitCode: code,
+          reason: code === 2 ? "comparison_unverified" : code === 1 ? "threshold_findings" : "checked_scope_rechecked",
+          after: afterFields,
+          comparison,
+          scopeComparison,
+          selectedCheckProgress: {
+            beforeStatus: canonical.diagnostic.status,
+            afterCheckIndex,
+            afterStatus: afterCheck.status,
+            state: !progressVerified ? "unverified" : incompleteStatuses.includes(afterCheck.status) ? "still_incomplete" : "reported_completed"
+          }
+        };
+      } else {
+        const code = Math.max(comparisonExitCode(comparison, input.agent.scanGate.failOn), afterGate);
+        const entry = comparison.entries.find((item) => item.checkId === canonical.selected.checkId && (canonical.selected.comparisonKey ? item.finding.comparisonKey === canonical.selected.comparisonKey : item.finding.id === canonical.selected.findingId));
+        receipt = {
+          ...canonical,
+          operation: "finish",
+          status: "rechecked",
+          exitCode: code,
+          reason: code === 2 ? "comparison_unverified" : code === 1 ? "threshold_findings" : "checked_scope_rechecked",
+          after: afterFields,
+          comparison,
+          selectedState: entry?.state ?? "unverified"
+        };
+      }
       copies.push(["after-report.json", after.reportBytes], ["after-agent-report.json", after.agentBytes]);
     }
     for (const [name, bytes] of copies) {
@@ -249001,7 +249686,7 @@ var USAGE2 = `Usage:
   wakeio-security-ci api-write-state --candidate fixed|ineffective|all-deny|normal-regression|status-only|wrong-object --active-consent --out NEW_DIR
     Owned synthetic PATCH resources only; external targets and automatic write retries are unavailable.
   wakeio-security-ci advise --report DIR --agent codex --auth cli-login|api-key --allow-report-upload --out NEW_DIR
-  wakeio-security-ci handoff create --report DIR --source DIR --finding ID --check-index N --out NEW_DIR
+  wakeio-security-ci handoff create --report DIR --source DIR --check-index N [--finding ID] --out NEW_DIR
   wakeio-security-ci handoff finish --handoff DIR --report AFTER_DIR --source DIR --out NEW_DIR
 
 Options:

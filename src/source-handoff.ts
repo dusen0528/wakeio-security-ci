@@ -2,8 +2,8 @@ import { constants } from 'node:fs';
 import { createHash, randomUUID } from 'node:crypto';
 import { link, lstat, mkdir, open, realpath, unlink, writeFile } from 'node:fs/promises';
 import { dirname, join, relative, resolve, sep } from 'node:path';
-import type { AgentReport, FailOn, ScanReport, SourceSnapshotEvidence } from './contracts.js';
-import { compareReports, comparisonExitCode, parseScanReport, type ComparisonState, type ReportComparison } from './compare.js';
+import type { AgentReport, CheckResult, FailOn, ScanReport, SourceSnapshotEvidence } from './contracts.js';
+import { compareDeclaredSourceScope, compareReports, comparisonExitCode, parseScanReport, type ComparisonState, type DeclaredSourceScopeComparison, type ReportComparison } from './compare.js';
 import { evaluateGate, REPORT_TOOL_VERSION, RULESET_VERSION, toAgentReport } from './report.js';
 import { collectSource } from './source/collector.js';
 import { sameAnalysisBudget, sanitiseAnalysisBudget } from './source/analysis-budget.js';
@@ -12,14 +12,17 @@ import { sameSourceSnapshot, sanitiseSourceSnapshotEvidence, sourceSnapshotEvide
 import { safeRelativePath } from './report-path.js';
 
 const HELP = `Usage:
-  wakeio-security-ci handoff create --report DIR --source DIR --finding ID --check-index N --out NEW_DIR
+  wakeio-security-ci handoff create --report DIR --source DIR --check-index N [--finding ID] --out NEW_DIR
   wakeio-security-ci handoff finish --handoff DIR --report AFTER_DIR --source DIR --out NEW_DIR
 
 Data-only local review packet for built-in-only source reports. Recollects source as data.
+Without --finding, create selects one incomplete AST/framework/code-coverage check for diagnostic review.
 Report, handoff and output directories must be outside the source; output must be new.
 No scan, target execution, model, network request, patch, source writes or verified-fix claim.
 Create: 0 packet produced (original scan gate retained), 2 refused/incomplete.
-Finish: 0 completed comparable checked scope; 1 threshold findings; 2 unverified/incomplete.
+Finish: finding v1 keeps strict comparison; diagnostic v2 checks declared source scope and full after gate.
+Diagnostic progress is a reported check status, never a verified fix; strict finding comparison remains separate.
+Finish: 0 completed checked scope; 1 threshold findings; 2 unverified/incomplete.
 Use the original scan command separately to produce the after report.
 `;
 const SHA = /^[a-f0-9]{64}$/;
@@ -27,6 +30,8 @@ const digest = (bytes: Buffer | string) => createHash('sha256').update(bytes).di
 const equal = (left: unknown, right: unknown) => JSON.stringify(left) === JSON.stringify(right);
 const outside = (root: string, path: string) => path !== root && !path.startsWith(root.endsWith(sep) ? root : root + sep);
 const fixedChecks = ['source.inventory', 'source.builtin-ast', 'source.framework'];
+const diagnosticChecks = ['source.builtin-ast', 'source.framework', 'source.code-coverage'];
+const incompleteStatuses = ['partial', 'error', 'skipped'];
 const verification = { vulnerabilityConfirmed: false, remediationVerified: false, securityControl: 'not_run', normalControl: 'not_run' } as const;
 const limitations = [
   'A review packet and candidate disappearance are not vulnerability or fix verification.',
@@ -56,6 +61,22 @@ export interface SourceHandoffReceipt {
   comparison?: ReportComparison;
   selectedState?: ComparisonState;
 }
+type DiagnosticSelection = { kind: 'diagnostic_check'; checkIndex: number; checkId: string };
+interface DiagnosticHandoffReceipt extends Omit<SourceHandoffReceipt, 'version' | 'selected' | 'selectedState'> {
+  version: 2;
+  selected: DiagnosticSelection;
+  diagnostic: Pick<CheckResult, 'status' | 'analysisGaps' | 'analysisBudget' | 'codeCoverage'>;
+  scopeComparison?: DeclaredSourceScopeComparison;
+  selectedCheckProgress?: {
+    beforeStatus: CheckResult['status'];
+    afterCheckIndex: number;
+    afterStatus: CheckResult['status'];
+    state: 'reported_completed' | 'still_incomplete' | 'unverified';
+  };
+}
+type HandoffReceipt = SourceHandoffReceipt | DiagnosticHandoffReceipt;
+type Selection = HandoffReceipt['selected'];
+const diagnosticSelection = (selected: Selection): selected is DiagnosticSelection => 'kind' in selected;
 
 function fail(reason: string): never { throw new Error(reason); }
 function parse(args: readonly string[]): Options {
@@ -68,12 +89,12 @@ function parse(args: readonly string[]): Options {
     if (!permitted.includes(key) || values.has(key) || !value || value.startsWith('--')) fail('invalid_arguments');
     values.set(key, value);
   }
-  if (!permitted.every(key => values.has(key))) fail('invalid_arguments');
+  if (!permitted.filter(key => key !== '--finding').every(key => values.has(key))) fail('invalid_arguments');
   const index = values.get('--check-index');
   if (index !== undefined && (!/^(?:0|[1-9][0-9]*)$/.test(index) || !Number.isSafeInteger(Number(index)) || Number(index) >= 1000)) fail('invalid_arguments');
   if (values.has('--finding') && !SHA.test(values.get('--finding')!)) fail('invalid_arguments');
   return { operation, report: resolve(values.get('--report')!), source: resolve(values.get('--source')!), out: resolve(values.get('--out')!),
-    ...(operation === 'create' ? { finding: values.get('--finding')!, checkIndex: Number(index) } : { handoff: resolve(values.get('--handoff')!) }) };
+    ...(operation === 'create' ? { finding: values.get('--finding'), checkIndex: Number(index) } : { handoff: resolve(values.get('--handoff')!) }) };
 }
 
 /** Metadata checks reject redirected directories; macOS system /tmp and /var aliases remain usable. */
@@ -155,9 +176,15 @@ function selection(input: Pair, index: number, findingId: string): SourceHandoff
   return { checkIndex: index, checkId: check.id, findingId, ruleId: finding.ruleId,
     ...(finding.comparisonKey ? { comparisonKey: finding.comparisonKey } : {}) };
 }
+function checkSelection(input: Pair, index: number): DiagnosticSelection {
+  const check = input.report.checks[index];
+  if (!check || !diagnosticChecks.includes(check.id) || !incompleteStatuses.includes(check.status)) fail('invalid_check');
+  if (input.report.checks.filter(other => other.id === check.id).length !== 1) fail('ambiguous_check');
+  return { kind: 'diagnostic_check', checkIndex: index, checkId: check.id };
+}
 
 async function currentSnapshot(source: string, input: Pair, checkCancelled: () => void,
-  selected?: SourceHandoffReceipt['selected']): Promise<SourceSnapshotEvidence> {
+  selected?: Selection): Promise<SourceSnapshotEvidence> {
   const expected = supported(input);
   const budget = input.report.scope!.collectionBudget!;
   checkCancelled();
@@ -166,33 +193,60 @@ async function currentSnapshot(source: string, input: Pair, checkCancelled: () =
   const observed = sourceSnapshotEvidence(snapshot);
   if (!observed.complete || !sameSourceSnapshot(expected, observed)) fail('source_drift_or_unknown');
   if (selected) {
-    const finding = input.report.checks[selected.checkIndex].findings.find(item => item.id === selected.findingId)!;
     const paths = new Set(snapshot.files.map(file => file.path));
+    if (diagnosticSelection(selected)) {
+      if (input.report.checks[selected.checkIndex].analysisGaps?.items.some(item => item.location && !paths.has(item.location.path))) fail('invalid_check');
+      return observed;
+    }
+    const finding = input.report.checks[selected.checkIndex].findings.find(item => item.id === selected.findingId)!;
     const locations = [finding.location, ...(finding.staticFlow?.steps.map(step => step.location) ?? []),
       ...(finding.staticContext?.items.flatMap(item => item.target ? [item.location, item.target] : [item.location]) ?? [])];
     if (locations.some(location => !location.path || !paths.has(location.path))) fail('invalid_finding');
   }
   return observed;
 }
-function created(input: Pair, selected: SourceHandoffReceipt['selected'], sourceBinding: SourceSnapshotEvidence): SourceHandoffReceipt {
-  return { version: 1, operation: 'create', status: 'ready', exitCode: 0, reason: 'review_packet_created',
+function created(input: Pair, selected: Selection, sourceBinding: SourceSnapshotEvidence): HandoffReceipt {
+  const common = { operation: 'create' as const, status: 'ready' as const, exitCode: 0 as const, reason: 'review_packet_created' as const,
     input: { reportSha256: input.reportSha256, agentReportSha256: input.agentReportSha256 }, selected,
     scope: input.report.scope!, sourceBinding, originalScanGate: input.agent.scanGate, verification: { ...verification }, limitations: [...limitations] };
+  if (!diagnosticSelection(selected)) return { version: 1, ...common, selected };
+  const check = input.report.checks[selected.checkIndex];
+  return { version: 2, ...common, selected, diagnostic: { status: check.status,
+    ...(check.analysisGaps ? { analysisGaps: check.analysisGaps } : {}),
+    ...(check.analysisBudget ? { analysisBudget: check.analysisBudget } : {}),
+    ...(check.codeCoverage ? { codeCoverage: check.codeCoverage } : {}) } };
 }
-function markdown(receipt: SourceHandoffReceipt, input: Pair): string {
-  const finding = input.report.checks[receipt.selected.checkIndex].findings.find(item => item.id === receipt.selected.findingId)!;
+function markdown(receipt: HandoffReceipt, input: Pair): string {
   const inline = (value: string) => value.replace(/[\r\n\t]+/g, ' ').replace(/[\\`*_[\]{}()<>#+.!|\-]/g, '\\$&');
+  const selectionLines: string[] = [];
+  if (receipt.version === 2) {
+    selectionLines.push(`Selected diagnostic check: ${inline(receipt.selected.checkId)}; check index ${receipt.selected.checkIndex}; original status ${receipt.diagnostic.status}.`);
+    const gaps = receipt.diagnostic.analysisGaps;
+    if (gaps) {
+      selectionLines.push(`Analysis gap accounting: ${gaps.accounting}; observed ${gaps.eventsObserved ?? 'unknown'}; dropped ${gaps.eventsDropped ?? 'unknown'}; truncated ${gaps.truncated}. Events are observations, not unique sites.`);
+      for (const item of gaps.items) selectionLines.push(`- ${inline(item.reason)}; ${item.phase}/${item.extent}; ${item.observations} observations; ${item.nextReview}${item.location ? `; local evidence ${inline(item.location.path)}:${item.location.line}:${item.location.column}` : '; location not recorded'}.`);
+      selectionLines.push('Only retained reported positions are available; dropped locations and exact unsupported coverage cannot be reconstructed.');
+    } else selectionLines.push('Cause: see the original selected check diagnostics; no recorded analysis-gap positions are available.');
+  } else {
+    const finding = input.report.checks[receipt.selected.checkIndex].findings.find(item => item.id === receipt.selected.findingId)!;
+    selectionLines.push(`Selected candidate: ${receipt.selected.findingId}; check index ${receipt.selected.checkIndex}; rule ${inline(receipt.selected.ruleId)}.`,
+      `Local evidence: ${inline(finding.location.path!)}:${finding.location.line ?? 'unknown'}:${finding.location.column ?? 'unknown'}.`);
+  }
   // Navigation is escaped plain text, never rendered links/HTML or executable commands.
   return [ '# Local source review handoff', '',
     `Operation: ${receipt.operation}; packet status: ${receipt.status}; command exit: ${receipt.exitCode}.`,
     `Original scan gate: ${receipt.originalScanGate.outcome}; exit ${receipt.originalScanGate.exitCode}; threshold ${receipt.originalScanGate.failOn}.`,
-    `Selected candidate: ${receipt.selected.findingId}; check index ${receipt.selected.checkIndex}; rule ${inline(receipt.selected.ruleId)}.`,
-    `Local evidence: ${inline(finding.location.path!)}:${finding.location.line ?? 'unknown'}:${finding.location.column ?? 'unknown'}.`,
+    ...selectionLines,
     `Before collected string snapshot: ${receipt.sourceBinding.digest}; matched the supplied source when create produced the review packet.`,
     ...(receipt.after ? [`After scan gate: ${receipt.after.scanGate.outcome}; exit ${receipt.after.scanGate.exitCode}.`,
       `After collected string snapshot: ${receipt.after.sourceBinding.digest}; matched the supplied source during this finish invocation.`,
-      `Comparison: ${receipt.comparison!.comparable ? 'comparable declared scope' : 'unverified'}; selected state: ${receipt.selectedState}.`] : []),
-    '', 'Review the local candidate evidence and its analysis gaps with a separately authorized coding tool. Preserve uncertainty.',
+      ...(receipt.version === 2 ? [
+        `Diagnostic declared source scope: ${receipt.scopeComparison!.compatible ? 'compatible' : 'unverified'}; selected check progress: ${receipt.selectedCheckProgress!.state}; after check index ${receipt.selectedCheckProgress!.afterCheckIndex}; reported status ${receipt.selectedCheckProgress!.afterStatus}.`,
+        `Strict finding comparison: ${receipt.comparison!.comparable ? 'comparable' : 'unverified'}; preserved separately from diagnostic progress and the full after gate.`,
+        'Check completion is a reported analysis status, not a fix, absence of findings or vulnerability verification.',
+      ] : [`Comparison: ${receipt.comparison!.comparable ? 'comparable declared scope' : 'unverified'}; selected state: ${receipt.selectedState}.`])] : []),
+    '', receipt.version === 1 ? 'Review the local candidate evidence and its analysis gaps with a separately authorized coding tool. Preserve uncertainty.'
+      : 'Review the selected check diagnostics and retained local positions with a separately authorized coding tool. Preserve uncertainty.',
     'After a separately reviewed change, reuse the original CI scan command and options outside this command, then provide the after report to handoff finish.',
     'Security and normal controls: not_run. Vulnerability confirmed: false. Remediation verified: false.', '',
     ...receipt.limitations.map(item => `- ${item}`), '', ].join('\n');
@@ -218,7 +272,7 @@ export async function handoffMain(args: readonly string[]): Promise<number> {
   const checkCancelled = () => { if (cancelled) fail('cancelled'); };
   process.on('SIGINT', cancel); process.on('SIGTERM', cancel);
   const allowed = new Set(['invalid_arguments', 'unsafe_path', 'invalid_artifact', 'invalid_report_pair', 'unsupported_scope', 'source_binding_unknown',
-    'invalid_finding', 'ambiguous_finding', 'source_drift_or_unknown', 'invalid_handoff', 'threshold_policy_changed', 'cancelled']);
+    'invalid_finding', 'ambiguous_finding', 'invalid_check', 'ambiguous_check', 'source_drift_or_unknown', 'invalid_handoff', 'threshold_policy_changed', 'cancelled']);
   try {
     const options = parse(args); operation = options.operation;
     const source = await directory(options.source), reportDir = await directory(options.report), parent = await directory(dirname(options.out));
@@ -228,32 +282,50 @@ export async function handoffMain(args: readonly string[]): Promise<number> {
     checkCancelled();
     await mkdir(output, { mode: 0o700 }); out = output;
     const input = await pair(handoffDir ?? reportDir);
-    let receipt: SourceHandoffReceipt;
+    let receipt: HandoffReceipt;
     const copies: Array<[string, Buffer]> = [];
     if (operation === 'create') {
-      const selected = selection(input, options.checkIndex!, options.finding!);
+      const selected = options.finding === undefined ? checkSelection(input, options.checkIndex!) : selection(input, options.checkIndex!, options.finding);
       const sourceBinding = await currentSnapshot(source, input, checkCancelled, selected);
       receipt = created(input, selected, sourceBinding);
       copies.push(['report.json', input.reportBytes], ['agent-report.json', input.agentBytes]);
     } else {
-      const previous = json(await boundedBytes(join(handoffDir!, 'handoff.json'))) as SourceHandoffReceipt;
+      const previous = json(await boundedBytes(join(handoffDir!, 'handoff.json'))) as HandoffReceipt;
       if (!previous || typeof previous !== 'object' || previous.operation !== 'create' || !previous.selected
-        || !Number.isSafeInteger(previous.selected.checkIndex) || typeof previous.selected.findingId !== 'string') fail('invalid_handoff');
+        || !Number.isSafeInteger(previous.selected.checkIndex) || previous.selected.checkIndex < 0
+        || !(previous.version === 1 && typeof previous.selected.findingId === 'string'
+          || previous.version === 2 && previous.selected.kind === 'diagnostic_check')) fail('invalid_handoff');
       const sourceBinding = supported(input);
-      const selected = selection(input, previous.selected.checkIndex, previous.selected.findingId);
+      const selected = previous.version === 2 ? checkSelection(input, previous.selected.checkIndex)
+        : selection(input, previous.selected.checkIndex, previous.selected.findingId);
       const canonical = created(input, selected, sourceBinding);
       if (!equal(previous, canonical)) fail('invalid_handoff');
       const after = await pair(reportDir);
       if (after.agent.scanGate.failOn !== input.agent.scanGate.failOn) fail('threshold_policy_changed');
       const afterBinding = await currentSnapshot(source, after, checkCancelled);
       const comparison = compareReports(input.report, after.report);
-      const code = Math.max(comparisonExitCode(comparison, input.agent.scanGate.failOn as FailOn), evaluateGate(after.report, input.agent.scanGate.failOn as FailOn).exitCode) as 0 | 1 | 2;
-      const entry = comparison.entries.find(item => item.checkId === selected.checkId && (selected.comparisonKey
-        ? item.finding.comparisonKey === selected.comparisonKey : item.finding.id === selected.findingId));
-      receipt = { ...canonical, operation: 'finish', status: 'rechecked', exitCode: code,
-        reason: code === 2 ? 'comparison_unverified' : code === 1 ? 'threshold_findings' : 'checked_scope_rechecked',
-        after: { reportSha256: after.reportSha256, agentReportSha256: after.agentReportSha256, sourceBinding: afterBinding, scanGate: after.agent.scanGate },
-        comparison, selectedState: entry?.state ?? 'unverified' };
+      const afterGate = evaluateGate(after.report, input.agent.scanGate.failOn as FailOn).exitCode;
+      const afterFields = { reportSha256: after.reportSha256, agentReportSha256: after.agentReportSha256, sourceBinding: afterBinding, scanGate: after.agent.scanGate };
+      if (canonical.version === 2) {
+        const scopeComparison = compareDeclaredSourceScope(input.report, after.report);
+        const afterCheckIndex = after.report.checks.findIndex(check => check.id === canonical.selected.checkId);
+        const afterCheck = after.report.checks[afterCheckIndex];
+        if (!afterCheck || after.report.checks.filter(check => check.id === canonical.selected.checkId).length !== 1) fail('ambiguous_check');
+        const progressVerified = scopeComparison.compatible && afterCheck.status !== 'not_applicable';
+        const code = progressVerified ? afterGate : 2;
+        receipt = { ...canonical, operation: 'finish', status: 'rechecked', exitCode: code,
+          reason: code === 2 ? 'comparison_unverified' : code === 1 ? 'threshold_findings' : 'checked_scope_rechecked',
+          after: afterFields, comparison, scopeComparison,
+          selectedCheckProgress: { beforeStatus: canonical.diagnostic.status, afterCheckIndex, afterStatus: afterCheck.status,
+            state: !progressVerified ? 'unverified' : incompleteStatuses.includes(afterCheck.status) ? 'still_incomplete' : 'reported_completed' } };
+      } else {
+        const code = Math.max(comparisonExitCode(comparison, input.agent.scanGate.failOn as FailOn), afterGate) as 0 | 1 | 2;
+        const entry = comparison.entries.find(item => item.checkId === canonical.selected.checkId && (canonical.selected.comparisonKey
+          ? item.finding.comparisonKey === canonical.selected.comparisonKey : item.finding.id === canonical.selected.findingId));
+        receipt = { ...canonical, operation: 'finish', status: 'rechecked', exitCode: code,
+          reason: code === 2 ? 'comparison_unverified' : code === 1 ? 'threshold_findings' : 'checked_scope_rechecked',
+          after: afterFields, comparison, selectedState: entry?.state ?? 'unverified' };
+      }
       copies.push(['after-report.json', after.reportBytes], ['after-agent-report.json', after.agentBytes]);
     }
     for (const [name, bytes] of copies) { checkCancelled(); await writeFile(join(out, name), bytes, { mode: 0o600, flag: 'wx' }); }
