@@ -48,9 +48,12 @@ try {
   await stage('build', 'npm', ['run', 'build'], 120000);
   if (!files.length) throw Error('no_test_files');
   const eventsPath = join(directory, 'tests.ndjson');
+  // Same-head CI suites took 142.62s and 168.70s; the former 180s aggregate
+  // watchdog expired on a third runner. This bounded 4.5-minute suite allowance
+  // leaves per-test/engine/request, cancellation, cleanup and zero-skip contracts unchanged.
   await stage('tests', process.execPath, ['--test', '--test-reporter=spec', '--test-reporter-destination=stdout',
     '--test-reporter=' + join(root, 'scripts/ci-test-reporter.mjs'), '--test-reporter-destination=' + eventsPath, ...files],
-    180000, { ...engineEnvironment, WAKEIO_SCHEMATHESIS_PYTHON: python,
+    270000, { ...engineEnvironment, WAKEIO_SCHEMATHESIS_PYTHON: python,
       WAKEIO_REQUIRE_SCHEMATHESIS: '1', WAKEIO_REQUIRE_RUNNER_ENGINES: '1' });
   const bytes = await readFile(eventsPath);
   await chmod(eventsPath, 0o600);

@@ -308,7 +308,12 @@ function observeFile(astFile: AstFile, flowUses: ReadonlyMap<ts.Node, InputFlowU
         observations.push(dynamicCodeObservation(astFile, node, use)!);
       } else if (use?.htmlResponse === "express" && flowConfidence(use, 0)) {
         const json = ts.isPropertyAccessExpression(node.expression) && node.expression.name.text === "json";
-        pushObservation(observations, file, sourceFile, node, "ast:html-input-sink",
+        const qualified = use.htmlResponseAuthority === 'registered_express' && !use.staticContext;
+        if (!qualified) pushObservation(observations, file, sourceFile, node, 'ast:response-input-sink',
+          'Input-related value reaches a response-shaped call; dispatch and MIME unresolved',
+          'Input-related data reaches a send/json-shaped call. Receiver binding, payload type and dispatch, MIME, and runtime request origin are not established by this analysis. Parameter names alone do not prove Express or HTML rendering.',
+          'high', 'First verify the receiver binding and caller origin, payload type and dispatch, and response headers. If the actual response renders HTML, contextually encode untrusted text; if it returns JSON data, review serialization and its Content-Type.', 'low');
+        else pushObservation(observations, file, sourceFile, node, "ast:html-input-sink",
           json ? "Request input reaches JSON with HTML or unknown MIME; set application/json" : "Request input reaches res.send; encode HTML or set a non-HTML type",
           "Input reaches a response-shaped body whose MIME can render HTML. JSON serialization does not reset an existing Content-Type. Confirm the binding, headers and encoding before assessing exploitability.",
           "high", "For JSON data, explicitly set application/json before res.json; for HTML, contextually encode untrusted text. Review custom header changes.", use.htmlResponseMime === "unknown" ? "low" : flowConfidence(use, 0));
@@ -495,7 +500,11 @@ export function runBuiltinAst(snapshot: SourceSnapshot, hasOtherSecurityCheck = 
       }
     }
     const staticContext = mergeStaticContexts(prior.staticContext, use.staticContext);
-    const merged: InputFlowUse = { ...prior, staticContext, htmlResponse: prior.htmlResponse ?? use.htmlResponse, htmlResponseMime: prior.htmlResponseMime === "unknown" || use.htmlResponseMime === "unknown" ? "unknown" : prior.htmlResponseMime ?? use.htmlResponseMime, argumentFlows: [...argumentsByIndex.values()].sort((a, b) => a.index - b.index), localForkCall: prior.localForkCall && use.localForkCall ? {complete:prior.localForkCall.complete && use.localForkCall.complete} : undefined, localProcessCall: prior.localProcessCall && use.localProcessCall ? {complete:prior.localProcessCall.complete && use.localProcessCall.complete} : undefined, forkRole: prior.forkRole?.identity === 'unresolved' || use.forkRole?.identity === 'unresolved' ? {identity:'unresolved' as const} : prior.forkRole ?? use.forkRole, processRole: mergeProcessRoles(prior.processRole, use.processRole), sqlRole:mergeSqlRoles(prior.sqlRole,use.sqlRole), nosqlRole:mergeNoSqlRoles(prior.nosqlRole,use.nosqlRole), httpRole: mergeHttpRoles(prior.httpRole, use.httpRole) };
+    // A name-only or conditional context cannot be promoted by a second,
+    // registered invocation at the same source site.
+    const responseAuthorities = [prior, use].filter(value => value.htmlResponse === 'express')
+      .map(value => value.htmlResponseAuthority ?? 'unqualified_response');
+    const merged: InputFlowUse = { ...prior, staticContext, htmlResponse: prior.htmlResponse ?? use.htmlResponse, htmlResponseAuthority: responseAuthorities.length ? staticContext || responseAuthorities.includes('unqualified_response') ? 'unqualified_response' : 'registered_express' : undefined, htmlResponseMime: prior.htmlResponseMime === "unknown" || use.htmlResponseMime === "unknown" ? "unknown" : prior.htmlResponseMime ?? use.htmlResponseMime, argumentFlows: [...argumentsByIndex.values()].sort((a, b) => a.index - b.index), localForkCall: prior.localForkCall && use.localForkCall ? {complete:prior.localForkCall.complete && use.localForkCall.complete} : undefined, localProcessCall: prior.localProcessCall && use.localProcessCall ? {complete:prior.localProcessCall.complete && use.localProcessCall.complete} : undefined, forkRole: prior.forkRole?.identity === 'unresolved' || use.forkRole?.identity === 'unresolved' ? {identity:'unresolved' as const} : prior.forkRole ?? use.forkRole, processRole: mergeProcessRoles(prior.processRole, use.processRole), sqlRole:mergeSqlRoles(prior.sqlRole,use.sqlRole), nosqlRole:mergeNoSqlRoles(prior.nosqlRole,use.nosqlRole), httpRole: mergeHttpRoles(prior.httpRole, use.httpRole) };
     const filesystemRoles = [prior.filesystemProcess, use.filesystemProcess].filter((role): role is NonNullable<InputFlowUse['filesystemProcess']> => !!role);
     merged.browserLocationRole = mergeBrowserLocationRoles(prior.browserLocationRole, use.browserLocationRole);
     const filesystemRank = { argv_shell_input: 4, argv_shell_unknown: 3, direct_argv_interpreter_unknown: 2, argv_only_shell_disabled: 0 };

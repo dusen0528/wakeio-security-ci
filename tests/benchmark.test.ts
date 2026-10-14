@@ -41,7 +41,7 @@ test("benchmark corpus is balanced and every expected finding has an inspectable
   };
   assert.match(corpus.corpusVersion, /^\d{4}-\d{2}-\d{2}\./);
   assert.ok(corpus.unsupportedScope.some((entry) => /Python/i.test(entry)));
-  assert.equal(corpus.corpusVersion, '2026-10-14.synthetic-js-ts.v4');
+  assert.equal(corpus.corpusVersion, '2026-10-14.synthetic-js-ts.v5');
   assert.equal(corpus.cases.length, 56);
   assert.equal(corpus.cases.filter((entry) => entry.classification === "vulnerable").length, corpus.cases.filter((entry) => entry.classification === "fixed").length);
   assert.ok(corpus.cases.every((entry) => entry.whyVulnerable.length > 0 && entry.whyFixed.length > 0 && entry.fixture.startsWith("fixtures/")));
@@ -67,6 +67,7 @@ test("benchmark corpus is balanced and every expected finding has an inspectable
   assert.deepEqual([...new Set(expected.map((finding) => finding.ruleId))].sort(), [
     "ast:html-input-sink",
     "ast:open-redirect",
+    "ast:response-input-sink",
     "ast:server-request",
     "ast:shell-input-sink",
     "ast:sql-input-sink",
@@ -120,7 +121,7 @@ test("benchmark measures the public engine, writes JSON and Markdown, and keeps 
     assert.equal(report.summary.knownUnsupportedExpectedFindings, report.summary.knownMisses + report.summary.knownMissesResolved);
     assert.equal(report.knownUnsupportedScope.length, report.summary.knownUnsupportedExpectedFindings);
     assert.ok(report.unsupportedScope.some((entry) => /Python/i.test(entry)));
-    assert.equal(report.summary.coveredRuleIds.length, 5);
+    assert.equal(report.summary.coveredRuleIds.length, 6);
     const markdown = await readFile(join(outDir, "benchmark.md"), "utf8");
     assert.match(markdown, /Synthetic scoped metrics only/);
     assert.match(markdown, /All-corpus expected recall/);

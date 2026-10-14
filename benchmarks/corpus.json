@@ -1,5 +1,5 @@
 {
-  "corpusVersion": "2026-10-14.synthetic-js-ts.v4",
+  "corpusVersion": "2026-10-14.synthetic-js-ts.v5",
   "name": "Wakeio built-in source security regression corpus",
   "description": "Small, inspectable JavaScript and TypeScript fixtures for the public runSource API. Every input is synthetic and contains no real credential or customer data.",
   "scope": "The measured signal is the built-in AST candidate detector with tools: []. It is a scoped regression benchmark, not a production accuracy estimate.",
@@ -426,7 +426,7 @@
       "whyFixed": "The request value is returned as JSON rather than parsed as an HTML response.",
       "expectedFindings": [
         {
-          "ruleId": "ast:html-input-sink",
+          "ruleId": "ast:response-input-sink",
           "path": "app.ts",
           "line": 2,
           "support": "supported"
@@ -453,7 +453,7 @@
       "whyFixed": "Only fixed markup is sent as HTML.",
       "expectedFindings": [
         {
-          "ruleId": "ast:html-input-sink",
+          "ruleId": "ast:response-input-sink",
           "path": "app.ts",
           "line": 3,
           "support": "supported"
@@ -480,7 +480,7 @@
       "whyFixed": "The local method named send only counts text length and is not a response or HTML sink.",
       "expectedFindings": [
         {
-          "ruleId": "ast:html-input-sink",
+          "ruleId": "ast:response-input-sink",
           "path": "app.ts",
           "line": 2,
           "support": "supported"
@@ -670,7 +670,7 @@
       "whyFixed": "The response status chain sends JSON rather than parsing request text as HTML.",
       "expectedFindings": [
         {
-          "ruleId": "ast:html-input-sink",
+          "ruleId": "ast:response-input-sink",
           "path": "app.ts",
           "line": 2,
           "support": "supported"
