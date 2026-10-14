@@ -6,7 +6,7 @@ import { mkdir, readFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { startFixture } from './fixture.mjs';
-import { prepare, runArm, save, sha } from './run.mjs';
+import { prepare, recordArm, save, sha } from './run.mjs';
 import { projectArm } from './score.mjs';
 
 const directory = dirname(fileURLToPath(import.meta.url)), root = resolve(directory, '../../../..');
@@ -45,8 +45,8 @@ try{
  await save(join(out,'precommit-attestation.json'),{declaration,signature,publicKey:publicKey.export({type:'spki',format:'pem'})});
  for(let i=0;i<5;i++)await save(join(out,`manifest-${i+1}.json`),manifests[i]);
  for(const arm of ['A','B'])for(let i=0;i<5;i++){
-  const run=await runArm(arm,fixture,prepared,join(out,`${arm}-${i+1}`),criteria.sharedRequestCap);
-  results[arm].push(run);await save(join(out,`${arm}-${i+1}.json`),run);
+  const run=await recordArm(arm,fixture,prepared,join(out,`${arm}-${i+1}`),criteria.sharedRequestCap);
+  results[arm].push(run);
   console.log(JSON.stringify({arm,repeat:i+1,status:run.status,exitCode:run.exitCode,requests:run.actualRequests,rounds:run.rounds.length}));
  }
  for(let i=0;i<5;i++){

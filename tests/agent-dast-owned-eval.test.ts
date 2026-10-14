@@ -43,3 +43,25 @@ test('owned runner projection preserves admitted requests, source observations a
     await assert.rejects(projectArm({ ...run, rounds: [...run.rounds, ...run.rounds] }), /multi_round_cli_support_required/);
   } finally { await fixture.close(); await rm(out, { recursive: true, force: true }); }
 });
+
+
+test('owned evaluation preserves provider setup failures as incomplete arms', async () => {
+  const { mkdtemp, readFile, rm } = await import('node:fs/promises');
+  const { tmpdir } = await import('node:os');
+  const { join } = await import('node:path');
+  const { recordArm } = await import(new URL('../../benchmarks/agent-eval/targets/local-sqlite/run.mjs', import.meta.url).href);
+  const out = await mkdtemp(join(tmpdir(), 'owned-failure-'));
+  const previous = process.env.WAKEIO_AGENT_LIVE;
+  delete process.env.WAKEIO_AGENT_LIVE;
+  try {
+    const fixture = { origin: 'http://127.0.0.1:1', requests: [], reset() {} };
+    const result = await recordArm('B', fixture, { plan: {}, inputs: {} }, join(out, 'B'));
+    assert.equal(result.exitCode, 2); assert.equal(result.status, 'error');
+    assert.equal(result.actualRequests, 0); assert.equal(result.requestCount, null);
+    assert.ok(result.durationMs >= 0);
+    assert.deepEqual(JSON.parse(await readFile(join(out, 'B.json'), 'utf8')), result);
+  } finally {
+    if (previous === undefined) delete process.env.WAKEIO_AGENT_LIVE; else process.env.WAKEIO_AGENT_LIVE = previous;
+    await rm(out, { recursive: true, force: true });
+  }
+});

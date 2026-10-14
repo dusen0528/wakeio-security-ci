@@ -37,8 +37,21 @@ export async function runArm(name, fixture, prepared, outDir, cap = 64) {
     const run = await runAgentLoop({ agent, reconStore: recon, reconRunId: 'r-recon', origin: fixture.origin, outDir, sharedRequestCap: cap,
       taskCatalog: prepared.plan.tasks.map((task, i) => ({ task, checkId: `c-endpoint-${i}` })),
       coverageCells: prepared.coverageCells, execution });
-    const gates = await Promise.all(run.rounds.map(async round => JSON.parse(await readFile(join(round.outDir, 'run-report.json'), 'utf8')).exitCode));
+    const gates = run.status === 'completed' ? await Promise.all(run.rounds.map(async round => JSON.parse(await readFile(join(round.outDir, 'run-report.json'), 'utf8')).exitCode)) : [];
     return { ...run, name, durationMs: Math.round(performance.now() - start), actualRequests: fixture.requests.length,
       exitCode: run.status === 'completed' ? Math.max(0, ...gates) : 2 };
   } finally { recon.close(); }
+}
+
+export async function recordArm(name, fixture, prepared, outDir, cap = 64) {
+  const start = performance.now();
+  let result;
+  try { result = await runArm(name, fixture, prepared, outDir, cap); }
+  catch {
+    result = { name, status: 'error', exitCode: 2, reason: 'arm_execution_failed',
+      durationMs: Math.round(performance.now() - start), actualRequests: fixture.requests.length,
+      requestCount: null, rounds: [] };
+  }
+  await save(outDir + '.json', result);
+  return result;
 }
