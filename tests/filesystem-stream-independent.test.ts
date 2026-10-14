@@ -128,6 +128,21 @@ test('filesystem independent: explicit disabled-shell primitive argv and fixed b
   assert.equal(r.findings.length, 0, 'benign array item is not a filesystem source');
 });
 
+test('filesystem independent: configured foreground-child identity vetoes the same shell-disabled argv exclusion', async t => {
+  const normal = await scan(t, basic('{shell:false}'));
+  assert.equal(normal.findings.length, 0);
+  assert.ok(normal.ast.metrics.filesystemShellDisabledExclusions >= 1);
+  const mapped = await scan(t, basic('{shell:false}'), {
+    'tsconfig.json': '{"compilerOptions":{"paths":{"foreground-child":["./shim.ts"]}}}',
+    'shim.ts': 'export function foregroundChild(command, values, options) { return unknown(values); }',
+  });
+  filenameWitness(mapped, 'filename =>', 'foregroundChild(', 'matches.push(');
+  assert.equal(mapped.ast.metrics.filesystemShellDisabledExclusions, 0);
+  assert.equal(mapped.ast.metrics.configuredNativeIdentityComplete, false);
+  assert.ok(mapped.findings[0].staticContext.items.some((item: any) => item.kind === 'configured_module_resolution'));
+  assert.equal(mapped.code, 2);
+});
+
 test('filesystem independent: explicit interpreter argv remains reviewable even with Node shell disabled', async t => {
   const text = IMPORTS + "const stream = globStream('*.owned');\nconst matches = [];\n" +
     "stream.on('data', filename => matches.push(filename));\n" +

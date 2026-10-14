@@ -31,8 +31,8 @@ test('selected advice: explicit selection preserves a late row and parent beyond
   checks[0].status = 'partial';
   const agent = toAgentReport(report(checks)), selection = select(agent, 29, 29);
   const { input, referenceRoutes } = project(agent, false, selection);
-  assert.equal(ADVICE_PROJECTION_POLICY_VERSION, 12);
-  assert.equal(input.projectionVersion, 12);
+  assert.equal(ADVICE_PROJECTION_POLICY_VERSION, 13);
+  assert.equal(input.projectionVersion, 13);
   assert.deepEqual(input.selection, selection);
   assert.equal(input.checks.length, 1);
   assert.equal(input.checks[0].checkIndex, 29);
@@ -142,7 +142,7 @@ test('selected advice: fake CLI in both auth modes binds receipt hashes and exac
     const out = join(top, auth);
     assert.equal(await adviseMain(argumentsFor(p.directory, out, fake.executable, auth, selected)), 0);
     const r = await receipt(out), captured = JSON.parse(await readFile(fake.capture, 'utf8'));
-    assert.equal(r.policyVersion, 12); assert.equal(r.status, 'advice_produced'); assert.equal(r.verified, false);
+    assert.equal(r.policyVersion, 13); assert.equal(r.status, 'advice_produced'); assert.equal(r.verified, false);
     assert.equal(r.authMode, auth); assert.equal(captured.auth, auth);
     assert.deepEqual(r.input.selection, selected); assert.deepEqual(captured.projection.selection, selected);
     assert.equal(r.input.reportSha256, sha(p.reportBytes)); assert.equal(r.input.agentReportSha256, sha(p.agentBytes));

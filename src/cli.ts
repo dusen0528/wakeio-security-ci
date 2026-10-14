@@ -103,7 +103,7 @@ export const USAGE = `Usage:
   wakeio-security-ci api-write-state --candidate fixed|ineffective|all-deny|normal-regression|status-only|wrong-object --active-consent --out NEW_DIR
     Owned synthetic PATCH resources only; external targets and automatic write retries are unavailable.
   wakeio-security-ci advise --report DIR --agent codex --auth cli-login|api-key --allow-report-upload --out NEW_DIR
-  wakeio-security-ci handoff create --report DIR --source DIR --finding ID --check-index N --out NEW_DIR
+  wakeio-security-ci handoff create --report DIR --source DIR --check-index N [--finding ID] --out NEW_DIR
   wakeio-security-ci handoff finish --handoff DIR --report AFTER_DIR --source DIR --out NEW_DIR
 
 Options:

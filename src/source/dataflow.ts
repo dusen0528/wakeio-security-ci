@@ -676,6 +676,14 @@ export function observedGapLocation(node: ts.Node, files: ReadonlyMap<string, ts
 }
 
 interface FunctionSummary { returned: FlowValue; }
+interface ConfiguredInspection {
+  call: ts.CallExpression;
+  target: ts.FunctionLikeDeclaration;
+  actuals: readonly FlowValue[];
+  context: StaticCandidateContext;
+  ancestors: readonly string[];
+  identity: string;
+}
 // Mutable content must not be reused through a cached return or skipped side effect.
 function hasMutableQuery(value: FlowValue, seen = new Set<FlowValue>(), depth = 0): boolean {
   if (value.koaRequest || value.honoRequest) return true;
@@ -734,6 +742,14 @@ class FlowSession {
   summaryWork = 0;
   resolvedCalls = 0;
   unsupportedCalls = 0;
+  configuredCallContexts = 0;
+  private readonly configuredInspections: Array<ConfiguredInspection | undefined> = [];
+  private configuredSnapshotValues = 0;
+  configuredInspectionsQueued = 0;
+  configuredInspectionsStarted = 0;
+  configuredInspectionsDropped = 0;
+  configuredInspectionWork = 0;
+  readonly nativeModuleContext?: StaticCandidateContext;
 
   constructor(files: readonly ts.SourceFile[], readonly limits: FlowLimits, parseErrorCount = 0, readonly roleProofScopeComplete = true, parseFiles?: Iterable<ParseFileEvidence>, metadata: readonly CollectedFile[] = []) {
     if (parseFiles === undefined) this.diagnostics.record('parse_error', 'parse', undefined, parseErrorCount);
@@ -751,7 +767,7 @@ class FlowSession {
     }
     this.maxIndexWork = limits.indexWork ?? FLOW_LIMITS.indexWork;
     this.maxFlowWork = limits.flowWork ?? FLOW_LIMITS.flowWork;
-    this.modules = new StaticModules(files, () => this.tick(), limits, (reason) => this.incomplete(reason), roleProofScopeComplete);
+    this.modules = new StaticModules(files, () => this.tick(), limits, (reason) => this.incomplete(reason), roleProofScopeComplete, metadata);
     this.queryModel = new NativeQueryModel(this.modules, () => this.tick(), this.indexComplete);
     this.httpModel = new HttpRoleModel(this.modules, () => this.tick(), roleProofScopeComplete, this.indexComplete);
     this.sqlModel = new SqlRoleModel(this.modules, () => this.tick(), roleProofScopeComplete, this.indexComplete);
@@ -767,6 +783,11 @@ class FlowSession {
     this.browserLocationModel = new BrowserLocationRoleModel(this.modules, () => this.tick(), roleProofScopeComplete, limits.aliasSteps);
     this.modules.finishIndex(this.indexComplete);
     this.phase = 'flow';
+    const nativeLoad = this.modules.configuredNativeLoads.values().next().value as ts.Node | undefined;
+    if (nativeLoad) {
+      this.nativeModuleContext = conditionalContext('configured_module_resolution', nativeLoad);
+      this.gap('module_export_unsupported', nativeLoad);
+    }
   }
 
   private incomplete(reason: string, call?: ts.Node): void {
@@ -888,10 +909,14 @@ class FlowSession {
     const localFork = ts.isIdentifier(call.expression) && (call.expression.text === 'fork' || PROCESS_METHODS.has(call.expression.text));
     let proof = localFork ? this.localForkCalls.get(call) : undefined;
     if (localFork && !proof) { proof = { complete: true }; this.localForkCalls.set(call, proof); }
-    const observed = (complete: boolean): void => { if (proof) proof.complete &&= complete && this.roleProofScopeComplete && this.modules.indexComplete; };
+    const observed = (complete: boolean): void => { if (proof) proof.complete &&= complete && this.roleProofScopeComplete && this.modules.indexComplete && this.modules.configuredNativeIdentityComplete; };
     const initial: CallResolution = capability && this.modules.indexComplete ? { kind: 'resolved' as const, target: capability.target } : this.modules.resolveCall(call,true,receiver);
     let resolution = initial.kind === 'resolved' || initial.kind === 'declared' ? initial : this.modules.resolveCjsFunctionCall(call) ?? initial;
     let staticContext = contexts(inheritedContext, capability?.staticContext, ...args.map(value => value.staticContext));
+    if ((resolution.kind === 'resolved' || resolution.kind === 'declared') && resolution.configured) {
+      staticContext = contexts(staticContext, conditionalContext('configured_module_resolution', call, resolution.target));
+      this.configuredCallContexts++;
+    }
     if (resolution.kind !== 'resolved' && resolution.kind !== 'declared') {
       const target = this.modules.discoverCjsBody(call);
       if (target) { resolution = { kind: 'declared', target }; staticContext = contexts(staticContext, conditionalContext('unresolved_cjs_dispatch', call, target)); }
@@ -902,6 +927,33 @@ class FlowSession {
       else this.unsupportedCalls += 1;
       if (resolution.kind === "export_unsupported") this.unsupportedCalls += 1;
       return undefined;
+    }
+    if (resolution.configured) {
+      // This newly discovered body never precedes the existing root inventory.
+      // Its eventual return/capabilities cannot flow back into the caller.
+      observed(false);
+      this.gap('module_export_unsupported', call);
+      const context = staticContext!;
+      const identity = this.invocationIdentity(resolution.target, undefined, true);
+      // Caller fallback covers every already-evaluated argument. Optional body
+      // copy limits must not erase input in an argument omitted from its frame.
+      const callerInput = this.returnInput(args);
+      const snapshots = this.configuredActuals(args, context, call);
+      this.invalidateActuals(args, context);
+      if (this.active.has(identity)) { this.configuredInspectionsDropped++; this.gap('summary_cycle', call); }
+      else if (this.active.size >= this.limits.callDepth) { this.configuredInspectionsDropped++; this.gap('depth_limit', call); }
+      else if (this.configuredInspectionsQueued >= this.limits.functions
+        || this.configuredSnapshotValues >= this.limits.summaryWork) {
+        this.configuredInspectionsDropped++; this.gap('summary_limit', call);
+      } else if (!this.tick()) this.configuredInspectionsDropped++;
+      else {
+        this.configuredInspections.push({ call, target: resolution.target, actuals: snapshots,
+          context, ancestors: [...this.active], identity });
+        this.configuredInspectionsQueued++;
+      }
+      return withContext({ kind: 'unknown', inputRelated: !!callerInput,
+        trace: callerInput?.trace, traceSourceKind: callerInput?.traceSourceKind, traceTruncated: true,
+        sqlScalarUnavailable: true, sqlDataUnavailable: true, httpTargetUnavailable: true }, context);
     }
     const declared = declaredContext || resolution.kind === 'declared' || !!staticContext;
     const snapshots = new Map<FlowValue, FlowValue>();
@@ -958,6 +1010,84 @@ class FlowSession {
   private returnInput(values: readonly FlowValue[]): FlowValue | undefined {
     const inputs = values.map(consumedInput).filter(isInputRelated);
     return inputs.length ? combineValues(inputs) : undefined;
+  }
+
+  /** Detached positive data only: no shared heap cell or negative certificate. */
+  private configuredActuals(values: readonly FlowValue[], context: StaticCandidateContext, call: ts.CallExpression): readonly FlowValue[] {
+    let copied = 0;
+    const seen = new Set<FlowValue>();
+    const snapshot = (value: FlowValue, depth: number): FlowValue => {
+      const current = currentQuery(consumedInput(value));
+      const input = isInputRelated(current);
+      const plain: FlowValue = { kind: input ? current.kind : 'unknown', root: current.root,
+        inputRelated: input, traceTruncated: true, traceSourceKind: current.traceSourceKind,
+        sqlScalarUnavailable: true, sqlDataUnavailable: true, httpTargetUnavailable: true, staticContext: context };
+      if (depth >= this.limits.callDepth || copied >= this.limits.traceSteps
+        || this.configuredSnapshotValues >= this.limits.summaryWork || seen.has(value)) {
+        this.gap('alias_limit', call); return Object.freeze(plain);
+      }
+      if (!this.tick()) return Object.freeze(plain);
+      copied++; this.configuredSnapshotValues++; seen.add(value);
+      if (current.trace) {
+        plain.trace = [];
+        for (const item of current.trace.slice(0, this.limits.traceSteps)) {
+          if (!this.tick()) break;
+          plain.trace.push(Object.freeze({ role: item.role, location: Object.freeze({ ...item.location }) }));
+        }
+        Object.freeze(plain.trace);
+      }
+      if (current.properties) {
+        const properties = new Map<string, FlowValue>();
+        for (const [name, child] of current.properties) {
+          if (copied >= this.limits.traceSteps || this.configuredSnapshotValues >= this.limits.summaryWork) {
+            this.gap('alias_limit', call); break;
+          }
+          properties.set(name, snapshot(child, depth + 1));
+        }
+        plain.properties = properties;
+      }
+      seen.delete(value);
+      return Object.freeze(plain);
+    };
+    const result: FlowValue[] = [];
+    for (const value of values) {
+      if (result.length >= this.limits.traceSteps) { this.gap('alias_limit', call); break; }
+      result.push(snapshot(value, 0));
+    }
+    return Object.freeze(result);
+  }
+
+  private inspectConfiguredBodies(): void {
+    const start = this.flowWork;
+    for (let cursor = 0; cursor < this.configuredInspections.length; cursor++) {
+      const inspection = this.configuredInspections[cursor]!;
+      this.configuredInspections[cursor] = undefined;
+      if (!this.canStartFlow()) {
+        this.configuredInspectionsDropped += this.configuredInspections.length - cursor;
+        this.tick(); break;
+      }
+      if (!this.tick()) { this.configuredInspectionsDropped++; continue; }
+      if (this.summaryWork >= this.limits.summaryWork) {
+        this.configuredInspectionsDropped++; this.gap('summary_limit', inspection.call); continue;
+      }
+      for (const identity of inspection.ancestors) this.active.add(identity);
+      if (this.active.has(inspection.identity) || this.active.size >= this.limits.callDepth) {
+        this.configuredInspectionsDropped++;
+        this.gap(this.active.has(inspection.identity) ? 'summary_cycle' : 'depth_limit', inspection.call);
+        this.active.clear(); continue;
+      }
+      this.active.add(inspection.identity); this.summaryWork++; this.functionContextsStarted++;
+      this.configuredInspectionsStarted++;
+      const before = this.incompleteEvents;
+      const analyzer = new DataflowAnalyzer(inspection.target.getSourceFile(), this);
+      analyzer.analyzeFunction(inspection.target, inspection.actuals.map(value => traced(value, inspection.call, 'call')),
+        undefined, true, undefined, inspection.context);
+      this.uses.push(...analyzer.output()); this.active.clear();
+      if (this.incompleteEvents === before) this.functionContextsCompleted++;
+      else this.functionContextsPartial++;
+    }
+    this.configuredInspections.length = 0;
+    this.configuredInspectionWork = this.flowWork - start;
   }
 
   /** Unknown call effects are applied even when a possible body is inspected. */
@@ -1069,6 +1199,7 @@ class FlowSession {
       else { this.entryRootsPartial += 1; this.functionContextsPartial += 1; }
       this.uses.push(...analyzer.output());
     }
+    this.inspectConfiguredBodies();
   }
 }
 
@@ -1118,10 +1249,25 @@ class DataflowAnalyzer {
   private staticContext?: StaticCandidateContext;
 
   constructor(private readonly sourceFile: ts.SourceFile, private readonly session?: FlowSession) {}
+  private certificateAvailable(): boolean {
+    return !this.declared && !this.staticContext && this.session?.modules.configuredNativeIdentityComplete !== false;
+  }
+  private filesystemCertificateAvailable(values: readonly FlowValue[]): boolean {
+    if (this.session?.modules.configuredNativeIdentityComplete === false) return false;
+    // Existing stream/callback provenance does not contradict a separately
+    // qualified shell-disabled primitive argv layout. Configured module
+    // identity (or a truncated context hiding it) still forbids that exclusion.
+    for (const context of [this.staticContext, ...values.map(value => consumedInput(value).staticContext)]) {
+      if (!context) continue;
+      if (this.session && !this.session.tick()) return false;
+      if (context.truncated || context.items.some(item => item.kind === 'configured_module_resolution')) return false;
+    }
+    return true;
+  }
 
   output(): InputFlowUse[] {
     return this.uses.map(use => {
-      const staticContext = contexts(this.staticContext, use.staticContext);
+      const staticContext = contexts(this.staticContext, use.staticContext, this.session?.nativeModuleContext);
       if (!staticContext) return use;
       if (staticContext.truncated) this.session?.gap('module_export_unsupported', use.node);
       const conditionalFlow = (flow: StaticFlow | undefined) => flow ? { ...flow, truncated: true } : undefined;
@@ -1678,7 +1824,10 @@ class DataflowAnalyzer {
       const argumentFlows: NonNullable<InputFlowUse["argumentFlows"]> = [];
       for (let index = 0; index < expression.arguments.length; index += 1) {
         const value = consumedInput(args[index]);
-        if (isInputRelated(value)) argumentFlows.push({ index, certainty: !this.declared && value.kind === "tainted" ? "tainted" : "unknown", staticFlow: evidence(value, expression), fixedDestination: !this.declared && fixedQueryDestination(value.urlFragments) });
+        if (isInputRelated(value)) argumentFlows.push({ index, certainty: !this.declared && value.kind === "tainted" ? "tainted" : "unknown", staticFlow: evidence(value, expression), fixedDestination: this.certificateAvailable() && fixedQueryDestination(value.urlFragments) });
+      }
+      if (responseState?.valid && !this.certificateAvailable()) {
+        responseState.mime = 'unknown'; responseState.authority = 'unqualified_response';
       }
       const responseMethod = ts.isPropertyAccessExpression(callee) ? callee.name.text : undefined;
       const htmlResponse = responseState?.valid && expression.arguments.length === 1
@@ -1699,7 +1848,7 @@ class DataflowAnalyzer {
       const filesystemProcess = filename && filesystemWrapper ? {
         outcome: filesystemWrapper.shell === 'enabled' ? 'argv_shell_input' as const
           : filesystemWrapper.shell === 'disabled' && filesystemWrapper.interpreter ? 'direct_argv_interpreter_unknown' as const
-          : filesystemWrapper.shell === 'disabled' && args[1]?.sequenceContent?.closed && args[1].sequenceContent.valid ? 'argv_only_shell_disabled' as const : 'argv_shell_unknown' as const,
+          : this.filesystemCertificateAvailable([filename, ...args]) && filesystemWrapper.shell === 'disabled' && args[1]?.sequenceContent?.closed && args[1].sequenceContent.valid ? 'argv_only_shell_disabled' as const : 'argv_shell_unknown' as const,
         staticFlow: evidence(filename, expression),
       } : undefined;
       const filesystemContext = filesystemProcess ? contexts(filename?.staticContext, conditionalContext('declared_process_wrapper', expression)) : undefined;
@@ -1707,7 +1856,7 @@ class DataflowAnalyzer {
       if (archive && archiveWriter && !archiveWriter.options) this.session!.archiveModel.unsupported(expression);
       const archiveWrite = archive && archiveWriter ? {
         outcome: !archiveWriter.options ? 'path_role_unknown' as const
-          : archiveWriter.closed && this.session?.archiveModel.contained(expression) ? 'lexically_contained' as const : 'path_input' as const,
+          : this.certificateAvailable() && archiveWriter.closed && this.session?.archiveModel.contained(expression) ? 'lexically_contained' as const : 'path_input' as const,
         staticFlow: evidence(archive, expression),
       } : undefined;
       if (archiveWrite?.outcome === 'lexically_contained') this.session!.archiveModel.lexicalExclusions++;
@@ -1933,7 +2082,7 @@ class DataflowAnalyzer {
     if (!bound && !legacyAxiosRequest(call)) return undefined;
     const inputRelated = value ? isInputRelated(value) : false;
     const config = value?.httpConfig;
-    if (this.declared && inputRelated) return {bound,inputRelated,outcome:'unknown_role',certainty:'unknown',...(value ? {staticFlow:evidence(value,call)} : {})};
+    if (!this.certificateAvailable() && inputRelated) return {bound,inputRelated,outcome:'unknown_role',certainty:'unknown',...(value ? {staticFlow:evidence(value,call)} : {})};
     if (bound && model?.canQualify(call) && config?.closed && !config.target.httpTargetUnavailable) {
       if (config.encodedQueryInitialUrl && fixedQueryDestination(config.target.urlFragments)) return { bound, inputRelated, outcome: 'encoded_query_fixed_initial_url' };
       if (isInputRelated(config.target)) return { bound, inputRelated: true, outcome: 'target_input',
@@ -1946,7 +2095,8 @@ class DataflowAnalyzer {
   }
 
   private processRole(call: ts.CallExpression, args: readonly FlowValue[], binding: ChildProcessBindingUse): ProcessRoleUse {
-    const layout = this.session!.processModel.layout(call, binding);
+    const modeled = this.session!.processModel.layout(call, binding);
+    const layout = { ...modeled, qualified: modeled.qualified && this.certificateAvailable() };
     const base = { api: binding.method, identity: binding.identity, shell: layout.shell };
     const selected = (value: FlowValue, outcome: ProcessRoleUse['outcome'], index: number, executable = false, known = false): ProcessRoleUse => {
       const certain = known && !this.declared && !this.staticContext && value.kind === 'tainted';
@@ -1978,7 +2128,7 @@ class DataflowAnalyzer {
     const model=this.session?.sqlModel; if (!model?.bound(call)) return undefined;
     const config=args[0]?.sqlConfig;
     const inputRelated=args.some(isInputRelated);
-    if (this.declared && inputRelated) { const value=args.find(isInputRelated)!; return {bound:true,inputRelated,outcome:'unknown_role',certainty:'unknown',staticFlow:evidence(value,call)}; }
+    if (!this.certificateAvailable() && inputRelated) { const value=args.find(isInputRelated)!; return {bound:true,inputRelated,outcome:'unknown_role',certainty:'unknown',staticFlow:evidence(value,call)}; }
     const text=config?.text ?? args[0];
     const values=config?.values ?? args[1];
     const shape=config ? config.closed && call.arguments.length===1
@@ -2018,7 +2168,7 @@ class DataflowAnalyzer {
     const candidate = (value: FlowValue, outcome: NoSqlRoleUse['outcome']): NoSqlRoleUse => ({ inputRelated: true, outcome, api,
       certainty: !this.declared && value.kind === 'tainted' && outcome !== 'unknown_role' ? 'tainted' : 'unknown',
       staticFlow: evidence(value, call) });
-    if (this.declared || selector.staticContext || !(mongoBound ? mongo!.valid && mongo!.db.valid : model!.qualified(call)) || modified) {
+    if (!this.certificateAvailable() || selector.staticContext || !(mongoBound ? mongo!.valid && mongo!.db.valid : model!.qualified(call)) || modified) {
       if (mongoBound) this.session?.gap('module_export_unsupported', call);
       if (selector.nosqlWhere && isInputRelated(selector.nosqlWhere.value)) return { ...candidate(selector.nosqlWhere.value, 'unknown_role'), operatorNode: selector.nosqlWhere.node };
       return candidate(observed, 'unknown_role');
@@ -2430,6 +2580,21 @@ export function findSnapshotInputFlows(files: readonly ts.SourceFile[], limits: 
     summaryWork: session.summaryWork, summariesCached: session.cache.size,
     resolvedCalls: session.resolvedCalls, unsupportedCalls: session.unsupportedCalls,
     moduleEdges: session.modules.moduleEdges.size,
+    moduleGraphModel: 'snapshot-configured-esm-functions-v1',
+    moduleConfigurationsObserved: session.modules.moduleConfigurations.observed,
+    moduleConfigurationsSupported: session.modules.moduleConfigurations.supported,
+    moduleConfigurationsUnsupported: session.modules.moduleConfigurations.unsupported,
+    moduleConfigurationBytes: session.modules.moduleConfigurations.bytes,
+    configuredModuleTargets: session.modules.configuredModuleTargets.size,
+    configuredModuleCallSites: session.modules.configuredCallSites.size,
+    configuredModuleCallContexts: session.configuredCallContexts,
+    configuredBodyInspectionsQueued: session.configuredInspectionsQueued,
+    configuredBodyInspectionsStarted: session.configuredInspectionsStarted,
+    configuredBodyInspectionsDropped: session.configuredInspectionsDropped,
+    configuredBodyInspectionFlowWork: session.configuredInspectionWork,
+    barrelFunctionTargets: session.modules.barrelFunctionTargets.size,
+    configuredNativeIdentityComplete: session.modules.configuredNativeIdentityComplete,
+    configuredNativeIdentityVetoes: session.modules.configuredNativeLoads.size,
     maxNodeVisits: limits.nodeVisits, maxFunctions: limits.functions, maxSummaryWork: limits.summaryWork,
     maxCallDepth: limits.callDepth, maxModuleEdges: limits.moduleEdges, maxAliasSteps: limits.aliasSteps, maxTraceSteps: FLOW_LIMITS.traceSteps,
     analysisIncomplete: session.reasons.size > 0, incompleteReasons: [...session.reasons].sort().join(","),
