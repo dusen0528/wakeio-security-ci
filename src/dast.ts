@@ -216,6 +216,9 @@ function stopReason(error: unknown, abortCause: "deadline" | "cancelled" | undef
   if (abortCause) return abortCause;
   if (Date.now() >= deadlineAt) return "deadline";
   const code = error instanceof UrlNetworkError ? error.code : "transport_error";
+  // The request deadline timer can settle before the shared abort timer or a
+  // later wall-clock check. Preserve its typed cause; a prior caller abort wins above.
+  if (code === "timeout") return "deadline";
   if (code === "request_limit") return "request_budget";
   if (/body|decompress|encoding/.test(code)) return "body_budget";
   if (/blocked|private|metadata|redirect|scheme|port|address|tls|dns_rebinding|host/.test(code)) return "network_policy";

@@ -228749,6 +228749,8 @@ function stopReason(error, abortCause, deadlineAt) {
   if (Date.now() >= deadlineAt)
     return "deadline";
   const code = error instanceof UrlNetworkError ? error.code : "transport_error";
+  if (code === "timeout")
+    return "deadline";
   if (code === "request_limit")
     return "request_budget";
   if (/body|decompress|encoding/.test(code))

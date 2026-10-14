@@ -146,3 +146,27 @@ comparison. Package publication, customer repairs and OSS runtime verification
 are outside this record.
 
 The first PR56 [release-check verify run](https://github.com/dusen0528/wakeio-security-ci/actions/runs/38492010103/job/115619159122) at feature SHA `f540951c0a4a831644d6b131822e194552730b36` failed explicitly with `tests:timeout`: buffered build completion was 00:46:53.913 UTC and the timeout was 00:49:53.941, matching the 180-second aggregate test-stage watchdog. The same SHA completed all 1309 tests with zero failures, cancellations or skips in [push self-test](https://github.com/dusen0528/wakeio-security-ci/actions/runs/38491967948/job/115619018310) (142.62 seconds) and [PR self-test](https://github.com/dusen0528/wakeio-security-ci/actions/runs/38492010062/job/115619160015) (168.70 seconds). The PR success left only 11.30 seconds below the old cap. Only the trusted full-suite stage allowance was raised to a fixed 270000 ms (4.5 minutes); the outer seven-minute step and individual test, engine, request, cancellation, cleanup and zero-skip contracts remain unchanged. This corrects aggregate CI capacity, not detector behavior or a proven individual-test defect. The failed run remains evidence; the adjusted revision requires a fresh complete verification.
+
+## CI integration addendum
+
+After PR56 merged into dev, the [hosted package check](https://github.com/dusen0528/wakeio-security-ci/actions/runs/38493661740/job/115624420242)
+reported 1308/1309 passing: the existing quoted cancellation/timeout test
+returned `transport_error` instead of `deadline`. This log does not establish
+the hosted timer ordering. Deterministic owned-loopback tests separately drove
+the request timeout callback before the shared abort or wall-clock deadline:
+four socket-deadline cases failed on the prior code while eight cancellation/
+connection-reset controls passed. The maintenance change maps typed
+`UrlNetworkError('timeout')` to `deadline`, after honoring a captured abort cause.
+The existing 30 ms CI test was preserved. Related tests passed 48/48 before a
+socket-close evidence refinement; the final refined tests passed 12/12 with
+zero failures or skips. Full integration verification is recorded separately.
+
+This maintenance build is distinct from the measured after engine above.
+An exact comparison of all 85 built-source JavaScript files found 84 unchanged
+and only `build/src/dast.js` changed; the source delta was only `src/dast.ts`.
+The historical 98-site/86-classification and normalized 56-case evidence stays
+bound to its original frozen engine. It carries forward only as evidence for
+the unchanged source-only components, not a fresh scan of the maintenance
+build. Old/new DAST hashes are retained in private
+`ci-maintenance-carry-forward.json`; no OSS rescan, target execution or provider
+call was performed for this addendum. The hosted failure remains preserved.
