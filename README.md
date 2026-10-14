@@ -42,6 +42,8 @@ The built-in source rules are intentionally narrow. They cover useful code scene
 
 The [Koa request-context source contract](docs/source-koa-context.md) describes declared middleware registration inputs, request/response alias boundaries, and the source-only four-report workflow.
 
+The GitHub source preview also recognizes a [bounded same-file Hono request subset](docs/research/hono-request-sources-2026-10-14.md): literal route registration connects Context query/param and awaited JSON reads to existing sinks. Middleware/composition and runtime `hono/*` imports remain outside this proof; language-analysis completion is not whole-Hono coverage. Use a reviewed build or Action commit containing this model.
+
 The source preview distinguishes command, executable, argv and shell-option
 roles for the [six Node process APIs](docs/process-role.md). Default/false argv
 exclusions cover Node's shell interpretation only; program-option safety and

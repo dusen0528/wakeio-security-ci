@@ -39,6 +39,8 @@ API preview는 redacted index 기반 실행 ledger로 판정한 단계, 불확�
 
 내장 소스 규칙은 의도적으로 좁게 잡았습니다. 예를 들어 요청값이 로컬 변수를 거쳐 raw SQL 호출·JSX HTML sink·프로세스 호출·외부 요청·리디렉션으로 전달되는 장면을 후보로 표시합니다. 구조 분해·반복문 binding, 일부 Next route 입력, 정적 client/server 환경변수 노출, Supabase migration 이력 후보도 확인합니다. 결과는 검토할 후보이며 exploit 재현이나 애플리케이션 전체의 안전 보장이 아닙니다.
 
+GitHub source preview는 [같은 파일의 제한된 Hono request 형태](docs/research/hono-request-sources-2026-10-14.md)도 인식합니다. Literal route에 등록된 Context의 query·param·awaited JSON 입력을 기존 sink에 연결합니다. Middleware·composition과 runtime `hono/*` import는 증명 범위 밖이며, 언어 분석 완료는 Hono 전체 coverage가 아닙니다. 이 모델이 포함된 검토한 build 또는 Action commit을 사용하세요.
+
 소스 preview는 [Node process API 여섯 개](docs/process-role.md)의 command·executable·argv·shell 필드 역할을 구별합니다. 기본/false argv의 제외는 Node의 셸 해석만 대상으로 하며, 프로그램 옵션 안전이나 실제 실행을 검증하지 않습니다. 이 ruleset 변경은 npm 게시를 뜻하지 않습니다.
 
 ## 빠른 시작: 내장 검사만 실행하기

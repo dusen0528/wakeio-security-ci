@@ -45,6 +45,7 @@ export class SqlRoleModel {
   private readonly bindings = new Map<ts.Symbol, Partial<Record<'array'|'config', boolean>>>();
   private readonly returnShapes = new Map<ts.FunctionLikeDeclaration, boolean>();
   private readonly dataBindings = new Map<ts.Symbol, boolean>();
+  private readonly requestDataBindings = new Map<ts.Symbol, boolean>();
   constructor(private readonly modules: StaticModules, private readonly tick: () => boolean,
     private readonly scopeComplete: boolean, indexAvailable: boolean) {
     this.pristine = indexAvailable;
@@ -255,11 +256,16 @@ export class SqlRoleModel {
     }
     const valid=text && this.valueUse(node,'config',0,new Set()); this.shapes.set(node,valid); return valid;
   }
-  closedArray(node: ts.ArrayLiteralExpression): boolean {
-    const cached=this.shapes.get(node); if (cached!==undefined) return cached;
-    this.shapes.set(node,false);
-    if (!this.instances.size || node.elements.length>64 || !this.dataExpression(node)) return false;
-    const valid=this.valueUse(node,'array',0,new Set()); this.shapes.set(node,valid); return valid;
+  closedArray(node: ts.ArrayLiteralExpression, requestData?: (call: ts.CallExpression, awaited: boolean) => boolean): boolean {
+    // Source-return witnesses belong to an evaluation, never a globally cached AST shape.
+    if (!requestData) {
+      const cached=this.shapes.get(node); if (cached!==undefined) return cached;
+      this.shapes.set(node,false);
+    }
+    if (!this.instances.size || node.elements.length>64 || !this.dataExpression(node,true,requestData)) return false;
+    const valid=this.valueUse(node,'array',0,new Set());
+    if (!requestData) this.shapes.set(node,valid);
+    return valid;
   }
   arrayParameter(name: ts.BindingName): boolean {
     return ts.isIdentifier(name) && this.bindingUses(name,'array',0,new Set());
@@ -336,10 +342,12 @@ export class SqlRoleModel {
     return ts.isFunctionDeclaration(declaration) || ts.isVariableDeclaration(declaration) && !!declaration.initializer
       && (ts.isFunctionExpression(unwrap(declaration.initializer)) || ts.isArrowFunction(unwrap(declaration.initializer)));
   }
-  private dataBindingPristine(symbol: ts.Symbol, depth=0): boolean {
+  private dataBindingPristine(symbol: ts.Symbol, depth=0, constFieldAliases=false): boolean {
     if(depth>8 || !this.tick())return false;
-    const cached=this.dataBindings.get(symbol); if(cached!==undefined)return cached;
-    this.dataBindings.set(symbol,false);
+    // Cache only structural use proofs; witnessed origins remain per evaluation.
+    const bindings=constFieldAliases ? this.requestDataBindings : this.dataBindings;
+    const cached=bindings.get(symbol); if(cached!==undefined)return cached;
+    bindings.set(symbol,false);
     if(this.modules.mutated.has(symbol) || this.modules.mutatedMembers.has(symbol))return false;
     const refs=this.modules.references.get(symbol); if(!refs?.length)return false;
     for(const ref of refs){
@@ -349,6 +357,20 @@ export class SqlRoleModel {
       while(expression.parent && (ts.isPropertyAccessExpression(expression.parent) || ts.isElementAccessExpression(expression.parent))
         && expression.parent.expression===expression){if(!this.tick())return false;expression=expression.parent;}
       const parent=expression.parent;
+      if(constFieldAliases && ts.isVariableDeclaration(parent) && parent.initializer===expression
+        && parent.parent.flags & ts.NodeFlags.Const && ts.isIdentifier(parent.name) && expression!==ref) {
+        let member=expression;
+        while(member!==ref) {
+          if(!this.tick() || !(ts.isPropertyAccessExpression(member) || ts.isElementAccessExpression(member)) || member.questionDotToken)return false;
+          const property=ts.isPropertyAccessExpression(member) ? member.name.text
+            : ts.isStringLiteralLike(member.argumentExpression) ? member.argumentExpression.text : undefined;
+          if(!property || ['toPostgres','toString','constructor','prototype','__proto__'].includes(property))return false;
+          member=member.expression;
+        }
+        const alias=this.modules.symbol(parent.name);
+        if(!alias || !this.dataBindingPristine(alias,depth+1,true))return false;
+        continue;
+      }
       if(ts.isArrayLiteralExpression(parent) || ts.isPropertyAssignment(parent) && parent.initializer===expression
         || ts.isShorthandPropertyAssignment(parent) && parent.name===expression){
         let container:ts.Node=ts.isArrayLiteralExpression(parent) ? parent : parent.parent;
@@ -374,13 +396,14 @@ export class SqlRoleModel {
           const target=slot>=0 ? this.modules.resolveCall(parent) : undefined;
           const formal=target?.kind==='resolved' ? target.target.parameters[slot]?.name : undefined;
           const symbol=formal && ts.isIdentifier(formal) ? this.modules.symbol(formal) : undefined;
-          if(!symbol || !this.dataBindingPristine(symbol,depth+1))return false;
+          if(!symbol || !this.dataBindingPristine(symbol,depth+1,constFieldAliases))return false;
         }
       }
     }
-    this.dataBindings.set(symbol,true);return true;
+    bindings.set(symbol,true);return true;
   }
-  private dataExpression(expression: ts.Expression, inspectDataBindings=true): boolean {
+  private dataExpression(expression: ts.Expression, inspectDataBindings=true,
+    requestData?: (call: ts.CallExpression, awaited: boolean) => boolean): boolean {
     let work=0; const active=new Set<ts.FunctionLikeDeclaration>(); const activeBindings=new Set<ts.Symbol>();
     const visit=(node:ts.Node,depth:number):boolean=>{
       if (++work>128 || depth>16 || !this.tick()) return false;
@@ -391,17 +414,28 @@ export class SqlRoleModel {
         if (declaration && (ts.isFunctionDeclaration(declaration) || ts.isFunctionExpression(declaration) || ts.isArrowFunction(declaration))) return false;
         if (symbol && declaration && ts.isVariableDeclaration(declaration) && declaration.initializer) {
           const origin=unwrap(declaration.initializer);
+          const awaitedOrigin=ts.isAwaitExpression(origin) ? unwrap(origin.expression) : undefined;
+          const requestOrigin=!!requestData && (ts.isCallExpression(origin) && requestData(origin,false)
+            || !!awaitedOrigin && ts.isCallExpression(awaitedOrigin) && requestData(awaitedOrigin,true));
           const objectOrigin=ts.isObjectLiteralExpression(origin) || ts.isArrayLiteralExpression(origin)
-            || ts.isNewExpression(origin) || ts.isCallExpression(origin) || ts.isIdentifier(origin);
-          if (activeBindings.has(symbol) || this.modules.mutated.has(symbol) || objectOrigin && !this.dataBindingPristine(symbol)) return false;
+            || ts.isNewExpression(origin) || ts.isCallExpression(origin) || ts.isIdentifier(origin)
+            || !!requestData && ts.isAwaitExpression(origin);
+          if (requestData && (ts.isCallExpression(origin) || ts.isAwaitExpression(origin))
+            && !(declaration.parent.flags & ts.NodeFlags.Const)) return false;
+          if (activeBindings.has(symbol) || this.modules.mutated.has(symbol) || objectOrigin && !this.dataBindingPristine(symbol,0,requestOrigin)) return false;
           activeBindings.add(symbol); const valid=visit(declaration.initializer,depth+1); activeBindings.delete(symbol); return valid;
         }
       }
       if (ts.isCallExpression(node)) {
+        if (requestData?.(node,false)) return true;
         const resolution=this.modules.resolveCall(node);
         if (resolution.kind!=='resolved' || active.has(resolution.target) || !resolution.target.body) return false;
         active.add(resolution.target); const valid=visit(resolution.target.body,depth+1); active.delete(resolution.target);
         return valid && node.arguments.every(a=>visit(a,depth+1));
+      }
+      if (ts.isAwaitExpression(node) && requestData) {
+        const origin=unwrap(node.expression);
+        if (ts.isCallExpression(origin) && requestData(origin,true)) return true;
       }
       if (ts.isNewExpression(node) || ts.isSpreadElement(node) || ts.isSpreadAssignment(node) || ts.isMethodDeclaration(node)
         || ts.isGetAccessorDeclaration(node) || ts.isSetAccessorDeclaration(node) || ts.isFunctionExpression(node) || ts.isArrowFunction(node)

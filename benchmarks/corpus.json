@@ -1,13 +1,13 @@
 {
-  "corpusVersion": "2026-10-05.synthetic-js-ts.v3",
+  "corpusVersion": "2026-10-14.synthetic-js-ts.v4",
   "name": "Wakeio built-in source security regression corpus",
   "description": "Small, inspectable JavaScript and TypeScript fixtures for the public runSource API. Every input is synthetic and contains no real credential or customer data.",
   "scope": "The measured signal is the built-in AST candidate detector with tools: []. It is a scoped regression benchmark, not a production accuracy estimate.",
   "unsupportedScope": [
     "Python semantics are outside this JS/TS AST corpus and are not represented as production coverage.",
-    "Real Next.js, React, Supabase, Express, database, or browser runtime behavior is not executed.",
+    "Real Next.js, React, Supabase, Express, Hono, database, or browser runtime behavior is not executed.",
     "Network, package installation, authentication, and framework build behavior are outside the measurement.",
-    "Only the declared static local/relative-module subset is supported; dynamic dispatch, package imports and full framework reachability remain outside the model.",
+    "Only the declared static local/relative-module subset and exact lexical Hono registration shapes are supported; dynamic dispatch, runtime package identity and full framework reachability remain outside the model.",
     "Koa ctx.request.query input is an explicit known miss in this corpus; other unrepresented frameworks and dispatch patterns are not covered by the measured denominator."
   ],
   "cases": [
@@ -685,6 +685,66 @@
       "fixture": "fixtures/express-status-send-fixed",
       "whyVulnerable": "A response status chain sends unescaped request-derived HTML.",
       "whyFixed": "The response status chain sends JSON rather than parsing request text as HTML.",
+      "expectedFindings": []
+    },
+    {
+      "id": "hono-query-fetch-vulnerable",
+      "classification": "vulnerable",
+      "language": "typescript",
+      "framework": "synthetic same-file Hono registered query handler",
+      "fixture": "fixtures/hono-query-fetch-vulnerable",
+      "whyVulnerable": "A registered handler's query value controls the outbound fetch destination.",
+      "whyFixed": "The paired handler keeps the query read but uses a fixed outbound destination.",
+      "expectedFindings": [{ "ruleId": "ast:server-request", "path": "app.ts", "line": 5, "support": "supported" }]
+    },
+    {
+      "id": "hono-query-fetch-fixed",
+      "classification": "fixed",
+      "language": "typescript",
+      "framework": "synthetic same-file Hono registered query handler",
+      "fixture": "fixtures/hono-query-fetch-fixed",
+      "whyVulnerable": "A registered handler's query value controls the outbound fetch destination.",
+      "whyFixed": "The paired handler keeps the query read but uses a fixed outbound destination.",
+      "expectedFindings": []
+    },
+    {
+      "id": "hono-param-sql-vulnerable",
+      "classification": "vulnerable",
+      "language": "typescript",
+      "framework": "synthetic same-file Hono registered path-parameter handler with imported pg Pool",
+      "fixture": "fixtures/hono-param-sql-vulnerable",
+      "whyVulnerable": "A registered handler interpolates a path-parameter value into SQL statement text.",
+      "whyFixed": "The paired handler keeps fixed parameterized statement text and supplies the path value as separate bound data.",
+      "expectedFindings": [{ "ruleId": "ast:sql-input-sink", "path": "app.ts", "line": 7, "support": "supported" }]
+    },
+    {
+      "id": "hono-param-sql-fixed",
+      "classification": "fixed",
+      "language": "typescript",
+      "framework": "synthetic same-file Hono registered path-parameter handler with imported pg Pool",
+      "fixture": "fixtures/hono-param-sql-fixed",
+      "whyVulnerable": "A registered handler interpolates a path-parameter value into SQL statement text.",
+      "whyFixed": "The paired handler keeps fixed parameterized statement text and supplies the path value as separate bound data.",
+      "expectedFindings": []
+    },
+    {
+      "id": "hono-json-sql-vulnerable",
+      "classification": "vulnerable",
+      "language": "typescript",
+      "framework": "synthetic same-file Hono registered JSON-body handler with imported pg Pool",
+      "fixture": "fixtures/hono-json-sql-vulnerable",
+      "whyVulnerable": "A registered handler interpolates an awaited JSON-body field into SQL statement text.",
+      "whyFixed": "The paired handler keeps fixed parameterized statement text and supplies the JSON field as separate bound data.",
+      "expectedFindings": [{ "ruleId": "ast:sql-input-sink", "path": "app.ts", "line": 8, "support": "supported" }]
+    },
+    {
+      "id": "hono-json-sql-fixed",
+      "classification": "fixed",
+      "language": "typescript",
+      "framework": "synthetic same-file Hono registered JSON-body handler with imported pg Pool",
+      "fixture": "fixtures/hono-json-sql-fixed",
+      "whyVulnerable": "A registered handler interpolates an awaited JSON-body field into SQL statement text.",
+      "whyFixed": "The paired handler keeps fixed parameterized statement text and supplies the JSON field as separate bound data.",
       "expectedFindings": []
     }
   ]

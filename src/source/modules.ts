@@ -79,6 +79,8 @@ export class StaticModules {
   readonly constructorBoundaryNodes: ts.Identifier[] = [];
   /** Evaluation can alter a lexical receiver without explicit object references. */
   readonly browserLocationBoundaryNodes: ts.Node[] = [];
+  /** Known JSON/Request runtime spellings for the Hono negative-data prerequisite. */
+  readonly honoJsonBoundaryNodes: ts.Node[] = [];
   readonly newExpressions: ts.NewExpression[] = [];
   /** Writes retained by the existing charged walk for narrow instance-field evidence. */
   readonly instanceFieldWrites: ts.Node[] = [];
@@ -254,6 +256,7 @@ export class StaticModules {
       if (ts.isImportEqualsDeclaration(node) && ts.isExternalModuleReference(node.moduleReference) && node.moduleReference.expression && ts.isStringLiteralLike(node.moduleReference.expression) && /^(pg(?:\/|$)|pg-native$|pg-pool$)/.test(node.moduleReference.expression.text)) this.sqlLoads.push({specifier:node.moduleReference.expression.text,node});
       if (ts.isExportDeclaration(node) && node.moduleSpecifier && ts.isStringLiteralLike(node.moduleSpecifier) && /^(pg(?:\/|$)|pg-native$|pg-pool$)/.test(node.moduleSpecifier.text)) this.sqlLoads.push({specifier:node.moduleSpecifier.text,node});
       if (ts.isIdentifier(node)) {
+        if (['JSON', 'Request', 'globalThis'].includes(node.text)) this.honoJsonBoundaryNodes.push(node);
         if (node.text === 'require' && !(ts.isPropertyAccessExpression(node.parent) && node.parent.name === node)) this.requireReferences.push(node);
         if (node.text === 'eval' || node.text === 'Function') this.opaqueClassScopeFiles.add(node.getSourceFile());
         const symbol = this.symbol(node);
@@ -272,6 +275,8 @@ export class StaticModules {
         if (['Object','String','Array','Reflect','process','globalThis'].includes(node.text)) this.sqlBoundaryNodes.push(node);
         if (node.text === 'require') this.loaderReferences.push(node);
       }
+      if (ts.isElementAccessExpression(node) && ts.isIdentifier(node.expression) && node.expression.text === 'globalThis'
+        && ts.isStringLiteralLike(node.argumentExpression) && ['JSON','Request'].includes(node.argumentExpression.text)) this.honoJsonBoundaryNodes.push(node);
       if (ts.isWithStatement(node)) { this.opaqueClassScopeFiles.add(node.getSourceFile()); this.browserLocationBoundaryNodes.push(node); }
       if (node.kind === ts.SyntaxKind.ThisKeyword || node.kind === ts.SyntaxKind.SuperKeyword) {
         // Include lexical outer methods as well as nested bodies. No receiver
