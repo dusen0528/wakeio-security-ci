@@ -219317,7 +219317,9 @@ function joinValues(left, right) {
     result3.koaRequest = left.koaRequest?.state === right.koaRequest?.state && left.koaRequest?.stage === right.koaRequest?.stage ? left.koaRequest : koaRole ? { ...koaRole, state: { valid: false } } : void 0;
     const honoRole = left.honoRequest ?? right.honoRequest;
     result3.honoRequest = left.honoRequest?.state === right.honoRequest?.state && left.honoRequest?.stage === right.honoRequest?.stage ? left.honoRequest : honoRole ? { ...honoRole, state: { valid: false } } : void 0;
-    return { ...result3, sequenceContent, filesystemStream, filesystemContent, expressResponse: joinResponse(left.expressResponse, right.expressResponse), nosqlObject: left.nosqlObject === right.nosqlObject ? left.nosqlObject : void 0, nosqlUnknown, nosqlWhere, mongoDb, mongoCollection, expressObjectBody: left.expressObjectBody === true && right.expressObjectBody === true, ...properties ? { properties } : {}, sqlFixedText, sqlArray, sqlConfig, sqlScalarUnavailable: left.sqlScalarUnavailable || right.sqlScalarUnavailable, sqlCallback: left.sqlCallback || right.sqlCallback, sqlDataUnavailable: left.sqlDataUnavailable || right.sqlDataUnavailable, httpTargetUnavailable: httpUnavailable([left, right]), urlFragments, nativeQuery: left.nativeQuery === true && right.nativeQuery === true, queryContent: sharedQueryContent, httpConfig };
+    const rest = left.restTuple ?? right.restTuple;
+    const restTuple = left.restTuple === right.restTuple ? left.restTuple : rest ? { slots: [], aggregate: combineValues([left, right]), valid: false, complete: false } : void 0;
+    return { ...result3, restTuple, sequenceContent, filesystemStream, filesystemContent, expressResponse: joinResponse(left.expressResponse, right.expressResponse), nosqlObject: left.nosqlObject === right.nosqlObject ? left.nosqlObject : void 0, nosqlUnknown, nosqlWhere, mongoDb, mongoCollection, expressObjectBody: left.expressObjectBody === true && right.expressObjectBody === true, ...properties ? { properties } : {}, sqlFixedText, sqlArray, sqlConfig, sqlScalarUnavailable: left.sqlScalarUnavailable || right.sqlScalarUnavailable, sqlCallback: left.sqlCallback || right.sqlCallback, sqlDataUnavailable: left.sqlDataUnavailable || right.sqlDataUnavailable, httpTargetUnavailable: httpUnavailable([left, right]), urlFragments, nativeQuery: left.nativeQuery === true && right.nativeQuery === true, queryContent: sharedQueryContent, httpConfig };
   };
   if (left.kind === right.kind && (left.kind !== "root" || left.root === right.root)) {
     if (left.kind === "root")
@@ -219367,6 +219369,25 @@ function withoutUrlProof(value) {
   };
 }
 function projectValue(base, property) {
+  if (base.restTuple) {
+    const tuple = base.restTuple;
+    if (tuple.valid && tuple.complete) {
+      if (property === "length")
+        return SAFE;
+      if (/^(0|[1-9]\d*)$/.test(property) && Number.isSafeInteger(Number(property))) {
+        return tuple.slots[Number(property)] ?? UNKNOWN;
+      }
+    }
+    return {
+      ...tuple.aggregate,
+      kind: "unknown",
+      inputRelated: isInputRelated(tuple.aggregate),
+      traceTruncated: true,
+      sqlScalarUnavailable: true,
+      sqlDataUnavailable: true,
+      httpTargetUnavailable: true
+    };
+  }
   if (base.honoRequest) {
     const known = base.properties?.get(property);
     if (known)
@@ -219437,6 +219458,8 @@ function observedGapLocation(node, files) {
   }
 }
 function hasMutableQuery(value, seen = /* @__PURE__ */ new Set(), depth = 0) {
+  if (value.restTuple)
+    return true;
   if (value.koaRequest || value.honoRequest)
     return true;
   if (value.archiveRole || value.archiveContent)
@@ -219546,6 +219569,9 @@ function findSnapshotInputFlows(files, limits = FLOW_LIMITS, parseErrorCount = 0
     configuredBodyInspectionsStarted: session.configuredInspectionsStarted,
     configuredBodyInspectionsDropped: session.configuredInspectionsDropped,
     configuredBodyInspectionFlowWork: session.configuredInspectionWork,
+    restBindingsRecognized: session.restBindingsRecognized,
+    restBindingsUnsupported: session.restBindingsUnsupported,
+    restSlotsMaterialized: session.restSlotsMaterialized,
     barrelFunctionTargets: session.modules.barrelFunctionTargets.size,
     configuredNativeIdentityComplete: session.modules.configuredNativeIdentityComplete,
     configuredNativeIdentityVetoes: session.modules.configuredNativeLoads.size,
@@ -219681,6 +219707,10 @@ var init_dataflow = __esm({
         }
         containResponse(value);
         const update = (base, index) => {
+          if (base.restTuple) {
+            base.restTuple.valid = false;
+            base.restTuple.aggregate = combineValues([base.restTuple.aggregate, value]);
+          }
           const property = path2[index];
           const properties = new Map(base.properties ?? []);
           if (index === path2.length - 1) {
@@ -219711,7 +219741,7 @@ var init_dataflow = __esm({
             base.archiveRole.state.valid = false;
           invalidateMongo(base.mongoDb, "write");
           invalidateMongo(base.mongoCollection, "write");
-          return { ...combined, koaRequest: base.koaRequest, honoRequest: base.honoRequest, expressResponse, expressObjectBody: base.expressObjectBody, properties, nosqlObject: base.nosqlObject, constructed: base.constructed, mongoDb: base.mongoDb, mongoCollection: base.mongoCollection };
+          return { ...combined, restTuple: base.restTuple, koaRequest: base.koaRequest, honoRequest: base.honoRequest, expressResponse, expressObjectBody: base.expressObjectBody, properties, nosqlObject: base.nosqlObject, constructed: base.constructed, mongoDb: base.mongoDb, mongoCollection: base.mongoCollection };
         };
         this.assign(path2[0], update(this.resolve(path2[0]), 1));
       }
@@ -219788,6 +219818,11 @@ var init_dataflow = __esm({
       localForkCalls = /* @__PURE__ */ new WeakMap();
       closureShapes = /* @__PURE__ */ new WeakMap();
       constructorShapes = /* @__PURE__ */ new WeakMap();
+      restProofs = /* @__PURE__ */ new WeakMap();
+      restEscapePaths = /* @__PURE__ */ new WeakMap();
+      restBindingsRecognized = 0;
+      restBindingsUnsupported = 0;
+      restSlotsMaterialized = 0;
       capabilityIdentity = 0;
       indexWork = 0;
       flowWork = 0;
@@ -219922,6 +219957,104 @@ var init_dataflow = __esm({
           captures.set(symbol, captured ?? UNKNOWN);
         }
         return { target, captures, lexicalThis: result3.shape.lexicalThis ? lexicalThis : void 0, identity: ++this.capabilityIdentity, staticContext };
+      }
+      restPristine(parameter, target, actuals) {
+        const elementKey = (node) => node && (ts17.isStringLiteralLike(node) || ts17.isNumericLiteral(node)) ? node.text : "*";
+        const compound = (value) => !!value && (!!value.properties || value.kind === "root" || value.kind === "unknown" && !isInputRelated(value) || !!value.constructed || !!value.callable || !!value.expressResponse || !!value.koaRequest || !!value.honoRequest || !!value.mongoDb || !!value.mongoCollection || !!value.sequenceContent || !!value.restTuple);
+        const unescaped = () => {
+          for (const path2 of this.restEscapePaths.get(parameter) ?? []) {
+            if (!this.tick())
+              return false;
+            if (path2[0] === "length")
+              continue;
+            if (path2.includes("*") && actuals.some(compound))
+              return false;
+            if (!/^(0|[1-9]\d*)$/.test(path2[0])) {
+              if (actuals.some(compound))
+                return false;
+              continue;
+            }
+            let selected = actuals[Number(path2[0])];
+            for (const key2 of path2.slice(1)) {
+              if (!this.tick())
+                return false;
+              selected = selected?.properties?.get(key2);
+            }
+            if (compound(selected))
+              return false;
+          }
+          return true;
+        };
+        const cached = this.restProofs.get(parameter);
+        if (cached !== void 0)
+          return cached && unescaped();
+        const escapes = [];
+        let valid = this.modules.indexComplete && ts17.isIdentifier(parameter.name) && !target.parameters.some((item) => item.initializer);
+        const queue = [], seen = /* @__PURE__ */ new Set();
+        const add2 = (name) => {
+          const symbol = this.modules.symbol(name);
+          if (!symbol || symbol.declarations?.length !== 1 || this.modules.mutated.has(symbol))
+            return false;
+          if (!seen.has(symbol)) {
+            seen.add(symbol);
+            queue.push(symbol);
+          }
+          return true;
+        };
+        if (ts17.isIdentifier(parameter.name) && !add2(parameter.name))
+          valid = false;
+        for (let cursor = 0; valid && cursor < queue.length; cursor++) {
+          if (!this.tick() || cursor >= this.limits.aliasSteps) {
+            valid = false;
+            break;
+          }
+          for (const reference2 of this.modules.references.get(queue[cursor]) ?? []) {
+            if (!this.tick()) {
+              valid = false;
+              break;
+            }
+            if (reference2.parent === queue[cursor].declarations[0])
+              continue;
+            if (this.modules.ownerOf(reference2) !== target) {
+              valid = false;
+              break;
+            }
+            let node = reference2;
+            while (node.parent && (ts17.isParenthesizedExpression(node.parent) || ts17.isAsExpression(node.parent) || ts17.isNonNullExpression(node.parent) || ts17.isTypeAssertionExpression(node.parent))) {
+              if (!this.tick()) {
+                valid = false;
+                break;
+              }
+              node = node.parent;
+            }
+            const parent = node.parent;
+            if (parent && ts17.isVariableDeclaration(parent) && parent.initializer === node && ts17.isIdentifier(parent.name) && parent.parent.flags & ts17.NodeFlags.Const && add2(parent.name))
+              continue;
+            if (!parent || !(ts17.isElementAccessExpression(parent) || ts17.isPropertyAccessExpression(parent)) || parent.expression !== node) {
+              valid = false;
+              break;
+            }
+            let member3 = parent;
+            const path2 = [ts17.isElementAccessExpression(parent) ? elementKey(parent.argumentExpression) : parent.name.text];
+            while (member3.parent && (ts17.isPropertyAccessExpression(member3.parent) || ts17.isElementAccessExpression(member3.parent)) && member3.parent.expression === member3) {
+              if (!this.tick() || path2.length >= this.limits.callDepth) {
+                valid = false;
+                break;
+              }
+              member3 = member3.parent;
+              path2.push(ts17.isPropertyAccessExpression(member3) ? member3.name.text : elementKey(member3.argumentExpression));
+            }
+            const use = member3.parent;
+            escapes.push(path2);
+            if (use && (ts17.isDeleteExpression(use) || ts17.isPrefixUnaryExpression(use) || ts17.isPostfixUnaryExpression(use) || ts17.isBinaryExpression(use) && use.left === member3 && isAssignmentOperator(use.operatorToken.kind) || ts17.isCallExpression(use) && use.expression === member3)) {
+              valid = false;
+              break;
+            }
+          }
+        }
+        this.restProofs.set(parameter, valid);
+        this.restEscapePaths.set(parameter, escapes);
+        return valid && unescaped();
       }
       opaqueCaptures(target, env) {
         if (!this.modules.indexComplete)
@@ -220126,7 +220259,8 @@ var init_dataflow = __esm({
         const target = resolution.target;
         const seeded = actualFrame.map((value) => traced(value, call, "call"));
         const identity = this.invocationIdentity(target, resolution.receiver, declared) + (capability ? `:${capability.identity}` : "");
-        const cacheable = !declared && !capability && !seeded.some((value) => hasMutableQuery(value));
+        const unresolvedRestSpread = target.parameters.some((parameter) => parameter.dotDotDotToken) && call.arguments.some(ts17.isSpreadElement);
+        const cacheable = !declared && !capability && !target.parameters.some((parameter) => parameter.dotDotDotToken) && !seeded.some((value) => hasMutableQuery(value));
         const key2 = cacheable ? `${identity}:${JSON.stringify(seeded.map((value) => contextValue(value)))}` : void 0;
         const cached = key2 ? this.cache.get(key2) : void 0;
         if (cached) {
@@ -220157,7 +220291,7 @@ var init_dataflow = __esm({
         const before = this.incompleteEvents;
         this.functionContextsStarted += 1;
         const frame = capability ? { ...capability, staticContext, captures: new Map([...capability.captures].map(([symbol, value]) => [symbol, traced(staticContext ? this.conditionalValue(value, staticContext) : value, call, "call")])) } : void 0;
-        const returned = analyzer.analyzeFunction(target, seeded, resolution.receiver, declared, frame, staticContext);
+        const returned = analyzer.analyzeFunction(target, seeded, resolution.receiver, declared, frame, staticContext, unresolvedRestSpread);
         observed(this.incompleteEvents === before);
         if (this.incompleteEvents === before)
           this.functionContextsCompleted += 1;
@@ -220280,7 +220414,7 @@ var init_dataflow = __esm({
           this.configuredInspectionsStarted++;
           const before = this.incompleteEvents;
           const analyzer = new DataflowAnalyzer(inspection.target.getSourceFile(), this);
-          analyzer.analyzeFunction(inspection.target, inspection.actuals.map((value) => traced(value, inspection.call, "call")), void 0, true, void 0, inspection.context);
+          analyzer.analyzeFunction(inspection.target, inspection.actuals.map((value) => traced(value, inspection.call, "call")), void 0, true, void 0, inspection.context, inspection.target.parameters.some((parameter) => parameter.dotDotDotToken) && inspection.call.arguments.some(ts17.isSpreadElement));
           this.uses.push(...analyzer.output());
           this.active.clear();
           if (this.incompleteEvents === before)
@@ -220597,7 +220731,7 @@ var init_dataflow = __esm({
           this.analyzeFunction(functionLike);
         return this.uses;
       }
-      analyzeFunction(functionLike, actuals, receiver, declared = false, capability, inheritedContext) {
+      analyzeFunction(functionLike, actuals, receiver, declared = false, capability, inheritedContext, unresolvedSpread = false) {
         this.staticContext = contexts(inheritedContext, capability?.staticContext);
         if (this.staticContext?.truncated)
           this.session?.gap("module_export_unsupported", functionLike);
@@ -220616,7 +220750,12 @@ var init_dataflow = __esm({
         const honoState = { valid: true, jsonDataValid: this.session?.honoModel.isolatedJsonEntry(functionLike) === true };
         const mongoEntry = actuals ? void 0 : this.session?.mongoModel.entry(functionLike);
         for (const [index, parameter] of functionLike.parameters.entries()) {
-          if (actuals)
+          if (actuals && parameter.dotDotDotToken) {
+            this.declareBinding(parameter.name, this.restActual(parameter, functionLike, unresolvedSpread ? actuals : actuals.slice(index), unresolvedSpread), env, true);
+          } else if (actuals && unresolvedSpread) {
+            this.session?.gap("module_export_unsupported", parameter);
+            this.declareBinding(parameter.name, this.restFallback(actuals, parameter), env, true);
+          } else if (actuals)
             this.declareBinding(parameter.name, traced(actuals[index] ?? UNKNOWN, parameter, "parameter"), env, true);
           else if (honoEntry)
             this.declareBinding(parameter.name, index === 0 ? { ...UNKNOWN, honoRequest: { stage: "context", state: honoState } } : { ...UNKNOWN, honoRequest: { stage: "next", state: honoState } }, env, true);
@@ -220650,8 +220789,13 @@ var init_dataflow = __esm({
         const env = new FlowEnv();
         for (const [symbol, value] of captures)
           env.declare(symbol.name, value, true, symbol);
-        for (const [index, parameter] of shape.target.parameters.entries())
-          this.declareBinding(parameter.name, traced(args[index] ?? UNKNOWN, parameter, "parameter"), env, true);
+        for (const [index, parameter] of shape.target.parameters.entries()) {
+          if (parameter.dotDotDotToken) {
+            this.session?.gap("module_export_unsupported", parameter);
+            this.declareBinding(parameter.name, this.restFallback(args.slice(index), parameter), env, true);
+          } else
+            this.declareBinding(parameter.name, traced(args[index] ?? UNKNOWN, parameter, "parameter"), env, true);
+        }
         this.constructedReceiver = { ...UNKNOWN, staticContext, constructed: { valid: true, shape, slots: /* @__PURE__ */ new Map(), staticContext } };
         this.constructorGuards = staticContext ? void 0 : new Set(shape.guards);
         this.analyzeStatement(shape.target.body, env);
@@ -220675,6 +220819,86 @@ var init_dataflow = __esm({
           return;
         }
         this.declareBinding(parameter.name, UNKNOWN, env, true);
+      }
+      restFallback(values, parameter) {
+        const combined = combineValues(values.map(consumedInput));
+        return traced({
+          kind: "unknown",
+          inputRelated: isInputRelated(combined),
+          trace: combined.trace,
+          traceSourceKind: combined.traceSourceKind,
+          traceTruncated: true,
+          staticContext: combined.staticContext,
+          sqlScalarUnavailable: true,
+          sqlDataUnavailable: true,
+          httpTargetUnavailable: true
+        }, parameter, "parameter");
+      }
+      restActual(parameter, target, values, unresolved) {
+        const aggregate = this.restFallback(values, parameter);
+        let complete = values.length <= (this.session?.limits.traceSteps ?? FLOW_LIMITS.traceSteps);
+        const valid = complete && !unresolved && this.session?.restPristine(parameter, target, values) === true;
+        const slots = [];
+        let copied = 0;
+        const seen = /* @__PURE__ */ new Set();
+        const copy = (value, depth) => {
+          const current = currentQuery(consumedInput(value));
+          const result3 = {
+            kind: current.kind,
+            root: current.root,
+            inputRelated: isInputRelated(current),
+            trace: current.trace,
+            traceTruncated: current.traceTruncated,
+            traceSourceKind: current.traceSourceKind,
+            staticContext: current.staticContext,
+            sqlScalarUnavailable: true,
+            sqlDataUnavailable: true,
+            httpTargetUnavailable: true
+          };
+          if (seen.has(value) || depth >= (this.session?.limits.callDepth ?? FLOW_LIMITS.callDepth) || copied >= (this.session?.limits.traceSteps ?? FLOW_LIMITS.traceSteps)) {
+            complete = false;
+            return result3;
+          }
+          if (this.session && !this.session.tick()) {
+            complete = false;
+            return result3;
+          }
+          copied++;
+          seen.add(value);
+          if (current.properties) {
+            const properties = /* @__PURE__ */ new Map();
+            for (const [name, child] of current.properties) {
+              if (copied >= (this.session?.limits.traceSteps ?? FLOW_LIMITS.traceSteps)) {
+                complete = false;
+                break;
+              }
+              properties.set(name, copy(child, depth + 1));
+            }
+            result3.properties = properties;
+          }
+          seen.delete(value);
+          return result3;
+        };
+        if (valid)
+          for (const value of values) {
+            if (!complete)
+              break;
+            slots.push(traced(copy(value, 0), parameter, "parameter"));
+          }
+        if (!valid || !complete) {
+          this.session?.gap(complete ? "module_export_unsupported" : "alias_limit", parameter);
+          if (this.session)
+            this.session.restBindingsUnsupported++;
+        } else if (this.session) {
+          this.session.restBindingsRecognized++;
+          this.session.restSlotsMaterialized += slots.length;
+        }
+        return {
+          ...aggregate,
+          kind: isInputRelated(aggregate) ? "tainted" : "unknown",
+          traceTruncated: !valid || !complete,
+          restTuple: { slots, aggregate, valid, complete }
+        };
       }
       declareBinding(name, value, env, blockScoped) {
         if (ts17.isIdentifier(name)) {
@@ -221777,6 +222001,8 @@ var init_dataflow = __esm({
           return this.constructedReceiver ?? UNKNOWN;
         if (ts17.isPropertyAccessExpression(expression)) {
           const receiver = this.evalExpression(expression.expression, env);
+          if (receiver.restTuple && expression.name.text !== "length")
+            this.session?.gap("module_export_unsupported", expression);
           if (receiver.archiveRole?.state.valid && receiver.archiveRole.stage === "entry" && expression.name.text === "path") {
             this.session.archiveModel.entryPaths++;
             return traced(withContext({ ...UNKNOWN_INPUT, traceSourceKind: "archive_entry_path" }, conditionalContext("declared_package_api", receiver.archiveRole.origin)), expression, "source");
@@ -221793,8 +222019,11 @@ var init_dataflow = __esm({
           return receiver.koaRequest && isInputRelated(projected) && !projected.trace?.some((step2) => step2.role === "source") ? traced(projected, expression, "source") : projected;
         }
         if (ts17.isElementAccessExpression(expression)) {
-          const key2 = propertyName(expression.argumentExpression);
           const base = this.evalExpression(expression.expression, env);
+          const argument = expression.argumentExpression;
+          const key2 = base.restTuple ? argument && (ts17.isStringLiteralLike(argument) || ts17.isNumericLiteral(argument)) ? argument.text : void 0 : propertyName(argument);
+          if (base.restTuple && (key2 === void 0 || key2 !== "length" && (!/^(0|[1-9]\d*)$/.test(key2) || !Number.isSafeInteger(Number(key2)))))
+            this.session?.gap("module_export_unsupported", expression);
           if (base.archiveRole?.state.valid && base.archiveRole.stage === "entry" && key2 === "path") {
             this.session.archiveModel.entryPaths++;
             return traced(withContext({ ...UNKNOWN_INPUT, traceSourceKind: "archive_entry_path" }, conditionalContext("declared_package_api", base.archiveRole.origin)), expression, "source");
@@ -221810,6 +222039,20 @@ var init_dataflow = __esm({
             return base.koaRequest && isInputRelated(projected) && !projected.trace?.some((step2) => step2.role === "source") ? traced(projected, expression, "source") : projected;
           }
           const keyValue = expression.argumentExpression ? this.evalExpression(expression.argumentExpression, env) : UNKNOWN;
+          if (base.restTuple) {
+            const combined = combineValues([base.restTuple.aggregate, consumedInput(keyValue)]);
+            return {
+              kind: "unknown",
+              inputRelated: isInputRelated(combined),
+              trace: combined.trace,
+              traceSourceKind: combined.traceSourceKind,
+              traceTruncated: true,
+              staticContext: combined.staticContext,
+              sqlScalarUnavailable: true,
+              sqlDataUnavailable: true,
+              httpTargetUnavailable: true
+            };
+          }
           const value = isInputRelated(base) || isInputRelated(keyValue) ? inheritTrace(base.kind === "tainted" ? TAINTED : UNKNOWN_INPUT, [base, keyValue]) : UNKNOWN;
           return { ...value, sqlDataUnavailable: base.sqlDataUnavailable || keyValue.sqlDataUnavailable, httpTargetUnavailable: httpUnavailable([base, keyValue]) };
         }
@@ -227837,7 +228080,7 @@ var init_report = __esm({
     init_analysis_gaps();
     REPORT_SCHEMA_VERSION = "1.0.0";
     REPORT_TOOL_VERSION = "0.5.0";
-    RULESET_VERSION = "2026-10-14.3";
+    RULESET_VERSION = "2026-10-14.4";
     SEVERITIES2 = [
       "info",
       "low",
