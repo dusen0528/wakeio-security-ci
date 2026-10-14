@@ -58,4 +58,29 @@ Corpus `2026-10-05.synthetic-js-ts.v3` has **50 cases: 25 vulnerable and 25 fixe
 
 These cases are acceptance/regression tests, not a statistically blind holdout. The Koa miss remains in the primary denominator and the failure artifact even if strict mode passes. The supported label is a regression commitment, not a reason to hide unsupported examples from the primary result. A newly failing supported case must be investigated rather than relabeled to make strict pass.
 
-Compare engine revisions against the **same corpus version and fixture bytes**. Historical reports retain their original labels and denominators; do not compare the old 15-finding denominator directly with v3's 25 findings or rewrite old reports. More framework-shaped source makes this corpus more revealing, but 50 selected examples cannot measure real-project recall. Python semantics, real framework/database/browser execution, network behavior, authentication, package installation and build behavior remain outside the benchmark. Unrepresented patterns remain unknown even when all represented cases pass. See [the source flow contract](../docs/source-flow.md) for the bounded static model.
+Compare engine revisions against the **same corpus version and fixture bytes**. Historical reports retain their original labels and denominators; do not compare the old 15-finding denominator directly with v3's 25 findings or rewrite old reports. More framework-shaped source makes this corpus more revealing, but selected examples cannot measure real-project recall. Python semantics, real framework/database/browser execution, network behavior, authentication, package installation and build behavior remain outside the benchmark. Unrepresented patterns remain unknown even when all represented cases pass. See [the source flow contract](../docs/source-flow.md) for the bounded static model.
+
+## Corpus v4: three Hono source pairs
+
+Corpus `2026-10-14.synthetic-js-ts.v4` has **56 cases: 28 vulnerable and 28 fixed**,
+with **28 expected findings: 27 supported and the unchanged 1 known miss**.
+It preserves all 50 v3 fixture sources and labels and adds three owned pairs:
+
+- [Query to fetch](fixtures/hono-query-fetch-vulnerable/app.ts) versus a
+  [fixed destination](fixtures/hono-query-fetch-fixed/app.ts).
+- [Path parameter to SQL text](fixtures/hono-param-sql-vulnerable/app.ts) versus
+  [separate bound data](fixtures/hono-param-sql-fixed/app.ts).
+- [Awaited JSON field to SQL text](fixtures/hono-json-sql-vulnerable/app.ts)
+  versus [separate bound data](fixtures/hono-json-sql-fixed/app.ts).
+
+These pairs use an exact named Hono import, an immutable same-file app and a
+single registered handler. They test request-source recognition reaching
+existing sinks, with the SQL pairs declaring an imported `pg` Pool; the runner
+imports neither target package and executes no fixture. The fixed
+controls retain the input read and change the sink's declared operand shape.
+They do not establish all Hono routes, middleware, composition, package identity
+or runtime behavior. The [Hono source validation record](../docs/research/hono-request-sources-2026-10-14.md)
+separates baseline misses from current results and production-source review.
+Historical 50-case measurements remain v3 results; a before/after v4 measurement
+must run both engines on all 56 fixed inputs. Known-miss and strict-mode policies
+are unchanged.

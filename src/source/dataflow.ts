@@ -11,6 +11,7 @@ import { SqlRoleModel, type SqlRoleUse } from './sql-role.js';
 import { HttpRoleModel, fixedInitialHttpUrl, legacyAxiosRequest, type HttpRoleUse } from './http-role.js';
 import { ExpressRoleModel } from './express-role.js';
 import { KoaRoleModel, type KoaRequestRole } from './koa-role.js';
+import { HonoRoleModel, type HonoRequestRole } from './hono-role.js';
 import { NoSqlRoleModel, type NoSqlRoleUse } from './nosql-role.js';
 import { analyzeClosureShape, analyzeConstructedShape, type ClosureShape, type ConstructorShape, type ShapeResult } from './closure-shape.js';
 import { MongoRoleModel, type MongoDbRole, type MongoCollectionRole } from './mongo-role.js';
@@ -78,6 +79,9 @@ function containResponse(value: FlowValue): void {
 
 interface FlowValue {
   koaRequest?: KoaRequestRole;
+  honoRequest?: HonoRequestRole;
+  /** Qualified request-return data only; never changes input taint or SQL dispatch. */
+  honoSqlData?: 'request_data' | 'json_promise';
   traceSourceKind?: StaticFlow['sourceKind'];
   archiveRole?: ArchiveRole;
   /** Independent path-origin witness when another input wins the general trace. */
@@ -202,6 +206,12 @@ function invalidateMongo(role: MongoDbRole | MongoCollectionRole | undefined, re
   if (!role) return;
   role.valid = false;
   if (!role.invalidReason || role.invalidReason === 'opaque' || reason === 'write') role.invalidReason = reason;
+}
+
+function invalidateHono(role: HonoRequestRole): void {
+  role.state.valid = false;
+  role.state.jsonDataValid = false;
+  if (role.jsonSourceState) role.jsonSourceState.jsonDataValid = false;
 }
 
 function evidence(value: FlowValue, node: ts.Node): StaticFlow | undefined {
@@ -407,6 +417,9 @@ function joinValues(left: FlowValue, right: FlowValue): FlowValue {
     const koaRole = left.koaRequest ?? right.koaRequest;
     result.koaRequest = left.koaRequest?.state === right.koaRequest?.state && left.koaRequest?.stage === right.koaRequest?.stage
       ? left.koaRequest : koaRole ? { ...koaRole, state: { valid: false } } : undefined;
+    const honoRole = left.honoRequest ?? right.honoRequest;
+    result.honoRequest = left.honoRequest?.state === right.honoRequest?.state && left.honoRequest?.stage === right.honoRequest?.stage
+      ? left.honoRequest : honoRole ? { ...honoRole, state: { valid: false } } : undefined;
     return { ...result, sequenceContent, filesystemStream, filesystemContent, expressResponse: joinResponse(left.expressResponse, right.expressResponse), nosqlObject: left.nosqlObject === right.nosqlObject ? left.nosqlObject : undefined, nosqlUnknown, nosqlWhere, mongoDb, mongoCollection, expressObjectBody: left.expressObjectBody === true && right.expressObjectBody === true, ...(properties ? { properties } : {}), sqlFixedText, sqlArray, sqlConfig, sqlScalarUnavailable:left.sqlScalarUnavailable || right.sqlScalarUnavailable, sqlCallback:left.sqlCallback || right.sqlCallback, sqlDataUnavailable:left.sqlDataUnavailable || right.sqlDataUnavailable, httpTargetUnavailable:httpUnavailable([left,right]), urlFragments, nativeQuery: left.nativeQuery === true && right.nativeQuery === true, queryContent: sharedQueryContent, httpConfig };
   };
   if (left.kind === right.kind && (left.kind !== "root" || left.root === right.root)) {
@@ -450,6 +463,13 @@ function withoutUrlProof(value: FlowValue): FlowValue {
 }
 
 function projectValue(base: FlowValue, property: string): FlowValue {
+  if (base.honoRequest) {
+    const known = base.properties?.get(property);
+    if (known) return known;
+    const role = base.honoRequest;
+    if (role.state.valid && role.stage === 'context' && property === 'req') return { ...UNKNOWN, honoRequest: { ...role, stage: 'request' } };
+    return UNKNOWN; // Method reads/detached aliases and unresolved Context fields are not input.
+  }
   if (base.koaRequest) {
     const known = base.properties?.get(property);
     if (known) return known;
@@ -553,7 +573,7 @@ class FlowEnv {
       if (index === path.length - 1) {
         properties.set(property, value);
       } else {
-        properties.set(property, update(properties.get(property) ?? (base.koaRequest ? projectValue(base, property) : UNKNOWN), index + 1));
+        properties.set(property, update(properties.get(property) ?? (base.koaRequest || base.honoRequest ? projectValue(base, property) : UNKNOWN), index + 1));
       }
       const combined = combineValues([base, value]);
       if (base.nosqlObject) {
@@ -567,11 +587,14 @@ class FlowEnv {
       const expressResponse = benignResponseWrite ? base.expressResponse : undefined;
       const benignKoaWrite = base.koaRequest?.stage === 'context' && ['body', 'state', 'status', 'type', 'response'].includes(property);
       if (base.koaRequest && !benignKoaWrite) base.koaRequest.state.valid = false;
+      const benignHonoWrite = base.honoRequest?.stage === 'context' && property === 'res';
+      if (base.honoRequest && !benignHonoWrite) base.honoRequest.state.valid = false;
+      if (base.honoRequest?.stage === 'request') base.honoRequest.state.jsonDataValid = false;
       if (base.constructed) base.constructed.valid = false;
       if (base.archiveRole) base.archiveRole.state.valid = false;
       invalidateMongo(base.mongoDb, 'write');
       invalidateMongo(base.mongoCollection, 'write');
-      return { ...combined, koaRequest: base.koaRequest, expressResponse, expressObjectBody: base.expressObjectBody, properties, nosqlObject: base.nosqlObject, constructed: base.constructed, mongoDb: base.mongoDb, mongoCollection: base.mongoCollection };
+      return { ...combined, koaRequest: base.koaRequest, honoRequest: base.honoRequest, expressResponse, expressObjectBody: base.expressObjectBody, properties, nosqlObject: base.nosqlObject, constructed: base.constructed, mongoDb: base.mongoDb, mongoCollection: base.mongoCollection };
     };
     this.assign(path[0], update(this.resolve(path[0]), 1));
   }
@@ -650,7 +673,7 @@ export function observedGapLocation(node: ts.Node, files: ReadonlyMap<string, ts
 interface FunctionSummary { returned: FlowValue; }
 // Mutable content must not be reused through a cached return or skipped side effect.
 function hasMutableQuery(value: FlowValue, seen = new Set<FlowValue>(), depth = 0): boolean {
-  if (value.koaRequest) return true;
+  if (value.koaRequest || value.honoRequest) return true;
   if (value.archiveRole || value.archiveContent) return true;
   if (value.sequenceContent || value.filesystemStream || value.staticContext || value.boundaryInput || value.expressResponse || value.queryContent || value.nosqlObject || value.nosqlUnknown || value.callable || value.constructed || value.mongoDb || value.mongoCollection || seen.has(value) || depth > 16 || seen.size > 128) return true;
   seen.add(value);
@@ -684,6 +707,7 @@ class FlowSession {
   readonly archiveModel: ArchiveRoleModel;
   readonly expressModel: ExpressRoleModel;
   readonly koaModel: KoaRoleModel;
+  readonly honoModel: HonoRoleModel;
   readonly browserLocationModel: BrowserLocationRoleModel;
   readonly active = new Set<string>();
   readonly cache = new Map<string, FunctionSummary>();
@@ -734,6 +758,7 @@ class FlowSession {
     this.archiveModel = new ArchiveRoleModel(this.modules, metadata, () => this.tick(), (reason, node) => this.gap(reason, node), roleProofScopeComplete, limits.aliasSteps);
     this.expressModel = new ExpressRoleModel(this.modules, () => this.tick(), this.indexComplete);
     this.koaModel = new KoaRoleModel(this.modules, () => this.tick(), this.indexComplete);
+    this.honoModel = new HonoRoleModel(this.modules, () => this.tick(), this.indexComplete, roleProofScopeComplete);
     this.browserLocationModel = new BrowserLocationRoleModel(this.modules, () => this.tick(), roleProofScopeComplete, limits.aliasSteps);
     this.modules.finishIndex(this.indexComplete);
     this.phase = 'flow';
@@ -941,6 +966,7 @@ class FlowSession {
       if (value.filesystemStream) value.filesystemStream.valid = false;
       if (value.archiveRole) { value.archiveRole.state.valid = false; this.archiveModel.unsupported(value.archiveRole.origin); }
       if (value.koaRequest) { value.koaRequest.state.valid = false; this.gap('module_export_unsupported'); }
+      if (value.honoRequest) { invalidateHono(value.honoRequest); this.gap('module_export_unsupported'); }
       invalidateMongo(value.mongoDb, 'opaque'); invalidateMongo(value.mongoCollection, 'opaque');
       if (value.constructed) { value.constructed.valid = false; value.constructed.staticContext = contexts(value.constructed.staticContext, staticContext); for (const slot of value.constructed.slots.values()) visit(slot, depth + 1); }
       if (value.callable) { value.callable.valid = false; value.callable.staticContext = contexts(value.callable.staticContext, staticContext); for (const captured of value.callable.captures.values()) visit(captured, depth + 1); if (value.callable.lexicalThis) visit(value.callable.lexicalThis, depth + 1); }
@@ -1051,6 +1077,7 @@ class DataflowAnalyzer {
   private readonly arrayActuals = new WeakMap<ts.ArrayLiteralExpression, { env: FlowEnv; values: Map<ts.Node, FlowValue> }>();
   private readonly constructedActuals = new WeakMap<ts.NewExpression, { env: FlowEnv; value: FlowValue }>();
   private readonly callableActuals = new WeakMap<ts.CallExpression, { env: FlowEnv; value?: FlowValue }>();
+  private honoDataReads?: WeakMap<ts.CallExpression, { env: FlowEnv; value: FlowValue }>;
   private readonly conditionalActuals = new WeakMap<ts.ConditionalExpression, { env: FlowEnv; value: FlowValue }>();
   private constructedReceiver?: FlowValue;
   private constructorGuards?: ReadonlySet<ts.IfStatement>;
@@ -1126,9 +1153,14 @@ class DataflowAnalyzer {
     const expressEntry = this.session?.expressModel.entry(functionLike);
     const koaEntry = this.session?.koaModel.entry(functionLike);
     const koaState = { valid: true };
+    const honoEntry = this.session?.honoModel.entry(functionLike);
+    const honoState = { valid: true, jsonDataValid: this.session?.honoModel.isolatedJsonEntry(functionLike) === true };
     const mongoEntry = actuals ? undefined : this.session?.mongoModel.entry(functionLike);
     for (const [index, parameter] of functionLike.parameters.entries()) {
       if (actuals) this.declareBinding(parameter.name, traced(actuals[index] ?? UNKNOWN, parameter, "parameter"), env, true);
+      else if (honoEntry) this.declareBinding(parameter.name, index === 0
+        ? { ...UNKNOWN, honoRequest: { stage: 'context', state: honoState } }
+          : { ...UNKNOWN, honoRequest: { stage: 'next', state: honoState } }, env, true);
       else if (koaEntry) this.declareBinding(parameter.name, { ...UNKNOWN, koaRequest: { stage: index === 0 ? 'context' : 'next', state: koaState } }, env, true);
       else if (mongoEntry && index === 1) this.declareBinding(parameter.name, { ...UNKNOWN, mongoDb: mongoEntry }, env, true);
       else if (expressEntry) this.declareBinding(parameter.name,
@@ -1507,6 +1539,7 @@ class DataflowAnalyzer {
       const archivePathCall = this.session?.archiveModel.pathCall(expression);
       const archiveWriter = this.session?.archiveModel.writer(expression);
       const koaRegistration = this.session?.koaModel.registration(expression);
+      const honoRegistration = this.session?.honoModel.registration(expression);
       this.session?.mongoModel.observe(expression);
       const mongoCollection = this.session?.mongoModel.collection(expression, response?.mongoDb);
       // Preserve operand order in this syntax-shaped lane: later writes cannot replace earlier actual evidence.
@@ -1571,6 +1604,7 @@ class DataflowAnalyzer {
       }
       const callable = selectedCallable.callable;
       if (koaRegistration && args[0]?.callable) this.session?.callback(args[0].callable, expression);
+      if (honoRegistration && args[1]?.callable) this.session?.callback(args[1].callable, expression);
       if (response?.koaRequest || selectedCallable.koaRequest?.stage === 'next') {
         const role = response?.koaRequest ?? selectedCallable.koaRequest!;
         role.state.valid = false; this.session?.gap('module_export_unsupported', expression);
@@ -1581,13 +1615,22 @@ class DataflowAnalyzer {
         response.archiveRole.state.valid = false; this.session?.archiveModel.unsupported(expression);
       }
       if (selectedCallable.opaqueClosure) this.session?.gap('module_export_unsupported', expression);
-      const applied = koaRegistration ? UNKNOWN : archiveOpen ? { ...UNKNOWN, archiveRole: archiveOpen }
+      const honoRead = this.honoRead(expression, response);
+      if (selectedCallable.honoRequest?.stage === 'next') {
+        selectedCallable.honoRequest.state.jsonDataValid = false;
+        this.session?.gap('module_export_unsupported', expression);
+      }
+      if (honoRead?.honoSqlData) {
+        this.honoDataReads ??= new WeakMap();
+        this.honoDataReads.set(expression, { env, value: honoRead });
+      }
+      const applied = koaRegistration || honoRegistration ? UNKNOWN : honoRead ?? (archiveOpen ? { ...UNKNOWN, archiveRole: archiveOpen }
         : archivePathCall ? archivePathCall === 'predicate' ? SAFE : traced(combineValues(args), expression, 'call')
         : archiveWriter ? UNKNOWN : filesystemStream ? { ...UNKNOWN, filesystemStream }
         : arrayMutation ? cell.closed && cell.valid ? SAFE : UNKNOWN // Only qualified arrays have a length return; opaque methods remain unknown.
         : filesystemEvent ? { ...UNKNOWN, filesystemStream: response!.filesystemStream }
         : mongoCollection ? { ...UNKNOWN, mongoCollection } : selectedCallable.opaqueClosure ? traced({ ...selectedCallable.opaqueClosure, traceTruncated: true }, expression, 'call')
-        : this.session?.invoke(expression, args,this.receiver,this.declared,callable,this.staticContext);
+        : this.session?.invoke(expression, args,this.receiver,this.declared,callable,this.staticContext));
       const invoked = !archiveOpen && !archiveWriter && !arrayMutation && !filesystemStream && !filesystemEvent
         && applied?.kind === 'unknown' && !applied.inputRelated && !applied.constructed && !applied.callable && !applied.mongoCollection && !applied.mongoDb && args.some(isInputRelated)
         ? { ...traced(combineValues(args), expression, 'call'), kind: 'unknown' as const, inputRelated: true, traceTruncated: true, httpTargetUnavailable: httpUnavailable([applied, ...args]) } : applied;
@@ -1605,6 +1648,7 @@ class DataflowAnalyzer {
             if (value.filesystemStream) value.filesystemStream.valid = false;
             if (value.archiveRole) { value.archiveRole.state.valid = false; this.session.archiveModel.unsupported(expression); }
             if (value.koaRequest) { value.koaRequest.state.valid = false; this.session.gap('module_export_unsupported', expression); }
+            if (value.honoRequest) { invalidateHono(value.honoRequest); this.session.gap('module_export_unsupported', expression); }
             if (value.nosqlObject) {
               value.nosqlObject.value = combineValues([value.nosqlObject.value, ...args]);
               value.nosqlObject.modified = true;
@@ -1703,21 +1747,21 @@ class DataflowAnalyzer {
       this.analyzeExpression(expression.operand, env);
       if (expression.operator === ts.SyntaxKind.PlusPlusToken || expression.operator === ts.SyntaxKind.MinusMinusToken) {
         if (ts.isIdentifier(expression.operand)) env.assign(expression.operand.text, UNKNOWN);
-        else if (env.resolve(staticMemberPath(expression.operand)[0] ?? '').koaRequest) this.assignMemberPath(expression.operand, UNKNOWN, env);
+        else if (env.resolve(staticMemberPath(expression.operand)[0] ?? '').koaRequest || env.resolve(staticMemberPath(expression.operand)[0] ?? '').honoRequest) this.assignMemberPath(expression.operand, UNKNOWN, env);
       }
       return;
     }
     if (ts.isPostfixUnaryExpression(expression)) {
       this.analyzeExpression(expression.operand, env);
       if (ts.isIdentifier(expression.operand)) env.assign(expression.operand.text, UNKNOWN);
-      else if (env.resolve(staticMemberPath(expression.operand)[0] ?? '').koaRequest) this.assignMemberPath(expression.operand, UNKNOWN, env);
+      else if (env.resolve(staticMemberPath(expression.operand)[0] ?? '').koaRequest || env.resolve(staticMemberPath(expression.operand)[0] ?? '').honoRequest) this.assignMemberPath(expression.operand, UNKNOWN, env);
       return;
     }
     if (ts.isDeleteExpression(expression)) {
       this.analyzeExpression(expression.expression, env);
-      // Only the Koa capability needs this new negative effect. Preserve
+      // Only request capabilities need this negative effect. Preserve
       // historical handling for unrelated member expressions.
-      if (env.resolve(staticMemberPath(expression.expression)[0] ?? '').koaRequest) this.assignMemberPath(expression.expression, UNKNOWN, env);
+      if (env.resolve(staticMemberPath(expression.expression)[0] ?? '').koaRequest || env.resolve(staticMemberPath(expression.expression)[0] ?? '').honoRequest) this.assignMemberPath(expression.expression, UNKNOWN, env);
       return;
     }
     if (ts.isConditionalExpression(expression)) {
@@ -2069,6 +2113,32 @@ class DataflowAnalyzer {
     return html;
   }
 
+  private honoRead(call: ts.CallExpression, receiver?: FlowValue): FlowValue | undefined {
+    const role = receiver?.honoRequest;
+    if (!role) return undefined;
+    const callee = call.expression;
+    const method = ts.isPropertyAccessExpression(callee) && !callee.questionDotToken ? callee.name.text : undefined;
+    const plain = !call.questionDotToken && !call.arguments.some(ts.isSpreadElement);
+    if (role.state.valid && plain && role.stage === 'context'
+      && ['text', 'json', 'html', 'redirect', 'body', 'status', 'header', 'newResponse', 'set', 'get'].includes(method ?? '')) return UNKNOWN;
+    if (role.state.valid && plain && role.stage === 'request') {
+      if ((method === 'query' || method === 'param') && (call.arguments.length === 0
+        || call.arguments.length === 1 && ts.isStringLiteralLike(call.arguments[0]))) return { ...traced(TAINTED, call, 'source'), honoSqlData: 'request_data' };
+      // Body reading starts at this call. Later request replacement cannot
+      // erase the captured promise's provenance; opaque promise effects can.
+      if (method === 'json' && call.arguments.length === 0) {
+        role.state.jsonReads = (role.state.jsonReads ?? 0) + 1;
+        // Older Hono versions can share a cached parsed object between reads.
+        role.state.jsonDataValid = role.state.jsonDataValid !== false && role.state.jsonReads === 1;
+        return { ...UNKNOWN, honoSqlData: 'json_promise',
+          honoRequest: { stage: 'promise', state: { valid: true }, origin: call, jsonSourceState: role.state } };
+      }
+    }
+    invalidateHono(role);
+    this.session?.gap('module_export_unsupported', call);
+    return UNKNOWN;
+  }
+
   private evalExpression(expression: ts.Expression, env: FlowEnv): FlowValue {
     if (this.session && !this.session.tick()) return UNKNOWN;
     if (ts.isIdentifier(expression)) {
@@ -2083,6 +2153,10 @@ class DataflowAnalyzer {
     if (expression.kind === ts.SyntaxKind.TrueKeyword || expression.kind === ts.SyntaxKind.FalseKeyword || expression.kind === ts.SyntaxKind.NullKeyword || expression.kind === ts.SyntaxKind.UndefinedKeyword) return SAFE;
     if (ts.isAwaitExpression(expression)) {
       const value = this.evalExpression(expression.expression, env);
+      if (value.honoRequest?.stage === 'promise') {
+        if (!value.honoRequest.state.valid) { this.session?.gap('module_export_unsupported', expression); return UNKNOWN; }
+        return value.honoRequest.origin ? traced(TAINTED, value.honoRequest.origin, 'source') : UNKNOWN;
+      }
       return value.archiveRole?.stage === 'promise' && value.archiveRole.state.valid
         ? { ...value, archiveRole: { ...value.archiveRole, stage: 'directory' } } : value;
     }
@@ -2099,6 +2173,8 @@ class DataflowAnalyzer {
       if (receiver.constructed) return receiver.constructed.valid ? receiver.constructed.slots.get(expression.name.text) ?? UNKNOWN : UNKNOWN;
       const projected = currentQuery(projectValue(receiver, expression.name.text));
       if (receiver.koaRequest && !receiver.koaRequest.state.valid) this.session?.gap('module_export_unsupported', expression);
+      if (receiver.honoRequest && !receiver.honoRequest.state.valid) this.session?.gap('module_export_unsupported', expression);
+      if (receiver.honoRequest?.stage === 'request' && !['query','param','json'].includes(expression.name.text)) receiver.honoRequest.state.jsonDataValid = false;
       return receiver.koaRequest && isInputRelated(projected) && !projected.trace?.some(step => step.role === 'source') ? traced(projected, expression, 'source') : projected;
     }
     if (ts.isElementAccessExpression(expression)) {
@@ -2112,6 +2188,8 @@ class DataflowAnalyzer {
       if (key !== undefined) {
         const projected = currentQuery(projectValue(base, key));
         if (base.koaRequest && !base.koaRequest.state.valid) this.session?.gap('module_export_unsupported', expression);
+        if (base.honoRequest && !base.honoRequest.state.valid) this.session?.gap('module_export_unsupported', expression);
+        if (base.honoRequest?.stage === 'request' && !['query','param','json'].includes(key)) base.honoRequest.state.jsonDataValid = false;
         return base.koaRequest && isInputRelated(projected) && !projected.trace?.some(step => step.role === 'source') ? traced(projected, expression, 'source') : projected;
       }
       // Dynamic keys cannot be resolved in this bounded analysis, but a
@@ -2140,7 +2218,13 @@ class DataflowAnalyzer {
       const filenameValues = values.map(filenamePart).filter((value): value is FlowValue => !!value);
       return { ...combined, expressObjectBody: true, properties,
         ...(filenameValues.length ? { filesystemContent: combineValues(filenameValues) } : {}),
-        ...(this.session?.sqlModel ? { sqlArray:{ node:expression,closed:this.session.sqlModel.closedArray(expression) && !combined.sqlDataUnavailable,count:expression.elements.length } } : {}) };
+        ...(this.session?.sqlModel ? { sqlArray:{ node:expression,closed:this.session.sqlModel.closedArray(expression,
+          this.honoDataReads ? (call, awaited) => {
+            const read = this.honoDataReads!.get(call);
+            return read?.env === env && (awaited ? read.value.honoSqlData === 'json_promise'
+              && read.value.honoRequest?.state.valid === true && read.value.honoRequest.jsonSourceState?.jsonDataValid === true
+              : read.value.honoSqlData === 'request_data');
+          } : undefined) && !combined.sqlDataUnavailable,count:expression.elements.length } } : {}) };
     }
     if (ts.isObjectLiteralExpression(expression)) {
       const observed = this.objectActuals.get(expression);
@@ -2236,6 +2320,8 @@ class DataflowAnalyzer {
       }
       const receiver = ts.isPropertyAccessExpression(expression.expression) ? this.evalExpression(expression.expression.expression, env) : undefined;
       const method = ts.isPropertyAccessExpression(expression.expression) ? expression.expression.name.text : undefined;
+      const honoRead = this.honoRead(expression, receiver);
+      if (honoRead) return honoRead;
       if (ts.isIdentifier(expression.expression) && expression.expression.text === "URLSearchParams") {
         return withHttpUnavailable(args.some(isInputRelated) ? inheritTrace(rootValue("searchParams"), args) : args.every((value) => value.kind === "safe") ? SAFE : UNKNOWN, args);
       }
@@ -2314,6 +2400,7 @@ export function findSnapshotInputFlows(files: readonly ts.SourceFile[], limits: 
     flowModel: "bounded-static-local-relative-v1", budgetModel: "shared-index-separate-flow-v1", entrySeedModel: "request_shaped_uncalled_exported_or_callback_escaped_function",
     expressEntryModel: 'lexical-express-registration-v1',
     koaEntryModel: 'lexical-koa-use-v1',
+    honoEntryModel: 'lexical-hono-literal-route-v1',
     nodeVisits: session.nodeVisits, indexWork: session.indexWork, flowWork: session.flowWork,
     maxIndexWork: session.maxIndexWork, maxFlowWork: session.maxFlowWork,
     indexComplete: session.indexComplete, rootInventoryComplete: session.indexComplete,

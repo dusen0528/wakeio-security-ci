@@ -1,0 +1,98 @@
+{
+  "schemaVersion": "oss-corpus-v1",
+  "repositories": [
+    {
+      "id": "express",
+      "url": "https://github.com/expressjs/express.git",
+      "commit": "cd7d4397c398a3f3ecadeaf9ef6ac1377bd414c4",
+      "tree": "234b224fd3074adb169a0da0619b624a070a0517",
+      "license": "MIT",
+      "fileSha256": {
+        "LICENSE": "95a5762890e5c1c9808921cef095661fc482c5e1f0bba31446ac85595df6237c",
+        "package.json": "0ca5c69a8c6647bd6c8b7d9ee3451e0eefce551304f6bfeb57f8df3ab79823e1",
+        "test/res.json.js": "08186aceebdb74af9f6fabe495c8c8b9334fbc6e5d53bf52145e4f86850eb046"
+      },
+      "expectedFindings": [],
+      "reviewedNegativeSites": [
+        {
+          "id": "express-fixed-json",
+          "path": "test/res.json.js",
+          "firstLine": 117,
+          "lastLine": 119,
+          "ruleIds": [
+            "ast:html-input-sink"
+          ],
+          "support": "supported",
+          "basis": "Fixed local markup is passed to res.json; no request operand and no declared HTML output.",
+          "sourceUrl": "https://github.com/expressjs/express/blob/cd7d4397c398a3f3ecadeaf9ef6ac1377bd414c4/test/res.json.js#L117-L119"
+        }
+      ]
+    },
+    {
+      "id": "umami",
+      "url": "https://github.com/umami-software/umami.git",
+      "commit": "60eaaaff60a38efb3c779a250742187ec9201944",
+      "tree": "fbb639330def9805000da7bee1a5329468d8d504",
+      "license": "MIT",
+      "fileSha256": {
+        "LICENSE": "d59f69c3a56253a150adfc42b41acd49e9024410ad087c58a23d506623258dfe",
+        "package.json": "35478e772d136361593cfbd2447a6c9ea134781378124f1da0ebdbb1972439a9",
+        "src/app/api/auth/login/route.ts": "ddd368e4e447291329dfb0fa9e9f8791e1108d11c556fb328d96be70b6c938e7",
+        "src/app/api/send/route.ts": "a5b5ee60a55af2cd927fadcab9af44d5c062c425cf688ec41156365109e3b6df",
+        "src/lib/prisma.ts": "2578080e1ae7030e424eb7671ced622e91581cbd5e5c54fb7266d303d60e1ca0",
+        "src/lib/response.ts": "bb235b33229e64eaa690cc99181fb3cb2cb4faaf205cee6115bfcad00a4ad407"
+      },
+      "expectedFindings": [],
+      "reviewedNegativeSites": [
+        {
+          "id": "umami-json-helper",
+          "path": "src/lib/response.ts",
+          "firstLine": 7,
+          "lastLine": 8,
+          "ruleIds": [
+            "ast:html-input-sink"
+          ],
+          "support": "supported",
+          "basis": "Response.json is a JSON serialization API, not an HTML rendering sink.",
+          "sourceUrl": "https://github.com/umami-software/umami/blob/60eaaaff60a38efb3c779a250742187ec9201944/src/lib/response.ts#L7-L8"
+        },
+        {
+          "id": "umami-login-json",
+          "path": "src/app/api/auth/login/route.ts",
+          "firstLine": 42,
+          "lastLine": 45,
+          "ruleIds": [
+            "ast:html-input-sink"
+          ],
+          "support": "supported",
+          "basis": "Returned object reaches imported local json wrapper whose implementation is Response.json; not proof of auth or whole-route safety.",
+          "sourceUrl": "https://github.com/umami-software/umami/blob/60eaaaff60a38efb3c779a250742187ec9201944/src/app/api/auth/login/route.ts#L42-L45"
+        },
+        {
+          "id": "umami-url-parse",
+          "path": "src/app/api/send/route.ts",
+          "firstLine": 137,
+          "lastLine": 143,
+          "ruleIds": [
+            "ast:server-request"
+          ],
+          "support": "supported",
+          "basis": "URL construction and property parsing do not perform an outbound HTTP request.",
+          "sourceUrl": "https://github.com/umami-software/umami/blob/60eaaaff60a38efb3c779a250742187ec9201944/src/app/api/send/route.ts#L137-L143"
+        },
+        {
+          "id": "umami-referrer-parse",
+          "path": "src/app/api/send/route.ts",
+          "firstLine": 168,
+          "lastLine": 176,
+          "ruleIds": [
+            "ast:server-request"
+          ],
+          "support": "supported",
+          "basis": "Referrer URL construction and property parsing do not perform an outbound HTTP request.",
+          "sourceUrl": "https://github.com/umami-software/umami/blob/60eaaaff60a38efb3c779a250742187ec9201944/src/app/api/send/route.ts#L168-L176"
+        }
+      ]
+    }
+  ]
+}
