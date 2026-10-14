@@ -1,7 +1,7 @@
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
+import { homedir, tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { credentialEnvironment, optionalSdk, recordedAgent, requireLive, type ProviderOptions, type Reply } from './record.js';
 
@@ -9,14 +9,16 @@ import { credentialEnvironment, optionalSdk, recordedAgent, requireLive, type Pr
 const disabledFeatures = ['shell_tool','unified_exec','shell_snapshot','code_mode','multi_agent','multi_agent_v2',
   'apps','plugins','hooks','browser_use','browser_use_external','computer_use','view_image',
   'image_generation','memories','in_app_browser','skill_mcp_dependency_install'];
-export async function createAgent(options: ProviderOptions) {
+export async function createAgent(options: ProviderOptions & { authMode?: 'api-key' | 'cli-login' }) {
   requireLive(options);
   const sdk = options.replay === undefined ? await optionalSdk('@openai/codex-sdk') : undefined;
   return recordedAgent('codex', options, async (prompt, schema) => {
     const directory = await mkdtemp(join(tmpdir(), 'wakeio-codex-'));
     const abort = new AbortController(), timer = setTimeout(() => abort.abort(), 60_000);
     try {
-      const env = { ...credentialEnvironment('CODEX_API_KEY', directory), CODEX_HOME: directory };
+      const env = options.authMode === 'cli-login'
+        ? { PATH: process.env.PATH ?? '/usr/bin:/bin', HOME: directory, TMPDIR: directory, CODEX_HOME: process.env.CODEX_HOME || join(homedir(), '.codex') }
+        : { ...credentialEnvironment('CODEX_API_KEY', directory), CODEX_HOME: directory };
       const help = await promisify(execFile)('codex', ['exec','--help'], { env, timeout: 5000, maxBuffer: 65536 });
       const flags = ['--ignore-user-config','--ignore-rules','--strict-config','--ephemeral','--disable'];
       if (flags.some(flag => !help.stdout.includes(flag))) throw new Error('agent_policy_unsupported');

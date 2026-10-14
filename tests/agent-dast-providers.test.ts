@@ -108,17 +108,18 @@ mock.module('./build/src/agent-dast/providers/record.js',{namedExports:{...recor
 const {createAgent}=await import('./build/src/agent-dast/providers/'+provider+'.js');
 const root=await mkdtemp(join(tmpdir(),'wakeio-sdk-test-'));
 try{
- const agent=await createAgent({template,recordDir:join(root,'record'),live:true});
+ const agent=await createAgent({template,recordDir:join(root,'record'),live:true,...(process.argv[2]==='cli-login'?{authMode:'cli-login'}:{})});
  if(attack){await assert.rejects(agent.planTasks(summary),/agent_output_invalid/);assert.equal(calls,2)}else{assert.deepEqual(await agent.planTasks(summary),template);assert.equal(calls,1)}
  const env=provider==='codex'?constructorOptions.env:queryOptions.options.env;
  assert.equal(env.PRIVATE_CANARY,undefined);assert.equal(env[provider==='codex'?'ANTHROPIC_API_KEY':'CODEX_API_KEY'],undefined);
+ if(process.argv[2]==='cli-login'){assert.equal(env.CODEX_API_KEY,undefined);assert.notEqual(env.CODEX_HOME,env.HOME);}
  if(provider==='codex'){assert.ok(executableText.includes('--ignore-user-config'));assert.ok(executableText.includes('--disable shell_tool'));assert.ok(executableText.includes('--disable unified_exec'));assert.equal(threadOptions.networkAccessEnabled,false);assert.equal(threadOptions.webSearchMode,'disabled');assert.equal(threadOptions.approvalPolicy,'never')}
  else{assert.deepEqual(queryOptions.options.tools,[]);assert.deepEqual(queryOptions.options.settingSources,[]);assert.equal(queryOptions.options.strictMcpConfig,true);assert.deepEqual(queryOptions.options.mcpServers,{});assert.equal((await queryOptions.options.canUseTool()).behavior,'deny');assert.equal(queryOptions.options.persistSession,false)}
  const data=(await readFile(join(root,'record/transcript.jsonl'),'utf8'))+(await readFile(join(root,'record/ledger.jsonl'),'utf8'));
  assert.ok(!data.includes('KEY_CANARY'));assert.ok(!data.includes('PRIVATE'));assert.equal(sockets,0);
 }finally{await rm(root,{recursive:true,force:true})}
 `;
-for (const provider of ['codex','claude']) for (const scenario of ['valid','tool']) {
+for (const provider of ['codex','claude']) for (const scenario of (provider === 'codex' ? ['valid','tool','cli-login'] : ['valid','tool'])) {
   test(`${provider}: SDK configuration and ${scenario} events without network`, () => {
     assert.doesNotThrow(() => execFileSync(process.execPath, ['--experimental-test-module-mocks','--input-type=module','-e',sdkScript,provider,scenario], { stdio: 'pipe' }));
   });
