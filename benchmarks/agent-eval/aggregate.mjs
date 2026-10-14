@@ -1,11 +1,14 @@
 #!/usr/bin/env node
-// Offline A-vs-B aggregation. Reads a label set, a pass-criteria file and a
-// synthetic/real results bundle, prints the per-arm scores, the total-round
-// budget and the comparison verdict. Sends no request, runs no engine or
-// model. Build first (npm run build); this imports the compiled modules.
+// Offline A-vs-B evaluation. Verifies the run-start record (criteria, final
+// labels and shared check list hashes), confirms the results reference that
+// record and each finding links to recorded evidence, then scores the
+// comparison. Sends no request, runs no engine or model. Build first
+// (npm run build); this imports the compiled modules.
 import { readFileSync } from 'node:fs';
+import { join, normalize } from 'node:path';
 import { parseLabelSet, finalLabels } from '../../build/src/agent-dast/eval/labels.js';
-import { parsePassCriteria, parseResultsBundle, compareArms, inputsDigest } from '../../build/src/agent-dast/eval/aggregate.js';
+import { parsePassCriteria, parseResultsBundle, evaluate, inputsDigest } from '../../build/src/agent-dast/eval/aggregate.js';
+import { parseChecklist, parseRunManifest } from '../../build/src/agent-dast/eval/manifest.js';
 
 function arg(name, fallback) {
   const i = process.argv.indexOf(name);
@@ -16,22 +19,38 @@ const readJson = p => JSON.parse(readFileSync(p, 'utf8'));
 
 const labels = finalLabels(parseLabelSet(readJson(arg('--labels'))));
 const criteria = parsePassCriteria(readJson(arg('--criteria')));
+const checklist = parseChecklist(readJson(arg('--checklist')));
+const manifest = parseRunManifest(readJson(arg('--manifest')));
 const rawResults = readJson(arg('--results'));
-const { armA, armB } = parseResultsBundle(rawResults); // reject malformed findings/rounds before counting
+const bundle = parseResultsBundle(rawResults);
 
-const comparison = compareArms(armA, armB, labels, criteria);
+// Optional: when an evidence directory is given, each finding's evidence file
+// must exist and match its recorded hash. Reads are confined to that directory.
+const evidenceDir = arg('--evidence-dir', '');
+const evidenceChecked = evidenceDir !== '';
+const readEvidence = evidenceChecked
+  ? relPath => {
+      const resolved = normalize(join(evidenceDir, relPath.replace(/^evidence\//, '')));
+      try { return readFileSync(resolved); } catch { return null; }
+    }
+  : undefined;
+
+const result = evaluate({ manifest, bundle, labels, criteria, checklist, readEvidence, evidenceChecked });
 console.log(JSON.stringify({
-  target: labels.target,
-  commit: labels.commit,
-  labelSetHash: labels.hash,
-  finalVulns: labels.vulnerabilities.length,
-  resultsDigest: inputsDigest(rawResults),
-  // committedBeforeArmB in the criteria is an unverified attestation; it does
-  // not by itself prove the criteria predate arm B. The execution layer must
-  // bind that (see the design doc's evidence links).
+  target: manifest.target,
+  commit: manifest.commit,
+  runId: manifest.runId,
+  manifestDigest: result.manifestDigest,
+  evidenceChecked,
+  // The manifest binds the three input hashes and is untampered, but it does
+  // NOT prove when it was written; the execution layer binds that timestamp.
   criteriaAttestationUnverified: true,
-  comparison,
+  resultsDigest: inputsDigest(rawResults),
+  provenanceAllOk: result.provenance.allOk,
+  provenance: result.provenance,
+  comparison: result.comparison,
 }, null, 2));
 
-// Exit 2 when either arm overran the shared budget; the comparison is not usable then.
-process.exit(comparison.withinBudget ? 0 : 2);
+// Exit 2 when a budget overran or provenance did not hold; the comparison is
+// then not usable even if the scores look fine.
+process.exit(result.comparison.withinBudget && result.provenance.allOk ? 0 : 2);

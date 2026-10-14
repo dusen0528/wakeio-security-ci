@@ -17,6 +17,7 @@
 import { createHash } from 'node:crypto';
 import { SEVERITIES, VULN_TYPES, siteKey, type FinalLabels, type Severity, type VulnType } from './labels.js';
 import { AUTH_STATES, PARAM_LOCATIONS, type AuthState, type ParamLocation } from '../store.js';
+import { manifestDigest, verifyManifest, type Checklist, type RunManifest } from './manifest.js';
 
 export type FindingBasis = 'candidate' | 'confirmed';
 
@@ -33,7 +34,16 @@ export interface EvalFinding {
   authState: AuthState;
   /** 1-based round the finding first appeared in. For reporting only; identity is the site. */
   round: number;
+  /** run.db reference this finding came from. Required when a run manifest is bound. */
+  runRef?: { runId: string; taskId: string };
+  /** `evidence/<findingId>.json` path recorded in run.db. Required when a manifest is bound. */
+  evidenceRef?: string;
+  /** SHA-256 of the evidence file's bytes, checked against the file when an evidence dir is given. */
+  evidenceSha256?: string;
 }
+
+/** Expected evidence path for a finding, matching the store's recordFinding default. */
+export function evidencePath(findingId: string): string { return `evidence/${findingId}.json`; }
 
 export interface RoundBudget {
   /** 1 = initial plan, then verify, retry, expansion… in execution order. */
@@ -118,7 +128,7 @@ export function parseEvalFinding(raw: unknown, path: string): EvalFinding {
   if (typeof raw.path !== 'string' || !raw.path.startsWith('/') || raw.path.length > 2048) throw new EvalError('results_invalid', `${path}.path`);
   if (raw.param !== null && (typeof raw.param !== 'string' || raw.param.length > 100)) throw new EvalError('results_invalid', `${path}.param`);
   const location = raw.location === null ? null : strIn(raw, 'location', PARAM_LOCATIONS, path);
-  return {
+  const finding: EvalFinding = {
     findingId: raw.findingId,
     type: strIn(raw, 'type', VULN_TYPES, path),
     severity: strIn(raw, 'severity', SEVERITIES, path),
@@ -130,6 +140,20 @@ export function parseEvalFinding(raw: unknown, path: string): EvalFinding {
     authState: strIn(raw, 'authState', AUTH_STATES, path),
     round: intField(raw, 'round', path, 1),
   };
+  if (raw.runRef !== undefined) {
+    if (!record(raw.runRef) || typeof raw.runRef.runId !== 'string' || !/^r-[0-9a-z-]{1,40}$/.test(raw.runRef.runId)
+      || typeof raw.runRef.taskId !== 'string' || !/^t-[0-9a-z-]{1,60}$/.test(raw.runRef.taskId)) throw new EvalError('results_invalid', `${path}.runRef`);
+    finding.runRef = { runId: raw.runRef.runId, taskId: raw.runRef.taskId };
+  }
+  if (raw.evidenceRef !== undefined) {
+    if (raw.evidenceRef !== evidencePath(finding.findingId)) throw new EvalError('results_invalid', `${path}.evidenceRef`);
+    finding.evidenceRef = raw.evidenceRef;
+  }
+  if (raw.evidenceSha256 !== undefined) {
+    if (typeof raw.evidenceSha256 !== 'string' || !/^[0-9a-f]{64}$/.test(raw.evidenceSha256)) throw new EvalError('results_invalid', `${path}.evidenceSha256`);
+    finding.evidenceSha256 = raw.evidenceSha256;
+  }
+  return finding;
 }
 
 const ROUND_KINDS = ['initial', 'verify', 'retry', 'expansion'] as const;
@@ -169,9 +193,16 @@ export function parseArm(raw: unknown, name: 'A' | 'B'): Arm {
   return arm;
 }
 
-export function parseResultsBundle(raw: unknown): { armA: Arm; armB: Arm } {
+export interface ResultsBundle { manifestDigest?: string; armA: Arm; armB: Arm }
+
+export function parseResultsBundle(raw: unknown): ResultsBundle {
   if (!record(raw)) throw new EvalError('results_invalid', '$');
-  return { armA: parseArm(raw.armA, 'A'), armB: parseArm(raw.armB, 'B') };
+  const bundle: ResultsBundle = { armA: parseArm(raw.armA, 'A'), armB: parseArm(raw.armB, 'B') };
+  if (raw.manifestDigest !== undefined) {
+    if (typeof raw.manifestDigest !== 'string' || !/^[0-9a-f]{64}$/.test(raw.manifestDigest)) throw new EvalError('results_invalid', 'manifestDigest');
+    bundle.manifestDigest = raw.manifestDigest;
+  }
+  return bundle;
 }
 
 /**
@@ -371,4 +402,78 @@ export function compareArms(armA: Arm, armB: Arm, labels: FinalLabels, criteria:
 /** Hash of a synthetic-results bundle, so a stored comparison names its exact inputs. */
 export function inputsDigest(value: unknown): string {
   return createHash('sha256').update(JSON.stringify(value)).digest('hex');
+}
+
+// --- Evidence linking: bind results to a run-start record and finding evidence ---
+
+export type ProvenanceStatus = 'ok' | 'missing_ref' | 'bad_ref' | 'missing_run_ref' | 'evidence_absent' | 'evidence_mismatch' | 'evidence_unchecked';
+
+export interface ProvenanceResult { findingId: string; status: ProvenanceStatus }
+
+/**
+ * Check one finding's link to recorded evidence. When `readEvidence` is given,
+ * the evidence file's bytes are hashed and compared to `evidenceSha256`; without
+ * it, a present and well-formed reference is reported as `evidence_unchecked`.
+ * `readEvidence` returns the file bytes, or null when the file is absent.
+ */
+export function verifyFindingProvenance(finding: EvalFinding, readEvidence?: (relPath: string) => Buffer | null): ProvenanceResult {
+  const id = finding.findingId;
+  if (!finding.runRef) return { findingId: id, status: 'missing_run_ref' };
+  if (!finding.evidenceRef) return { findingId: id, status: 'missing_ref' };
+  if (finding.evidenceRef !== evidencePath(id)) return { findingId: id, status: 'bad_ref' };
+  if (!readEvidence) return { findingId: id, status: 'evidence_unchecked' };
+  const bytes = readEvidence(finding.evidenceRef);
+  if (bytes === null) return { findingId: id, status: 'evidence_absent' };
+  if (!finding.evidenceSha256 || createHash('sha256').update(bytes).digest('hex') !== finding.evidenceSha256) return { findingId: id, status: 'evidence_mismatch' };
+  return { findingId: id, status: 'ok' };
+}
+
+export interface ArmProvenance { name: 'A' | 'B'; findings: ProvenanceResult[]; allOk: boolean }
+
+function armProvenance(arm: Arm, readEvidence?: (relPath: string) => Buffer | null): ArmProvenance {
+  const findings = arm.findings.map(f => verifyFindingProvenance(f, readEvidence));
+  return { name: arm.name, findings, allOk: findings.every(r => r.status === 'ok') };
+}
+
+export interface Evaluation {
+  manifestDigest: string;
+  manifestVerified: boolean;
+  provenance: { a: ArmProvenance; b: ArmProvenance; allOk: boolean };
+  comparison: Comparison;
+}
+
+/**
+ * Full offline evaluation from stored results: confirm the run-start record is
+ * untampered and matches the criteria, labels and check list; confirm the
+ * results reference that record and every finding links to recorded evidence;
+ * then score the comparison. No request, engine or model.
+ *
+ * `evidenceChecked` controls strictness: when false (no evidence directory
+ * available), a present, well-formed reference is accepted as
+ * `evidence_unchecked` and does not fail the evaluation; when true, every
+ * finding's evidence file must exist and match its hash.
+ */
+export function evaluate(input: {
+  manifest: RunManifest;
+  bundle: ResultsBundle;
+  labels: FinalLabels;
+  criteria: PassCriteria;
+  checklist: Checklist;
+  readEvidence?: (relPath: string) => Buffer | null;
+  evidenceChecked: boolean;
+}): Evaluation {
+  const digest = manifestDigest(input.manifest);
+  // The record must be internally consistent with the three inputs it pins…
+  verifyManifest(input.manifest, digest, { labels: input.labels, criteria: input.criteria, checklist: input.checklist });
+  // …and the results must reference exactly this record.
+  if (input.bundle.manifestDigest !== digest) throw new EvalError('results_invalid', 'bundle.manifestDigest does not reference the run-start record');
+
+  const read = input.evidenceChecked ? input.readEvidence : undefined;
+  const a = armProvenance(input.bundle.armA, read);
+  const b = armProvenance(input.bundle.armB, read);
+  const accept = (s: ProvenanceStatus) => s === 'ok' || (!input.evidenceChecked && s === 'evidence_unchecked');
+  const allOk = [...a.findings, ...b.findings].every(r => accept(r.status));
+
+  const comparison = compareArms(input.bundle.armA, input.bundle.armB, input.labels, input.criteria);
+  return { manifestDigest: digest, manifestVerified: true, provenance: { a, b, allOk }, comparison };
 }

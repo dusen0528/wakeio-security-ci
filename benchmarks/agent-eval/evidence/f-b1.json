@@ -1,0 +1,1 @@
+{"schema":"wakeio.evidence/v1","finding_id":"f-b1","redacted":true,"observation":"boolean-based differential: true/false branch responses differ at the login email parameter","request_count":4}

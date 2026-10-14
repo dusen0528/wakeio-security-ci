@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "entries": [
+    { "checkId": "c-sqli-boolean", "engine": "native-dast", "check": "sql_boolean_numeric_v1" },
+    { "checkId": "c-authz-owner", "engine": "native-dast", "check": "owner_vs_other_user_v1" },
+    { "checkId": "c-contract-items", "engine": "schemathesis", "check": "get_items_id_schema_v1" },
+    { "checkId": "c-exposure-misconfig", "engine": "nuclei", "check": "misconfiguration" }
+  ]
+}

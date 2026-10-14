@@ -88,22 +88,51 @@ bound to the final label set:
   `criteriaAttestationUnverified: true`. Real pre-registration must be enforced
   by the execution layer below.
 
-## Evidence the execution layer must add
+## Evidence linking (implemented, offline)
 
-This offline harness scores numbers; it does not observe the run that produced
-them. Before a real-target comparison can be trusted, the follow-up execution
-layer must bind:
+A **run-start record** ([format](../../src/agent-dast/eval/manifest.ts)) is
+written before the arms run and pins three hashes into one record: the pass
+criteria, the final label set, and the shared check list both arms run. Its
+digest is referenced by the results.
 
-- **Pre-registration of criteria** — a timestamp or signature (e.g. a committed
-  criteria file hashed into a dated ledger, or a signed commit) proving the
-  criteria and the final label hash existed before arm B ran. `committedBeforeArmB`
-  is a placeholder for that proof, not the proof.
-- **Label non-disclosure** — the input-provisioning step that builds the agent's
-  recon/plan inputs must be shown never to include final labels (a separate
-  corpus, a redaction check on the agent's inputs).
-- **Finding provenance** — each `EvalFinding` the harness scores must link back
-  to a run.db row and its evidence file, so a scored detection is traceable to
-  an actual admitted request, not a hand-written number.
+- `evaluate()` ([aggregate.ts](../../src/agent-dast/eval/aggregate.ts))
+  recomputes the three hashes from the criteria, labels and check list a result
+  supplies and confirms the record and its digest are untampered. Any edit to
+  any of the three changes a hash and the evaluation throws (`digest_mismatch`).
+- The results bundle carries `manifestDigest`; a bundle that references a
+  different record is refused.
+- Each scored finding carries `runRef` (run.db run/task) and `evidenceRef`
+  (`evidence/<findingId>.json`). With `--evidence-dir`, each evidence file must
+  exist and match its recorded `evidenceSha256`; without it, a present,
+  well-formed reference is reported as `evidence_unchecked` and does not fail
+  the run.
+
+```sh
+npm run build
+node benchmarks/agent-eval/aggregate.mjs \
+  --labels    benchmarks/agent-eval/labels/example.labels.json \
+  --criteria  benchmarks/agent-eval/criteria.example.json \
+  --checklist benchmarks/agent-eval/checklist.example.json \
+  --manifest  benchmarks/agent-eval/run-start.example.json \
+  --results   benchmarks/agent-eval/results.example.json \
+  --evidence-dir benchmarks/agent-eval/evidence
+```
+
+## Still owed by the execution layer
+
+The record pins *which* inputs a result claims, from stored data. It does not
+prove *when* it was written, and this harness does not observe the run. The
+follow-up execution layer must still bind:
+
+- **Pre-registration time** — a timestamp or signature (a dated ledger, a signed
+  commit) proving the record existed before arm B ran. `committedBeforeArmB`
+  and `criteriaAttestationUnverified: true` mark this as not yet proven.
+- **Label non-disclosure** — the step that provisions the agent's recon/plan
+  inputs must be shown never to include final labels. The scorer prevents tuning
+  labels from being *scored*; it cannot police the agent's inputs.
+- **Live provenance** — `runRef`/`evidenceRef` are checked for shape and file
+  hash here; binding them to an actually admitted request belongs to the run
+  that writes run.db.
 
 ### Gates (draft, finalize with the real label set)
 

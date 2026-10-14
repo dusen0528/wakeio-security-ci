@@ -9,7 +9,10 @@
   summation against one shared cap, a pre-run coverage denominator, and pass
   criteria bound to the final label hash and attested as fixed before arm B.
   It sends no request and runs no engine or model; arm A (fixed plan) vs arm B
-  (agent selection) is scored from synthetic or recorded results only.
+  (agent selection) is scored from synthetic or recorded results only. Adds a
+  run-start record pinning the criteria, final label and shared check-list
+  hashes, with `evaluate()` confirming the record and its digest are untampered
+  and each scored finding links to its run.db row and evidence file.
 
 - Add an experimental `wakeio-security-ci/agent-dast` SDK with a bounded
   worker-result contract and RunStore v2. Completion requires the declared

@@ -1,12 +1,13 @@
 {
-  "note": "Synthetic results for harness self-checking only. No request was sent, no engine or model ran. Each arm lists findings (projected to the harness shape), per-round admitted request counts, the pre-fixed coverage denominator, wall time, and B's model tokens.",
+  "note": "Synthetic results for harness self-checking only. No request was sent, no engine or model ran. Each finding references its run.db row (runRef) and evidence file (evidenceRef + evidenceSha256); the bundle references the run-start record by manifestDigest.",
+  "manifestDigest": "cd0cb689009eff23c454165b35b8222e546194833e114842ed5ef94d8cfb8667",
   "armA": {
     "name": "A",
     "durationMs": 5200,
     "coverage": { "plannedCells": 40, "executedCells": 40 },
     "rounds": [{ "round": 1, "kind": "initial", "requestCount": 58 }],
     "findings": [
-      { "findingId": "f-a1", "type": "sqli", "severity": "high", "state": "confirmed", "method": "POST", "path": "/rest/user/login", "param": "email", "location": "body", "authState": "anonymous", "round": 1 }
+      { "findingId": "f-a1", "type": "sqli", "severity": "high", "state": "confirmed", "method": "POST", "path": "/rest/user/login", "param": "email", "location": "body", "authState": "anonymous", "round": 1, "runRef": { "runId": "r-a-01", "taskId": "t-injection" }, "evidenceRef": "evidence/f-a1.json", "evidenceSha256": "f93f063f504c717ae85c3baa593ba7dc8e6cffaf9520ddcaecbeff55d180beef" }
     ]
   },
   "armB": {
@@ -21,8 +22,8 @@
       { "round": 3, "kind": "expansion", "requestCount": 18 }
     ],
     "findings": [
-      { "findingId": "f-b1", "type": "sqli", "severity": "high", "state": "confirmed", "method": "POST", "path": "/rest/user/login", "param": "email", "location": "body", "authState": "anonymous", "round": 1 },
-      { "findingId": "f-b2", "type": "authz", "severity": "high", "state": "confirmed", "method": "GET", "path": "/rest/basket/3", "param": null, "location": null, "authState": "user", "round": 3 }
+      { "findingId": "f-b1", "type": "sqli", "severity": "high", "state": "confirmed", "method": "POST", "path": "/rest/user/login", "param": "email", "location": "body", "authState": "anonymous", "round": 1, "runRef": { "runId": "r-b-01", "taskId": "t-injection" }, "evidenceRef": "evidence/f-b1.json", "evidenceSha256": "615426ce485321ea62fcc5a8134c56c71a5da4ecef5cebe465c183c13e1327fb" },
+      { "findingId": "f-b2", "type": "authz", "severity": "high", "state": "confirmed", "method": "GET", "path": "/rest/basket/3", "param": null, "location": null, "authState": "user", "round": 3, "runRef": { "runId": "r-b-01", "taskId": "t-authz" }, "evidenceRef": "evidence/f-b2.json", "evidenceSha256": "7bc31a163dae6b4404656b3e723e8975cf70506a47964f263c8e8e4c2f085993" }
     ]
   }
 }

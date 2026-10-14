@@ -1,0 +1,1 @@
+{"schema":"wakeio.evidence/v1","finding_id":"f-b2","redacted":true,"observation":"owner vs other-user access: other_user retrieved an object owned by user","request_count":3}
