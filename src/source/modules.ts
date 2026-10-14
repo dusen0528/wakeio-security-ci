@@ -1,5 +1,7 @@
 import * as ts from "typescript";
 import { posix } from "node:path";
+import { ModuleConfigurations } from './module-config.js';
+import type { CollectedFile } from './types.js';
 
 export const FLOW_LIMITS = Object.freeze({
   nodeVisits: 500_000, // Aggregate cap; legacy callers can override independently.
@@ -20,6 +22,10 @@ const BROWSER_LOCATION_EVALUATION_NAMES = new Set([
   'eval', 'Function', 'execScript', 'setTimeout', 'setInterval',
   'runInContext', 'runInThisContext', 'runInNewContext', 'compileFunction',
 ]);
+const NATIVE_CERTIFICATE_FAMILIES = new Set([
+  'pg', 'pg-pool', 'pg-native', 'axios', 'child_process', 'url', 'fs', 'path',
+  'glob', 'minipass', 'unzipper', 'foreground-child', 'marsdb', 'mongodb', 'hono', 'koa', 'express', 'next',
+]);
 
 export function isFlowFunction(node: ts.Node): node is ts.FunctionLikeDeclaration {
   return ts.isFunctionDeclaration(node) || ts.isFunctionExpression(node) || ts.isArrowFunction(node)
@@ -29,8 +35,9 @@ export function isFlowFunction(node: ts.Node): node is ts.FunctionLikeDeclaratio
 
 export interface SingletonReceiver { readonly file: ts.SourceFile; readonly classNode: ts.ClassDeclaration; readonly exportNode: ts.NewExpression; }
 export type CallResolution =
-  | { kind: "resolved" | "declared"; target: ts.FunctionLikeDeclaration; receiver?: SingletonReceiver }
+  | { kind: "resolved" | "declared"; target: ts.FunctionLikeDeclaration; receiver?: SingletonReceiver; configured?: true }
   | { kind: "missing" | "ambiguous" | "unsupported" | "external" | "module_budget" | "export_unsupported" };
+type ExportResolution = CallResolution | { kind: 'absent_export' };
 
 function nameOf(node: ts.PropertyName | ts.Expression | undefined): string | undefined {
   return node && (ts.isIdentifier(node) || ts.isStringLiteralLike(node)) ? node.text : undefined;
@@ -66,9 +73,18 @@ export class StaticModules {
   readonly checker: ts.TypeChecker;
   readonly files: ReadonlyMap<string, ts.SourceFile>;
   readonly moduleEdges = new Set<string>();
+  readonly moduleConfigurations: ModuleConfigurations;
+  readonly configuredModuleTargets = new Set<string>();
+  readonly configuredCallSites = new Set<ts.CallExpression>();
+  readonly barrelFunctionTargets = new Set<string>();
+  configuredNativeIdentityComplete = true;
+  readonly configuredNativeLoads = new Set<ts.Node>();
   readonly mutated = new Set<ts.Symbol>();
   readonly mutatedMembers = new Set<ts.Symbol>();
   private readonly exports = new Map<string, Map<string, ts.FunctionLikeDeclaration | null>>();
+  private readonly reExports = new Map<string, Array<{ specifier: string; imported?: string; exported?: string }>>();
+  private readonly exportedFunctionCache = new Map<string, ExportResolution>();
+  private readonly exportNamesIncomplete = new Set<ts.SourceFile>();
   private readonly cjsExportFiles = new Set<ts.SourceFile>();
   private readonly esmFiles = new Set<ts.SourceFile>();
   private readonly cjsShadowScopes = new Map<ts.SourceFile, Map<string, Set<ts.Node>>>();
@@ -134,8 +150,9 @@ export class StaticModules {
 
   constructor(files: readonly ts.SourceFile[], private readonly tick: () => boolean,
     private readonly limits: FlowLimits, private readonly incomplete: (reason: string) => void,
-    private readonly objectScopeComplete = true) {
+    private readonly objectScopeComplete = true, metadata: readonly CollectedFile[] = []) {
     this.files = new Map(files.map((file) => [file.fileName, file]));
+    this.moduleConfigurations = new ModuleConfigurations(metadata, tick);
     const lookup = (name: string) => this.files.get(name.replace(/^\//, ""));
     const host: ts.CompilerHost = {
       getSourceFile: (name) => lookup(name),
@@ -358,6 +375,38 @@ export class StaticModules {
         if (!possible.has(target)) { possible.add(target); queue.push(target); }
       }
     }
+    this.auditConfiguredNativeLoads();
+  }
+
+  private auditConfiguredNativeLoads(): void {
+    if (!this.moduleConfigurations.observed) return;
+    const inspect = (node: ts.Node, specifier: string): void => {
+      const family = specifier.replace(/^node:/, '').split('/')[0];
+      if (!NATIVE_CERTIFICATE_FAMILIES.has(family)) return;
+      if (this.moduleConfigurations.resolve(node.getSourceFile().fileName, specifier).kind !== 'external') {
+        this.configuredNativeIdentityComplete = false; this.configuredNativeLoads.add(node);
+      }
+    };
+    for (const load of this.importDeclarations) {
+      if (!this.tick()) { this.configuredNativeIdentityComplete = false; return; }
+      const clause = load.importClause;
+      if (clause?.isTypeOnly || clause && !clause.name && clause.namedBindings && ts.isNamedImports(clause.namedBindings)
+        && clause.namedBindings.elements.length > 0 && clause.namedBindings.elements.every(specifier => specifier.isTypeOnly)) continue;
+      if (ts.isStringLiteralLike(load.moduleSpecifier)) inspect(load, load.moduleSpecifier.text);
+    }
+    for (const call of this.calls) {
+      if (!this.tick()) { this.configuredNativeIdentityComplete = false; return; }
+      if (call.arguments.length !== 1 || !ts.isStringLiteralLike(call.arguments[0])) continue;
+      if (call.expression.kind === ts.SyntaxKind.ImportKeyword
+        || ts.isIdentifier(call.expression) && call.expression.text === 'require' && this.cjsGlobal(call.expression)) inspect(call, call.arguments[0].text);
+    }
+    for (const load of this.unsupportedObjectLoads) {
+      if (!this.tick()) { this.configuredNativeIdentityComplete = false; return; }
+      if (ts.isImportEqualsDeclaration(load.node) && load.node.isTypeOnly) continue;
+      if (ts.isExportDeclaration(load.node) && (load.node.isTypeOnly || load.node.exportClause && ts.isNamedExports(load.node.exportClause)
+        && load.node.exportClause.elements.length > 0 && load.node.exportClause.elements.every(specifier => specifier.isTypeOnly))) continue;
+      if (load.specifier) inspect(load.node, load.specifier);
+    }
   }
 
   symbol(node: ts.Node): ts.Symbol | undefined {
@@ -433,13 +482,25 @@ export class StaticModules {
   // Pure ESM remains independent of the closed CommonJS object proof.
   private collectExports(file: ts.SourceFile): void {
     const output = new Map<string, ts.FunctionLikeDeclaration | null>();
+    const reExports: Array<{ specifier: string; imported?: string; exported?: string }> = [];
+    let complete = true;
+    const work = (): boolean => { if (this.tick()) return true; complete = false; return false; };
     const put = (name: string | undefined, value: ts.Node | undefined) => {
       if (!name) return;
       const fn = this.functionOf(value);
       output.set(name, output.has(name) ? null : fn ?? null);
     };
+    const putBinding = (name: ts.BindingName, depth = 0): void => {
+      if (!work()) return;
+      if (depth >= this.limits.aliasSteps) { complete = false; this.incomplete('alias_limit'); return; }
+      if (ts.isIdentifier(name)) { put(name.text, undefined); return; }
+      for (const element of name.elements) {
+        if (!work()) return;
+        if (!ts.isOmittedExpression(element)) putBinding(element.name, depth + 1);
+      }
+    };
     for (const statement of file.statements) {
-      if (!this.tick()) break;
+      if (!work()) break;
       const modifiers = ts.canHaveModifiers(statement) ? ts.getModifiers(statement) : undefined;
       if (ts.isImportDeclaration(statement) || ts.isExportDeclaration(statement) || ts.isExportAssignment(statement)
         || ts.isImportEqualsDeclaration(statement) || modifiers?.some(modifier => modifier.kind === ts.SyntaxKind.ExportKeyword)) {
@@ -447,27 +508,51 @@ export class StaticModules {
       }
       const exported = modifiers?.some((modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword)
         && !modifiers?.some((modifier) => modifier.kind === ts.SyntaxKind.DefaultKeyword);
+      if (ts.isExportAssignment(statement) && statement.isExportEquals
+        || exported && ts.isImportEqualsDeclaration(statement) && !statement.isTypeOnly) complete = false;
+      if (exported && !ts.isFunctionDeclaration(statement) && !ts.isVariableStatement(statement)
+        && !ts.isClassDeclaration(statement) && !ts.isEnumDeclaration(statement) && !ts.isModuleDeclaration(statement)
+        && !ts.isInterfaceDeclaration(statement) && !ts.isTypeAliasDeclaration(statement)
+        && !(ts.isImportEqualsDeclaration(statement) && statement.isTypeOnly)) complete = false;
       // Erased signatures do not create competing runtime exports. One actual
       // body remains required; duplicate bodies still take the ambiguity path.
       if (exported && ts.isFunctionDeclaration(statement) && statement.body) put(statement.name?.text, statement);
       if (exported && ts.isVariableStatement(statement)) {
         for (const declaration of statement.declarationList.declarations) {
-          if (!this.tick()) break;
+          if (!work()) break;
           if (ts.isIdentifier(declaration.name)) put(declaration.name.text, declaration);
+          else putBinding(declaration.name);
         }
+      }
+      // These runtime bindings are not function bodies, but still conflict with
+      // a function of the same exported name in another star sibling.
+      if (exported && (ts.isClassDeclaration(statement) || ts.isEnumDeclaration(statement) || ts.isModuleDeclaration(statement))) {
+        put(statement.name?.text, undefined);
       }
       if (ts.isExportDeclaration(statement) && !statement.moduleSpecifier && statement.exportClause
         && ts.isNamedExports(statement.exportClause)) {
         for (const specifier of statement.exportClause.elements) {
-          if (!this.tick()) break;
+          if (!work()) break;
           if (statement.isTypeOnly || specifier.isTypeOnly) continue;
           const local = this.checker.getExportSpecifierLocalTargetSymbol(specifier);
           if (local) this.localExportBindings.add(local);
           put(specifier.name.text, local ? this.singleRuntimeDeclaration(local) : undefined);
         }
       }
+      if (ts.isExportDeclaration(statement) && !statement.isTypeOnly && statement.moduleSpecifier
+        && ts.isStringLiteralLike(statement.moduleSpecifier)) {
+        if (!statement.exportClause) reExports.push({ specifier: statement.moduleSpecifier.text });
+        else if (ts.isNamedExports(statement.exportClause)) for (const specifier of statement.exportClause.elements) {
+          if (!work()) break;
+          if (!specifier.isTypeOnly) reExports.push({ specifier: statement.moduleSpecifier.text,
+            imported: (specifier.propertyName ?? specifier.name).text, exported: specifier.name.text });
+        }
+        else if (ts.isNamespaceExport(statement.exportClause)) put(statement.exportClause.name.text, undefined);
+      }
     }
     this.exports.set(file.fileName, output);
+    this.reExports.set(file.fileName, reExports);
+    if (!complete) this.exportNamesIncomplete.add(file);
   }
 
   /** Budgeted snapshot-only resolution shared by role models. */
@@ -757,17 +842,26 @@ export class StaticModules {
     return true;
   }
 
-  private importedFile(file: ts.SourceFile, specifier: string, count: boolean):
-    { kind: 'file'; file: ts.SourceFile; directory: boolean } | Exclude<CallResolution, { kind: 'resolved' }> {
-    if (!specifier.startsWith("./") && !specifier.startsWith("../")) return { kind: "external" };
-    const path = posix.normalize(posix.join(posix.dirname(file.fileName), specifier));
+  private importedFile(file: ts.SourceFile, specifier: string, count: boolean, allowConfigured = false):
+    { kind: 'file'; file: ts.SourceFile; directory: boolean; configured?: true } | Exclude<CallResolution, { kind: 'resolved' }> {
+    let path: string, configured = false;
+    if (!specifier.startsWith("./") && !specifier.startsWith("../")) {
+      // Native/role identity consumers call resolveSourceModule without this
+      // opt-in. Compiler mapping data can only discover conditional call bodies.
+      if (!allowConfigured) return { kind: "external" };
+      const mapping = this.moduleConfigurations.resolve(file.fileName, specifier);
+      if (mapping.kind !== 'mapped') return { kind: mapping.kind === 'external' ? 'external' : 'export_unsupported' };
+      path = mapping.path; configured = true;
+    } else path = posix.normalize(posix.join(posix.dirname(file.fileName), specifier));
     if (path === ".." || path.startsWith("../") || path.startsWith("/") || path.includes("\\")) return { kind: "unsupported" };
     const edge = `${file.fileName}\0${specifier}`;
     if (count) {
       this.moduleEdges.add(edge);
       if (this.moduleEdges.size > this.limits.moduleEdges) return { kind: "module_budget" };
     }
-    const directory = specifier.endsWith('/');
+    // A configured alias can end in '/' while mapping to a literal file stem.
+    // Only the adopted target, not the alias spelling, selects directory lookup.
+    const directory = (configured ? path : specifier).endsWith('/');
     let directoryLookup = directory;
     const extensions = [".js", ".ts", ".tsx", ".jsx", ".cjs", ".mjs"];
     let candidates: string[];
@@ -793,19 +887,76 @@ export class StaticModules {
     }
     if (matched.length === 0) return { kind: "missing" };
     if (matched.length !== 1) return { kind: "ambiguous" };
-    return { kind: 'file', file: matched[0], directory: directoryLookup };
+    if (configured) this.configuredModuleTargets.add(`${file.fileName}\0${specifier}\0${matched[0].fileName}`);
+    return { kind: 'file', file: matched[0], directory: directoryLookup, ...(configured ? { configured: true as const } : {}) };
   }
 
-  private imported(file: ts.SourceFile, specifier: string, name: string, count: boolean, unproved = false): CallResolution {
-    const result = this.importedFile(file, specifier, count);
+  private exportedFunction(file: ts.SourceFile, name: string, count: boolean, allowConfigured: boolean,
+    active = new Set<string>(), depth = 0): ExportResolution {
+    if (!this.tick()) return { kind: 'unsupported' };
+    if (this.exportNamesIncomplete.has(file)) return { kind: 'export_unsupported' };
+    if (depth >= this.limits.aliasSteps) { this.incomplete('alias_limit'); return { kind: 'export_unsupported' }; }
+    const key = `${file.fileName}\0${name}`;
+    if (active.has(key)) return { kind: 'export_unsupported' };
+    const cacheKey = `${key}\0${allowConfigured}`;
+    const cached = count && active.size === 0 ? this.exportedFunctionCache.get(cacheKey) : undefined;
+    if (cached) return cached;
+    const next = new Set(active); next.add(key);
+    const local = this.exports.get(file.fileName);
+    const explicit = (this.reExports.get(file.fileName) ?? []).filter(edge => edge.exported === name);
+    if (local?.has(name)) {
+      const target = local.get(name);
+      return target && explicit.length === 0 ? { kind: 'resolved', target } : { kind: 'export_unsupported' };
+    }
+    if (explicit.length > 1) return { kind: 'ambiguous' };
+    const edges = explicit.length ? explicit : name === 'default' ? []
+      : (this.reExports.get(file.fileName) ?? []).filter(edge => edge.exported === undefined);
+    let selected: Extract<CallResolution, { target: ts.FunctionLikeDeclaration }> | undefined;
+    let failure: ExportResolution | undefined;
+    for (const edge of edges) {
+      if (!this.tick()) return { kind: 'unsupported' };
+      const source = this.importedFile(file, edge.specifier, count, allowConfigured);
+      if (source.kind !== 'file') { failure = source; continue; }
+      if (this.cjsExportFiles.has(source.file)) { failure = { kind: 'export_unsupported' }; continue; }
+      const result = this.exportedFunction(source.file, edge.imported ?? name, count, allowConfigured, next, depth + 1);
+      if (result.kind !== 'resolved' && result.kind !== 'declared') {
+        // A complete supported sibling with no such runtime export contributes
+        // no candidate. Missing files/unknown exports are still unresolved edges.
+        if (result.kind !== 'absent_export' || explicit.length) failure = result;
+        continue;
+      }
+      if (selected && selected.target !== result.target) return { kind: 'ambiguous' };
+      const configured = source.configured || result.configured || selected?.configured;
+      selected = { kind: configured ? 'declared' : 'resolved', target: result.target, ...(configured ? { configured: true } : {}) };
+    }
+    // A failed star edge can contain a conflicting export; it cannot certify uniqueness.
+    if (failure) return failure.kind === 'external' || failure.kind === 'unsupported' || failure.kind === 'absent_export'
+      ? { kind: 'export_unsupported' } : failure;
+    if (!selected) return { kind: 'absent_export' };
+    this.barrelFunctionTargets.add(`${key}\0${selected.target.getSourceFile().fileName}\0${selected.target.pos}`);
+    if (count && active.size === 0) this.exportedFunctionCache.set(cacheKey, selected);
+    return selected;
+  }
+
+  private imported(file: ts.SourceFile, specifier: string, name: string, count: boolean, unproved = false, allowConfigured = false): CallResolution {
+    const result = this.importedFile(file, specifier, count, allowConfigured);
     if (result.kind !== 'file') return result;
+    if (unproved) return { kind: 'export_unsupported' };
+    if (result.configured && this.cjsExportFiles.has(result.file)) return { kind: 'export_unsupported' };
+    if (!this.cjsExportFiles.has(result.file)) {
+      const exported = this.exportedFunction(result.file, name, count, allowConfigured);
+      if (exported.kind !== 'resolved' && exported.kind !== 'declared') return exported.kind === 'absent_export'
+        ? { kind: 'export_unsupported' } : exported;
+      return result.configured || exported.configured
+        ? { kind: 'declared', target: exported.target, configured: true } : exported;
+    }
     const group = this.objectExports.get(result.file);
     // Every CommonJS scalar uses the same canonical producer/importer proof.
     // A file match alone must never revive the old direct-file export map.
     const target = this.cjsExportFiles.has(result.file)
       ? group?.valid && (!group.singletonProof || this.singletonEligibility.get(group) === 'closed') && this.objectValidationComplete && this.objectScopeComplete
         && group.methods.get('')?.get(name)
-      : this.exports.get(result.file.fileName)?.get(name);
+      : undefined;
     return !unproved && target && target.getSourceFile() === result.file
       ? { kind: "resolved", target } : { kind: "export_unsupported" };
   }
@@ -1746,8 +1897,10 @@ export class StaticModules {
       const importDeclaration = declaration.parent.parent.parent;
       if (!ts.isImportDeclaration(importDeclaration) || !ts.isStringLiteral(importDeclaration.moduleSpecifier)
         || declaration.isTypeOnly || importDeclaration.importClause?.isTypeOnly) return { kind: "unsupported" };
-      return this.imported(call.getSourceFile(), importDeclaration.moduleSpecifier.text,
-        (declaration.propertyName ?? declaration.name).text, count, unproved);
+      const imported = this.imported(call.getSourceFile(), importDeclaration.moduleSpecifier.text,
+        (declaration.propertyName ?? declaration.name).text, count, unproved, true);
+      if ((imported.kind === 'declared' || imported.kind === 'resolved') && imported.configured) this.configuredCallSites.add(call);
+      return imported;
     }
     if (ts.isBindingElement(declaration)) {
       const variable = variableOf(declaration);

@@ -176,9 +176,8 @@ function indexed(report: ScanReport): FindingIndex {
   return { findings: output, ambiguous };
 }
 
-export function compareReports(beforeInput: ScanReport, afterInput: ScanReport): ReportComparison {
-  const before = parseScanReport(beforeInput);
-  const after = parseScanReport(afterInput);
+/** Shared identity checks. Diagnostic progress may change completion, never declared scope. */
+function comparisonReasons(before: ScanReport, after: ScanReport, completion: boolean): string[] {
   const reasons: string[] = [];
   for (const id of new Set([...before.checks, ...after.checks].map(check => check.id))) {
     const oldWrite = before.checks.find(check => check.id === id)?.apiWriteStateEvidence;
@@ -225,11 +224,13 @@ export function compareReports(beforeInput: ScanReport, afterInput: ScanReport):
   const beforeChecks = before.checks.map((check) => check.id).sort();
   const afterChecks = after.checks.map((check) => check.id).sort();
   if (JSON.stringify(beforeChecks) !== JSON.stringify(afterChecks)) reasons.push('The set of executed checks changed.');
-  if (exitCode(before, 'none') === 2 || exitCode(after, 'none') === 2) reasons.push('At least one scan is incomplete or has no applicable checks.');
-  for (const check of before.checks) {
-    if (after.checks.find((next) => next.id === check.id)?.status !== check.status) {
-      reasons.push('Check applicability or completion changed.');
-      break;
+  if (completion) {
+    if (exitCode(before, 'none') === 2 || exitCode(after, 'none') === 2) reasons.push('At least one scan is incomplete or has no applicable checks.');
+    for (const check of before.checks) {
+      if (after.checks.find((next) => next.id === check.id)?.status !== check.status) {
+        reasons.push('Check applicability or completion changed.');
+        break;
+      }
     }
   }
   for (const [report, label] of [[before, 'Before'], [after, 'After']] as const) {
@@ -260,6 +261,30 @@ export function compareReports(beforeInput: ScanReport, afterInput: ScanReport):
       reasons.push('Native DAST policy or execution is missing, incomplete, or changed.');
     }
   }
+  return reasons;
+}
+
+export interface DeclaredSourceScopeComparison {
+  basis: 'declared_source_scope';
+  compatible: boolean;
+  reasons: string[];
+}
+
+/** Diagnostic check progress only; this establishes no finding matching or remediation. */
+export function compareDeclaredSourceScope(beforeInput: ScanReport, afterInput: ScanReport): DeclaredSourceScopeComparison {
+  const before = parseScanReport(beforeInput), after = parseScanReport(afterInput);
+  const reasons = comparisonReasons(before, after, false);
+  if (before.mode !== 'source' || after.mode !== 'source') reasons.push('Diagnostic scope requires source-only reports.');
+  if ([before, after].some(report => new Set(report.checks.map(check => check.id)).size !== report.checks.length)) {
+    reasons.push('Diagnostic check identity is duplicated or ambiguous.');
+  }
+  return { basis: 'declared_source_scope', compatible: reasons.length === 0, reasons };
+}
+
+export function compareReports(beforeInput: ScanReport, afterInput: ScanReport): ReportComparison {
+  const before = parseScanReport(beforeInput);
+  const after = parseScanReport(afterInput);
+  const reasons = comparisonReasons(before, after, true);
   const oldIndex = indexed(before);
   const currentIndex = indexed(after);
   for (const id of new Set([...oldIndex.findings.keys(), ...currentIndex.findings.keys()])) {
