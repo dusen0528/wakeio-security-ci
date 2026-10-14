@@ -40,7 +40,7 @@ export interface Checklist {
 }
 
 export class ManifestError extends Error {
-  constructor(readonly code: 'checklist_invalid' | 'manifest_invalid' | 'criteria_label_mismatch' | 'digest_mismatch', detail?: string) {
+  constructor(readonly code: 'checklist_invalid' | 'manifest_invalid' | 'criteria_label_mismatch' | 'digest_mismatch' | 'field_mismatch', detail?: string) {
     super(detail ? `${code}: ${detail}` : code);
   }
 }
@@ -78,6 +78,18 @@ export function criteriaHash(criteria: PassCriteria): string {
   return sha256({ version: criteria.version, labelSetHash: criteria.labelSetHash, committedBeforeArmB: criteria.committedBeforeArmB, sharedRequestCap: criteria.sharedRequestCap, basis: criteria.basis });
 }
 
+/**
+ * One coverage cell fixed before the run: a surface crossed with a check from
+ * the shared list. The count of cells is the coverage denominator both arms
+ * must use, so the denominator is tied to the check list and cannot be set to
+ * an arbitrary number.
+ */
+export interface CoverageCell {
+  /** Surface identity key (e.g. method+path+param+auth). Opaque to this layer. */
+  surface: string;
+  checkId: string;
+}
+
 export interface RunManifest {
   version: 1;
   runId: string;
@@ -88,8 +100,32 @@ export interface RunManifest {
   criteriaHash: string;
   finalLabelHash: string;
   checklistHash: string;
+  /** Coverage cells fixed at run start; their count is the shared denominator. */
+  coverageCells: CoverageCell[];
   sharedRequestCap: number;
   basis: PassCriteria['basis'];
+}
+
+function parseCoverageCells(raw: unknown, checkIds: ReadonlySet<string>): CoverageCell[] {
+  if (!Array.isArray(raw) || raw.length === 0) throw new ManifestError('manifest_invalid', 'coverageCells');
+  const seen = new Set<string>();
+  return raw.map((c, i): CoverageCell => {
+    const p = `coverageCells[${i}]`;
+    if (c === null || typeof c !== 'object' || Array.isArray(c)) throw new ManifestError('manifest_invalid', p);
+    const cell = c as Record<string, unknown>;
+    if (typeof cell.surface !== 'string' || !cell.surface || cell.surface.length > 512) throw new ManifestError('manifest_invalid', `${p}.surface`);
+    if (typeof cell.checkId !== 'string' || !CHECK_ID.test(cell.checkId)) throw new ManifestError('manifest_invalid', `${p}.checkId`);
+    // Every coverage cell must name a check from the shared list.
+    if (!checkIds.has(cell.checkId)) throw new ManifestError('manifest_invalid', `${p}.checkId not in checklist`);
+    const key = `${cell.surface}\u0000${cell.checkId}`;
+    if (seen.has(key)) throw new ManifestError('manifest_invalid', `${p} duplicate`);
+    seen.add(key);
+    return { surface: cell.surface, checkId: cell.checkId };
+  });
+}
+
+function sortedCells(cells: readonly CoverageCell[]): CoverageCell[] {
+  return [...cells].sort((a, b) => (a.surface === b.surface ? (a.checkId < b.checkId ? -1 : 1) : a.surface < b.surface ? -1 : 1));
 }
 
 export interface BuildManifestInput {
@@ -98,6 +134,7 @@ export interface BuildManifestInput {
   labels: FinalLabels;
   criteria: PassCriteria;
   checklist: Checklist;
+  coverageCells: CoverageCell[];
 }
 
 /** Build the run-start record, cross-checking that criteria already bind these labels. */
@@ -105,6 +142,8 @@ export function buildRunManifest(input: BuildManifestInput): RunManifest {
   if (!/^run-[0-9a-z][0-9a-z-]{0,48}$/.test(input.runId)) throw new ManifestError('manifest_invalid', 'runId');
   if (typeof input.createdAt !== 'string' || !/^\d{4}-\d{2}-\d{2}T/.test(input.createdAt)) throw new ManifestError('manifest_invalid', 'createdAt');
   if (input.criteria.labelSetHash !== input.labels.hash) throw new ManifestError('criteria_label_mismatch', `criteria ${input.criteria.labelSetHash.slice(0, 12)} vs labels ${input.labels.hash.slice(0, 12)}`);
+  const checkIds = new Set(input.checklist.entries.map(e => e.checkId));
+  const coverageCells = sortedCells(parseCoverageCells(input.coverageCells, checkIds));
   return {
     version: 1,
     runId: input.runId,
@@ -114,6 +153,7 @@ export function buildRunManifest(input: BuildManifestInput): RunManifest {
     criteriaHash: criteriaHash(input.criteria),
     finalLabelHash: input.labels.hash,
     checklistHash: checklistHash(input.checklist),
+    coverageCells,
     sharedRequestCap: input.criteria.sharedRequestCap,
     basis: input.criteria.basis,
   };
@@ -123,7 +163,9 @@ export function buildRunManifest(input: BuildManifestInput): RunManifest {
 export function manifestDigest(manifest: RunManifest): string {
   return sha256([
     manifest.version, manifest.runId, manifest.createdAt, manifest.target, manifest.commit,
-    manifest.criteriaHash, manifest.finalLabelHash, manifest.checklistHash, manifest.sharedRequestCap, manifest.basis,
+    manifest.criteriaHash, manifest.finalLabelHash, manifest.checklistHash,
+    sortedCells(manifest.coverageCells).map(c => [c.surface, c.checkId]),
+    manifest.sharedRequestCap, manifest.basis,
   ]);
 }
 
@@ -138,9 +180,17 @@ export function parseRunManifest(raw: unknown): RunManifest {
   if (typeof r.commit !== 'string' || !/^[0-9a-f]{7,64}$/.test(r.commit)) throw new ManifestError('manifest_invalid', 'commit');
   if (!Number.isSafeInteger(r.sharedRequestCap) || (r.sharedRequestCap as number) < 1) throw new ManifestError('manifest_invalid', 'sharedRequestCap');
   if (r.basis !== 'candidate' && r.basis !== 'confirmed') throw new ManifestError('manifest_invalid', 'basis');
+  // Cells are validated against the check list in verifyManifest; shape-check only here.
+  if (!Array.isArray(r.coverageCells) || r.coverageCells.length === 0) throw new ManifestError('manifest_invalid', 'coverageCells');
+  const coverageCells = r.coverageCells.map((c, i): CoverageCell => {
+    const cell = c as Record<string, unknown>;
+    if (cell === null || typeof cell !== 'object' || typeof cell.surface !== 'string' || !cell.surface || cell.surface.length > 512 || typeof cell.checkId !== 'string' || !CHECK_ID.test(cell.checkId)) throw new ManifestError('manifest_invalid', `coverageCells[${i}]`);
+    return { surface: cell.surface, checkId: cell.checkId };
+  });
   return {
     version: 1, runId: r.runId, createdAt: r.createdAt, target: r.target, commit: r.commit,
     criteriaHash: hex('criteriaHash'), finalLabelHash: hex('finalLabelHash'), checklistHash: hex('checklistHash'),
+    coverageCells,
     sharedRequestCap: r.sharedRequestCap as number, basis: r.basis,
   };
 }
@@ -156,4 +206,16 @@ export function verifyManifest(manifest: RunManifest, expectedDigest: string, in
   if (manifest.criteriaHash !== criteriaHash(inputs.criteria)) throw new ManifestError('digest_mismatch', 'criteria hash');
   if (manifest.checklistHash !== checklistHash(inputs.checklist)) throw new ManifestError('digest_mismatch', 'checklist hash');
   if (inputs.criteria.labelSetHash !== inputs.labels.hash) throw new ManifestError('criteria_label_mismatch', 'criteria do not bind these labels');
+  // A matching digest proves the record is self-consistent, not that its plain
+  // fields agree with the inputs. Cross-check the fields the digest covers but
+  // nothing else re-derives, or an internally consistent but wrong record passes.
+  if (manifest.target !== inputs.labels.target) throw new ManifestError('field_mismatch', `target ${manifest.target} vs labels ${inputs.labels.target}`);
+  if (manifest.commit !== inputs.labels.commit) throw new ManifestError('field_mismatch', `commit ${manifest.commit} vs labels ${inputs.labels.commit}`);
+  if (manifest.sharedRequestCap !== inputs.criteria.sharedRequestCap) throw new ManifestError('field_mismatch', `sharedRequestCap ${manifest.sharedRequestCap} vs criteria ${inputs.criteria.sharedRequestCap}`);
+  if (manifest.basis !== inputs.criteria.basis) throw new ManifestError('field_mismatch', `basis ${manifest.basis} vs criteria ${inputs.criteria.basis}`);
+  // Every coverage cell must name a check from the shared list.
+  const checkIds = new Set(inputs.checklist.entries.map(e => e.checkId));
+  for (const cell of manifest.coverageCells) {
+    if (!checkIds.has(cell.checkId)) throw new ManifestError('field_mismatch', `coverage cell check ${cell.checkId} not in checklist`);
+  }
 }

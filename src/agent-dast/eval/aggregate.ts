@@ -406,26 +406,63 @@ export function inputsDigest(value: unknown): string {
 
 // --- Evidence linking: bind results to a run-start record and finding evidence ---
 
-export type ProvenanceStatus = 'ok' | 'missing_ref' | 'bad_ref' | 'missing_run_ref' | 'evidence_absent' | 'evidence_mismatch' | 'evidence_unchecked';
+export type ProvenanceStatus =
+  | 'ok'                    // reference, hash AND evidence content all agree
+  | 'missing_ref' | 'bad_ref' | 'missing_run_ref'
+  | 'evidence_absent' | 'evidence_mismatch'   // file missing / byte hash wrong
+  | 'evidence_unreadable'   // not the stored evidence JSON format
+  | 'evidence_content_mismatch'  // JSON present and hash-correct, but names a different finding/run/task
+  | 'hash_ok_unverified'    // byte hash matched but content was not cross-checked (no reader for content)
+  | 'evidence_unchecked';   // reference present and well-formed; no evidence read at all
 
-export interface ProvenanceResult { findingId: string; status: ProvenanceStatus }
+/** What was actually confirmed, so a hash-only check is never reported as provenance. */
+export interface ProvenanceResult {
+  findingId: string;
+  status: ProvenanceStatus;
+  refOk: boolean;
+  hashChecked: boolean;
+  hashOk: boolean;
+  /** True only when the evidence JSON names this finding and its run/task. */
+  contentOk: boolean;
+}
+
+/** The minimal stored-evidence shape the harness cross-checks against a finding. */
+interface EvidenceDoc { finding_id: string; run_id: string; task_id: string }
+
+function parseEvidenceDoc(bytes: Buffer): EvidenceDoc | null {
+  let value: unknown;
+  try { value = JSON.parse(bytes.toString('utf8')); } catch { return null; }
+  if (!record(value)) return null;
+  if (typeof value.finding_id !== 'string' || typeof value.run_id !== 'string' || typeof value.task_id !== 'string') return null;
+  return { finding_id: value.finding_id, run_id: value.run_id, task_id: value.task_id };
+}
 
 /**
- * Check one finding's link to recorded evidence. When `readEvidence` is given,
- * the evidence file's bytes are hashed and compared to `evidenceSha256`; without
- * it, a present and well-formed reference is reported as `evidence_unchecked`.
- * `readEvidence` returns the file bytes, or null when the file is absent.
+ * Check one finding's link to recorded evidence. A byte-hash match alone is not
+ * provenance: when the evidence file is read it is also parsed as the stored
+ * evidence JSON and its finding_id / run_id / task_id are cross-checked against
+ * the finding's own ids. The result reports ref, hash and content separately so
+ * a hash-only pass can never be read as a verified source.
  */
 export function verifyFindingProvenance(finding: EvalFinding, readEvidence?: (relPath: string) => Buffer | null): ProvenanceResult {
   const id = finding.findingId;
-  if (!finding.runRef) return { findingId: id, status: 'missing_run_ref' };
-  if (!finding.evidenceRef) return { findingId: id, status: 'missing_ref' };
-  if (finding.evidenceRef !== evidencePath(id)) return { findingId: id, status: 'bad_ref' };
-  if (!readEvidence) return { findingId: id, status: 'evidence_unchecked' };
+  const base = { findingId: id, refOk: false, hashChecked: false, hashOk: false, contentOk: false };
+  if (!finding.runRef) return { ...base, status: 'missing_run_ref' };
+  if (!finding.evidenceRef) return { ...base, status: 'missing_ref' };
+  if (finding.evidenceRef !== evidencePath(id)) return { ...base, status: 'bad_ref' };
+  base.refOk = true;
+  if (!readEvidence) return { ...base, status: 'evidence_unchecked' };
   const bytes = readEvidence(finding.evidenceRef);
-  if (bytes === null) return { findingId: id, status: 'evidence_absent' };
-  if (!finding.evidenceSha256 || createHash('sha256').update(bytes).digest('hex') !== finding.evidenceSha256) return { findingId: id, status: 'evidence_mismatch' };
-  return { findingId: id, status: 'ok' };
+  if (bytes === null) return { ...base, status: 'evidence_absent' };
+  base.hashChecked = true;
+  base.hashOk = !!finding.evidenceSha256 && createHash('sha256').update(bytes).digest('hex') === finding.evidenceSha256;
+  if (!base.hashOk) return { ...base, status: 'evidence_mismatch' };
+  const doc = parseEvidenceDoc(bytes);
+  if (!doc) return { ...base, status: 'evidence_unreadable' };
+  // The hash matched the bytes; now the bytes must name THIS finding and its run/task.
+  base.contentOk = doc.finding_id === id && doc.run_id === finding.runRef.runId && doc.task_id === finding.runRef.taskId;
+  if (!base.contentOk) return { ...base, status: 'evidence_content_mismatch' };
+  return { ...base, status: 'ok' };
 }
 
 export interface ArmProvenance { name: 'A' | 'B'; findings: ProvenanceResult[]; allOk: boolean }
@@ -463,14 +500,25 @@ export function evaluate(input: {
   evidenceChecked: boolean;
 }): Evaluation {
   const digest = manifestDigest(input.manifest);
-  // The record must be internally consistent with the three inputs it pins…
+  // The record must be internally consistent with the three inputs it pins, and
+  // its plain fields (target, commit, cap, basis, coverage cells) must agree…
   verifyManifest(input.manifest, digest, { labels: input.labels, criteria: input.criteria, checklist: input.checklist });
   // …and the results must reference exactly this record.
   if (input.bundle.manifestDigest !== digest) throw new EvalError('results_invalid', 'bundle.manifestDigest does not reference the run-start record');
 
+  // The coverage denominator is the fixed cell count, not a free number per arm.
+  const denominator = input.manifest.coverageCells.length;
+  for (const arm of [input.bundle.armA, input.bundle.armB]) {
+    if (arm.coverage.plannedCells !== denominator) {
+      throw new EvalError('denominator_mismatch', `arm ${arm.name} planned ${arm.coverage.plannedCells}, run-start fixed ${denominator}`);
+    }
+  }
+
   const read = input.evidenceChecked ? input.readEvidence : undefined;
   const a = armProvenance(input.bundle.armA, read);
   const b = armProvenance(input.bundle.armB, read);
+  // Without an evidence directory only the reference shape is confirmed; a
+  // hash-only or unchecked state is not accepted as provenance when checking is on.
   const accept = (s: ProvenanceStatus) => s === 'ok' || (!input.evidenceChecked && s === 'evidence_unchecked');
   const allOk = [...a.findings, ...b.findings].every(r => accept(r.status));
 

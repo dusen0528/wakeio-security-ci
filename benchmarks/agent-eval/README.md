@@ -99,13 +99,28 @@ digest is referenced by the results.
   recomputes the three hashes from the criteria, labels and check list a result
   supplies and confirms the record and its digest are untampered. Any edit to
   any of the three changes a hash and the evaluation throws (`digest_mismatch`).
+- A matching digest proves the record is self-consistent, not that its plain
+  fields are right. `verifyManifest` also cross-checks the record's `target`,
+  `commit`, `sharedRequestCap` and `basis` against the labels and criteria, so a
+  record whose fields were changed and whose digest was then recomputed is still
+  refused (`field_mismatch`).
+- The coverage denominator is tied to the check list. The record pins a list of
+  coverage cells (surface × a check from the shared list); its length is the
+  denominator, and `evaluate` requires each arm's `plannedCells` to equal it. A
+  cell naming a check outside the list is refused, and both arms set to `1/1`
+  against a 4-cell record no longer passes.
 - The results bundle carries `manifestDigest`; a bundle that references a
   different record is refused.
 - Each scored finding carries `runRef` (run.db run/task) and `evidenceRef`
-  (`evidence/<findingId>.json`). With `--evidence-dir`, each evidence file must
-  exist and match its recorded `evidenceSha256`; without it, a present,
-  well-formed reference is reported as `evidence_unchecked` and does not fail
-  the run.
+  (`evidence/<findingId>.json`). With `--evidence-dir`, provenance is more than a
+  byte-hash match: the evidence file must parse as the stored evidence JSON and
+  its `finding_id` / `run_id` / `task_id` must equal the finding's own ids and
+  `runRef`. A file whose hash matches but whose contents name a different
+  finding/run/task is `evidence_content_mismatch`; a non-JSON file is
+  `evidence_unreadable`. The result reports `refOk`, `hashOk` and `contentOk`
+  separately, so a hash-only pass is never counted as verified provenance.
+  Without `--evidence-dir`, a present, well-formed reference is reported as
+  `evidence_unchecked` and does not fail the run.
 
 ```sh
 npm run build
@@ -130,9 +145,10 @@ follow-up execution layer must still bind:
 - **Label non-disclosure** — the step that provisions the agent's recon/plan
   inputs must be shown never to include final labels. The scorer prevents tuning
   labels from being *scored*; it cannot police the agent's inputs.
-- **Live provenance** — `runRef`/`evidenceRef` are checked for shape and file
-  hash here; binding them to an actually admitted request belongs to the run
-  that writes run.db.
+- **Live provenance** — `runRef`/`evidenceRef` are checked for shape, file hash
+  AND evidence-content agreement here; binding them to an actually admitted
+  request (that run.db row came from real traffic) belongs to the run that
+  writes run.db.
 
 ### Gates (draft, finalize with the real label set)
 

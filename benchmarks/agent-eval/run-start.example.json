@@ -7,6 +7,24 @@
   "criteriaHash": "e5d288c3585f84d9ebaeb3d24b623e330de8f7965fc38bd6638e0a9ad2b8070b",
   "finalLabelHash": "86edc46ede3b5122fe99c5a9b581369259fe47eb14f453510e94a2af77b484ff",
   "checklistHash": "a85d3d72e6eaa42b552a1a0a521162cb2edf310ce993df15a1ae393fc53f6a58",
+  "coverageCells": [
+    {
+      "surface": "GET /rest/basket/{id}",
+      "checkId": "c-authz-owner"
+    },
+    {
+      "surface": "GET /rest/products/{id} schema",
+      "checkId": "c-contract-items"
+    },
+    {
+      "surface": "POST /rest/user/login email",
+      "checkId": "c-sqli-boolean"
+    },
+    {
+      "surface": "origin misconfiguration",
+      "checkId": "c-exposure-misconfig"
+    }
+  ],
   "sharedRequestCap": 64,
   "basis": "confirmed"
 }
