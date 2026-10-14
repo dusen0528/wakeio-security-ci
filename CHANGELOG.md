@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- Add the offline agent-DAST evaluation harness (internal, not exported or
+  wired to the CLI) under `src/agent-dast/eval` and `benchmarks/agent-eval`:
+  a label format with `tuning`/`final` splits, distinct-vulnerability TP/FP/FN
+  scoring with cross-worker de-duplication, total-round request-budget
+  summation against one shared cap, a pre-run coverage denominator, and pass
+  criteria bound to the final label hash and attested as fixed before arm B.
+  It sends no request and runs no engine or model; arm A (fixed plan) vs arm B
+  (agent selection) is scored from synthetic or recorded results only.
+
 - Add an experimental `wakeio-security-ci/agent-dast` SDK with a bounded
   worker-result contract and RunStore v2. Completion requires the declared
   plan, retained task observations and trusted runner ledger to agree;

@@ -1,0 +1,28 @@
+{
+  "note": "Synthetic results for harness self-checking only. No request was sent, no engine or model ran. Each arm lists findings (projected to the harness shape), per-round admitted request counts, the pre-fixed coverage denominator, wall time, and B's model tokens.",
+  "armA": {
+    "name": "A",
+    "durationMs": 5200,
+    "coverage": { "plannedCells": 40, "executedCells": 40 },
+    "rounds": [{ "round": 1, "kind": "initial", "requestCount": 58 }],
+    "findings": [
+      { "findingId": "f-a1", "type": "sqli", "severity": "high", "state": "confirmed", "method": "POST", "path": "/rest/user/login", "param": "email", "location": "body", "authState": "anonymous", "round": 1 }
+    ]
+  },
+  "armB": {
+    "name": "B",
+    "durationMs": 9100,
+    "tokens": 21000,
+    "producedValidPlanArmAMissed": true,
+    "coverage": { "plannedCells": 40, "executedCells": 40 },
+    "rounds": [
+      { "round": 1, "kind": "initial", "requestCount": 26 },
+      { "round": 2, "kind": "verify", "requestCount": 10 },
+      { "round": 3, "kind": "expansion", "requestCount": 18 }
+    ],
+    "findings": [
+      { "findingId": "f-b1", "type": "sqli", "severity": "high", "state": "confirmed", "method": "POST", "path": "/rest/user/login", "param": "email", "location": "body", "authState": "anonymous", "round": 1 },
+      { "findingId": "f-b2", "type": "authz", "severity": "high", "state": "confirmed", "method": "GET", "path": "/rest/basket/3", "param": null, "location": null, "authState": "user", "round": 3 }
+    ]
+  }
+}
