@@ -11,6 +11,7 @@ import { mergeHttpRoles } from './http-role.js';
 import { mergeStaticContexts } from '../static-context.js';
 import { mergeProcessRoles, PROCESS_METHODS } from './process-role.js';
 import { mergeBrowserLocationRoles } from './browser-location-role.js';
+import { mergeNodeResponseUses } from './node-response-role.js';
 
 interface AstFile {
   file: CollectedFile;
@@ -261,7 +262,23 @@ function observeFile(astFile: AstFile, flowUses: ReadonlyMap<ts.Node, InputFlowU
     if (ts.isCallExpression(node)) {
       const name = callName(node.expression);
       const use = flowUses.get(node);
-      if (use?.archiveWrite) {
+      if (use?.nodeHtml?.inputRelated && !['non_html', 'text_only'].includes(use.nodeHtml.outcome)) {
+        const role = use.nodeHtml;
+        const knownUrl = role.outcome === 'url_attribute_input';
+        const fixedPrefix = role.urlAttributeKinds.includes('fixed_prefix');
+        pushObservation(observations, file, sourceFile, node,
+          knownUrl ? 'ast:html-url-input-sink' : 'ast:html-output-context-unknown',
+          knownUrl ? 'Input reaches a quoted URL attribute in a declared HTML response'
+            : 'Input reaches a declared response with unresolved HTML rendering context',
+          knownUrl ? `An input-related hole appears in a quoted URL attribute of the collected HTML template. ${fixedPrefix
+            ? 'A literal prefix precedes at least one hole; this does not prove input control of the URL scheme. Attribute escaping remains unverified.'
+            : 'URL scheme restrictions and attribute escaping require separate review.'} Callback scheduling, MIME at runtime, receiver identity and browser behavior remain conditional; exploitability is unverified.`
+            : role.uncertainty === 'encoding' ? 'Input appears in a text position of the collected HTML template, but encoding is unverified. This is not a claim that input controls a URL attribute or that HTML text is safe. Runtime rendering and exploitability are unverified.'
+              : 'Input-related data reaches a declared response, but MIME, markup, provenance or preceding streamed fragments leave its rendering context unresolved. This is not a claim that input controls a URL attribute. Runtime rendering and exploitability are unverified.',
+          'medium', knownUrl ? 'Review the declared caller and response headers. Keep allowed URL schemes and destinations fixed, and encode values for the exact attribute context; HTML text escaping alone does not establish URL scheme safety.'
+            : 'Review the response binding, complete output sequence, headers and input provenance. Apply encoding for the actual output context; do not treat missing context as a safe HTML or URL certificate.', 'low');
+        observations.at(-1)!.staticFlow = role.staticFlow;
+      } else if (use?.archiveWrite) {
         const role = use.archiveWrite;
         if (role.outcome !== 'lexically_contained' && role.staticFlow) {
           pushObservation(observations, file, sourceFile, node, 'ast:archive-path-write',
@@ -505,6 +522,7 @@ export function runBuiltinAst(snapshot: SourceSnapshot, hasOtherSecurityCheck = 
     const responseAuthorities = [prior, use].filter(value => value.htmlResponse === 'express')
       .map(value => value.htmlResponseAuthority ?? 'unqualified_response');
     const merged: InputFlowUse = { ...prior, staticContext, htmlResponse: prior.htmlResponse ?? use.htmlResponse, htmlResponseAuthority: responseAuthorities.length ? staticContext || responseAuthorities.includes('unqualified_response') ? 'unqualified_response' : 'registered_express' : undefined, htmlResponseMime: prior.htmlResponseMime === "unknown" || use.htmlResponseMime === "unknown" ? "unknown" : prior.htmlResponseMime ?? use.htmlResponseMime, argumentFlows: [...argumentsByIndex.values()].sort((a, b) => a.index - b.index), localForkCall: prior.localForkCall && use.localForkCall ? {complete:prior.localForkCall.complete && use.localForkCall.complete} : undefined, localProcessCall: prior.localProcessCall && use.localProcessCall ? {complete:prior.localProcessCall.complete && use.localProcessCall.complete} : undefined, forkRole: prior.forkRole?.identity === 'unresolved' || use.forkRole?.identity === 'unresolved' ? {identity:'unresolved' as const} : prior.forkRole ?? use.forkRole, processRole: mergeProcessRoles(prior.processRole, use.processRole), sqlRole:mergeSqlRoles(prior.sqlRole,use.sqlRole), nosqlRole:mergeNoSqlRoles(prior.nosqlRole,use.nosqlRole), httpRole: mergeHttpRoles(prior.httpRole, use.httpRole) };
+    merged.nodeHtml = mergeNodeResponseUses(prior.nodeHtml, use.nodeHtml);
     const filesystemRoles = [prior.filesystemProcess, use.filesystemProcess].filter((role): role is NonNullable<InputFlowUse['filesystemProcess']> => !!role);
     merged.browserLocationRole = mergeBrowserLocationRoles(prior.browserLocationRole, use.browserLocationRole);
     const filesystemRank = { argv_shell_input: 4, argv_shell_unknown: 3, direct_argv_interpreter_unknown: 2, argv_only_shell_disabled: 0 };

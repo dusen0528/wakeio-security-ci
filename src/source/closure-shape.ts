@@ -11,6 +11,37 @@ export interface ClosureShape {
   readonly lexicalThis: boolean;
 }
 
+export interface RegularClosureShape {
+  readonly target: ts.FunctionExpression | ts.FunctionDeclaration;
+  readonly captures: readonly ts.Symbol[];
+}
+
+/** Conditional inspection only: mutable captures never confer callable or safety authority. */
+export function analyzeRegularClosureShape(target: RegularClosureShape['target'], modules: StaticModules,
+  tick: () => boolean): ShapeResult<RegularClosureShape> {
+  const captures = new Set<ts.Symbol>();
+  let failure: ShapeResult<never> | undefined;
+  const visit = (node: ts.Node): void => {
+    if (failure) return;
+    if (!tick()) { failure = { kind: 'budget' }; return; }
+    if (ts.isTypeNode(node)) return;
+    if (node !== target && (ts.isFunctionDeclaration(node) || ts.isFunctionExpression(node)
+      || ts.isArrowFunction(node) || ts.isClassDeclaration(node))) return;
+    if (ts.isWithStatement(node) || ts.isMetaProperty(node) || node.kind === ts.SyntaxKind.SuperKeyword) {
+      failure = unsupported('dynamic_scope'); return;
+    }
+    if (ts.isIdentifier(node) && reference(node)) {
+      const symbol = modules.symbol(node);
+      if (!tick()) { failure = { kind: 'budget' }; return; }
+      if (node.text === 'eval' || node.text === 'arguments') { failure = unsupported('dynamic_scope'); return; }
+      if (symbol && !symbol.declarations?.every(declaration => inside(declaration, target))) captures.add(symbol);
+    }
+    node.forEachChild(visit);
+  };
+  visit(target);
+  return failure ?? { kind: 'supported', shape: { target, captures: [...captures] } };
+}
+
 export interface ConstructorShape {
   readonly target: ts.FunctionDeclaration | ts.FunctionExpression;
   readonly ownArrows: ReadonlyMap<string, ClosureShape>;

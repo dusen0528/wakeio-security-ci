@@ -68,7 +68,7 @@ test('rest owner: branch writes retain added input without granting exact select
 test('rest owner: constructor rest remains explicit unsupported and old ruleset comparison unverified', () => {
   const check = scan(EXEC + "function Owned(...args){this.run=()=>exec(args[1]);}export function route(req){const item=new Owned('fixed',req.query.value);item.run();}");
   assert.equal(check.status, 'partial');
-  assert.equal(RULESET_VERSION, '2026-10-14.4');
+  assert.equal(RULESET_VERSION, '2026-10-14.5');
   const current = scan(EXEC + "function helper(...args){exec(args[1]);}export function route(req){helper('fixed',req.query.value);}");
   const after = createReport([current], 'source', new Date(0), {
     fingerprint: 'a'.repeat(64), ruleset: RULESET_VERSION, analysisBudget: current.analysisBudget,

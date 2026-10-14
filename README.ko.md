@@ -43,6 +43,8 @@ GitHub source preview는 [같은 파일의 제한된 Hono request 형태](docs/r
 
 소스 preview는 [Node process API 여섯 개](docs/process-role.md)의 command·executable·argv·shell 필드 역할을 구별합니다. 기본/false argv의 제외는 Node의 셸 해석만 대상으로 하며, 프로그램 옵션 안전이나 실제 실행을 검증하지 않습니다. 이 ruleset 변경은 npm 게시를 뜻하지 않습니다.
 
+검토한 source preview의 [Node HTML 출력 문맥](docs/html-output-context.md)은 quoted URL attribute 입력과 미해결 HTML text/streaming을 구분합니다. 조건부 callback과 미해결 문맥은 partial/exit 2이며, URL 후보가 없다는 사실은 HTML 안전이나 수정 완료를 뜻하지 않습니다.
+
 ## 빠른 시작: 내장 검사만 실행하기
 
 Node.js 22 이상에서 버전을 고정한 npm CLI를 실행합니다. 두 경로를 실제 경로로 바꾸고 보고서는 검사 대상 저장소 밖에 둡니다.

@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Add bounded source-only Node HTML output-context candidates under ruleset
+  `2026-10-14.5`: declared core HTTP/HTTPS request callbacks and a narrow send
+  directory adapter preserve literal/input-hole provenance to quoted URL attributes.
+  Unknown encoding, MIME and streaming remain partial low-confidence candidates;
+  encoder names grant no safety proof. See [scope and gates](docs/html-output-context.md).
+
 - Add an experimental `wakeio-security-ci/agent-dast` SDK with a bounded
   worker-result contract and RunStore v2. Completion requires the declared
   plan, retained task observations and trusted runner ledger to agree;
