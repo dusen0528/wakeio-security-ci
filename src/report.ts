@@ -45,7 +45,7 @@ export const REPORT_SCHEMA_VERSION = '1.0.0' as const;
 
 /** The version advertised to SARIF consumers when the package is built. */
 export const REPORT_TOOL_VERSION = '0.5.0';
-export const RULESET_VERSION = '2026-10-14.3';
+export const RULESET_VERSION = '2026-10-14.4';
 
 const SEVERITIES: readonly Severity[] = [
   'info',
