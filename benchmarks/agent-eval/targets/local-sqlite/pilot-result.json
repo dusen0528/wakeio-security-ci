@@ -1,0 +1,93 @@
+{
+  "version": 1,
+  "verdict": "defer",
+  "g3Complete": false,
+  "g4Started": false,
+  "criteriaCommit": "e68ed3e24dc98628a97a362a7937d74a57cc9f00",
+  "executionCommit": "9e0d278348c9de62ffcdfb7e128f24dce2385c2b",
+  "attempts": [
+    {
+      "id": "initial",
+      "complete": false,
+      "completedA": 5,
+      "completedB": 2,
+      "failure": "SDK abort after iterator cleanup during B3",
+      "fixCommit": "9e0d278"
+    },
+    {
+      "id": "r2",
+      "complete": false,
+      "completedA": 5,
+      "completedB": 4,
+      "failure": "B5 invalid_agent_output after two rejected selection attempts",
+      "allArmRequests": 16,
+      "sharedCap": 64
+    }
+  ],
+  "completedPairs": 4,
+  "completedPairScores": {
+    "A": {
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "coverage": "2/2"
+    },
+    "B": {
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "coverage": "2/2"
+    }
+  },
+  "completedPairsProvenanceAllOk": true,
+  "completedPairsManifestVerified": true,
+  "stats": {
+    "A": {
+      "requests": {
+        "mean": 16,
+        "min": 16,
+        "max": 16,
+        "variance": 0
+      },
+      "durationMs": {
+        "mean": 1574.2,
+        "min": 1571,
+        "max": 1580,
+        "variance": 10.160000000000002
+      },
+      "tokens": null
+    },
+    "B": {
+      "requests": {
+        "mean": 16,
+        "min": 16,
+        "max": 16,
+        "variance": 0
+      },
+      "durationMs": {
+        "mean": 18350.2,
+        "min": 14585,
+        "max": 29968,
+        "variance": 34005356.559999995
+      },
+      "tokens": null
+    }
+  },
+  "modelUsage": {
+    "knownInputTokens": 113300,
+    "knownOutputTokens": 755,
+    "callsWithUnknownUsage": 2,
+    "monetaryCost": null
+  },
+  "artifactSha256": {
+    "evaluation.json": "8be5e0aafd0709240674914abac89198071c2d5faa463fce218a8ca708555aff",
+    "precommit-attestation.json": "0721e27fd73357f1fd73933d802328a774ae09c9393310c9fb6b610f01417d31"
+  },
+  "limits": [
+    "candidate-state SQL differential only; one positive and one negative site",
+    "failed model calls have unknown usage; known tokens are a lower bound",
+    "invalid_output does not distinguish transport error from schema rejection",
+    "local signing key is not an independently trusted timestamp",
+    "no final-set prompt tuning or successful-only replacement of failed repeats"
+  ]
+}

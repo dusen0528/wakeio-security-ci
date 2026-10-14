@@ -19,3 +19,13 @@ For this pilot the unchanged PR60 CLI can verify a one-round B bundle. If B prod
 The CLI does not print its internal `manifestVerified` value. The target scorer additionally calls the unchanged `evaluate()` API with the same stored readers and reports that verified value. Original CLI output is preserved beside it.
 
 Coverage counts the two predeclared native policy tasks only when their stored group-completion rows report execution. Finding-observation rows are not used as a coverage denominator. Candidate-state findings are evaluated against source-grounded labels; no synthetic confirmation is added to run.db.
+
+## Recorded pilot result (2026-10-14)
+
+`pilot-result.json` preserves both attempts and hashes of the private raw artifacts. Initial execution was interrupted during B3 by aborting an SDK child after its iterator had removed listeners. Commit 9e0d278 removes that redundant abort; a regression test reproduces the event-lifecycle failure offline. Criteria, labels, prompts and engine configuration were unchanged for the second complete attempt.
+
+The second attempt executed all five A and five B arms. A completed 5/5; B completed 4/5. B5 sent 16 admitted requests, then both selection attempts failed validation/provider completion and the loop safely returned `invalid_agent_output`, exit 2. The deliberately sanitized provider record cannot distinguish a transport failure from an invalid model result; no more specific cause is claimed.
+
+The four completed pairs each scored candidate TP=1, FP=0, FN=0 and coverage=2/2, with CLI provenance and API manifest verification passing. Every arm used 16/64 requests. Mean total elapsed time across all five arms was A=1.5742 seconds, B=18.3502 seconds (including the failed B arm); population variance was A=10.16 ms², B=34,005,356.56 ms². Token usage is incomplete for failed calls and is reported as a lower bound, not zero or a price estimate.
+
+Verdict: defer. G3's all-arms-complete condition is unmet; G4 has not started. No repeated campaign was run merely to obtain five favorable results. All bundles, rejected-attempt records and attestation remain in private local storage; only aggregate metrics and content hashes are committed. The public criteria commit predates both campaigns. This pilot does not establish a detection or efficiency advantage for the agent.
