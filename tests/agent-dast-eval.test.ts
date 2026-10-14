@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { finalLabels, parseLabelSet, siteKey, type LabelSet } from '../src/agent-dast/eval/labels.js';
 import {
-  EvalError, compareArms, coverage, dedupeFindings, parsePassCriteria, scoreRun, sumRoundBudget,
+  EvalError, compareArms, coverage, dedupeFindings, parseArm, parsePassCriteria, parseResultsBundle, scoreRun, sumRoundBudget,
   type Arm, type EvalFinding, type RoundBudget,
 } from '../src/agent-dast/eval/aggregate.js';
 
@@ -148,4 +148,54 @@ test('comparison holds quality and flags fewer-requests value, within one shared
   // If B loses a detection, quality is not held.
   const worseB: Arm = { ...armB, findings: [finding({ findingId: 'f-a' })] };
   assert.equal(compareArms(armA, worseB, labels, criteria).qualityHeld, false);
+});
+
+// --- Regression: three issues raised in review of PR #60 ---
+
+const idorFinding = (round: number): EvalFinding => finding({ findingId: 'f-idor', type: 'authz', severity: 'high', method: 'GET', path: '/rest/basket/3', param: null, location: null, authState: 'user', round });
+
+test('regression: a per-arm coverage denominator is refused; ratios compare only against one shared denominator', () => {
+  const labels = finalLabels(labelSet());
+  const criteria = parsePassCriteria({ version: 1, labelSetHash: labels.hash, committedBeforeArmB: true, sharedRequestCap: 64, basis: 'confirmed' });
+  const mk = (planned: number): Arm => ({ name: 'A', findings: [finding({})], rounds: [{ round: 1, kind: 'initial', requestCount: 10 }], coverage: { plannedCells: planned, executedCells: planned }, durationMs: 1 });
+  const armA = mk(40);
+  const armB: Arm = { ...mk(20), name: 'B' }; // B measured against a smaller denominator → 20/20 would falsely "hold"
+  assert.throws(() => compareArms(armA, armB, labels, criteria), (e: unknown) => e instanceof EvalError && e.code === 'denominator_mismatch');
+});
+
+test('regression: equal TP count with a different detection set is not "same detection" and does not hold quality', () => {
+  const labels = finalLabels(labelSet());
+  const criteria = parsePassCriteria({ version: 1, labelSetHash: labels.hash, committedBeforeArmB: true, sharedRequestCap: 64, basis: 'confirmed' });
+  const cov = { plannedCells: 40, executedCells: 40 };
+  // A detects {sqli}; B detects {idor}. Same tp count (1), disjoint sets.
+  const armA: Arm = { name: 'A', findings: [finding({})], rounds: [{ round: 1, kind: 'initial', requestCount: 50 }], coverage: cov, durationMs: 1 };
+  const armB: Arm = { name: 'B', findings: [idorFinding(1)], rounds: [{ round: 1, kind: 'initial', requestCount: 20 }], coverage: cov, durationMs: 1 };
+  const cmp = compareArms(armA, armB, labels, criteria);
+  assert.equal(cmp.b.score.tp, cmp.a.score.tp); // equal count…
+  assert.equal(cmp.qualityHeld, false);          // …but B dropped the vuln A found
+  assert.equal(cmp.fewerRequestsSameDetection, false); // fewer requests, but NOT the same detection set
+  assert.ok(cmp.reasons.some(r => r.includes('v-sqli-login')));
+});
+
+test('regression: fewer-requests value requires the exact same detection set, not just an equal count', () => {
+  const labels = finalLabels(labelSet());
+  const criteria = parsePassCriteria({ version: 1, labelSetHash: labels.hash, committedBeforeArmB: true, sharedRequestCap: 64, basis: 'confirmed' });
+  const cov = { plannedCells: 40, executedCells: 40 };
+  const both = (round: number): EvalFinding[] => [finding({ findingId: 'f-s', round }), idorFinding(round)];
+  const armA: Arm = { name: 'A', findings: both(1), rounds: [{ round: 1, kind: 'initial', requestCount: 60 }], coverage: cov, durationMs: 1 };
+  const armB: Arm = { name: 'B', findings: both(1), rounds: [{ round: 1, kind: 'initial', requestCount: 30 }], coverage: cov, durationMs: 1 };
+  assert.equal(compareArms(armA, armB, labels, criteria).fewerRequestsSameDetection, true);
+});
+
+test('regression: a malformed results bundle is rejected before counting', () => {
+  const good = { findingId: 'f-1', type: 'sqli', severity: 'high', state: 'confirmed', method: 'POST', path: '/x', param: 'e', location: 'body', authState: 'anonymous', round: 1 };
+  const arm = (findings: unknown[]) => ({ name: 'A', findings, rounds: [{ round: 1, kind: 'initial', requestCount: 1 }], coverage: { plannedCells: 1, executedCells: 1 }, durationMs: 0 });
+  assert.doesNotThrow(() => parseArm(arm([good]), 'A'));
+  assert.throws(() => parseArm(arm([{ ...good, type: 'sqlinjection' }]), 'A'), /results_invalid.*type/);
+  assert.throws(() => parseArm(arm([{ ...good, round: 0 }]), 'A'), /results_invalid.*round/);
+  assert.throws(() => parseArm(arm([{ ...good, authState: 'root' }]), 'A'), /results_invalid.*authState/);
+  assert.throws(() => parseArm(arm([good, good]), 'A'), /findings\[1\]\.findingId/); // duplicate id
+  assert.throws(() => parseArm({ ...arm([]), rounds: [] }, 'A'), /results_invalid.*rounds/);
+  assert.throws(() => parseArm(arm([good]), 'B'), /arm.*name/); // name must match the slot
+  assert.throws(() => parseResultsBundle({ armA: arm([good]) }, ), /results_invalid/); // missing armB
 });

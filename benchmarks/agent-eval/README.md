@@ -56,7 +56,7 @@ scoring, so repeated detection is not rewarded. A finding at a negative or
 unlabeled site is one FP after the same de-duplication. A finding must match the
 labeled **type** as well as the site.
 
-## Labels: tuning and final are separate
+## Labels: tuning and final splits
 
 `labels/*.labels.json` ([format](../../src/agent-dast/eval/labels.ts)) lists
 distinct vulnerabilities and negative sites, each with a `split`:
@@ -64,22 +64,46 @@ distinct vulnerabilities and negative sites, each with a `split`:
 - `tuning` — used while developing the agent's prompts and selection logic.
 - `final` — used only to score a comparison run.
 
-The scorer (`scoreRun`) takes `finalLabels()` output and **refuses** any set
-that still contains a tuning entry (`tuning_label_in_scoring`). Final-evaluation
-truth therefore never reaches the agent's inputs or mixes into scoring. In a
-final run the target should contain only final + negative sites; tuning sites
-live in a separate development corpus.
+What this code guarantees: the scorer (`scoreRun`) takes `finalLabels()` output
+and **refuses** any set that still contains a tuning entry
+(`tuning_label_in_scoring`), so tuning labels can never be *scored* alongside
+final ones. What it does **not** guarantee: it cannot stop the final labels from
+being handed to an agent as input — this harness only scores results; it does
+not provision the agent's inputs. Keeping final labels out of the agent's view
+is the job of the follow-up execution layer (see "Evidence the execution layer
+must add"). In a final run the target should contain only final + negative
+sites; tuning sites live in a separate development corpus.
 
-## Pass criteria are fixed before arm B
+## Pass criteria binding (and what is not yet verified)
 
 `criteria.example.json` ([format](../../src/agent-dast/eval/aggregate.ts)) is
-committed **before** arm B runs and is bound to the final label set:
+bound to the final label set:
 
 - `labelSetHash` must equal `finalLabels().hash`, or `compareArms` throws
   `criteria_hash_mismatch` — criteria cannot be retrofitted to an edited truth
-  set.
-- `committedBeforeArmB: true` is a required attestation; the N-repeat majority
-  verdict is decided from this file, before anyone sees B's numbers.
+  set. **This is enforced by code.**
+- `committedBeforeArmB: true` is only a **self-declared attestation**. It does
+  not prove the criteria predate arm B; nothing in this harness checks when the
+  file was written. The CLI output flags this as
+  `criteriaAttestationUnverified: true`. Real pre-registration must be enforced
+  by the execution layer below.
+
+## Evidence the execution layer must add
+
+This offline harness scores numbers; it does not observe the run that produced
+them. Before a real-target comparison can be trusted, the follow-up execution
+layer must bind:
+
+- **Pre-registration of criteria** — a timestamp or signature (e.g. a committed
+  criteria file hashed into a dated ledger, or a signed commit) proving the
+  criteria and the final label hash existed before arm B ran. `committedBeforeArmB`
+  is a placeholder for that proof, not the proof.
+- **Label non-disclosure** — the input-provisioning step that builds the agent's
+  recon/plan inputs must be shown never to include final labels (a separate
+  corpus, a redaction check on the agent's inputs).
+- **Finding provenance** — each `EvalFinding` the harness scores must link back
+  to a run.db row and its evidence file, so a scored detection is traceable to
+  an actual admitted request, not a hand-written number.
 
 ### Gates (draft, finalize with the real label set)
 

@@ -15,8 +15,8 @@
  *     before arm B.
  */
 import { createHash } from 'node:crypto';
-import { siteKey, type FinalLabels, type Severity, type VulnType } from './labels.js';
-import type { AuthState, ParamLocation } from '../store.js';
+import { SEVERITIES, VULN_TYPES, siteKey, type FinalLabels, type Severity, type VulnType } from './labels.js';
+import { AUTH_STATES, PARAM_LOCATIONS, type AuthState, type ParamLocation } from '../store.js';
 
 export type FindingBasis = 'candidate' | 'confirmed';
 
@@ -89,9 +89,89 @@ export interface ScoreResult {
 }
 
 export class EvalError extends Error {
-  constructor(readonly code: 'tuning_label_in_scoring' | 'criteria_hash_mismatch' | 'criteria_not_fixed' | 'coverage_basis', detail?: string) {
+  constructor(readonly code: 'tuning_label_in_scoring' | 'criteria_hash_mismatch' | 'criteria_not_fixed' | 'coverage_basis' | 'denominator_mismatch' | 'results_invalid', detail?: string) {
     super(detail ? `${code}: ${detail}` : code);
   }
+}
+
+function record(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function intField(raw: Record<string, unknown>, key: string, path: string, min: number): number {
+  const value = raw[key];
+  if (!Number.isSafeInteger(value) || (value as number) < min) throw new EvalError('results_invalid', `${path}.${key}`);
+  return value as number;
+}
+
+function strIn<T extends string>(raw: Record<string, unknown>, key: string, options: readonly T[], path: string): T {
+  const value = raw[key];
+  if (typeof value !== 'string' || !(options as readonly string[]).includes(value)) throw new EvalError('results_invalid', `${path}.${key}`);
+  return value as T;
+}
+
+/** Validate one finding from an untrusted results bundle into the harness shape. */
+export function parseEvalFinding(raw: unknown, path: string): EvalFinding {
+  if (!record(raw)) throw new EvalError('results_invalid', path);
+  if (typeof raw.findingId !== 'string' || !/^f-[0-9a-z-]{1,40}$/.test(raw.findingId)) throw new EvalError('results_invalid', `${path}.findingId`);
+  if (typeof raw.method !== 'string' || !/^[A-Z]{3,7}$/.test(raw.method)) throw new EvalError('results_invalid', `${path}.method`);
+  if (typeof raw.path !== 'string' || !raw.path.startsWith('/') || raw.path.length > 2048) throw new EvalError('results_invalid', `${path}.path`);
+  if (raw.param !== null && (typeof raw.param !== 'string' || raw.param.length > 100)) throw new EvalError('results_invalid', `${path}.param`);
+  const location = raw.location === null ? null : strIn(raw, 'location', PARAM_LOCATIONS, path);
+  return {
+    findingId: raw.findingId,
+    type: strIn(raw, 'type', VULN_TYPES, path),
+    severity: strIn(raw, 'severity', SEVERITIES, path),
+    state: strIn(raw, 'state', ['candidate', 'confirmed', 'rejected'] as const, path),
+    method: raw.method,
+    path: raw.path,
+    param: (raw.param as string | null) ?? null,
+    location,
+    authState: strIn(raw, 'authState', AUTH_STATES, path),
+    round: intField(raw, 'round', path, 1),
+  };
+}
+
+const ROUND_KINDS = ['initial', 'verify', 'retry', 'expansion'] as const;
+
+export function parseRoundBudget(raw: unknown, path: string): RoundBudget {
+  if (!record(raw)) throw new EvalError('results_invalid', path);
+  return { round: intField(raw, 'round', path, 1), kind: strIn(raw, 'kind', ROUND_KINDS, path), requestCount: intField(raw, 'requestCount', path, 0) };
+}
+
+/** Validate an arm (`armA`/`armB`) from an untrusted results bundle. */
+export function parseArm(raw: unknown, name: 'A' | 'B'): Arm {
+  const path = `arm${name}`;
+  if (!record(raw)) throw new EvalError('results_invalid', path);
+  if (raw.name !== name) throw new EvalError('results_invalid', `${path}.name`);
+  if (!Array.isArray(raw.findings)) throw new EvalError('results_invalid', `${path}.findings`);
+  if (!Array.isArray(raw.rounds) || raw.rounds.length === 0) throw new EvalError('results_invalid', `${path}.rounds`);
+  if (!record(raw.coverage)) throw new EvalError('results_invalid', `${path}.coverage`);
+  const findingIds = new Set<string>();
+  const findings = raw.findings.map((f, i) => {
+    const finding = parseEvalFinding(f, `${path}.findings[${i}]`);
+    if (findingIds.has(finding.findingId)) throw new EvalError('results_invalid', `${path}.findings[${i}].findingId`);
+    findingIds.add(finding.findingId);
+    return finding;
+  });
+  const arm: Arm = {
+    name,
+    findings,
+    rounds: raw.rounds.map((r, i) => parseRoundBudget(r, `${path}.rounds[${i}]`)),
+    coverage: { plannedCells: intField(raw.coverage, 'plannedCells', `${path}.coverage`, 0), executedCells: intField(raw.coverage, 'executedCells', `${path}.coverage`, 0) },
+    durationMs: intField(raw, 'durationMs', path, 0),
+  };
+  if (raw.tokens !== undefined) arm.tokens = intField(raw, 'tokens', path, 0);
+  if (raw.producedValidPlanArmAMissed !== undefined) {
+    if (typeof raw.producedValidPlanArmAMissed !== 'boolean') throw new EvalError('results_invalid', `${path}.producedValidPlanArmAMissed`);
+    arm.producedValidPlanArmAMissed = raw.producedValidPlanArmAMissed;
+  }
+  return arm;
+}
+
+export function parseResultsBundle(raw: unknown): { armA: Arm; armB: Arm } {
+  if (!record(raw)) throw new EvalError('results_invalid', '$');
+  return { armA: parseArm(raw.armA, 'A'), armB: parseArm(raw.armB, 'B') };
 }
 
 /**
@@ -214,15 +294,24 @@ export function parsePassCriteria(raw: unknown): PassCriteria {
 export interface Comparison {
   a: ArmResult;
   b: ArmResult;
-  /** No-quality-loss gate: B keeps detection and coverage at A's level within one shared budget. */
+  /** No-quality-loss gate: B detects every vulnerability A did (by identity, not count), adds no false positive, and holds coverage, within one shared budget. */
   qualityHeld: boolean;
-  /** B reached the same detection with fewer requests. */
+  /** B detected exactly A's vulnerability set with no new false positive and fewer total requests. */
   fewerRequestsSameDetection: boolean;
   /** Usability outcome, recorded apart from detection. */
   producedValidPlanArmAMissed: boolean;
   /** Both arms stayed within the shared cap. */
   withinBudget: boolean;
   reasons: string[];
+}
+
+function subset(a: readonly string[], b: readonly string[]): boolean {
+  const set = new Set(b);
+  return a.every(x => set.has(x));
+}
+
+function sameSet(a: readonly string[], b: readonly string[]): boolean {
+  return a.length === b.length && subset(a, b);
 }
 
 function armResult(arm: Arm, labels: FinalLabels, basis: FindingBasis, sharedCap: number): ArmResult {
@@ -244,19 +333,33 @@ function armResult(arm: Arm, labels: FinalLabels, basis: FindingBasis, sharedCap
  */
 export function compareArms(armA: Arm, armB: Arm, labels: FinalLabels, criteria: PassCriteria): Comparison {
   if (criteria.labelSetHash !== labels.hash) throw new EvalError('criteria_hash_mismatch', `criteria ${criteria.labelSetHash.slice(0, 12)} vs labels ${labels.hash.slice(0, 12)}`);
+  // Coverage ratios compare only against one shared, pre-fixed denominator; a
+  // per-arm denominator would make the ratio comparison meaningless.
+  if (armA.coverage.plannedCells !== armB.coverage.plannedCells) {
+    throw new EvalError('denominator_mismatch', `A planned ${armA.coverage.plannedCells}, B planned ${armB.coverage.plannedCells}`);
+  }
   const a = armResult(armA, labels, criteria.basis, criteria.sharedRequestCap);
   const b = armResult(armB, labels, criteria.basis, criteria.sharedRequestCap);
   const reasons: string[] = [];
   const withinBudget = !a.budget.overBudget && !b.budget.overBudget;
   if (!withinBudget) reasons.push('a round budget exceeded the shared cap');
 
-  const detectionHeld = b.score.tp >= a.score.tp && b.score.fp <= a.score.fp;
+  // By identity, not count: B must detect every vulnerability A detected, so a
+  // same-count run that swapped one detection for another does not pass.
+  const keptAllOfA = subset(a.score.detected, b.score.detected);
+  const noNewFalsePositive = subset(b.score.falsePositiveKeys, a.score.falsePositiveKeys);
   const coverageHeld = (b.coverage.ratio ?? 0) >= (a.coverage.ratio ?? 0);
-  const qualityHeld = withinBudget && detectionHeld && coverageHeld;
-  if (!detectionHeld) reasons.push(`detection not held: tp ${b.score.tp} vs ${a.score.tp}, fp ${b.score.fp} vs ${a.score.fp}`);
+  const qualityHeld = withinBudget && keptAllOfA && noNewFalsePositive && coverageHeld;
+  if (!keptAllOfA) reasons.push(`detection not held: B missed ${a.score.detected.filter(v => !b.score.detected.includes(v)).join(', ') || '(none)'}`);
+  if (!noNewFalsePositive) reasons.push('B introduced a false positive A did not have');
   if (!coverageHeld) reasons.push(`coverage not held: ${b.coverage.ratio} vs ${a.coverage.ratio}`);
 
-  const fewerRequestsSameDetection = withinBudget && b.score.tp === a.score.tp && b.score.fp <= a.score.fp && b.budget.total < a.budget.total;
+  // "Same detection" is set equality on vulnerabilities plus no new false
+  // positive — not an equal TP count, which can hide a swapped detection.
+  const fewerRequestsSameDetection = withinBudget
+    && sameSet(a.score.detected, b.score.detected)
+    && noNewFalsePositive
+    && b.budget.total < a.budget.total;
 
   return {
     a, b, qualityHeld, fewerRequestsSameDetection,
