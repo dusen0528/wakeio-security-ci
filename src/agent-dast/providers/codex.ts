@@ -40,6 +40,7 @@ export async function createAgent(options: ProviderOptions & { authMode?: 'api-k
       }
       if (!completed) throw new Error('agent_output_invalid');
       return reply;
-    } finally { clearTimeout(timer); abort.abort(); await rm(directory, { recursive: true, force: true }); }
+    // The SDK iterator kills its child on close; aborting after it removes listeners emits an unhandled error.
+    } finally { clearTimeout(timer); await rm(directory, { recursive: true, force: true }); }
   });
 }

@@ -85,7 +85,8 @@ const sdk = {
   constructor(options) { constructorOptions = options; }
   startThread(options) {
    threadOptions = options;
-   return { runStreamed: async () => {
+   return { runStreamed: async (_prompt, options) => {
+    if (process.argv[2] === 'cleanup') options.signal.addEventListener('abort', () => { throw Error('abort_after_sdk_cleanup'); });
     calls++; executableText = await readFile(constructorOptions.codexPathOverride, 'utf8');
     return { events: (async function* () {
      yield { type: 'thread.started' }; yield { type: 'turn.started' };
@@ -119,7 +120,7 @@ try{
  assert.ok(!data.includes('KEY_CANARY'));assert.ok(!data.includes('PRIVATE'));assert.equal(sockets,0);
 }finally{await rm(root,{recursive:true,force:true})}
 `;
-for (const provider of ['codex','claude']) for (const scenario of (provider === 'codex' ? ['valid','tool','cli-login'] : ['valid','tool'])) {
+for (const provider of ['codex','claude']) for (const scenario of (provider === 'codex' ? ['valid','tool','cli-login','cleanup'] : ['valid','tool'])) {
   test(`${provider}: SDK configuration and ${scenario} events without network`, () => {
     assert.doesNotThrow(() => execFileSync(process.execPath, ['--experimental-test-module-mocks','--input-type=module','-e',sdkScript,provider,scenario], { stdio: 'pipe' }));
   });
