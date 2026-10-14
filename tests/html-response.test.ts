@@ -10,7 +10,7 @@ function scan(text: string) {
     ignoredFiles: 0, totalBytes: Buffer.byteLength(text) };
   return runBuiltinAst(snapshot, false);
 }
-const html = (text: string) => scan(text).findings.filter(finding => finding.ruleId === 'ast:html-input-sink');
+const html = (text: string) => scan(text).findings.filter(finding => ['ast:html-input-sink', 'ast:response-input-sink'].includes(finding.ruleId));
 
 // These source strings are parsed, never imported or executed.
 test('Express request/response-shaped handlers report direct, template, status and alias send bodies', () => {
@@ -23,13 +23,14 @@ test('Express request/response-shaped handlers report direct, template, status a
   ]) {
     const check = scan(`app.get('/hello',(req,res)=>{${body}})`);
     assert.equal(check.status, 'completed');
-    const findings = check.findings.filter(finding => finding.ruleId === 'ast:html-input-sink');
+    const findings = check.findings.filter(finding => ['ast:html-input-sink', 'ast:response-input-sink'].includes(finding.ruleId));
     assert.equal(findings.length, 1, body);
     assert.equal(findings[0].kind, 'candidate');
-    assert.equal(findings[0].confidence, 'medium');
+    assert.equal(findings[0].confidence, 'low');
+    assert.equal(findings[0].ruleId, 'ast:response-input-sink');
     assert.equal(findings[0].location.path, 'route.ts');
     assert.equal(findings[0].location.line, 1);
-    assert.match(findings[0].title, /res.send.*encode HTML or set a non-HTML type/);
+    assert.match(findings[0].title, /response-shaped call; dispatch and MIME unresolved/);
     assert.equal(findings[0].staticFlow?.steps.at(-1)?.role, 'sink');
     assert.equal(findings[0].staticFlow?.truncated, false);
     const report = createReport([check], 'source', new Date(0));
@@ -131,9 +132,10 @@ test('literal Express MIME setters distinguish text data from JSON served as HTM
   for (const prefix of ["res.type('text/html');", "res.set('Content-Type','text/html');", "res.header({'content-type':'text/html'});", "res.type('text/plain');res.type('html');"]) {
     const findings = html(`function route(req,res){${prefix}res.json({message:req.query.value})}`);
     assert.equal(findings.length, 1, prefix);
-    assert.equal(findings[0].confidence, 'medium');
-    assert.match(findings[0].title, /JSON.*set application\/json/);
-    assert.match(findings[0].remediation, /explicitly set application\/json before res.json/);
+    assert.equal(findings[0].confidence, 'low');
+    assert.equal(findings[0].ruleId, 'ast:response-input-sink');
+    assert.match(findings[0].title, /dispatch and MIME unresolved/);
+    assert.match(findings[0].remediation, /First verify the receiver binding and caller origin/);
   }
   assert.equal(html("function route(req,res){res.type('html').json({message:req.query.value})}").length, 1);
   assert.equal(html("function route(req,res){res.type('text/plain').set('X-Content-Type-Options','nosniff').send(req.query.value)}").length, 0);
