@@ -41,11 +41,22 @@ test("benchmark corpus is balanced and every expected finding has an inspectable
   };
   assert.match(corpus.corpusVersion, /^\d{4}-\d{2}-\d{2}\./);
   assert.ok(corpus.unsupportedScope.some((entry) => /Python/i.test(entry)));
-  assert.equal(corpus.cases.length, 50);
+  assert.equal(corpus.corpusVersion, '2026-10-14.synthetic-js-ts.v4');
+  assert.equal(corpus.cases.length, 56);
   assert.equal(corpus.cases.filter((entry) => entry.classification === "vulnerable").length, corpus.cases.filter((entry) => entry.classification === "fixed").length);
   assert.ok(corpus.cases.every((entry) => entry.whyVulnerable.length > 0 && entry.whyFixed.length > 0 && entry.fixture.startsWith("fixtures/")));
   const expected = corpus.cases.flatMap((entry) => entry.expectedFindings);
-  assert.ok(expected.length > 0);
+  assert.equal(expected.length, 28);
+  assert.equal(expected.filter((finding) => finding.support === 'supported').length, 27);
+  assert.equal(expected.filter((finding) => finding.support === 'known_miss').length, 1);
+  assert.equal(corpus.cases.find((entry) => entry.id === 'koa-query-sql-vulnerable')?.expectedFindings[0].support, 'known_miss');
+  for (const pair of ['hono-query-fetch', 'hono-param-sql', 'hono-json-sql']) {
+    const positive = corpus.cases.find((entry) => entry.id === `${pair}-vulnerable`);
+    const fixed = corpus.cases.find((entry) => entry.id === `${pair}-fixed`);
+    assert.equal(positive?.expectedFindings.length, 1);
+    assert.equal(positive?.expectedFindings[0].support, 'supported');
+    assert.deepEqual(fixed?.expectedFindings, []);
+  }
   for (const id of ["sql-cross-function-known-miss", "sql-cross-file-known-miss"]) {
     const promoted = corpus.cases.find((entry) => entry.id === id);
     assert.ok(promoted);
@@ -162,7 +173,7 @@ test("programmatic runBenchmark accepts a caller-supplied public runSource", asy
   const report = await benchmark.runBenchmark(engine.runSource, { engine: { label: "programmatic-test", version: "test", versionSource: "test" } });
   assert.equal(report.success, true);
   assert.equal(report.engine.label, "programmatic-test");
-  assert.equal(report.summary.totalCases, 50);
+  assert.equal(report.summary.totalCases, 56);
 });
 
 test("default exit semantics permit a measured FN while strict mode exposes the supported regression", async () => {
@@ -175,8 +186,8 @@ test("default exit semantics permit a measured FN while strict mode exposes the 
     { id: "source.builtin-ast", status: "completed", findings: [], notes: [] },
   ], { engine: { label: "empty-test-engine", version: "test", versionSource: "test" } });
   assert.equal(report.success, true);
-  assert.equal(report.summary.falseNegatives, 25);
-  assert.equal(report.summary.strictRegressions, 24);
+  assert.equal(report.summary.falseNegatives, 28);
+  assert.equal(report.summary.strictRegressions, 27);
   assert.equal(benchmark.benchmarkExitCode(report, false), 0);
   assert.equal(benchmark.benchmarkExitCode(report, true), 1);
 });
@@ -208,7 +219,7 @@ test("false-positive case metrics use the fixed-case denominator and preserve du
   assert.equal(report.summary.falsePositives, 2);
   assert.equal(report.summary.falsePositiveCases, 2);
   assert.equal(report.summary.fixedFalsePositiveCases, 1);
-  assert.equal(report.summary.fixedCaseFalsePositiveRate, 0.04);
+  assert.equal(report.summary.fixedCaseFalsePositiveRate, 0.0357);
   assert.equal(report.ruleMetrics.reduce((sum, metric) => sum + metric.falsePositives, 0), 2);
 });
 
@@ -280,14 +291,14 @@ test("primary metrics count known misses in every FN denominator while strict ga
   let index = 0;
   const report = await benchmark.runBenchmark(async () => completedChecks(corpus.cases[index++].expectedFindings.filter((finding) => finding.support === "supported")));
   assert.equal(report.schemaVersion, "2.0.0");
-  assert.equal(report.summary.allExpectedFindings, 25);
-  assert.equal(report.summary.supportedExpectedFindings, 24);
-  assert.equal(report.summary.truePositives, 24);
+  assert.equal(report.summary.allExpectedFindings, 28);
+  assert.equal(report.summary.supportedExpectedFindings, 27);
+  assert.equal(report.summary.truePositives, 27);
   assert.equal(report.summary.falseNegatives, 1);
   assert.equal(report.summary.supportedFalseNegatives, 0);
   assert.equal(report.summary.knownMisses, 1);
   assert.equal(report.summary.precision, 1);
-  assert.equal(report.summary.recall, 0.96);
+  assert.equal(report.summary.recall, 0.9643);
   assert.equal(report.summary.supportedRecall, 1);
   assert.equal(report.ruleMetrics.reduce((sum, rule) => sum + rule.falseNegatives, 0), 1);
   assert.equal(report.cases.find((entry) => entry.id === "koa-query-sql-vulnerable")?.counts.falseNegatives, 1);
@@ -303,16 +314,16 @@ test("a resolved known miss contributes to primary TP and precision without beco
     if (index === 1) checks[1].findings.push({ ruleId: "ast:unexpected-test-only", location: { path: "app.ts", line: 1 } });
     return checks;
   });
-  assert.equal(report.summary.truePositives, 25);
-  assert.equal(report.summary.supportedTruePositives, 24);
+  assert.equal(report.summary.truePositives, 28);
+  assert.equal(report.summary.supportedTruePositives, 27);
   assert.equal(report.summary.knownMissesResolved, 1);
   assert.equal(report.summary.knownMisses, 0);
   assert.equal(report.summary.falsePositives, 1);
   assert.equal(report.summary.falseNegatives, 0);
-  assert.equal(report.summary.precision, 0.9615);
-  assert.equal(report.summary.supportedPrecision, 0.96);
+  assert.equal(report.summary.precision, 0.9655);
+  assert.equal(report.summary.supportedPrecision, 0.9643);
   assert.equal(report.summary.recall, 1);
-  assert.equal(report.ruleMetrics.reduce((sum, rule) => sum + rule.truePositives, 0), 25);
+  assert.equal(report.ruleMetrics.reduce((sum, rule) => sum + rule.truePositives, 0), 28);
   assert.equal(benchmark.benchmarkExitCode(report, true), 1);
 });
 
@@ -325,8 +336,8 @@ test("incomplete checks retain evidence and full denominators, never a successfu
     ]);
     assert.equal(report.success, false, status);
     assert.equal(report.summary.completedCases, 0, status);
-    assert.equal(report.summary.incompleteCases, 50, status);
-    assert.equal(report.summary.falseNegatives, 25, status);
+    assert.equal(report.summary.incompleteCases, 56, status);
+    assert.equal(report.summary.falseNegatives, 28, status);
     assert.equal(report.summary.recall, 0, status);
     assert.equal(report.cases.every((entry) => !entry.complete), true, status);
     assert.equal(benchmark.benchmarkExitCode(report, false), 2, status);
@@ -344,9 +355,9 @@ test("partial inventory cannot be hidden by a completed AST with matching findin
     return checks;
   });
   assert.equal(report.success, false);
-  assert.equal(report.summary.truePositives, 25);
+  assert.equal(report.summary.truePositives, 28);
   assert.equal(report.summary.recall, 1);
-  assert.equal(report.summary.incompleteCases, 50);
+  assert.equal(report.summary.incompleteCases, 56);
   assert.equal(benchmark.benchmarkExitCode(report, true), 2);
 });
 
@@ -365,9 +376,9 @@ test("scan exceptions preserve an incomplete case and signature-only failure art
       return checks;
     });
     assert.equal(report.success, false);
-    assert.equal(report.summary.completedCases, 49);
+    assert.equal(report.summary.completedCases, 55);
     assert.equal(report.summary.incompleteCases, 1);
-    assert.equal(report.summary.truePositives, 24);
+    assert.equal(report.summary.truePositives, 27);
     assert.equal(report.summary.falseNegatives, 1);
     assert.equal(benchmark.benchmarkExitCode(report), 2);
     const paths = await benchmark.writeBenchmarkReports(report, outDir);
@@ -403,12 +414,12 @@ test("CLI writes an incomplete report and failure artifact before exiting 2", as
     assert.equal(result.code, 2, result.stderr || result.stdout);
     const report = JSON.parse(await readFile(join(outDir, "benchmark.json"), "utf8")) as BenchmarkReport;
     assert.equal(report.success, false);
-    assert.equal(report.summary.incompleteCases, 50);
-    assert.equal(report.summary.falseNegatives, 25);
+    assert.equal(report.summary.incompleteCases, 56);
+    assert.equal(report.summary.falseNegatives, 28);
     const failures = JSON.parse(await readFile(join(outDir, "benchmark-failures.json"), "utf8")) as { cases: unknown[] };
-    assert.equal(failures.cases.length, 50);
+    assert.equal(failures.cases.length, 56);
     const markdown = await readFile(join(outDir, "benchmark.md"), "utf8");
-    assert.match(markdown, /Completed \/ incomplete cases \| 0 \/ 50/);
+    assert.match(markdown, /Completed \/ incomplete cases \| 0 \/ 56/);
     assert.match(markdown, /\| NO \|/);
   } finally {
     await rm(outDir, { recursive: true, force: true });
