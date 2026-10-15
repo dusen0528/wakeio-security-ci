@@ -1,0 +1,59 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Owner-authored Juice Shop bounded search error",
+    "version": "20.3.0",
+    "description": "Pilot input derived from pinned public route behavior; not the upstream OpenAPI specification"
+  },
+  "x-wakeio-input-source": "owner-authored",
+  "paths": {
+    "/rest/products/search": {
+      "get": {
+        "operationId": "pilotSearchError",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "';"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Normal search response; a 500 is an observed server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "data"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "success"
+                      ]
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,59 @@
+{
+  "version": 1,
+  "kind": "wakeio.oss-pilot-inputs",
+  "project": "OWASP Juice Shop",
+  "release": "20.3.0",
+  "source": {
+    "repository": "https://github.com/juice-shop/juice-shop",
+    "tag": "v20.3.0",
+    "commit": "f189f521266f42c6bd05884468292000cee852ed",
+    "license": "MIT",
+    "licenseUrl": "https://github.com/juice-shop/juice-shop/blob/f189f521266f42c6bd05884468292000cee852ed/LICENSE"
+  },
+  "archive": {
+    "name": "juice-shop-20.3.0_node22_linux_x64.tgz",
+    "url": "https://github.com/juice-shop/juice-shop/releases/download/v20.3.0/juice-shop-20.3.0_node22_linux_x64.tgz",
+    "sha256": "6148dcce8fe7d990a86bf8457a0e9a07821c127d498c76da1a3bc7dba12a77e5",
+    "digestSource": "https://api.github.com/repos/juice-shop/juice-shop/releases/tags/v20.3.0",
+    "verification": "release-metadata-only",
+    "downloadedBytesVerified": false
+  },
+  "runtime": {
+    "platform": "linux",
+    "architecture": "x64",
+    "nodeMajor": 22,
+    "exactVersion": null,
+    "sha256": null,
+    "approval": "pending"
+  },
+  "execution": {
+    "status": "blocked",
+    "origin": null,
+    "reason": "Approved preparation, verified archive bytes and an exact runtime pin are required; the generic run-plan does not bind this manifest"
+  },
+  "inputsSource": "owner-authored",
+  "upstreamSpec": {
+    "url": "https://github.com/juice-shop/juice-shop/blob/f189f521266f42c6bd05884468292000cee852ed/swagger.yml",
+    "used": false,
+    "reason": "The upstream spec describes POST /b2b/v2/orders, not this GET search subset"
+  },
+  "ownerOptions": {
+    "maxRequests": 16,
+    "timeoutMs": 120000,
+    "ratePerSecond": 2,
+    "concurrency": 1,
+    "allowPrivate": true,
+    "failOn": "medium"
+  },
+  "readinessBudget": {
+    "maxRequests": 12,
+    "timeoutMs": 60000,
+    "countedSeparatelyFromScan": true
+  },
+  "evidence": {
+    "targetExecuted": false,
+    "scanExecuted": false,
+    "rerunExecuted": false,
+    "classification": "server-error observation; not SQL injection confirmation or data extraction"
+  }
+}

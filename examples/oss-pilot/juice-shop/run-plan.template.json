@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "kind": "wakeio.execution-plan",
+  "origin": null,
+  "tasks": [
+    {
+      "id": "t-search-normal",
+      "engine": "schemathesis",
+      "schema": "search_normal",
+      "operations": [
+        "/rest/products/search"
+      ],
+      "seed": 1,
+      "maxRequests": 8
+    },
+    {
+      "id": "t-search-error",
+      "engine": "schemathesis",
+      "schema": "search_error",
+      "operations": [
+        "/rest/products/search"
+      ],
+      "seed": 1,
+      "maxRequests": 8
+    }
+  ]
+}
