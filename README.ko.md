@@ -8,6 +8,8 @@
 
 **릴리스 후보(미배포):** `0.5.0` · **npm 공개 버전:** `0.4.0` · Apache-2.0 · Node.js 22+
 
+0.5.0의 중심은 제한된 소스 분석, 고정 계획 `run-plan` 실행, CLI·CI 보고서 경로입니다. `scan`과 `run-plan`은 모델을 호출하지 않습니다. 별도 선택하는 agent loop·provider와 소유 대상 dashboard는 [실험 기능](#실험-기능과-제한된-지원-범위)으로 패키지에 포함되며, 범용 자율 에이전트 DAST나 모델 라우팅의 정식 출시를 뜻하지 않습니다.
+
 기본 검사는 무료로 로컬에서 실행합니다. Wakeio 계정·구독·호스팅된 Wakeio 서비스·LLM·소스 업로드가 필요하지 않으며 사용 텔레메트리도 전송하지 않습니다. 빠른 시작의 npm 명령은 공개된 0.4.0을 실행하며, 별도로 표시한 0.5.0 레지스트리 명령은 배포 후 경로입니다. 뒤의 replay·origin 허용 목록·능동 DAST 예시는 이 0.5.0 소스 checkout을 `npm run build`로 빌드하거나 검토한 Git commit의 Action을 사용해야 합니다. npm 0.5.0은 아직 발행하지 않았습니다. [0.5.0 소스 변경점](CHANGELOG.md#050--release-candidate-unpublished)과 [0.4.0 릴리스 범위](docs/release-0.4.0.md)를 참고하세요.
 
 ## 무엇을 검사하나요?

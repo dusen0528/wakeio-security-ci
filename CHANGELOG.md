@@ -4,9 +4,16 @@
 
 This is a release candidate, not an npm publication. The current registry version is 0.4.0.
 
+The release focus is bounded source analysis, fixed-plan `run-plan` execution,
+and the CLI/package/GitHub Action report path. `scan` and `run-plan` do not call
+models. This is not a release of general autonomous agent DAST or model routing;
+the separately opt-in agent loop/providers and owned-target dashboard are
+packaged as experimental features, not excluded from the tarball.
+
 - Add Action-only `init --code-scanning`: SHA-pinned SARIF upload, fork-PR exclusion, fresh basic SARIF validation, and unchanged finding gates. Omitting the flag preserves both existing workflow templates.
 - Document tarball-first verification and post-publication onboarding separately. Agent loop/providers and the owned-target dashboard are included but remain experimental/scoped; package inclusion is not general support.
-- Release acceptance requires package and release checks on the final integrated SHA. Registry smoke checks, live GitHub annotations, ja/zh-CN onboarding and the pilot remain follow-ups.
+- Record [pre-tag validation](benchmarks/release-0.5.0-validation.md): synthetic TN 28 and the known Koa miss, incomplete pinned OSS outcomes, and unchanged generated-workflow GitHub runs before/after SQL parameterization. This is scoped validation, not production accuracy.
+- Release acceptance requires package and release checks on the final integrated SHA. Registry smoke checks, changed-line PR annotations, ja/zh-CN onboarding and the pilot remain follow-ups.
 
 - Stop pre-cancelled agent loops before any agent call; relay caller abort to Codex/Claude SDK controllers and await cooperative cleanup before returning.
   Optional call context preserves existing callers; custom ports that ignore cancellation have no hard-termination guarantee.

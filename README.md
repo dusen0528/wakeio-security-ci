@@ -8,6 +8,8 @@ Wakeio checks the code, HTTP responses, and optional read-only API policy that y
 
 **Release candidate (unpublished):** `0.5.0` · **published npm:** `0.4.0` · Apache-2.0 · Node.js 22+
 
+The 0.5.0 release focus is bounded source analysis, fixed-plan `run-plan` execution, and CLI/CI reports. `scan` and `run-plan` do not call models. Separately opt-in agent loop/providers and the owned-target dashboard are packaged as [experimental features](#experimental-and-scoped-features); this is not a general autonomous agent DAST or model-routing release.
+
 The default scan is a free local tool. It does not require a Wakeio account, subscription, hosted Wakeio service, LLM, or source upload, and it does not send usage telemetry. The quick-start npm commands run the published 0.4.0 package; the separately labeled 0.5.0 registry command is for after publication. The newer replay, origin allowlist and active DAST examples use this 0.5.0 source checkout after `npm run build`, or a reviewed Git commit of its Action; npm 0.5.0 is not published. See the [0.5.0 source changes](CHANGELOG.md#050--release-candidate-unpublished) and [0.4.0 release scope](docs/release-0.4.0.md).
 
 ## What it checks
