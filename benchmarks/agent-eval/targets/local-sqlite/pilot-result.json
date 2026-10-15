@@ -89,5 +89,65 @@
     "invalid_output does not distinguish transport error from schema rejection",
     "local signing key is not an independently trusted timestamp",
     "no final-set prompt tuning or successful-only replacement of failed repeats"
-  ]
+  ],
+  "followup": {
+    "date": "2026-10-15",
+    "diagnosticCommit": "36bc596",
+    "exactHistoricalFailureCause": "not recoverable from erased historical error details",
+    "sameInputDiagnosticCalls": 6,
+    "sameInputDiagnosticFailures": 0,
+    "g3Complete": true,
+    "qualityHeld": true,
+    "valueProven": false,
+    "verdict": "defer",
+    "completedA": 5,
+    "completedB": 5,
+    "verifiedPairs": 5,
+    "stats": {
+      "A": {
+        "requests": {
+          "mean": 16,
+          "min": 16,
+          "max": 16,
+          "variance": 0
+        },
+        "durationMs": {
+          "mean": 1573,
+          "min": 1569,
+          "max": 1584,
+          "variance": 34
+        },
+        "tokens": {
+          "mean": 0,
+          "min": 0,
+          "max": 0,
+          "variance": 0
+        }
+      },
+      "B": {
+        "requests": {
+          "mean": 16,
+          "min": 16,
+          "max": 16,
+          "variance": 0
+        },
+        "durationMs": {
+          "mean": 11922.8,
+          "min": 10692,
+          "max": 15181,
+          "variance": 2714696.96
+        },
+        "tokens": {
+          "mean": 25309.4,
+          "min": 25296,
+          "max": 25320,
+          "variance": 72.64
+        }
+      }
+    },
+    "artifactSha256": {
+      "evaluation.json": "2141cb92b3b8bb092725c56d67e9447e73c6efb33302d945d2d9ff7fc5c0cd19",
+      "precommit-attestation.json": "f1b9d94f2cfa6e612128b8e0f010169e94e7481f44fd94cc0f18b9f7a1294247"
+    }
+  }
 }
