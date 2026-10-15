@@ -10,7 +10,7 @@ export type Purpose = 'plan' | 'select';
 export type Transport = (prompt: string, schema: unknown, context?: AgentCallContext) => Promise<Reply>;
 const digest = (value: unknown) => createHash('sha256').update(JSON.stringify(value)).digest('hex');
 const invalid = () => new Error('agent_output_invalid');
-const diagnostics = new Set(['rate_limit','authentication','output_schema','transport','timeout','sdk_failure','sdk_turn_failed','unexpected_event']);
+const diagnostics = new Set(['rate_limit','authentication','output_schema','transport','timeout','sdk_failure','sdk_turn_failed','unexpected_event','cleanup_error']);
 export class ProviderFailure extends Error {
   constructor(readonly diagnostic: string) { super('provider_failure'); }
 }
@@ -70,7 +70,7 @@ export async function recordedAgent(provider: 'codex' | 'claude', options: Provi
     safe(prompt);
     for (let attempt = 0; attempt < 2; attempt++) {
       throwIfAgentCancelled(context);
-      const start = Date.now(); let reply: Reply = {}, output: unknown, error: 'invalid_output' | 'tools_forbidden' | 'cancelled' | undefined, diagnostic: string | undefined;
+      const start = Date.now(); let reply: Reply = {}, output: unknown, error: 'invalid_output' | 'tools_forbidden' | 'cancelled' | 'cleanup_error' | undefined, diagnostic: string | undefined;
       let stage = 'transport';
       try {
         reply = replies ? replies[cursor++] ?? {} : await transport(prompt, schema, context);
@@ -89,8 +89,8 @@ export async function recordedAgent(provider: 'codex' | 'claude', options: Provi
         if (purpose === 'plan' && decision.origin !== template.origin || decision.tasks.some(task => !catalog.has(digest(task)))) throw invalid();
         safe(output);
       } catch (cause) {
-        error = context?.signal?.aborted ? 'cancelled' : error ?? 'invalid_output';
-        diagnostic = error === 'cancelled' ? 'cancelled' : cause instanceof ProviderFailure ? diagnostics.has(cause.diagnostic) ? cause.diagnostic : 'sdk_failure' : stage;
+        error = cause instanceof ProviderFailure && cause.diagnostic === 'cleanup_error' ? 'cleanup_error' : context?.signal?.aborted ? 'cancelled' : error ?? 'invalid_output';
+        diagnostic = error === 'cancelled' || error === 'cleanup_error' ? error : cause instanceof ProviderFailure ? diagnostics.has(cause.diagnostic) ? cause.diagnostic : 'sdk_failure' : stage;
         output = undefined;
       }
       const token = (value: unknown) => Number.isSafeInteger(value) && Number(value) >= 0 ? Number(value) : null;
@@ -99,6 +99,7 @@ export async function recordedAgent(provider: 'codex' | 'claude', options: Provi
         await appendFile(join(options.recordDir, 'ledger.jsonl'), JSON.stringify(usage) + '\n');
         await appendFile(join(options.recordDir, 'transcript.jsonl'), JSON.stringify({ version: 1, inputDigest, ...usage, ...(error ? { error } : { output }) }) + '\n');
       } catch { failed = true; throw new Error('agent_recording_failed'); }
+      if (error === 'cleanup_error') { failed = true; throw new ProviderFailure('cleanup_error'); }
       if (context?.signal?.aborted) { failed = true; throw Error('agent_cancelled'); }
       if (!error) return output;
     }

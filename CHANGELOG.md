@@ -4,6 +4,7 @@
 
 - Stop pre-cancelled agent loops before any agent call; relay caller abort to Codex/Claude SDK controllers and await cooperative cleanup before returning.
   Optional call context preserves existing callers; custom ports that ignore cancellation have no hard-termination guarantee.
+  Codex help requires owned-process close/group cleanup with bounded TERM/KILL escalation; unconfirmed cleanup is terminal `cleanup_error`.
 
 - Add an explicit policy-driven property-write API check for one disposable staging resource, with owner/verifier controls, strong ETag negative controls, a fresh normal-field barrier, and bounded conditional cleanup. All four reports preserve typed redacted HTTP readback evidence; ambiguity/cancellation stop writes and incomplete runs retain exit 2. This grants no automatic agent replay or independent storage/fix verification. See [operator contract](docs/api-property-write.md).
 

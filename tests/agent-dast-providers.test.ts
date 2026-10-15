@@ -107,6 +107,7 @@ const sdk = {
  }
 };
 mock.module('./build/src/agent-dast/providers/record.js',{namedExports:{...record,optionalSdk:async()=>sdk}});
+mock.module('./build/src/agent-dast/providers/codex-help.js',{namedExports:{codexHelp:async()=>({executable:'/owned/codex',stdout:'--ignore-user-config --ignore-rules --strict-config --ephemeral --disable'})}});
 const {createAgent}=await import('./build/src/agent-dast/providers/'+provider+'.js');
 const root=await mkdtemp(join(tmpdir(),'wakeio-sdk-test-'));
 try{

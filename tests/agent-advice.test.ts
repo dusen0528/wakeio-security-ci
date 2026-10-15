@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os';
 import { watch } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { createReport, toAgentReport, writeReports } from '../src/report.js';
 import { adviseMain } from '../src/agent-advice.js';
 import { ADVICE_PROJECTION_POLICY_VERSION, projectAdviceContext } from '../src/agent-advice-context.js';
@@ -549,4 +550,40 @@ test('fake CLI receives conditional context enum metadata without source positio
     if (previousKey === undefined) delete process.env.CODEX_API_KEY; else process.env.CODEX_API_KEY = previousKey;
     await rm(top, { recursive: true, force: true });
   }
+});
+
+
+test('public CLI api-key mode with no key refuses before fake Codex despite an available login home', async () => {
+  const { top, reports } = await fixture();
+  try {
+    const loginHome = join(top, 'synthetic-login'); await mkdir(loginHome, { mode: 0o700 });
+    const loginSecret = 'owned-no-fallback-login-token-9c61';
+    await writeFile(join(loginHome, 'auth.json'), JSON.stringify({ tokens: { access_token: loginSecret } }), { mode: 0o600 });
+    const fake = await fakeCodex(top, 'ok'), invoked = join(top, 'fake-invoked');
+    const script = await readFile(fake, 'utf8');
+    const instrumented = script.replace('\n', '\nrequire("fs").writeFileSync(' + JSON.stringify(invoked) + ',"invoked");\n');
+    assert.notEqual(instrumented, script, 'fake invocation marker must be installed');
+    await writeFile(fake, instrumented, { mode: 0o700 });
+    const out = join(top, 'missing-key-advice');
+    const env: NodeJS.ProcessEnv = { ...process.env, CODEX_HOME: loginHome }; delete env.CODEX_API_KEY;
+    let status: number | null | undefined = 0, stdout = '', stderr = '';
+    try {
+      stdout = execFileSync(process.execPath, [fileURLToPath(new URL('../src/cli.js', import.meta.url)), ...args(reports, out, fake, 'api-key')],
+        { encoding: 'utf8', env, timeout: 10000, stdio: ['ignore', 'pipe', 'pipe'] });
+    } catch (error) {
+      const result = error as { status?: number | null; stdout?: string; stderr?: string };
+      status = result.status; stdout = result.stdout ?? ''; stderr = result.stderr ?? '';
+    }
+    assert.equal(status, 2);
+    await assert.rejects(readFile(invoked), { code: 'ENOENT' }, 'neither help/version nor an auth fallback may invoke Codex');
+    const produced = await receipt(out);
+    assert.equal(produced.status, 'incomplete'); assert.equal(produced.reason, 'agent_authentication_missing');
+    assert.equal(produced.authMode, 'api-key'); assert.equal(produced.verified, false);
+    assert.equal(Object.hasOwn(produced, 'advice'), false);
+    assert.equal(produced.policyVersion, ADVICE_PROJECTION_POLICY_VERSION);
+    const publicOutput = stdout + stderr + JSON.stringify(produced);
+    assert.equal(publicOutput.includes(loginSecret), false);
+    assert.equal(publicOutput.includes(loginHome), false);
+    assert.equal(publicOutput.includes('access_token'), false);
+  } finally { await rm(top, { recursive: true, force: true }); }
 });

@@ -61,6 +61,7 @@ const sdk={Codex:class{startThread(options){directories.push(options.workingDire
  const iterator=(async function*(){for await(const event of events(options.options.abortController.signal))if(event.type==='item.completed')yield{type:'result',subtype:'success',is_error:false,result:event.item.text,usage:{input_tokens:1,output_tokens:1}};})();iterator.close=()=>{};return iterator;
 }};
 const record=await import('./build/src/agent-dast/providers/record.js');mock.module('./build/src/agent-dast/providers/record.js',{namedExports:{...record,optionalSdk:async()=>sdk}});
+mock.module('./build/src/agent-dast/providers/codex-help.js',{namedExports:{codexHelp:async()=>({executable:'/owned/codex',stdout:'--ignore-user-config --ignore-rules --strict-config --ephemeral --disable'})}});
 const {createAgent}=await import('./build/src/agent-dast/providers/'+provider+'.js');
 const root=await mkdtemp(join(tmpdir(),'wakeio-provider-cancel-'));
 try{
