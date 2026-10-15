@@ -1,0 +1,189 @@
+# Agent-DAST evaluation: fixed plan (A) vs agent selection (B)
+
+This directory holds the **offline** comparison harness for the next validation
+question: does letting an agent choose the plan and the follow-up checks add
+anything over a well-built fixed plan, at the same target, engines and request
+budget?
+
+Scope of this harness: label format, a pass-criteria format, and an aggregator
+that scores synthetic (or, later, real) results. It **sends no request, runs no
+engine, and calls no model.** Real target traffic and agent-SDK wiring are out
+of scope here. The harness exists to prove the counting is correct before any
+live comparison runs.
+
+## The two arms
+
+- **A — fixed plan.** A human-written `plan.json` run through `run-plan`. Not a
+  deliberately weak plan: a competent combination of the existing engines. Both
+  arms receive the same follow-up execution results; A decides the next check by
+  fixed rules.
+- **B — agent selection.** An agent builds the plan from recon output and, from
+  each round's summary, chooses verify / retry / scope expansion. Execution uses
+  the **same `run-plan` executor and the same engines** as A.
+
+### Fixed controls (identical for both arms)
+
+- Same target (a local instance at one commit), same engine set, same recon
+  input (same OpenAPI / surface list). B's advantage must come from *selection
+  over the same input*, not from more input.
+- Same oracle and adjudication. The label set is pinned to a known
+  vulnerable/fixed pair.
+- **One shared request budget for the whole of B.** Re-invoking `run-plan` does
+  not grant a fresh budget: initial + verify + retry + expansion are summed and
+  held to the same cap as A (`sumRoundBudget`). Scope expansion is allowed only
+  within the approved target and a check scope fixed in advance.
+- Each condition is repeated N times (preliminary N = 5) to see run-to-run
+  variance.
+
+## Measurement order: detection first, cost second
+
+1. **Detection accuracy** — TP / FP against the pre-fixed labels, on a
+   `confirmed` basis by default.
+2. **Misses (FN)** — labeled vulnerabilities not detected.
+3. **Coverage** — executed cells over a denominator **fixed before the run**
+   (endpoint × parameter × check). The run's own `run.db` audit count is never
+   used as a "whole-scan rate"; `coverage()` refuses an executed count above the
+   planned denominator.
+4. **Then** tokens, cost and time (time includes model deliberation for B;
+   A's tokens are 0). "Produced a valid plan A missed" is recorded as a
+   **usability** outcome, separately — it is not by itself detection value.
+
+### Units
+
+TP / FP / FN are counted by **distinct vulnerability**, never by request count.
+Many findings for one problem collapse to one via `dedupeFindings` before
+scoring, so repeated detection is not rewarded. A finding at a negative or
+unlabeled site is one FP after the same de-duplication. A finding must match the
+labeled **type** as well as the site.
+
+## Labels: tuning and final splits
+
+`labels/*.labels.json` ([format](../../src/agent-dast/eval/labels.ts)) lists
+distinct vulnerabilities and negative sites, each with a `split`:
+
+- `tuning` — used while developing the agent's prompts and selection logic.
+- `final` — used only to score a comparison run.
+
+What this code guarantees: the scorer (`scoreRun`) takes `finalLabels()` output
+and **refuses** any set that still contains a tuning entry
+(`tuning_label_in_scoring`), so tuning labels can never be *scored* alongside
+final ones. What it does **not** guarantee: it cannot stop the final labels from
+being handed to an agent as input — this harness only scores results; it does
+not provision the agent's inputs. Keeping final labels out of the agent's view
+is the job of the follow-up execution layer (see "Evidence the execution layer
+must add"). In a final run the target should contain only final + negative
+sites; tuning sites live in a separate development corpus.
+
+## Pass criteria binding (and what is not yet verified)
+
+`criteria.example.json` ([format](../../src/agent-dast/eval/aggregate.ts)) is
+bound to the final label set:
+
+- `labelSetHash` must equal `finalLabels().hash`, or `compareArms` throws
+  `criteria_hash_mismatch` — criteria cannot be retrofitted to an edited truth
+  set. **This is enforced by code.**
+- `committedBeforeArmB: true` is only a **self-declared attestation**. It does
+  not prove the criteria predate arm B; nothing in this harness checks when the
+  file was written. The CLI output flags this as
+  `criteriaAttestationUnverified: true`. Real pre-registration must be enforced
+  by the execution layer below.
+
+## Evidence linking (implemented, offline)
+
+A **run-start record** ([format](../../src/agent-dast/eval/manifest.ts)) is
+written before the arms run and pins three hashes into one record: the pass
+criteria, the final label set, and the shared check list both arms run. Its
+digest is referenced by the results.
+
+- `evaluate()` ([aggregate.ts](../../src/agent-dast/eval/aggregate.ts))
+  recomputes the three hashes from the criteria, labels and check list a result
+  supplies and confirms the record and its digest are untampered. Any edit to
+  any of the three changes a hash and the evaluation throws (`digest_mismatch`).
+- A matching digest proves the record is self-consistent, not that its plain
+  fields are right. `verifyManifest` also cross-checks the record's `target`,
+  `commit`, `sharedRequestCap` and `basis` against the labels and criteria, so a
+  record whose fields were changed and whose digest was then recomputed is still
+  refused (`field_mismatch`).
+- The coverage denominator is tied to the check list. The record pins a list of
+  coverage cells (surface × a check from the shared list); its length is the
+  denominator, and `evaluate` requires each arm's `plannedCells` to equal it. A
+  cell naming a check outside the list is refused, and both arms set to `1/1`
+  against a 4-cell record no longer passes.
+- The results bundle carries `manifestDigest`; a bundle that references a
+  different record is refused.
+- `EvalFinding.findingId` is the database **observation ID** used in the
+  evidence filename. It can differ from the deduplicated canonical finding ID.
+  The actual runner evidence contains `version`, `taskId`, `reportPath`,
+  `findingId` (the **engine/report ID**), `ruleId`, `severity` and `kind`.
+  It contains no `run_id`. The earlier snake_case example was a synthetic
+  format, not the runner's stored format; it is no longer accepted.
+- With `--run-a DIR --run-b DIR`, each owner-selected directory supplies an
+  existing run-plan bundle. The reader opens `run.db` read-only, locates
+  `finding_observations.observation_id`, and checks its task/run, surface,
+  rule, severity and evidence reference. It then follows the evidence's
+  `reportPath` and engine `findingId` into the task report and compares rule,
+  severity and kind. This supports identical observation filenames in separate
+  runs, and observations deduplicated under a different canonical finding ID.
+- With `--evidence-dir` alone, the reader can check bytes and the runner JSON
+  shape, but cannot bind the run or report. It returns `hash_ok_unverified`,
+  `contentOk: false`, and exit 2. Without either option it reports
+  `evidence_unchecked`; this is a reference-only preview, not provenance proof.
+  `refOk`, `hashChecked`, `hashOk` and `contentOk` describe the checks separately.
+- Both manifest construction and file parsing use the same coverage-cell
+  validator. Duplicate `(surface, checkId)` cells are rejected on either path.
+
+The checked-in example files are synthetic evidence-only inputs, so this command
+intentionally returns exit 2 (`hash_ok_unverified`). For stored bundles replace
+`--evidence-dir` with `--run-a /path/to/A-output --run-b /path/to/B-output` and
+supply results referencing those bundles.
+
+```sh
+npm run build
+node benchmarks/agent-eval/aggregate.mjs \
+  --labels    benchmarks/agent-eval/labels/example.labels.json \
+  --criteria  benchmarks/agent-eval/criteria.example.json \
+  --checklist benchmarks/agent-eval/checklist.example.json \
+  --manifest  benchmarks/agent-eval/run-start.example.json \
+  --results   benchmarks/agent-eval/results.example.json \
+  --evidence-dir benchmarks/agent-eval/evidence
+```
+
+## Still owed by the execution layer
+
+The record pins *which* inputs a result claims, from stored data. It does not
+prove *when* it was written, and this harness does not observe the run. The
+follow-up execution layer must still bind:
+
+- **Pre-registration time** — a timestamp or signature (a dated ledger, a signed
+  commit) proving the record existed before arm B ran. `committedBeforeArmB`
+  and `criteriaAttestationUnverified: true` mark this as not yet proven.
+- **Label non-disclosure** — the step that provisions the agent's recon/plan
+  inputs must be shown never to include final labels. The scorer prevents tuning
+  labels from being *scored*; it cannot police the agent's inputs.
+- **Live provenance** — `runRef`/`evidenceRef` are checked for shape, file hash
+  AND evidence-content agreement here; binding them to an actually admitted
+  request (that run.db row came from real traffic) belongs to the run that
+  writes run.db.
+
+### Gates (draft, finalize with the real label set)
+
+- **No quality loss (required):** within one shared budget, B's TP ≥ A's TP,
+  B's FP ≤ A's FP, and B's coverage ≥ A's coverage (`qualityHeld`).
+- **Value (one of, in a majority of repeats):** B produces a valid plan A
+  missed, or B reaches the same detection with fewer requests
+  (`fewerRequestsSameDetection`).
+- **Otherwise:** hold the agent loop; keep the fixed plan plus code rules.
+
+The exact numeric thresholds are set once the real label set exists; the example
+criteria file is a shape placeholder, not the committed bar.
+
+## Offline regression test
+
+`tests/agent-dast-eval-stored.test.ts` replaces only the scanner engine with a
+synthetic result in an isolated Node process. The actual `runExecutionPlan`
+writes SQLite, evidence, task reports and publication metadata. The test then
+reads that bundle through the verifier and CLI, with zero admitted target
+requests. It checks distinct observation/engine IDs and rejects an unrelated
+run, surface or altered report rule. It is storage compatibility evidence, not
+a live detection test. The regular evaluation tests cover duplicate manifest
+cells, malformed evidence and the arithmetic gates.

@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "target": "example-owned-fixture",
+  "commit": "0000000",
+  "vulnerabilities": [
+    {
+      "vulnId": "v-sqli-login",
+      "type": "sqli",
+      "severity": "high",
+      "split": "final",
+      "site": { "method": "POST", "path": "/rest/user/login", "param": "email", "location": "body", "authState": "anonymous" }
+    },
+    {
+      "vulnId": "v-idor-basket",
+      "type": "authz",
+      "severity": "high",
+      "split": "final",
+      "site": { "method": "GET", "path": "/rest/basket/1", "param": null, "location": null, "authState": "user" }
+    },
+    {
+      "vulnId": "v-tuning-reflected-search",
+      "type": "xss",
+      "severity": "medium",
+      "split": "tuning",
+      "site": { "method": "GET", "path": "/search", "param": "q", "location": "query", "authState": "anonymous" }
+    }
+  ],
+  "negatives": [
+    {
+      "siteId": "n-products-list",
+      "split": "final",
+      "note": "read-only product list, parameterized query",
+      "site": { "method": "GET", "path": "/rest/products", "param": null, "location": null, "authState": "anonymous" }
+    },
+    {
+      "siteId": "n-tuning-healthz",
+      "split": "tuning",
+      "site": { "method": "GET", "path": "/healthz", "param": null, "location": null, "authState": "anonymous" }
+    }
+  ]
+}
