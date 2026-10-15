@@ -144,9 +144,10 @@ test('provider diagnostics distinguish transport and parse failures without reta
       ['auth', '401 unauthorized SECRET_CANARY', 'authentication'],
       ['schema', 'invalid response_format schema SECRET_CANARY', 'output_schema'],
       ['network', 'ECONNRESET SECRET_CANARY', 'transport'],
+      ['unknown', 'SECRET_CANARY', 'sdk_failure'],
     ]) {
       const recordDir = join(root, label);
-      const agent = await recordedAgent('codex', { template, recordDir, live: true }, async () => { throw providerFailure(failure); });
+      const agent = await recordedAgent('codex', { template, recordDir, live: true }, async () => { throw providerFailure(failure, 'SECRET_CANARY'); });
       await assert.rejects(agent.selectNext(summary));
       const text = await readFile(join(recordDir, 'ledger.jsonl'), 'utf8');
       const rows = text.trim().split('\n').map(line => JSON.parse(line));

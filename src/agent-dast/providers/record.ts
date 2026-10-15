@@ -10,6 +10,7 @@ export type Purpose = 'plan' | 'select';
 export type Transport = (prompt: string, schema: unknown) => Promise<Reply>;
 const digest = (value: unknown) => createHash('sha256').update(JSON.stringify(value)).digest('hex');
 const invalid = () => new Error('agent_output_invalid');
+const diagnostics = new Set(['rate_limit','authentication','output_schema','transport','timeout','sdk_failure','sdk_turn_failed','unexpected_event']);
 export class ProviderFailure extends Error {
   constructor(readonly diagnostic: string) { super('provider_failure'); }
 }
@@ -76,7 +77,7 @@ export async function recordedAgent(provider: 'codex' | 'claude', options: Provi
         const decision = output as ExecutionPlan;
         if (purpose === 'plan' && decision.origin !== template.origin || decision.tasks.some(task => !catalog.has(digest(task)))) throw invalid();
         safe(output);
-      } catch (cause) { error ??= 'invalid_output'; diagnostic = cause instanceof ProviderFailure ? cause.diagnostic : stage; output = undefined; }
+      } catch (cause) { error ??= 'invalid_output'; diagnostic = cause instanceof ProviderFailure ? diagnostics.has(cause.diagnostic) ? cause.diagnostic : 'sdk_failure' : stage; output = undefined; }
       const token = (value: unknown) => Number.isSafeInteger(value) && Number(value) >= 0 ? Number(value) : null;
       const usage = { provider, purpose, mode: replies ? 'replay' : 'live', attempt: attempt + 1, inputTokens: token(reply.inputTokens), outputTokens: token(reply.outputTokens), durationMs: replies && token(reply.durationMs) !== null ? reply.durationMs : Date.now() - start, status: error ?? 'ok', ...(diagnostic ? { diagnostic } : {}) };
       try {
