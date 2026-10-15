@@ -55,11 +55,15 @@ for (const scenario of ['withheld', 'cleanup-error', 'not-started', 'quoted']) {
 }
 
 const ownedScript = `
-import assert from 'node:assert/strict';import {mock} from 'node:test';import * as fs from 'node:fs/promises';import {tmpdir} from 'node:os';import {join} from 'node:path';import net from 'node:net';
+import assert from 'node:assert/strict';import {mock} from 'node:test';import * as fs from 'node:fs/promises';import {tmpdir} from 'node:os';import {join} from 'node:path';import net from 'node:net';import * as children from 'node:child_process';
 let sockets=0;mock.method(net.Socket.prototype,'connect',()=>{sockets++;throw Error('network_forbidden')});
-const root=await fs.mkdtemp(join(tmpdir(),'wakeio-help-owned-')),bin=join(root,'bin'),ready=join(root,'ready.json'),term=join(root,'term');await fs.mkdir(bin);
-const program='#!'+process.execPath+'\\n'+"const fs=require('node:fs');process.on('SIGTERM',()=>fs.writeFileSync("+JSON.stringify(term)+",'TERM'));fs.writeFileSync("+JSON.stringify(ready)+",JSON.stringify({pid:process.pid}));setInterval(()=>{},1000);\\n";
+const root=await fs.mkdtemp(join(tmpdir(),'wakeio-help-owned-')),bin=join(root,'bin'),ready=join(root,'ready.json');await fs.mkdir(bin);
+const program='#!'+process.execPath+'\\n'+"const fs=require('node:fs');process.on('SIGTERM',()=>{});fs.writeFileSync("+JSON.stringify(ready)+",JSON.stringify({pid:process.pid}));setInterval(()=>{},1000);\\n";
 await fs.writeFile(join(bin,'codex'),program,{mode:0o700});process.env.PATH=bin;process.env.WAKEIO_AGENT_LIVE='1';process.env.CODEX_API_KEY='OWNED_KEY_CANARY';
+const checkedHelp=await fs.realpath(join(bin,'codex'));
+let ownedChild,observedExit,observedClose;const forwarded=[],realKill=process.kill;
+const childExports=Object.fromEntries(Object.entries(children).filter(([key])=>key!=='default'));
+mock.module('node:child_process',{namedExports:{...childExports,spawn:(...args)=>{const child=children.spawn(...args);if(String(args[0])===checkedHelp){assert.deepEqual(args[1],['exec','--help']);ownedChild=child;child.once('exit',(code,signal)=>observedExit={code,signal});child.once('close',(code,signal)=>observedClose={code,signal});}return child;}}});
 let sdkStarts=0;const record=await import('./build/src/agent-dast/providers/record.js');mock.module('./build/src/agent-dast/providers/record.js',{namedExports:{...record,optionalSdk:async()=>({Codex:class{constructor(){sdkStarts++;throw Error('SDK forbidden')}}})}});
 const {createAgent}=await import('./build/src/agent-dast/providers/codex.js');const caller=new AbortController();let pid,pending;
 const template={version:1,kind:'wakeio.execution-plan',origin:'http://127.0.0.1',tasks:[{id:'t-owned',engine:'nuclei',scopes:['exposures'],maxRequests:8}]};
@@ -67,11 +71,15 @@ const summary={run_id:'r-owned',tasks:{queued:0,running:0,completed:0,partial:0,
 try{
  const agent=await createAgent({template,recordDir:join(root,'record'),live:true});pending=agent.planTasks(summary,{signal:caller.signal});pending.catch(()=>{});
  const deadline=Date.now()+3000;while(!pid){try{pid=JSON.parse(await fs.readFile(ready,'utf8')).pid;}catch{if(Date.now()>deadline)throw Error('owned help never ready');await new Promise(resolve=>setTimeout(resolve,10));}}
- assert(Number.isSafeInteger(pid));process.kill(pid,0);caller.abort();await assert.rejects(pending,/agent_cancelled/);
- assert.equal(await fs.readFile(term,'utf8'),'TERM');assert.throws(()=>process.kill(pid,0),{code:'ESRCH'});assert.throws(()=>process.kill(-pid,0),{code:'ESRCH'});assert.equal(sdkStarts,0);assert.equal(sockets,0);
+ assert(Number.isSafeInteger(pid));assert.equal(ownedChild?.pid,pid);process.kill(pid,0);
+ if(process.argv[1]==='stopped')realKill.call(process,-pid,'SIGSTOP');
+ process.kill=(target,signal)=>{const result=realKill.call(process,target,signal);if(target===-pid&&(signal==='SIGTERM'||signal==='SIGKILL'))forwarded.push(signal);return result;};
+ caller.abort();await assert.rejects(pending,/agent_cancelled/);
+ assert.deepEqual(forwarded,['SIGTERM','SIGKILL']);assert.deepEqual(observedExit,{code:null,signal:'SIGKILL'});assert.deepEqual(observedClose,{code:null,signal:'SIGKILL'});
+ assert.throws(()=>process.kill(pid,0),{code:'ESRCH'});assert.throws(()=>process.kill(-pid,0),{code:'ESRCH'});assert.equal(sdkStarts,0);assert.equal(sockets,0);
  const ledger=(await fs.readFile(join(root,'record/ledger.jsonl'),'utf8')).trim().split('\\n').map(JSON.parse);assert.equal(ledger.length,1);assert.equal(ledger[0].diagnostic,'cancelled');
-}finally{caller.abort();if(pid){try{process.kill(-pid,'SIGKILL');}catch{}}if(pending)await pending.catch(()=>{});await fs.rm(root,{recursive:true,force:true});}
+}finally{process.kill=realKill;caller.abort();if(pid){try{process.kill(-pid,'SIGKILL');}catch{}}if(pending)await pending.catch(()=>{});await fs.rm(root,{recursive:true,force:true});}
 `;
 test('owned harmless help child ignoring TERM is killed and its actual close/group disappearance precedes cancellation return', () => {
-  execFileSync(process.execPath, ['--experimental-test-module-mocks', '--input-type=module', '-e', ownedScript], { stdio: 'pipe', timeout: 10000 });
+  for (const state of ['nominal', 'stopped']) execFileSync(process.execPath, ['--experimental-test-module-mocks', '--input-type=module', '-e', ownedScript, state], { stdio: 'pipe', timeout: 10000 });
 });
