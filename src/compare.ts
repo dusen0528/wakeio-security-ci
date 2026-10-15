@@ -3,6 +3,7 @@ import { sanitiseAnalysisBudget, sameAnalysisBudget } from './source/analysis-bu
 import { sanitiseCollectionBudget, sanitiseCollectionEvidence, sameCollectionBudget } from './source/collection-budget.js';
 import { sanitiseSourceSnapshotEvidence } from './source/snapshot-evidence.js';
 import { parseApiWriteStateEvidence } from './api-write-observer.js';
+import { API_PROPERTY_CHECK, apiPropertyCheckConsistent, parseApiPropertyWriteEvidence } from './api-property-evidence.js';
 import { types as utilTypes } from 'node:util';
 import { sanitiseStaticContext } from './static-context.js';
 import { sanitizeDastExecution, isDastObservedEvidence, isLegacyDastExecution } from './dast-execution.js';
@@ -99,6 +100,12 @@ export function parseScanReport(input: unknown): ScanReport {
     const writeEvidence = collectionField(check, 'apiWriteStateEvidence');
     if (writeEvidence.present && (!writeEvidence.valid || check.id !== 'api.owned-write-state-oracle'
       || !parseApiWriteStateEvidence(writeEvidence.value))) return invalid();
+    const propertyField = collectionField(check, 'propertyWriteEvidence');
+    if (propertyField.present || check.id === API_PROPERTY_CHECK) {
+      const evidence = propertyField.valid ? parseApiPropertyWriteEvidence(propertyField.value) : undefined;
+      if (!evidence || !apiPropertyCheckConsistent({ id: check.id, findings: check.findings, metrics: check.metrics }, evidence)
+        || evidence.execution !== 'completed' && ['completed', 'not_applicable'].includes(check.status)) return invalid();
+    }
     count += check.findings.length;
     if (count > 50_000 || (check.status === 'not_applicable' && check.findings.length)) return invalid();
     for (const finding of check.findings) {
@@ -180,6 +187,12 @@ function indexed(report: ScanReport): FindingIndex {
 function comparisonReasons(before: ScanReport, after: ScanReport, completion: boolean): string[] {
   const reasons: string[] = [];
   for (const id of new Set([...before.checks, ...after.checks].map(check => check.id))) {
+    const oldProperty = before.checks.find(check => check.id === id)?.propertyWriteEvidence;
+    const newProperty = after.checks.find(check => check.id === id)?.propertyWriteEvidence;
+    if ((oldProperty || newProperty) && (!oldProperty || !newProperty || !oldProperty.policySha256
+      || oldProperty.policySha256 !== newProperty.policySha256 || JSON.stringify(oldProperty.budget) !== JSON.stringify(newProperty.budget) || oldProperty.execution !== 'completed' || newProperty.execution !== 'completed')) {
+      reasons.push('Property-write declared policy changed, is missing or execution is incomplete; HTTP readback does not verify a fix.');
+    }
     const oldWrite = before.checks.find(check => check.id === id)?.apiWriteStateEvidence;
     const newWrite = after.checks.find(check => check.id === id)?.apiWriteStateEvidence;
     if ((oldWrite || newWrite) && JSON.stringify(oldWrite) !== JSON.stringify(newWrite)) reasons.push('Owned write evidence, execution plan or persisted-state scope changed or is missing; independent observer comparison is required.');

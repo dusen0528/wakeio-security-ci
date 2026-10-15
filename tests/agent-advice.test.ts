@@ -2,9 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { watch } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { createReport, toAgentReport, writeReports } from '../src/report.js';
 import { adviseMain } from '../src/agent-advice.js';
 import { ADVICE_PROJECTION_POLICY_VERSION, projectAdviceContext } from '../src/agent-advice-context.js';
@@ -366,79 +366,121 @@ test('owned process group kills TERM-ignoring descendant after normal agent exit
 });
 
 test('agent cancellation sends TERM then KILL to an owned descendant group', async () => {
-  // The delayed control exceeds the old ~1s PID polling window without changing
-  // the supervisor's 4s deadline. Ready means both TERM handlers are installed.
-  for (const bootDelayMs of [0, 1200]) {
-    const top = await mkdtemp(join(tmpdir(), 'wakeio-advice-cancel-'));
-    const controller = new AbortController();
-    let pending: ReturnType<typeof runProcess> | undefined;
-    let watcher: ReturnType<typeof watch> | undefined;
-    try {
-      const readyPath = join(top, 'ready.json'), termPath = join(top, 'term.log');
-      const parent = join(top, 'parent.cjs');
-      const childScript = `const fs=require('fs');
-process.on('SIGTERM',()=>fs.appendFileSync(${JSON.stringify(termPath)},'child:'+process.pid+'\\n'));
-process.send({kind:'ready',pid:process.pid});
-setInterval(()=>{},1000);`;
-      await writeFile(parent, `const cp=require('child_process'),fs=require('fs');
-process.on('SIGTERM',()=>fs.appendFileSync(${JSON.stringify(termPath)},'parent:'+process.pid+'\\n'));
-setTimeout(()=>{
-  const child=cp.spawn(process.execPath,['-e',${JSON.stringify(childScript)}],{detached:false,stdio:['ignore','ignore','ignore','ipc']});
-  child.once('error',()=>process.exit(1));
-  child.once('message',message=>{
-    if(message.kind!=='ready'||message.pid!==child.pid)process.exit(1);
-    fs.writeFileSync(${JSON.stringify(readyPath + '.tmp')},JSON.stringify({parentPid:process.pid,childPid:message.pid}));
-    fs.renameSync(${JSON.stringify(readyPath + '.tmp')},${JSON.stringify(readyPath)});
+  // Isolate the forwarding spy from other tests. Successful OS signal delivery is
+  // distinct from a JS callback being scheduled before the fixed 250ms KILL.
+  const driver = String.raw`
+import assert from 'node:assert/strict';
+import { readFile, writeFile } from 'node:fs/promises';
+import { watch } from 'node:fs';
+import { join } from 'node:path';
+import { execFileSync } from 'node:child_process';
+const [top, processModule, delay, mode] = process.argv.slice(2);
+const { runProcess } = await import(processModule);
+const bootDelayMs = Number(delay), stoppedControl = mode === 'stopped';
+const controller = new AbortController(), realKill = process.kill.bind(process);
+let pending, watcher;
+try {
+  const readyPath = join(top, 'ready.json'), termPath = join(top, 'term.log'), parent = join(top, 'parent.cjs');
+  const childScript = [
+    "const fs=require('fs');",
+    "process.on('SIGTERM',()=>fs.appendFileSync(" + JSON.stringify(termPath) + ",'child:'+process.pid+'\\n'));",
+    "process.send({kind:'ready',pid:process.pid});",
+    "setInterval(()=>{},1000);"
+  ].join('\n');
+  await writeFile(parent, [
+    "const cp=require('child_process'),fs=require('fs');",
+    "process.on('SIGTERM',()=>fs.appendFileSync(" + JSON.stringify(termPath) + ",'parent:'+process.pid+'\\n'));",
+    "setTimeout(()=>{",
+    "const child=cp.spawn(process.execPath,['-e'," + JSON.stringify(childScript) + "],{detached:false,stdio:['ignore','ignore','ignore','ipc']});",
+    "child.once('error',()=>process.exit(1));",
+    "child.once('message',message=>{",
+    "if(message.kind!=='ready'||message.pid!==child.pid)process.exit(1);",
+    "fs.writeFileSync(" + JSON.stringify(readyPath + '.tmp') + ",JSON.stringify({parentPid:process.pid,childPid:message.pid}));",
+    "fs.renameSync(" + JSON.stringify(readyPath + '.tmp') + ',' + JSON.stringify(readyPath) + ');',
+    '});},' + bootDelayMs + ');',
+    'setInterval(()=>{},1000);'
+  ].join('\n'));
+  const ready = new Promise((resolve, reject) => {
+    watcher = watch(top, (_event, filename) => {
+      if (filename !== 'ready.json') return;
+      void readFile(readyPath, 'utf8').then(text => resolve(JSON.parse(text))).catch(reject);
+    });
   });
-},${bootDelayMs});
-setInterval(()=>{},1000);`);
-      const ready = new Promise<{ parentPid: number; childPid: number }>((resolve, reject) => {
-        watcher = watch(top, (_event, filename) => {
-          if (filename !== 'ready.json') return;
-          void readFile(readyPath, 'utf8').then(text => resolve(JSON.parse(text))).catch(reject);
-        });
-      });
-      pending = runProcess(process.execPath, [parent], { cwd: top, home: top, timeoutMs: 4000,
-        maxOutputBytes: 1024, supervision: 'agent', signal: controller.signal });
-      const { parentPid, childPid } = await Promise.race([ready, pending.then(outcome => {
-        throw new Error(`owned fixture ended before IPC readiness: ${JSON.stringify(outcome)}`);
+  pending = runProcess(process.execPath, [parent], { cwd: top, home: top, timeoutMs: 4000,
+    maxOutputBytes: 1024, supervision: 'agent', signal: controller.signal });
+  const { parentPid, childPid } = await Promise.race([ready, pending.then(outcome => {
+    throw new Error('owned fixture ended before IPC readiness: ' + JSON.stringify(outcome));
+  })]);
+  watcher.close(); watcher = undefined;
+  assert.ok(Number.isSafeInteger(parentPid) && parentPid > 0);
+  assert.ok(Number.isSafeInteger(childPid) && childPid > 0 && childPid !== parentPid);
+  const members = () => execFileSync('/bin/ps', ['-o', 'pid=,pgid=,stat=', '-p', parentPid + ',' + childPid],
+    { encoding: 'utf8', timeout: 1000, maxBuffer: 4096 }).trim().split('\n').map(line => line.trim().split(/\s+/));
+  for (const pid of [parentPid, childPid]) {
+    const row = members().find(fields => Number(fields[0]) === pid); assert.ok(row);
+    assert.equal(Number(row[1]), parentPid, 'both live processes belong to the supervised root group');
+    assert.equal(row[2].startsWith('Z'), false);
+  }
+  if (stoppedControl) {
+    realKill(-parentPid, 'SIGSTOP');
+    for (;;) {
+      const rows = members();
+      if ([parentPid, childPid].every(pid => rows.find(fields => Number(fields[0]) === pid)?.[2].startsWith('T'))) break;
+      await Promise.race([new Promise(resolve => setTimeout(resolve, 10)), pending.then(outcome => {
+        throw new Error('owned fixture ended before stopped-state observation: ' + JSON.stringify(outcome));
       })]);
-      watcher?.close(); watcher = undefined;
-      assert.ok(Number.isSafeInteger(parentPid) && parentPid > 0);
-      assert.ok(Number.isSafeInteger(childPid) && childPid > 0 && childPid !== parentPid);
-      const members = execFileSync('/bin/ps', ['-o', 'pid=,pgid=,stat=', '-p', `${parentPid},${childPid}`],
-        { encoding: 'utf8', timeout: 1000, maxBuffer: 4096 }).trim().split('\n')
-        .map(line => line.trim().split(/\s+/));
-      for (const pid of [parentPid, childPid]) {
-        const row = members.find(fields => Number(fields[0]) === pid); assert.ok(row);
-        assert.equal(Number(row[1]), parentPid, 'both live processes belong to the supervised root group');
-        assert.equal(row[2].startsWith('Z'), false);
-      }
-      controller.abort();
-      const outcome = await pending;
-      assert.equal(outcome.cancelled, true);
-      assert.equal(outcome.stopReason, 'cancelled');
-      assert.equal(outcome.timedOut, false);
-      assert.equal(outcome.signal, 'SIGKILL', 'TERM-ignoring root requires actual escalation');
-      assert.equal(outcome.closeConfirmed, true);
-      assert.equal(outcome.cleanupConfirmed, true);
-      const acknowledged = (await readFile(termPath, 'utf8')).trim().split('\n');
-      assert.ok(acknowledged.includes(`parent:${parentPid}`));
-      assert.ok(acknowledged.includes(`child:${childPid}`), 'the installed descendant handler received TERM');
-      let state = '';
-      try {
-        state = execFileSync('/bin/ps', ['-o', 'stat=', '-p', String(childPid)],
-          { encoding: 'utf8', timeout: 1000, maxBuffer: 4096, stdio: ['ignore', 'pipe', 'pipe'] }).trim();
-      } catch (error) {
-        const ended = error as { status?: number; stdout?: string };
-        assert.equal(ended.status, 1, 'only the explicit absent-process ps result is accepted');
-        assert.equal(ended.stdout?.trim(), '');
-      }
-      assert.ok(!state || state.startsWith('Z'), `descendant still alive: ${state}`);
-    } finally {
-      watcher?.close(); controller.abort(); await pending;
-      await rm(top, { recursive: true, force: true });
     }
+  }
+  const delivered = [];
+  process.kill = (pid, signal) => {
+    const success = realKill(pid, signal);
+    if (pid === -parentPid && typeof signal === 'string') delivered.push({ pid, signal, success });
+    return success;
+  };
+  controller.abort();
+  const outcome = await pending;
+  assert.equal(outcome.cancelled, true);
+  assert.equal(outcome.stopReason, 'cancelled');
+  assert.equal(outcome.timedOut, false);
+  assert.equal(outcome.signal, 'SIGKILL', 'TERM-ignoring root requires actual escalation');
+  assert.equal(outcome.closeConfirmed, true);
+  assert.equal(outcome.cleanupConfirmed, true);
+  assert.deepEqual(delivered, [
+    { pid: -parentPid, signal: 'SIGTERM', success: true },
+    { pid: -parentPid, signal: 'SIGKILL', success: true }
+  ], 'successful real TERM precedes real KILL for this exact owned group');
+  let ack = '';
+  try { ack = await readFile(termPath, 'utf8'); }
+  catch (error) { assert.equal(error.code, 'ENOENT'); }
+  const acknowledged = ack.trim() ? ack.trim().split('\n') : [];
+  assert.ok(acknowledged.every(value => value === 'parent:' + parentPid || value === 'child:' + childPid));
+  if (stoppedControl) assert.deepEqual(acknowledged, [], 'stopped JS cannot acknowledge successfully delivered TERM');
+  let state = '';
+  try {
+    state = execFileSync('/bin/ps', ['-o', 'stat=', '-p', String(childPid)],
+      { encoding: 'utf8', timeout: 1000, maxBuffer: 4096, stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+  } catch (error) {
+    assert.equal(error.status, 1, 'only the explicit absent-process ps result is accepted');
+    assert.equal(error.stdout?.trim(), '');
+  }
+  assert.ok(!state || state.startsWith('Z'), 'descendant still alive: ' + state);
+  process.stdout.write(JSON.stringify({ mode, bootDelayMs, delivered, outcome, acknowledged }) + '\n');
+} finally {
+  watcher?.close(); controller.abort(); await pending; process.kill = realKill;
+}
+`;
+  // Keep both original boot controls and the same 4s supervised deadline. The
+  // stopped-group control makes the scheduling-dependent ACK counterexample exact.
+  for (const [bootDelayMs, mode] of [[0, 'normal'], [1200, 'normal'], [0, 'stopped']] as const) {
+    const top = await mkdtemp(join(tmpdir(), 'wakeio-advice-cancel-'));
+    try {
+      const filename = join(top, 'driver.mjs'); await writeFile(filename, driver);
+      const stdout = execFileSync(process.execPath, [filename, top,
+        new URL('../src/source/process.js', import.meta.url).href, String(bootDelayMs), mode],
+      { encoding: 'utf8', timeout: 8000, maxBuffer: 64 * 1024, stdio: ['ignore', 'pipe', 'pipe'] });
+      const result = JSON.parse(stdout); assert.equal(result.mode, mode); assert.equal(result.bootDelayMs, bootDelayMs);
+      assert.equal(result.outcome.cleanupConfirmed, true);
+    } finally { await rm(top, { recursive: true, force: true }); }
   }
 });
 
@@ -549,4 +591,40 @@ test('fake CLI receives conditional context enum metadata without source positio
     if (previousKey === undefined) delete process.env.CODEX_API_KEY; else process.env.CODEX_API_KEY = previousKey;
     await rm(top, { recursive: true, force: true });
   }
+});
+
+
+test('public CLI api-key mode with no key refuses before fake Codex despite an available login home', async () => {
+  const { top, reports } = await fixture();
+  try {
+    const loginHome = join(top, 'synthetic-login'); await mkdir(loginHome, { mode: 0o700 });
+    const loginSecret = 'owned-no-fallback-login-token-9c61';
+    await writeFile(join(loginHome, 'auth.json'), JSON.stringify({ tokens: { access_token: loginSecret } }), { mode: 0o600 });
+    const fake = await fakeCodex(top, 'ok'), invoked = join(top, 'fake-invoked');
+    const script = await readFile(fake, 'utf8');
+    const instrumented = script.replace('\n', '\nrequire("fs").writeFileSync(' + JSON.stringify(invoked) + ',"invoked");\n');
+    assert.notEqual(instrumented, script, 'fake invocation marker must be installed');
+    await writeFile(fake, instrumented, { mode: 0o700 });
+    const out = join(top, 'missing-key-advice');
+    const env: NodeJS.ProcessEnv = { ...process.env, CODEX_HOME: loginHome }; delete env.CODEX_API_KEY;
+    let status: number | null | undefined = 0, stdout = '', stderr = '';
+    try {
+      stdout = execFileSync(process.execPath, [fileURLToPath(new URL('../src/cli.js', import.meta.url)), ...args(reports, out, fake, 'api-key')],
+        { encoding: 'utf8', env, timeout: 10000, stdio: ['ignore', 'pipe', 'pipe'] });
+    } catch (error) {
+      const result = error as { status?: number | null; stdout?: string; stderr?: string };
+      status = result.status; stdout = result.stdout ?? ''; stderr = result.stderr ?? '';
+    }
+    assert.equal(status, 2);
+    await assert.rejects(readFile(invoked), { code: 'ENOENT' }, 'neither help/version nor an auth fallback may invoke Codex');
+    const produced = await receipt(out);
+    assert.equal(produced.status, 'incomplete'); assert.equal(produced.reason, 'agent_authentication_missing');
+    assert.equal(produced.authMode, 'api-key'); assert.equal(produced.verified, false);
+    assert.equal(Object.hasOwn(produced, 'advice'), false);
+    assert.equal(produced.policyVersion, ADVICE_PROJECTION_POLICY_VERSION);
+    const publicOutput = stdout + stderr + JSON.stringify(produced);
+    assert.equal(publicOutput.includes(loginSecret), false);
+    assert.equal(publicOutput.includes(loginHome), false);
+    assert.equal(publicOutput.includes('access_token'), false);
+  } finally { await rm(top, { recursive: true, force: true }); }
 });

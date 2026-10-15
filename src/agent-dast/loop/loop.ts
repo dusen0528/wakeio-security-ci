@@ -23,9 +23,19 @@ export interface LoopResult {
 const hash = (value: unknown) => createHash('sha256').update(JSON.stringify(value)).digest('hex');
 class LoopError extends Error { constructor(readonly reason: string) { super(reason); } }
 /** One retry for malformed JSON/data; policy violations never execute or acquire a new budget. */
-async function decision<T>(request: () => Promise<unknown>, parse: (raw: unknown) => T): Promise<T> {
+async function decision<T>(request: () => Promise<unknown>, parse: (raw: unknown) => T, signal?: AbortSignal): Promise<T> {
   for (let attempt = 0; attempt < 2; attempt++) {
-    try { return parse(await request()); } catch { /* Agent output/errors are untrusted; do not echo them. */ }
+    if (signal?.aborted) throw new LoopError('cancelled');
+    try {
+      // Await cooperative provider cleanup. Legacy ports ignoring context can remain pending;
+      // cancellation never authorizes a new runner or treats a late decision as usable.
+      const raw = await request();
+      if (signal?.aborted) throw new LoopError('cancelled');
+      return parse(raw);
+    } catch {
+      if (signal?.aborted) throw new LoopError('cancelled');
+      // Agent output/errors are untrusted; do not echo them.
+    }
   }
   throw new LoopError('invalid_agent_output');
 }
@@ -69,10 +79,12 @@ export async function runAgentLoop(input: LoopOptions): Promise<LoopResult> {
     store.completeTask(value, { provider: 'fixed', requestCount: requests, bytes: 0, exitCode: gap ? 2 : 0, stdoutBytes: Buffer.byteLength(JSON.stringify(value)), truncated: false });
   };
   try {
-    let plan = scope(await decision(() => input.agent.planTasks(structuredClone(recon)), parseExecutionPlan));
+    const context = { signal: input.execution.signal };
+    let plan = scope(await decision(() => input.agent.planTasks(structuredClone(recon), context), parseExecutionPlan, context.signal));
     let action: 'initial' | 'verify' | 'expand' = 'initial';
     const summaries = new Set<string>();
     while (true) {
+      if (context.signal?.aborted) throw new LoopError('cancelled');
       const remaining = cap - result.requestCount;
       if (remaining <= 0) throw new LoopError('budget_exhausted');
       if (result.rounds.length >= maxRounds) throw new LoopError('round_limit');
@@ -92,6 +104,7 @@ export async function runAgentLoop(input: LoopOptions): Promise<LoopResult> {
       const incomplete = run.exitCode === 2;
       record(requests, !attempted.ledgerVerified ? 'tool_error' : incomplete ? result.requestCount >= cap ? 'budget_exhausted' : 'tool_error' : undefined);
       if (!attempted.ledgerVerified) throw new LoopError('ledger_mismatch');
+      if (context.signal?.aborted) throw new LoopError('cancelled');
       if (incomplete) throw new LoopError(result.requestCount >= cap ? 'budget_exhausted' : 'execution_failed');
       const roundStore = await openRunStore(join(roundDir, 'run.db'));
       let summary;
@@ -100,7 +113,7 @@ export async function runAgentLoop(input: LoopOptions): Promise<LoopResult> {
       if (summaries.has(fingerprint)) throw new LoopError('repeated_summary');
       summaries.add(fingerprint);
       if (result.requestCount >= cap) throw new LoopError('budget_exhausted');
-      const next = await decision(() => input.agent.selectNext(structuredClone(summary)), raw => parseSelection(raw, origin));
+      const next = await decision(() => input.agent.selectNext(structuredClone(summary), context), raw => parseSelection(raw, origin), context.signal);
       if (next.action === 'stop') break;
       plan = scope(parseExecutionPlan({ version: 1, kind: 'wakeio.execution-plan', origin, tasks: next.tasks }));
       action = next.action;

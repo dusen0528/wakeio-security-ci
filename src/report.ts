@@ -10,6 +10,7 @@ import { sanitiseSourceSnapshotEvidence } from './source/snapshot-evidence.js';
 import { sanitiseStaticContext } from './static-context.js';
 import { sanitiseApiStateEvidence } from './api-state-observer.js';
 import { sanitiseApiWriteStateEvidence } from './api-write-observer.js';
+import { API_PROPERTY_CHECK, apiPropertyCheckConsistent, sanitiseApiPropertyWriteEvidence } from './api-property-evidence.js';
 import { projectReportSummary } from './report-summary.js';
 import { createHash } from 'node:crypto';
 import { constants as fsConstants } from 'node:fs';
@@ -294,6 +295,7 @@ function projectAgentReport(report: ScanReport, failOn: FailOn): AgentReport {
       ...(check.analysisGaps ? { analysisGaps: check.analysisGaps } : {}),
       ...(check.apiStateEvidence ? { apiStateEvidence: check.apiStateEvidence } : {}),
       ...(check.apiWriteStateEvidence ? { apiWriteStateEvidence: check.apiWriteStateEvidence } : {}),
+      ...(check.propertyWriteEvidence ? { propertyWriteEvidence: check.propertyWriteEvidence } : {}),
       ...(check.apiExecution ? { apiExecution: check.apiExecution } : {}),
       ...(check.dastExecution ? { dastExecution: check.dastExecution } : {}),
       ...(check.schemathesisAuthRequired ? { schemathesisAuthRequired: true as const } : {}),
@@ -475,6 +477,10 @@ export function toSarif(report: ScanReport): SarifLog {
             apiWriteStateEvidence: safeReport.checks.flatMap((check, checkIndex) => check.apiWriteStateEvidence
               ? [{ checkIndex, checkId: check.id, apiWriteStateEvidence: check.apiWriteStateEvidence }] : []),
           } : {}),
+          ...(safeReport.checks.some(check => check.propertyWriteEvidence) ? {
+            propertyWriteEvidence: safeReport.checks.flatMap((check, checkIndex) => check.propertyWriteEvidence
+              ? [{ checkIndex, checkId: check.id, propertyWriteEvidence: check.propertyWriteEvidence }] : []),
+          } : {}),
           ...(safeReport.checks.some((check) => check.analysisGaps) ? {
             analysisGaps: safeReport.checks.flatMap((check, checkIndex) => check.analysisGaps
               ? [{ checkIndex, checkId: check.id, analysisGaps: check.analysisGaps }] : []),
@@ -576,6 +582,15 @@ export function toMarkdown(report: ScanReport, failOn: FailOn = 'high'): string 
         lines.push(`  - Owned synthetic PATCH state (${e.phase}): execution=${e.execution}, persisted unauthorized effect=${e.effect}, normal=${e.normal}, verification=${e.verification}, cleanup=${e.cleanup}.`,
           `  - HTTP attempts=${e.counts.httpAttempts}/${e.counts.plannedRequests}; PATCH attempts=${e.counts.patchAttempts}; mutation snapshots=${e.counts.stateObservations}. Writes are never retried.`,
           `  - Reasons: ${e.reasons.length ? e.reasons.join(', ') : 'none'}. Observer basis=${e.lineage.observerBasis ?? 'unknown'}; next evidence=${e.nextEvidence}. Owned scope only; HTTP status and production fix verification are distinct.`);
+      }
+      if (check.propertyWriteEvidence) {
+        const e = check.propertyWriteEvidence;
+        lines.push(`  - Property write API readback: execution=${e.execution}; effect=${e.effect}; provisional=${e.provisional}; cleanup=${e.cleanup}. Candidate only; no independent storage, causality or remediation verification.`,
+          `  - Requests=${e.counts.httpAttempts}/23 (22 planned); PATCH=${e.counts.patchAttempts}/8; captured responses=${e.counts.capturedResponses}; stop reason=${e.stopReason}.`,
+          `  - Controls: ${Object.entries(e.controls).map(([key, value]) => `${key}=${value}`).join('; ')}.`,
+          `  - Effective budget: requests=${e.budget.maxRequests ?? 'unknown'}; timeoutMs=${e.budget.timeoutMs ?? 'unknown'}; request bytes=${e.budget.maxRequestBodyBytes}; response bytes=${e.budget.maxResponseBodyBytes}; total response bytes=${e.budget.maxTotalResponseBytes}.`,
+          `  - Policy digest: ${e.policySha256 ?? 'unknown'}. No automatic replay or cleanup after cancellation.`);
+        for (const step of e.ledger.steps) lines.push(`    - Step ${step.ordinal}: ${step.phase}; actor=${step.actorIndex}; ${step.method}; ${step.outcome}; HTTP=${step.httpStatus ?? 'none'}; reason=${step.reason}.`);
       }
       if (check.analysisGaps) {
         const gaps = check.analysisGaps;
@@ -866,6 +881,10 @@ function sanitiseCheck(input: CheckResult): CheckResult {
   const needsWriteEvidence = writeField.present || input?.id === 'api.owned-write-state-oracle';
   const apiWriteStateEvidence = needsWriteEvidence ? sanitiseApiWriteStateEvidence(writeField.valid ? writeField.value : undefined) : undefined;
   if (needsWriteEvidence && (input?.id !== 'api.owned-write-state-oracle' || apiWriteStateEvidence?.execution !== 'completed') && status !== 'error') status = 'partial';
+  const propertyField = ownDataField(input, 'propertyWriteEvidence');
+  const needsPropertyEvidence = propertyField.present || input?.id === API_PROPERTY_CHECK;
+  const propertyWriteEvidence = needsPropertyEvidence ? sanitiseApiPropertyWriteEvidence(propertyField.valid ? propertyField.value : undefined) : undefined;
+  if (needsPropertyEvidence && (input?.id !== API_PROPERTY_CHECK || propertyWriteEvidence?.execution !== 'completed') && status !== 'error') status = 'partial';
   if (input?.id === 'api.owned-state-oracle' && apiStateEvidence?.execution !== undefined && apiStateEvidence.execution !== 'completed' && status === 'completed') status = 'partial';
   const analysisBudget = sanitiseAnalysisBudget(input?.analysisBudget);
   const budgetField = ownDataField(input, 'collectionBudget');
@@ -911,6 +930,7 @@ function sanitiseCheck(input: CheckResult): CheckResult {
       if (status !== 'error') status = 'partial';
     }
   }
+  if (needsPropertyEvidence && propertyWriteEvidence && !apiPropertyCheckConsistent({ id: input?.id, findings, metrics: input?.metrics }, propertyWriteEvidence) && status !== 'error') status = 'partial';
   if (Array.isArray(input?.findings) && input.findings.some(finding => ownDataField(finding, 'staticContext').present)
     && (status === 'completed' || status === 'not_applicable')) status = 'partial';
   if (Array.isArray(input?.findings) && input.findings.some(finding => {
@@ -927,7 +947,8 @@ function sanitiseCheck(input: CheckResult): CheckResult {
   const analysisGaps = sanitiseAnalysisGaps(input?.analysisGaps,
     (path) => redactSecrets(path) === path ? safeRelativePath(path) : undefined);
   if (input?.metrics && typeof input.metrics === 'object') {
-    const entries = authRequested ? schemathesisAuthMetrics(ownDataField(input, 'metrics').value) : Object.entries(input.metrics);
+    const entries = needsPropertyEvidence ? propertyWriteMetrics(ownDataField(input, 'metrics').value)
+      : authRequested ? schemathesisAuthMetrics(ownDataField(input, 'metrics').value) : Object.entries(input.metrics);
     for (const [key, value] of entries) {
       if (
         typeof value === 'number' ||
@@ -955,11 +976,20 @@ function sanitiseCheck(input: CheckResult): CheckResult {
     ...(analysisGaps ? { analysisGaps } : {}),
     ...(apiStateEvidence ? { apiStateEvidence } : {}),
     ...(apiWriteStateEvidence ? { apiWriteStateEvidence } : {}),
+    ...(propertyWriteEvidence ? { propertyWriteEvidence } : {}),
     ...(apiExecution ? { apiExecution } : {}),
     ...(dastExecution ? { dastExecution } : {}),
     ...(authRequested ? { schemathesisAuthRequired: true as const } : {}),
     ...(schemathesisAuth ? { schemathesisAuth } : {}),
   };
+}
+
+/** Only finite numeric execution accounting is public for the property-write lane. */
+function propertyWriteMetrics(input: unknown): Array<[string, number]> {
+  return ['httpAttempts', 'patchAttempts'].flatMap(key => {
+    const field = ownDataField(input, key);
+    return field.valid && Number.isSafeInteger(field.value) && Number(field.value) >= 0 ? [[key, Number(field.value)] as [string, number]] : [];
+  });
 }
 
 /** Auth diagnostics have a closed metric surface; arbitrary environment/body strings are not retained. */

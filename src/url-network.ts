@@ -441,7 +441,10 @@ function sameAddress(left: string | undefined, right: string): boolean {
   return canonical(left) === canonical(right);
 }
 
-async function requestPinned(url: NormalizedUrl, address: DnsAddress, context: UrlNetworkContext, jsonPost?: Buffer): Promise<IncomingMessage> {
+async function requestPinned(url: NormalizedUrl, address: DnsAddress, context: UrlNetworkContext, jsonPost?: Buffer,
+  property?: { method: 'GET' | 'PATCH'; ifMatch?: string }): Promise<IncomingMessage> {
+  // This standalone write lane has no agent-dast admission capability yet.
+  if (property && context.admission !== undefined) fail('property_admission_unsupported');
   if (context.signal.aborted || Date.now() >= context.deadlineAt) fail("timeout", "collection deadline exceeded");
   if (context.authorization !== undefined) validateAuthorization(context.authorization);
   if (context.budget.count >= context.budget.max) fail('request_limit', 'request budget exhausted');
@@ -468,7 +471,7 @@ async function requestPinned(url: NormalizedUrl, address: DnsAddress, context: U
       hostname: url.hostname,
       port,
       path: `${new URL(url.href).pathname}${new URL(url.href).search}` || "/",
-      method: jsonPost === undefined ? "GET" : "POST",
+      method: property?.method ?? (jsonPost === undefined ? "GET" : "POST"),
       headers: {
         accept: context.acceptJson
           ? "application/json,application/*+json;q=0.9"
@@ -476,7 +479,8 @@ async function requestPinned(url: NormalizedUrl, address: DnsAddress, context: U
         "accept-encoding": "gzip, br, deflate",
         connection: "close",
         host: hostHeader,
-        ...(jsonPost === undefined ? {} : { 'content-type': 'application/json', 'content-length': String(jsonPost.byteLength) }),
+        ...(jsonPost === undefined ? {} : { 'content-type': property ? 'application/merge-patch+json' : 'application/json', 'content-length': String(jsonPost.byteLength) }),
+        ...(property?.ifMatch === undefined ? {} : { 'if-match': property.ifMatch }),
         ...(context.authorization === undefined ? {} : { authorization: context.authorization }),
       },
       // The DNS answer was checked before this call. Returning only the
@@ -530,9 +534,9 @@ async function requestPinned(url: NormalizedUrl, address: DnsAddress, context: U
       req.destroy();
       finishError(new UrlNetworkError("timeout", "request deadline exceeded"));
     });
-    if (jsonPost === undefined) req.end();
+    if (jsonPost === undefined && property === undefined) req.end();
     else req.once('socket', socket => {
-      // Do not send the POST headers/body until the selected peer (and TLS) is checked.
+      // Do not send these headers/body until the selected peer (and TLS) is checked.
       socket.once(isHttps ? 'secureConnect' : 'connect', () => {
         const verified = sameAddress(socket.remoteAddress, address.address)
           && (!isHttps || (socket as typeof socket & { authorized?: boolean }).authorized === true);
@@ -542,6 +546,56 @@ async function requestPinned(url: NormalizedUrl, address: DnsAddress, context: U
       });
     });
   }).catch(error => { permit?.finish('transport_error'); throw error; });
+}
+
+export interface PropertyFetchedResource extends FetchedResource {
+  /** Count raw header occurrences; Node's normalized headers can hide duplicates. */
+  etag: { kind: 'strong'; value: string } | { kind: 'missing' | 'invalid' };
+}
+
+export function isStrongPropertyEtag(value: unknown): value is string {
+  return typeof value === 'string' && /^"[\x21\x23-\x7e]{1,126}"$/.test(value);
+}
+
+/** One address/attempt, GET or conditional merge PATCH, peer verified before ANY headers. */
+export async function requestPropertyResource(start: NormalizedUrl, context: UrlNetworkContext, allowedOrigin: string,
+  request: { method: 'GET' } | { method: 'PATCH'; ifMatch: string; body: string },
+  maxCompressedBytes: number, maxDecompressedBytes: number): Promise<PropertyFetchedResource> {
+  if (context.admission !== undefined) fail('property_admission_unsupported');
+  if (start.origin !== allowedOrigin) fail('cross_origin_redirect');
+  if (context.authorization === undefined) fail('authorization_required');
+  validateAuthorization(context.authorization);
+  if (/[^\x00-\xff]/.test(context.authorization)) fail('invalid_authorization');
+  if (request.method !== 'GET' && request.method !== 'PATCH') fail('request_method_invalid');
+  let bytes: Buffer | undefined;
+  if (request.method === 'PATCH') {
+    if (!isStrongPropertyEtag(request.ifMatch)) fail('invalid_if_match');
+    if (typeof request.body !== 'string' || Buffer.byteLength(request.body) > 4096) fail('request_body_limit');
+    let data: unknown;
+    try { data = JSON.parse(request.body); } catch { fail('request_body_invalid'); }
+    if (!data || typeof data !== 'object' || Array.isArray(data) || Object.keys(data).length < 1 || Object.keys(data).length > 2
+      || Object.entries(data).some(([key, value]) => !/^[A-Za-z_][A-Za-z0-9_-]{0,63}$/.test(key)
+        || ['__proto__', 'prototype', 'constructor'].includes(key)
+        || !(typeof value === 'string' && value.length <= 1024 || typeof value === 'boolean' || typeof value === 'number' && Number.isFinite(value)))
+      || JSON.stringify(data) !== request.body) fail('request_body_invalid');
+    bytes = Buffer.from(request.body);
+  }
+  try {
+    const addresses = await resolveAddresses(start, context.signal, context.allowPrivate);
+    if (!addresses[0]) fail('dns_empty');
+    const response = await requestPinned(start, addresses[0], context, bytes,
+      request.method === 'PATCH' ? { method: 'PATCH', ifMatch: request.ifMatch } : { method: 'GET' });
+    const headers = responseHeaders(response);
+    if (isRedirect(response.statusCode ?? 0)) { closeResponse(response); fail('redirect_rejected'); }
+    const tags: string[] = [];
+    for (let i = 0; i < response.rawHeaders.length; i += 2) if (response.rawHeaders[i]?.toLowerCase() === 'etag') tags.push(response.rawHeaders[i + 1]!);
+    const etag: PropertyFetchedResource['etag'] = tags.length === 0 ? { kind: 'missing' }
+      : tags.length === 1 && isStrongPropertyEtag(tags[0]) ? { kind: 'strong', value: tags[0] } : { kind: 'invalid' };
+    if (context.signal.aborted) { closeResponse(response); fail('timeout'); }
+    const content = await readResponseBody(response, context.signal, maxCompressedBytes, maxDecompressedBytes);
+    return { requestedUrl: start, finalUrl: start, status: response.statusCode ?? 0, headers, body: content.bytes,
+      compressedBytes: content.compressedBytes, redirects: [], etag };
+  } finally { bytes?.fill(0); }
 }
 
 /** Fixed JSON POST lane: one checked address, one wire attempt, never a redirect or retry. */

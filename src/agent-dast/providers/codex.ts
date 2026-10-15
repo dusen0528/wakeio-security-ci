@@ -1,9 +1,9 @@
-import { execFile } from 'node:child_process';
-import { promisify } from 'node:util';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { homedir, tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { credentialEnvironment, optionalSdk, ProviderFailure, providerFailure, recordedAgent, requireLive, type ProviderOptions, type Reply } from './record.js';
+import { credentialEnvironment, optionalSdk, providerControl, ProviderFailure, providerFailure, recordedAgent, requireLive, type ProviderOptions, type Reply } from './record.js';
+import { throwIfAgentCancelled } from '../loop/agent.js';
+import { codexHelp } from './codex-help.js';
 
 // Same fail-closed feature policy as agent-provider.ts; that module keeps its list private.
 const disabledFeatures = ['shell_tool','unified_exec','shell_snapshot','code_mode','multi_agent','multi_agent_v2',
@@ -12,19 +12,23 @@ const disabledFeatures = ['shell_tool','unified_exec','shell_snapshot','code_mod
 export async function createAgent(options: ProviderOptions & { authMode?: 'api-key' | 'cli-login' }) {
   requireLive(options);
   const sdk = options.replay === undefined ? await optionalSdk('@openai/codex-sdk') : undefined;
-  return recordedAgent('codex', options, async (prompt, schema) => {
+  return recordedAgent('codex', options, async (prompt, schema, context) => {
     const directory = await mkdtemp(join(tmpdir(), 'wakeio-codex-'));
-    const abort = new AbortController(), timer = setTimeout(() => abort.abort(), 60_000);
+    const control = providerControl(context), abort = control.controller;
     try {
+      throwIfAgentCancelled(context);
       const env = options.authMode === 'cli-login'
         ? { PATH: process.env.PATH ?? '/usr/bin:/bin', HOME: directory, TMPDIR: directory, CODEX_HOME: process.env.CODEX_HOME || join(homedir(), '.codex') }
         : { ...credentialEnvironment('CODEX_API_KEY', directory), CODEX_HOME: directory };
-      const help = await promisify(execFile)('codex', ['exec','--help'], { env, timeout: 5000, maxBuffer: 65536 });
+      const help = await codexHelp(directory, abort.signal);
+      throwIfAgentCancelled(context);
       const flags = ['--ignore-user-config','--ignore-rules','--strict-config','--ephemeral','--disable'];
       if (flags.some(flag => !help.stdout.includes(flag))) throw new Error('agent_policy_unsupported');
       // The SDK does not expose isolation flags. Its executable adapter inserts the existing CLI policy before exec arguments.
       const executable = join(directory, 'sdk-exec');
-      await writeFile(executable, `#!/bin/sh\n[ "$1" = exec ] || exit 64\nshift\nexec codex exec ${flags.slice(0,4).join(' ')} ${disabledFeatures.map(name => '--disable ' + name).join(' ')} "$@"\n`, { mode: 0o700, flag: 'wx' });
+      const binary = "'" + help.executable.replaceAll("'", "'\\''") + "'";
+      await writeFile(executable, `#!/bin/sh\n[ "$1" = exec ] || exit 64\nshift\nexec ${binary} exec ${flags.slice(0,4).join(' ')} ${disabledFeatures.map(name => '--disable ' + name).join(' ')} "$@"\n`, { mode: 0o700, flag: 'wx' });
+      throwIfAgentCancelled(context);
       const codex = new sdk.Codex({ codexPathOverride: executable, env, config: { approval_policy: 'never', web_search: 'disabled' } });
       const thread = codex.startThread({ workingDirectory: directory, sandboxMode: 'read-only', skipGitRepoCheck: true, approvalPolicy: 'never', networkAccessEnabled: false, webSearchMode: 'disabled' });
       const { events } = await thread.runStreamed(prompt, { outputSchema: schema, signal: abort.signal });
@@ -46,6 +50,6 @@ export async function createAgent(options: ProviderOptions & { authMode?: 'api-k
       if (error instanceof ProviderFailure) throw error;
       throw providerFailure(error);
     // The SDK iterator kills its child on close; aborting after it removes listeners emits an unhandled error.
-    } finally { clearTimeout(timer); await rm(directory, { recursive: true, force: true }); }
+    } finally { control.dispose(); await rm(directory, { recursive: true, force: true }); }
   });
 }

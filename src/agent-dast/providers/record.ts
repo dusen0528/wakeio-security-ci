@@ -2,15 +2,15 @@ import { createHash } from 'node:crypto';
 import { appendFile, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { parseExecutionPlan, type ExecutionPlan } from '../plan.js';
-import { parseSelection, summaryInput, type AgentPort, type RoundSummary } from '../loop/agent.js';
+import { parseSelection, summaryInput, throwIfAgentCancelled, type AgentCallContext, type AgentPort, type RoundSummary } from '../loop/agent.js';
 
 export interface Reply { json?: string; toolAttempt?: boolean; inputTokens?: number; outputTokens?: number; purpose?: Purpose; inputDigest?: string; durationMs?: number; provider?: string }
 export interface ProviderOptions { template: ExecutionPlan; recordDir: string; replay?: Reply[]; live?: boolean }
 export type Purpose = 'plan' | 'select';
-export type Transport = (prompt: string, schema: unknown) => Promise<Reply>;
+export type Transport = (prompt: string, schema: unknown, context?: AgentCallContext) => Promise<Reply>;
 const digest = (value: unknown) => createHash('sha256').update(JSON.stringify(value)).digest('hex');
 const invalid = () => new Error('agent_output_invalid');
-const diagnostics = new Set(['rate_limit','authentication','output_schema','transport','timeout','sdk_failure','sdk_turn_failed','unexpected_event']);
+const diagnostics = new Set(['rate_limit','authentication','output_schema','transport','timeout','sdk_failure','sdk_turn_failed','unexpected_event','cleanup_error']);
 export class ProviderFailure extends Error {
   constructor(readonly diagnostic: string) { super('provider_failure'); }
 }
@@ -40,6 +40,14 @@ export function credentialEnvironment(name: 'CODEX_API_KEY' | 'ANTHROPIC_API_KEY
   if (!key || key.length > 16384) throw new Error('agent_authentication_missing');
   return { PATH: process.env.PATH ?? '/usr/bin:/bin', HOME: directory, TMPDIR: directory, [name]: key };
 }
+/** Relay caller cancellation to the existing SDK controller; disposal never re-aborts a completed SDK. */
+export function providerControl(context?: AgentCallContext) {
+  const controller = new AbortController(), cancel = () => controller.abort();
+  context?.signal?.addEventListener('abort', cancel, { once: true });
+  if (context?.signal?.aborted) cancel();
+  const timer = setTimeout(cancel, 60_000);
+  return { controller, dispose() { clearTimeout(timer); context?.signal?.removeEventListener('abort', cancel); } };
+}
 /** Only validated decisions and bounded usage survive; SDK prose/errors are never recorded. */
 export async function recordedAgent(provider: 'codex' | 'claude', options: ProviderOptions, transport: Transport): Promise<AgentPort> {
   requireLive(options);
@@ -49,7 +57,8 @@ export async function recordedAgent(provider: 'codex' | 'claude', options: Provi
   let cursor = 0, failed = false;
   await mkdir(options.recordDir, { mode: 0o700 });
   for (const name of ['ledger.jsonl','transcript.jsonl']) await writeFile(join(options.recordDir, name), '', { flag: 'wx', mode: 0o600 });
-  async function decide(purpose: Purpose, input: RoundSummary): Promise<any> {
+  async function decide(purpose: Purpose, input: RoundSummary, context?: AgentCallContext): Promise<any> {
+    throwIfAgentCancelled(context);
     if (failed) throw invalid(); // A provider exhausted its one retry; the outer loop must not acquire more attempts.
     const summary = summaryInput(input);
     const inputDigest = digest({ summary: { ...summary, run_id: '' }, template, purpose }); // Run IDs change across offline replay executions.
@@ -60,10 +69,12 @@ export async function recordedAgent(provider: 'codex' | 'claude', options: Provi
     const prompt = JSON.stringify({ instruction: 'Return only one JSON decision. Use no tools. Choose only from the approved task catalog; stop with empty tasks when no further work is needed.', purpose, summary, template });
     safe(prompt);
     for (let attempt = 0; attempt < 2; attempt++) {
-      const start = Date.now(); let reply: Reply = {}, output: unknown, error: 'invalid_output' | 'tools_forbidden' | undefined, diagnostic: string | undefined;
+      throwIfAgentCancelled(context);
+      const start = Date.now(); let reply: Reply = {}, output: unknown, error: 'invalid_output' | 'tools_forbidden' | 'cancelled' | 'cleanup_error' | undefined, diagnostic: string | undefined;
       let stage = 'transport';
       try {
-        reply = replies ? replies[cursor++] ?? {} : await transport(prompt, schema);
+        reply = replies ? replies[cursor++] ?? {} : await transport(prompt, schema, context);
+        throwIfAgentCancelled(context);
         stage = 'response_shape';
         if (reply.provider !== undefined && reply.provider !== provider) throw invalid();
         if (reply.purpose !== undefined && reply.purpose !== purpose || reply.inputDigest !== undefined && reply.inputDigest !== inputDigest) throw invalid();
@@ -77,18 +88,24 @@ export async function recordedAgent(provider: 'codex' | 'claude', options: Provi
         const decision = output as ExecutionPlan;
         if (purpose === 'plan' && decision.origin !== template.origin || decision.tasks.some(task => !catalog.has(digest(task)))) throw invalid();
         safe(output);
-      } catch (cause) { error ??= 'invalid_output'; diagnostic = cause instanceof ProviderFailure ? diagnostics.has(cause.diagnostic) ? cause.diagnostic : 'sdk_failure' : stage; output = undefined; }
+      } catch (cause) {
+        error = cause instanceof ProviderFailure && cause.diagnostic === 'cleanup_error' ? 'cleanup_error' : context?.signal?.aborted ? 'cancelled' : error ?? 'invalid_output';
+        diagnostic = error === 'cancelled' || error === 'cleanup_error' ? error : cause instanceof ProviderFailure ? diagnostics.has(cause.diagnostic) ? cause.diagnostic : 'sdk_failure' : stage;
+        output = undefined;
+      }
       const token = (value: unknown) => Number.isSafeInteger(value) && Number(value) >= 0 ? Number(value) : null;
       const usage = { provider, purpose, mode: replies ? 'replay' : 'live', attempt: attempt + 1, inputTokens: token(reply.inputTokens), outputTokens: token(reply.outputTokens), durationMs: replies && token(reply.durationMs) !== null ? reply.durationMs : Date.now() - start, status: error ?? 'ok', ...(diagnostic ? { diagnostic } : {}) };
       try {
         await appendFile(join(options.recordDir, 'ledger.jsonl'), JSON.stringify(usage) + '\n');
         await appendFile(join(options.recordDir, 'transcript.jsonl'), JSON.stringify({ version: 1, inputDigest, ...usage, ...(error ? { error } : { output }) }) + '\n');
       } catch { failed = true; throw new Error('agent_recording_failed'); }
+      if (error === 'cleanup_error') { failed = true; throw new ProviderFailure('cleanup_error'); }
+      if (context?.signal?.aborted) { failed = true; throw Error('agent_cancelled'); }
       if (!error) return output;
     }
     failed = true; throw invalid();
   }
-  return { planTasks: summary => decide('plan', summary), selectNext: summary => decide('select', summary) };
+  return { planTasks: (summary, context) => decide('plan', summary, context), selectNext: (summary, context) => decide('select', summary, context) };
 }
 export async function replayRecording(path: string): Promise<Reply[]> {
   const text = await readFile(path, 'utf8');

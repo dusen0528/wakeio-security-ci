@@ -1,16 +1,18 @@
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { credentialEnvironment, optionalSdk, recordedAgent, requireLive, type ProviderOptions, type Reply } from './record.js';
+import { credentialEnvironment, optionalSdk, providerControl, recordedAgent, requireLive, type ProviderOptions, type Reply } from './record.js';
+import { throwIfAgentCancelled } from '../loop/agent.js';
 
 export async function createAgent(options: ProviderOptions) {
   requireLive(options);
   const sdk = options.replay === undefined ? await optionalSdk('@anthropic-ai/claude-agent-sdk') : undefined;
-  return recordedAgent('claude', options, async (prompt, schema) => {
+  return recordedAgent('claude', options, async (prompt, schema, context) => {
     const directory = await mkdtemp(join(tmpdir(), 'wakeio-claude-'));
-    const abort = new AbortController(), timer = setTimeout(() => abort.abort(), 60_000);
+    const control = providerControl(context), abort = control.controller;
     let stream: any;
     try {
+      throwIfAgentCancelled(context);
       stream = sdk.query({ prompt: JSON.stringify({ request: prompt, schema }), options: { cwd: directory, env: { ...credentialEnvironment('ANTHROPIC_API_KEY', directory), CLAUDE_CONFIG_DIR: directory },
         tools: [], allowedTools: [], mcpServers: {}, strictMcpConfig: true, plugins: [], skills: [], settingSources: [],
         settings: { disableAllHooks: true }, permissionMode: 'dontAsk',
@@ -32,6 +34,6 @@ export async function createAgent(options: ProviderOptions) {
         }
       }
       throw new Error('agent_output_invalid');
-    } finally { clearTimeout(timer); abort.abort(); stream?.close(); await rm(directory, { recursive: true, force: true }); }
+    } finally { control.dispose(); abort.abort(); stream?.close(); await rm(directory, { recursive: true, force: true }); }
   });
 }
