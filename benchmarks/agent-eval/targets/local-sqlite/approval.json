@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "target": "owned-local-sqlite",
+  "approvedAt": "2026-10-14",
+  "approvalSource": "User approval in this Codex chat: local-only fixture creation and active testing; target-specific benchmark files and existing Codex CLI login authorized.",
+  "bindAddress": "127.0.0.1",
+  "methods": ["GET"],
+  "finalPaths": ["/items", "/lookup"],
+  "tuningPaths": ["/catalog", "/inventory"],
+  "sharedRequestCap": 64,
+  "ratePerSecond": 10,
+  "repeats": 5,
+  "publicTargetsAllowed": false,
+  "destructiveChecksAllowed": false
+}

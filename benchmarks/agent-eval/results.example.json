@@ -1,0 +1,104 @@
+{
+  "note": "Synthetic results for harness self-checking only. No request was sent, no engine or model ran. Each finding references its run.db row (runRef) and evidence file (evidenceRef + evidenceSha256 over the stored evidence JSON, which itself names the same finding/run/task); the bundle references the run-start record by manifestDigest; coverage denominators match the run-start cell count (4).",
+  "manifestDigest": "fce14f0a6272d8f5c363483bf77cad2d828368130b356921b321f367e5e03651",
+  "armA": {
+    "name": "A",
+    "durationMs": 5200,
+    "coverage": {
+      "plannedCells": 4,
+      "executedCells": 4
+    },
+    "rounds": [
+      {
+        "round": 1,
+        "kind": "initial",
+        "requestCount": 58
+      }
+    ],
+    "findings": [
+      {
+        "findingId": "f-a1",
+        "type": "sqli",
+        "severity": "high",
+        "state": "confirmed",
+        "method": "POST",
+        "path": "/rest/user/login",
+        "param": "email",
+        "location": "body",
+        "authState": "anonymous",
+        "round": 1,
+        "runRef": {
+          "runId": "r-a-01",
+          "taskId": "t-injection"
+        },
+        "evidenceRef": "evidence/f-a1.json",
+        "evidenceSha256": "6b1d90085b344e3e50bfd7af8406e714ca7a59483a3eb9734c6761bb510f2963"
+      }
+    ]
+  },
+  "armB": {
+    "name": "B",
+    "durationMs": 9100,
+    "tokens": 21000,
+    "producedValidPlanArmAMissed": true,
+    "coverage": {
+      "plannedCells": 4,
+      "executedCells": 4
+    },
+    "rounds": [
+      {
+        "round": 1,
+        "kind": "initial",
+        "requestCount": 26
+      },
+      {
+        "round": 2,
+        "kind": "verify",
+        "requestCount": 10
+      },
+      {
+        "round": 3,
+        "kind": "expansion",
+        "requestCount": 18
+      }
+    ],
+    "findings": [
+      {
+        "findingId": "f-b1",
+        "type": "sqli",
+        "severity": "high",
+        "state": "confirmed",
+        "method": "POST",
+        "path": "/rest/user/login",
+        "param": "email",
+        "location": "body",
+        "authState": "anonymous",
+        "round": 1,
+        "runRef": {
+          "runId": "r-b-01",
+          "taskId": "t-injection"
+        },
+        "evidenceRef": "evidence/f-b1.json",
+        "evidenceSha256": "7ebfa410ff7fb80afa0da07016a1853e0f9b8066ab2d657b74331fb76eb6b0b4"
+      },
+      {
+        "findingId": "f-b2",
+        "type": "authz",
+        "severity": "high",
+        "state": "confirmed",
+        "method": "GET",
+        "path": "/rest/basket/3",
+        "param": null,
+        "location": null,
+        "authState": "user",
+        "round": 3,
+        "runRef": {
+          "runId": "r-b-01",
+          "taskId": "t-authz"
+        },
+        "evidenceRef": "evidence/f-b2.json",
+        "evidenceSha256": "c7cc9c3452e136c54cecf6dcfde86bbb9a460ae2597e1f5f1ad8af23cbfc5429"
+      }
+    ]
+  }
+}
