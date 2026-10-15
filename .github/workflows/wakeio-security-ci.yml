@@ -1,0 +1,63 @@
+name: wakeio-security-ci
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+  security-events: write
+
+jobs:
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source as data
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          path: wakeio-source
+      # Reviewed prebuilt scanner only. No target dependency installation or lifecycle scripts.
+      # tools none supports local handoff; selecting external tools is a separate scan scope.
+      - name: Run pinned Wakeio Action
+        id: wakeio
+        uses: dusen0528/wakeio-security-ci@642fedf8c39b2a7fba7d7d446fe2675a4dc586eb
+        with:
+          source: wakeio-source
+          tools: "none"
+          out: "wakeio-security-reports/${{ github.run_id }}-${{ github.run_attempt }}"
+      - name: Check fresh SARIF for code scanning
+        id: wakeio-sarif
+        if: ${{ !cancelled() && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && steps.wakeio.outputs.report-sarif != '' }}
+        env:
+          WAKEIO_SARIF: ${{ steps.wakeio.outputs.report-sarif }}
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import { lstatSync, readFileSync, appendFileSync } from 'node:fs';
+          try {
+            const info = lstatSync(process.env.WAKEIO_SARIF);
+            if (!info.isFile() || info.isSymbolicLink() || info.size > 16 * 1024 * 1024) process.exit(0);
+            const sarif = JSON.parse(readFileSync(process.env.WAKEIO_SARIF, 'utf8'));
+            if (sarif.version === '2.1.0' && Array.isArray(sarif.runs) && sarif.runs.length > 0 &&
+                sarif.runs.every(run => run?.tool?.driver?.name && Array.isArray(run.results))) {
+              appendFileSync(process.env.GITHUB_OUTPUT, 'valid=true\n');
+            }
+          } catch { console.log('SARIF unavailable or invalid; code scanning upload skipped.'); }
+          NODE
+      - name: Upload code scanning results
+        if: ${{ !cancelled() && steps.wakeio-sarif.outputs.valid == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
+        uses: github/codeql-action/upload-sarif@24c54180a607b1449ed407dd24f251e4e9147c8d
+        with:
+          sarif_file: ${{ steps.wakeio.outputs.report-sarif }}
+          checkout_path: wakeio-source
+          category: wakeio-security-ci
+      - name: Upload reports
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: wakeio-security-reports-${{ github.run_id }}-${{ github.run_attempt }}
+          path: "wakeio-security-reports/${{ github.run_id }}-${{ github.run_attempt }}"
+          if-no-files-found: error
