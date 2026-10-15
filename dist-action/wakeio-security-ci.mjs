@@ -249072,6 +249072,7 @@ import { isAbsolute as isAbsolute7, join as join7, relative as relative8, resolv
 var CHECKOUT_SHA = "11d5960a326750d5838078e36cf38b85af677262";
 var SETUP_NODE_SHA = "49933ea5288caeca8642d1e84afbd3f7d6820020";
 var UPLOAD_ARTIFACT_SHA = "ea165f8d65b6e75b540449e92b4886f43607fa02";
+var UPLOAD_SARIF_SHA = "24c54180a607b1449ed407dd24f251e4e9147c8d";
 var STABLE_SYSTEM_ALIASES = /* @__PURE__ */ new Set(["/tmp", "/var"]);
 async function initMain(argv = process.argv.slice(2)) {
   let options;
@@ -249140,6 +249141,13 @@ function parseInitArgs(argv) {
   const selected = /* @__PURE__ */ new Set();
   for (let index = 0; index < args.length; index += 1) {
     const argument = args[index];
+    if (argument === "--code-scanning") {
+      if (selected.has(argument))
+        throw new Error("--code-scanning may only be specified once");
+      selected.add(argument);
+      options.codeScanning = true;
+      continue;
+    }
     if (argument === "--require-code-analysis") {
       if (selected.has(argument))
         throw new Error("--require-code-analysis may only be specified once");
@@ -249215,6 +249223,7 @@ function parseInitArgs(argv) {
   if (hasControl(options.workflow) || hasControl(options.out))
     throw new Error("--workflow and --out cannot contain control characters");
   validateMode(options.mode, options.actionRef);
+  validateCodeScanning(options.mode, options.codeScanning);
   if (options.mode === "action") {
     validateActionPath(options.out, true);
     validateActionPath(options.workflow, false);
@@ -249226,11 +249235,12 @@ function initUsage() {
     "Usage: wakeio-security-ci init [--source DIR] [--workflow .github/workflows/wakeio-security-ci.yml] [--out DIR] [--tools none]",
     "",
     "       [--source-max-files N] [--source-max-bytes N] [--analysis-profile default|extended] [--require-code-analysis]",
-    "       [--mode npm|action] [--action-ref FULL_40_HEX_COMMIT_SHA]",
+    "       [--mode npm|action] [--action-ref FULL_40_HEX_COMMIT_SHA] [--code-scanning]",
     "",
     "Create a local CI workflow only when its destination does not exist; no file is overwritten.",
     "Default npm mode runs the installed CLI with npx --no-install and uses pinned helper-action commits.",
     "Action mode requires an explicit reviewed Wakeio commit SHA, never installs the target, and writes fresh reports outside its fixed wakeio-source checkout.",
+    "--code-scanning requires --mode action; uploads fresh SARIF to GitHub code scanning except on fork PRs, preserving scan failure.",
     "Action --out is a plain relative report base, with a generated run/attempt suffix. Handoff currently supports tools none only.",
     ""
   ].join("\n");
@@ -249239,6 +249249,7 @@ function renderWorkflow(options) {
   options = {
     mode: options.mode,
     actionRef: options.actionRef,
+    codeScanning: options.codeScanning,
     out: options.out,
     tools: options.tools,
     pythonFiles: options.pythonFiles,
@@ -249250,6 +249261,7 @@ function renderWorkflow(options) {
   if (Array.isArray(options.tools))
     options.tools = [...options.tools];
   const mode = validateMode(options.mode, options.actionRef);
+  validateCodeScanning(mode, options.codeScanning);
   if (mode === "action")
     return renderActionWorkflow(options);
   const files = options.sourceMaxFiles === void 0 ? "" : ` --source-max-files ${parseCollectionLimit(String(options.sourceMaxFiles), COLLECTION_MAX_FILES)}`;
@@ -249311,6 +249323,12 @@ function validateMode(mode, reference2) {
     throw new Error("Action mode requires --action-ref with a full 40-hex reviewed commit SHA");
   return "action";
 }
+function validateCodeScanning(mode, enabled) {
+  if (enabled !== void 0 && typeof enabled !== "boolean")
+    throw new Error("codeScanning must be a boolean");
+  if (enabled && mode !== "action")
+    throw new Error("--code-scanning requires explicit --mode action and --action-ref FULL_40_HEX_COMMIT_SHA");
+}
 function validateActionPath(value, reports) {
   if (typeof value !== "string" || !value || value.length > 240)
     throw new Error("Action paths must be bounded plain relative paths");
@@ -249348,6 +249366,33 @@ function renderActionWorkflow(options) {
       throw new Error(`${name} must be an integer`);
     inputs2.push(`          ${name}: '${parseCollectionLimit(String(value), maximum)}'`);
   }
+  const codeScanning = options.codeScanning ? `      - name: Check fresh SARIF for code scanning
+        id: wakeio-sarif
+        if: \${{ !cancelled() && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && steps.wakeio.outputs.report-sarif != '' }}
+        env:
+          WAKEIO_SARIF: \${{ steps.wakeio.outputs.report-sarif }}
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import { lstatSync, readFileSync, appendFileSync } from 'node:fs';
+          try {
+            const info = lstatSync(process.env.WAKEIO_SARIF);
+            if (!info.isFile() || info.isSymbolicLink() || info.size > 16 * 1024 * 1024) process.exit(0);
+            const sarif = JSON.parse(readFileSync(process.env.WAKEIO_SARIF, 'utf8'));
+            if (sarif.version === '2.1.0' && Array.isArray(sarif.runs) && sarif.runs.length > 0 &&
+                sarif.runs.every(run => run?.tool?.driver?.name && Array.isArray(run.results))) {
+              appendFileSync(process.env.GITHUB_OUTPUT, 'valid=true\\n');
+            }
+          } catch { console.log('SARIF unavailable or invalid; code scanning upload skipped.'); }
+          NODE
+      - name: Upload code scanning results
+        if: \${{ !cancelled() && steps.wakeio-sarif.outputs.valid == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
+        uses: github/codeql-action/upload-sarif@${UPLOAD_SARIF_SHA}
+        with:
+          sarif_file: \${{ steps.wakeio.outputs.report-sarif }}
+          checkout_path: wakeio-source
+          category: wakeio-security-ci
+` : "";
   return `name: wakeio-security-ci
 
 on:
@@ -249356,7 +249401,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: read${options.codeScanning ? "\n  actions: read\n  security-events: write" : ""}
 
 jobs:
   security:
@@ -249374,7 +249419,7 @@ jobs:
         uses: dusen0528/wakeio-security-ci@${options.actionRef.toLowerCase()}
         with:
 ${inputs2.join("\n")}
-      - name: Upload reports
+${codeScanning}      - name: Upload reports
         if: always()
         uses: actions/upload-artifact@${UPLOAD_ARTIFACT_SHA}
         with:

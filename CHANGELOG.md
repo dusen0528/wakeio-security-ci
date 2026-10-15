@@ -1,6 +1,12 @@
 # Changelog
 
-## Unreleased
+## 0.5.0 — Release candidate (unpublished)
+
+This is a release candidate, not an npm publication. The current registry version is 0.4.0.
+
+- Add Action-only `init --code-scanning`: SHA-pinned SARIF upload, fork-PR exclusion, fresh basic SARIF validation, and unchanged finding gates. Omitting the flag preserves both existing workflow templates.
+- Document tarball-first verification and post-publication onboarding separately. Agent loop/providers and the owned-target dashboard are included but remain experimental/scoped; package inclusion is not general support.
+- Release acceptance requires package and release checks on the final integrated SHA. Registry smoke checks, live GitHub annotations, ja/zh-CN onboarding and the pilot remain follow-ups.
 
 - Stop pre-cancelled agent loops before any agent call; relay caller abort to Codex/Claude SDK controllers and await cooperative cleanup before returning.
   Optional call context preserves existing callers; custom ports that ignore cancellation have no hard-termination guarantee.
@@ -49,7 +55,7 @@
   and write non-success scan receipts instead of retaining stale successful status.
 - Require cancellation and teardown regressions in the real-engine zero-skip gate.
 
-## 0.5.0 — GitHub source preview
+### Previously integrated 0.5.0 changes
 
 Source and the checked-in Action are versioned 0.5.0. The latest published npm
 package remains 0.4.0; use a reviewed Git commit or build this checkout for the

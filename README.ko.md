@@ -6,26 +6,9 @@
 
 [English](README.md) · [日本語](README.ja.md) · [简体中文](README.zh-CN.md) · [구현 체크리스트](docs/checklist.md) · [0.4 사용법](docs/preview-0.4.md) · [검증 기록](docs/verification-0.4.md)
 
-**GitHub 소스:** `0.5.0` · **npm 공개 버전:** `0.4.0` · Apache-2.0 · Node.js 22+
+**릴리스 후보(미배포):** `0.5.0` · **npm 공개 버전:** `0.4.0` · Apache-2.0 · Node.js 22+
 
-기본 검사는 무료로 로컬에서 실행합니다. Wakeio 계정·구독·호스팅된 Wakeio 서비스·LLM·소스 업로드가 필요하지 않으며 사용 텔레메트리도 전송하지 않습니다. 아래 npm 명령은 공개된 0.4.0을 실행합니다. 뒤의 replay·origin 허용 목록·능동 DAST 예시는 이 0.5.0 소스 checkout을 `npm run build`로 빌드하거나 검토한 Git commit의 Action을 사용해야 합니다. npm 0.5.0은 아직 발행하지 않았습니다. [0.5.0 소스 변경점](CHANGELOG.md#050--github-source-preview)과 [0.4.0 릴리스 범위](docs/release-0.4.0.md)를 참고하세요.
-
-별도의 실험적 [`repair` CLI](docs/repair-preview.md)는 검토한 로컬 수정안을 검증하거나 Codex/Claude를 선택적으로 연결합니다. 에이전트 호출에는 명시적 소스 전송 동의와 API 인증이 필요하며 모델 비용이 발생할 수 있습니다. 준비된 Docker 이미지와 고정 검증기로 private patch·검증 기록만 만들고 원본 적용·커밋은 하지 않습니다. 첫 지원 범위는 선언된 SQL fixture이며 범용 앱 수리 완료를 뜻하지 않습니다.
-
-API preview는 redacted index 기반 실행 ledger로 판정한 단계, 불확실한 단계,
-실행하지 못한 단계를 구분한다. [실행 계약](docs/preview-0.4-api.md#계획-대비-실행-ledger)을 참고한다.
-[소유 API pilot](docs/api-state-oracle.md)은 명시적으로 두 번 검증을 선택할 수 있다.
-정상 기능 대조를 반복하고 결과가 다르면 불확실로 남긴다.
-
-별도의 [소유 PATCH state pilot](docs/api-write-state.md)은 고정 자체 loopback fixture에서 실제 저장 변경과 정상 owner 대조를 확인합니다. SDK·CLI·전용 Action은 명시적 동의를 요구하고 원 phase gate를 보존하며 외부 API를 입력받지 않습니다.
-
-명시적 [property-write 검사](docs/api-property-write.md)는 운영자가 지정한 disposable staging resource 한 개에서 정상 쓰기·privileged 대조·fresh nonce readback으로 보호 property 변경 후보를 확인합니다. 실행마다 동의가 필요하며 22회 계획/최대23회 HTTP·8회 PATCH, 조건부 복원과 partial gate를 사용합니다. API 관측은 독립 저장소 증명이나 수정 완료가 아닙니다.
-
-
-[수집한 코드의 분석 범위](docs/source-code-coverage.md)는 파일 수집과 언어 분석 완료를 구분합니다. `--require-code-analysis`로 미분석 코드에 CI gate를 적용할 수 있으며 새 분석기나 프로젝트 전체 coverage를 뜻하지 않습니다.
-
-
-명시적 [인증 POST JSON numeric SQL profile](docs/native-dast-post-json.md)은 고정 body field와 다른 정상값 대조를 consented 차등 검사 계약에 추가합니다. 별도 v4 정책이며 기존 GET 정책의 범위는 유지합니다.
+기본 검사는 무료로 로컬에서 실행합니다. Wakeio 계정·구독·호스팅된 Wakeio 서비스·LLM·소스 업로드가 필요하지 않으며 사용 텔레메트리도 전송하지 않습니다. 빠른 시작의 npm 명령은 공개된 0.4.0을 실행하며, 별도로 표시한 0.5.0 레지스트리 명령은 배포 후 경로입니다. 뒤의 replay·origin 허용 목록·능동 DAST 예시는 이 0.5.0 소스 checkout을 `npm run build`로 빌드하거나 검토한 Git commit의 Action을 사용해야 합니다. npm 0.5.0은 아직 발행하지 않았습니다. [0.5.0 소스 변경점](CHANGELOG.md#050--release-candidate-unpublished)과 [0.4.0 릴리스 범위](docs/release-0.4.0.md)를 참고하세요.
 
 ## 무엇을 검사하나요?
 
@@ -102,58 +85,37 @@ node build/src/cli.js scan \
 
 로컬·사설 URL/API 대상은 `--allow-private`를 명시해야 하며 metadata 주소 차단은 계속 적용됩니다. URL 수집은 지정한 페이지, 같은 origin의 정적 모듈 그래프, 요청·바이트·시간 예산 안에서만 동작하고 전체 페이지 수는 최대 8개입니다.
 
-## GitHub Actions
+## GitHub Actions: 선택형 code scanning
 
-검토한 전체 commit SHA로 Action을 고정하고 보고서를 대상 checkout 밖에 둡니다. 아래 예제는 기존에 검토한 scanner `575dbff63c6adc36e327487a2a9a2ead8337b4f0`를 사용합니다. 내장 검사만 선택하고 scan 실패 뒤에도 보고서 업로드를 시도합니다.
+대상 프로젝트의 의존성을 설치하지 않는 Action 모드입니다. 아래 세 단계로 시작합니다.
 
-```yaml
-name: wakeio-security-ci
+1. 검토한 CLI로 `init --mode action --action-ref <검토한 전체 SHA> --code-scanning`을 실행합니다. **배포 전**에는 빈 설치 디렉터리에 로컬 tarball을 설치하고 그 실행 파일을 직접 사용합니다.
 
-on:
-  push:
-  pull_request:
-  workflow_dispatch:
+   ```sh
+   # 후보 소스 checkout에서 생성한 npm pack tarball 사용
+   npm run package:release
+   mkdir /tmp/wakeio-rc-install
+   npm install --prefix /tmp/wakeio-rc-install --ignore-scripts --no-audit --fund=false /absolute/path/to/wakeio-security-ci/artifacts/wakeio-security-ci-0.5.0.tgz
+   /tmp/wakeio-rc-install/node_modules/.bin/wakeio-security-ci init \
+     --source /path/to/your-app --mode action \
+     --action-ref abc64d4defcbb6d532ae1e6224af0af8efaba0ce --code-scanning
+   ```
 
-permissions:
-  contents: read
+2. 생성된 `.github/workflows/wakeio-security-ci.yml`의 검사 범위·SHA·권한을 검토한 뒤 커밋·push합니다. 모든 `uses`는 전체 SHA로 고정됩니다. `contents: read`, `actions: read`, `security-events: write`를 요청하며 대상은 `wakeio-source`에 checkout합니다. 기존 파일은 덮어쓰지 않습니다.
+3. Actions의 실행 결과·보고서 artifact와 저장소 **Security → Code scanning** 결과를 확인합니다. 취약점으로 검사가 실패해도 새 유효 SARIF는 업로드할 수 있으며 원래 실패는 유지됩니다. SARIF가 없거나 기본 형식 검증에 실패하면 업로드를 건너뜁니다. 최종 SARIF schema·수집 검증은 GitHub가 수행합니다. 포크 PR에서는 code scanning 업로드만 제외하고 검사·artifact 경로는 유지합니다.
 
-jobs:
-  security:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out source as data
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-        with:
-          persist-credentials: false
-          path: wakeio-source
-      - name: Run pinned Wakeio Action
-        id: wakeio
-        uses: dusen0528/wakeio-security-ci@575dbff63c6adc36e327487a2a9a2ead8337b4f0
-        with:
-          source: wakeio-source
-          tools: none
-          out: "wakeio-security-reports/${{ github.run_id }}-${{ github.run_attempt }}"
-      - name: Upload reports
-        if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: wakeio-security-reports-${{ github.run_id }}-${{ github.run_attempt }}
-          path: "wakeio-security-reports/${{ github.run_id }}-${{ github.run_attempt }}"
-          if-no-files-found: error
-```
-
-복사해서 쓸 파일은 [`examples/github-action.yml`](examples/github-action.yml)입니다. Action은 Node.js 22를 준비하고 대상 의존성 설치나 script 실행 없이 소스를 데이터로 읽습니다. Job Summary와 `report.md`, `report.json`, `report.sarif`, `agent-report.json`, `action-status.json`을 새 출력 디렉터리에 남깁니다. artifact 업로드 성공은 scan gate를 바꾸지 않습니다.
-
-새 소스 CLI에서 이 레이아웃을 명시적으로 생성할 수 있습니다.
+**0.5.0 npm 배포 후에만** 위 tarball 실행 명령을 다음 레지스트리 명령으로 대체할 수 있습니다. 현재 npm 0.5.0 실행을 검증했다는 뜻이 아닙니다.
 
 ```sh
-node /path/to/wakeio-security-ci/build/src/cli.js init \
-  --source /path/to/your-app --mode action \
-  --action-ref 575dbff63c6adc36e327487a2a9a2ead8337b4f0 \
-  --tools none --out wakeio-security-reports
+npx --yes wakeio-security-ci@0.5.0 init --source /path/to/your-app \
+  --mode action --action-ref abc64d4defcbb6d532ae1e6224af0af8efaba0ce --code-scanning
 ```
 
-새 init 옵션은 위 scanner commit 이후에 추가됐으며 npm 공개판 0.4.0에는 없습니다. 기본 `init`은 기존 npm 모드를 유지합니다. [CI artifact에서 로컬 handoff까지의 안내](docs/init-action-onboarding.md)는 실행·attempt 지정 다운로드, 실제 checkout commit 복원, 호환 CLI 선택과 after 보고서 비교를 설명합니다. 지원 언어와 분석 한도는 그대로입니다.
+[GitHub 공식 지원 조건](https://docs.github.com/en/code-security/how-tos/find-and-fix-code-vulnerabilities/integrate-with-existing-tools/upload-sarif-file): GitHub.com 공개 저장소에서 사용할 수 있습니다. 비공개·내부 저장소는 지원 플랜(GitHub Team 또는 Enterprise)의 조직 소유 저장소에서 **GitHub Code Security 활성화**가 필요합니다. Actions 사용과 필요한 권한도 허용되어야 합니다. PR 줄 단위 표시는 변경된 코드 위치 등 [GitHub 표시 조건](https://docs.github.com/en/code-security/how-tos/manage-security-alerts/manage-code-scanning-alerts/triage-alerts-in-pull-requests)에 따르므로 모든 결과가 Files changed에 표시되는 것은 아닙니다.
+
+SARIF는 `steps.wakeio.outputs.report-sarif`, `checkout_path: wakeio-source`, `category: wakeio-security-ci`로 업로드됩니다. 기본 `init`은 여전히 npm 모드이고 `--code-scanning`은 명시적 Action 모드에서만 지원합니다. 플래그를 생략하면 기존 npm·Action workflow 출력이 유지됩니다. 기본 `--tools none`은 내장 검사만 선택하며 대상 코드·설치 스크립트를 실행하지 않습니다. 선택형 외부 검사와 agent의 동의·승인 범위는 별도입니다. [Action 전달 계약](docs/action-delivery.md)과 [artifact-to-handoff 안내](docs/init-action-onboarding.md)를 참고하세요.
+
+일본어·중국어 README, npm 배포 후 명령 검증, 실제 GitHub 업로드·줄 연결 및 파일럿은 후속 검증 항목입니다.
 
 ## 선택형 외부 엔진
 
@@ -291,6 +253,27 @@ node build/src/cli.js compare \
 ```
 
 범위가 다르거나 미완료인 검사를 깨끗한 결과로 보여 주지 않습니다. 이전 발견이 사라져도 `not_observed`이며 자동 수정 인증서가 아닙니다. [비교 안내](docs/preview-0.4-comparison.md)를 참고하세요.
+
+## 실험 기능과 제한된 지원 범위
+
+0.5.0 소스와 npm 후보에는 `build/src/agent-dast`의 agent loop, 선택형 Codex/Claude provider adapter, 소유 대상 dashboard가 포함됩니다. 패키지 포함은 안정 지원 보장이 아닙니다. Loop/provider는 실험 단계이며 실제 모델은 별도 준비한 선택형 SDK와 명시적 동의가 필요합니다. Dashboard는 승인된 loopback 대상에 한정된 로컬 token 보호 pilot입니다. 이번 릴리스는 호스팅된 검사 이력이나 일반 보고서 연결을 완성하지 않습니다.
+
+별도의 실험적 [`repair` CLI](docs/repair-preview.md)는 검토한 로컬 수정안을 검증하거나 Codex/Claude를 선택적으로 연결합니다. 에이전트 호출에는 명시적 소스 전송 동의와 API 인증이 필요하며 모델 비용이 발생할 수 있습니다. 준비된 Docker 이미지와 고정 검증기로 private patch·검증 기록만 만들고 원본 적용·커밋은 하지 않습니다. 첫 지원 범위는 선언된 SQL fixture이며 범용 앱 수리 완료를 뜻하지 않습니다.
+
+API preview는 redacted index 기반 실행 ledger로 판정한 단계, 불확실한 단계,
+실행하지 못한 단계를 구분한다. [실행 계약](docs/preview-0.4-api.md#계획-대비-실행-ledger)을 참고한다.
+[소유 API pilot](docs/api-state-oracle.md)은 명시적으로 두 번 검증을 선택할 수 있다.
+정상 기능 대조를 반복하고 결과가 다르면 불확실로 남긴다.
+
+별도의 [소유 PATCH state pilot](docs/api-write-state.md)은 고정 자체 loopback fixture에서 실제 저장 변경과 정상 owner 대조를 확인합니다. SDK·CLI·전용 Action은 명시적 동의를 요구하고 원 phase gate를 보존하며 외부 API를 입력받지 않습니다.
+
+명시적 [property-write 검사](docs/api-property-write.md)는 운영자가 지정한 disposable staging resource 한 개에서 정상 쓰기·privileged 대조·fresh nonce readback으로 보호 property 변경 후보를 확인합니다. 실행마다 동의가 필요하며 22회 계획/최대23회 HTTP·8회 PATCH, 조건부 복원과 partial gate를 사용합니다. API 관측은 독립 저장소 증명이나 수정 완료가 아닙니다.
+
+
+[수집한 코드의 분석 범위](docs/source-code-coverage.md)는 파일 수집과 언어 분석 완료를 구분합니다. `--require-code-analysis`로 미분석 코드에 CI gate를 적용할 수 있으며 새 분석기나 프로젝트 전체 coverage를 뜻하지 않습니다.
+
+
+명시적 [인증 POST JSON numeric SQL profile](docs/native-dast-post-json.md)은 고정 body field와 다른 정상값 대조를 consented 차등 검사 계약에 추가합니다. 별도 v4 정책이며 기존 GET 정책의 범위는 유지합니다.
 
 ## 네이티브 DAST와 선택형 Codex 조언
 
