@@ -7,9 +7,16 @@ export type ReconSummary = RoundSummary;
 export type TaskSpec = ExecutionTask;
 export type { RoundSummary } from '../store.js';
 export interface NextSelection { action: 'verify' | 'expand' | 'stop'; tasks: TaskSpec[] }
+/** Cooperative cancellation; custom ports that ignore it have no hard-termination guarantee. */
+export interface AgentCallContext { signal?: AbortSignal }
+export function throwIfAgentCancelled(context?: AgentCallContext): void {
+  if (context?.signal?.aborted) throw Error('agent_cancelled');
+}
 export interface AgentPort {
-  planTasks(recon: ReconSummary): Promise<ExecutionPlan>;
-  selectNext(summary: RoundSummary): Promise<NextSelection>;
+  /** Settle only after this decision's transport cleanup, including on cancellation. */
+  planTasks(recon: ReconSummary, context?: AgentCallContext): Promise<ExecutionPlan>;
+  /** Settle only after this decision's transport cleanup, including on cancellation. */
+  selectNext(summary: RoundSummary, context?: AgentCallContext): Promise<NextSelection>;
 }
 function invalid(): never { throw Error('invalid_agent_output'); }
 export function parseSelection(raw: unknown, origin: string): NextSelection {
