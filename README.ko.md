@@ -19,6 +19,8 @@ API preview는 redacted index 기반 실행 ledger로 판정한 단계, 불확�
 
 별도의 [소유 PATCH state pilot](docs/api-write-state.md)은 고정 자체 loopback fixture에서 실제 저장 변경과 정상 owner 대조를 확인합니다. SDK·CLI·전용 Action은 명시적 동의를 요구하고 원 phase gate를 보존하며 외부 API를 입력받지 않습니다.
 
+명시적 [property-write 검사](docs/api-property-write.md)는 운영자가 지정한 disposable staging resource 한 개에서 정상 쓰기·privileged 대조·fresh nonce readback으로 보호 property 변경 후보를 확인합니다. 실행마다 동의가 필요하며 22회 계획/최대23회 HTTP·8회 PATCH, 조건부 복원과 partial gate를 사용합니다. API 관측은 독립 저장소 증명이나 수정 완료가 아닙니다.
+
 
 [수집한 코드의 분석 범위](docs/source-code-coverage.md)는 파일 수집과 언어 분석 완료를 구분합니다. `--require-code-analysis`로 미분석 코드에 CI gate를 적용할 수 있으며 새 분석기나 프로젝트 전체 coverage를 뜻하지 않습니다.
 

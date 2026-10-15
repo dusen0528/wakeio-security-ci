@@ -102,6 +102,8 @@ export const USAGE = `Usage:
   wakeio-security-ci repair --help
   wakeio-security-ci api-write-state --candidate fixed|ineffective|all-deny|normal-regression|status-only|wrong-object --active-consent --out NEW_DIR
     Owned synthetic PATCH resources only; external targets and automatic write retries are unavailable.
+  wakeio-security-ci api-property-write --policy FILE --active-consent --out NEW_DIR [--allow-private] [--timeout-ms N] [--max-requests N]
+  wakeio-security-ci api-property-write --policy FILE --preflight [--allow-private]
   wakeio-security-ci advise --report DIR --agent codex --auth cli-login|api-key --allow-report-upload --out NEW_DIR
   wakeio-security-ci handoff create --report DIR --source DIR --check-index N [--finding ID] --out NEW_DIR
   wakeio-security-ci handoff finish --handoff DIR --report AFTER_DIR --source DIR --out NEW_DIR
@@ -615,6 +617,7 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
   if (argv[0] === 'run-plan') return (await import('./agent-dast/cli.js')).runPlanMain(argv);
   if (argv[0] === 'plan') return planMain(argv);
   if (argv[0] === 'api-write-state') return apiWriteStateMain(argv);
+  if (argv[0] === 'api-property-write') return (await import('./api-property-cli.js')).apiPropertyWriteMain(argv);
   if (argv[0] === 'compare') return runComparison(argv);
   if (argv[0] === 'replay') return runReplay(argv);
   if (argv[0] === 'doctor') return doctorMain(argv);

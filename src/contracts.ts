@@ -199,6 +199,7 @@ export interface CheckResult {
   /** Owned fixture observations only; not authentication of arbitrary external evidence. */
   apiStateEvidence?: ApiStateEvidence;
   apiWriteStateEvidence?: ApiWriteStateEvidence;
+  propertyWriteEvidence?: ApiPropertyWriteEvidence;
   apiExecution?: ApiExecutionLedger;
   /** Bounded native differential metadata; not independent exploit verification. */
   dastExecution?: DastExecution;
@@ -285,6 +286,40 @@ export interface ApiWriteExecutionLedger {
   steps: Array<{ ordinal: number; method: 'GET' | 'PATCH'; actorIndex: 0 | 1 | 2; resourceIndex?: 0 | 1;
     action: 'identity-before' | 'read-before' | 'owner-write' | 'read-normal' | 'peer-write' | 'read-peer' | 'anonymous-write' | 'read-anonymous' | 'identity-after';
     attempted: boolean; outcome: 'evaluated' | 'inconclusive' | 'not_attempted'; httpStatus: number | null }>;
+}
+export type ApiPropertyControl = 'passed' | 'failed' | 'unknown' | 'not_run';
+export type ApiPropertyPhase = 'owner-identity-before' | 'verifier-identity-before' | 'owner-resource' | 'baseline-read'
+  | 'owner-precondition' | 'owner-precondition-read' | 'verifier-precondition' | 'verifier-precondition-read'
+  | 'owner-normal' | 'owner-normal-read' | 'verifier-positive' | 'verifier-positive-read'
+  | 'verifier-restore' | 'verifier-restore-read' | 'owner-probe' | 'probe-read'
+  | 'owner-barrier' | 'barrier-read' | 'cleanup' | 'cleanup-read'
+  | 'owner-identity-after' | 'verifier-identity-after' | 'reconcile-read';
+export type ApiPropertyReason = 'none' | 'invalid_evidence' | 'invalid_policy' | 'consent_missing'
+  | 'credential_unavailable' | 'identity_failed' | 'resource_mismatch' | 'run_marker_mismatch'
+  | 'baseline_mismatch' | 'unsupported_validator' | 'precondition_not_enforced' | 'positive_control_failed'
+  | 'normal_failed' | 'restore_failed' | 'freshness_failed' | 'unexpected_mutation' | 'response_invalid'
+  | 'readback_unobservable' | 'stale_or_conflicting_state' | 'write_ambiguous' | 'cleanup_failed'
+  | 'cleanup_unconfirmed' | 'request_limit' | 'body_limit' | 'transport_error' | 'target_refused' | 'deadline' | 'cancelled';
+export interface ApiPropertyWriteStep {
+  ordinal: number; method: 'GET' | 'PATCH'; actorIndex: 0 | 1; phase: ApiPropertyPhase;
+  attempted: boolean; outcome: 'evaluated' | 'inconclusive' | 'not_attempted'; httpStatus: number | null;
+  reason: ApiPropertyReason;
+}
+/** Declared HTTP readback only; never independent storage or exploit proof. */
+export interface ApiPropertyWriteEvidence {
+  version: 1; scope: 'policy-resource-property-write'; basis: 'authenticated-http-readback';
+  execution: 'completed' | 'partial' | 'error';
+  effect: 'observed' | 'not_observed' | 'unknown';
+  provisional: 'observed' | 'not_observed' | 'unknown';
+  controls: Record<'identityBefore' | 'ownerResource' | 'ownerPrecondition' | 'verifierPrecondition'
+    | 'normal' | 'positive' | 'restore' | 'freshness' | 'identityAfter', ApiPropertyControl>;
+  cleanup: 'confirmed' | 'unknown' | 'not_run' | 'not_needed';
+  policySha256?: string;
+  budget: { maxRequests: number | null; timeoutMs: number | null; maxRequestBodyBytes: 4096; maxResponseBodyBytes: 65536; maxTotalResponseBytes: 1048576 };
+  stopReason: ApiPropertyReason; reasons: ApiPropertyReason[];
+  counts: { plannedRequests: 22; httpAttempts: number; patchAttempts: number; capturedResponses: number };
+  ledger: { version: 1; status: 'complete' | 'partial'; maximumHttpAttempts: 23; maximumPatchAttempts: 8;
+    steps: ApiPropertyWriteStep[] };
 }
 export interface SourceOptions {
   requireCodeAnalysis?: boolean;
@@ -490,6 +525,7 @@ export interface AgentReport {
     analysisGaps?: AnalysisGaps;
     apiStateEvidence?: ApiStateEvidence;
     apiWriteStateEvidence?: ApiWriteStateEvidence;
+    propertyWriteEvidence?: ApiPropertyWriteEvidence;
     apiExecution?: ApiExecutionLedger;
     /** Bounded native differential metadata; not independent exploit verification. */
     dastExecution?: DastExecution;

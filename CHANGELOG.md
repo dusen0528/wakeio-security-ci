@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add an explicit policy-driven property-write API check for one disposable staging resource, with owner/verifier controls, strong ETag negative controls, a fresh normal-field barrier, and bounded conditional cleanup. All four reports preserve typed redacted HTTP readback evidence; ambiguity/cancellation stop writes and incomplete runs retain exit 2. This grants no automatic agent replay or independent storage/fix verification. See [operator contract](docs/api-property-write.md).
+
 - Add bounded source-only Node HTML output-context candidates under ruleset
   `2026-10-14.5`: declared core HTTP/HTTPS request callbacks and a narrow send
   directory adapter preserve literal/input-hole provenance to quoted URL attributes.
