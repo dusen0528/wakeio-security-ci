@@ -1,22 +1,24 @@
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
+import { homedir, tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { credentialEnvironment, optionalSdk, recordedAgent, requireLive, type ProviderOptions, type Reply } from './record.js';
+import { credentialEnvironment, optionalSdk, ProviderFailure, providerFailure, recordedAgent, requireLive, type ProviderOptions, type Reply } from './record.js';
 
 // Same fail-closed feature policy as agent-provider.ts; that module keeps its list private.
 const disabledFeatures = ['shell_tool','unified_exec','shell_snapshot','code_mode','multi_agent','multi_agent_v2',
   'apps','plugins','hooks','browser_use','browser_use_external','computer_use','view_image',
   'image_generation','memories','in_app_browser','skill_mcp_dependency_install'];
-export async function createAgent(options: ProviderOptions) {
+export async function createAgent(options: ProviderOptions & { authMode?: 'api-key' | 'cli-login' }) {
   requireLive(options);
   const sdk = options.replay === undefined ? await optionalSdk('@openai/codex-sdk') : undefined;
   return recordedAgent('codex', options, async (prompt, schema) => {
     const directory = await mkdtemp(join(tmpdir(), 'wakeio-codex-'));
     const abort = new AbortController(), timer = setTimeout(() => abort.abort(), 60_000);
     try {
-      const env = { ...credentialEnvironment('CODEX_API_KEY', directory), CODEX_HOME: directory };
+      const env = options.authMode === 'cli-login'
+        ? { PATH: process.env.PATH ?? '/usr/bin:/bin', HOME: directory, TMPDIR: directory, CODEX_HOME: process.env.CODEX_HOME || join(homedir(), '.codex') }
+        : { ...credentialEnvironment('CODEX_API_KEY', directory), CODEX_HOME: directory };
       const help = await promisify(execFile)('codex', ['exec','--help'], { env, timeout: 5000, maxBuffer: 65536 });
       const flags = ['--ignore-user-config','--ignore-rules','--strict-config','--ephemeral','--disable'];
       if (flags.some(flag => !help.stdout.includes(flag))) throw new Error('agent_policy_unsupported');
@@ -34,10 +36,16 @@ export async function createAgent(options: ProviderOptions) {
           if (event.type === 'item.completed' && event.item.type === 'agent_message') reply.json = event.item.text;
         } else if (event.type === 'turn.completed') {
           completed = true; reply.inputTokens = event.usage?.input_tokens; reply.outputTokens = event.usage?.output_tokens;
-        } else if (!['thread.started','turn.started'].includes(event.type)) throw new Error('agent_output_invalid');
+        } else if (event.type === 'turn.failed' || event.type === 'error') {
+          throw providerFailure(event.error?.message ?? event.message, 'sdk_turn_failed');
+        } else if (!['thread.started','turn.started'].includes(event.type)) throw providerFailure('', 'unexpected_event');
       }
       if (!completed) throw new Error('agent_output_invalid');
       return reply;
-    } finally { clearTimeout(timer); abort.abort(); await rm(directory, { recursive: true, force: true }); }
+    } catch (error) {
+      if (error instanceof ProviderFailure) throw error;
+      throw providerFailure(error);
+    // The SDK iterator kills its child on close; aborting after it removes listeners emits an unhandled error.
+    } finally { clearTimeout(timer); await rm(directory, { recursive: true, force: true }); }
   });
 }

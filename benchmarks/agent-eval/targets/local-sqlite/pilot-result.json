@@ -1,0 +1,153 @@
+{
+  "version": 1,
+  "verdict": "defer",
+  "g3Complete": false,
+  "g4Started": false,
+  "criteriaCommit": "e68ed3e24dc98628a97a362a7937d74a57cc9f00",
+  "executionCommit": "9e0d278348c9de62ffcdfb7e128f24dce2385c2b",
+  "attempts": [
+    {
+      "id": "initial",
+      "complete": false,
+      "completedA": 5,
+      "completedB": 2,
+      "failure": "SDK abort after iterator cleanup during B3",
+      "fixCommit": "9e0d278"
+    },
+    {
+      "id": "r2",
+      "complete": false,
+      "completedA": 5,
+      "completedB": 4,
+      "failure": "B5 invalid_agent_output after two rejected selection attempts",
+      "allArmRequests": 16,
+      "sharedCap": 64
+    }
+  ],
+  "completedPairs": 4,
+  "completedPairScores": {
+    "A": {
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "coverage": "2/2"
+    },
+    "B": {
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "coverage": "2/2"
+    }
+  },
+  "completedPairsProvenanceAllOk": true,
+  "completedPairsManifestVerified": true,
+  "stats": {
+    "A": {
+      "requests": {
+        "mean": 16,
+        "min": 16,
+        "max": 16,
+        "variance": 0
+      },
+      "durationMs": {
+        "mean": 1574.2,
+        "min": 1571,
+        "max": 1580,
+        "variance": 10.160000000000002
+      },
+      "tokens": null
+    },
+    "B": {
+      "requests": {
+        "mean": 16,
+        "min": 16,
+        "max": 16,
+        "variance": 0
+      },
+      "durationMs": {
+        "mean": 18350.2,
+        "min": 14585,
+        "max": 29968,
+        "variance": 34005356.559999995
+      },
+      "tokens": null
+    }
+  },
+  "modelUsage": {
+    "knownInputTokens": 113300,
+    "knownOutputTokens": 755,
+    "callsWithUnknownUsage": 2,
+    "monetaryCost": null
+  },
+  "artifactSha256": {
+    "evaluation.json": "8be5e0aafd0709240674914abac89198071c2d5faa463fce218a8ca708555aff",
+    "precommit-attestation.json": "0721e27fd73357f1fd73933d802328a774ae09c9393310c9fb6b610f01417d31"
+  },
+  "limits": [
+    "candidate-state SQL differential only; one positive and one negative site",
+    "failed model calls have unknown usage; known tokens are a lower bound",
+    "invalid_output does not distinguish transport error from schema rejection",
+    "local signing key is not an independently trusted timestamp",
+    "no final-set prompt tuning or successful-only replacement of failed repeats"
+  ],
+  "followup": {
+    "date": "2026-10-15",
+    "diagnosticCommit": "36bc596",
+    "exactHistoricalFailureCause": "not recoverable from erased historical error details",
+    "sameInputDiagnosticCalls": 6,
+    "sameInputDiagnosticFailures": 0,
+    "g3Complete": true,
+    "qualityHeld": true,
+    "valueProven": false,
+    "verdict": "defer",
+    "completedA": 5,
+    "completedB": 5,
+    "verifiedPairs": 5,
+    "stats": {
+      "A": {
+        "requests": {
+          "mean": 16,
+          "min": 16,
+          "max": 16,
+          "variance": 0
+        },
+        "durationMs": {
+          "mean": 1573,
+          "min": 1569,
+          "max": 1584,
+          "variance": 34
+        },
+        "tokens": {
+          "mean": 0,
+          "min": 0,
+          "max": 0,
+          "variance": 0
+        }
+      },
+      "B": {
+        "requests": {
+          "mean": 16,
+          "min": 16,
+          "max": 16,
+          "variance": 0
+        },
+        "durationMs": {
+          "mean": 11922.8,
+          "min": 10692,
+          "max": 15181,
+          "variance": 2714696.96
+        },
+        "tokens": {
+          "mean": 25309.4,
+          "min": 25296,
+          "max": 25320,
+          "variance": 72.64
+        }
+      }
+    },
+    "artifactSha256": {
+      "evaluation.json": "2141cb92b3b8bb092725c56d67e9447e73c6efb33302d945d2d9ff7fc5c0cd19",
+      "precommit-attestation.json": "f1b9d94f2cfa6e612128b8e0f010169e94e7481f44fd94cc0f18b9f7a1294247"
+    }
+  }
+}

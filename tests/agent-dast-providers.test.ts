@@ -85,10 +85,12 @@ const sdk = {
   constructor(options) { constructorOptions = options; }
   startThread(options) {
    threadOptions = options;
-   return { runStreamed: async () => {
+   return { runStreamed: async (_prompt, options) => {
+    if (process.argv[2] === 'cleanup') options.signal.addEventListener('abort', () => { throw Error('abort_after_sdk_cleanup'); });
     calls++; executableText = await readFile(constructorOptions.codexPathOverride, 'utf8');
     return { events: (async function* () {
      yield { type: 'thread.started' }; yield { type: 'turn.started' };
+     if (process.argv[2] === 'rate-limit') { yield {type:'turn.failed',error:{message:'429 rate limit SECRET_CANARY'}}; return; }
      yield { type: 'item.completed', item: { type: attack ? 'command_execution' : 'agent_message', text: JSON.stringify(template) } };
      yield { type: 'turn.completed', usage: { input_tokens: 4, output_tokens: 3 } };
     })() };
@@ -108,17 +110,19 @@ mock.module('./build/src/agent-dast/providers/record.js',{namedExports:{...recor
 const {createAgent}=await import('./build/src/agent-dast/providers/'+provider+'.js');
 const root=await mkdtemp(join(tmpdir(),'wakeio-sdk-test-'));
 try{
- const agent=await createAgent({template,recordDir:join(root,'record'),live:true});
- if(attack){await assert.rejects(agent.planTasks(summary),/agent_output_invalid/);assert.equal(calls,2)}else{assert.deepEqual(await agent.planTasks(summary),template);assert.equal(calls,1)}
+ const agent=await createAgent({template,recordDir:join(root,'record'),live:true,...(process.argv[2]==='cli-login'?{authMode:'cli-login'}:{})});
+ if(attack || process.argv[2]==='rate-limit'){await assert.rejects(agent.planTasks(summary),/agent_output_invalid/);assert.equal(calls,2)}else{assert.deepEqual(await agent.planTasks(summary),template);assert.equal(calls,1)}
  const env=provider==='codex'?constructorOptions.env:queryOptions.options.env;
  assert.equal(env.PRIVATE_CANARY,undefined);assert.equal(env[provider==='codex'?'ANTHROPIC_API_KEY':'CODEX_API_KEY'],undefined);
+ if(process.argv[2]==='cli-login'){assert.equal(env.CODEX_API_KEY,undefined);assert.notEqual(env.CODEX_HOME,env.HOME);}
  if(provider==='codex'){assert.ok(executableText.includes('--ignore-user-config'));assert.ok(executableText.includes('--disable shell_tool'));assert.ok(executableText.includes('--disable unified_exec'));assert.equal(threadOptions.networkAccessEnabled,false);assert.equal(threadOptions.webSearchMode,'disabled');assert.equal(threadOptions.approvalPolicy,'never')}
  else{assert.deepEqual(queryOptions.options.tools,[]);assert.deepEqual(queryOptions.options.settingSources,[]);assert.equal(queryOptions.options.strictMcpConfig,true);assert.deepEqual(queryOptions.options.mcpServers,{});assert.equal((await queryOptions.options.canUseTool()).behavior,'deny');assert.equal(queryOptions.options.persistSession,false)}
  const data=(await readFile(join(root,'record/transcript.jsonl'),'utf8'))+(await readFile(join(root,'record/ledger.jsonl'),'utf8'));
- assert.ok(!data.includes('KEY_CANARY'));assert.ok(!data.includes('PRIVATE'));assert.equal(sockets,0);
+ assert.ok(!data.includes('KEY_CANARY'));assert.ok(!data.includes('PRIVATE'));assert.ok(!data.includes('SECRET_CANARY'));assert.equal(sockets,0);
+ if(process.argv[2]==='rate-limit') assert.ok(data.includes('rate_limit'));
 }finally{await rm(root,{recursive:true,force:true})}
 `;
-for (const provider of ['codex','claude']) for (const scenario of ['valid','tool']) {
+for (const provider of ['codex','claude']) for (const scenario of (provider === 'codex' ? ['valid','tool','cli-login','cleanup','rate-limit'] : ['valid','tool'])) {
   test(`${provider}: SDK configuration and ${scenario} events without network`, () => {
     assert.doesNotThrow(() => execFileSync(process.execPath, ['--experimental-test-module-mocks','--input-type=module','-e',sdkScript,provider,scenario], { stdio: 'pipe' }));
   });
@@ -128,4 +132,34 @@ for (const provider of ['codex','claude']) for (const scenario of ['valid','tool
 test('missing optional SDK has a named error without loading a provider', async () => {
   const { optionalSdk } = await import('../src/agent-dast/providers/record.js');
   await assert.rejects(optionalSdk('node:wakeio-missing-sdk'), /optional_sdk_unavailable: node:wakeio-missing-sdk/);
+});
+
+test('provider diagnostics distinguish transport and parse failures without retaining messages', async () => {
+  const { recordedAgent, providerFailure } = await import('../src/agent-dast/providers/record.js');
+  const root = await mkdtemp(join(tmpdir(), 'wakeio-diagnostics-'));
+  const previous = process.env.WAKEIO_AGENT_LIVE; process.env.WAKEIO_AGENT_LIVE = '1';
+  try {
+    for (const [label, failure, expected] of [
+      ['rate', '429 rate limit SECRET_CANARY', 'rate_limit'],
+      ['auth', '401 unauthorized SECRET_CANARY', 'authentication'],
+      ['schema', 'invalid response_format schema SECRET_CANARY', 'output_schema'],
+      ['network', 'ECONNRESET SECRET_CANARY', 'transport'],
+      ['unknown', 'SECRET_CANARY', 'sdk_failure'],
+    ]) {
+      const recordDir = join(root, label);
+      const agent = await recordedAgent('codex', { template, recordDir, live: true }, async () => { throw providerFailure(failure, 'SECRET_CANARY'); });
+      await assert.rejects(agent.selectNext(summary));
+      const text = await readFile(join(recordDir, 'ledger.jsonl'), 'utf8');
+      const rows = text.trim().split('\n').map(line => JSON.parse(line));
+      assert.equal(rows.length, 2); assert.ok(rows.every(row => row.diagnostic === expected));
+      assert.ok(!text.includes('SECRET_CANARY'));
+    }
+    const recordDir = join(root, 'parse');
+    const agent = await recordedAgent('codex', { template, recordDir, replay: [{ json: 'broken' }, { json: 'broken' }] }, async () => ({}));
+    await assert.rejects(agent.selectNext(summary));
+    assert.ok((await readFile(join(recordDir, 'ledger.jsonl'), 'utf8')).includes('json_parse'));
+  } finally {
+    if (previous === undefined) delete process.env.WAKEIO_AGENT_LIVE; else process.env.WAKEIO_AGENT_LIVE = previous;
+    await rm(root, { recursive: true, force: true });
+  }
 });

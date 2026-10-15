@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "checkId": "c-endpoint-0",
+      "engine": "native-dast",
+      "check": "endpoint_0"
+    },
+    {
+      "checkId": "c-endpoint-1",
+      "engine": "native-dast",
+      "check": "endpoint_1"
+    }
+  ]
+}

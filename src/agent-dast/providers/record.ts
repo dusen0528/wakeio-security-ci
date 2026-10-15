@@ -10,6 +10,20 @@ export type Purpose = 'plan' | 'select';
 export type Transport = (prompt: string, schema: unknown) => Promise<Reply>;
 const digest = (value: unknown) => createHash('sha256').update(JSON.stringify(value)).digest('hex');
 const invalid = () => new Error('agent_output_invalid');
+const diagnostics = new Set(['rate_limit','authentication','output_schema','transport','timeout','sdk_failure','sdk_turn_failed','unexpected_event']);
+export class ProviderFailure extends Error {
+  constructor(readonly diagnostic: string) { super('provider_failure'); }
+}
+export function providerFailure(error: unknown, fallback = 'sdk_failure'): ProviderFailure {
+  const message = error instanceof Error ? error.message : typeof error === 'string' ? error : '';
+  const diagnostic = /429|rate.limit|quota|usage.limit/i.test(message) ? 'rate_limit'
+    : /401|403|unauthori|authentication|sign.in/i.test(message) ? 'authentication'
+    : /schema|response_format/i.test(message) ? 'output_schema'
+    : /ECONN|ENOTFOUND|fetch failed|connect|stream disconnected/i.test(message) ? 'transport'
+    : /abort|timed.out|timeout/i.test(message) ? 'timeout' : fallback;
+  return new ProviderFailure(diagnostic);
+}
+
 const safe = (value: unknown) => {
   const text = JSON.stringify(value);
   if (['CODEX_API_KEY','ANTHROPIC_API_KEY'].some(name => process.env[name] && text.includes(process.env[name]!))) throw invalid();
@@ -46,21 +60,26 @@ export async function recordedAgent(provider: 'codex' | 'claude', options: Provi
     const prompt = JSON.stringify({ instruction: 'Return only one JSON decision. Use no tools. Choose only from the approved task catalog; stop with empty tasks when no further work is needed.', purpose, summary, template });
     safe(prompt);
     for (let attempt = 0; attempt < 2; attempt++) {
-      const start = Date.now(); let reply: Reply = {}, output: unknown, error: 'invalid_output' | 'tools_forbidden' | undefined;
+      const start = Date.now(); let reply: Reply = {}, output: unknown, error: 'invalid_output' | 'tools_forbidden' | undefined, diagnostic: string | undefined;
+      let stage = 'transport';
       try {
         reply = replies ? replies[cursor++] ?? {} : await transport(prompt, schema);
+        stage = 'response_shape';
         if (reply.provider !== undefined && reply.provider !== provider) throw invalid();
         if (reply.purpose !== undefined && reply.purpose !== purpose || reply.inputDigest !== undefined && reply.inputDigest !== inputDigest) throw invalid();
         if (reply.toolAttempt) { error = 'tools_forbidden'; throw invalid(); }
         if (typeof reply.json !== 'string' || Buffer.byteLength(reply.json) > 65536) throw invalid();
+        stage = 'json_parse';
         const value = JSON.parse(reply.json);
+        stage = 'decision_schema';
         output = purpose === 'plan' ? parseExecutionPlan(value) : parseSelection(value, template.origin);
+        stage = 'catalog_scope';
         const decision = output as ExecutionPlan;
         if (purpose === 'plan' && decision.origin !== template.origin || decision.tasks.some(task => !catalog.has(digest(task)))) throw invalid();
         safe(output);
-      } catch { error ??= 'invalid_output'; output = undefined; }
+      } catch (cause) { error ??= 'invalid_output'; diagnostic = cause instanceof ProviderFailure ? diagnostics.has(cause.diagnostic) ? cause.diagnostic : 'sdk_failure' : stage; output = undefined; }
       const token = (value: unknown) => Number.isSafeInteger(value) && Number(value) >= 0 ? Number(value) : null;
-      const usage = { provider, purpose, mode: replies ? 'replay' : 'live', attempt: attempt + 1, inputTokens: token(reply.inputTokens), outputTokens: token(reply.outputTokens), durationMs: replies && token(reply.durationMs) !== null ? reply.durationMs : Date.now() - start, status: error ?? 'ok' };
+      const usage = { provider, purpose, mode: replies ? 'replay' : 'live', attempt: attempt + 1, inputTokens: token(reply.inputTokens), outputTokens: token(reply.outputTokens), durationMs: replies && token(reply.durationMs) !== null ? reply.durationMs : Date.now() - start, status: error ?? 'ok', ...(diagnostic ? { diagnostic } : {}) };
       try {
         await appendFile(join(options.recordDir, 'ledger.jsonl'), JSON.stringify(usage) + '\n');
         await appendFile(join(options.recordDir, 'transcript.jsonl'), JSON.stringify({ version: 1, inputDigest, ...usage, ...(error ? { error } : { output }) }) + '\n');

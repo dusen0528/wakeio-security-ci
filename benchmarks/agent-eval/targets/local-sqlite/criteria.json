@@ -1,0 +1,7 @@
+{
+  "version": 1,
+  "labelSetHash": "b933063c18ba29e4e79a91f64f12d8bbf2c5def0253f0b4da66eab51887eb72d",
+  "committedBeforeArmB": true,
+  "sharedRequestCap": 64,
+  "basis": "candidate"
+}

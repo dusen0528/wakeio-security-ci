@@ -1,0 +1,57 @@
+{
+  "version": 1,
+  "target": "owned-local-sqlite",
+  "commit": "2830b02d046f8b4b98179c1b040ca105e6ed82ff",
+  "vulnerabilities": [
+    {
+      "vulnId": "v-items-sql",
+      "type": "sqli",
+      "severity": "high",
+      "site": {
+        "method": "GET",
+        "path": "/items",
+        "param": "id",
+        "location": "query",
+        "authState": "anonymous"
+      },
+      "split": "final"
+    },
+    {
+      "vulnId": "v-catalog-sql",
+      "type": "sqli",
+      "severity": "high",
+      "site": {
+        "method": "GET",
+        "path": "/catalog",
+        "param": "id",
+        "location": "query",
+        "authState": "anonymous"
+      },
+      "split": "tuning"
+    }
+  ],
+  "negatives": [
+    {
+      "siteId": "n-lookup",
+      "site": {
+        "method": "GET",
+        "path": "/lookup",
+        "param": "id",
+        "location": "query",
+        "authState": "anonymous"
+      },
+      "split": "final"
+    },
+    {
+      "siteId": "n-inventory",
+      "site": {
+        "method": "GET",
+        "path": "/inventory",
+        "param": "id",
+        "location": "query",
+        "authState": "anonymous"
+      },
+      "split": "tuning"
+    }
+  ]
+}
