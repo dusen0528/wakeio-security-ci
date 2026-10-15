@@ -6,25 +6,9 @@ Wakeio checks the code, HTTP responses, and optional read-only API policy that y
 
 [한국어](README.ko.md) · [日本語](README.ja.md) · [简体中文](README.zh-CN.md) · [implemented checklist](docs/checklist.md) · [0.4 guide](docs/preview-0.4.md) · [verification record](docs/verification-0.4.md)
 
-**GitHub source:** `0.5.0` · **published npm:** `0.4.0` · Apache-2.0 · Node.js 22+
+**Release candidate (unpublished):** `0.5.0` · **published npm:** `0.4.0` · Apache-2.0 · Node.js 22+
 
-The default scan is a free local tool. It does not require a Wakeio account, subscription, hosted Wakeio service, LLM, or source upload, and it does not send usage telemetry. The npm commands below run the published 0.4.0 package. The newer replay, origin allowlist and active DAST examples use this 0.5.0 source checkout after `npm run build`, or a reviewed Git commit of its Action; npm 0.5.0 is not published. See the [0.5.0 source changes](CHANGELOG.md#050--github-source-preview) and [0.4.0 release scope](docs/release-0.4.0.md).
-
-An experimental, separate [`repair` CLI](docs/repair-preview.md) can verify a reviewed local proposal or optionally request one from Codex/Claude. Agent calls require explicit source-upload consent and API authentication; they may incur provider costs. Repair uses a prepared local Docker image and frozen verifier, writes private patch/verification artifacts only, and never applies changes or commits to the original checkout. Its initial SQL fixture support is not general-purpose application remediation.
-
-The API preview now records a redacted, indexed execution ledger so CI can
-separate evaluated probes from inconclusive and never-attempted steps.
-See the [execution contract](docs/preview-0.4-api.md#계획-대비-실행-ledger).
-The [owned API pilot](docs/api-state-oracle.md) also offers explicit two-round
-normal-behavior controls; inconsistent repeats remain inconclusive.
-
-The separate [owned PATCH state pilot](docs/api-write-state.md) checks actual persisted writes and normal owner controls on fixed synthetic loopback fixtures. Its SDK, CLI and dedicated Action require explicit consent, preserve the original phase gates, and do not accept an external API target.
-
-
-The [collected-code coverage contract](docs/source-code-coverage.md) separates file collection from completed language analysis. Opt into `--require-code-analysis` to gate uncovered collected code; this does not add a language analyzer or establish whole-project coverage.
-
-
-The explicit [authenticated POST JSON numeric SQL profile](docs/native-dast-post-json.md) adds a fixed body field and a distinct benign-value control to the consented differential contract. It uses a separate v4 policy; GET policies retain their scope.
+The default scan is a free local tool. It does not require a Wakeio account, subscription, hosted Wakeio service, LLM, or source upload, and it does not send usage telemetry. The quick-start npm commands run the published 0.4.0 package; the separately labeled 0.5.0 registry command is for after publication. The newer replay, origin allowlist and active DAST examples use this 0.5.0 source checkout after `npm run build`, or a reviewed Git commit of its Action; npm 0.5.0 is not published. See the [0.5.0 source changes](CHANGELOG.md#050--release-candidate-unpublished) and [0.4.0 release scope](docs/release-0.4.0.md).
 
 ## What it checks
 
@@ -100,60 +84,37 @@ Private or local URL/API targets require explicit `--allow-private`; metadata-ad
 
 Static HTML references use the first HTML document base without expanding the allowed origin. Text collection supports explicit BOM, HTTP and early HTML-meta encodings; undeclared text keeps the UTF-8 fallback and module scripts use UTF-8. Unsupported/malformed decoding and bounded parser failures remain partial. CLI SIGINT/SIGTERM cancels source, URL and API stages and writes retained findings with an incomplete result; SIGKILL/crashes and arbitrary synchronous parser preemption are not covered.
 
-## GitHub Actions
+## GitHub Actions: opt-in code scanning
 
-Use a reviewed full commit SHA and keep reports outside the target checkout. This example uses the preexisting reviewed scanner at `575dbff63c6adc36e327487a2a9a2ead8337b4f0`, selects built-in checks, and uploads reports after scan failure.
+Action mode scans without installing the target project's dependencies. Start in three steps:
 
-```yaml
-name: wakeio-security-ci
+1. Run `init --mode action --action-ref <reviewed full SHA> --code-scanning` with a reviewed CLI. **Before publication**, install the locally packed tarball in an empty installation directory and invoke that executable directly.
 
-on:
-  push:
-  pull_request:
-  workflow_dispatch:
+   ```sh
+   # From the candidate source checkout; package:release reuses npm pack
+   npm run package:release
+   mkdir /tmp/wakeio-rc-install
+   npm install --prefix /tmp/wakeio-rc-install --ignore-scripts --no-audit --fund=false /absolute/path/to/wakeio-security-ci/artifacts/wakeio-security-ci-0.5.0.tgz
+   /tmp/wakeio-rc-install/node_modules/.bin/wakeio-security-ci init \
+     --source /path/to/your-app --mode action \
+     --action-ref abc64d4defcbb6d532ae1e6224af0af8efaba0ce --code-scanning
+   ```
 
-permissions:
-  contents: read
+2. Review the generated `.github/workflows/wakeio-security-ci.yml`, including scan scope, SHAs and permissions, then commit and push. Every `uses` is pinned to a full SHA. The workflow requests `contents: read`, `actions: read`, and `security-events: write`, and checks out the target into `wakeio-source`. Existing workflows are never overwritten.
+3. Check the Actions result, report artifacts, and the repository's **Security → Code scanning** results. Fresh valid SARIF can upload after a finding gate failure; the original failure remains. Upload is skipped when SARIF is absent or fails the basic format check; GitHub performs final schema and ingestion validation. Fork PRs skip code scanning upload and retain the scan and artifact steps.
 
-jobs:
-  security:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out source as data
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-        with:
-          persist-credentials: false
-          path: wakeio-source
-      - name: Run pinned Wakeio Action
-        id: wakeio
-        uses: dusen0528/wakeio-security-ci@575dbff63c6adc36e327487a2a9a2ead8337b4f0
-        with:
-          source: wakeio-source
-          tools: none
-          out: "wakeio-security-reports/${{ github.run_id }}-${{ github.run_attempt }}"
-      - name: Upload reports
-        if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: wakeio-security-reports-${{ github.run_id }}-${{ github.run_attempt }}
-          path: "wakeio-security-reports/${{ github.run_id }}-${{ github.run_attempt }}"
-          if-no-files-found: error
-```
-
-Copy-ready version: [`examples/github-action.yml`](examples/github-action.yml). The Action provisions Node.js 22, reads target source without installing or running target scripts, writes a Job Summary, and leaves `report.md`, `report.json`, `report.sarif`, `agent-report.json`, and `action-status.json` in the fresh output directory. Artifact upload success does not change the scan gate.
-
-See the [Action delivery contract](docs/action-delivery.md) for scanner versus final Action exits, delivery failures, and current report paths.
-
-With the newer source CLI, generate this layout explicitly:
+**Only after npm 0.5.0 is published**, the registry command can replace the tarball executable above. This is not a claim that npm 0.5.0 has already been run successfully.
 
 ```sh
-node /path/to/wakeio-security-ci/build/src/cli.js init \
-  --source /path/to/your-app --mode action \
-  --action-ref 575dbff63c6adc36e327487a2a9a2ead8337b4f0 \
-  --tools none --out wakeio-security-reports
+npx --yes wakeio-security-ci@0.5.0 init --source /path/to/your-app \
+  --mode action --action-ref abc64d4defcbb6d532ae1e6224af0af8efaba0ce --code-scanning
 ```
 
-The new init flags are added after that scanner commit and are not available in published npm 0.4.0. Default `init` remains npm mode. The [CI artifact-to-handoff guide](docs/init-action-onboarding.md) explains downloading a specific run/attempt, recovering the actual checkout commit, using a compatible CLI, and comparing after reports. Source-analysis limits remain unchanged.
+[GitHub availability](https://docs.github.com/en/code-security/how-tos/find-and-fix-code-vulnerabilities/integrate-with-existing-tools/upload-sarif-file): public repositories on GitHub.com are supported. Private/internal repositories require an organization on a supported GitHub Team or Enterprise plan with **GitHub Code Security enabled**. Actions and the necessary permissions must also be allowed. PR annotations depend on changed code locations and [GitHub's display conditions](https://docs.github.com/en/code-security/how-tos/manage-security-alerts/manage-code-scanning-alerts/triage-alerts-in-pull-requests); not every finding appears in Files changed.
+
+The upload uses `steps.wakeio.outputs.report-sarif`, `checkout_path: wakeio-source`, and `category: wakeio-security-ci`. Default `init` remains npm mode; `--code-scanning` requires explicit Action mode. Omitting it preserves the existing npm and Action workflow bytes. Default `--tools none` selects built-in checks and never executes target code or installation scripts. Optional external checks and agents retain their separate consent and authorization scopes. See the [Action delivery contract](docs/action-delivery.md) and [artifact-to-handoff guide](docs/init-action-onboarding.md).
+
+Japanese/Chinese READMEs, post-publication registry commands, actual GitHub upload/line linking, and a pilot remain follow-up work.
 
 ## Optional engines
 
@@ -294,6 +255,26 @@ node build/src/cli.js compare \
 ```
 
 Comparison refuses to present mismatched or incomplete scopes as a clean result. A finding that disappeared is `not_observed`, not an automatic fix certificate. See the [comparison guide](docs/preview-0.4-comparison.md).
+
+## Experimental and scoped features
+
+The 0.5.0 source and npm candidate include the agent loop, optional Codex/Claude provider adapters, and the owned-target dashboard under `build/src/agent-dast`. Inclusion is not a stable support promise: the loop/providers are experimental, live models need their separately prepared optional SDKs and explicit consent, and the dashboard is a local, token-protected pilot restricted to approved loopback targets. This release does not deliver hosted scan history or general report linking.
+
+An experimental, separate [`repair` CLI](docs/repair-preview.md) can verify a reviewed local proposal or optionally request one from Codex/Claude. Agent calls require explicit source-upload consent and API authentication; they may incur provider costs. Repair uses a prepared local Docker image and frozen verifier, writes private patch/verification artifacts only, and never applies changes or commits to the original checkout. Its initial SQL fixture support is not general-purpose application remediation.
+
+The API preview now records a redacted, indexed execution ledger so CI can
+separate evaluated probes from inconclusive and never-attempted steps.
+See the [execution contract](docs/preview-0.4-api.md#계획-대비-실행-ledger).
+The [owned API pilot](docs/api-state-oracle.md) also offers explicit two-round
+normal-behavior controls; inconsistent repeats remain inconclusive.
+
+The separate [owned PATCH state pilot](docs/api-write-state.md) checks actual persisted writes and normal owner controls on fixed synthetic loopback fixtures. Its SDK, CLI and dedicated Action require explicit consent, preserve the original phase gates, and do not accept an external API target.
+
+
+The [collected-code coverage contract](docs/source-code-coverage.md) separates file collection from completed language analysis. Opt into `--require-code-analysis` to gate uncovered collected code; this does not add a language analyzer or establish whole-project coverage.
+
+
+The explicit [authenticated POST JSON numeric SQL profile](docs/native-dast-post-json.md) adds a fixed body field and a distinct benign-value control to the consented differential contract. It uses a separate v4 policy; GET policies retain their scope.
 
 ## Native DAST and optional Codex advice
 
