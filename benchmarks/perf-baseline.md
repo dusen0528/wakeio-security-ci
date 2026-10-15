@@ -33,7 +33,9 @@ Use an absolute, real checkout path (on macOS `/tmp` resolves to `/private/tmp`)
 
 ## Accuracy and tests
 
-Strict accuracy at BASE_SHA and after implementation: 56/56 completed cases, TP 27, FP 0, FN 1 (the existing known unsupported case), supported FN 0, strict exit 0. Entire summary objects match. The older accuracy benchmark's durations include fixture work and are not used as performance results.
+Strict accuracy at BASE_SHA and after implementation: 56/56 completed cases — 28 positive cases (TP 27 / FN 1) and 28 negative cases (TN 28 / FP 0); supported FN 0, strict exit 0. TN counts completed negative cases with no finding, not all safe code locations. The single FN is `koa-query-sql-vulnerable`: its unregistered `ctx.request.query` input reaching SQL is outside the bounded input model. Entire summary objects match. This author-maintained synthetic regression corpus is not a blinded holdout or a production accuracy estimate; near-perfect supported-case results do not demonstrate generalization. The older accuracy benchmark's durations include fixture work and are not used as performance results.
+
+External cross-check at integrated engine `642fedf`: pinned Juice Shop and NodeGoat produced candidates at 6/7 declared flow locations, but only 1/7 met the complete source-to-sink oracle; five were unevaluable and one remained unsupported. Both AST scans were partial (exit 2), with 56 unadjudicated candidates, so precision/FP/recall are unavailable. See the [pinned inputs, per-project outcomes and reproduction](release-0.5.0-validation.md#accuracy-including-external-limitations). This is separate from the original P0 timing measurement and does not establish generalization.
 
 - Original 1,521 tests in the prepared environment: 1,515 pass, 0 fail, 6 skip.
 - `npm test` with the nine added performance tests: 1,524 pass, 0 fail, 6 skip (1,530 total).
