@@ -124,11 +124,7 @@ export async function bootstrapSecurityToolchain() {
         const zap = join(directory, 'ZAP_2.17.0/zap.sh'), wrapper = join(directory, 'zap'); await chmod(zap, 0o700);
         // The scan supervisor strips inherited environment. Bind Java explicitly in this CI-only wrapper.
         await writeFile(wrapper, `#!/bin/sh\nJAVA_HOME=${shellQuote(javaHome)}\nexport JAVA_HOME\nexec ${shellQuote(zap)} "$@"\n`, { mode: 0o700, flag: 'wx' });
-        const version = await command('zap-version', wrapper, ['-Xmx512m', '-silent', '-dir', join(directory, 'zap-version'),
-          '-config', 'start.checkForUpdates=false', '-config', 'start.checkAddonUpdates=false',
-          '-config', 'start.downloadNewRelease=false', '-config', 'start.installAddonUpdates=false',
-          '-config', 'start.installScannerRules=false', '-config', 'callhome.tel.enabled=false', '-version'], directory, 30_000);
-        if (!version.split(/\r?\n/).includes(SECURITY_TOOLCHAIN_RELEASES.zap.version)) throw Error('zap_version_mismatch');
+        // runZap checks the version in its isolated environment before any target request.
         environment.WAKEIO_ZAP_PATH = wrapper;
       })(),
     ]);
