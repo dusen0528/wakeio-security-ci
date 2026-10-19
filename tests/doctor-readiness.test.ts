@@ -100,3 +100,42 @@ test('doctor directory depth bound retains unknown even with ready code near roo
   const result = await doctor(f.source, ['--strict', '--require-code-analysis']);
   assert.equal(result.code, 2); metadataOnly(result.data); assert.equal(result.data.codeAnalysisReadiness.state, 'unknown');
 });
+
+test('doctor optional Go and CVE engines do not block an unrelated JavaScript project', async t => {
+  const f = await fixture(t, { 'app.js': 'OWNED_DATA_ONLY' });
+  const result = await doctor(f.source, ['--tools', 'semgrep,govulncheck,trivy-vuln', '--strict']);
+  assert.equal(result.code, 0); metadataOnly(result.data);
+  assert.deepEqual(result.data.tools, ['semgrep', 'govulncheck', 'trivy-vuln'].map(name => ({ name, applicability: 'not_applicable', availability: 'not_applicable' })));
+  assert.deepEqual(result.data.expectedTransfers, []); assert.deepEqual(result.data.runtimeNetwork, []);
+  assert.equal(result.data.inventory.goFiles, 0); assert.equal(result.data.inventory.goModules, 0); assert.equal(result.data.inventory.trivyVulnerabilityManifests, 0);
+});
+
+test('doctor uses actual Go and Trivy filenames and collector exclusions for applicability', async t => {
+  const f = await fixture(t, { 'app.js': 'data', '.env.go': 'private', 'GO.MOD': 'unsupported case', 'cargo.lock': 'unsupported case', 'package.json': '{}', 'requirements-dev.txt': 'not in Trivy adapter allowlist' });
+  await mkdir(join(f.source, 'vendor')); await writeFile(join(f.source, 'vendor', 'main.go'), 'ignored');
+  const result = await doctor(f.source, ['--tools', 'semgrep,govulncheck,trivy-vuln', '--strict']);
+  assert.equal(result.code, 0);
+  assert.ok(result.data.tools.every((tool: any) => tool.applicability === 'not_applicable'));
+  assert.deepEqual(result.data.runtimeNetwork, []);
+});
+
+test('doctor observes supported Go inputs without executing tools or claiming Go runtime readiness', async t => {
+  const f = await fixture(t, { 'main.go': 'OWNED_DATA_ONLY', 'go.mod': 'module example.test/app\ngo 1.23\n', 'package-lock.json': '{}' });
+  const bin = join(f.top, 'bin'), marker = join(f.top, 'executed'); await mkdir(bin);
+  for (const name of ['semgrep', 'govulncheck', 'trivy']) { const file = join(bin, name); await writeFile(file, `#!/bin/sh\nprintf executed > '${marker}'\nexit 97\n`); await chmod(file, 0o700); }
+  const result = await doctor(f.source, ['--tools', 'semgrep,govulncheck,trivy-vuln', '--strict', '--require-code-analysis'], { ...process.env, PATH: bin });
+  assert.equal(result.code, 0); metadataOnly(result.data);
+  assert.ok(result.data.tools.every((tool: any) => tool.applicability === 'applicable' && tool.availability === 'available'));
+  assert.equal(result.data.inventory.goFiles, 1); assert.equal(result.data.inventory.goModules, 1); assert.equal(result.data.inventory.trivyVulnerabilityManifests, 2);
+  assert.equal(result.data.runtimeNetwork.length, 2);
+  assert.ok(result.data.codeAnalysisReadiness.limitations.some((note: string) => /does not verify the Go toolchain/.test(note)));
+  await assert.rejects(readFile(marker), { code: 'ENOENT' });
+});
+
+test('doctor cannot infer inapplicability when the bounded metadata walk stops early', async t => {
+  const f = await fixture(t, { 'a.js': 'data', 'go.mod': 'module example.test/app\n', 'z.go': 'data' });
+  const result = await doctor(f.source, ['--tools', 'semgrep,govulncheck,trivy-vuln', '--source-max-files', '1', '--strict']);
+  assert.equal(result.code, 2); metadataOnly(result.data);
+  assert.ok(result.data.tools.every((tool: any) => tool.applicability === 'unknown'));
+  assert.deepEqual(result.data.runtimeNetwork, []);
+});

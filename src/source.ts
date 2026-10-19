@@ -15,6 +15,9 @@ import { parseGitleaksOutput, parseOsvOutput, parseTrivyOutput } from "./source/
 import { DEFAULT_TOOL_TIMEOUT_MS, MAX_TOOL_TIMEOUT_MS, findExecutable, runProcess } from "./source/process.js";
 import { pythonFiles, runBandit } from "./source/python.js";
 import { nativeFiles, runNativePreview } from './source/opengrep.js';
+import { semgrepFiles, runSemgrep } from './source/semgrep.js';
+import { govulncheckHasApplicableInput, runGovulncheck } from './source/govulncheck.js';
+import { runTrivyVulnerabilities } from './trivy-vuln.js';
 import type { ParsedToolResult, ProcessResult, SourceSnapshot } from "./source/types.js";
 
 export const DEFAULT_SOURCE_TOOLS: ToolName[] = ["gitleaks", "osv", "trivy"];
@@ -374,7 +377,7 @@ function normalizeTimeout(value: number | undefined): number {
 }
 
 function isToolName(value: unknown): value is ToolName {
-  return value === "gitleaks" || value === "osv" || value === "trivy" || value === "bandit";
+  return value === "gitleaks" || value === "osv" || value === "trivy" || value === "bandit" || value === 'semgrep' || value === 'govulncheck' || value === 'trivy-vuln';
 }
 
 function requestedTools(options: SourceOptions): ToolName[] {
@@ -584,6 +587,9 @@ function hasOtherSecurityCheck(snapshot: SourceSnapshot, tools: ToolName[], nati
     if (tool === "gitleaks") return snapshot.files.length > 0;
     if (tool === "osv") return osvHasApplicableInput(snapshot);
     if (tool === "trivy") return trivyHasApplicableInput(snapshot);
+    if (tool === 'semgrep') return semgrepFiles(snapshot).length > 0;
+    if (tool === 'govulncheck') return govulncheckHasApplicableInput(snapshot);
+    if (tool === 'trivy-vuln') return snapshot.files.some(file => file.category === 'dependency');
     return pythonFiles(snapshot).length > 0;
   }) || frameworkHasApplicableInput(snapshot);
 }
@@ -776,6 +782,14 @@ async function runTrivy(context: ToolContext): Promise<CheckResult> {
 }
 
 async function runTool(tool: ToolName, snapshot: SourceSnapshot, stageDir: string, options: SourceOptions, timeoutMs: number, blockedConfigCount = 0): Promise<CheckResult> {
+  if (tool === 'semgrep' || tool === 'govulncheck' || tool === 'trivy-vuln') {
+    const command = options.toolPaths?.[tool] ?? (tool === 'trivy-vuln' ? options.toolPaths?.trivy ?? 'trivy' : tool);
+    const toolPath = await findExecutable(command) ?? '';
+    const context = { snapshot, stageDir, toolPath, timeoutMs, signal: options.signal };
+    if (tool === 'semgrep') return runSemgrep(context);
+    if (tool === 'govulncheck') return runGovulncheck({ ...context, goPath: options.goPath, moduleCache: options.goModuleCache, database: options.govulnDatabase });
+    return runTrivyVulnerabilities({ ...context, cacheDir: options.trivyCache, offline: options.trivyOffline });
+  }
   // Do this applicability check before resolving the executable. A project
   // without IaC should not fail merely because Trivy is not installed.
   if (tool === "trivy" && pathForTool(snapshot, "trivy").length === 0) {
@@ -849,6 +863,7 @@ export async function runSource(options: SourceOptions): Promise<CheckResult[]> 
         if (tool === "trivy") return notApplicableCheck("source.trivy", "No supported Dockerfile, Kubernetes manifest, or Terraform configuration was available for Trivy config scanning.", { configFiles: 0, blockedConfigFiles: 0 });
         if (tool === "osv") return notApplicableCheck("source.osv", "No allowlisted dependency manifest or supported lockfile was available for OSV-Scanner.", { lockfiles: 0, dependencyManifest: false });
         if (tool === "bandit") return notApplicableCheck("source.bandit", "No allowlisted Python file was available for Bandit.", { files: 0 });
+        if (tool === 'semgrep' || tool === 'govulncheck' || tool === 'trivy-vuln') return notApplicableCheck(`source.${tool}`, 'No applicable source input was collected.', { files: 0 });
         return notApplicableCheck("source.gitleaks", "No allowlisted source file was available for Gitleaks.", { files: 0 });
       }));
       if (tools.length > 0 && checks.filter((check) => check.id !== "source.inventory").every((check) => check.status === "not_applicable")) {

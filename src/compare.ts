@@ -421,7 +421,7 @@ function safeMetadataKey(value: string): boolean {
 
 function externalCheckNeedsProvenance(report: ScanReport): boolean {
   return report.checks.some((check) =>
-    ['source.gitleaks', 'source.osv', 'source.trivy', 'source.bandit'].includes(check.id)
+    ['source.gitleaks', 'source.osv', 'source.trivy', 'source.bandit', 'source.semgrep', 'source.govulncheck', 'source.trivy-vuln', 'image.trivy', 'url.zap'].includes(check.id)
       && check.status !== 'not_applicable',
   );
 }
@@ -437,17 +437,22 @@ function requireExternalProvenance(report: ScanReport, label: string, reasons: s
   if (!provenance) return;
   const engines = new Map((provenance.engines ?? []).map((engine) => [engine.name, engine]));
   const dataSources = provenance.dataSources ?? {};
-  const requirements: Record<string, { sourceNames?: string[] }> = {
+  const requirements: Record<string, { sourceNames?: string[]; engine?: string }> = {
     'source.gitleaks': {},
     'source.osv': { sourceNames: ['osvDatabase'] },
     'source.trivy': { sourceNames: ['trivyDatabase', 'trivyChecksBundle'] },
     'source.bandit': { sourceNames: ['banditRuntime'] },
+    'source.semgrep': { sourceNames: ['semgrepOwnRules', 'semgrepRuntime'] },
+    'source.govulncheck': { sourceNames: ['govulnDatabase', 'goRuntime'] },
+    'source.trivy-vuln': { sourceNames: ['trivyVulnerabilityDatabase'] },
+    'image.trivy': { engine: 'trivy-image', sourceNames: ['trivyVulnerabilityDatabase', 'imageArchive'] },
+    'url.zap': { engine: 'zap', sourceNames: ['zapRuntime'] },
   };
   for (const check of report.checks) {
     if (check.status === 'not_applicable') continue;
     const requirement = requirements[check.id];
     if (!requirement) continue;
-    const engine = engines.get(check.id.slice('source.'.length));
+    const engine = engines.get(requirement.engine ?? check.id.slice('source.'.length));
     if (!engine || engine.status !== 'available' || !/^[a-f0-9]{64}$/.test(engine.sha256 ?? '')) {
       reasons.push(`${label} ${check.id} lacks available engine SHA-256 provenance.`);
     }

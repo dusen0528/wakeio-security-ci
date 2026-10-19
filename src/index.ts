@@ -28,3 +28,8 @@ export { sanitizeDastExecution, isDastObservedEvidence, isDastReplayableExecutio
 export { adviseMain } from './agent-advice.js';
 
 export * from './dast-replay.js';
+
+export * from './source/semgrep.js';
+export * from './source/govulncheck.js';
+export * from './trivy-vuln.js';
+export * from './zap.js';

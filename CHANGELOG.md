@@ -10,6 +10,7 @@ models. This is not a release of general autonomous agent DAST or model routing;
 the separately opt-in agent loop/providers and owned-target dashboard are
 packaged as experimental features, not excluded from the tarball.
 
+- Add opt-in Semgrep CE with three owned Go rules, govulncheck source-symbol advisories, Trivy dependency and explicit local image/archive CVEs, and a bounded ZAP 2.17.0 HTTP GET query adapter. Reuse common reports and incomplete exit 2; no model calls, target dependency installation, image execution, or automatic active scan. Source tools are available through CLI/Action; ZAP is CLI/SDK only. See the README for exact runtime, rule, and target limits.
 - Add Action-only `init --code-scanning`: SHA-pinned SARIF upload, fork-PR exclusion, fresh basic SARIF validation, and unchanged finding gates. Omitting the flag preserves both existing workflow templates.
 - Document tarball-first verification and post-publication onboarding separately. Agent loop/providers and the owned-target dashboard are included but remain experimental/scoped; package inclusion is not general support.
 - Record [pre-tag validation](benchmarks/release-0.5.0-validation.md): synthetic TN 28 and the known Koa miss, incomplete pinned OSS outcomes, and unchanged generated-workflow GitHub runs before/after SQL parameterization. This is scoped validation, not production accuracy.

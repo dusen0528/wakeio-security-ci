@@ -276,7 +276,7 @@ function validateActionPath(value: unknown, reports: boolean): asserts value is 
 
 function renderActionWorkflow(options: WorkflowOptions): string {
   validateActionPath(options.out, true);
-  if (!Array.isArray(options.tools) || options.tools.length > 4 || !options.tools.every(tool => typeof tool === 'string')) throw new Error('Invalid Action tools');
+  if (!Array.isArray(options.tools) || options.tools.length > 7 || !options.tools.every(tool => typeof tool === 'string')) throw new Error('Invalid Action tools');
   const tools = parseTools(options.tools.length ? options.tools.join(',') : 'none');
   if (!Number.isSafeInteger(options.pythonFiles) || options.pythonFiles < 0 || options.pythonFiles > 20_000) throw new Error('Invalid Python inventory count');
   if (options.requireCodeAnalysis !== undefined && typeof options.requireCodeAnalysis !== 'boolean') throw new Error('requireCodeAnalysis must be a boolean');

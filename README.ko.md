@@ -127,8 +127,11 @@ SARIF는 `steps.wakeio.outputs.report-sarif`, `checkout_path: wakeio-source`, `c
 | --- | ---: | --- | --- |
 | Gitleaks | 8.30.1 | 수집한 파일의 Secret 패턴 | 현재 수집 파일 기준이며 전체 Git 이력·키 유효성은 확인하지 않음 |
 | OSV-Scanner | 2.6.0 | 지원 lockfile과 자체 포함된 고정 Python requirements의 advisory | advisory 조회이며 source reachability·악성코드 분석 아님. 온라인 모드에서는 패키지 식별자가 공개 OSV 서비스로 전송될 수 있음 |
-| Trivy | 0.74.0 | Dockerfile·Kubernetes·Terraform 설정 | 설정 검사만 하며 이미지 CVE·실제 클라우드 상태·외부 module까지 검증하지 않음 |
+| Trivy | 0.74.0 | `trivy`: 설정 검사, `trivy-vuln`: 의존성 CVE, `--image-archive`: 이미지·OS 패키지 CVE | 패키지 advisory이며 런타임 악용 가능성을 증명하지 않음. 이미지 빌드·pull·실행 없음 |
 | Bandit | 1.9.4 | 선택적인 Python AST 검사 | 별도 실행 파일을 준비해야 하며 선택한 Python 파일만 검사하고 대상 코드는 실행하지 않음 |
+| Semgrep CE | 1.147.0 | WakeIO Go 규칙 3개: SQL 입력, 신뢰 HTML 변환, TLS 검증 해제 | 자체 로컬 규칙만 사용. 전체 SAST나 인증·인가 검증을 보장하지 않음 |
+| govulncheck | 1.9.0 | Go 의존성의 알려진 취약점과 정적 호출 경로 | 준비된 Go·module cache와 완전한 루트 module 하나 필요 |
+| OWASP ZAP | 2.17.0 | 명시한 HTTP GET 쿼리의 SQLi·반사형 XSS 능동 검사 | HTTPS·자동 크롤링·로그인·쓰기·임의 정책은 이번 어댑터 범위 밖 |
 
 예시는 다음과 같습니다.
 
@@ -144,6 +147,46 @@ node build/src/cli.js scan \
 ```
 
 선택형 엔진 명령을 실행하기 전에 고정된 native binary를 준비하거나 신뢰할 수 있는 실행 파일 경로를 지정해야 합니다. 설치기·cache·provenance는 [배포 안내](docs/preview-0.4-distribution.md)에 정리했습니다. 설치기는 native release asset의 SHA-256을 확인합니다. OSV는 `--osv-offline`과 준비된 로컬 DB를 사용할 수 있으며 DB가 없으면 완료로 처리하지 않습니다. Trivy는 scanner가 관리하는 policy 또는 DB 데이터를 내려받을 수 있습니다. scan 모드에서 Wakeio 자체는 소스를 업로드하거나 LLM을 호출하지 않습니다.
+
+### Go 소스·의존성·컨테이너 검사
+
+기존 기본값은 유지합니다. 새 엔진은 명시적으로 선택하며, 선택한 소스 검사기는 병렬로 실행합니다. Semgrep CE·govulncheck 실행 파일과 Go는 별도로 준비하세요. Trivy는 기존 체크섬 검증 설치기를 재사용합니다. 검사 중 대상 의존성 설치나 lifecycle script 실행은 하지 않습니다. Go module cache는 신뢰할 수 있는 별도 빌드 단계에서 준비합니다.
+
+```sh
+node build/src/cli.js scan --source /path/to/go-app \
+  --tools semgrep,govulncheck,trivy,trivy-vuln \
+  --semgrep /path/to/semgrep --govulncheck /path/to/govulncheck \
+  --go /path/to/go --go-module-cache /path/to/prepared/go-mod \
+  --trivy /path/to/trivy --trivy-cache /path/to/trivy-cache \
+  --require-code-analysis --fail-on medium
+
+# 소스 검사에 명시한 로컬 Docker-save/OCI 이미지 파일 검사를 추가합니다.
+node build/src/cli.js scan --source /path/to/app --tools trivy-vuln \
+  --trivy /path/to/trivy --image-archive /path/to/image.tar \
+  --trivy-cache /path/to/prepared/trivy-cache --trivy-offline
+```
+
+`--govuln-db URL`로 Go 취약점 DB를 지정할 수 있고, 기본값은 공식 DB입니다. Go module·toolchain 자동 다운로드는 막습니다. Trivy는 기본적으로 취약점 DB를 내려받을 수 있으며, `--trivy-offline`은 준비된 DB만 사용합니다. 반복 실행은 `--trivy-cache`를 재사용하세요. 도구·DB 누락, module 로드 실패, 손상된 출력, 불완전한 수집은 **exit 2**이며 `--fail-on none`으로 숨겨지지 않습니다.
+
+공통 보고서 4종에 취약점 ID, 영향받는 패키지·버전, 알려진 수정 버전과 출처가 들어갑니다. govulncheck 프로토콜에는 심각도 점수가 없어 medium 정책을 명시하며, module 존재·package import·호출 경로를 구분합니다. CVE 검사 완료를 소스 코드 분석 완료로 계산하지 않습니다. Semgrep 파일 분석 완료도 선택한 3개 규칙 실행을 뜻하며 서비스 전체의 안전을 의미하지 않습니다. 확인되지 않은 runtime·DB provenance는 unknown으로 남겨 비교 결과를 과장하지 않습니다.
+
+CI Action에는 `tools: semgrep,govulncheck,trivy-vuln`과 `semgrep-path`, `govulncheck-path`, `go-path`, `go-module-cache`, `govuln-db`, `trivy-cache`, `trivy-offline`, `image-archive`를 전달할 수 있습니다. Go와 두 실행 파일을 앞 단계에서 준비하세요. ZAP은 CLI/SDK 경로를 지원하며 기존 `actions/dast`·`run-plan`의 엔진 목록에는 아직 포함하지 않습니다.
+
+Semgrep 엔진과 공식 규칙 묶음은 [라이선스 조건이 다릅니다](https://semgrep.dev/blog/2024/important-updates-to-semgrep-oss/). 이번에는 WakeIO가 작성한 Apache-2.0 Go 규칙만 포함합니다. registry 규칙 다운로드, 로그인, metrics 전송은 켜지 않습니다.
+
+### ZAP 능동 검사
+
+소유하거나 허가받은 폐기 가능한 대상에서 실행하세요. 공식 ZAP 2.17.0 설치본과 Java를 준비해야 하며 검사 중 엔진을 설치하지 않습니다. 현재는 요청 단위 예산을 강제할 수 있는 HTTP만 지원합니다. HTTPS CONNECT는 검사 전에 거부합니다. ZAP 실행에는 별도의 수동 URL 수집 요청을 추가하지 않습니다.
+
+```sh
+node build/src/cli.js scan --url http://127.0.0.1:8080 \
+  --engine zap --zap /path/to/ZAP_2.17.0/zap.sh \
+  --zap-path '/search?q=test' --zap-path '/profile?name=test' \
+  --active-consent --allow-private --allowed-origin http://127.0.0.1:8080 \
+  --zap-max-requests 200 --zap-rate-limit 10 --zap-timeout-ms 300000
+```
+
+인증된 egress gate로 origin·경로·GET method·요청 수·속도·응답 크기·시간을 제한합니다. 쿼리 전용 SQLi/XSS 규칙 40018/40012만 켜며 spider·OAST·script·로그인·업데이트는 끕니다. GET 공격도 부작용이 있을 수 있습니다. 설치한 엔진이 설정된 프록시를 따른다는 신뢰 경계이며 OS 네트워크 sandbox는 아닙니다. 원본 공격 payload·응답·엔진 보고서는 임시 영역에서 삭제하고 공통 보고서에는 정규화한 발견과 집계만 남깁니다. 예산·시간 초과·취소·범위 위반은 미완료입니다. 서비스 고유 인증·인가 검증은 기존 API 정책과 사용자별 대조 검사를 함께 사용해야 합니다.
 
 ## 보고서와 종료 코드
 
