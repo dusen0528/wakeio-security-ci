@@ -3,7 +3,7 @@ import type { SchemathesisAuthEvidence } from './schemathesis-auth.js';
 export type { DastExecution, DastExecutionV4, DastJsonExecutionStep, DastJsonStepReason } from './dast-execution.js';
 export type Severity = 'info' | 'low' | 'medium' | 'high' | 'critical';
 export type Mode = 'source' | 'url' | 'both' | 'api' | 'combined';
-export type ToolName = 'gitleaks' | 'osv' | 'trivy' | 'bandit';
+export type ToolName = 'gitleaks' | 'osv' | 'trivy' | 'bandit' | 'semgrep' | 'govulncheck' | 'trivy-vuln';
 /** Observed static source positions only; no source text or runtime verification. */
 export interface StaticFlow {
   kind: 'static_flow';
@@ -206,7 +206,7 @@ export interface CheckResult {
 }
 
 export type CodeLanguage = 'javascript' | 'typescript' | 'python' | 'c' | 'cpp' | 'csharp' | 'go' | 'java' | 'kotlin' | 'php' | 'ruby' | 'rust' | 'shell' | 'swift' | 'vue';
-export type CodeProvider = 'builtin_ast' | 'bandit' | 'opengrep_native';
+export type CodeProvider = 'builtin_ast' | 'bandit' | 'opengrep_native' | 'semgrep';
 export interface CodeCounts { collected: number | null; eligible: number | null; completed: number | null; uncovered: number | null }
 export interface CodeCoverage {
   version: 1;
@@ -331,6 +331,13 @@ export interface SourceOptions {
   maxFiles?: number;
   maxBytes?: number;
   osvOffline?: boolean;
+  /** Prepared Go toolchain and module cache; scanning never installs dependencies. */
+  goPath?: string;
+  goModuleCache?: string;
+  govulnDatabase?: string;
+  goBuildTags?: string[];
+  trivyCache?: string;
+  trivyOffline?: boolean;
   outDir?: string;
   /** Explicit BYO native preview; never installed or selected automatically. */
   nativePreview?: { executable: string };

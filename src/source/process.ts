@@ -15,6 +15,8 @@ export interface ProcessOptions {
   home?: string;
   /** Narrow, explicit additions for a scanner's prepared local database. */
   environment?: Record<string, string>;
+  /** Explicit prepared toolchain directory, never inherited from target configuration. */
+  runtimePath?: string;
   /** Bounded protocol input, never a shell command. */
   input?: string;
   /** Explicit provider-only authentication; never pass this to target/scanner processes. */
@@ -33,15 +35,21 @@ function safeTimeout(value: number): number {
 }
 
 function minimalEnvironment(home: string | undefined, additions: Record<string, string> | undefined,
-  authentication: ProcessOptions['authentication'], codexHome: string | undefined): NodeJS.ProcessEnv {
+  authentication: ProcessOptions['authentication'], codexHome: string | undefined, runtimePath?: string): NodeJS.ProcessEnv {
   // Keep only paths needed by the binary itself and by a shebang in test
   // adapters. In particular, do not forward proxy, cloud credential, npm, or
   // scanner-specific environment variables from the caller.
   const nodeBin = dirname(process.execPath);
-  const path = [nodeBin, "/usr/local/bin", "/opt/homebrew/bin", "/usr/bin", "/bin", "/usr/sbin", "/sbin"]
+  const path = [...(runtimePath && isAbsolute(runtimePath) && !/[:\0\r\n]/.test(runtimePath) ? [runtimePath] : []), nodeBin, "/usr/local/bin", "/opt/homebrew/bin", "/usr/bin", "/bin", "/usr/sbin", "/sbin"]
     .filter((entry, index, all) => all.indexOf(entry) === index)
     .join(":");
-  const allowedAdditions = Object.entries(additions ?? {}).filter(([key, value]) => key === "OSV_SCANNER_LOCAL_DB_CACHE_DIRECTORY" && typeof value === "string" && value.length > 0);
+  const fixedGoEnvironment: Record<string, string> = { GOTOOLCHAIN: 'local', GOWORK: 'off', GOFLAGS: '-mod=readonly', CGO_ENABLED: '0', GOENV: 'off', GOPROXY: 'off', GOSUMDB: 'off' };
+  const allowedAdditions = Object.entries(additions ?? {}).filter(([key, value]) =>
+    typeof value === 'string' && value.length > 0 && !/[\0\r\n]/.test(value) && (
+      key === 'OSV_SCANNER_LOCAL_DB_CACHE_DIRECTORY'
+      || Object.hasOwn(fixedGoEnvironment, key) && value === fixedGoEnvironment[key]
+      || ['GOPATH', 'GOMODCACHE', 'GOCACHE'].includes(key) && isAbsolute(value)
+    ));
   const auth = authentication && ['CODEX_API_KEY', 'ANTHROPIC_API_KEY'].includes(authentication.variable) &&
     typeof authentication.value === 'string' && authentication.value.length > 0 && authentication.value.length <= 16384
     ? { [authentication.variable]: authentication.value } : {};
@@ -75,7 +83,7 @@ export function runProcess(executable: string, args: readonly string[], options:
     try {
       child = spawn(executable, [...args], {
         cwd: options.cwd,
-        env: minimalEnvironment(options.home, options.environment, options.authentication, options.codexHome),
+        env: minimalEnvironment(options.home, options.environment, options.authentication, options.codexHome, options.runtimePath),
         shell: false,
         detached: process.platform !== "win32",
         windowsHide: true,
@@ -163,7 +171,7 @@ function runAgentProcess(executable: string, args: readonly string[], options: P
   const empty = { exitCode: null, signal: null, stdout: '', stderr: '', timedOut: false, outputLimitExceeded: false };
   if (options.signal?.aborted) return Promise.resolve({ ...empty, cancelled: true, stopReason: 'cancelled',
     cleanupState: 'not_started', cleanupConfirmed: true, closeConfirmed: true });
-  if (!['darwin', 'linux'].includes(process.platform) || !options.home || options.environment ||
+  if (!['darwin', 'linux'].includes(process.platform) || !options.home || options.environment || options.runtimePath ||
       (options.authentication && options.codexHome)) return Promise.resolve({ ...empty, spawnError: 'invalid agent process profile',
     stopReason: 'spawn_error', cleanupState: 'not_started', cleanupConfirmed: true, closeConfirmed: true });
   const timeoutMs = safeTimeout(options.timeoutMs);
@@ -275,7 +283,7 @@ export function observeOwnedGroup(pid: number): NonNullable<ProcessResult['clean
 async function runStrictProcess(executable: string, args: readonly string[], options: ProcessOptions): Promise<ProcessResult> {
   const empty = { exitCode: null, signal: null, stdout: '', stderr: '', timedOut: false, outputLimitExceeded: false };
   if (options.signal?.aborted) return { ...empty, cancelled: true, stopReason: 'cancelled', exited: false, closeConfirmed: false, cleanupState: 'not_started', cleanupConfirmed: true };
-  if (!['darwin', 'linux'].includes(process.platform) || !options.home || !options.tmpdir || options.authentication || options.environment || options.input !== undefined) {
+  if (!['darwin', 'linux'].includes(process.platform) || !options.home || !options.tmpdir || options.authentication || options.environment || options.runtimePath || options.input !== undefined) {
     return { ...empty, spawnError: 'invalid strict process profile', stopReason: 'spawn_error', cleanupState: 'not_started', cleanupConfirmed: true };
   }
   const started = Date.now();

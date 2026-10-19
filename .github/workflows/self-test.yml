@@ -42,12 +42,16 @@ jobs:
         timeout-minutes: 5
         working-directory: wakeio-security-ci
         run: node scripts/bootstrap-nuclei.mjs
+      - name: Prepare real Semgrep, Go, Trivy and ZAP fixtures
+        timeout-minutes: 8
+        working-directory: wakeio-security-ci
+        run: node scripts/bootstrap-security-toolchain.mjs
       - name: Install and run required-engine package tests
-        timeout-minutes: 7
+        timeout-minutes: 9
         working-directory: wakeio-security-ci
         run: |
           npm ci --ignore-scripts --no-audit --fund=false
-          node --test scripts/ci-verification.test.mjs scripts/bootstrap-nuclei.test.mjs
+          node --test scripts/ci-verification.test.mjs scripts/bootstrap-nuclei.test.mjs scripts/bootstrap-security-toolchain.test.mjs
           npm run test:schemathesis
       - name: Gate owned loopback DAST task coverage
         timeout-minutes: 2

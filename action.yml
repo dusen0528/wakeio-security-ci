@@ -67,6 +67,42 @@ inputs:
     description: Optional preinstalled trusted Bandit executable for Python source scans
     required: false
     default: ''
+  semgrep-path:
+    description: Prepared Semgrep CE executable for bundled WakeIO Go rules
+    required: false
+    default: ''
+  govulncheck-path:
+    description: Prepared govulncheck executable; requires a prepared Go toolchain
+    required: false
+    default: ''
+  go-path:
+    description: Prepared Go executable; no automatic toolchain download
+    required: false
+    default: ''
+  go-module-cache:
+    description: Prepared Go module cache; target dependencies are never installed by scan
+    required: false
+    default: ''
+  govuln-db:
+    description: Optional Go vulnerability database URL
+    required: false
+    default: ''
+  go-build-tags:
+    description: Explicit comma-separated build tags for govulncheck source analysis
+    required: false
+    default: ''
+  image-archive:
+    description: Explicit Docker or OCI archive to scan in addition to source; no build or pull
+    required: false
+    default: ''
+  trivy-cache:
+    description: Optional prepared or reusable Trivy vulnerability database cache
+    required: false
+    default: ''
+  trivy-offline:
+    description: Disable Trivy CVE database updates; prepared database required
+    required: false
+    default: 'false'
   project-id:
     description: Stable project identifier passed to the scanner (defaults to github.repository)
     required: false
@@ -170,6 +206,15 @@ runs:
         WAKEIO_MAX_PAGES: ${{ inputs.max-pages }}
         WAKEIO_OSV_OFFLINE: ${{ inputs.osv-offline }}
         WAKEIO_BANDIT_PATH: ${{ inputs.bandit-path }}
+        WAKEIO_SEMGREP_PATH: ${{ inputs.semgrep-path }}
+        WAKEIO_GOVULNCHECK_PATH: ${{ inputs.govulncheck-path }}
+        WAKEIO_GO_PATH: ${{ inputs.go-path }}
+        WAKEIO_GO_MODULE_CACHE: ${{ inputs.go-module-cache }}
+        WAKEIO_GOVULN_DB: ${{ inputs.govuln-db }}
+        WAKEIO_GO_BUILD_TAGS: ${{ inputs.go-build-tags }}
+        WAKEIO_IMAGE_ARCHIVE: ${{ inputs.image-archive }}
+        WAKEIO_TRIVY_CACHE: ${{ inputs.trivy-cache }}
+        WAKEIO_TRIVY_OFFLINE: ${{ inputs.trivy-offline }}
         WAKEIO_PROJECT_ID: ${{ inputs.project-id }}
         WAKEIO_TOOL_CACHE: ${{ inputs.tool-cache }}
       run: node "$WAKEIO_ACTION_PATH/scripts/action-run.mjs"

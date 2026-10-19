@@ -15,6 +15,10 @@ import { parseGitleaksOutput, parseOsvOutput, parseTrivyOutput } from "./source/
 import { DEFAULT_TOOL_TIMEOUT_MS, MAX_TOOL_TIMEOUT_MS, findExecutable, runProcess } from "./source/process.js";
 import { pythonFiles, runBandit } from "./source/python.js";
 import { nativeFiles, runNativePreview } from './source/opengrep.js';
+import { semgrepFiles, runSemgrep } from './source/semgrep.js';
+import { govulncheckHasApplicableInput, runGovulncheck } from './source/govulncheck.js';
+import { runTrivyVulnerabilities } from './trivy-vuln.js';
+import { inspectRequirementsFile } from './source/requirements.js';
 import type { ParsedToolResult, ProcessResult, SourceSnapshot } from "./source/types.js";
 
 export const DEFAULT_SOURCE_TOOLS: ToolName[] = ["gitleaks", "osv", "trivy"];
@@ -374,7 +378,7 @@ function normalizeTimeout(value: number | undefined): number {
 }
 
 function isToolName(value: unknown): value is ToolName {
-  return value === "gitleaks" || value === "osv" || value === "trivy" || value === "bandit";
+  return value === "gitleaks" || value === "osv" || value === "trivy" || value === "bandit" || value === 'semgrep' || value === 'govulncheck' || value === 'trivy-vuln';
 }
 
 function requestedTools(options: SourceOptions): ToolName[] {
@@ -507,45 +511,6 @@ function dependencyManifestNeedsLockfile(file: SourceSnapshot["files"][number]):
   return name !== "package.json" || !packageManifestHasExplicitlyEmptyDependencies(file.text);
 }
 
-interface RequirementsInspection {
-  pinned: boolean;
-  packageCount: number;
-}
-
-function inspectRequirementsFile(text: string): RequirementsInspection {
-  let packageCount = 0;
-  let unresolved = false;
-  for (const rawLine of text.replace(/^\uFEFF/, "").split(/\r\n|\r|\n/)) {
-    const line = rawLine.replace(/\s+#.*$/, "").trim();
-    if (!line || line.startsWith("#")) continue;
-    // Includes and constraints require resolver context outside this bounded
-    // snapshot. Passing them to OSV as if they were a lock would be a clean
-    // result with unknown package coverage, so retain them as partial input.
-    if (/^(?:-r|--requirement|-c|--constraint)(?:\s+|=)/i.test(line)) {
-      unresolved = true;
-      continue;
-    }
-    // A small set of pip options does not declare a package. Other options
-    // (and editable/VCS/URL requirements) are deliberately unresolved.
-    if (/^--(?:hash(?:=|\s)|require-hashes(?:=|\s|$)|index-url(?:=|\s)|extra-index-url(?:=|\s)|trusted-host(?:=|\s)|find-links(?:=|\s)|no-index(?:=|\s|$)|only-binary(?:=|\s)|no-binary(?:=|\s)|prefer-binary(?:=|\s)|pre(?:=|\s|$))/i.test(line)) continue;
-    if (/^(?:-|git\+|hg\+|svn\+|bzr\+|https?:|file:|ssh:|\.?\.?\/|[A-Za-z0-9_.-]+\s*@\s*)/i.test(line)) {
-      unresolved = true;
-      continue;
-    }
-    // Keep markers and hash options out of the version check. A requirement
-    // is lock-like only when its package specifier contains exactly ==.
-    const withoutHash = line.split(/\s+--hash(?:=|\s+)/i, 1)[0].trim();
-    const spec = withoutHash.split(";", 1)[0].trim();
-    const match = /^([A-Za-z0-9][A-Za-z0-9._-]*)(?:\[[^\]\r\n]+\])?\s*==\s*([^\s,;#=]+)$/i.exec(spec);
-    if (!match || (spec.match(/==/g)?.length ?? 0) !== 1 || /(?:[<>~!]=?|\*|,)/.test(spec.replace(/==/g, ""))) {
-      unresolved = true;
-      continue;
-    }
-    packageCount += 1;
-  }
-  return { pinned: !unresolved && packageCount > 0, packageCount };
-}
-
 function requirementsInspection(snapshot: SourceSnapshot): { pinned: string[]; unresolved: string[] } {
   const pinned: string[] = [];
   const unresolved: string[] = [];
@@ -584,6 +549,9 @@ function hasOtherSecurityCheck(snapshot: SourceSnapshot, tools: ToolName[], nati
     if (tool === "gitleaks") return snapshot.files.length > 0;
     if (tool === "osv") return osvHasApplicableInput(snapshot);
     if (tool === "trivy") return trivyHasApplicableInput(snapshot);
+    if (tool === 'semgrep') return semgrepFiles(snapshot).length > 0;
+    if (tool === 'govulncheck') return govulncheckHasApplicableInput(snapshot);
+    if (tool === 'trivy-vuln') return snapshot.files.some(file => file.category === 'dependency');
     return pythonFiles(snapshot).length > 0;
   }) || frameworkHasApplicableInput(snapshot);
 }
@@ -776,6 +744,14 @@ async function runTrivy(context: ToolContext): Promise<CheckResult> {
 }
 
 async function runTool(tool: ToolName, snapshot: SourceSnapshot, stageDir: string, options: SourceOptions, timeoutMs: number, blockedConfigCount = 0): Promise<CheckResult> {
+  if (tool === 'semgrep' || tool === 'govulncheck' || tool === 'trivy-vuln') {
+    const command = options.toolPaths?.[tool] ?? (tool === 'trivy-vuln' ? options.toolPaths?.trivy ?? 'trivy' : tool);
+    const toolPath = await findExecutable(command) ?? '';
+    const context = { snapshot, stageDir, toolPath, timeoutMs, signal: options.signal };
+    if (tool === 'semgrep') return runSemgrep(context);
+    if (tool === 'govulncheck') return runGovulncheck({ ...context, goPath: options.goPath, moduleCache: options.goModuleCache, database: options.govulnDatabase, buildTags: options.goBuildTags });
+    return runTrivyVulnerabilities({ ...context, cacheDir: options.trivyCache, offline: options.trivyOffline });
+  }
   // Do this applicability check before resolving the executable. A project
   // without IaC should not fail merely because Trivy is not installed.
   if (tool === "trivy" && pathForTool(snapshot, "trivy").length === 0) {
@@ -849,6 +825,7 @@ export async function runSource(options: SourceOptions): Promise<CheckResult[]> 
         if (tool === "trivy") return notApplicableCheck("source.trivy", "No supported Dockerfile, Kubernetes manifest, or Terraform configuration was available for Trivy config scanning.", { configFiles: 0, blockedConfigFiles: 0 });
         if (tool === "osv") return notApplicableCheck("source.osv", "No allowlisted dependency manifest or supported lockfile was available for OSV-Scanner.", { lockfiles: 0, dependencyManifest: false });
         if (tool === "bandit") return notApplicableCheck("source.bandit", "No allowlisted Python file was available for Bandit.", { files: 0 });
+        if (tool === 'semgrep' || tool === 'govulncheck' || tool === 'trivy-vuln') return notApplicableCheck(`source.${tool}`, 'No applicable source input was collected.', { files: 0 });
         return notApplicableCheck("source.gitleaks", "No allowlisted source file was available for Gitleaks.", { files: 0 });
       }));
       if (tools.length > 0 && checks.filter((check) => check.id !== "source.inventory").every((check) => check.status === "not_applicable")) {

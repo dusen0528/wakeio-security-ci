@@ -40,10 +40,14 @@ jobs:
         timeout-minutes: 3
         run: npm ci --ignore-scripts --no-audit --fund=false
 
+      - name: Prepare real Semgrep, Go, Trivy and ZAP fixtures
+        timeout-minutes: 8
+        run: node scripts/bootstrap-security-toolchain.mjs
+
       - name: Run CI verification contracts and required real-engine suite
-        timeout-minutes: 7
+        timeout-minutes: 9
         run: |
-          node --test scripts/ci-verification.test.mjs scripts/bootstrap-nuclei.test.mjs
+          node --test scripts/ci-verification.test.mjs scripts/bootstrap-nuclei.test.mjs scripts/bootstrap-security-toolchain.test.mjs
           npm run test:schemathesis
 
       - name: Gate owned loopback DAST task coverage

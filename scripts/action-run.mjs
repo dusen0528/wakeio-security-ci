@@ -16,7 +16,7 @@ import { promisify } from 'node:util';
 import { tmpdir } from 'node:os';
 
 const spawnAsync = promisify(spawnProcess);
-const TOOL_NAMES = new Set(['gitleaks', 'osv', 'trivy', 'bandit']);
+const TOOL_NAMES = new Set(['gitleaks', 'osv', 'trivy', 'bandit', 'semgrep', 'govulncheck', 'trivy-vuln']);
 const INCOMPLETE_STATUSES = new Set(['partial', 'error', 'skipped']);
 const REPORT_FORMATS = ['report.json', 'report.sarif', 'report.md', 'agent-report.json'];
 const STABLE_SYSTEM_ALIASES = new Set(['/tmp', '/var']);
@@ -106,7 +106,7 @@ async function main() {
     const cliEntry = await findCliEntry(actionPath);
     state.selectedTools = parseToolList(tools);
     const banditPath = value(env.WAKEIO_BANDIT_PATH);
-    const nativeTools = state.selectedTools.filter((tool) => tool !== 'bandit').join(',') || 'none';
+    const nativeTools = [...new Set(state.selectedTools.filter((tool) => !['bandit', 'semgrep', 'govulncheck'].includes(tool)).map((tool) => tool === 'trivy-vuln' ? 'trivy' : tool).concat(value(env.WAKEIO_IMAGE_ARCHIVE) ? ['trivy'] : []))].join(',') || 'none';
     const toolPaths = sourceMode
       ? await installTools(actionPath, toolsRoot, nativeTools, env)
       : { paths: {}, metadata: {} };
@@ -114,6 +114,9 @@ async function main() {
     // not_applicable without downloading or requiring a Bandit executable.
     if (state.selectedTools.includes('bandit') && banditPath) {
       toolPaths.paths.bandit = resolve(workspace, banditPath);
+    }
+    for (const [name, setting] of [['semgrep', 'WAKEIO_SEMGREP_PATH'], ['govulncheck', 'WAKEIO_GOVULNCHECK_PATH']]) {
+      if (state.selectedTools.includes(name) && value(env[setting])) toolPaths.paths[name] = resolve(workspace, value(env[setting]));
     }
     state.cacheMetadata = toolPaths.metadata ?? {};
     throwIfCancelled();
@@ -130,9 +133,22 @@ async function main() {
     addValueOption(args, '--max-pages', env.WAKEIO_MAX_PAGES);
     if (asBoolean(env.WAKEIO_ALLOW_PRIVATE)) args.push('--allow-private');
     if (asBoolean(env.WAKEIO_OSV_OFFLINE)) args.push('--osv-offline');
+    if (state.selectedTools.includes('govulncheck')) {
+      for (const [flag, setting] of [['--go', 'WAKEIO_GO_PATH'], ['--go-module-cache', 'WAKEIO_GO_MODULE_CACHE']]) {
+        if (value(env[setting])) args.push(flag, resolve(workspace, value(env[setting])));
+      }
+      addValueOption(args, '--govuln-db', env.WAKEIO_GOVULN_DB);
+      addValueOption(args, '--go-build-tags', env.WAKEIO_GO_BUILD_TAGS);
+    }
+    if (state.selectedTools.includes('trivy-vuln') || value(env.WAKEIO_IMAGE_ARCHIVE)) {
+      for (const [flag, setting] of [['--trivy-cache', 'WAKEIO_TRIVY_CACHE'], ['--image-archive', 'WAKEIO_IMAGE_ARCHIVE']]) {
+        if (value(env[setting])) args.push(flag, resolve(workspace, value(env[setting])));
+      }
+      if (asBoolean(env.WAKEIO_TRIVY_OFFLINE)) args.push('--trivy-offline');
+    }
     const projectId = value(env.WAKEIO_PROJECT_ID) || value(env.GITHUB_REPOSITORY);
     if (projectId) args.push('--project-id', projectId);
-    for (const name of ['gitleaks', 'osv', 'trivy', 'bandit']) {
+    for (const name of ['gitleaks', 'osv', 'trivy', 'bandit', 'semgrep', 'govulncheck']) {
       if (toolPaths.paths?.[name] || toolPaths[name]) args.push(`--${name}`, toolPaths.paths?.[name] || toolPaths[name]);
     }
 

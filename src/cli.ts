@@ -15,7 +15,7 @@ import { replayDastFinding, dastReplayExitCode } from "./dast-replay.js";
 import { compareReports, comparisonExitCode, readScanReport, writeComparison } from "./compare.js";
 import { runApiPolicy, parseApiPolicy, type ApiPolicy } from "./api.js";
 import { readJsonInput } from "./json-input.js";
-import { DEFAULT_TOOL_TIMEOUT_MS, MAX_TOOL_TIMEOUT_MS } from "./source/process.js";
+import { DEFAULT_TOOL_TIMEOUT_MS, MAX_TOOL_TIMEOUT_MS, findExecutable } from "./source/process.js";
 import { buildScanScope, validateProjectId } from "./scan-scope.js";
 import { doctorMain } from "./doctor.js";
 import { initMain } from "./init.js";
@@ -31,8 +31,13 @@ import { parseSchemathesisAuthPolicy, SCHEMATHESIS_AUTH_REVISION, type Schemathe
 import { selectOpenApiLiveOperations } from "./openapi.js";
 import { NUCLEI_MAX_RATE_LIMIT, NUCLEI_MAX_REQUESTS, NUCLEI_SCOPES, runNuclei, type NucleiScope } from "./nuclei.js";
 
+import { runZap, ZAP_DEFAULT_MAX_REQUESTS, ZAP_MAX_REQUESTS, ZAP_DEFAULT_TIMEOUT_MS, ZAP_DEFAULT_RATE_LIMIT, ZAP_MAX_RATE_LIMIT } from './zap.js';
+import { runTrivyVulnerabilities } from './trivy-vuln.js';
+import { normalizeGoBuildTags } from './source/govulncheck.js';
+import { SEMGREP_RULE_REVISION } from './source/semgrep-rules.js';
+
 const SEVERITY_VALUES = new Set(["critical", "high", "medium", "low", "info", "none"] as const);
-const TOOL_VALUES = new Set<ToolName>(["gitleaks", "osv", "trivy", "bandit"]);
+const TOOL_VALUES = new Set<ToolName>(["gitleaks", "osv", "trivy", "bandit", "semgrep", "govulncheck", "trivy-vuln"]);
 
 export interface CliOptions {
   requireCodeAnalysis?: boolean;
@@ -66,7 +71,19 @@ export interface CliOptions {
   apiMaxRequests?: number;
   seed?: number;
   schemathesisPython?: string;
-  engines: Array<"nuclei">;
+  goPath?: string;
+  goModuleCache?: string;
+  govulnDatabase?: string;
+  goBuildTags?: string[];
+  trivyCache?: string;
+  trivyOffline?: boolean;
+  imageArchive?: string;
+  engines: Array<"nuclei" | "zap">;
+  zapPath?: string;
+  zapPaths: string[];
+  zapMaxRequests?: number;
+  zapRateLimit?: number;
+  zapTimeoutMs?: number;
   nucleiPath?: string;
   nucleiTemplates?: string;
   nucleiScopes: NucleiScope[];
@@ -112,6 +129,16 @@ Options:
   --out DIR                    Report directory (default: wakeio-security-reports)
   --tools gitleaks,osv,trivy   External source scanners (default: all three)
   --tools bandit               Optional Python SAST (install Bandit separately)
+  --tools semgrep,govulncheck,trivy-vuln  Go SAST, reachable Go CVEs and package CVEs
+  --semgrep PATH               Prepared Semgrep CE executable; bundled Go rules only
+  --govulncheck PATH           Prepared govulncheck executable
+  --go PATH                    Prepared Go executable (no toolchain download)
+  --go-module-cache DIR        Prepared Go module cache (no dependency installation)
+  --govuln-db URL              Go vulnerability database (default official database)
+  --go-build-tags TAGS         Explicit comma-separated Go build tags
+  --trivy-cache DIR            Prepared/reusable Trivy database cache
+  --trivy-offline              Disable Trivy CVE database updates (prepared DB required)
+  --image-archive FILE         Also scan an explicit Docker/OCI archive; requires --source
   --tools none                 Run built-in source checks only
   --source-max-files N         Collected-file cap 1..10000 (source only; default: 1000)
   --source-max-bytes N         Total-byte cap 1..134217728 (source only; default: 26214400)
@@ -144,7 +171,12 @@ Active DAST (off by default; sends generated or template requests to the target)
   --api-max-requests N         Schemathesis request budget, 1..64 (default 32)
   --seed N                     Hypothesis seed (default 1)
   --schemathesis-python PATH   Python with workers/schemathesis/requirements.lock.txt
-  --engine nuclei              Run pinned Nuclei 3.11.1 against the --url origin
+  --engine nuclei|zap         Explicit active engine selection (comma-separated)
+  --zap PATH                   Prepared local zap.sh executable
+  --zap-path PATH              Explicit GET URL path with query (repeatable, at most 16)
+  --zap-max-requests N         ZAP gate request cap (default ${ZAP_DEFAULT_MAX_REQUESTS}, maximum ${ZAP_MAX_REQUESTS})
+  --zap-rate-limit N           ZAP requests per second (default ${ZAP_DEFAULT_RATE_LIMIT}, maximum ${ZAP_MAX_RATE_LIMIT})
+  --zap-timeout-ms N           ZAP time budget (default ${ZAP_DEFAULT_TIMEOUT_MS}, maximum ${MAX_TOOL_TIMEOUT_MS})
   --nuclei PATH                Nuclei executable (default: PATH lookup)
   --nuclei-templates DIR       Prepared nuclei-templates directory (never downloaded)
   --nuclei-scope LIST          misconfiguration,exposures (default: misconfiguration)
@@ -164,7 +196,7 @@ function parseTools(value: string): ToolName[] {
   if (value === "none") return [];
   const parts = value.split(",").map((part) => part.trim()).filter(Boolean);
   if (parts.length === 0 || parts.some((part) => !TOOL_VALUES.has(part as ToolName)) || new Set(parts).size !== parts.length) {
-    throw new CliUsageError("--tools must be a comma-separated list of gitleaks, osv, trivy, bandit, or none");
+    throw new CliUsageError("--tools must be a comma-separated list of gitleaks, osv, trivy, bandit, semgrep, govulncheck, trivy-vuln, or none");
   }
   return parts as ToolName[];
 }
@@ -227,6 +259,7 @@ export function parseCliArgs(argv: readonly string[]): CliOptions | { help: true
     operations: [],
     engines: [],
     nucleiScopes: [],
+    zapPaths: [],
   };
   const seen = new Set<string>();
   let help = false;
@@ -300,6 +333,21 @@ export function parseCliArgs(argv: readonly string[]): CliOptions | { help: true
     else if ((value = valueFlag("--osv")) !== undefined) options.toolPaths.osv = value;
     else if ((value = valueFlag("--trivy")) !== undefined) options.toolPaths.trivy = value;
     else if ((value = valueFlag("--bandit")) !== undefined) options.toolPaths.bandit = value;
+    else if ((value = valueFlag('--semgrep')) !== undefined) options.toolPaths.semgrep = value;
+    else if ((value = valueFlag('--govulncheck')) !== undefined) options.toolPaths.govulncheck = value;
+    else if ((value = valueFlag('--go')) !== undefined) options.goPath = value;
+    else if ((value = valueFlag('--go-module-cache')) !== undefined) options.goModuleCache = value;
+    else if ((value = valueFlag('--govuln-db')) !== undefined) options.govulnDatabase = value;
+    else if ((value = valueFlag('--go-build-tags')) !== undefined) {
+      try { options.goBuildTags = normalizeGoBuildTags(value.split(',')); }
+      catch { throw new CliUsageError('--go-build-tags requires at most 32 comma-separated Go tag names'); }
+    }
+    else if ((value = valueFlag('--trivy-cache')) !== undefined) options.trivyCache = value;
+    else if ((value = valueFlag('--image-archive')) !== undefined) options.imageArchive = value;
+    else if (arg === '--trivy-offline') {
+      if (seen.has(arg)) throw new CliUsageError('--trivy-offline may only be specified once');
+      seen.add(arg); options.trivyOffline = true;
+    }
     else if ((value = valueFlag('--opengrep-core')) !== undefined) {
       if (!isAbsolute(value) || value.includes('\0')) throw new CliUsageError('--opengrep-core requires an absolute executable path');
       options.nativePreview = { executable: value };
@@ -335,8 +383,18 @@ export function parseCliArgs(argv: readonly string[]): CliOptions | { help: true
     else if ((value = valueFlag("--schemathesis-python")) !== undefined) options.schemathesisPython = value;
     else if ((value = valueFlag("--engine")) !== undefined) {
       const engines = value.split(",").map((part) => part.trim()).filter(Boolean);
-      if (engines.length === 0 || engines.some((engine) => engine !== "nuclei") || new Set(engines).size !== engines.length) throw new CliUsageError("--engine must be nuclei");
+      if (engines.length === 0 || engines.some((engine) => engine !== "nuclei" && engine !== "zap") || new Set(engines).size !== engines.length) throw new CliUsageError("--engine must be nuclei, zap, or nuclei,zap");
       options.engines = engines as CliOptions["engines"];
+    }
+    else if ((value = valueFlag('--zap')) !== undefined) options.zapPath = value;
+    else if ((value = valueFlag('--zap-max-requests')) !== undefined) options.zapMaxRequests = parseBoundedInteger('--zap-max-requests', value, ZAP_MAX_REQUESTS);
+    else if ((value = valueFlag('--zap-rate-limit')) !== undefined) options.zapRateLimit = parseBoundedInteger('--zap-rate-limit', value, ZAP_MAX_RATE_LIMIT);
+    else if ((value = valueFlag('--zap-timeout-ms')) !== undefined) options.zapTimeoutMs = parseBoundedInteger('--zap-timeout-ms', value, MAX_TOOL_TIMEOUT_MS);
+    else if (arg === '--zap-path' || arg.startsWith('--zap-path=')) {
+      const pair = arg === '--zap-path' ? valueAfter(args, index, '--zap-path') : [arg.slice('--zap-path='.length), index] as const;
+      index = pair[1];
+      if (!pair[0].startsWith('/') || pair[0].startsWith('//') || /[\\#\r\n]/.test(pair[0]) || pair[0].length > 2048 || options.zapPaths.length >= 16) throw new CliUsageError('--zap-path must be a relative GET URL path, at most 16 paths');
+      options.zapPaths.push(pair[0]);
     }
     else if ((value = valueFlag("--nuclei")) !== undefined) options.nucleiPath = value;
     else if ((value = valueFlag("--nuclei-templates")) !== undefined) options.nucleiTemplates = value;
@@ -377,6 +435,12 @@ export function parseCliArgs(argv: readonly string[]): CliOptions | { help: true
   const nucleiOnly = options.nucleiPath !== undefined || options.nucleiTemplates !== undefined || options.nucleiScopes.length > 0 || options.nucleiMaxRequests !== undefined || options.nucleiRateLimit !== undefined || options.nucleiTimeoutMs !== undefined;
   if (nucleiOnly && !options.engines.includes("nuclei")) throw new CliUsageError("--nuclei* options require --engine nuclei");
   if (options.engines.includes("nuclei") && (!options.url || !options.nucleiTemplates)) throw new CliUsageError("--engine nuclei requires --url and --nuclei-templates");
+  const zapOnly = options.zapPath !== undefined || options.zapPaths.length > 0 || options.zapMaxRequests !== undefined || options.zapRateLimit !== undefined || options.zapTimeoutMs !== undefined;
+  if (zapOnly && !options.engines.includes('zap')) throw new CliUsageError('--zap* options require --engine zap');
+  if (options.engines.includes('zap') && (options.pages.length > 0 || options.maxPages !== undefined)) throw new CliUsageError('--page and --max-pages cannot be combined with ZAP; select every active query URL with --zap-path');
+  if (options.engines.includes('zap') && (!options.url || new URL(options.url).protocol !== 'http:' || options.zapPaths.length === 0)) throw new CliUsageError('--engine zap requires an HTTP --url and at least one explicit --zap-path');
+  if ((options.goPath || options.goModuleCache || options.govulnDatabase || options.goBuildTags) && (!options.source || !options.tools.includes('govulncheck'))) throw new CliUsageError('Go options require --source and --tools govulncheck');
+  if ((options.trivyCache || options.trivyOffline || options.imageArchive) && (!options.source || !options.imageArchive && !options.tools.includes('trivy-vuln'))) throw new CliUsageError('Trivy CVE options require --source and --tools trivy-vuln or --image-archive');
   if (options.dastMaxRequests !== undefined && !options.dastPolicy) throw new CliUsageError("--dast-max-requests requires --dast-policy");
   const active = Boolean(options.openapi || options.dastPolicy) || options.engines.length > 0;
   // Consent is checked before any DNS lookup or request: active testing never starts implicitly.
@@ -595,6 +659,16 @@ async function declaredScope(options: CliOptions, apiPolicy: ApiPolicy | undefin
     // provenance. They are intentionally excluded from the stable scope.
     toolPaths: options.source ? options.toolPaths : {},
     nativePreview: options.nativePreview,
+    imageArchive: options.imageArchive,
+    zapExecutable: options.engines.includes('zap') ? options.zapPath ?? 'zap.sh' : undefined,
+    ...(options.tools.includes('semgrep') || options.tools.includes('govulncheck') || options.tools.includes('trivy-vuln') || options.imageArchive ? { securityToolchain: {
+      semgrepRules: options.tools.includes('semgrep') ? SEMGREP_RULE_REVISION : null,
+      govulnMode: options.tools.includes('govulncheck') ? 'source-symbol-readonly-v1' : null,
+      govulnDatabase: options.govulnDatabase ? createHash('sha256').update(options.govulnDatabase).digest('hex') : null,
+      goBuildTags: options.tools.includes('govulncheck') ? options.goBuildTags ?? [] : null,
+      trivyOffline: options.trivyOffline === true,
+      imageArchive: options.imageArchive ? createHash('sha256').update(resolve(options.imageArchive)).digest('hex') : null,
+    } } : {}),
     allowPrivate: options.allowPrivate,
     timeoutMs: options.timeoutMs,
     osvOffline: options.osvOffline,
@@ -606,6 +680,7 @@ async function declaredScope(options: CliOptions, apiPolicy: ApiPolicy | undefin
       ...(options.dastPolicy ? { native: { policySha256: dastPolicySha256 ?? null, profileRevision: dastPolicy ? dastProfileRevision(dastPolicy) : null, maxRequests: options.dastMaxRequests ?? (dastPolicy ? dastDefaultMaxRequests(dastPolicy) : DAST_DEFAULT_MAX_REQUESTS), timeoutMs: Math.min(options.timeoutMs, API_MAX_TIMEOUT_MS) } } : {}),
       ...(options.openapi ? { schemathesis: { apiBase: options.apiBase, operations: [...options.operations], maxRequests: options.apiMaxRequests ?? 32, seed: options.seed ?? 1 } } : {}),
       ...(options.schemathesisAuthPolicy ? { schemathesisAuthPolicy: schemathesisAuthPolicy ?? { profileRevision: SCHEMATHESIS_AUTH_REVISION, policySha256: null, schemaSha256: null } } : {}),
+      ...(options.engines.includes('zap') ? { zap: { paths: options.zapPaths.map(path => createHash('sha256').update(path).digest('hex')), maxRequests: options.zapMaxRequests ?? ZAP_DEFAULT_MAX_REQUESTS, rateLimit: options.zapRateLimit ?? ZAP_DEFAULT_RATE_LIMIT, timeoutMs: options.zapTimeoutMs ?? ZAP_DEFAULT_TIMEOUT_MS, profile: 'query-sqli-xss-v2' } } : {}),
       ...(options.engines.includes("nuclei") ? { nuclei: { scopes: [...options.nucleiScopes].sort(), maxRequests: options.nucleiMaxRequests ?? null, rateLimit: options.nucleiRateLimit ?? null } } : {}),
     } } : {}),
   });
@@ -699,6 +774,12 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
       toolPaths: parsed.toolPaths,
       timeoutMs: parsed.timeoutMs,
       osvOffline: parsed.osvOffline,
+      goPath: parsed.goPath,
+      goModuleCache: parsed.goModuleCache,
+      govulnDatabase: parsed.govulnDatabase,
+      goBuildTags: parsed.goBuildTags,
+      trivyCache: parsed.trivyCache,
+      trivyOffline: parsed.trivyOffline,
       outDir: parsed.outDir,
       nativePreview: parsed.nativePreview,
       signal: controller.signal,
@@ -709,7 +790,14 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
       checks.push(runtimeErrorCheck("source.runtime", "Source scanning could not be completed."));
     }
   }
-  if (parsed.url && !controller.signal.aborted) {
+  if (parsed.imageArchive && !controller.signal.aborted) {
+    try {
+      const toolPath = await findExecutable(parsed.toolPaths.trivy ?? 'trivy') ?? '';
+      checks.push(await runTrivyVulnerabilities({ toolPath, imageArchive: parsed.imageArchive, timeoutMs: parsed.timeoutMs, signal: controller.signal, cacheDir: parsed.trivyCache, offline: parsed.trivyOffline }));
+    } catch { checks.push(runtimeErrorCheck('image.trivy', 'Image vulnerability scanning could not be completed.')); }
+  }
+  // ZAP's explicit paths and request cap are the entire URL scope for this mode.
+  if (parsed.url && !parsed.engines.includes('zap') && !controller.signal.aborted) {
     const urlOptions: UrlOptions = {
       url: parsed.url,
       pages: parsed.pages,
@@ -730,6 +818,13 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
     } catch {
       checks.push(runtimeErrorCheck('api.runtime', 'API authorization scanning could not be completed.'));
     }
+  }
+  if (parsed.engines.includes('zap') && parsed.url && !controller.signal.aborted) {
+    try {
+      checks.push(...await runZap({ url: parsed.url, paths: parsed.zapPaths, executable: parsed.zapPath, consent: parsed.activeConsent,
+        allowPrivate: parsed.allowPrivate, maxRequests: parsed.zapMaxRequests, rateLimit: parsed.zapRateLimit,
+        timeoutMs: parsed.zapTimeoutMs, signal: controller.signal }));
+    } catch { checks.push(runtimeErrorCheck('url.zap', 'ZAP scanning could not be completed.')); }
   }
   if (parsed.engines.includes("nuclei") && parsed.url && !controller.signal.aborted) {
     try {

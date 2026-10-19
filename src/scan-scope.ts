@@ -6,6 +6,7 @@ import { lstat, readdir } from 'node:fs/promises';
 import { relative, resolve, sep } from 'node:path';
 import type { Mode, ScanScope, ToolName } from './contracts.js';
 import { findExecutable } from './source/process.js';
+import { SEMGREP_RULES_SHA256 } from './source/semgrep.js';
 import { OPENGREP_PROFILE, OPENGREP_SHA256, OWN_RULES_SHA256 } from './source/opengrep-rules.js';
 
 const MAX_PROJECT_ID_LENGTH = 128;
@@ -43,6 +44,9 @@ export interface ScopeInputs {
   allowPrivate?: boolean;
   timeoutMs?: number;
   osvOffline?: boolean;
+  securityToolchain?: unknown;
+  imageArchive?: string;
+  zapExecutable?: string;
   pages?: string[];
   maxPages?: number;
   apiPolicy?: unknown;
@@ -140,7 +144,7 @@ async function engineProvenance(inputs: ScopeInputs): Promise<ScanScope['provena
   const engines: NonNullable<NonNullable<ScanScope['provenance']>['engines']> = [];
   for (const name of inputs.tools ?? []) {
     const configured = inputs.toolPaths?.[name];
-    const command = configured ?? (name === 'osv' ? 'osv-scanner' : name);
+    const command = configured ?? (name === 'osv' ? 'osv-scanner' : name === 'trivy-vuln' ? inputs.toolPaths?.trivy ?? 'trivy' : name);
     const executable = await findExecutable(command);
     if (!executable) {
       engines.push({ name, status: 'missing' });
@@ -154,8 +158,21 @@ async function engineProvenance(inputs: ScopeInputs): Promise<ScanScope['provena
     engines.push(sha256 ? { name: 'opengrep-native-preview', status: sha256 === OPENGREP_SHA256 ? 'available' : 'unknown', sha256 }
       : { name: 'opengrep-native-preview', status: 'unreadable' });
   }
+  for (const [name, command] of [
+    ...(inputs.imageArchive ? [['trivy-image', inputs.toolPaths?.trivy ?? 'trivy']] : []),
+    ...(inputs.zapExecutable ? [['zap', inputs.zapExecutable]] : []),
+  ]) {
+    const executable = await findExecutable(command);
+    const sha256 = executable ? await hashEngine(executable) : undefined;
+    engines.push(sha256 ? { name, status: 'available', sha256 } : { name, status: executable ? 'unreadable' : 'missing' });
+  }
   engines.sort((a, b) => a.name.localeCompare(b.name));
   const dataSources: Record<string, string> = {};
+  if ((inputs.tools ?? []).includes('semgrep')) { dataSources.semgrepOwnRules = SEMGREP_RULES_SHA256; dataSources.semgrepRuntime = 'unknown'; }
+  if ((inputs.tools ?? []).includes('govulncheck')) { dataSources.govulnDatabase = 'unknown'; dataSources.goRuntime = 'unknown'; }
+  if ((inputs.tools ?? []).includes('trivy-vuln') || inputs.imageArchive) dataSources.trivyVulnerabilityDatabase = 'unknown';
+  if (inputs.imageArchive) dataSources.imageArchive = await hashEngine(resolve(inputs.imageArchive)) ?? 'unknown';
+  if (inputs.zapExecutable) dataSources.zapRuntime = 'unknown';
   if (inputs.nativePreview) dataSources.opengrepOwnRules = OWN_RULES_SHA256;
   if ((inputs.tools ?? []).includes('osv')) dataSources.osvDatabase = inputs.osvOffline ? 'offline-unknown' : 'online-unknown';
   if ((inputs.tools ?? []).includes('trivy')) {
@@ -197,6 +214,8 @@ export async function buildScanScope(inputs: ScopeInputs): Promise<ScanScope> {
     pages: [...(inputs.pages ?? [])],
     maxPages: inputs.maxPages ?? null,
     apiPolicy: inputs.apiPolicy ?? null,
+    ...(inputs.securityToolchain !== undefined ? { securityToolchain: inputs.securityToolchain } : {}),
+    ...((inputs.tools ?? []).includes('semgrep') ? { semgrepOwnRules: SEMGREP_RULES_SHA256 } : {}),
     ...(inputs.dast !== undefined ? { dast: inputs.dast } : {}),
     // Preserve non-native fingerprints; selection is an explicit model change.
     ...(inputs.nativePreview ? { nativePreview: { profile: OPENGREP_PROFILE, enginePin: OPENGREP_SHA256, rulePackPin: OWN_RULES_SHA256,

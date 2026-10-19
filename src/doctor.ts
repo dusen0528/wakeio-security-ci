@@ -6,9 +6,10 @@ import type { Dirent } from "node:fs";
 import type { CodeLanguage, CodeProvider } from './contracts.js';
 import { findExecutable as findScannerExecutable } from "./source/process.js";
 import { sourceDirectoryIgnored, sourceOutputFileIgnored, sourcePathCategory } from './source/collector.js';
+import { isTrivyVulnerabilityManifest } from './trivy-vuln.js';
 
 const DEFAULT_TOOLS = ["gitleaks", "osv", "trivy"] as const;
-const TOOL_NAMES = new Set(["gitleaks", "osv", "trivy", "bandit"]);
+const TOOL_NAMES = new Set(["gitleaks", "osv", "trivy", "bandit", "semgrep", "govulncheck", "trivy-vuln"]);
 const SKIPPED_DIRECTORIES = new Set([
   ".git",
   ".hg",
@@ -95,6 +96,8 @@ const CODE_LANGUAGES: Record<string, CodeLanguage> = {
 
 interface CodeMetadata {
   languages: Map<CodeLanguage, number>;
+  goModules: number;
+  trivyVulnerabilityManifests: number;
   incomplete: boolean;
   budgetExceeded: boolean;
 }
@@ -136,13 +139,15 @@ export async function doctorMain(argv: readonly string[] = process.argv.slice(2)
   const collectionBudget = resolveCollectionBudget({ maxFiles: options.sourceMaxFiles, maxBytes: options.sourceMaxBytes });
   const codeMetadata = await inspectCodeMetadata(source, collectionBudget);
   const toolStatuses = await inspectTools(options.tools, { ...inventory,
-    pythonFiles: Math.max(inventory.pythonFiles, codeMetadata.languages.get('python') ?? 0) });
+    pythonFiles: Math.max(inventory.pythonFiles, codeMetadata.languages.get('python') ?? 0) }, codeMetadata);
   const codeAnalysisReadiness = codeReadiness(codeMetadata, options.tools, toolStatuses);
   const expectedTransfers = toolStatuses
     .filter((tool) => tool.availability === "missing" && tool.applicability !== "not_applicable")
     .map((tool) => tool.name === "bandit"
       ? "separately prepared trusted Bandit executable or Python environment (the native archive installer does not provide Bandit)"
-      : `pinned ${tool.name} release archive (installer verifies the upstream SHA-256 before extraction)`);
+      : tool.name === 'semgrep' || tool.name === 'govulncheck'
+        ? `separately prepared trusted ${tool.name} executable${tool.name === 'govulncheck' ? ', Go toolchain and module cache' : ' (bundled WakeIO Go rules only)'}`
+      : `pinned ${tool.name === 'trivy-vuln' ? 'trivy' : tool.name} release archive (installer verifies the upstream SHA-256 before extraction)`);
   const runtimeNetwork: string[] = [];
   if (options.tools.includes("osv") && inventory.dependencyManifests > 0) {
     runtimeNetwork.push("OSV package/version and vulnerability lookups may use the public service unless an explicit prepared offline DB is supplied");
@@ -150,12 +155,14 @@ export async function doctorMain(argv: readonly string[] = process.argv.slice(2)
   if (options.tools.includes("trivy") && inventory.configFiles > 0) {
     runtimeNetwork.push("Trivy policy/DB traffic may be scanner-managed and is not verified by this Action");
   }
+  if (toolStatuses.some(tool => tool.name === 'govulncheck' && tool.applicability === 'applicable')) runtimeNetwork.push('Go vulnerability database lookups; module and toolchain downloads are disabled, prepared module cache required');
+  if (toolStatuses.some(tool => tool.name === 'trivy-vuln' && tool.applicability === 'applicable')) runtimeNetwork.push('Trivy vulnerability database download unless --trivy-offline uses a prepared cache; no image pull/build');
   const dast = options.dast ? await inspectDast(options) : undefined;
   const result = {
     schemaVersion: "1.0.0",
     source: source,
     execution: { targetCode: "none", network: "none", packageManager: "none" },
-    inventory,
+    inventory: { ...inventory, goFiles: codeMetadata.languages.get('go') ?? 0, goModules: codeMetadata.goModules, trivyVulnerabilityManifests: codeMetadata.trivyVulnerabilityManifests },
     requireCodeAnalysis: options.requireCodeAnalysis === true,
     inventoryBasis: 'metadata_estimate_not_collector_coverage' as const,
     collectionBudget,
@@ -175,6 +182,7 @@ export async function doctorMain(argv: readonly string[] = process.argv.slice(2)
   }
 
   if (options.strict && (inventory.truncated || toolStatuses.some((tool) => tool.availability === "missing" && tool.applicability !== "not_applicable"))) return 2;
+  if (options.strict && toolStatuses.some(tool => ['semgrep', 'govulncheck', 'trivy-vuln'].includes(tool.name) && tool.applicability === 'unknown')) return 2;
   if (options.strict && options.requireCodeAnalysis && codeAnalysisReadiness.state !== 'ready') return 2;
   if (options.strict && dast && (dast.nuclei.availability !== "available" || dast.nucleiTemplates.availability !== "available" || dast.schemathesisPython.availability !== "available")) return 2;
   return 0;
@@ -281,14 +289,14 @@ export function parseTools(value: string): string[] {
   if (value.trim().toLowerCase() === "none") return [];
   const tools = value.split(",").map((tool) => tool.trim().toLowerCase()).filter(Boolean);
   if (tools.length === 0 || tools.includes("none") || tools.some((tool) => !TOOL_NAMES.has(tool)) || new Set(tools).size !== tools.length) {
-    throw new Error("--tools must be a comma-separated list of gitleaks, osv, trivy, bandit, or none");
+    throw new Error("--tools must be a comma-separated list of gitleaks, osv, trivy, bandit, semgrep, govulncheck, trivy-vuln, or none");
   }
   return tools;
 }
 
 export function doctorUsage(): string {
   return [
-    "Usage: wakeio-security-ci doctor [--source DIR] [--tools gitleaks,osv,trivy,bandit|none] [--json] [--strict]",
+    "Usage: wakeio-security-ci doctor [--source DIR] [--tools gitleaks,osv,trivy,bandit,semgrep,govulncheck,trivy-vuln|none] [--json] [--strict]",
     "                              [--source-max-files N] [--source-max-bytes N] [--analysis-profile default|extended] [--require-code-analysis]",
     "                              [--dast [--nuclei PATH] [--nuclei-templates DIR] [--schemathesis-python PATH]]",
     "",
@@ -349,7 +357,7 @@ export async function inspectTree(source: string): Promise<Inventory> {
 
 /** Mirrors collector name and size selection without opening source contents. */
 async function inspectCodeMetadata(source: string, budget: ReturnType<typeof resolveCollectionBudget>): Promise<CodeMetadata> {
-  const result: CodeMetadata = { languages: new Map(), incomplete: false, budgetExceeded: false };
+  const result: CodeMetadata = { languages: new Map(), goModules: 0, trivyVulnerabilityManifests: 0, incomplete: false, budgetExceeded: false };
   let entriesSeen = 0, selectedFiles = 0, selectedBytes = 0;
   const visit = async (directory: string, depth: number): Promise<void> => {
     if (depth > COLLECTION_MAX_DIRECTORY_DEPTH) { result.budgetExceeded = true; return; }
@@ -378,6 +386,10 @@ async function inspectCodeMetadata(source: string, budget: ReturnType<typeof res
         result.budgetExceeded = true; continue;
       }
       selectedBytes += info.size;
+      if (category === 'dependency') {
+        if (entry.name === 'go.mod') result.goModules++;
+        if (isTrivyVulnerabilityManifest(entry.name)) result.trivyVulnerabilityManifests++;
+      }
       if (category !== 'code') continue;
       const language = CODE_LANGUAGES[extname(entry.name).toLowerCase()];
       if (!language) { result.incomplete = true; continue; }
@@ -396,8 +408,9 @@ function codeReadiness(metadata: CodeMetadata, selected: string[], tools: Doctor
     const observedFiles = metadata.languages.get(language);
     if (!observedFiles) return [];
     const selectedProviders: CodeProvider[] = language === 'javascript' || language === 'typescript'
-      ? ['builtin_ast'] : language === 'python' && selected.includes('bandit') ? ['bandit'] : [];
+      ? ['builtin_ast'] : language === 'python' && selected.includes('bandit') ? ['bandit'] : language === 'go' && selected.includes('semgrep') ? ['semgrep'] : [];
     if (!selectedProviders.length) reasons.add('unsupported_language');
+    if (selectedProviders.includes('semgrep') && tools.find(tool => tool.name === 'semgrep')?.availability !== 'available') reasons.add('provider_missing');
     if (selectedProviders.includes('bandit') && tools.find(tool => tool.name === 'bandit')?.availability !== 'available') reasons.add('provider_missing');
     return [{ language, observedFiles, selectedProviders }];
   });
@@ -410,19 +423,26 @@ function codeReadiness(metadata: CodeMetadata, selected: string[], tools: Doctor
       'Observed file names and sizes follow collector selection policy; source contents are not read and files are not collected.',
       'Ready means selected providers are available for observed language inputs; parsing, decoded sizes and analysis completion remain unknown until scan.',
       'This is neither completed code coverage nor a prediction that the scan gate will pass.',
+      ...(selected.includes('govulncheck') ? ['Govulncheck executable availability does not verify the Go toolchain, prepared module cache, database or build compatibility.'] : []),
     ],
   };
 }
 
-async function inspectTools(selected: string[], inventory: Inventory): Promise<DoctorToolStatus[]> {
+async function inspectTools(selected: string[], inventory: Inventory, metadata: CodeMetadata): Promise<DoctorToolStatus[]> {
   const result: DoctorToolStatus[] = [];
   for (const name of selected) {
     if (name === "bandit" && inventory.pythonFiles === 0) {
       result.push({ name, applicability: "not_applicable", availability: "not_applicable" });
       continue;
     }
-    const path = await findExecutable(name === "osv" ? "osv-scanner" : name);
-    const applicability = name === "gitleaks"
+    const inputs = name === 'semgrep' ? metadata.languages.get('go') ?? 0
+      : name === 'govulncheck' ? metadata.goModules : name === 'trivy-vuln' ? metadata.trivyVulnerabilityManifests : undefined;
+    if (inputs === 0 && !metadata.incomplete && !metadata.budgetExceeded) {
+      result.push({ name, applicability: 'not_applicable', availability: 'not_applicable' });
+      continue;
+    }
+    const path = await findExecutable(name === "osv" ? "osv-scanner" : name === "trivy-vuln" ? "trivy" : name);
+    const applicability = inputs !== undefined ? inputs > 0 ? 'applicable' : 'unknown' : name === "gitleaks"
       ? inventory.files > 0 ? "applicable" : "not_applicable"
       : name === "osv"
         ? inventory.dependencyManifests > 0 ? "applicable" : "unknown"

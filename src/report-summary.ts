@@ -13,7 +13,7 @@ function selectedTools(report: ScanReport): ReportSummary['scope']['toolSelectio
   if (metrics.requestedTools === 'none') return metrics.nativePreviewSelected ? 'native_preview_selected' : 'built_in_only';
   if (typeof metrics.requestedTools !== 'string') return 'unknown';
   const tools = metrics.requestedTools.split(',');
-  return tools.length > 0 && tools.every(tool => ['gitleaks', 'osv', 'trivy', 'bandit'].includes(tool))
+  return tools.length > 0 && tools.every(tool => ['gitleaks', 'osv', 'trivy', 'bandit', 'semgrep', 'govulncheck', 'trivy-vuln'].includes(tool))
     ? 'external_tools_selected' : 'unknown';
 }
 
