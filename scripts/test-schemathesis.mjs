@@ -52,12 +52,12 @@ try {
   await stage('build', 'npm', ['run', 'build'], 120000);
   if (!files.length) throw Error('no_test_files');
   const eventsPath = join(directory, 'tests.ndjson');
-  // Four-engine CI took 263.60s before the additional denied-seed/SQL controls.
-  // Allow six minutes for the aggregate suite; per-test/engine/request limits,
+  // Three Linux runs exhausted 360s after 1,578/1,579 passes, in the final ZAP controls.
+  // Allow eight minutes for the aggregate suite; per-test/engine/request limits,
   // cancellation, cleanup and the zero-skip contract are unchanged.
   await stage('tests', process.execPath, ['--test', '--test-concurrency=2', '--test-reporter=spec', '--test-reporter-destination=stdout',
     '--test-reporter=' + join(root, 'scripts/ci-test-reporter.mjs'), '--test-reporter-destination=' + eventsPath, ...files],
-    360000, { ...engineEnvironment, WAKEIO_SCHEMATHESIS_PYTHON: python,
+    480000, { ...engineEnvironment, WAKEIO_SCHEMATHESIS_PYTHON: python,
       WAKEIO_REQUIRE_SCHEMATHESIS: '1', WAKEIO_REQUIRE_RUNNER_ENGINES: '1' });
   const bytes = await readFile(eventsPath);
   await chmod(eventsPath, 0o600);

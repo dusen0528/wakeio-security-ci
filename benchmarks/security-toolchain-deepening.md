@@ -113,9 +113,15 @@ Use the prepared executable/cache variables from
 [the initial validation record](security-toolchain-validation.md#reproduction).
 Build with `npm run build`, then run `semgrep`, `govulncheck`, `trivy-vuln` and
 `zap` test files under `build/tests/`. Required CI validates exact real-engine
-test names with zero skips and bounds file concurrency to two. The aggregate CI watchdog is six minutes: the prior
-four-engine suite took 263.60 seconds before adding denied-seed controls. This
-changes no individual scanner/request budget or success condition.
+test names with zero skips and bounds file concurrency to two. The aggregate CI
+watchdog is eight minutes. Three Linux runs hit the previous six-minute limit
+after 1,578/1,579 passes, during the final ZAP controls, with no assertion failure
+before cutoff ([release-check](https://github.com/dusen0528/wakeio-security-ci/actions/runs/39203456030),
+[package/Action](https://github.com/dusen0528/wakeio-security-ci/actions/runs/39203455890),
+[push package/Action](https://github.com/dusen0528/wakeio-security-ci/actions/runs/39203452080)).
+The enclosing step permits nine minutes for build/contracts/cleanup overhead.
+This changes no individual scanner/request budget or success condition; an
+interrupted suite is still a failed verification and is never counted as green.
 
 Observed targeted checks:
 
