@@ -43,6 +43,9 @@ inputs:
   nuclei-templates:
     description: Optional prepared trusted Nuclei template directory; no download occurs
     default: ''
+  zap-path:
+    description: Optional preinstalled trusted ZAP executable; no installation occurs
+    default: ''
 outputs:
   exit-code:
     description: 0 completed without threshold findings, 1 threshold findings, 2 refused, incomplete, cancelled or delivery failure
@@ -101,6 +104,7 @@ runs:
         WAKEIO_PLAN_SCHEMATHESIS_PYTHON: ${{ inputs.schemathesis-python }}
         WAKEIO_PLAN_NUCLEI_PATH: ${{ inputs.nuclei-path }}
         WAKEIO_PLAN_NUCLEI_TEMPLATES: ${{ inputs.nuclei-templates }}
+        WAKEIO_PLAN_ZAP_PATH: ${{ inputs.zap-path }}
       run: |
         if ! command -v node >/dev/null 2>&1; then
           echo 'exit-code=2' >> "$GITHUB_OUTPUT"

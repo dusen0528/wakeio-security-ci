@@ -131,7 +131,7 @@ SARIF는 `steps.wakeio.outputs.report-sarif`, `checkout_path: wakeio-source`, `c
 | Bandit | 1.9.4 | 선택적인 Python AST 검사 | 별도 실행 파일을 준비해야 하며 선택한 Python 파일만 검사하고 대상 코드는 실행하지 않음 |
 | Semgrep CE | 1.147.0 | WakeIO Go 규칙 6개: SQL·HTML·TLS·명령 실행·SSRF·파일 경로 | 자체 로컬 규칙만 사용. 전체 SAST나 인증·인가 검증을 보장하지 않음 |
 | govulncheck | 1.9.0 | Go 의존성의 알려진 취약점과 정적 호출 경로 | 준비된 Go·module cache와 완전한 루트 module 하나 필요 |
-| OWASP ZAP | 2.17.0 | 명시한 HTTP GET 쿼리의 SQLi·반사형 XSS 능동 검사 | HTTPS·자동 크롤링·로그인·쓰기·임의 정책은 이번 어댑터 범위 밖 |
+| OWASP ZAP | 2.17.0 | 검토한 HTTP(S) GET 쿼리·단일 필드 POST JSON의 SQLi·반사형 XSS | 선택형 Authorization·principal 대조; 자동 크롤링·로그인 흐름·임의 본문은 범위 밖 |
 
 예시는 다음과 같습니다.
 
@@ -170,7 +170,7 @@ node build/src/cli.js scan --source /path/to/app --tools trivy-vuln \
 
 공통 보고서 4종에 취약점 ID, 영향받는 패키지·버전, 알려진 수정 버전과 출처가 들어갑니다. govulncheck 프로토콜에는 심각도 점수가 없어 medium 정책을 명시하며, module 존재·package import·호출 경로를 구분합니다. CVE 검사 완료를 소스 코드 분석 완료로 계산하지 않습니다. Semgrep 파일 분석 완료도 선택한 6개 규칙 실행을 뜻하며 서비스 전체의 안전을 의미하지 않습니다. 확인되지 않은 runtime·DB provenance는 unknown으로 남겨 비교 결과를 과장하지 않습니다.
 
-CI Action에는 `tools: semgrep,govulncheck,trivy-vuln`과 `semgrep-path`, `govulncheck-path`, `go-path`, `go-module-cache`, `govuln-db`, `go-build-tags`, `trivy-cache`, `trivy-offline`, `image-archive`를 전달할 수 있습니다. Go와 두 실행 파일을 앞 단계에서 준비하세요. ZAP은 CLI/SDK 경로를 지원하며 기존 `actions/dast`·`run-plan`의 엔진 목록에는 아직 포함하지 않습니다.
+CI Action에는 `tools: semgrep,govulncheck,trivy-vuln`과 `semgrep-path`, `govulncheck-path`, `go-path`, `go-module-cache`, `govuln-db`, `go-build-tags`, `trivy-cache`, `trivy-offline`, `image-archive`를 전달할 수 있습니다. Go와 두 실행 파일을 앞 단계에서 준비하세요. ZAP은 CLI/SDK, 별도 `dast` Action과 `actions/run-plan`에서 검토한 정책으로 실행할 수 있습니다.
 
 Semgrep 엔진과 공식 규칙 묶음은 [라이선스 조건이 다릅니다](https://semgrep.dev/blog/2024/important-updates-to-semgrep-oss/). 이번에는 WakeIO가 작성한 Apache-2.0 Go 규칙만 포함합니다. registry 규칙 다운로드, 로그인, metrics 전송은 켜지 않습니다.
 
@@ -180,17 +180,22 @@ Trivy는 자체 분석기로 `uv.lock`, `requirements-dev.txt`, `requirements-pr
 
 ### ZAP 능동 검사
 
-소유하거나 허가받은 폐기 가능한 대상에서 실행하세요. 공식 ZAP 2.17.0 설치본과 Java를 준비해야 하며 검사 중 엔진을 설치하지 않습니다. 현재는 요청 단위 예산을 강제할 수 있는 HTTP만 지원합니다. HTTPS CONNECT는 검사 전에 거부합니다. ZAP 실행에는 별도의 수동 URL 수집 요청을 추가하지 않습니다.
+소유하거나 허가받은 폐기 가능한 대상에서 실행하세요. ZAP 2.17.0과 Java는 미리 준비합니다. 기존 `--zap-path`는 HTTP GET 전용이며, [`--zap-policy` 예시](benchmarks/dast-zap/policy.example.json)는 HTTP(S) GET 쿼리와 문자열·정수 필드 하나인 POST JSON을 지원합니다. 수동 URL 수집 요청은 추가하지 않습니다.
 
 ```sh
-node build/src/cli.js scan --url http://127.0.0.1:8080 \
-  --engine zap --zap /path/to/ZAP_2.17.0/zap.sh \
-  --zap-path '/search?q=test' --zap-path '/profile?name=test' \
-  --active-consent --allow-private --allowed-origin http://127.0.0.1:8080 \
-  --zap-max-requests 200 --zap-rate-limit 10 --zap-timeout-ms 300000
+# 정책·선택한 인증정보만 점검합니다. DNS·HTTP·엔진 실행은 없습니다.
+node build/src/cli.js plan --zap-policy owner-policy.json --allow-private
+node build/src/cli.js scan --url http://127.0.0.1:3000 \
+  --engine zap --zap /prepared/ZAP_2.17.0/zap.sh --zap-policy owner-policy.json \
+  --active-consent --allow-private --allowed-origin http://127.0.0.1:3000 \
+  --zap-max-requests 200 --zap-rate-limit 10 --zap-timeout-ms 120000
 ```
 
-시드 GET은 HTTP 200을 반환해야 하며, 다른 응답이면 자동화 실행을 미완료로 판정합니다. 서로 다른 취약 쿼리 매개변수는 값과 이름을 노출하지 않는 해시로 구분합니다. 실행마다 loopback의 빈 포트를 OS가 배정하므로 동시 검사에서 기본 8080 포트가 충돌하지 않습니다. 인증된 egress gate로 origin·경로·GET method·요청 수·속도·응답 크기·시간을 제한합니다. 쿼리 전용 SQLi/XSS 규칙 40018/40012만 켜며 spider·OAST·script·로그인·업데이트는 끕니다. GET 공격도 부작용이 있을 수 있습니다. 설치한 엔진이 설정된 프록시를 따른다는 신뢰 경계이며 OS 네트워크 sandbox는 아닙니다. 원본 공격 payload·응답·엔진 보고서는 임시 영역에서 삭제하고 공통 보고서에는 정규화한 발견과 집계만 남깁니다. 예산·시간 초과·취소·범위 위반은 미완료입니다. 서비스 고유 인증·인가 검증은 기존 API 정책과 사용자별 대조 검사를 함께 사용해야 합니다.
+정책이 지정한 Authorization 환경변수는 외부에서 설정합니다. Node가 DNS를 고정한 실제 대상에 요청을 전달하고 인증정보를 주입합니다. ZAP에는 가상 HTTP origin만 제공하며 HTTPS는 Node에서 CA·호스트명을 검증합니다. CONNECT는 허용하지 않습니다. 경로·method·쿼리 이름·전체 JSON 본문을 검증한 뒤 전달합니다. 검사 전후 principal 일치와 무인증 401/403 대조를 요구하며 시드·공격·대조 요청 모두 같은 예산에 포함합니다. 이 대조만으로 지속적인 인증이나 업무 인가의 정확성을 증명하지는 않습니다.
+
+시드는 HTTP 200이어야 합니다. 실행마다 빈 loopback 포트를 배정하고 요청 수·속도·응답 크기·시간을 제한합니다. SQLi/XSS 규칙 40018/40012만 켜며 spider·OAST·script·로그인·토큰 갱신·업데이트는 끕니다. GET·POST 능동 요청은 부작용이 있을 수 있습니다. 설치한 엔진이 설정된 프록시를 따른다는 신뢰 경계이며 OS 네트워크 sandbox는 아닙니다. 원본 공격·응답·엔진 보고서는 임시 영역에서 삭제하고 공통 보고서에는 발견·수정 방향·집계를 남깁니다. 예산 소진·취소·범위 위반·리다이렉트·인증 거절·대조 실패는 미완료(exit 2)입니다.
+
+별도 `dast` Action에는 `engines: zap`, `url`, `zap-policy`, `zap-path`, 선택형 `zap-max-requests`·`zap-rate-limit`·`zap-timeout-ms`와 기존 승인·허용 origin을 전달합니다. `run-plan`에는 `{"id":"t-zap","engine":"zap","policy":"owner-alias","maxRequests":200}`와 SHA로 묶인 입력을 추가하고 운영자가 `--zap` 또는 Action `zap-path`를 지정합니다. 모든 작업이 전역 요청 예산·속도·마감 시간을 공유하며 ZAP 포함 계획은 최대 50회/초입니다. [재현 절차·측정·한계](benchmarks/dast-zap/README.md)를 확인하세요. 별도 실험용 agent-eval 형식에 ZAP을 추가한 것은 아닙니다.
 
 ## 보고서와 종료 코드
 

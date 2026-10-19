@@ -3,7 +3,7 @@ import { constants } from 'node:fs';
 import { lstat, mkdir, open, readdir, realpath, unlink } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { types } from 'node:util';
-import type { CheckResult, FailOn, ScanReport } from '../contracts.js';
+import type { CheckResult, FailOn, Finding, ScanReport } from '../contracts.js';
 import { createApiRunControl } from '../api.js';
 import { dastDefaultMaxRequests, hasDastAuthentication, parseDastPolicy, prepareDastPolicy, runDast, snapshotDastEnvironment, type DastPolicy } from '../dast.js';
 import { runSchemathesisLive } from '../schemathesis-live.js';
@@ -11,6 +11,8 @@ import { parseSchemathesisAuthPolicy, snapshotSchemathesisCredential, type Schem
 import { validateSchemathesisAuthSchema } from '../schemathesis-auth-run.js';
 import { selectOpenApiLiveOperations } from '../openapi.js';
 import { runNuclei } from '../nuclei.js';
+import { runZap } from '../zap.js';
+import { prepareZapPolicy, zapSurfaceKey, type ZapPolicy } from '../zap-policy.js';
 import { normalizeUrl, validateStaticTarget } from '../url-network.js';
 import { createReport, evaluateGate, RULESET_VERSION, writeArtifacts, writeReports } from '../report.js';
 import { RunAdmission, type AdmissionSnapshot, type TaskAdmission } from './admission.js';
@@ -22,7 +24,7 @@ export const EXECUTION_RUN_REVISION = 'built-in-plan-run-v1' as const;
 export interface ExecutionRunOptions {
   plan: ExecutionPlan; inputs: ExecutionInputs; inputBaseDir?: string; outDir: string; consent: boolean; allowedOrigin: string;
   allowPrivate?: boolean; maxRequests?: number; timeoutMs?: number; ratePerSecond?: number; concurrency?: number; failOn?: FailOn;
-  nucleiPath?: string; nucleiTemplates?: string; schemathesisPython?: string; env?: NodeJS.ProcessEnv; signal?: AbortSignal;
+  nucleiPath?: string; nucleiTemplates?: string; schemathesisPython?: string; zapPath?: string; env?: NodeJS.ProcessEnv; signal?: AbortSignal;
 }
 export interface TaskRunSummary {
   taskId: string; engine: ExecutionEngine; status: 'completed' | 'partial' | 'error'; exitCode: 0 | 1 | 2;
@@ -50,7 +52,7 @@ function optionsSnapshot(raw: ExecutionRunOptions): Required<Pick<ExecutionRunOp
   const prototype = Object.getPrototypeOf(raw);
   if (prototype !== Object.prototype && prototype !== null || Object.getOwnPropertySymbols(raw).length) invalid();
   const descriptors = Object.getOwnPropertyDescriptors(raw);
-  const names = ['plan', 'inputs', 'inputBaseDir', 'outDir', 'consent', 'allowedOrigin', 'allowPrivate', 'maxRequests', 'timeoutMs', 'ratePerSecond', 'concurrency', 'failOn', 'nucleiPath', 'nucleiTemplates', 'schemathesisPython', 'env', 'signal'];
+  const names = ['plan', 'inputs', 'inputBaseDir', 'outDir', 'consent', 'allowedOrigin', 'allowPrivate', 'maxRequests', 'timeoutMs', 'ratePerSecond', 'concurrency', 'failOn', 'nucleiPath', 'nucleiTemplates', 'schemathesisPython', 'zapPath', 'env', 'signal'];
   if (Object.keys(descriptors).some(key => !names.includes(key) || !descriptors[key].enumerable || !('value' in descriptors[key]))
     || ['plan', 'inputs', 'outDir', 'consent', 'allowedOrigin'].some(key => !Object.hasOwn(descriptors, key))) invalid();
   const read = (key: string): unknown => descriptors[key]?.value;
@@ -68,7 +70,7 @@ function optionsSnapshot(raw: ExecutionRunOptions): Required<Pick<ExecutionRunOp
   validateStaticTarget(normalizeUrl(plan.origin), allowPrivate);
   return { plan, inputs, outDir: resolve(outDir), consent: true, allowedOrigin: plan.origin, allowPrivate, env: sourceEnv as NodeJS.ProcessEnv, signal: signal as AbortSignal | undefined,
     inputBaseDir: pathOption(read('inputBaseDir')), nucleiPath: pathOption(read('nucleiPath')), nucleiTemplates: pathOption(read('nucleiTemplates')),
-    schemathesisPython: pathOption(read('schemathesisPython')), maxRequests: bounded(read('maxRequests'), 64, 20_000),
+    schemathesisPython: pathOption(read('schemathesisPython')), zapPath: pathOption(read('zapPath')), maxRequests: bounded(read('maxRequests'), 64, 20_000),
     timeoutMs: bounded(read('timeoutMs'), 120_000, 600_000), ratePerSecond: bounded(read('ratePerSecond'), 10, 150), concurrency: bounded(read('concurrency'), 2, 4), failOn: failOn as FailOn };
 }
 /** Read each granted input once. Execution uses these bytes' parsed snapshot only. */
@@ -83,10 +85,10 @@ async function readStable(path: string, cap: number): Promise<Buffer> {
     return bytes.subarray(0, used);
   } finally { await handle.close(); }
 }
-type PreparedTask = { task: ExecutionTask; policy?: DastPolicy; document?: unknown; authPolicy?: SchemathesisAuthPolicy; env?: NodeJS.ProcessEnv };
+type PreparedTask = { task: ExecutionTask; policy?: DastPolicy; zapPolicy?: ZapPolicy; document?: unknown; authPolicy?: SchemathesisAuthPolicy; env?: NodeJS.ProcessEnv };
 async function prepareTasks(options: ReturnType<typeof optionsSnapshot>): Promise<PreparedTask[]> {
   const data = new Map<string, unknown>();
-  const required = new Set(options.plan.tasks.flatMap(task => task.engine === 'native-dast' ? [task.policy] : task.engine === 'schemathesis' ? [task.schema, ...(task.authPolicy ? [task.authPolicy] : [])] : []));
+  const required = new Set(options.plan.tasks.flatMap(task => task.engine === 'native-dast' || task.engine === 'zap' ? [task.policy] : task.engine === 'schemathesis' ? [task.schema, ...(task.authPolicy ? [task.authPolicy] : [])] : []));
   for (const id of required) {
     const input = options.inputs.inputs.find(item => item.id === id); if (!input) invalid();
     const bytes = await readStable(resolve(options.inputBaseDir ?? process.cwd(), input.path), EXECUTION_INPUT_MAX_BYTES);
@@ -94,6 +96,12 @@ async function prepareTasks(options: ReturnType<typeof optionsSnapshot>): Promis
     data.set(id, JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes)));
   }
   return options.plan.tasks.map(task => {
+    if (task.engine === 'zap') {
+      const prepared = prepareZapPolicy(data.get(task.policy), options.allowPrivate, options.env);
+      if (prepared.policy.origin !== options.plan.origin || options.ratePerSecond > 50
+        || task.maxRequests < prepared.policy.requests.length + (prepared.policy.authentication ? 3 : 0) + 1) invalid();
+      return { task, zapPolicy: prepared.policy, env: prepared.policy.authentication ? { [prepared.policy.authentication.authorizationEnv]: prepared.authorization } : {} };
+    }
     if (task.engine === 'native-dast') {
       const parsed = parseDastPolicy(data.get(task.policy));
       const env = snapshotDastEnvironment(parsed.policy, options.env);
@@ -136,6 +144,9 @@ function gapCheck(reason: 'not_started' | 'execution_incomplete' | 'store_error'
 async function execute(prepared: PreparedTask, options: ReturnType<typeof optionsSnapshot>, runtime: TaskAdmission): Promise<CheckResult[]> {
   const task = prepared.task, remaining = Math.max(1, runtime.deadlineAt - Date.now());
   if (runtime.signal.aborted || Date.now() >= runtime.deadlineAt) return [gapCheck('not_started')];
+  if (task.engine === 'zap') return runZap({ url: options.plan.origin, policy: prepared.zapPolicy!, env: prepared.env, executable: options.zapPath,
+    consent: true, allowPrivate: options.allowPrivate, maxRequests: task.maxRequests, rateLimit: options.ratePerSecond,
+    timeoutMs: Math.min(remaining, 600_000), signal: options.signal }, runtime);
   if (task.engine === 'native-dast') return runDast({ policy: prepared.policy!, env: prepared.env, consent: true, allowPrivate: options.allowPrivate,
     maxRequests: task.maxRequests, timeoutMs: Math.min(remaining, 120_000), signal: options.signal }, runtime);
   if (task.engine === 'schemathesis') return runSchemathesisLive({ document: prepared.document, baseUrl: `${options.plan.origin}/`, operations: task.operations.map(path => ({ method: 'GET' as const, path })),
@@ -151,13 +162,24 @@ function observedGroup(prepared: PreparedTask, checks: CheckResult[], observed: 
   if (prepared.task.engine === 'native-dast') return check.dastExecution?.status === 'complete';
   if (prepared.authPolicy) return check.schemathesisAuth?.status === 'completed' && check.schemathesisAuth.requests.attempted === observed.requestCount;
   // These are trusted adapter results, not arbitrary caller-supplied metrics. No per-endpoint coverage is inferred.
-  return prepared.task.engine === 'nuclei' || check.metrics?.operationsExercised === prepared.task.operations.length;
+  return prepared.task.engine === 'nuclei' || prepared.task.engine === 'zap' || prepared.task.engine === 'schemathesis' && check.metrics?.operationsExercised === prepared.task.operations.length;
 }
-function findingSurface(prepared: PreparedTask, findingUrl: string | undefined): NewSurface {
+function findingSurface(prepared: PreparedTask, finding: Finding): NewSurface {
   if (prepared.policy) return { surfaceId: '', method: prepared.policy.version === 4 ? 'POST' : 'GET', path: new URL(prepared.policy.url).pathname,
     param: prepared.policy.parameter, location: prepared.policy.version === 4 ? 'body' : 'query', authState: hasDastAuthentication(prepared.policy) ? 'user' : 'anonymous' };
-  if (!findingUrl) invalid();
-  const url = new URL(findingUrl);
+  if (!finding.location.url) invalid();
+  const url = new URL(finding.location.url);
+  if (prepared.zapPolicy) {
+    for (const request of prepared.zapPolicy.requests) {
+      const selected = new URL(request.path, prepared.zapPolicy.origin);
+      if (url.origin !== selected.origin || url.pathname !== selected.pathname) continue;
+      const params = request.method === 'POST' ? Object.keys(request.body) : [...selected.searchParams.keys()];
+      const parameter = params.find(param => zapSurfaceKey(finding.ruleId.replace(/^zap\./, ''), request, param) === finding.comparisonKey);
+      if (parameter !== undefined) return { surfaceId: '', method: request.method, path: selected.pathname, param: parameter,
+        location: request.method === 'POST' ? 'body' : 'query', authState: prepared.zapPolicy.authentication ? 'user' : 'anonymous' };
+    }
+    invalid();
+  }
   let path = url.pathname;
   if (prepared.task.engine === 'schemathesis') {
     const template = prepared.task.operations.find(candidate => candidate === path || new URL(candidate, url.origin).pathname === path);
@@ -168,9 +190,9 @@ function findingSurface(prepared: PreparedTask, findingUrl: string | undefined):
 /** Post-execution audit: group completion and registered observations are separate from endpoint coverage. */
 async function storeTask(store: RunStore, runId: string, prepared: PreparedTask, report: ScanReport, complete: boolean, observed: AdmissionSnapshot, duration: number, out: string): Promise<void> {
   const task = prepared.task, groupSurfaceId = `s-${task.id.slice(2)}`, groupCheck = `group.${task.engine}`;
-  const category = task.engine === 'native-dast' ? 'injection' : 'config';
+  const category = task.engine === 'native-dast' || task.engine === 'zap' ? 'injection' : 'config';
   const rows = report.checks.flatMap(item => item.findings).map((finding, index) => {
-    const surface = findingSurface(prepared, finding.location?.url);
+    const surface = findingSurface(prepared, finding);
     surface.surfaceId = `s-${sha(JSON.stringify(surface)).slice(0, 40)}`;
     return { finding, id: `f-${sha(`${task.id}:${index}`).slice(0, 32)}`, surface, check: `observation.${sha(finding.ruleId).slice(0, 24)}` };
   });
@@ -204,7 +226,7 @@ async function artifact(path: string, base: string): Promise<RunArtifact> {
 }
 /** Preserve already registered observations; placeholder counts are error-only, never a completion claim. */
 function closeFailedTask(store: RunStore, runId: string, task: ExecutionTask, observed: AdmissionSnapshot, duration: number): boolean {
-  const category = task.engine === 'native-dast' ? 'injection' : 'config', surfaceId = `s-${task.id.slice(2)}`, check = `group.${task.engine}`;
+  const category = task.engine === 'native-dast' || task.engine === 'zap' ? 'injection' : 'config', surfaceId = `s-${task.id.slice(2)}`, check = `group.${task.engine}`;
   try {
     store.addSurfaces(runId, [{ surfaceId, method: 'GET', path: '/', authState: 'anonymous' }]);
     try { store.createTask({ taskId: task.id, runId, category, surfaceIds: [surfaceId], coveragePlan: [{ surfaceId, check }], provider: 'fixed', scriptRef: `builtin:${task.engine}` }); } catch { /* May already be registered. */ }

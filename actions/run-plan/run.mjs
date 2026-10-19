@@ -147,7 +147,7 @@ async function main() {
       '--max-requests', String(options.maxRequests), '--timeout-ms', String(options.timeoutMs), '--rate-per-second', String(options.rate),
       '--concurrency', String(options.concurrency), '--fail-on', options.failOn];
     if (options.allowPrivate) args.push('--allow-private');
-    for (const [flag, name] of [['--schemathesis-python', 'WAKEIO_PLAN_SCHEMATHESIS_PYTHON'], ['--nuclei', 'WAKEIO_PLAN_NUCLEI_PATH'], ['--nuclei-templates', 'WAKEIO_PLAN_NUCLEI_TEMPLATES']]) {
+    for (const [flag, name] of [['--schemathesis-python', 'WAKEIO_PLAN_SCHEMATHESIS_PYTHON'], ['--nuclei', 'WAKEIO_PLAN_NUCLEI_PATH'], ['--nuclei-templates', 'WAKEIO_PLAN_NUCLEI_TEMPLATES'], ['--zap', 'WAKEIO_PLAN_ZAP_PATH']]) {
       const value = env[name]; if (value) { requireFact(value.length <= 4096 && !/[\u0000-\u001f\u007f]/.test(value)); args.push(flag, value); }
     }
     requireFact(true); state.setupStatus = 'success';

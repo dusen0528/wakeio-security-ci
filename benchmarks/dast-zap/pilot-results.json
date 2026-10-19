@@ -1,0 +1,125 @@
+{
+  "version": 1,
+  "kind": "owned-zap-pilot",
+  "engine": {
+    "zap": "2.17.0",
+    "automation": "0.58.0",
+    "ascanrules": "78"
+  },
+  "profileRevision": "zap-bounded-http-json-v1",
+  "runtime": {
+    "node": "v22.23.1",
+    "platform": "darwin",
+    "arch": "arm64"
+  },
+  "measuredAt": "2026-10-19T06:38:37.262Z",
+  "labelsSha256": "168293d4c5c5a827d2087eb27e78508ace7d4d8669cc4f0e80f65b2967a24224",
+  "rounds": [
+    {
+      "round": 1,
+      "TP": 3,
+      "FP": 0,
+      "FN": 0,
+      "TN": 3,
+      "elapsedMs": 20286.26,
+      "requests": 97,
+      "maxRequests": 200,
+      "identityBefore": true,
+      "anonymousDenied": true,
+      "identityAfter": true
+    },
+    {
+      "round": 2,
+      "TP": 3,
+      "FP": 0,
+      "FN": 0,
+      "TN": 3,
+      "elapsedMs": 20472.06,
+      "requests": 97,
+      "maxRequests": 200,
+      "identityBefore": true,
+      "anonymousDenied": true,
+      "identityAfter": true
+    },
+    {
+      "round": 3,
+      "TP": 3,
+      "FP": 0,
+      "FN": 0,
+      "TN": 3,
+      "elapsedMs": 20248.26,
+      "requests": 97,
+      "maxRequests": 200,
+      "identityBefore": true,
+      "anonymousDenied": true,
+      "identityAfter": true
+    },
+    {
+      "round": 4,
+      "TP": 3,
+      "FP": 0,
+      "FN": 0,
+      "TN": 3,
+      "elapsedMs": 20683.41,
+      "requests": 97,
+      "maxRequests": 200,
+      "identityBefore": true,
+      "anonymousDenied": true,
+      "identityAfter": true
+    },
+    {
+      "round": 5,
+      "TP": 3,
+      "FP": 0,
+      "FN": 0,
+      "TN": 3,
+      "elapsedMs": 20429.54,
+      "requests": 97,
+      "maxRequests": 200,
+      "identityBefore": true,
+      "anonymousDenied": true,
+      "identityAfter": true
+    }
+  ],
+  "summary": {
+    "repeats": 5,
+    "TP": [
+      3,
+      3,
+      3,
+      3,
+      3
+    ],
+    "FP": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "FN": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "TN": [
+      3,
+      3,
+      3,
+      3,
+      3
+    ],
+    "elapsedP50Ms": 20429.54,
+    "elapsedMaxMs": 20683.41,
+    "requestsMin": 97,
+    "requestsMax": 97
+  },
+  "limits": [
+    "Small self-authored SQLite fixture; not external-target efficacy or an autonomous-agent comparison.",
+    "Three vulnerable and three fixed sites; one label per distinct rule/method/path/parameter. Unexpected distinct findings count as FP.",
+    "Elapsed includes engine version check, startup, seeds, three principal controls, active scan, shutdown and cleanup.",
+    "Policy and fixture are public. No hidden evaluation split or production-coverage claim."
+  ]
+}

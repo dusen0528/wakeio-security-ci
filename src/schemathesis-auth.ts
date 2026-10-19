@@ -48,7 +48,7 @@ function relativePath(value: unknown, query: boolean): string {
   }
   return value;
 }
-function assertion(value: unknown, query: boolean): SchemathesisAuthAssertion {
+export function parseAuthAssertion(value: unknown, query: boolean): SchemathesisAuthAssertion {
   if (!exact(value, ['path', 'status', 'jsonPointer', 'equals']) || !Number.isSafeInteger(value.status) || value.status < 200 || value.status > 299
     || typeof value.jsonPointer !== 'string' || value.jsonPointer.length > 512 || value.jsonPointer !== '' && !value.jsonPointer.startsWith('/')
     || /~(?![01])/.test(value.jsonPointer) || /[\u0000-\u001f\u007f]/.test(value.jsonPointer) || !scalar(value.equals)) fail();
@@ -63,17 +63,17 @@ export function parseSchemathesisAuthPolicy(input: unknown): { policy: Schemathe
   const seen = new Set<string>();
   const operations = value.operations.map((item: unknown) => {
     if (!exact(item, ['path', 'normal'])) fail();
-    const path = relativePath(item.path, false), normal = assertion(item.normal, true);
+    const path = relativePath(item.path, false), normal = parseAuthAssertion(item.normal, true);
     if (seen.has(path) || !operationPathMatches(path, normal.path.split('?')[0])) fail(); seen.add(path);
     return { path, normal };
   });
   const policy: SchemathesisAuthPolicy = { version: 1, kind: 'schemathesis-get-auth', baseUrl: base.href, authorizationEnv: value.authorizationEnv,
-    identity: assertion(value.identity, false), operations };
+    identity: parseAuthAssertion(value.identity, false), operations };
   const bytes = JSON.stringify(policy); if (Buffer.byteLength(bytes) > 64 * 1024) fail();
   return { policy, policySha256: createHash('sha256').update(bytes).digest('hex') };
 }
 /** Select a single own data value before asynchronous work; never enumerate environment secrets. */
-export function snapshotSchemathesisCredential(policy: SchemathesisAuthPolicy, env: NodeJS.ProcessEnv = process.env): string {
+export function snapshotSchemathesisCredential(policy: Pick<SchemathesisAuthPolicy, 'authorizationEnv'>, env: NodeJS.ProcessEnv = process.env): string {
   if (!env || typeof env !== 'object' || types.isProxy(env) || Array.isArray(env)) fail();
   const descriptor = Object.getOwnPropertyDescriptor(env, policy.authorizationEnv), value: unknown = descriptor && 'value' in descriptor ? descriptor.value : undefined;
   if (typeof value !== 'string' || !value.trim() || value.length > 8192 || /[^\x20-\x7e\x80-\xff]/.test(value)) fail();
