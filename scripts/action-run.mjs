@@ -386,7 +386,7 @@ async function dastPolicy(env) {
       if (!/^\d+$/.test(cap) || Number(cap) < zap.minimumRequests || Number(cap) > 2000 || !/^\d+$/.test(rate) || Number(rate) < 1 || Number(rate) > 50 || !/^\d+$/.test(timeout) || Number(timeout) < 1 || Number(timeout) > 600000) return refuse('invalid ZAP request, rate or time budget');
       plan.zap = { file, origin: zap.origin, executable: resolve(workspace, value(env.WAKEIO_ZAP_PATH)) };
     } catch { return refuse('ZAP policy preflight failed'); }
-  } else if (['WAKEIO_ZAP_POLICY', 'WAKEIO_ZAP_PATH', 'WAKEIO_ZAP_MAX_REQUESTS', 'WAKEIO_ZAP_RATE_LIMIT', 'WAKEIO_ZAP_TIMEOUT_MS'].some(name => value(env[name]))) return refuse('zap inputs require engines: zap');
+  } else if (['WAKEIO_ZAP_POLICY', 'WAKEIO_ZAP_MAX_REQUESTS', 'WAKEIO_ZAP_RATE_LIMIT', 'WAKEIO_ZAP_TIMEOUT_MS'].some(name => value(env[name]))) return refuse('zap inputs require engines: zap');
   if (value(env.WAKEIO_OPENAPI)) {
     const target = originOf(value(env.WAKEIO_API_BASE));
     if (!target || !value(env.WAKEIO_OPERATIONS)) return refuse('openapi requires an origin api-base and at least one operation');

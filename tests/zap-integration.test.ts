@@ -2,9 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn, execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { chmod, copyFile, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
+import { copyFile, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { runZap } from '../src/zap.js';
 import { runExecutionPlan } from '../src/agent-dast/runner.js';
@@ -144,6 +144,11 @@ test('ZAP DAST Action refuses missing consent, credentials, policy and budgets b
     const env = { ...target.env, WAKEIO_MODE: 'dast', WAKEIO_ACTION_PATH: ROOT, GITHUB_WORKSPACE: top, GITHUB_EVENT_NAME: 'workflow_dispatch',
       GITHUB_OUTPUT: join(top, 'outputs'), WAKEIO_ACTIVE_CONSENT: 'true', WAKEIO_ALLOWED_ORIGINS: target.origin, WAKEIO_URL: target.origin,
       WAKEIO_ENGINES: 'zap', WAKEIO_ZAP_PATH: '/missing-engine-must-not-start', WAKEIO_ZAP_POLICY: 'policy.json', WAKEIO_ALLOW_PRIVATE: 'true', WAKEIO_OUT: 'reports' };
+    // A prepared runtime may be inherited by non-ZAP engine jobs without opting them into ZAP.
+    const preflight = await child(join(ROOT, 'scripts/action-run.mjs'), [], { ...env, WAKEIO_MODE: 'dast-preflight', WAKEIO_ENGINES: '',
+      WAKEIO_ZAP_POLICY: '', WAKEIO_OPENAPI: 'not-read-during-preflight.json', WAKEIO_API_BASE: target.origin, WAKEIO_OPERATIONS: '/items' }, top);
+    assert.equal(preflight.code, 0); assert.match(await readFile(join(top, 'outputs'), 'utf8'), /prepare-schemathesis=true/);
+    assert.equal(target.seen.length, 0);
     for (const patch of [{ WAKEIO_ACTIVE_CONSENT: 'false' }, { WAKEIO_ZAP_TEST_AUTH: '' }, { WAKEIO_ALLOWED_ORIGINS: 'https://unapproved.invalid' },
       { WAKEIO_ZAP_POLICY: '' }, { WAKEIO_ZAP_MAX_REQUESTS: '1' }, { WAKEIO_ZAP_RATE_LIMIT: '51' }, { WAKEIO_ZAP_TIMEOUT_MS: '0' }, { GITHUB_EVENT_NAME: 'pull_request_target' }]) {
       const result = await child(join(ROOT, 'scripts/action-run.mjs'), [], { ...env, ...patch }, top);
