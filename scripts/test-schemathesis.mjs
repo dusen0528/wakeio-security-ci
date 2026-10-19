@@ -33,6 +33,10 @@ try {
   const setup = process.env.WAKEIO_NUCLEI && process.env.WAKEIO_NUCLEI_TEMPLATES ? undefined
     : JSON.parse(await readFile(NUCLEI_SETUP_FILE, 'utf8').catch(error => { if (error.code === 'ENOENT') return 'null'; throw error; }));
   const engineEnvironment = requiredNucleiEnvironment(process.env, setup);
+  for (const name of ['WAKEIO_SEMGREP_TEST_PATH', 'WAKEIO_GOVULNCHECK_EXECUTABLE', 'WAKEIO_GO_EXECUTABLE',
+    'WAKEIO_GO_MODULE_CACHE', 'WAKEIO_TRIVY_EXECUTABLE', 'WAKEIO_TRIVY_CACHE', 'WAKEIO_TRIVY_IMAGE_ARCHIVE', 'WAKEIO_ZAP_PATH']) {
+    if (!engineEnvironment[name] || /[\r\n\0]/.test(engineEnvironment[name])) throw Error('security_toolchain_setup_required:' + name);
+  }
   receipt.nucleiRuntime = { executable: engineEnvironment.WAKEIO_NUCLEI, templates: engineEnvironment.WAKEIO_NUCLEI_TEMPLATES };
   receipt.sourceBefore = sourceSnapshot(root);
   const files = currentTestFiles(root);
@@ -81,6 +85,19 @@ try {
     ['real nuclei: risk/normal pair, wire coverage and egress refusal counts',
       'real nuclei: request budget and a failing target are partial even though nuclei exits 0'],
     join(root, 'build/tests/nuclei.test.js'));
+  receipt.semgrep = validateTestEvents(events,
+    ['Semgrep CE real owned Go fixtures detect three risky patterns and reject fixed counterparts'],
+    join(root, 'build/tests/semgrep.test.js'));
+  receipt.govulncheck = validateTestEvents(events,
+    ['real govulncheck distinguishes an affected Go call from its fixed dependency and a clean module'],
+    join(root, 'build/tests/govulncheck.test.js'));
+  receipt.trivyVulnerabilities = validateTestEvents(events,
+    ['real Trivy detects a known package CVE, accepts a clean inventory, and reads an image without running it'],
+    join(root, 'build/tests/trivy-vuln.test.js'));
+  receipt.zap = validateTestEvents(events,
+    ['real ZAP detects owned reflected XSS, rejects the encoded control, and accounts every fixture request',
+      'real ZAP request cap stops the engine and leaves a partial result'],
+    join(root, 'build/tests/zap.test.js'));
   receipt.agentDastRunner = validateTestEvents(events, [
     'runner engines independent: real Schemathesis vulnerable/fixed contract pair and irrecoverable transport errors propagate 1/0/2',
     'runner engines independent: real signed one-template Nuclei and native SQL tasks overlap and share observed run counts',

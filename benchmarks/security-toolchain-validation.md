@@ -92,6 +92,14 @@ Missing mandatory real-tool inputs fail the require-enabled CVE tests;
 Semgrep/ZAP live tests are skipped unless their executable variables are set.
 The default offline protocol tests do not establish a real-engine pass.
 
+Linux x64 CI prepares all four engines, advisory caches and the pinned image
+archive with `node scripts/bootstrap-security-toolchain.mjs`; the setup step
+publishes prepared paths through `GITHUB_ENV`. It downloads fixture dependencies
+before scanning and never runs the image. Both required-engine workflows then
+require the real test names in their structured receipts, with zero skipped
+tests. The initial CI run correctly failed that gate when these five new real
+tests lacked prepared runtimes; no skip exemption was added.
+
 The full suite also supports the existing prepared Schemathesis and Nuclei
 runtimes. Use `node --test --test-concurrency=2 build/tests/*.test.js` when running
 all real engines together. Local evidence is retained under ignored
