@@ -121,6 +121,10 @@ than claiming those local artifacts are distributed with the package.
   when ZAP owns the URL scope.
 - Cleanup failure cannot produce a completed ZAP check. No failing outcome was
   replaced with a claim of clean findings.
+- CI setup cleanup handles Go's read-only cache directories without following
+  external symlinks, and preserves the original setup error if cleanup also
+  fails. The ZAP version probe uses the same 512 MiB and update-off settings as
+  the scanner. Bootstrap/CI contract tests: 22 passed, 0 failed, 0 skipped.
 
 Official contracts: [Semgrep engine/rules licensing](https://semgrep.dev/blog/2024/important-updates-to-semgrep-oss/),
 [govulncheck output and reachability](https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck),

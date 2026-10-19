@@ -1,6 +1,6 @@
 // Explicit Linux CI preparation only. Product scans never install these engines.
 import { createHash } from 'node:crypto';
-import { appendFile, chmod, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { appendFile, chmod, lstat, mkdir, mkdtemp, readdir, rm, writeFile } from 'node:fs/promises';
 import { isAbsolute, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { installToolsDetailed } from './install-tools.mjs';
@@ -42,7 +42,7 @@ async function command(name, executable, args, cwd, timeoutMs, env = process.env
   const result = await runBounded(executable, args, { cwd, timeoutMs, env });
   if (result.reason || !result.cleanupConfirmed || result.exitCode !== 0) {
     process.stderr.write(result.stderr + result.stdout);
-    throw Error(`${name}:${result.reason ?? (result.cleanupConfirmed ? 'command_failed' : 'cleanup_unknown')}`);
+    throw Error(`${name}:${result.reason ?? (result.cleanupConfirmed ? 'command_failed' : 'cleanup_unknown')}:exit=${result.exitCode}:reason=${result.reason}:cleanup=${result.cleanup}:signal=${result.signal}`);
   }
   return result.stdout;
 }
@@ -51,6 +51,22 @@ const shellQuote = value => `'${value.replaceAll("'", "'\\''")}'`;
 function pathValue(value) {
   if (typeof value !== 'string' || !isAbsolute(value) || /[\0\r\n]/.test(value)) throw Error('security_setup_path');
   return value;
+}
+
+async function writableDirectories(directory) {
+  const stat = await lstat(directory).catch(error => { if (error.code === 'ENOENT') return undefined; throw error; });
+  if (!stat?.isDirectory() || stat.isSymbolicLink()) return;
+  // Go caches use read-only directories. Only the fresh owned setup tree is changed.
+  await chmod(directory, 0o700);
+  for (const entry of await readdir(directory, { withFileTypes: true })) {
+    if (entry.isDirectory() && !entry.isSymbolicLink()) await writableDirectories(join(directory, entry.name));
+  }
+}
+
+export async function failSecuritySetup(directory, originalError) {
+  try { await writableDirectories(directory); await rm(directory, { recursive: true, force: true }); }
+  catch (cleanupError) { process.stderr.write(`Security setup cleanup failed (${cleanupError.code ?? 'unknown'}); preserving the original setup failure.\n`); }
+  throw originalError;
 }
 
 export async function bootstrapSecurityToolchain() {
@@ -108,7 +124,10 @@ export async function bootstrapSecurityToolchain() {
         const zap = join(directory, 'ZAP_2.17.0/zap.sh'), wrapper = join(directory, 'zap'); await chmod(zap, 0o700);
         // The scan supervisor strips inherited environment. Bind Java explicitly in this CI-only wrapper.
         await writeFile(wrapper, `#!/bin/sh\nJAVA_HOME=${shellQuote(javaHome)}\nexport JAVA_HOME\nexec ${shellQuote(zap)} "$@"\n`, { mode: 0o700, flag: 'wx' });
-        const version = await command('zap-version', wrapper, ['-silent', '-dir', join(directory, 'zap-version'), '-version'], directory, 30_000);
+        const version = await command('zap-version', wrapper, ['-Xmx512m', '-silent', '-dir', join(directory, 'zap-version'),
+          '-config', 'start.checkForUpdates=false', '-config', 'start.checkAddonUpdates=false',
+          '-config', 'start.downloadNewRelease=false', '-config', 'start.installAddonUpdates=false',
+          '-config', 'start.installScannerRules=false', '-config', 'callhome.tel.enabled=false', '-version'], directory, 30_000);
         if (!version.split(/\r?\n/).includes(SECURITY_TOOLCHAIN_RELEASES.zap.version)) throw Error('zap_version_mismatch');
         environment.WAKEIO_ZAP_PATH = wrapper;
       })(),
@@ -124,7 +143,7 @@ export async function bootstrapSecurityToolchain() {
     await writeFile(join(root, 'artifacts/ci/security-toolchain-setup.json'), JSON.stringify({ version: 1, releases: SECURITY_TOOLCHAIN_RELEASES,
       environment, imageExecuted: false, packageVerification: 'Go/ZAP archive SHA256; existing Trivy archive SHA256; Go module checksum database; Semgrep version pin via PyPI (not a transitive hash lock)' }, null, 2) + '\n', { mode: 0o600 });
     return environment;
-  } catch (error) { await rm(directory, { recursive: true, force: true }); throw error; }
+  } catch (error) { return failSecuritySetup(directory, error); }
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
