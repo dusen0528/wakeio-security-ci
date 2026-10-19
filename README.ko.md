@@ -129,7 +129,7 @@ SARIF는 `steps.wakeio.outputs.report-sarif`, `checkout_path: wakeio-source`, `c
 | OSV-Scanner | 2.6.0 | 지원 lockfile과 자체 포함된 고정 Python requirements의 advisory | advisory 조회이며 source reachability·악성코드 분석 아님. 온라인 모드에서는 패키지 식별자가 공개 OSV 서비스로 전송될 수 있음 |
 | Trivy | 0.74.0 | `trivy`: 설정 검사, `trivy-vuln`: 의존성 CVE, `--image-archive`: 이미지·OS 패키지 CVE | 패키지 advisory이며 런타임 악용 가능성을 증명하지 않음. 이미지 빌드·pull·실행 없음 |
 | Bandit | 1.9.4 | 선택적인 Python AST 검사 | 별도 실행 파일을 준비해야 하며 선택한 Python 파일만 검사하고 대상 코드는 실행하지 않음 |
-| Semgrep CE | 1.147.0 | WakeIO Go 규칙 3개: SQL 입력, 신뢰 HTML 변환, TLS 검증 해제 | 자체 로컬 규칙만 사용. 전체 SAST나 인증·인가 검증을 보장하지 않음 |
+| Semgrep CE | 1.147.0 | WakeIO Go 규칙 6개: SQL·HTML·TLS·명령 실행·SSRF·파일 경로 | 자체 로컬 규칙만 사용. 전체 SAST나 인증·인가 검증을 보장하지 않음 |
 | govulncheck | 1.9.0 | Go 의존성의 알려진 취약점과 정적 호출 경로 | 준비된 Go·module cache와 완전한 루트 module 하나 필요 |
 | OWASP ZAP | 2.17.0 | 명시한 HTTP GET 쿼리의 SQLi·반사형 XSS 능동 검사 | HTTPS·자동 크롤링·로그인·쓰기·임의 정책은 이번 어댑터 범위 밖 |
 
@@ -168,11 +168,15 @@ node build/src/cli.js scan --source /path/to/app --tools trivy-vuln \
 
 `--govuln-db URL`로 Go 취약점 DB를 지정할 수 있고, 기본값은 공식 DB입니다. Go module·toolchain 자동 다운로드는 막습니다. Trivy는 기본적으로 취약점 DB를 내려받을 수 있으며, `--trivy-offline`은 준비된 DB만 사용합니다. 반복 실행은 `--trivy-cache`를 재사용하세요. 도구·DB 누락, module 로드 실패, 손상된 출력, 불완전한 수집은 **exit 2**이며 `--fail-on none`으로 숨겨지지 않습니다.
 
-공통 보고서 4종에 취약점 ID, 영향받는 패키지·버전, 알려진 수정 버전과 출처가 들어갑니다. govulncheck 프로토콜에는 심각도 점수가 없어 medium 정책을 명시하며, module 존재·package import·호출 경로를 구분합니다. CVE 검사 완료를 소스 코드 분석 완료로 계산하지 않습니다. Semgrep 파일 분석 완료도 선택한 3개 규칙 실행을 뜻하며 서비스 전체의 안전을 의미하지 않습니다. 확인되지 않은 runtime·DB provenance는 unknown으로 남겨 비교 결과를 과장하지 않습니다.
+공통 보고서 4종에 취약점 ID, 영향받는 패키지·버전, 알려진 수정 버전과 출처가 들어갑니다. govulncheck 프로토콜에는 심각도 점수가 없어 medium 정책을 명시하며, module 존재·package import·호출 경로를 구분합니다. CVE 검사 완료를 소스 코드 분석 완료로 계산하지 않습니다. Semgrep 파일 분석 완료도 선택한 6개 규칙 실행을 뜻하며 서비스 전체의 안전을 의미하지 않습니다. 확인되지 않은 runtime·DB provenance는 unknown으로 남겨 비교 결과를 과장하지 않습니다.
 
-CI Action에는 `tools: semgrep,govulncheck,trivy-vuln`과 `semgrep-path`, `govulncheck-path`, `go-path`, `go-module-cache`, `govuln-db`, `trivy-cache`, `trivy-offline`, `image-archive`를 전달할 수 있습니다. Go와 두 실행 파일을 앞 단계에서 준비하세요. ZAP은 CLI/SDK 경로를 지원하며 기존 `actions/dast`·`run-plan`의 엔진 목록에는 아직 포함하지 않습니다.
+CI Action에는 `tools: semgrep,govulncheck,trivy-vuln`과 `semgrep-path`, `govulncheck-path`, `go-path`, `go-module-cache`, `govuln-db`, `go-build-tags`, `trivy-cache`, `trivy-offline`, `image-archive`를 전달할 수 있습니다. Go와 두 실행 파일을 앞 단계에서 준비하세요. ZAP은 CLI/SDK 경로를 지원하며 기존 `actions/dast`·`run-plan`의 엔진 목록에는 아직 포함하지 않습니다.
 
 Semgrep 엔진과 공식 규칙 묶음은 [라이선스 조건이 다릅니다](https://semgrep.dev/blog/2024/important-updates-to-semgrep-oss/). 이번에는 WakeIO가 작성한 Apache-2.0 Go 규칙만 포함합니다. registry 규칙 다운로드, 로그인, metrics 전송은 켜지 않습니다.
+
+Go 빌드 변형은 `--go-build-tags feature,release`(Action 입력 `go-build-tags`)로 선택합니다. 정규화한 태그와 관찰한 Go 버전을 보고서에 남기며 해당 빌드만 분석합니다. 고정 버전 엔진이 테스트 전용 의존성을 누락하는 사례를 재현해, Go 테스트 패키지 분석 옵션은 제공하지 않습니다.
+
+Trivy는 자체 분석기로 `uv.lock`, `requirements-dev.txt`, `requirements-prod.txt`도 검사합니다. 버전 범위·include·URL 등 미확정 requirements가 섞이면 발견된 취약점은 보존하고 커버리지는 미완료로 표시합니다.
 
 ### ZAP 능동 검사
 
@@ -186,7 +190,7 @@ node build/src/cli.js scan --url http://127.0.0.1:8080 \
   --zap-max-requests 200 --zap-rate-limit 10 --zap-timeout-ms 300000
 ```
 
-인증된 egress gate로 origin·경로·GET method·요청 수·속도·응답 크기·시간을 제한합니다. 쿼리 전용 SQLi/XSS 규칙 40018/40012만 켜며 spider·OAST·script·로그인·업데이트는 끕니다. GET 공격도 부작용이 있을 수 있습니다. 설치한 엔진이 설정된 프록시를 따른다는 신뢰 경계이며 OS 네트워크 sandbox는 아닙니다. 원본 공격 payload·응답·엔진 보고서는 임시 영역에서 삭제하고 공통 보고서에는 정규화한 발견과 집계만 남깁니다. 예산·시간 초과·취소·범위 위반은 미완료입니다. 서비스 고유 인증·인가 검증은 기존 API 정책과 사용자별 대조 검사를 함께 사용해야 합니다.
+시드 GET은 HTTP 200을 반환해야 하며, 다른 응답이면 자동화 실행을 미완료로 판정합니다. 서로 다른 취약 쿼리 매개변수는 값과 이름을 노출하지 않는 해시로 구분합니다. 실행마다 loopback의 빈 포트를 OS가 배정하므로 동시 검사에서 기본 8080 포트가 충돌하지 않습니다. 인증된 egress gate로 origin·경로·GET method·요청 수·속도·응답 크기·시간을 제한합니다. 쿼리 전용 SQLi/XSS 규칙 40018/40012만 켜며 spider·OAST·script·로그인·업데이트는 끕니다. GET 공격도 부작용이 있을 수 있습니다. 설치한 엔진이 설정된 프록시를 따른다는 신뢰 경계이며 OS 네트워크 sandbox는 아닙니다. 원본 공격 payload·응답·엔진 보고서는 임시 영역에서 삭제하고 공통 보고서에는 정규화한 발견과 집계만 남깁니다. 예산·시간 초과·취소·범위 위반은 미완료입니다. 서비스 고유 인증·인가 검증은 기존 API 정책과 사용자별 대조 검사를 함께 사용해야 합니다.
 
 ## 보고서와 종료 코드
 

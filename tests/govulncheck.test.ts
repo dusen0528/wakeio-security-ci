@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, relative } from 'node:path';
-import { parseGovulncheckOutput, runGovulncheck } from '../src/source/govulncheck.js';
+import { normalizeGoBuildTags, parseGovulncheckOutput, runGovulncheck } from '../src/source/govulncheck.js';
 import type { SourceSnapshot } from '../src/source/types.js';
 
 function snapshot(): SourceSnapshot {
@@ -39,6 +39,20 @@ test('govulncheck rejects malformed/truncated streams, absent inventory and unbo
   const badPosition = { finding: { ...calledFinding.finding, trace: [...calledFinding.finding.trace.slice(0, 1), { module: 'example.test/app', position: { filename: '../secret.go', line: 2 } }] } };
   for (const text of [stream().slice(0, -1), '{}', stream().replace('v1.0.0', 'v2.0.0'), stream(calledFinding), stream(osv, badPosition), stream({ error: { message: 'failure' } })]) {
     assert.throws(() => parseGovulncheckOutput(text, snapshot().files));
+  }
+});
+
+test('govulncheck binds findings to the inventoried module version', () => {
+  for (const frame of [{ module: 'unrelated.test/module', version: 'v1.0.0' }, { module: 'example.test/dependency', version: 'v9.0.0' }, { module: 'example.test/dependency' }]) {
+    assert.throws(() => parseGovulncheckOutput(stream(osv, { finding: { ...moduleFinding.finding, trace: [frame] } }), snapshot().files), /unbound finding/);
+  }
+});
+
+test('Go build tags are bounded names and invalid SDK build scope cannot launch an engine', async () => {
+  assert.deepEqual(normalizeGoBuildTags(['release', 'go1.23', 'release']), ['go1.23', 'release']);
+  for (const tags of [[''], ['release -ldflags=x'], ['../file'], ['tag\nINJECTED'], Array(33).fill('tag')]) {
+    assert.throws(() => normalizeGoBuildTags(tags));
+    assert.equal((await runGovulncheck({ snapshot: snapshot(), stageDir: '/unused', toolPath: '/never/run', buildTags: tags, timeoutMs: 1000 })).status, 'error');
   }
 });
 
@@ -96,6 +110,10 @@ test('govulncheck accepts findings despite JSON exit zero, isolates Go env, and 
     assert.equal(captured.env.GOFLAGS, '-mod=readonly'); assert.equal(captured.env.GOWORK, 'off');
     assert.equal(captured.env.GOMODCACHE, moduleCache); assert.equal(captured.env.CGO_ENABLED, '0');
     assert.equal(captured.env.PATH.split(':')[0], home);
+    const scoped = await runGovulncheck({ snapshot: snapshot(), stageDir: stage, toolPath: executable, goPath: go, buildTags: ['release', 'feature', 'release'], timeoutMs: 5000 });
+    const scopedArgs = JSON.parse(await readFile(receipt, 'utf8')).argv;
+    assert.deepEqual(scopedArgs, ['-json', '-mode', 'source', '-scan', 'symbol', '-tags', 'feature,release', './...']);
+    assert.equal(scoped.metrics?.buildTags, 'feature,release'); assert.equal(scoped.metrics?.testPackages, false);
     await writeFile(executable, `#!${process.execPath}\nprocess.stdout.write(${JSON.stringify(stream())}); process.exit(1);\n`);
     assert.equal((await runGovulncheck({ snapshot: snapshot(), stageDir: stage, toolPath: executable, goPath: go, timeoutMs: 5000 })).status, 'error');
   } finally { await rm(top, { recursive: true, force: true }); }
@@ -123,6 +141,18 @@ test('real govulncheck distinguishes an affected Go call from its fixed dependen
       assert.equal(result.status, 'completed', result.notes.join(' '));
       assert.equal(result.findings.some(finding => finding.ruleId === 'govulncheck:GO-2021-0113'), affected);
       if (affected) assert.ok(Number(result.metrics?.reachableFindings) > 0);
+      if (affected) {
+        const scoped = structuredClone(input);
+        scoped.files[1]!.text = 'package main\nfunc main() {}\n';
+        const text = '//go:build feature\n\npackage main\nimport "golang.org/x/text/language"\nfunc init() { _, _ = language.Parse("en") }\n';
+        scoped.files.push({ path: 'feature.go', category: 'code', sensitive: false, bytes: Buffer.byteLength(text), text });
+        const defaultScope = await runGovulncheck({ snapshot: scoped, stageDir: root, toolPath, goPath, moduleCache, timeoutMs: 120_000 });
+        assert.equal(defaultScope.status, 'completed', defaultScope.notes.join(' '));
+        assert.equal(defaultScope.metrics?.reachableFindings, 0);
+        const enabled = await runGovulncheck({ snapshot: scoped, stageDir: root, toolPath, goPath, moduleCache, buildTags: ['feature'], timeoutMs: 120_000 });
+        assert.equal(enabled.status, 'completed', enabled.notes.join(' '));
+        assert.ok(Number(enabled.metrics?.reachableFindings) > 0, JSON.stringify(enabled));
+      }
       if (!version) assert.equal(result.findings.length, 0);
     }
   } finally { await rm(root, { recursive: true, force: true }); }

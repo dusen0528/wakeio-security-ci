@@ -1,6 +1,7 @@
 import { lstat, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { createHash } from 'node:crypto';
 import { createApiRunControl } from './api.js';
 import { RunAdmission } from './agent-dast/admission.js';
 import type { CheckResult, Finding, Severity } from './contracts.js';
@@ -69,7 +70,7 @@ export function buildZapPlan(urls: URL[], proxy: URL, directory: string): object
         postData: { enabled: false }, urlPath: false, httpHeaders: { enabled: false, allRequests: false },
         cookieData: { enabled: false }, scripts: false,
       } },
-      { type: 'requestor', requests: urls.map(url => ({ url: url.href, method: 'GET' })) },
+      { type: 'requestor', requests: urls.map(url => ({ url: url.href, method: 'GET', responseCode: 200 })) },
       // Only the outer supervisor/gate may stop a scan: ZAP's per-rule timeouts can silently skip work.
       { type: 'activeScan', parameters: { context: 'wakeio', threadPerHost: 1, handleAntiCSRFTokens: false, maxRuleDurationInMins: 0, maxScanDurationInMins: 0 },
         policyDefinition: { defaultThreshold: 'Off', defaultStrength: 'Low', rules: RULES.map(id => ({ id, strength: 'Low', threshold: 'Medium' })) } },
@@ -97,11 +98,12 @@ export function parseZapReport(raw: unknown, origin: string, paths: string[]): {
         let url: URL;
         try { url = new URL(normalizeUrl(instance.uri).href); } catch { result.malformed++; continue; }
         if (url.origin !== origin || !urls.some(seed => seed.pathname === url.pathname && seed.searchParams.has(instance.param as string))) { result.outOfScope++; continue; }
-        const key = `${alert.pluginid}:${url.pathname}:${instance.param}`;
+        const key = JSON.stringify([alert.pluginid, url.pathname, instance.param]);
         if (seen.has(key)) continue;
         seen.add(key);
         const xss = alert.pluginid === '40012';
         result.findings.push({ ruleId: `zap.${alert.pluginid}`, title: xss ? 'Reflected cross-site scripting' : 'SQL injection',
+          comparisonKey: createHash('sha256').update(key).digest('hex'),
           description: `ZAP ${ZAP_VERSION} reported ${xss ? 'reflected XSS' : 'SQL injection'} at an approved GET query surface. Confirm the observation before treating it as an independently verified exploit. Raw attacks and response evidence are not retained.`,
           severity: severities[Number(alert.riskcode)]!, confidence: Number(alert.confidence) >= 3 ? 'high' : Number(alert.confidence) === 2 ? 'medium' : 'low',
           kind: 'observation', location: { url: safeUrl(url) },
@@ -141,7 +143,8 @@ export async function runZap(options: ZapOptions): Promise<CheckResult[]> {
   let gate: EgressGate | undefined;
   let result: CheckResult[] | undefined;
   try {
-    const args = ['-Xmx512m', '-silent', '-dir', work, '-config', 'start.checkForUpdates=false', '-config', 'start.checkAddonUpdates=false',
+    // ZAP 2.17 ignores a CLI -port 0 override; the native config accepts an OS-assigned port.
+    const args = ['-Xmx512m', '-silent', '-dir', work, '-host', '127.0.0.1', '-config', 'network.localServers.mainProxy.port=0', '-config', 'start.checkForUpdates=false', '-config', 'start.checkAddonUpdates=false',
       '-config', 'start.downloadNewRelease=false', '-config', 'start.installAddonUpdates=false', '-config', 'start.installScannerRules=false',
       '-config', 'callhome.tel.enabled=false', '-config', 'network.connection.socksProxy.enabled=false', '-config', 'network.connection.httpProxy.authEnabled=true'];
     const version = await runProcess(executable, [...args, '-version'], { cwd: work, home: work, timeoutMs: Math.min(30_000, timeoutMs), signal: control.signal });
@@ -169,8 +172,10 @@ export async function runZap(options: ZapOptions): Promise<CheckResult[]> {
       : counters.upstreamErrors || counters.rejectedEncoding ? 'transport_error' : counters.forwarded <= urls.length ? 'active_scan_unobserved' : 'complete');
     result = [{ id: ZAP_CHECK_ID, status: reason === 'complete' ? 'completed' : 'partial', findings: parsed.findings,
       notes: [SCOPE, `ZAP ${ZAP_VERSION}: ${counters.forwarded} forwarded request(s); ${urls.length} seed URL(s).`,
+        'Every seed GET must return HTTP 200; a mismatched seed response makes the automation run incomplete.',
         ...(reason === 'complete' ? ['The configured engine jobs finished; no exhaustive endpoint or authorization coverage is inferred.'] : [`Incomplete: ${reason}; absent findings are not a clean security result.`])],
       metrics: { engine: 'zap', engineVersion: ZAP_VERSION, rules: RULES.join(','), requestCount: counters.forwarded,
+        seedExpectedStatus: 200,
         maxRequests, rateLimit, durationMs: Date.now() - started, blockedOrigin: counters.blockedOrigin, blockedMethod: counters.blockedMethod,
         skippedByBudget: counters.blockedBudget, upstreamErrors: counters.upstreamErrors, responseBytes: counters.responseBytes,
         malformedEngineOutput: parsed.malformed, outOfScopeResults: parsed.outOfScope, stopReason: reason, gateTunnels: counters.tunnels } }];

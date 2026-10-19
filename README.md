@@ -128,7 +128,7 @@ External engines are opt-in in the examples. The source CLI historically default
 | OSV-Scanner | 2.6.0 | Advisories for supported lockfiles and self-contained pinned Python requirements | Advisory lookup, not source reachability or malware analysis; online mode may send package identifiers to the public OSV service |
 | Trivy | 0.74.0 | `trivy`: IaC configuration; `trivy-vuln`: dependency CVEs; `--image-archive`: image/OS package CVEs | Advisory inventory, not runtime exploitability; no image build/pull or live cloud inspection |
 | Bandit | 1.9.4 | Optional Python AST checks | Separately installed executable; selected Python files only and no target execution |
-| Semgrep CE | 1.147.0 | Three WakeIO-owned Go rules: SQL request input, trusted HTML, TLS verification disabled | Local rules only; not the Semgrep registry, general auth/authz verification or complete SAST |
+| Semgrep CE | 1.147.0 | Six WakeIO-owned Go rules: SQL, trusted HTML, TLS, command execution, SSRF and file paths | Local rules only; not the Semgrep registry, general auth/authz verification or complete SAST |
 | govulncheck | 1.9.0 | Known Go module vulnerabilities with observed symbol reachability | One complete root module and prepared Go/cache; nested/local-replacement modules remain incomplete |
 | OWASP ZAP | 2.17.0 | Explicit HTTP GET query SQLi/reflected-XSS active scan | Approved paths only; no HTTPS, spider, login, writes or arbitrary policies in this adapter |
 
@@ -167,11 +167,15 @@ node build/src/cli.js scan --source /path/to/app --tools trivy-vuln \
 
 `--govuln-db URL` selects a prepared Go vulnerability database; default is the official database. Go module/toolchain downloads are disabled. Trivy can download its vulnerability DB unless `--trivy-offline` is set, but remote dependency resolution is disabled. Reuse `--trivy-cache` to avoid downloading the database for every run. Missing tools/DBs, failed module loads, malformed outputs and incomplete inventories remain exit **2**, even with `--fail-on none`.
 
-All four report formats retain advisory IDs, affected package/version, reported fixes and references. Govulncheck's protocol has no severity rating; this adapter explicitly uses medium rather than implying a CVSS score. It distinguishes module/package presence from an observed call path. Package advisories do not satisfy code-analysis coverage. A completed Semgrep file means its selected three rules ran, not that the Go application is secure. Runtime/database provenance remains unknown where it cannot be established, so report comparison does not invent a verified fix.
+All four report formats retain advisory IDs, affected package/version, reported fixes and references. Govulncheck's protocol has no severity rating; this adapter explicitly uses medium rather than implying a CVSS score. It distinguishes module/package presence from an observed call path. Package advisories do not satisfy code-analysis coverage. A completed Semgrep file means its selected six rules ran, not that the Go application is secure. Runtime/database provenance remains unknown where it cannot be established, so report comparison does not invent a verified fix.
 
-The composite Action accepts `tools: semgrep,govulncheck,trivy-vuln`, `semgrep-path`, `govulncheck-path`, `go-path`, `go-module-cache`, `govuln-db`, `trivy-cache`, `trivy-offline`, and `image-archive`. Prepare Go and the two executables before invoking it; `trivy-vuln` reuses the existing pinned Trivy installer. ZAP is available through the CLI/SDK, not the existing `actions/dast` or `run-plan` engine list.
+The composite Action accepts `tools: semgrep,govulncheck,trivy-vuln`, `semgrep-path`, `govulncheck-path`, `go-path`, `go-module-cache`, `govuln-db`, `go-build-tags`, `trivy-cache`, `trivy-offline`, and `image-archive`. Prepare Go and the two executables before invoking it; `trivy-vuln` reuses the existing pinned Trivy installer. ZAP is available through the CLI/SDK, not the existing `actions/dast` or `run-plan` engine list.
 
 Semgrep's engine and its maintained rules have different [licensing terms](https://semgrep.dev/blog/2024/important-updates-to-semgrep-oss/). WakeIO ships its own Apache-2.0 Go rules and does not download registry rules, log in, enable metrics, or bundle the Semgrep engine.
+
+Go build variants can be selected with `--go-build-tags feature,release` (Action input `go-build-tags`). The normalized tags and observed Go version appear in the report; only that build variant is analyzed. Go test-package analysis is not exposed because the pinned engine missed a test-only dependency in an owned reproduction.
+
+Trivy also inspects `uv.lock`, `requirements-dev.txt` and `requirements-prod.txt` through its native analyzers. Unresolved ranges/includes/URLs keep requirements coverage incomplete while retaining known findings.
 
 ### Explicit ZAP active scan
 
@@ -185,7 +189,7 @@ node build/src/cli.js scan --url http://127.0.0.1:8080 \
   --zap-max-requests 200 --zap-rate-limit 10 --zap-timeout-ms 300000
 ```
 
-The authenticated egress gate enforces origin/path/method, request/body caps, rate and deadline. ZAP uses query-only rules 40012/40018; no spider, OAST, scripts, login, or updates. GET attacks can still cause side effects. The adapter trusts the installed engine to use its configured proxy; it is not an OS network sandbox. Raw payloads, responses and engine reports stay temporary and are removed; shared reports contain normalized findings and counts. Cap/deadline/cancel/scope failures are incomplete, not clean. Authentication and business authorization still require the existing explicit API policies and actor/control tests.
+Every seed GET must return HTTP 200; a mismatched response makes the automation run incomplete. Distinct query findings retain hashed identities without exposing parameter names or values. Each ZAP run binds its local listener to an OS-assigned loopback port so simultaneous scans do not compete for port 8080. The authenticated egress gate enforces origin/path/method, request/body caps, rate and deadline. ZAP uses query-only rules 40012/40018; no spider, OAST, scripts, login, or updates. GET attacks can still cause side effects. The adapter trusts the installed engine to use its configured proxy; it is not an OS network sandbox. Raw payloads, responses and engine reports stay temporary and are removed; shared reports contain normalized findings and counts. Cap/deadline/cancel/scope failures are incomplete, not clean. Authentication and business authorization still require the existing explicit API policies and actor/control tests.
 
 ## Reports and exit codes
 

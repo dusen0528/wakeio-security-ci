@@ -115,7 +115,7 @@ process.stdout.write(JSON.stringify({paths:{trivy:'/prepared/trivy'},metadata:{}
 `);
   const result = await run(f, 0, { WAKEIO_TOOLS: 'semgrep,govulncheck,trivy,trivy-vuln',
     WAKEIO_SEMGREP_PATH: 'tools/semgrep', WAKEIO_GOVULNCHECK_PATH: 'tools/govulncheck',
-    WAKEIO_GO_PATH: 'tools/go', WAKEIO_GO_MODULE_CACHE: 'cache/modules',
+    WAKEIO_GO_PATH: 'tools/go', WAKEIO_GO_MODULE_CACHE: 'cache/modules', WAKEIO_GO_BUILD_TAGS: 'release,feature',
     WAKEIO_IMAGE_ARCHIVE: 'image.tar', WAKEIO_TRIVY_CACHE: 'cache/trivy', WAKEIO_TRIVY_OFFLINE: 'true' });
   assert.equal(result.code, 0, result.stderr);
   const installed = JSON.parse(await readFile(trace, 'utf8')) as string[];
@@ -127,13 +127,14 @@ process.stdout.write(JSON.stringify({paths:{trivy:'/prepared/trivy'},metadata:{}
   }
   assert.equal(args[args.indexOf('--trivy') + 1], '/prepared/trivy');
   assert.ok(args.includes('--trivy-offline'));
+  assert.equal(args[args.indexOf('--go-build-tags') + 1], 'release,feature');
 });
 
 test('prepared optional cache settings do not enable unselected Action scanners', async t => {
   const f = await fixture(t);
   const result = await run(f, 0, { WAKEIO_TOOLS: 'none', WAKEIO_GO_MODULE_CACHE: '/prepared/modules', WAKEIO_GO_PATH: '/prepared/go',
-    WAKEIO_GOVULN_DB: 'file:///prepared/database', WAKEIO_TRIVY_CACHE: '/prepared/trivy', WAKEIO_TRIVY_OFFLINE: 'true' });
+    WAKEIO_GOVULN_DB: 'file:///prepared/database', WAKEIO_GO_BUILD_TAGS: 'release', WAKEIO_TRIVY_CACHE: '/prepared/trivy', WAKEIO_TRIVY_OFFLINE: 'true' });
   assert.equal(result.code, 0, result.stderr);
   const args = JSON.parse(await readFile(join(f.reports, 'argv.json'), 'utf8')) as string[];
-  for (const flag of ['--go', '--go-module-cache', '--govuln-db', '--trivy-cache', '--trivy-offline']) assert.ok(!args.includes(flag));
+  for (const flag of ['--go', '--go-module-cache', '--govuln-db', '--go-build-tags', '--trivy-cache', '--trivy-offline']) assert.ok(!args.includes(flag));
 });

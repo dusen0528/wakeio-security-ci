@@ -5,8 +5,9 @@ import type { CheckResult, Finding, Severity } from './contracts.js';
 import { runProcess } from './source/process.js';
 import { stageSnapshot, type StagedSnapshot } from './source/collector.js';
 import type { CollectedFile, ParsedToolResult, SourceSnapshot } from './source/types.js';
+import { inspectRequirementsFile } from './source/requirements.js';
 
-const MANIFESTS = new Set(['package-lock.json', 'npm-shrinkwrap.json', 'yarn.lock', 'pnpm-lock.yaml', 'go.mod', 'go.sum', 'Cargo.lock', 'Gemfile.lock', 'poetry.lock', 'Pipfile.lock', 'requirements.txt', 'packages.lock.json', 'composer.lock']);
+const MANIFESTS = new Set(['package-lock.json', 'npm-shrinkwrap.json', 'yarn.lock', 'pnpm-lock.yaml', 'go.mod', 'go.sum', 'Cargo.lock', 'Gemfile.lock', 'poetry.lock', 'Pipfile.lock', 'uv.lock', 'requirements.txt', 'requirements-dev.txt', 'requirements-prod.txt', 'packages.lock.json', 'composer.lock']);
 const SEVERITIES: Record<string, Severity> = { UNKNOWN: 'info', LOW: 'low', MEDIUM: 'medium', HIGH: 'high', CRITICAL: 'critical' };
 
 export function isTrivyVulnerabilityManifest(path: string): boolean { return MANIFESTS.has(basename(path)); }
@@ -97,6 +98,7 @@ export async function runTrivyVulnerabilities(options: TrivyVulnerabilityOptions
   const image = options.imageArchive !== undefined, id = image ? 'image.trivy' : 'source.trivy-vuln';
   const check = (status: CheckResult['status'], note: string): CheckResult => ({ id, status, findings: [], notes: [note] });
   const files = options.snapshot ? trivyVulnerabilityFiles(options.snapshot) : [];
+  const unresolvedRequirements = files.filter(file => /^requirements(?:-(?:dev|prod))?\.txt$/.test(basename(file.path)) && !inspectRequirementsFile(file.text).pinned).length;
   if (image && (options.snapshot || options.stageDir)) return check('error', 'Choose exactly one Trivy target: a staged source snapshot or a local image archive.');
   if (!image && (!options.snapshot || !options.stageDir)) return check('error', 'Trivy filesystem vulnerability scanning requires a staged source snapshot.');
   if (!image && files.length === 0) return check('not_applicable', 'No supported dependency inventory was collected for Trivy vulnerability scanning.');
@@ -114,12 +116,15 @@ export async function runTrivyVulnerabilities(options: TrivyVulnerabilityOptions
     const config = join(privateRoot, 'trivy.yaml'), ignore = join(privateRoot, 'empty.ignore');
     await writeFile(config, '{}\n', { mode: 0o600 });
     await writeFile(ignore, '', { mode: 0o600 });
-    const args = [image ? 'image' : 'fs', '--quiet', '--disable-telemetry', '--skip-version-check', '--format', 'json', '--exit-code', '0', '--scanners', 'vuln', '--list-all-pkgs', '--pkg-types', image ? 'os,library' : 'library', '--config', config, '--ignorefile', ignore, '--cache-dir', cache, '--module-dir', modules, '--offline-scan', ...(options.offline ? ['--skip-db-update', '--skip-java-db-update'] : []), ...(image ? ['--input', resolve(options.imageArchive!)] : [staged!.dir])];
+    const args = [image ? 'image' : 'fs', '--quiet', '--disable-telemetry', '--skip-version-check', '--format', 'json', '--exit-code', '0', '--scanners', 'vuln', '--list-all-pkgs', '--pkg-types', image ? 'os,library' : 'library', '--config', config, '--ignorefile', ignore, '--cache-dir', cache, '--module-dir', modules, '--offline-scan', ...(!image ? ['--file-patterns', 'pip:(^|/)requirements-(dev|prod)\\.txt$'] : []), ...(options.offline ? ['--skip-db-update', '--skip-java-db-update'] : []), ...(image ? ['--input', resolve(options.imageArchive!)] : [staged!.dir])];
     const result = await runProcess(options.toolPath, args, { cwd: image ? privateRoot : staged!.dir, timeoutMs: options.timeoutMs, home, signal: options.signal });
     if (result.cancelled || result.spawnError || result.timedOut || result.outputLimitExceeded || result.signal || result.exitCode !== 0) return check('error', 'Trivy vulnerability scanning did not complete. Check the prepared database/cache, archive format, and timeout; no clean result is inferred from missing output.');
     const parsed = parseTrivyVulnerabilityOutput(result.stdout, { image, stageDir: staged?.dir, allowedPaths: files.map(file => file.path) });
     const incomplete = !image && options.snapshot?.complete === false;
-    return { id, status: incomplete ? 'partial' : parsed.status ?? 'completed', findings: parsed.findings, notes: [...parsed.notes, ...(incomplete ? ['The collected snapshot was incomplete; dependency coverage is incomplete.'] : [])], metrics: parsed.metrics };
+    return { id, status: incomplete || unresolvedRequirements ? 'partial' : parsed.status ?? 'completed', findings: parsed.findings,
+      notes: [...parsed.notes, ...(incomplete ? ['The collected snapshot was incomplete; dependency coverage is incomplete.'] : []),
+        ...(unresolvedRequirements ? ['Python requirements contain an unresolved range, include, URL or option; only inventoried versions were checked and dependency coverage is incomplete.'] : [])],
+      metrics: { ...parsed.metrics, unresolvedRequirements } };
   } catch { return check('error', 'Trivy returned invalid vulnerability data or its target/cache could not be read.'); }
   finally { await staged?.cleanup(); if (privateRoot) await rm(privateRoot, { recursive: true, force: true }); }
 }

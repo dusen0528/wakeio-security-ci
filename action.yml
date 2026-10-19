@@ -87,6 +87,10 @@ inputs:
     description: Optional Go vulnerability database URL
     required: false
     default: ''
+  go-build-tags:
+    description: Explicit comma-separated build tags for govulncheck source analysis
+    required: false
+    default: ''
   image-archive:
     description: Explicit Docker or OCI archive to scan in addition to source; no build or pull
     required: false
@@ -207,6 +211,7 @@ runs:
         WAKEIO_GO_PATH: ${{ inputs.go-path }}
         WAKEIO_GO_MODULE_CACHE: ${{ inputs.go-module-cache }}
         WAKEIO_GOVULN_DB: ${{ inputs.govuln-db }}
+        WAKEIO_GO_BUILD_TAGS: ${{ inputs.go-build-tags }}
         WAKEIO_IMAGE_ARCHIVE: ${{ inputs.image-archive }}
         WAKEIO_TRIVY_CACHE: ${{ inputs.trivy-cache }}
         WAKEIO_TRIVY_OFFLINE: ${{ inputs.trivy-offline }}

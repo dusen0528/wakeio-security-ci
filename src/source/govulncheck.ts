@@ -15,6 +15,12 @@ export interface GovulncheckContext {
   moduleCache?: string;
   /** Explicit database endpoint; defaults to the official Go vulnerability database. */
   database?: string;
+  buildTags?: string[];
+}
+
+export function normalizeGoBuildTags(tags: string[] = []): string[] {
+  if (!Array.isArray(tags) || tags.length > 32 || tags.some(tag => typeof tag !== 'string' || !/^[A-Za-z0-9_][A-Za-z0-9_.]{0,63}$/.test(tag))) throw new TypeError('invalid_go_build_tags');
+  return [...new Set(tags)].sort();
 }
 
 export function govulncheckFiles(snapshot: SourceSnapshot): CollectedFile[] {
@@ -76,6 +82,7 @@ export function parseGovulncheckOutput(text: string, files: CollectedFile[]): Pa
   if (Object.keys(stream[0]!).length !== 1 || config.protocol_version !== 'v1.0.0' || config.scan_level !== 'symbol' || config.scan_mode !== 'source') throw new Error('unsupported protocol');
   const entries = new Set<string>();
   const records: Record<string, unknown>[] = [];
+  const modules = new Map<string, string>();
   let sbomSeen = false, roots = 0;
   for (const message of stream.slice(1)) {
     const keys = Object.keys(message);
@@ -90,7 +97,7 @@ export function parseGovulncheckOutput(text: string, files: CollectedFile[]): Pa
       const rootPaths = value.roots.map(token);
       if (new Set(rootPaths).size !== rootPaths.length || rootPaths.some(path =>
         (path !== mainModule && !path.startsWith(`${mainModule}/`)) || path.split('/').some(part => !part || part === '.' || part === '..'))) throw new Error('unbound roots');
-      const modulePaths = value.modules.map(module => { const m = object(module); if (m.version) token(m.version); return token(m.path); });
+      const modulePaths = value.modules.map(module => { const m = object(module), path = token(m.path); modules.set(path, m.version ? token(m.version) : 'unknown'); return path; });
       if (modulePaths.filter(path => path === mainModule).length !== 1 || new Set(modulePaths).size !== modulePaths.length) throw new Error('unbound module inventory');
       sbomSeen = true; roots = value.roots.length;
     } else if (key !== 'progress') throw new Error('unknown message');
@@ -102,6 +109,7 @@ export function parseGovulncheckOutput(text: string, files: CollectedFile[]): Pa
     if (!entries.has(id) || !Array.isArray(record.trace) || !record.trace.length || record.trace.length > 1024) throw new Error('invalid finding');
     const trace = record.trace.map(object), frame = trace[0]!;
     const module = token(frame.module), version = frame.version ? token(frame.version) : 'unknown';
+    if (modules.get(module) !== version) throw new Error('unbound finding module or version');
     const fixed = record.fixed_version ? token(record.fixed_version) : undefined;
     const rank = frame.function ? 2 : frame.package ? 1 : 0;
     const location: Finding['location'] = { path: 'go.mod' };
@@ -130,11 +138,17 @@ export function parseGovulncheckOutput(text: string, files: CollectedFile[]): Pa
   const values = [...findings.values()];
   return { findings: values.map(value => value.finding), status: 'completed',
     notes: ['Go module advisories are deduplicated by vulnerability and module version; the strongest observed reachability is retained. Static reachability is build-specific and cannot prove runtime exploitability or cover reflect/unsafe calls. No source snippets or raw scanner messages are retained.'],
-    metrics: { rootsAnalyzed: roots, findingCount: values.length, reachableFindings: values.filter(value => value.rank === 2).length, scannerVersion: typeof config.scanner_version === 'string' && /^[A-Za-z0-9.+_-]{1,80}$/.test(config.scanner_version) ? config.scanner_version : 'unknown' } };
+    metrics: { rootsAnalyzed: roots, findingCount: values.length, reachableFindings: values.filter(value => value.rank === 2).length,
+      goVersion: typeof config.go_version === 'string' && /^go[0-9][A-Za-z0-9.+_-]{0,79}$/.test(config.go_version) ? config.go_version : 'unknown',
+      scannerVersion: typeof config.scanner_version === 'string' && /^[A-Za-z0-9.+_-]{1,80}$/.test(config.scanner_version) ? config.scanner_version : 'unknown' } };
 }
 
 export async function runGovulncheck(context: GovulncheckContext): Promise<CheckResult> {
   const check = (status: CheckResult['status'], note: string): CheckResult => ({ id: 'source.govulncheck', status, findings: [], notes: [note] });
+  let buildTags: string[];
+  try {
+    buildTags = normalizeGoBuildTags(context.buildTags);
+  } catch { return check('error', 'Invalid Go build tags; no engine was started.'); }
   const files = govulncheckFiles(context.snapshot), modules = files.filter(file => /(?:^|\/)go\.mod$/.test(file.path));
   if (!modules.length) return check('not_applicable', 'No collected Go module was available for govulncheck.');
   if (!context.snapshot.complete || modules.length !== 1 || modules[0]?.path !== 'go.mod') return check('partial', 'Govulncheck requires one complete root Go module. Incomplete snapshots and nested modules must be scanned separately.');
@@ -149,12 +163,15 @@ export async function runGovulncheck(context: GovulncheckContext): Promise<Check
     const privateRoot = join(dirname(staged.dir), 'govulncheck');
     const home = join(privateRoot, 'home'), cache = join(privateRoot, 'build-cache'), gopath = join(privateRoot, 'gopath');
     await Promise.all([home, cache, gopath].map(path => mkdir(path, { recursive: true, mode: 0o700 })));
-    const args = ['-json', '-mode', 'source', '-scan', 'symbol', ...(context.database ? ['-db', context.database] : []), './...'];
+    const args = ['-json', '-mode', 'source', '-scan', 'symbol', ...(context.database ? ['-db', context.database] : []),
+      ...(buildTags.length ? ['-tags', buildTags.join(',')] : []), './...'];
     const result = await runProcess(context.toolPath, args, { cwd: staged.dir, timeoutMs: context.timeoutMs, home, signal: context.signal,
       runtimePath: dirname(go), environment: { GOTOOLCHAIN: 'local', GOWORK: 'off', GOFLAGS: '-mod=readonly', CGO_ENABLED: '0', GOENV: 'off', GOPROXY: 'off', GOSUMDB: 'off', GOPATH: gopath, GOCACHE: cache, GOMODCACHE: context.moduleCache ? resolve(context.moduleCache) : join(gopath, 'pkg', 'mod') } });
     if (result.cancelled || result.spawnError || result.timedOut || result.outputLimitExceeded || result.signal || result.exitCode !== 0) return check('error', 'Govulncheck did not complete. Check the prepared Go toolchain/module cache, build compatibility, vulnerability database, and timeout. Target dependencies and toolchains are never downloaded automatically.');
     const parsed = parseGovulncheckOutput(result.stdout, files);
-    return { id: 'source.govulncheck', status: parsed.status ?? 'completed', findings: parsed.findings, notes: parsed.notes, metrics: parsed.metrics };
+    return { id: 'source.govulncheck', status: parsed.status ?? 'completed', findings: parsed.findings,
+      notes: [...parsed.notes, `Go build tags: ${buildTags.join(',') || 'default'}; test packages: excluded. Other build configurations were not analyzed.`],
+      metrics: { ...parsed.metrics, buildTags: buildTags.join(','), testPackages: false } };
   } catch { return check('error', 'Govulncheck output or staged runtime was invalid; Go vulnerability analysis is incomplete.'); }
   finally { await staged?.cleanup(); }
 }

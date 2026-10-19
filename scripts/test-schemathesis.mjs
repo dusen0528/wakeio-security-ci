@@ -52,12 +52,12 @@ try {
   await stage('build', 'npm', ['run', 'build'], 120000);
   if (!files.length) throw Error('no_test_files');
   const eventsPath = join(directory, 'tests.ndjson');
-  // Same-head CI suites took 142.62s and 168.70s; the former 180s aggregate
-  // watchdog expired on a third runner. This bounded 4.5-minute suite allowance
-  // leaves per-test/engine/request, cancellation, cleanup and zero-skip contracts unchanged.
-  await stage('tests', process.execPath, ['--test', '--test-reporter=spec', '--test-reporter-destination=stdout',
+  // Four-engine CI took 263.60s before the additional denied-seed/SQL controls.
+  // Allow six minutes for the aggregate suite; per-test/engine/request limits,
+  // cancellation, cleanup and the zero-skip contract are unchanged.
+  await stage('tests', process.execPath, ['--test', '--test-concurrency=2', '--test-reporter=spec', '--test-reporter-destination=stdout',
     '--test-reporter=' + join(root, 'scripts/ci-test-reporter.mjs'), '--test-reporter-destination=' + eventsPath, ...files],
-    270000, { ...engineEnvironment, WAKEIO_SCHEMATHESIS_PYTHON: python,
+    360000, { ...engineEnvironment, WAKEIO_SCHEMATHESIS_PYTHON: python,
       WAKEIO_REQUIRE_SCHEMATHESIS: '1', WAKEIO_REQUIRE_RUNNER_ENGINES: '1' });
   const bytes = await readFile(eventsPath);
   await chmod(eventsPath, 0o600);
@@ -86,7 +86,7 @@ try {
       'real nuclei: request budget and a failing target are partial even though nuclei exits 0'],
     join(root, 'build/tests/nuclei.test.js'));
   receipt.semgrep = validateTestEvents(events,
-    ['Semgrep CE real owned Go fixtures detect three risky patterns and reject fixed counterparts'],
+    ['Semgrep CE real owned Go fixtures detect six risky patterns and reject fixed counterparts'],
     join(root, 'build/tests/semgrep.test.js'));
   receipt.govulncheck = validateTestEvents(events,
     ['real govulncheck distinguishes an affected Go call from its fixed dependency and a clean module'],
@@ -95,7 +95,9 @@ try {
     ['real Trivy detects a known package CVE, accepts a clean inventory, and reads an image without running it'],
     join(root, 'build/tests/trivy-vuln.test.js'));
   receipt.zap = validateTestEvents(events,
-    ['real ZAP detects owned reflected XSS, rejects the encoded control, and accounts every fixture request',
+    ['real ZAP detects owned XSS and SQLite SQLi, rejects fixed controls, and accounts every fixture request',
+      'real ZAP rejects unauthenticated and absent seed responses as incomplete',
+      'real ZAP runs simultaneous owned scans with independent listeners and request accounting',
       'real ZAP request cap stops the engine and leaves a partial result'],
     join(root, 'build/tests/zap.test.js'));
   receipt.agentDastRunner = validateTestEvents(events, [

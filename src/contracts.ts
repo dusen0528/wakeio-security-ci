@@ -335,6 +335,7 @@ export interface SourceOptions {
   goPath?: string;
   goModuleCache?: string;
   govulnDatabase?: string;
+  goBuildTags?: string[];
   trivyCache?: string;
   trivyOffline?: boolean;
   outDir?: string;

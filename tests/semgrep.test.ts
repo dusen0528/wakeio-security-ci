@@ -10,20 +10,28 @@ import type { CheckResult } from '../src/contracts.js';
 import type { CollectedFile } from '../src/source/types.js';
 
 const RISKY = `package app
-import("database/sql";"net/http";"html/template";"crypto/tls")
+import("database/sql";"net/http";"html/template";"crypto/tls";"os/exec";"os";"path/filepath")
 func handler(w http.ResponseWriter,r *http.Request,db *sql.DB){
 q := r.URL.Query().Get("q")
 db.Query("SELECT * FROM users WHERE id=" + q)
 _ = template.HTML(r.FormValue("html"))
 _ = &tls.Config{InsecureSkipVerify:true}
+_ = exec.Command("sh", "-c", r.FormValue("cmd"))
+http.Get(r.Header.Get("X-Callback"))
+os.ReadFile(filepath.Join("/srv/files", r.PathValue("file")))
 }
 `;
 const FIXED = `package app
-import("database/sql";"net/http";"html/template";"crypto/tls")
+import("database/sql";"net/http";"html/template";"crypto/tls";"os/exec";"os";"strings")
 func handler(w http.ResponseWriter,r *http.Request,db *sql.DB,t *template.Template){
 db.Query("SELECT * FROM users WHERE id=$1", r.URL.Query().Get("q"))
 t.Execute(w,r.FormValue("html"))
 _ = &tls.Config{InsecureSkipVerify:false}
+_ = exec.Command("printf", "%s", r.FormValue("cmd"))
+http.Post("https://example.test/fixed", "text/plain", strings.NewReader(r.FormValue("body")))
+os.ReadFile("/srv/files/public.txt")
+root, _ := os.OpenRoot("/srv/files")
+root.Open(r.PathValue("file"))
 }
 `;
 const sample: CollectedFile = { path: 'app.go', text: 'package app\nvar x = "한글"\n', bytes: Buffer.byteLength('package app\nvar x = "한글"\n'), category: 'code', sensitive: false };
@@ -114,13 +122,13 @@ test('Semgrep Go coverage preserves legacy three-provider records and rejects mi
   assert.equal(parseCodeCoverage(unsupported), undefined);
 });
 
-test('Semgrep CE real owned Go fixtures detect three risky patterns and reject fixed counterparts', { skip: !process.env.WAKEIO_SEMGREP_TEST_PATH }, async t => {
+test('Semgrep CE real owned Go fixtures detect six risky patterns and reject fixed counterparts', { skip: !process.env.WAKEIO_SEMGREP_TEST_PATH }, async t => {
   const toolPath = resolve(process.env.WAKEIO_SEMGREP_TEST_PATH!);
-  for (const [source, expected] of [[RISKY, 3], [FIXED, 0]] as const) {
+  for (const [source, expected] of [[RISKY, 6], [FIXED, 0]] as const) {
     const w = await fixture(t, source);
     const result = await runSemgrep({ snapshot: w.snapshot, stageDir: w.root, toolPath, timeoutMs: 30_000 });
     assert.equal(result.status, 'completed', JSON.stringify(result));
     assert.equal(result.findings.length, expected, JSON.stringify(result));
-    if (expected) assert.deepEqual(result.findings.map(f => f.ruleId).sort(), ['semgrep:wakeio.go.html-request-input', 'semgrep:wakeio.go.insecure-tls', 'semgrep:wakeio.go.sql-request-input']);
+    if (expected) assert.deepEqual(result.findings.map(f => f.ruleId).sort(), ['semgrep:wakeio.go.command-request-input', 'semgrep:wakeio.go.html-request-input', 'semgrep:wakeio.go.insecure-tls', 'semgrep:wakeio.go.path-request-input', 'semgrep:wakeio.go.sql-request-input', 'semgrep:wakeio.go.ssrf-request-input']);
   }
 });

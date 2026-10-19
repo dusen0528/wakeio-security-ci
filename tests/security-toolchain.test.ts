@@ -29,9 +29,12 @@ test('toolchain selection preserves defaults and refuses dependent options witho
   assert.deepEqual(selected.tools, ['semgrep', 'govulncheck', 'trivy-vuln']);
   assert.equal(selected.trivyOffline, true);
   for (const args of [
-    ['--go', '/go'], ['--go-module-cache', '/cache'], ['--govuln-db', 'file:///db'],
+    ['--go', '/go'], ['--go-module-cache', '/cache'], ['--govuln-db', 'file:///db'], ['--go-build-tags', 'release'],
     ['--trivy-cache', '/cache'], ['--trivy-offline'], ['--zap', '/zap.sh'],
   ]) assert.throws(() => parseCliArgs(['scan', '--source', '.', '--tools', 'none', ...args]));
+  const scope = parseCliArgs(['scan', '--source', '.', '--tools', 'govulncheck', '--go-build-tags', 'release,feature,release']);
+  assert.ok(!('help' in scope)); assert.deepEqual(scope.goBuildTags, ['feature', 'release']);
+  for (const value of ['', 'release,,feature', 'release -ldflags=x']) assert.throws(() => parseCliArgs(['scan', '--source', '.', '--tools', 'govulncheck', '--go-build-tags', value]));
   for (const args of [
     ['--url', 'http://example.test', '--engine', 'zap', '--zap-path', '/search?q=test'],
     ['--url', 'https://example.test', '--engine', 'zap', '--zap-path', '/search?q=test', '--active-consent'],
@@ -65,7 +68,7 @@ test('Go advisory output with engine exit zero is retained but cannot satisfy co
   await writeFile(join(w.source, 'app.go'), 'package app\nfunc ready() {}\n');
   const stream = [
     { config: { protocol_version: 'v1.0.0', scan_level: 'symbol', scan_mode: 'source' } },
-    { SBOM: { roots: ['example.test/app'], modules: [{ path: 'example.test/app' }] } },
+    { SBOM: { roots: ['example.test/app'], modules: [{ path: 'example.test/app' }, { path: 'example.test/library', version: 'v1.0.0' }] } },
     { osv: { id: 'GO-2024-1234' } },
     { finding: { osv: 'GO-2024-1234', fixed_version: 'v1.2.3', trace: [{ module: 'example.test/library', version: 'v1.0.0', package: 'example.test/library', function: 'Unsafe' }] } },
   ].map(value => JSON.stringify(value)).join('\n');

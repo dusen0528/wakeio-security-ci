@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { parseTrivyVulnerabilityOutput, runTrivyVulnerabilities } from '../src/trivy-vuln.js';
+import { isTrivyVulnerabilityManifest, parseTrivyVulnerabilityOutput, runTrivyVulnerabilities, trivyVulnerabilityFiles } from '../src/trivy-vuln.js';
 import type { SourceSnapshot } from '../src/source/types.js';
 
 const vulnerability = { VulnerabilityID: 'CVE-2024-12345', PkgName: 'example', InstalledVersion: '1.0.0', FixedVersion: '1.0.1', Severity: 'HIGH', Description: 'PRIVATE_RAW_ADVISORY' };
@@ -82,6 +82,22 @@ test('Trivy selected but missing or failed tools cannot become clean scans', asy
   assert.equal((await runTrivyVulnerabilities({ snapshot: snapshot(), stageDir: '/stage', toolPath: '/nonexistent-trivy', timeoutMs: 1000 })).status, 'error');
 });
 
+test('Trivy selects uv and named pip inventories and keeps partly pinned requirements incomplete', async () => {
+  for (const path of ['uv.lock', 'requirements.txt', 'requirements-dev.txt', 'requirements-prod.txt']) assert.equal(isTrivyVulnerabilityManifest(`nested/${path}`), true);
+  assert.equal(isTrivyVulnerabilityManifest('private-requirements.txt'), false);
+  const root = await mkdtemp(join(tmpdir(), 'wakeio-python-cve-'));
+  try {
+    const input = snapshot(), text = 'example==1.0.0\nunresolved>=2\n';
+    input.files[0] = { path: 'requirements-dev.txt', category: 'dependency', sensitive: false, bytes: text.length, text };
+    assert.equal(trivyVulnerabilityFiles(input).length, 1);
+    const output = JSON.stringify(report()).replaceAll('package-lock.json', 'requirements-dev.txt');
+    const executable = join(root, 'trivy');
+    await writeFile(executable, `#!${process.execPath}\nprocess.stdout.write(${JSON.stringify(output)});\n`, { mode: 0o700 });
+    const result = await runTrivyVulnerabilities({ snapshot: input, stageDir: root, toolPath: executable, timeoutMs: 5000 });
+    assert.equal(result.status, 'partial'); assert.equal(result.findings.length, 1); assert.equal(result.metrics?.unresolvedRequirements, 1);
+  } finally { await rm(root, { recursive: true, force: true }); }
+});
+
 test('real Trivy detects a known package CVE, accepts a clean inventory, and reads an image without running it', {
   skip: !process.env.WAKEIO_TRIVY_EXECUTABLE && process.env.WAKEIO_REQUIRE_TRIVY_VULN !== '1',
 }, async () => {
@@ -104,6 +120,18 @@ test('real Trivy detects a known package CVE, accepts a clean inventory, and rea
     const go = await runTrivyVulnerabilities({ snapshot: goInput, stageDir: root, toolPath, cacheDir, offline: true, timeoutMs: 120_000 });
     assert.equal(go.status, 'completed', go.notes.join(' '));
     assert.ok(go.findings.some(finding => finding.ruleId === 'trivy-vuln:CVE-2021-38561'));
+    for (const filename of ['requirements.txt', 'requirements-dev.txt', 'requirements-prod.txt', 'uv.lock']) {
+      for (const version of ['2.31.0', '2.32.4']) {
+        const input = snapshot();
+        const text = filename === 'uv.lock'
+          ? `version = 1\nrevision = 1\nrequires-python = ">=3.12"\n[[package]]\nname = "fixture"\nversion = "0.1.0"\nsource = { virtual = "." }\ndependencies = [{ name = "requests" }]\n[[package]]\nname = "requests"\nversion = "${version}"\nsource = { registry = "https://pypi.org/simple" }\n`
+          : `requests==${version}\n`;
+        input.files = [{ path: filename, category: 'dependency', sensitive: false, bytes: text.length, text }];
+        const python = await runTrivyVulnerabilities({ snapshot: input, stageDir: root, toolPath, cacheDir, offline: true, timeoutMs: 120_000 });
+        assert.equal(python.status, 'completed', `${filename}: ${python.notes.join(' ')}`);
+        assert.equal(python.findings.some(finding => finding.ruleId === 'trivy-vuln:CVE-2024-35195'), version === '2.31.0', filename);
+      }
+    }
     const image = await runTrivyVulnerabilities({ imageArchive, toolPath, cacheDir, offline: true, timeoutMs: 120_000 });
     assert.equal(image.status, 'completed', image.notes.join(' '));
     assert.ok(Number(image.metrics?.packages) > 0);

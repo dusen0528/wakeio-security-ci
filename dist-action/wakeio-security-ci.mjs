@@ -233592,11 +233592,20 @@ var init_collector = __esm({
 });
 
 // build/src/source/semgrep-rules.js
-var SEMGREP_RULE_REVISION, SEMGREP_RULES;
+var SEMGREP_RULE_REVISION, REQUEST_SOURCES, SEMGREP_RULES;
 var init_semgrep_rules = __esm({
   "build/src/source/semgrep-rules.js"() {
     "use strict";
-    SEMGREP_RULE_REVISION = "wakeio-go-v1";
+    SEMGREP_RULE_REVISION = "wakeio-go-v2";
+    REQUEST_SOURCES = `    pattern-sources:
+      - pattern-either:
+          - pattern: $REQ.FormValue(...)
+          - pattern: $REQ.PostFormValue(...)
+          - pattern: $REQ.URL.Query().Get(...)
+          - pattern: $REQ.PathValue(...)
+          - pattern: $REQ.Header.Get(...)
+          - pattern: $REQ.URL.Path
+        exact: true`;
     SEMGREP_RULES = `# SPDX-License-Identifier: Apache-2.0
 rules:
   - id: wakeio.go.sql-request-input
@@ -233604,12 +233613,7 @@ rules:
     mode: taint
     message: Request input reaches a SQL query argument.
     severity: ERROR
-    pattern-sources:
-      - pattern-either:
-          - pattern: $REQ.FormValue(...)
-          - pattern: $REQ.PostFormValue(...)
-          - pattern: $REQ.URL.Query().Get(...)
-        exact: true
+${REQUEST_SOURCES}
     pattern-sinks:
       - patterns:
           - pattern-either:
@@ -233625,12 +233629,7 @@ rules:
     mode: taint
     message: Request input is converted to trusted HTML.
     severity: ERROR
-    pattern-sources:
-      - pattern-either:
-          - pattern: $REQ.FormValue(...)
-          - pattern: $REQ.PostFormValue(...)
-          - pattern: $REQ.URL.Query().Get(...)
-        exact: true
+${REQUEST_SOURCES}
     pattern-sinks:
       - patterns:
           - pattern: template.HTML($HTML)
@@ -233640,6 +233639,55 @@ rules:
     message: TLS certificate verification is disabled.
     severity: ERROR
     pattern: 'tls.Config{..., InsecureSkipVerify: true, ...}'
+  - id: wakeio.go.command-request-input
+    languages: [go]
+    mode: taint
+    message: Request input selects an executable or shell command.
+    severity: ERROR
+${REQUEST_SOURCES}
+    pattern-sinks:
+      - patterns:
+          - pattern-either:
+              - pattern: exec.Command($COMMAND, ...)
+              - pattern: exec.CommandContext($CTX, $COMMAND, ...)
+          - focus-metavariable: $COMMAND
+      - patterns:
+          - pattern-either:
+              - pattern: exec.Command($SHELL, "-c", $COMMAND, ...)
+              - pattern: exec.CommandContext($CTX, $SHELL, "-c", $COMMAND, ...)
+          - metavariable-regex:
+              metavariable: $SHELL
+              regex: '^"(?:/bin/)?(?:sh|bash|dash|zsh)"$'
+          - focus-metavariable: $COMMAND
+  - id: wakeio.go.ssrf-request-input
+    languages: [go]
+    mode: taint
+    message: Request input controls an outbound HTTP destination.
+    severity: ERROR
+${REQUEST_SOURCES}
+    pattern-sinks:
+      - patterns:
+          - pattern-either:
+              - pattern: http.Get($URL)
+              - pattern: http.Head($URL)
+              - pattern: http.Post($URL, ...)
+              - pattern: http.PostForm($URL, ...)
+          - focus-metavariable: $URL
+  - id: wakeio.go.path-request-input
+    languages: [go]
+    mode: taint
+    message: Request input controls a filesystem path.
+    severity: ERROR
+${REQUEST_SOURCES}
+    pattern-sinks:
+      - patterns:
+          - pattern-either:
+              - pattern: os.Open($PATH)
+              - pattern: os.OpenFile($PATH, ...)
+              - pattern: os.ReadFile($PATH)
+              - pattern: os.Create($PATH)
+              - pattern: http.ServeFile($W, $REQ, $PATH)
+          - focus-metavariable: $PATH
 `;
   }
 });
@@ -233821,11 +233869,14 @@ var init_semgrep = __esm({
     SEMGREP_CHECK_ID = "source.semgrep";
     SEMGREP_RULES_SHA256 = createHash2("sha256").update(SEMGREP_RULES).digest("hex");
     MAX_OUTPUT = 8 * 1024 * 1024;
-    NOTE2 = "Semgrep CE runs the bundled Go SQL, trusted-HTML and TLS rules. Findings are static candidates requiring review; authentication/authorization logic and whole-project vulnerability coverage are not established.";
+    NOTE2 = "Semgrep CE runs six bundled Go rules for SQL input, trusted HTML, TLS verification, command execution, outbound HTTP destinations and filesystem paths. These intraprocedural candidates require review; authentication/authorization logic and whole-project coverage are not established.";
     GUIDANCE = {
       "wakeio.go.sql-request-input": { title: "Request input reaches a SQL query", description: "An intraprocedural rule observed request-shaped input reaching a selected query argument. Receiver identity and exploitability require review.", remediation: "Use a fixed SQL statement and pass untrusted values as separate bound parameters; review Query, QueryRow and Exec call sites.", cwe: 89 },
       "wakeio.go.html-request-input": { title: "Request input becomes trusted HTML", description: "An intraprocedural rule observed request-shaped input converted to template.HTML, bypassing normal template escaping.", remediation: "Pass untrusted text as ordinary template data so html/template escapes it. Do not convert request input to template.HTML.", cwe: 79 },
-      "wakeio.go.insecure-tls": { title: "TLS certificate verification is disabled", description: "A Go TLS configuration explicitly enables InsecureSkipVerify. Review whether equivalent certificate verification exists.", remediation: "Keep InsecureSkipVerify false and configure trusted root certificates and the expected server name.", cwe: 295 }
+      "wakeio.go.insecure-tls": { title: "TLS certificate verification is disabled", description: "A Go TLS configuration explicitly enables InsecureSkipVerify. Review whether equivalent certificate verification exists.", remediation: "Keep InsecureSkipVerify false and configure trusted root certificates and the expected server name.", cwe: 295 },
+      "wakeio.go.command-request-input": { title: "Request input controls an executable or shell command", description: "An intraprocedural rule observed request-shaped input selecting an executable or reaching a selected Unix shell command argument. Ordinary arguments to a fixed executable are not classified as shell commands.", remediation: "Use an allowlist of fixed executables and operations. Pass data as separate arguments and avoid constructing shell command strings from request values.", cwe: 78 },
+      "wakeio.go.ssrf-request-input": { title: "Request input controls an outbound HTTP destination", description: "An intraprocedural rule observed request-shaped input reaching the destination argument of a selected net/http client helper. Review destination allowlists, DNS resolution and redirect policy.", remediation: "Map permitted actions to fixed destinations. Validate scheme, host and resolved addresses, and constrain redirects before making outbound requests.", cwe: 918 },
+      "wakeio.go.path-request-input": { title: "Request input controls a filesystem path", description: "An intraprocedural rule observed request-shaped input reaching a selected file access path. filepath.Join and filepath.Clean alone do not prove containment.", remediation: "Map public identifiers to fixed files, or enforce filesystem-root containment with an appropriate rooted filesystem API. Reject traversal and account for symlinks.", cwe: 22 }
     };
     object7 = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
     semgrepFiles = (snapshot4) => snapshot4.files.filter((f) => f.category === "code" && !f.sensitive && /\.go$/i.test(f.path));
@@ -237607,6 +237658,8 @@ function findingIdentity(checkId, finding2, profileRevision) {
   ];
   if (profileRevision !== void 0)
     identity.push("native-dast-profile", profileRevision);
+  if (checkId === "url.zap" && finding2.comparisonKey)
+    identity.push("zap-query-surface", finding2.comparisonKey);
   return createHash8("sha256").update(JSON.stringify(identity)).digest("hex");
 }
 async function writeArtifacts(outDir, artifacts) {
@@ -242091,7 +242144,7 @@ var init_plan = __esm({
 });
 
 // build/src/agent-dast/store.js
-import { createHash as createHash21 } from "node:crypto";
+import { createHash as createHash22 } from "node:crypto";
 import { closeSync, constants as constants12, fstatSync as fstatSync2, lstatSync as lstatSync2, openSync, readSync as readSync2, realpathSync } from "node:fs";
 import { basename as basename5, dirname as dirname13, resolve as resolve19 } from "node:path";
 function invalid4(field2) {
@@ -242144,7 +242197,7 @@ function dedupeKey(ruleId, method2, path3, param, authState, location2) {
   check(param === null || typeof param === "string" && param.length <= 100 && !/[\x00-\x1f\x7f]/.test(param), "param");
   if (location2 !== null)
     member2(location2, PARAM_LOCATIONS, "location");
-  return createHash21("sha256").update(JSON.stringify([ruleId, method2.toUpperCase(), normalizePath(path3), param, authState, location2])).digest("hex");
+  return createHash22("sha256").update(JSON.stringify([ruleId, method2.toUpperCase(), normalizePath(path3), param, authState, location2])).digest("hex");
 }
 function requireSqliteRuntime() {
   const match = /^(\d+)\.(\d+)\.(\d+)(?:[-+].*)?$/.exec(process.versions.node);
@@ -242799,7 +242852,7 @@ var init_store = __esm({
 });
 
 // build/src/agent-dast/runner.js
-import { createHash as createHash22, randomUUID as randomUUID5 } from "node:crypto";
+import { createHash as createHash23, randomUUID as randomUUID5 } from "node:crypto";
 import { constants as constants13 } from "node:fs";
 import { lstat as lstat20, mkdir as mkdir14, open as open10, readdir as readdir6, realpath as realpath8, unlink as unlink4 } from "node:fs/promises";
 import { dirname as dirname14, join as join19, resolve as resolve20 } from "node:path";
@@ -243334,7 +243387,7 @@ var init_runner = __esm({
     init_result();
     EXECUTION_RUN_REVISION = "built-in-plan-run-v1";
     zero = () => ({ requestCount: 0, bytes: 0, responseCompleted: 0, transportErrors: 0, pending: 0, refused: 0, attempts: [] });
-    sha = (value) => createHash22("sha256").update(value).digest("hex");
+    sha = (value) => createHash23("sha256").update(value).digest("hex");
     note = "Built-in engine groups only. The agent supplied a data plan; the trusted controller executed it. Group completion is not individual endpoint or whole-service coverage. Database assignments registered after execution audit observations; they are not a live scheduler, crash recovery or planned endpoint denominator. Publication does not attest the final caller process exit.";
   }
 });
@@ -243468,7 +243521,7 @@ Input aliases bind raw-file SHA256. The output directory must be new; incomplete
 });
 
 // build/src/api-property-policy.js
-import { createHash as createHash23 } from "node:crypto";
+import { createHash as createHash24 } from "node:crypto";
 function invalid6() {
   throw new ApiPropertyPolicyError();
 }
@@ -243617,7 +243670,7 @@ function parseApiPropertyPolicy(input) {
   };
 }
 function propertyPolicyDigest(policy) {
-  return createHash23("sha256").update(JSON.stringify(policy)).digest("hex");
+  return createHash24("sha256").update(JSON.stringify(policy)).digest("hex");
 }
 function propertyPointer(data, pointer3) {
   let value = data;
@@ -244254,7 +244307,7 @@ init_collection_budget();
 init_analysis_budget();
 import { realpathSync as realpathSync2 } from "node:fs";
 import { mkdir as mkdir16, readFile as readFile6, rm as rm10 } from "node:fs/promises";
-import { createHash as createHash24 } from "node:crypto";
+import { createHash as createHash25 } from "node:crypto";
 import { fileURLToPath as fileURLToPath4 } from "node:url";
 import { dirname as dirname17, isAbsolute as isAbsolute13, resolve as resolve23 } from "node:path";
 
@@ -245486,6 +245539,11 @@ init_process();
 init_collector();
 import { mkdir as mkdir4 } from "node:fs/promises";
 import { dirname as dirname5, join as join6, resolve as resolve8 } from "node:path";
+function normalizeGoBuildTags(tags = []) {
+  if (!Array.isArray(tags) || tags.length > 32 || tags.some((tag) => typeof tag !== "string" || !/^[A-Za-z0-9_][A-Za-z0-9_.]{0,63}$/.test(tag)))
+    throw new TypeError("invalid_go_build_tags");
+  return [...new Set(tags)].sort();
+}
 function govulncheckFiles(snapshot4) {
   return snapshot4.files.filter((file) => !file.sensitive && (/\.go$/.test(file.path) || /(?:^|\/)go\.(?:mod|sum)$/.test(file.path)));
 }
@@ -245556,6 +245614,7 @@ function parseGovulncheckOutput(text4, files) {
     throw new Error("unsupported protocol");
   const entries = /* @__PURE__ */ new Set();
   const records = [];
+  const modules = /* @__PURE__ */ new Map();
   let sbomSeen = false, roots = 0;
   for (const message of stream.slice(1)) {
     const keys6 = Object.keys(message);
@@ -245575,10 +245634,9 @@ function parseGovulncheckOutput(text4, files) {
       if (new Set(rootPaths).size !== rootPaths.length || rootPaths.some((path3) => path3 !== mainModule && !path3.startsWith(`${mainModule}/`) || path3.split("/").some((part) => !part || part === "." || part === "..")))
         throw new Error("unbound roots");
       const modulePaths = value.modules.map((module) => {
-        const m = object8(module);
-        if (m.version)
-          token(m.version);
-        return token(m.path);
+        const m = object8(module), path3 = token(m.path);
+        modules.set(path3, m.version ? token(m.version) : "unknown");
+        return path3;
       });
       if (modulePaths.filter((path3) => path3 === mainModule).length !== 1 || new Set(modulePaths).size !== modulePaths.length)
         throw new Error("unbound module inventory");
@@ -245596,6 +245654,8 @@ function parseGovulncheckOutput(text4, files) {
       throw new Error("invalid finding");
     const trace = record10.trace.map(object8), frame = trace[0];
     const module = token(frame.module), version = frame.version ? token(frame.version) : "unknown";
+    if (modules.get(module) !== version)
+      throw new Error("unbound finding module or version");
     const fixed = record10.fixed_version ? token(record10.fixed_version) : void 0;
     const rank = frame.function ? 2 : frame.package ? 1 : 0;
     const location2 = { path: "go.mod" };
@@ -245635,11 +245695,23 @@ function parseGovulncheckOutput(text4, files) {
     findings: values.map((value) => value.finding),
     status: "completed",
     notes: ["Go module advisories are deduplicated by vulnerability and module version; the strongest observed reachability is retained. Static reachability is build-specific and cannot prove runtime exploitability or cover reflect/unsafe calls. No source snippets or raw scanner messages are retained."],
-    metrics: { rootsAnalyzed: roots, findingCount: values.length, reachableFindings: values.filter((value) => value.rank === 2).length, scannerVersion: typeof config.scanner_version === "string" && /^[A-Za-z0-9.+_-]{1,80}$/.test(config.scanner_version) ? config.scanner_version : "unknown" }
+    metrics: {
+      rootsAnalyzed: roots,
+      findingCount: values.length,
+      reachableFindings: values.filter((value) => value.rank === 2).length,
+      goVersion: typeof config.go_version === "string" && /^go[0-9][A-Za-z0-9.+_-]{0,79}$/.test(config.go_version) ? config.go_version : "unknown",
+      scannerVersion: typeof config.scanner_version === "string" && /^[A-Za-z0-9.+_-]{1,80}$/.test(config.scanner_version) ? config.scanner_version : "unknown"
+    }
   };
 }
 async function runGovulncheck(context) {
   const check2 = (status, note2) => ({ id: "source.govulncheck", status, findings: [], notes: [note2] });
+  let buildTags;
+  try {
+    buildTags = normalizeGoBuildTags(context.buildTags);
+  } catch {
+    return check2("error", "Invalid Go build tags; no engine was started.");
+  }
   const files = govulncheckFiles(context.snapshot), modules = files.filter((file) => /(?:^|\/)go\.mod$/.test(file.path));
   if (!modules.length)
     return check2("not_applicable", "No collected Go module was available for govulncheck.");
@@ -245658,7 +245730,16 @@ async function runGovulncheck(context) {
     const privateRoot = join6(dirname5(staged.dir), "govulncheck");
     const home = join6(privateRoot, "home"), cache = join6(privateRoot, "build-cache"), gopath = join6(privateRoot, "gopath");
     await Promise.all([home, cache, gopath].map((path3) => mkdir4(path3, { recursive: true, mode: 448 })));
-    const args = ["-json", "-mode", "source", "-scan", "symbol", ...context.database ? ["-db", context.database] : [], "./..."];
+    const args = [
+      "-json",
+      "-mode",
+      "source",
+      "-scan",
+      "symbol",
+      ...context.database ? ["-db", context.database] : [],
+      ...buildTags.length ? ["-tags", buildTags.join(",")] : [],
+      "./..."
+    ];
     const result3 = await runProcess(context.toolPath, args, {
       cwd: staged.dir,
       timeoutMs: context.timeoutMs,
@@ -245670,7 +245751,13 @@ async function runGovulncheck(context) {
     if (result3.cancelled || result3.spawnError || result3.timedOut || result3.outputLimitExceeded || result3.signal || result3.exitCode !== 0)
       return check2("error", "Govulncheck did not complete. Check the prepared Go toolchain/module cache, build compatibility, vulnerability database, and timeout. Target dependencies and toolchains are never downloaded automatically.");
     const parsed = parseGovulncheckOutput(result3.stdout, files);
-    return { id: "source.govulncheck", status: parsed.status ?? "completed", findings: parsed.findings, notes: parsed.notes, metrics: parsed.metrics };
+    return {
+      id: "source.govulncheck",
+      status: parsed.status ?? "completed",
+      findings: parsed.findings,
+      notes: [...parsed.notes, `Go build tags: ${buildTags.join(",") || "default"}; test packages: excluded. Other build configurations were not analyzed.`],
+      metrics: { ...parsed.metrics, buildTags: buildTags.join(","), testPackages: false }
+    };
   } catch {
     return check2("error", "Govulncheck output or staged runtime was invalid; Go vulnerability analysis is incomplete.");
   } finally {
@@ -245684,7 +245771,39 @@ init_collector();
 import { lstat as lstat4, mkdir as mkdir5, mkdtemp as mkdtemp4, rm as rm4, writeFile as writeFile4 } from "node:fs/promises";
 import { tmpdir as tmpdir4 } from "node:os";
 import { basename as basename2, isAbsolute as isAbsolute8, join as join7, relative as relative7, resolve as resolve9 } from "node:path";
-var MANIFESTS = /* @__PURE__ */ new Set(["package-lock.json", "npm-shrinkwrap.json", "yarn.lock", "pnpm-lock.yaml", "go.mod", "go.sum", "Cargo.lock", "Gemfile.lock", "poetry.lock", "Pipfile.lock", "requirements.txt", "packages.lock.json", "composer.lock"]);
+
+// build/src/source/requirements.js
+function inspectRequirementsFile(text4) {
+  let packageCount = 0;
+  let unresolved = false;
+  for (const rawLine of text4.replace(/^\uFEFF/, "").split(/\r\n|\r|\n/)) {
+    const line = rawLine.replace(/\s+#.*$/, "").trim();
+    if (!line || line.startsWith("#"))
+      continue;
+    if (/^(?:-r|--requirement|-c|--constraint)(?:\s+|=)/i.test(line)) {
+      unresolved = true;
+      continue;
+    }
+    if (/^--(?:hash(?:=|\s)|require-hashes(?:=|\s|$)|index-url(?:=|\s)|extra-index-url(?:=|\s)|trusted-host(?:=|\s)|find-links(?:=|\s)|no-index(?:=|\s|$)|only-binary(?:=|\s)|no-binary(?:=|\s)|prefer-binary(?:=|\s)|pre(?:=|\s|$))/i.test(line))
+      continue;
+    if (/^(?:-|git\+|hg\+|svn\+|bzr\+|https?:|file:|ssh:|\.?\.?\/|[A-Za-z0-9_.-]+\s*@\s*)/i.test(line)) {
+      unresolved = true;
+      continue;
+    }
+    const withoutHash = line.split(/\s+--hash(?:=|\s+)/i, 1)[0].trim();
+    const spec = withoutHash.split(";", 1)[0].trim();
+    const match = /^([A-Za-z0-9][A-Za-z0-9._-]*)(?:\[[^\]\r\n]+\])?\s*==\s*([^\s,;#=]+)$/i.exec(spec);
+    if (!match || (spec.match(/==/g)?.length ?? 0) !== 1 || /(?:[<>~!]=?|\*|,)/.test(spec.replace(/==/g, ""))) {
+      unresolved = true;
+      continue;
+    }
+    packageCount += 1;
+  }
+  return { pinned: !unresolved && packageCount > 0, packageCount };
+}
+
+// build/src/trivy-vuln.js
+var MANIFESTS = /* @__PURE__ */ new Set(["package-lock.json", "npm-shrinkwrap.json", "yarn.lock", "pnpm-lock.yaml", "go.mod", "go.sum", "Cargo.lock", "Gemfile.lock", "poetry.lock", "Pipfile.lock", "uv.lock", "requirements.txt", "requirements-dev.txt", "requirements-prod.txt", "packages.lock.json", "composer.lock"]);
 var SEVERITIES = { UNKNOWN: "info", LOW: "low", MEDIUM: "medium", HIGH: "high", CRITICAL: "critical" };
 function isTrivyVulnerabilityManifest(path3) {
   return MANIFESTS.has(basename2(path3));
@@ -245788,6 +245907,7 @@ async function runTrivyVulnerabilities(options) {
   const image = options.imageArchive !== void 0, id = image ? "image.trivy" : "source.trivy-vuln";
   const check2 = (status, note2) => ({ id, status, findings: [], notes: [note2] });
   const files = options.snapshot ? trivyVulnerabilityFiles(options.snapshot) : [];
+  const unresolvedRequirements = files.filter((file) => /^requirements(?:-(?:dev|prod))?\.txt$/.test(basename2(file.path)) && !inspectRequirementsFile(file.text).pinned).length;
   if (image && (options.snapshot || options.stageDir))
     return check2("error", "Choose exactly one Trivy target: a staged source snapshot or a local image archive.");
   if (!image && (!options.snapshot || !options.stageDir))
@@ -245811,13 +245931,23 @@ async function runTrivyVulnerabilities(options) {
     const config = join7(privateRoot, "trivy.yaml"), ignore = join7(privateRoot, "empty.ignore");
     await writeFile4(config, "{}\n", { mode: 384 });
     await writeFile4(ignore, "", { mode: 384 });
-    const args = [image ? "image" : "fs", "--quiet", "--disable-telemetry", "--skip-version-check", "--format", "json", "--exit-code", "0", "--scanners", "vuln", "--list-all-pkgs", "--pkg-types", image ? "os,library" : "library", "--config", config, "--ignorefile", ignore, "--cache-dir", cache, "--module-dir", modules, "--offline-scan", ...options.offline ? ["--skip-db-update", "--skip-java-db-update"] : [], ...image ? ["--input", resolve9(options.imageArchive)] : [staged.dir]];
+    const args = [image ? "image" : "fs", "--quiet", "--disable-telemetry", "--skip-version-check", "--format", "json", "--exit-code", "0", "--scanners", "vuln", "--list-all-pkgs", "--pkg-types", image ? "os,library" : "library", "--config", config, "--ignorefile", ignore, "--cache-dir", cache, "--module-dir", modules, "--offline-scan", ...!image ? ["--file-patterns", "pip:(^|/)requirements-(dev|prod)\\.txt$"] : [], ...options.offline ? ["--skip-db-update", "--skip-java-db-update"] : [], ...image ? ["--input", resolve9(options.imageArchive)] : [staged.dir]];
     const result3 = await runProcess(options.toolPath, args, { cwd: image ? privateRoot : staged.dir, timeoutMs: options.timeoutMs, home, signal: options.signal });
     if (result3.cancelled || result3.spawnError || result3.timedOut || result3.outputLimitExceeded || result3.signal || result3.exitCode !== 0)
       return check2("error", "Trivy vulnerability scanning did not complete. Check the prepared database/cache, archive format, and timeout; no clean result is inferred from missing output.");
     const parsed = parseTrivyVulnerabilityOutput(result3.stdout, { image, stageDir: staged?.dir, allowedPaths: files.map((file) => file.path) });
     const incomplete2 = !image && options.snapshot?.complete === false;
-    return { id, status: incomplete2 ? "partial" : parsed.status ?? "completed", findings: parsed.findings, notes: [...parsed.notes, ...incomplete2 ? ["The collected snapshot was incomplete; dependency coverage is incomplete."] : []], metrics: parsed.metrics };
+    return {
+      id,
+      status: incomplete2 || unresolvedRequirements ? "partial" : parsed.status ?? "completed",
+      findings: parsed.findings,
+      notes: [
+        ...parsed.notes,
+        ...incomplete2 ? ["The collected snapshot was incomplete; dependency coverage is incomplete."] : [],
+        ...unresolvedRequirements ? ["Python requirements contain an unresolved range, include, URL or option; only inventoried versions were checked and dependency coverage is incomplete."] : []
+      ],
+      metrics: { ...parsed.metrics, unresolvedRequirements }
+    };
   } catch {
     return check2("error", "Trivy returned invalid vulnerability data or its target/cache could not be read.");
   } finally {
@@ -246272,34 +246402,6 @@ function dependencyManifestNeedsLockfile(file) {
   const name = fileBasename(file.path);
   return name !== "package.json" || !packageManifestHasExplicitlyEmptyDependencies(file.text);
 }
-function inspectRequirementsFile(text4) {
-  let packageCount = 0;
-  let unresolved = false;
-  for (const rawLine of text4.replace(/^\uFEFF/, "").split(/\r\n|\r|\n/)) {
-    const line = rawLine.replace(/\s+#.*$/, "").trim();
-    if (!line || line.startsWith("#"))
-      continue;
-    if (/^(?:-r|--requirement|-c|--constraint)(?:\s+|=)/i.test(line)) {
-      unresolved = true;
-      continue;
-    }
-    if (/^--(?:hash(?:=|\s)|require-hashes(?:=|\s|$)|index-url(?:=|\s)|extra-index-url(?:=|\s)|trusted-host(?:=|\s)|find-links(?:=|\s)|no-index(?:=|\s|$)|only-binary(?:=|\s)|no-binary(?:=|\s)|prefer-binary(?:=|\s)|pre(?:=|\s|$))/i.test(line))
-      continue;
-    if (/^(?:-|git\+|hg\+|svn\+|bzr\+|https?:|file:|ssh:|\.?\.?\/|[A-Za-z0-9_.-]+\s*@\s*)/i.test(line)) {
-      unresolved = true;
-      continue;
-    }
-    const withoutHash = line.split(/\s+--hash(?:=|\s+)/i, 1)[0].trim();
-    const spec = withoutHash.split(";", 1)[0].trim();
-    const match = /^([A-Za-z0-9][A-Za-z0-9._-]*)(?:\[[^\]\r\n]+\])?\s*==\s*([^\s,;#=]+)$/i.exec(spec);
-    if (!match || (spec.match(/==/g)?.length ?? 0) !== 1 || /(?:[<>~!]=?|\*|,)/.test(spec.replace(/==/g, ""))) {
-      unresolved = true;
-      continue;
-    }
-    packageCount += 1;
-  }
-  return { pinned: !unresolved && packageCount > 0, packageCount };
-}
 function requirementsInspection(snapshot4) {
   const pinned = [];
   const unresolved = [];
@@ -246531,7 +246633,7 @@ async function runTool(tool, snapshot4, stageDir, options, timeoutMs, blockedCon
     if (tool === "semgrep")
       return runSemgrep(context);
     if (tool === "govulncheck")
-      return runGovulncheck({ ...context, goPath: options.goPath, moduleCache: options.goModuleCache, database: options.govulnDatabase });
+      return runGovulncheck({ ...context, goPath: options.goPath, moduleCache: options.goModuleCache, database: options.govulnDatabase, buildTags: options.goBuildTags });
     return runTrivyVulnerabilities({ ...context, cacheDir: options.trivyCache, offline: options.trivyOffline });
   }
   if (tool === "trivy" && pathForTool(snapshot4, "trivy").length === 0) {
@@ -252793,6 +252895,7 @@ init_url_network();
 import { lstat as lstat19, mkdtemp as mkdtemp9, readFile as readFile5, rm as rm9, writeFile as writeFile12 } from "node:fs/promises";
 import { tmpdir as tmpdir9 } from "node:os";
 import { join as join18 } from "node:path";
+import { createHash as createHash21 } from "node:crypto";
 var ZAP_CHECK_ID = "url.zap";
 var ZAP_VERSION = "2.17.0";
 var ZAP_DEFAULT_MAX_REQUESTS = 200;
@@ -252848,7 +252951,7 @@ function buildZapPlan(urls, proxy, directory2) {
         cookieData: { enabled: false },
         scripts: false
       } },
-      { type: "requestor", requests: urls.map((url) => ({ url: url.href, method: "GET" })) },
+      { type: "requestor", requests: urls.map((url) => ({ url: url.href, method: "GET", responseCode: 200 })) },
       // Only the outer supervisor/gate may stop a scan: ZAP's per-rule timeouts can silently skip work.
       {
         type: "activeScan",
@@ -252905,7 +253008,7 @@ function parseZapReport(raw, origin, paths) {
           result3.outOfScope++;
           continue;
         }
-        const key2 = `${alert.pluginid}:${url.pathname}:${instance.param}`;
+        const key2 = JSON.stringify([alert.pluginid, url.pathname, instance.param]);
         if (seen.has(key2))
           continue;
         seen.add(key2);
@@ -252913,6 +253016,7 @@ function parseZapReport(raw, origin, paths) {
         result3.findings.push({
           ruleId: `zap.${alert.pluginid}`,
           title: xss ? "Reflected cross-site scripting" : "SQL injection",
+          comparisonKey: createHash21("sha256").update(key2).digest("hex"),
           description: `ZAP ${ZAP_VERSION} reported ${xss ? "reflected XSS" : "SQL injection"} at an approved GET query surface. Confirm the observation before treating it as an independently verified exploit. Raw attacks and response evidence are not retained.`,
           severity: severities2[Number(alert.riskcode)],
           confidence: Number(alert.confidence) >= 3 ? "high" : Number(alert.confidence) === 2 ? "medium" : "low",
@@ -252966,6 +253070,10 @@ async function runZap(options) {
       "-silent",
       "-dir",
       work,
+      "-host",
+      "127.0.0.1",
+      "-config",
+      "network.localServers.mainProxy.port=0",
       "-config",
       "start.checkForUpdates=false",
       "-config",
@@ -253028,6 +253136,7 @@ async function runZap(options) {
       notes: [
         SCOPE,
         `ZAP ${ZAP_VERSION}: ${counters.forwarded} forwarded request(s); ${urls.length} seed URL(s).`,
+        "Every seed GET must return HTTP 200; a mismatched seed response makes the automation run incomplete.",
         ...reason2 === "complete" ? ["The configured engine jobs finished; no exhaustive endpoint or authorization coverage is inferred."] : [`Incomplete: ${reason2}; absent findings are not a clean security result.`]
       ],
       metrics: {
@@ -253035,6 +253144,7 @@ async function runZap(options) {
         engineVersion: ZAP_VERSION,
         rules: RULES.join(","),
         requestCount: counters.forwarded,
+        seedExpectedStatus: 200,
         maxRequests,
         rateLimit,
         durationMs: Date.now() - started,
@@ -253064,6 +253174,7 @@ async function runZap(options) {
 }
 
 // build/src/cli.js
+init_semgrep_rules();
 var SEVERITY_VALUES = /* @__PURE__ */ new Set(["critical", "high", "medium", "low", "info", "none"]);
 var TOOL_VALUES = /* @__PURE__ */ new Set(["gitleaks", "osv", "trivy", "bandit", "semgrep", "govulncheck", "trivy-vuln"]);
 var CliUsageError = class extends Error {
@@ -253108,6 +253219,7 @@ Options:
   --go PATH                    Prepared Go executable (no toolchain download)
   --go-module-cache DIR        Prepared Go module cache (no dependency installation)
   --govuln-db URL              Go vulnerability database (default official database)
+  --go-build-tags TAGS         Explicit comma-separated Go build tags
   --trivy-cache DIR            Prepared/reusable Trivy database cache
   --trivy-offline              Disable Trivy CVE database updates (prepared DB required)
   --image-archive FILE         Also scan an explicit Docker/OCI archive; requires --source
@@ -253346,7 +253458,13 @@ function parseCliArgs(argv) {
       options.goModuleCache = value;
     else if ((value = valueFlag("--govuln-db")) !== void 0)
       options.govulnDatabase = value;
-    else if ((value = valueFlag("--trivy-cache")) !== void 0)
+    else if ((value = valueFlag("--go-build-tags")) !== void 0) {
+      try {
+        options.goBuildTags = normalizeGoBuildTags(value.split(","));
+      } catch {
+        throw new CliUsageError("--go-build-tags requires at most 32 comma-separated Go tag names");
+      }
+    } else if ((value = valueFlag("--trivy-cache")) !== void 0)
       options.trivyCache = value;
     else if ((value = valueFlag("--image-archive")) !== void 0)
       options.imageArchive = value;
@@ -253481,8 +253599,8 @@ function parseCliArgs(argv) {
     throw new CliUsageError("--page and --max-pages cannot be combined with ZAP; select every active query URL with --zap-path");
   if (options.engines.includes("zap") && (!options.url || new URL(options.url).protocol !== "http:" || options.zapPaths.length === 0))
     throw new CliUsageError("--engine zap requires an HTTP --url and at least one explicit --zap-path");
-  if ((options.goPath || options.goModuleCache || options.govulnDatabase) && (!options.source || !options.tools.includes("govulncheck")))
-    throw new CliUsageError("--go, --go-module-cache and --govuln-db require --source and --tools govulncheck");
+  if ((options.goPath || options.goModuleCache || options.govulnDatabase || options.goBuildTags) && (!options.source || !options.tools.includes("govulncheck")))
+    throw new CliUsageError("Go options require --source and --tools govulncheck");
   if ((options.trivyCache || options.trivyOffline || options.imageArchive) && (!options.source || !options.imageArchive && !options.tools.includes("trivy-vuln")))
     throw new CliUsageError("Trivy CVE options require --source and --tools trivy-vuln or --image-archive");
   if (options.dastMaxRequests !== void 0 && !options.dastPolicy)
@@ -253681,7 +253799,7 @@ async function runDastReplay(argv) {
         reportArtifact = {
           name: "report.json",
           algorithm: "sha256",
-          digest: createHash24("sha256").update(await readFile6(resolve23(options.outDir, "report.json"))).digest("hex")
+          digest: createHash25("sha256").update(await readFile6(resolve23(options.outDir, "report.json"))).digest("hex")
         };
       }
       if (controller.signal.aborted)
@@ -253779,11 +253897,12 @@ async function declaredScope(options, apiPolicy, dastPolicySha256, dastPolicy, s
     imageArchive: options.imageArchive,
     zapExecutable: options.engines.includes("zap") ? options.zapPath ?? "zap.sh" : void 0,
     ...options.tools.includes("semgrep") || options.tools.includes("govulncheck") || options.tools.includes("trivy-vuln") || options.imageArchive ? { securityToolchain: {
-      semgrepRules: options.tools.includes("semgrep") ? "wakeio-go-v1" : null,
+      semgrepRules: options.tools.includes("semgrep") ? SEMGREP_RULE_REVISION : null,
       govulnMode: options.tools.includes("govulncheck") ? "source-symbol-readonly-v1" : null,
-      govulnDatabase: options.govulnDatabase ? createHash24("sha256").update(options.govulnDatabase).digest("hex") : null,
+      govulnDatabase: options.govulnDatabase ? createHash25("sha256").update(options.govulnDatabase).digest("hex") : null,
+      goBuildTags: options.tools.includes("govulncheck") ? options.goBuildTags ?? [] : null,
       trivyOffline: options.trivyOffline === true,
-      imageArchive: options.imageArchive ? createHash24("sha256").update(resolve23(options.imageArchive)).digest("hex") : null
+      imageArchive: options.imageArchive ? createHash25("sha256").update(resolve23(options.imageArchive)).digest("hex") : null
     } } : {},
     allowPrivate: options.allowPrivate,
     timeoutMs: options.timeoutMs,
@@ -253796,7 +253915,7 @@ async function declaredScope(options, apiPolicy, dastPolicySha256, dastPolicy, s
       ...options.dastPolicy ? { native: { policySha256: dastPolicySha256 ?? null, profileRevision: dastPolicy ? dastProfileRevision(dastPolicy) : null, maxRequests: options.dastMaxRequests ?? (dastPolicy ? dastDefaultMaxRequests(dastPolicy) : DAST_DEFAULT_MAX_REQUESTS), timeoutMs: Math.min(options.timeoutMs, API_MAX_TIMEOUT_MS) } } : {},
       ...options.openapi ? { schemathesis: { apiBase: options.apiBase, operations: [...options.operations], maxRequests: options.apiMaxRequests ?? 32, seed: options.seed ?? 1 } } : {},
       ...options.schemathesisAuthPolicy ? { schemathesisAuthPolicy: schemathesisAuthPolicy ?? { profileRevision: SCHEMATHESIS_AUTH_REVISION, policySha256: null, schemaSha256: null } } : {},
-      ...options.engines.includes("zap") ? { zap: { paths: options.zapPaths.map((path3) => createHash24("sha256").update(path3).digest("hex")), maxRequests: options.zapMaxRequests ?? ZAP_DEFAULT_MAX_REQUESTS, rateLimit: options.zapRateLimit ?? ZAP_DEFAULT_RATE_LIMIT, timeoutMs: options.zapTimeoutMs ?? ZAP_DEFAULT_TIMEOUT_MS, profile: "query-sqli-xss-v1" } } : {},
+      ...options.engines.includes("zap") ? { zap: { paths: options.zapPaths.map((path3) => createHash25("sha256").update(path3).digest("hex")), maxRequests: options.zapMaxRequests ?? ZAP_DEFAULT_MAX_REQUESTS, rateLimit: options.zapRateLimit ?? ZAP_DEFAULT_RATE_LIMIT, timeoutMs: options.zapTimeoutMs ?? ZAP_DEFAULT_TIMEOUT_MS, profile: "query-sqli-xss-v2" } } : {},
       ...options.engines.includes("nuclei") ? { nuclei: { scopes: [...options.nucleiScopes].sort(), maxRequests: options.nucleiMaxRequests ?? null, rateLimit: options.nucleiRateLimit ?? null } } : {}
     } } : {}
   });
@@ -253890,7 +254009,7 @@ ${USAGE2}`);
         schemathesisAuthScope = {
           profileRevision: SCHEMATHESIS_AUTH_REVISION,
           policySha256: input.policySha256,
-          schemaSha256: createHash24("sha256").update(JSON.stringify(selection2.document)).digest("hex")
+          schemaSha256: createHash25("sha256").update(JSON.stringify(selection2.document)).digest("hex")
         };
         schemathesisAuthPolicy = input.policy;
       } catch {
@@ -253911,6 +254030,7 @@ ${USAGE2}`);
         goPath: parsed.goPath,
         goModuleCache: parsed.goModuleCache,
         govulnDatabase: parsed.govulnDatabase,
+        goBuildTags: parsed.goBuildTags,
         trivyCache: parsed.trivyCache,
         trivyOffline: parsed.trivyOffline,
         outDir: parsed.outDir,

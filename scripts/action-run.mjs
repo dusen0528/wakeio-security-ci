@@ -138,6 +138,7 @@ async function main() {
         if (value(env[setting])) args.push(flag, resolve(workspace, value(env[setting])));
       }
       addValueOption(args, '--govuln-db', env.WAKEIO_GOVULN_DB);
+      addValueOption(args, '--go-build-tags', env.WAKEIO_GO_BUILD_TAGS);
     }
     if (state.selectedTools.includes('trivy-vuln') || value(env.WAKEIO_IMAGE_ARCHIVE)) {
       for (const [flag, setting] of [['--trivy-cache', 'WAKEIO_TRIVY_CACHE'], ['--image-archive', 'WAKEIO_IMAGE_ARCHIVE']]) {

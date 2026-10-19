@@ -1,6 +1,8 @@
-# Optional security toolchain validation
+# Initial optional security toolchain validation
 
-This change extends the unpublished 0.5.0 candidate. The integration base is
+This record describes the initial integration at `f326cfa5d1389c828c8571a475f718cb8eb6018a`.
+The [upstream-analysis follow-up](security-toolchain-deepening.md) records later extensions.
+The unpublished 0.5.0 integration base is
 `f00fb8a0484a7124ab53d8ace99f0f994331b995` (`dev`), checked on 2026-10-19.
 It is not a claim of complete application security, production precision/recall,
 or autonomous-agent benefit.

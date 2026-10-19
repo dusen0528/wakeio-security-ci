@@ -6,6 +6,8 @@ import { createServer } from 'node:http';
 import { chmod, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { DatabaseSync } from 'node:sqlite';
+import { createReport, sanitiseReport } from '../src/report.js';
 import { buildZapPlan, parseZapReport, runZap, ZAP_VERSION, type ZapOptions } from '../src/zap.js';
 
 function report(origin: string) {
@@ -33,6 +35,21 @@ test('ZAP projection validates scope and strips payloads, engine HTML and respon
   assert.equal(parseZapReport(raw, origin, ['/vulnerable?q=test']).malformed, 1);
 });
 
+test('ZAP query parameters retain distinct report identities without retaining names or values', () => {
+  const origin = 'http://127.0.0.1:8000', raw = report(origin);
+  raw.site[0]!.alerts[0]!.instances.push({ ...raw.site[0]!.alerts[0]!.instances[0]!, uri: `${origin}/vulnerable?private_parameter_name=secret`, param: 'private_parameter_name' });
+  const parsed = parseZapReport(raw, origin, ['/vulnerable?q=first&private_parameter_name=second']);
+  assert.equal(parsed.findings.length, 2);
+  const value = createReport([{ id: 'url.zap', status: 'completed', notes: [], findings: parsed.findings }], 'url', new Date());
+  assert.equal(new Set(value.checks[0]!.findings.map(finding => finding.id)).size, 2);
+  assert.deepEqual(sanitiseReport(value).checks[0]!.findings.map(finding => finding.id), value.checks[0]!.findings.map(finding => finding.id));
+  assert.equal(JSON.stringify(value).includes('private_parameter_name'), false);
+  assert.equal(JSON.stringify(value).includes('secret'), false);
+  const separated = report(origin), first = separated.site[0]!.alerts[0]!.instances[0]!;
+  separated.site[0]!.alerts[0]!.instances = [{ ...first, uri: `${origin}/a:b?c=1`, param: 'c' }, { ...first, uri: `${origin}/a?b%3Ac=1`, param: 'b:c' }];
+  assert.equal(parseZapReport(separated, origin, ['/a:b?c=1', '/a?b%3Ac=1']).findings.length, 2);
+});
+
 test('ZAP plan permits only explicit query seeds, two active rules and no crawler', () => {
   const plan = buildZapPlan([new URL('http://127.0.0.1:8000/vulnerable?q=test')], new URL('http://wakeio:token@127.0.0.1:1234'), '/tmp/private') as any;
   assert.deepEqual(plan.jobs.map((job: any) => job.type), ['passiveScan-config', 'activeScan-config', 'requestor', 'activeScan', 'report']);
@@ -40,6 +57,7 @@ test('ZAP plan permits only explicit query seeds, two active rules and no crawle
   assert.equal(plan.jobs[1].inputVectors.scripts, false);
   assert.equal(plan.jobs[3].policyDefinition.defaultThreshold, 'Off');
   assert.deepEqual(plan.jobs[3].policyDefinition.rules.map((rule: any) => rule.id), [40012, 40018]);
+  assert.equal(plan.jobs[2].requests[0].responseCode, 200);
   const pattern = new RegExp(plan.env.contexts[0].includePaths[0]);
   assert.ok(pattern.test('http://127.0.0.1:8000/vulnerable?q=next'));
   assert.ok(!pattern.test('http://127.0.0.1:8000/vulnerable/other?q=next'));
@@ -52,9 +70,27 @@ test('ZAP plan permits only explicit query seeds, two active rules and no crawle
 
 async function fixture() {
   const requests: Array<{ method: string; path: string; at: number }> = [];
+  const database = new DatabaseSync(':memory:');
+  database.exec("CREATE TABLE items(id INTEGER PRIMARY KEY, name TEXT); INSERT INTO items VALUES (1,'first'),(2,'second');");
   const server = createServer((req, res) => {
     const url = new URL(req.url!, 'http://fixture');
     requests.push({ method: req.method!, path: url.pathname, at: Date.now() });
+    if (url.pathname === '/denied' || url.pathname === '/missing') {
+      res.writeHead(url.pathname === '/denied' ? 401 : 404, { 'content-type': 'text/plain' }); res.end('Unavailable'); return;
+    }
+    if (url.pathname === '/sql-vulnerable' || url.pathname === '/sql-safe') {
+      const id = url.searchParams.get('id') ?? '1';
+      try {
+        const rows = url.pathname === '/sql-vulnerable'
+          ? database.prepare(`SELECT name FROM items WHERE id=${id}`).all()
+          : database.prepare('SELECT name FROM items WHERE id=?').all(id);
+        res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-store' }); res.end(JSON.stringify(rows));
+      } catch (cause) {
+        const error = cause as Error & { code: string };
+        res.writeHead(500, { 'content-type': 'application/json', 'cache-control': 'no-store' }); res.end(JSON.stringify({ error: error.code, message: error.message }));
+      }
+      return;
+    }
     const query = url.searchParams.get('q') ?? '';
     res.writeHead(200, { 'content-type': 'text/html', 'cache-control': 'no-store' });
     const encoded = query.replace(/[&<>"']/g, char => `&#${char.charCodeAt(0)};`);
@@ -62,7 +98,7 @@ async function fixture() {
   });
   await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve));
   const origin = `http://127.0.0.1:${(server.address() as { port: number }).port}`;
-  return { server, origin, requests, close: () => new Promise<void>(resolve => server.close(() => resolve())) };
+  return { server, origin, requests, close: () => new Promise<void>(resolve => server.close(() => { database.close(); resolve(); })) };
 }
 
 async function fakeEngine(directory: string, behavior: { requests?: number; exit?: number; report?: 'missing' | 'invalid'; forbidden?: boolean; delay?: number } = {}) {
@@ -163,22 +199,58 @@ test('ZAP enforces its advertised rate at the shared admission gate', async () =
   } finally { await target.close(); await rm(directory, { recursive: true, force: true }); }
 });
 
-test('real ZAP detects owned reflected XSS, rejects the encoded control, and accounts every fixture request', {
+test('real ZAP detects owned XSS and SQLite SQLi, rejects fixed controls, and accounts every fixture request', {
   skip: !process.env.WAKEIO_ZAP_PATH, timeout: 240_000,
 }, async context => {
   const target = await fixture();
   try {
-    const result = (await runZap({ url: target.origin, paths: ['/vulnerable?q=hello', '/safe?q=hello'], executable: process.env.WAKEIO_ZAP_PATH,
+    const result = (await runZap({ url: target.origin, paths: ['/vulnerable?q=hello', '/safe?q=hello', '/sql-vulnerable?id=1', '/sql-safe?id=1'], executable: process.env.WAKEIO_ZAP_PATH,
       consent: true, allowPrivate: true, maxRequests: 1000, rateLimit: 50, timeoutMs: 180_000 }))[0]!;
     assert.equal(result.status, 'completed', JSON.stringify(result));
     assert.ok(result.findings.some(finding => finding.ruleId === 'zap.40012' && finding.location.url?.includes('/vulnerable?')));
     assert.ok(!result.findings.some(finding => finding.location.url?.includes('/safe?')));
+    assert.ok(result.findings.some(finding => finding.ruleId === 'zap.40018' && finding.location.url?.includes('/sql-vulnerable?')), JSON.stringify(result));
+    assert.ok(!result.findings.some(finding => finding.location.url?.includes('/sql-safe?')));
     assert.equal(result.metrics!.requestCount, target.requests.length, 'Every target request must pass the gate; no local-proxy bypass');
-    assert.ok(target.requests.every(req => req.method === 'GET' && ['/vulnerable', '/safe'].includes(req.path)));
+    assert.ok(target.requests.every(req => req.method === 'GET' && ['/vulnerable', '/safe', '/sql-vulnerable', '/sql-safe'].includes(req.path)));
     assert.ok(!JSON.stringify(result).includes('<script'));
     context.diagnostic(JSON.stringify({ engineVersion: ZAP_VERSION, requestCount: result.metrics!.requestCount,
       targetRequestCount: target.requests.length, findingRules: result.findings.map(finding => finding.ruleId), status: result.status }));
   } finally { await target.close(); }
+});
+
+test('real ZAP rejects unauthenticated and absent seed responses as incomplete', {
+  skip: !process.env.WAKEIO_ZAP_PATH, timeout: 180_000,
+}, async context => {
+  const target = await fixture();
+  try {
+    const result = (await runZap({ url: target.origin, paths: ['/denied?q=hello', '/missing?q=hello'], executable: process.env.WAKEIO_ZAP_PATH,
+      consent: true, allowPrivate: true, maxRequests: 100, rateLimit: 50, timeoutMs: 120_000 }))[0]!;
+    assert.equal(result.status, 'partial', JSON.stringify(result));
+    assert.equal(result.findings.length, 0);
+    assert.equal(result.metrics?.stopReason, 'engine_exit');
+    assert.equal(result.metrics?.requestCount, target.requests.length);
+    context.diagnostic(JSON.stringify({ seedStatus: [401, 404], requests: target.requests.length, status: result.status }));
+  } finally { await target.close(); }
+});
+
+test('real ZAP runs simultaneous owned scans with independent listeners and request accounting', {
+  skip: !process.env.WAKEIO_ZAP_PATH, timeout: 180_000,
+}, async context => {
+  const targets = await Promise.all([fixture(), fixture()]);
+  try {
+    const results = await Promise.all(targets.map(async target => (await runZap({ url: target.origin,
+      paths: ['/safe?q=hello'], executable: process.env.WAKEIO_ZAP_PATH, consent: true, allowPrivate: true,
+      maxRequests: 100, rateLimit: 50, timeoutMs: 120_000 }))[0]!));
+    for (const [index, result] of results.entries()) {
+      assert.equal(result.status, 'completed', JSON.stringify(result));
+      assert.equal(result.metrics?.requestCount, targets[index]!.requests.length);
+      assert.ok(targets[index]!.requests.length > 1);
+      assert.equal(result.findings.length, 0);
+    }
+    context.diagnostic(JSON.stringify({ simultaneousScans: results.length,
+      requestCounts: results.map(result => result.metrics?.requestCount), targetRequestCounts: targets.map(target => target.requests.length) }));
+  } finally { await Promise.all(targets.map(target => target.close())); }
 });
 
 test('real ZAP request cap stops the engine and leaves a partial result', {

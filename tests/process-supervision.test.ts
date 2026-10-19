@@ -41,8 +41,10 @@ test('strict ps parser rejects empty/malformed and group EPERM remains unknown',
 test('strict environment contains only private OS paths and never inherits auth/proxy', async () => {
   const previous = process.env.HTTPS_PROXY; process.env.HTTPS_PROXY = 'http://synthetic-proxy.test';
   try {
-    const p = await owned('process.stdout.write(JSON.stringify(process.env)); setTimeout(()=>{},180)');
-    assert.equal(p.stopReason, undefined); assert.equal(p.rss?.failedSamples, 0);
+    // Keep this environment fixture alive until the supervisor stops it. A
+    // natural exit can briefly appear as ?E in macOS ps and must fail closed.
+    const p = await owned('process.stdout.write(JSON.stringify(process.env)); setInterval(()=>{},1000)', { timeoutMs: 350 });
+    assert.equal(p.stopReason, 'timeout'); assert.equal(p.rss?.failedSamples, 0);
     const env = JSON.parse(p.stdout); assert.equal(env.HTTPS_PROXY, undefined); assert.equal(env.CODEX_API_KEY, undefined);
     assert.equal(env.PATH, '/usr/bin:/bin:/usr/sbin:/sbin'); assert.equal(env.HOME, env.TMPDIR);
     assert.equal(p.closeConfirmed, true); assert.equal(p.cleanupConfirmed, true); assert.equal(p.rss?.assessment, 'measured');

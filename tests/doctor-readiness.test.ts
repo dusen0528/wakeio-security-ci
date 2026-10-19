@@ -111,12 +111,23 @@ test('doctor optional Go and CVE engines do not block an unrelated JavaScript pr
 });
 
 test('doctor uses actual Go and Trivy filenames and collector exclusions for applicability', async t => {
-  const f = await fixture(t, { 'app.js': 'data', '.env.go': 'private', 'GO.MOD': 'unsupported case', 'cargo.lock': 'unsupported case', 'package.json': '{}', 'requirements-dev.txt': 'not in Trivy adapter allowlist' });
+  const f = await fixture(t, { 'app.js': 'data', '.env.go': 'private', 'GO.MOD': 'unsupported case', 'cargo.lock': 'unsupported case', 'package.json': '{}', 'requirements-extra.txt': 'not in collector or Trivy allowlist' });
   await mkdir(join(f.source, 'vendor')); await writeFile(join(f.source, 'vendor', 'main.go'), 'ignored');
   const result = await doctor(f.source, ['--tools', 'semgrep,govulncheck,trivy-vuln', '--strict']);
   assert.equal(result.code, 0);
   assert.ok(result.data.tools.every((tool: any) => tool.applicability === 'not_applicable'));
   assert.deepEqual(result.data.runtimeNetwork, []);
+});
+
+test('doctor recognizes native uv and named requirements without executing Trivy', async t => {
+  const f = await fixture(t, { 'uv.lock': 'OWNED_METADATA_ONLY', 'requirements-dev.txt': 'OWNED_METADATA_ONLY', 'requirements-prod.txt': 'OWNED_METADATA_ONLY' });
+  const bin = join(f.top, 'bin'), marker = join(f.top, 'executed'); await mkdir(bin);
+  const executable = join(bin, 'trivy'); await writeFile(executable, `#!/bin/sh\nprintf executed > '${marker}'\nexit 97\n`); await chmod(executable, 0o700);
+  const result = await doctor(f.source, ['--tools', 'trivy-vuln', '--strict'], { ...process.env, PATH: bin });
+  assert.equal(result.code, 0); metadataOnly(result.data);
+  assert.equal(result.data.inventory.trivyVulnerabilityManifests, 3);
+  assert.equal(result.data.tools[0].applicability, 'applicable'); assert.equal(result.data.tools[0].availability, 'available');
+  await assert.rejects(readFile(marker), { code: 'ENOENT' });
 });
 
 test('doctor observes supported Go inputs without executing tools or claiming Go runtime readiness', async t => {

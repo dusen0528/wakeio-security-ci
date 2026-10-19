@@ -1124,6 +1124,8 @@ function findingIdentity(checkId: string, finding: Finding, profileRevision?: st
   // Only sanitized newer transport/profile evidence supplies this discriminator.
   // Preserve the original GET numeric identity byte-for-byte.
   if (profileRevision !== undefined) identity.push('native-dast-profile', profileRevision);
+  // ZAP can report several query parameters at one redacted URL.
+  if (checkId === 'url.zap' && finding.comparisonKey) identity.push('zap-query-surface', finding.comparisonKey);
   return createHash('sha256').update(JSON.stringify(identity)).digest('hex');
 }
 
