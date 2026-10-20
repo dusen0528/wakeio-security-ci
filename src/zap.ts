@@ -9,9 +9,11 @@ import { resolveDastOrigin, startEgressGate, type EgressGate } from './dast-egre
 import { findExecutable, MAX_PROCESS_OUTPUT_BYTES, MAX_TOOL_TIMEOUT_MS, runProcess } from './source/process.js';
 import { normalizeUrl, safeUrl, UrlNetworkError } from './url-network.js';
 import { authScalarMatches } from './schemathesis-auth.js';
-import { prepareZapPolicy, zapSurfaceKey, ZAP_RELAY_ORIGIN, ZAP_POLICY_REVISION, type ZapPolicy, type ZapRequest } from './zap-policy.js';
-export { parseZapPolicy, ZAP_POLICY_REVISION } from './zap-policy.js';
-export type { ZapPolicy, ZapRequest } from './zap-policy.js';
+import { ZapSessionBridge, ZAP_SESSION_PATH } from './zap-session.js';
+import { projectedZapOpenApi, type ZapCompiledRequest } from './zap-openapi.js';
+import { prepareZapPolicy, ZAP_OPENAPI_REVISION, zapSurfaceKey, ZAP_RELAY_ORIGIN, ZAP_POLICY_REVISION, type ZapPolicyInput, type ZapRequest } from './zap-policy.js';
+export { parseZapPolicy, ZAP_POLICY_REVISION, ZAP_OPENAPI_REVISION } from './zap-policy.js';
+export type { ZapPolicy, ZapPolicyV2, ZapPolicyInput, ZapRequest } from './zap-policy.js';
 
 export const ZAP_CHECK_ID = 'url.zap';
 export const ZAP_VERSION = '2.17.0';
@@ -21,11 +23,11 @@ export const ZAP_DEFAULT_TIMEOUT_MS = 300_000;
 export const ZAP_DEFAULT_RATE_LIMIT = 10;
 export const ZAP_MAX_RATE_LIMIT = 50;
 const RULES = [40012, 40018];
-const SCOPE = 'ZAP tests only explicitly selected inputs for reflected XSS and SQL injection through the shared egress gate. No spider, login, token refresh, script, out-of-band callback or update is enabled. Active requests can have side effects; use an approved disposable target. This is not an authorization or complete application-security assessment.';
+const SCOPE = 'ZAP tests only explicitly selected inputs for reflected XSS and SQL injection through the shared egress gate. No spider, arbitrary script, out-of-band callback or update is enabled. API login and session renewal require the explicit version-2 profile. Active requests can have side effects; use an approved disposable target. This is not an authorization or complete application-security assessment.';
 export interface ZapOptions {
   url: string;
   paths?: string[];
-  policy?: ZapPolicy;
+  policy?: ZapPolicyInput;
   env?: NodeJS.ProcessEnv;
   executable?: string;
   consent: boolean;
@@ -60,12 +62,16 @@ function selectedUrls(origin: string, paths: string[]): URL[] {
 const escapeRegex = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 /** JSON is a YAML subset; generated data cannot inject extra automation jobs. */
-export function buildZapPlan(urls: URL[], proxy: URL, directory: string, requests?: ZapRequest[]): object {
+export function buildZapPlan(urls: URL[], proxy: URL, directory: string, requests?: ZapCompiledRequest[], automation?: { openapi: boolean; session: boolean; format?: 'json' | 'form' }): object {
   const allowed = [...new Set(urls.map(url => `${escapeRegex(url.origin + url.pathname)}(?:\\?.*)?`))];
   return {
     env: {
       // Context urls add broad regexes; exclusions must constrain their union, not just add includePaths.
-      contexts: [{ name: 'wakeio', urls: [urls[0]!.origin], includePaths: allowed.map(path => `^${path}$`), excludePaths: [`^(?!(?:${allowed.join('|')})$).*$`] }],
+      contexts: [{ name: 'wakeio', urls: [urls[0]!.origin], includePaths: allowed.map(path => `^${path}$`), excludePaths: [`^(?!(?:${allowed.join('|')})$).*$`],
+        ...(automation?.session ? { authentication: { method: automation.format, parameters: { loginPageUrl: '', loginRequestUrl: urls[0]!.origin + ZAP_SESSION_PATH,
+          loginRequestBody: automation.format === 'form' ? 'username={%username%}&password={%password%}' : JSON.stringify({ username: '{%username%}', password: '{%password%}' }) },
+          verification: { method: 'response', loggedInRegex: '(?i)x-wakeio-session: valid', loggedOutRegex: '(?i)x-wakeio-session: expired' } },
+          sessionManagement: { method: 'cookie' }, users: [{ name: 'wakeio-user', credentials: { username: 'wakeio-user', password: 'wakeio-password' } }] } : {}) }],
       parameters: { failOnError: true, failOnWarning: true, continueOnFailure: false, progressToStdout: false },
       proxy: { hostname: proxy.hostname, port: Number(proxy.port), username: proxy.username, password: proxy.password },
     },
@@ -78,11 +84,12 @@ export function buildZapPlan(urls: URL[], proxy: URL, directory: string, request
         urlPath: false, httpHeaders: { enabled: false, allRequests: false },
         cookieData: { enabled: false }, scripts: false,
       } },
-      { type: 'requestor', requests: urls.map((url, index) => ({ url: url.href, method: requests?.[index].method ?? 'GET', responseCode: 200,
-        ...(requests?.[index].method === 'POST' ? { data: JSON.stringify((requests[index] as Extract<ZapRequest, { method: 'POST' }>).body),
+      ...(automation?.openapi ? [{ type: 'openapi', parameters: { apiFile: join(directory, 'openapi.json'), targetUrl: urls[0]!.origin, context: 'wakeio', ...(automation.session ? {user:'wakeio-user'} : {}) } }] : []),
+      { type: 'requestor', ...(automation?.session ? { parameters: { user: 'wakeio-user' } } : {}), requests: urls.map((url, index) => ({ url: url.href, method: requests?.[index].method ?? 'GET', responseCode: 200,
+        ...(requests?.[index].method === 'POST' ? { data: JSON.stringify(requests[index].body),
           headers: ['Content-Type:application/json'] } : {}) })) },
       // Only the outer supervisor/gate may stop a scan: ZAP's per-rule timeouts can silently skip work.
-      { type: 'activeScan', parameters: { context: 'wakeio', threadPerHost: 1, handleAntiCSRFTokens: false, maxRuleDurationInMins: 0, maxScanDurationInMins: 0 },
+      { type: 'activeScan', parameters: { context: 'wakeio', ...(automation?.session ? {user:'wakeio-user'} : {}), threadPerHost: 1, handleAntiCSRFTokens: false, maxRuleDurationInMins: 0, maxScanDurationInMins: 0 },
         policyDefinition: { defaultThreshold: 'Off', defaultStrength: 'Low', rules: RULES.map(id => ({ id, strength: 'Low', threshold: 'Medium' })) } },
       { type: 'report', parameters: { template: 'traditional-json', reportDir: directory, reportFile: 'report.json', displayReport: false } },
     ],
@@ -91,7 +98,7 @@ export function buildZapPlan(urls: URL[], proxy: URL, directory: string, request
 
 function object(value: unknown): value is Record<string, unknown> { return !!value && typeof value === 'object' && !Array.isArray(value); }
 /** Project only rule metadata. Engine strings, payloads and evidence never enter the shared report. */
-export function parseZapReport(raw: unknown, origin: string, paths: string[], policy?: ZapPolicy): { findings: Finding[]; malformed: number; outOfScope: number } {
+export function parseZapReport(raw: unknown, origin: string, paths: string[], policy?: { requests: ZapCompiledRequest[] }): { findings: Finding[]; malformed: number; outOfScope: number } {
   const result = { findings: [] as Finding[], malformed: 0, outOfScope: 0 };
   if (!object(raw) || raw['@version'] !== ZAP_VERSION || !Array.isArray(raw.site)) return { ...result, malformed: 1 };
   const urls = policy ? policy.requests.map(request => new URL(request.path, origin)) : selectedUrls(origin, paths), seen = new Set<string>();
@@ -108,9 +115,10 @@ export function parseZapReport(raw: unknown, origin: string, paths: string[], po
         let url: URL;
         try { url = new URL(normalizeUrl(instance.uri).href); } catch { result.malformed++; continue; }
         const selected = policy?.requests.find(request => request.method === instance.method && new URL(request.path, origin).pathname === url.pathname
-          && (request.method === 'POST' ? Object.hasOwn(request.body, instance.param as string) : new URL(request.path, origin).searchParams.has(instance.param as string)));
+          && (request.method === 'POST' ? !!request.body && Object.hasOwn(request.body, instance.param as string) : new URL(request.path, origin).searchParams.has(instance.param as string)));
         if (url.origin !== origin || (policy ? !selected : !urls.some(seed => seed.pathname === url.pathname && seed.searchParams.has(instance.param as string)))) { result.outOfScope++; continue; }
-        const key = policy ? zapSurfaceKey(String(alert.pluginid), selected!, instance.param) : createHash('sha256').update(JSON.stringify([alert.pluginid, url.pathname, instance.param])).digest('hex');
+        const parameter = selected?.fields?.find(field => field.alias === instance.param)?.pointer ?? instance.param;
+        const key = policy ? zapSurfaceKey(String(alert.pluginid), selected!, parameter) : createHash('sha256').update(JSON.stringify([alert.pluginid, url.pathname, instance.param])).digest('hex');
         if (seen.has(key)) continue;
         seen.add(key);
         const xss = alert.pluginid === '40012';
@@ -147,8 +155,8 @@ export async function runZap(options: ZapOptions, runtime?: TaskAdmission): Prom
       if (options.paths !== undefined) throw new TypeError();
       prepared = prepareZapPolicy(options.policy, options.allowPrivate === true, options.env);
       if (prepared.policy.origin !== origin.origin) throw new TypeError();
-      urls = prepared.policy.requests.map(request => new URL(request.path, ZAP_RELAY_ORIGIN));
-      if (maxRequests < urls.length + (prepared.policy.authentication ? 3 : 0) + 1) throw new TypeError();
+      urls = prepared.requests.map(request => new URL(request.path, ZAP_RELAY_ORIGIN));
+      if (maxRequests < urls.length * (prepared.policy.version === 2 ? 2 : 1) + (prepared.policy.authentication ? 3 : 0) + (prepared.loginEnv ? 1 : 0) + 1) throw new TypeError();
     } else {
       if (origin.protocol !== 'http:') return error('https_wire_budget_unsupported', 'Legacy ZAP paths require HTTP. Use an explicit ZAP policy for request-observable HTTPS forwarding. No requests were made.');
       urls = selectedUrls(origin.origin, [...options.paths!]);
@@ -163,7 +171,10 @@ export async function runZap(options: ZapOptions, runtime?: TaskAdmission): Prom
   const engine = new AbortController(), stopEngine = () => engine.abort();
   control.signal.addEventListener('abort', stopEngine, { once: true });
   let gate: EgressGate | undefined;
+  const session = prepared?.loginEnv && prepared.policy.authentication && 'login' in prepared.policy.authentication ? new ZapSessionBridge(prepared.policy.authentication, prepared.loginEnv) : undefined;
   let result: CheckResult[] | undefined;
+  const virtualOrigin = session?.virtualOrigin ?? ZAP_RELAY_ORIGIN;
+  if (session) urls = urls.map(url => new URL(url.pathname + url.search, virtualOrigin));
   let controlFailure: string | undefined, identityBefore = false, identityAfter = false, anonymousDenied = false;
   const identityControl = async (anonymous: boolean): Promise<boolean> => {
     const auth = prepared!.policy.authentication!;
@@ -184,18 +195,26 @@ export async function runZap(options: ZapOptions, runtime?: TaskAdmission): Prom
     catch (cause) { return error(cause instanceof UrlNetworkError ? cause.code : 'invalid_origin', 'The URL-network policy rejected the target; no requests were made.'); }
     gate = await startEgressGate({ ...resolved, methods: new Set(prepared ? ['GET', 'POST'] : ['GET']), operations: [...new Set(urls.map(url => url.pathname))],
       maxRequests, maxSingleBodyBytes: 2 * 1024 * 1024, maxTotalBytes: 64 * 1024 * 1024, signal: control.signal, deadlineAt: control.deadlineAt,
-      ...(prepared ? { relay: { virtualOrigin: ZAP_RELAY_ORIGIN, authorization: prepared.authorization,
+      ...(prepared ? { relay: { virtualOrigin, authorization: prepared.authorization, session,
         controlPaths: prepared.policy.authentication ? [prepared.policy.authentication.identity.path] : [],
-        requests: prepared.policy.requests.map(request => ({ method: request.method, path: new URL(request.path, ZAP_RELAY_ORIGIN).pathname,
-          ...(request.method === 'GET' ? { query: [...new URL(request.path, ZAP_RELAY_ORIGIN).searchParams.keys()] } : { parameter: Object.keys(request.body)[0] }) })) } } : {}) }, admission);
+        requests: prepared.requests.map(request => ({ method: request.method, path: new URL(request.path, ZAP_RELAY_ORIGIN).pathname,
+          ...(request.method === 'GET' ? { query: [...new URL(request.path, ZAP_RELAY_ORIGIN).searchParams.keys()] } : { parameter: Object.keys(request.body!)[0], compiled: request }) })) } } : {}) }, admission);
     gate.onStop(stopEngine);
-    if (prepared?.policy.authentication) {
+    if (session) {
+      try { if ((await gate.relay!.authenticate()).status !== 200) controlFailure = 'login_failed'; } catch { controlFailure = 'login_failed'; }
+    }
+    if (prepared?.policy.authentication && !controlFailure) {
       identityBefore = await identityControl(false);
       if (identityBefore) anonymousDenied = await identityControl(true);
       if (!identityBefore || !anonymousDenied) controlFailure ??= 'identity_control_failed';
     }
+    if (session) session.onRenewed = async () => { const matched = await identityControl(false); if (!matched) { controlFailure = 'identity_control_failed'; stopEngine(); } return matched; };
+    const imported = prepared?.policy.version === 2;
+    const projection = imported ? projectedZapOpenApi(prepared!.requests, virtualOrigin) : undefined;
+    const projectionSha256 = projection ? createHash('sha256').update(JSON.stringify(projectedZapOpenApi(prepared!.requests, ZAP_RELAY_ORIGIN))).digest('hex') : undefined;
+    if (projection) await writeFile(join(work, 'openapi.json'), JSON.stringify(projection), {mode:0o600});
     const plan = join(work, 'plan.json');
-    await writeFile(plan, JSON.stringify(buildZapPlan(urls, new URL(gate.proxyUrl), work, prepared?.policy.requests)), { mode: 0o600 });
+    await writeFile(plan, JSON.stringify(buildZapPlan(urls, new URL(gate.proxyUrl), work, prepared?.requests, { openapi: imported, session: !!session, format: session?.policy.login.format })), { mode: 0o600 });
     const run = controlFailure ? { exitCode: 2, timedOut: false, spawnError: false, outputLimitExceeded: false } : await runProcess(executable, [...args, '-cmd', '-autorun', plan], { cwd: work, home: work,
       timeoutMs: Math.max(1, control.deadlineAt - Date.now()), signal: AbortSignal.any([control.signal, engine.signal]) });
     if (prepared?.policy.authentication && !controlFailure && !control.signal.aborted && !gate.stopReason() && !gate.counters.upstreamErrors) {
@@ -206,8 +225,8 @@ export async function runZap(options: ZapOptions, runtime?: TaskAdmission): Prom
     try {
       const report = join(work, 'report.json'), stat = await lstat(report);
       if (stat.isFile() && !stat.isSymbolicLink() && stat.size <= MAX_PROCESS_OUTPUT_BYTES) {
-        parsed = parseZapReport(JSON.parse(await readFile(report, 'utf8')), prepared ? ZAP_RELAY_ORIGIN : resolved.origin.origin, urls.map(url => `${url.pathname}${url.search}`), prepared?.policy);
-        if (prepared) for (const finding of parsed.findings) finding.location.url = finding.location.url!.replace(ZAP_RELAY_ORIGIN, prepared.policy.origin);
+        parsed = parseZapReport(JSON.parse(await readFile(report, 'utf8')), prepared ? virtualOrigin : resolved.origin.origin, urls.map(url => `${url.pathname}${url.search}`), prepared ? { requests: prepared.requests } : undefined);
+        if (prepared) for (const finding of parsed.findings) finding.location.url = finding.location.url!.replace(virtualOrigin, prepared.policy.origin);
       }
     } catch { /* Missing/truncated report is an incomplete scan, never a clean result. */ }
     const counters = { ...gate.counters };
@@ -215,8 +234,8 @@ export async function runZap(options: ZapOptions, runtime?: TaskAdmission): Prom
       : run.spawnError ? 'engine_spawn_failed' : run.outputLimitExceeded ? 'output_limit' : run.exitCode !== 0 ? 'engine_exit'
       : parsed.malformed ? 'invalid_report' : parsed.outOfScope || counters.blockedOrigin || counters.blockedMethod ? 'scope_violation'
       : counters.upstreamErrors || counters.rejectedEncoding ? 'transport_error'
-      : gate.relay?.redirectResponses ? 'redirect_observed' : prepared?.policy.authentication && gate.relay?.deniedResponses ? 'authenticated_request_denied'
-      : counters.forwarded <= urls.length + (prepared?.policy.authentication ? 3 : 0) ? 'active_scan_unobserved' : 'complete');
+      : gate.relay?.redirectResponses ? 'redirect_observed' : session && !session.ready ? 'session_incomplete' : prepared?.policy.authentication && !session && gate.relay?.deniedResponses ? 'authenticated_request_denied'
+      : counters.forwarded <= urls.length * (prepared?.policy.version === 2 ? 2 : 1) + (prepared?.policy.authentication ? 3 : 0) + (session ? 1 : 0) ? 'active_scan_unobserved' : 'complete');
     result = [{ id: ZAP_CHECK_ID, status: reason === 'complete' ? 'completed' : 'partial', findings: parsed.findings,
       notes: [SCOPE, `ZAP ${ZAP_VERSION}: ${counters.forwarded} forwarded request(s); ${urls.length} seed URL(s).`,
         'Every seed must return HTTP 200; a mismatched seed response makes the automation run incomplete.',
@@ -224,8 +243,10 @@ export async function runZap(options: ZapOptions, runtime?: TaskAdmission): Prom
         ...(reason === 'complete' ? ['The configured engine jobs finished; no exhaustive endpoint or authorization coverage is inferred.'] : [`Incomplete: ${reason}; absent findings are not a clean security result.`])],
       metrics: { engine: 'zap', engineVersion: ZAP_VERSION, rules: RULES.join(','), requestCount: counters.forwarded,
         seedExpectedStatus: 200,
-        ...(prepared ? { policyRevision: ZAP_POLICY_REVISION, policySha256: prepared.policySha256, identityBefore, anonymousDenied, identityAfter,
-          authenticated: !!prepared.policy.authentication, jsonRequests: prepared.policy.requests.filter(request => request.method === 'POST').length } : {}),
+        ...(prepared ? { policyRevision: prepared.policy.version === 2 ? ZAP_OPENAPI_REVISION : ZAP_POLICY_REVISION, policySha256: prepared.policySha256, identityBefore, anonymousDenied, identityAfter,
+          ...(prepared.sourceSha256 ? { openapiSourceSha256: prepared.sourceSha256, openapiProjectionSha256: projectionSha256!, importedOperations: prepared.requests.length } : {}),
+          ...(session ? { loginRequests: session.metrics.loginRequests, refreshRequests: session.metrics.refreshRequests, authChallenges: session.metrics.challenges, nativeAuthentication: session.policy.login.format } : {}),
+          authenticated: !!prepared.policy.authentication, jsonRequests: prepared.requests.filter(request => request.method === 'POST').length } : {}),
         maxRequests, rateLimit, durationMs: Date.now() - started, blockedOrigin: counters.blockedOrigin, blockedMethod: counters.blockedMethod,
         skippedByBudget: counters.blockedBudget, upstreamErrors: counters.upstreamErrors, responseBytes: counters.responseBytes,
         malformedEngineOutput: parsed.malformed, outOfScopeResults: parsed.outOfScope, stopReason: reason, gateTunnels: counters.tunnels } }];

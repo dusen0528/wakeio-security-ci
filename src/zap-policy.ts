@@ -1,15 +1,22 @@
 import { createHash } from 'node:crypto';
+import { types } from 'node:util';
+import { compileZapOpenApi, type ZapOpenApiInput, type ZapCompiledRequest } from './zap-openapi.js';
+import { parseZapSessionPolicy, snapshotZapLogin, type ZapSessionPolicy } from './zap-session.js';
 import { snapshotJsonData } from './json-snapshot.js';
 import { parseAuthAssertion, snapshotSchemathesisCredential, type SchemathesisAuthAssertion } from './schemathesis-auth.js';
 import { normalizeUrl, validateStaticTarget } from './url-network.js';
 
 export const ZAP_POLICY_REVISION = 'zap-bounded-http-json-v1';
+export const ZAP_OPENAPI_REVISION = 'zap-openapi-session-v2';
 export const ZAP_RELAY_ORIGIN = 'http://wakeio-zap.invalid';
 export type ZapRequest = { method: 'GET'; path: string } | { method: 'POST'; path: string; body: Record<string, string | number> };
 export interface ZapPolicy {
   version: 1; kind: 'zap-active'; origin: string; requests: ZapRequest[];
   authentication?: { authorizationEnv: string; identity: SchemathesisAuthAssertion };
 }
+export interface ZapPolicyV2 { version: 2; kind: 'zap-active'; origin: string; openapi: ZapOpenApiInput;
+  authentication?: ZapSessionPolicy | ZapPolicy['authentication'] }
+export type ZapPolicyInput = ZapPolicy | ZapPolicyV2;
 function invalid(): never { throw new TypeError('invalid_zap_policy'); }
 function object(value: unknown, required: string[], optional: string[] = []): asserts value is Record<string, any> {
   if (!value || typeof value !== 'object' || Array.isArray(value) || required.some(key => !Object.hasOwn(value, key))
@@ -26,9 +33,31 @@ export function zapRequestUrl(origin: string, path: string): URL {
   }
   return url;
 }
-/** Owner data only. POST scanning is deliberately one top-level scalar field. */
-export function parseZapPolicy(input: unknown): { policy: ZapPolicy; policySha256: string } {
+function staticAuthentication(value: unknown, origin: string): NonNullable<ZapPolicy['authentication']> {
+  object(value, ['authorizationEnv', 'identity']);
+  if (typeof value.authorizationEnv !== 'string' || !/^[A-Z][A-Z0-9_]{0,127}$/.test(value.authorizationEnv)) invalid();
+  const identity = parseAuthAssertion(value.identity, true); zapRequestUrl(origin, identity.path);
+  return { authorizationEnv: value.authorizationEnv, identity };
+}
+/** Owner data only; version 1 retains its single-field contract. */
+export function parseZapPolicy(input: unknown): { policy: ZapPolicyInput; policySha256: string; requests: ZapCompiledRequest[]; sourceSha256?: string } {
   const value = snapshotJsonData(input, invalid, invalid);
+  if (value && typeof value === 'object' && (value as any).version === 2) {
+    object(value, ['version', 'kind', 'origin', 'openapi'], ['authentication']);
+    if (value.kind !== 'zap-active' || typeof value.origin !== 'string' || normalizeUrl(value.origin).origin !== value.origin) invalid();
+    const compiled = compileZapOpenApi(value.openapi);
+    for (const request of compiled.requests) { zapRequestUrl(value.origin, request.path); if (new URL(request.path, value.origin).pathname === '/__wakeio_session') invalid(); }
+    const policy: ZapPolicyV2 = { version: 2, kind: 'zap-active', origin: value.origin, openapi: compiled.openapi };
+    if (value.authentication !== undefined) {
+      if (Object.hasOwn(value.authentication, 'authorizationEnv')) {
+        policy.authentication = staticAuthentication(value.authentication, value.origin);
+      } else policy.authentication = parseZapSessionPolicy(value.authentication, value.origin);
+      const auth = policy.authentication!;
+      const controls = 'login' in auth ? [auth.login.path, auth.refresh?.path, auth.identity.path] : [auth.identity.path];
+      if (compiled.requests.some(r => controls.some(p => p && new URL(p, value.origin).pathname === new URL(r.path, value.origin).pathname))) invalid();
+    }
+    return { policy, policySha256: createHash('sha256').update(JSON.stringify(policy)).digest('hex'), requests: compiled.requests, sourceSha256: compiled.sourceSha256 };
+  }
   object(value, ['version', 'kind', 'origin', 'requests'], ['authentication']);
   if (value.version !== 1 || value.kind !== 'zap-active' || typeof value.origin !== 'string') invalid();
   const base = normalizeUrl(value.origin), origin = base.origin;
@@ -54,23 +83,22 @@ export function parseZapPolicy(input: unknown): { policy: ZapPolicy; policySha25
   });
   const policy: ZapPolicy = { version: 1, kind: 'zap-active', origin, requests };
   if (Object.hasOwn(value, 'authentication')) {
-    object(value.authentication, ['authorizationEnv', 'identity']);
-    if (typeof value.authentication.authorizationEnv !== 'string' || !/^[A-Z][A-Z0-9_]{0,127}$/.test(value.authentication.authorizationEnv)) invalid();
-    const identity = parseAuthAssertion(value.authentication.identity, true);
-    zapRequestUrl(origin, identity.path);
-    if (requests.some(request => new URL(request.path, origin).pathname === new URL(identity.path, origin).pathname)) invalid();
-    policy.authentication = { authorizationEnv: value.authentication.authorizationEnv, identity };
+    policy.authentication = staticAuthentication(value.authentication, origin);
+    if (requests.some(request => new URL(request.path, origin).pathname === new URL(policy.authentication!.identity.path, origin).pathname)) invalid();
   }
-  return { policy, policySha256: createHash('sha256').update(JSON.stringify(policy)).digest('hex') };
+  return { policy, policySha256: createHash('sha256').update(JSON.stringify(policy)).digest('hex'), requests };
 }
 /** Snapshot one credential before any asynchronous work; never pass it to ZAP. */
-export function prepareZapPolicy(input: unknown, allowPrivate = false, env: NodeJS.ProcessEnv = process.env) {
+export function prepareZapPolicy(input: unknown, allowPrivate = false, env: NodeJS.ProcessEnv = process.env): ReturnType<typeof parseZapPolicy> & { authorization?: string; loginEnv?: Record<string, string> } {
   const parsed = parseZapPolicy(input), url = new URL(parsed.policy.origin);
   validateStaticTarget(normalizeUrl(url.href), allowPrivate);
   if (parsed.policy.authentication && url.protocol !== 'https:' && !(allowPrivate && ['127.0.0.1', '[::1]'].includes(url.hostname))) invalid();
-  return { ...parsed, ...(parsed.policy.authentication ? { authorization: snapshotSchemathesisCredential(parsed.policy.authentication, env) } : {}) };
+  if (!env || typeof env !== 'object' || types.isProxy(env) || Array.isArray(env)) invalid();
+  const auth = parsed.policy.authentication;
+  return { ...parsed, ...(auth && 'login' in auth ? { loginEnv: snapshotZapLogin(auth, env) } : auth ? { authorization: snapshotSchemathesisCredential(auth, env) } : {}) };
+
 }
-export function zapSurfaceKey(plugin: string, request: ZapRequest, parameter: string): string {
+export function zapSurfaceKey(plugin: string, request: Pick<ZapRequest, 'method' | 'path'>, parameter: string): string {
   const path = new URL(request.path, 'http://scope.invalid').pathname;
   const parts = request.method === 'GET' ? [plugin, path, parameter] : [plugin, 'POST', path, parameter];
   return createHash('sha256').update(JSON.stringify(parts)).digest('hex');

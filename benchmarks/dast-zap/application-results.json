@@ -1,0 +1,857 @@
+{
+  "version": 1,
+  "measuredAt": "2026-10-20T01:33:09.878Z",
+  "engine": "2.17.0",
+  "profile": "zap-openapi-session-v2",
+  "runtime": {
+    "node": "v22.23.1",
+    "platform": "darwin",
+    "arch": "arm64"
+  },
+  "runtimeSha256": "e293be1c14399c1ab11c8cc62a1cfb443538d79dcaee30b7f701d447e0a5c73a",
+  "labelsSha256": "d4fa807d01e37f388bd5356779894d8bbb6e42c564be42df2565f534b5c75c20",
+  "rounds": [
+    {
+      "round": 1,
+      "application": "reference",
+      "mode": "vulnerable",
+      "status": "completed",
+      "stopReason": "complete",
+      "TP": 4,
+      "FP": 0,
+      "FN": 0,
+      "TN": 2,
+      "elapsedMs": 18359.51,
+      "provisionMs": 3.17,
+      "requests": 59,
+      "cap": 200,
+      "loginRequests": 1,
+      "refreshRequests": 1,
+      "authChallenges": 1,
+      "sourceSha256": "fd011c31b8692b43de4ce286dd4bf3c235f643466857f5a41b6b082465f32bea",
+      "projectionSha256": "5e868d937b7e1ff5154a8aaf1b260c0e05e8d93ec99853c514263150c20fa2a0",
+      "target": {
+        "implementation": "owned SQLite product API with login, refresh and nested filter",
+        "auth": "JSON/Bearer",
+        "expiry": "first token expires after six protected probes"
+      },
+      "requestKinds": {
+        "POST /sessions": 1,
+        "GET /identity": 4,
+        "GET /api/products/search": 9,
+        "GET /api/help/search": 11,
+        "POST /api/products/filter": 33,
+        "POST /sessions/refresh": 1
+      }
+    },
+    {
+      "round": 1,
+      "application": "reference",
+      "mode": "fixed",
+      "status": "completed",
+      "stopReason": "complete",
+      "TP": 0,
+      "FP": 0,
+      "FN": 0,
+      "TN": 6,
+      "elapsedMs": 18847.01,
+      "provisionMs": 0.27,
+      "requests": 79,
+      "cap": 200,
+      "loginRequests": 1,
+      "refreshRequests": 1,
+      "authChallenges": 1,
+      "sourceSha256": "fd011c31b8692b43de4ce286dd4bf3c235f643466857f5a41b6b082465f32bea",
+      "projectionSha256": "5e868d937b7e1ff5154a8aaf1b260c0e05e8d93ec99853c514263150c20fa2a0",
+      "target": {
+        "implementation": "owned SQLite product API with login, refresh and nested filter",
+        "auth": "JSON/Bearer",
+        "expiry": "first token expires after six protected probes"
+      },
+      "requestKinds": {
+        "POST /sessions": 1,
+        "GET /identity": 4,
+        "GET /api/products/search": 14,
+        "GET /api/help/search": 16,
+        "POST /api/products/filter": 43,
+        "POST /sessions/refresh": 1
+      }
+    },
+    {
+      "round": 1,
+      "application": "juiceShop",
+      "mode": "vulnerable",
+      "status": "completed",
+      "stopReason": "complete",
+      "TP": 1,
+      "FP": 0,
+      "FN": 0,
+      "TN": 1,
+      "elapsedMs": 18225.92,
+      "provisionMs": 2032.73,
+      "requests": 14,
+      "cap": 200,
+      "loginRequests": 1,
+      "refreshRequests": 0,
+      "authChallenges": 0,
+      "sourceSha256": "5d7ed022c18cd64642ee9d9c98d62e0631bd35d41d76330b0aca393cccdeb0f0",
+      "projectionSha256": "e031f614c01c3f60b49323d96e7d26e3c9ec3fbfa1d3e692218c0976ee8a60cb",
+      "target": {
+        "image": "bkimminich/juice-shop@sha256:2765a26de7647609099a338d5b7f61085d95903c8703bb70f03fcc4b12f0818d",
+        "sourceCommit": "36870cbbdfe7864698e1adf644c7bf772f67ebb7",
+        "fix": "unmodified",
+        "routeSha256": "073059f1600484467f9039b3989314c7aacd6a806ec679d5afc4a8f91b6e9b3c",
+        "network": "none",
+        "transport": "owned loopback observer plus persistent Docker IPC to real container HTTP"
+      },
+      "requestKinds": {
+        "POST /rest/user/login": 1,
+        "GET /rest/basket/6": 3,
+        "GET /rest/products/search": 10
+      }
+    },
+    {
+      "round": 1,
+      "application": "juiceShop",
+      "mode": "fixed",
+      "status": "completed",
+      "stopReason": "complete",
+      "TP": 0,
+      "FP": 0,
+      "FN": 0,
+      "TN": 2,
+      "elapsedMs": 18822.33,
+      "provisionMs": 2092.93,
+      "requests": 18,
+      "cap": 200,
+      "loginRequests": 1,
+      "refreshRequests": 0,
+      "authChallenges": 0,
+      "sourceSha256": "5d7ed022c18cd64642ee9d9c98d62e0631bd35d41d76330b0aca393cccdeb0f0",
+      "projectionSha256": "e031f614c01c3f60b49323d96e7d26e3c9ec3fbfa1d3e692218c0976ee8a60cb",
+      "target": {
+        "image": "bkimminich/juice-shop@sha256:2765a26de7647609099a338d5b7f61085d95903c8703bb70f03fcc4b12f0818d",
+        "sourceCommit": "36870cbbdfe7864698e1adf644c7bf772f67ebb7",
+        "fix": "parameterized-search-only",
+        "routeSha256": "a26713609ed5a6622af93ef6e56863f4396f0e7d99b36c65395e836fe9d738a7",
+        "network": "none",
+        "transport": "owned loopback observer plus persistent Docker IPC to real container HTTP"
+      },
+      "requestKinds": {
+        "POST /rest/user/login": 1,
+        "GET /rest/basket/6": 3,
+        "GET /rest/products/search": 14
+      }
+    },
+    {
+      "round": 2,
+      "application": "reference",
+      "mode": "vulnerable",
+      "status": "completed",
+      "stopReason": "complete",
+      "TP": 4,
+      "FP": 0,
+      "FN": 0,
+      "TN": 2,
+      "elapsedMs": 18797.64,
+      "provisionMs": 0.82,
+      "requests": 59,
+      "cap": 200,
+      "loginRequests": 1,
+      "refreshRequests": 1,
+      "authChallenges": 1,
+      "sourceSha256": "fd011c31b8692b43de4ce286dd4bf3c235f643466857f5a41b6b082465f32bea",
+      "projectionSha256": "5e868d937b7e1ff5154a8aaf1b260c0e05e8d93ec99853c514263150c20fa2a0",
+      "target": {
+        "implementation": "owned SQLite product API with login, refresh and nested filter",
+        "auth": "JSON/Bearer",
+        "expiry": "first token expires after six protected probes"
+      },
+      "requestKinds": {
+        "POST /sessions": 1,
+        "GET /identity": 4,
+        "GET /api/products/search": 9,
+        "GET /api/help/search": 11,
+        "POST /api/products/filter": 33,
+        "POST /sessions/refresh": 1
+      }
+    },
+    {
+      "round": 2,
+      "application": "reference",
+      "mode": "fixed",
+      "status": "completed",
+      "stopReason": "complete",
+      "TP": 0,
+      "FP": 0,
+      "FN": 0,
+      "TN": 6,
+      "elapsedMs": 19234.97,
+      "provisionMs": 0.26,
+      "requests": 79,
+      "cap": 200,
+      "loginRequests": 1,
+      "refreshRequests": 1,
+      "authChallenges": 1,
+      "sourceSha256": "fd011c31b8692b43de4ce286dd4bf3c235f643466857f5a41b6b082465f32bea",
+      "projectionSha256": "5e868d937b7e1ff5154a8aaf1b260c0e05e8d93ec99853c514263150c20fa2a0",
+      "target": {
+        "implementation": "owned SQLite product API with login, refresh and nested filter",
+        "auth": "JSON/Bearer",
+        "expiry": "first token expires after six protected probes"
+      },
+      "requestKinds": {
+        "POST /sessions": 1,
+        "GET /identity": 4,
+        "GET /api/products/search": 14,
+        "GET /api/help/search": 16,
+        "POST /api/products/filter": 43,
+        "POST /sessions/refresh": 1
+      }
+    },
+    {
+      "round": 2,
+      "application": "juiceShop",
+      "mode": "vulnerable",
+      "status": "completed",
+      "stopReason": "complete",
+      "TP": 1,
+      "FP": 0,
+      "FN": 0,
+      "TN": 1,
+      "elapsedMs": 18449.77,
+      "provisionMs": 2018.86,
+      "requests": 14,
+      "cap": 200,
+      "loginRequests": 1,
+      "refreshRequests": 0,
+      "authChallenges": 0,
+      "sourceSha256": "5d7ed022c18cd64642ee9d9c98d62e0631bd35d41d76330b0aca393cccdeb0f0",
+      "projectionSha256": "e031f614c01c3f60b49323d96e7d26e3c9ec3fbfa1d3e692218c0976ee8a60cb",
+      "target": {
+        "image": "bkimminich/juice-shop@sha256:2765a26de7647609099a338d5b7f61085d95903c8703bb70f03fcc4b12f0818d",
+        "sourceCommit": "36870cbbdfe7864698e1adf644c7bf772f67ebb7",
+        "fix": "unmodified",
+        "routeSha256": "073059f1600484467f9039b3989314c7aacd6a806ec679d5afc4a8f91b6e9b3c",
+        "network": "none",
+        "transport": "owned loopback observer plus persistent Docker IPC to real container HTTP"
+      },
+      "requestKinds": {
+        "POST /rest/user/login": 1,
+        "GET /rest/basket/6": 3,
+        "GET /rest/products/search": 10
+      }
+    },
+    {
+      "round": 2,
+      "application": "juiceShop",
+      "mode": "fixed",
+      "status": "completed",
+      "stopReason": "complete",
+      "TP": 0,
+      "FP": 0,
+      "FN": 0,
+      "TN": 2,
+      "elapsedMs": 18540.75,
+      "provisionMs": 1850.16,
+      "requests": 18,
+      "cap": 200,
+      "loginRequests": 1,
+      "refreshRequests": 0,
+      "authChallenges": 0,
+      "sourceSha256": "5d7ed022c18cd64642ee9d9c98d62e0631bd35d41d76330b0aca393cccdeb0f0",
+      "projectionSha256": "e031f614c01c3f60b49323d96e7d26e3c9ec3fbfa1d3e692218c0976ee8a60cb",
+      "target": {
+        "image": "bkimminich/juice-shop@sha256:2765a26de7647609099a338d5b7f61085d95903c8703bb70f03fcc4b12f0818d",
+        "sourceCommit": "36870cbbdfe7864698e1adf644c7bf772f67ebb7",
+        "fix": "parameterized-search-only",
+        "routeSha256": "a26713609ed5a6622af93ef6e56863f4396f0e7d99b36c65395e836fe9d738a7",
+        "network": "none",
+        "transport": "owned loopback observer plus persistent Docker IPC to real container HTTP"
+      },
+      "requestKinds": {
+        "POST /rest/user/login": 1,
+        "GET /rest/basket/6": 3,
+        "GET /rest/products/search": 14
+      }
+    },
+    {
+      "round": 3,
+      "application": "reference",
+      "mode": "vulnerable",
+      "status": "completed",
+      "stopReason": "complete",
+      "TP": 4,
+      "FP": 0,
+      "FN": 0,
+      "TN": 2,
+      "elapsedMs": 18482.55,
+      "provisionMs": 0.26,
+      "requests": 59,
+      "cap": 200,
+      "loginRequests": 1,
+      "refreshRequests": 1,
+      "authChallenges": 1,
+      "sourceSha256": "fd011c31b8692b43de4ce286dd4bf3c235f643466857f5a41b6b082465f32bea",
+      "projectionSha256": "5e868d937b7e1ff5154a8aaf1b260c0e05e8d93ec99853c514263150c20fa2a0",
+      "target": {
+        "implementation": "owned SQLite product API with login, refresh and nested filter",
+        "auth": "JSON/Bearer",
+        "expiry": "first token expires after six protected probes"
+      },
+      "requestKinds": {
+        "POST /sessions": 1,
+        "GET /identity": 4,
+        "GET /api/products/search": 9,
+        "GET /api/help/search": 11,
+        "POST /api/products/filter": 33,
+        "POST /sessions/refresh": 1
+      }
+    },
+    {
+      "round": 3,
+      "application": "reference",
+      "mode": "fixed",
+      "status": "completed",
+      "stopReason": "complete",
+      "TP": 0,
+      "FP": 0,
+      "FN": 0,
+      "TN": 6,
+      "elapsedMs": 19729.56,
+      "provisionMs": 0.25,
+      "requests": 79,
+      "cap": 200,
+      "loginRequests": 1,
+      "refreshRequests": 1,
+      "authChallenges": 1,
+      "sourceSha256": "fd011c31b8692b43de4ce286dd4bf3c235f643466857f5a41b6b082465f32bea",
+      "projectionSha256": "5e868d937b7e1ff5154a8aaf1b260c0e05e8d93ec99853c514263150c20fa2a0",
+      "target": {
+        "implementation": "owned SQLite product API with login, refresh and nested filter",
+        "auth": "JSON/Bearer",
+        "expiry": "first token expires after six protected probes"
+      },
+      "requestKinds": {
+        "POST /sessions": 1,
+        "GET /identity": 4,
+        "GET /api/products/search": 14,
+        "GET /api/help/search": 16,
+        "POST /api/products/filter": 43,
+        "POST /sessions/refresh": 1
+      }
+    },
+    {
+      "round": 3,
+      "application": "juiceShop",
+      "mode": "vulnerable",
+      "status": "completed",
+      "stopReason": "complete",
+      "TP": 1,
+      "FP": 0,
+      "FN": 0,
+      "TN": 1,
+      "elapsedMs": 18353.34,
+      "provisionMs": 1761.67,
+      "requests": 14,
+      "cap": 200,
+      "loginRequests": 1,
+      "refreshRequests": 0,
+      "authChallenges": 0,
+      "sourceSha256": "5d7ed022c18cd64642ee9d9c98d62e0631bd35d41d76330b0aca393cccdeb0f0",
+      "projectionSha256": "e031f614c01c3f60b49323d96e7d26e3c9ec3fbfa1d3e692218c0976ee8a60cb",
+      "target": {
+        "image": "bkimminich/juice-shop@sha256:2765a26de7647609099a338d5b7f61085d95903c8703bb70f03fcc4b12f0818d",
+        "sourceCommit": "36870cbbdfe7864698e1adf644c7bf772f67ebb7",
+        "fix": "unmodified",
+        "routeSha256": "073059f1600484467f9039b3989314c7aacd6a806ec679d5afc4a8f91b6e9b3c",
+        "network": "none",
+        "transport": "owned loopback observer plus persistent Docker IPC to real container HTTP"
+      },
+      "requestKinds": {
+        "POST /rest/user/login": 1,
+        "GET /rest/basket/6": 3,
+        "GET /rest/products/search": 10
+      }
+    },
+    {
+      "round": 3,
+      "application": "juiceShop",
+      "mode": "fixed",
+      "status": "completed",
+      "stopReason": "complete",
+      "TP": 0,
+      "FP": 0,
+      "FN": 0,
+      "TN": 2,
+      "elapsedMs": 18291.99,
+      "provisionMs": 2091.96,
+      "requests": 18,
+      "cap": 200,
+      "loginRequests": 1,
+      "refreshRequests": 0,
+      "authChallenges": 0,
+      "sourceSha256": "5d7ed022c18cd64642ee9d9c98d62e0631bd35d41d76330b0aca393cccdeb0f0",
+      "projectionSha256": "e031f614c01c3f60b49323d96e7d26e3c9ec3fbfa1d3e692218c0976ee8a60cb",
+      "target": {
+        "image": "bkimminich/juice-shop@sha256:2765a26de7647609099a338d5b7f61085d95903c8703bb70f03fcc4b12f0818d",
+        "sourceCommit": "36870cbbdfe7864698e1adf644c7bf772f67ebb7",
+        "fix": "parameterized-search-only",
+        "routeSha256": "a26713609ed5a6622af93ef6e56863f4396f0e7d99b36c65395e836fe9d738a7",
+        "network": "none",
+        "transport": "owned loopback observer plus persistent Docker IPC to real container HTTP"
+      },
+      "requestKinds": {
+        "POST /rest/user/login": 1,
+        "GET /rest/basket/6": 3,
+        "GET /rest/products/search": 14
+      }
+    },
+    {
+      "round": 4,
+      "application": "reference",
+      "mode": "vulnerable",
+      "status": "completed",
+      "stopReason": "complete",
+      "TP": 4,
+      "FP": 0,
+      "FN": 0,
+      "TN": 2,
+      "elapsedMs": 18273.94,
+      "provisionMs": 0.27,
+      "requests": 59,
+      "cap": 200,
+      "loginRequests": 1,
+      "refreshRequests": 1,
+      "authChallenges": 1,
+      "sourceSha256": "fd011c31b8692b43de4ce286dd4bf3c235f643466857f5a41b6b082465f32bea",
+      "projectionSha256": "5e868d937b7e1ff5154a8aaf1b260c0e05e8d93ec99853c514263150c20fa2a0",
+      "target": {
+        "implementation": "owned SQLite product API with login, refresh and nested filter",
+        "auth": "JSON/Bearer",
+        "expiry": "first token expires after six protected probes"
+      },
+      "requestKinds": {
+        "POST /sessions": 1,
+        "GET /identity": 4,
+        "GET /api/products/search": 9,
+        "GET /api/help/search": 11,
+        "POST /api/products/filter": 33,
+        "POST /sessions/refresh": 1
+      }
+    },
+    {
+      "round": 4,
+      "application": "reference",
+      "mode": "fixed",
+      "status": "completed",
+      "stopReason": "complete",
+      "TP": 0,
+      "FP": 0,
+      "FN": 0,
+      "TN": 6,
+      "elapsedMs": 18985.66,
+      "provisionMs": 0.27,
+      "requests": 79,
+      "cap": 200,
+      "loginRequests": 1,
+      "refreshRequests": 1,
+      "authChallenges": 1,
+      "sourceSha256": "fd011c31b8692b43de4ce286dd4bf3c235f643466857f5a41b6b082465f32bea",
+      "projectionSha256": "5e868d937b7e1ff5154a8aaf1b260c0e05e8d93ec99853c514263150c20fa2a0",
+      "target": {
+        "implementation": "owned SQLite product API with login, refresh and nested filter",
+        "auth": "JSON/Bearer",
+        "expiry": "first token expires after six protected probes"
+      },
+      "requestKinds": {
+        "POST /sessions": 1,
+        "GET /identity": 4,
+        "GET /api/products/search": 14,
+        "GET /api/help/search": 16,
+        "POST /api/products/filter": 43,
+        "POST /sessions/refresh": 1
+      }
+    },
+    {
+      "round": 4,
+      "application": "juiceShop",
+      "mode": "vulnerable",
+      "status": "completed",
+      "stopReason": "complete",
+      "TP": 1,
+      "FP": 0,
+      "FN": 0,
+      "TN": 1,
+      "elapsedMs": 18318.49,
+      "provisionMs": 2014.94,
+      "requests": 14,
+      "cap": 200,
+      "loginRequests": 1,
+      "refreshRequests": 0,
+      "authChallenges": 0,
+      "sourceSha256": "5d7ed022c18cd64642ee9d9c98d62e0631bd35d41d76330b0aca393cccdeb0f0",
+      "projectionSha256": "e031f614c01c3f60b49323d96e7d26e3c9ec3fbfa1d3e692218c0976ee8a60cb",
+      "target": {
+        "image": "bkimminich/juice-shop@sha256:2765a26de7647609099a338d5b7f61085d95903c8703bb70f03fcc4b12f0818d",
+        "sourceCommit": "36870cbbdfe7864698e1adf644c7bf772f67ebb7",
+        "fix": "unmodified",
+        "routeSha256": "073059f1600484467f9039b3989314c7aacd6a806ec679d5afc4a8f91b6e9b3c",
+        "network": "none",
+        "transport": "owned loopback observer plus persistent Docker IPC to real container HTTP"
+      },
+      "requestKinds": {
+        "POST /rest/user/login": 1,
+        "GET /rest/basket/6": 3,
+        "GET /rest/products/search": 10
+      }
+    },
+    {
+      "round": 4,
+      "application": "juiceShop",
+      "mode": "fixed",
+      "status": "completed",
+      "stopReason": "complete",
+      "TP": 0,
+      "FP": 0,
+      "FN": 0,
+      "TN": 2,
+      "elapsedMs": 18128.47,
+      "provisionMs": 2102.15,
+      "requests": 18,
+      "cap": 200,
+      "loginRequests": 1,
+      "refreshRequests": 0,
+      "authChallenges": 0,
+      "sourceSha256": "5d7ed022c18cd64642ee9d9c98d62e0631bd35d41d76330b0aca393cccdeb0f0",
+      "projectionSha256": "e031f614c01c3f60b49323d96e7d26e3c9ec3fbfa1d3e692218c0976ee8a60cb",
+      "target": {
+        "image": "bkimminich/juice-shop@sha256:2765a26de7647609099a338d5b7f61085d95903c8703bb70f03fcc4b12f0818d",
+        "sourceCommit": "36870cbbdfe7864698e1adf644c7bf772f67ebb7",
+        "fix": "parameterized-search-only",
+        "routeSha256": "a26713609ed5a6622af93ef6e56863f4396f0e7d99b36c65395e836fe9d738a7",
+        "network": "none",
+        "transport": "owned loopback observer plus persistent Docker IPC to real container HTTP"
+      },
+      "requestKinds": {
+        "POST /rest/user/login": 1,
+        "GET /rest/basket/6": 3,
+        "GET /rest/products/search": 14
+      }
+    },
+    {
+      "round": 5,
+      "application": "reference",
+      "mode": "vulnerable",
+      "status": "completed",
+      "stopReason": "complete",
+      "TP": 4,
+      "FP": 0,
+      "FN": 0,
+      "TN": 2,
+      "elapsedMs": 18385.32,
+      "provisionMs": 0.38,
+      "requests": 59,
+      "cap": 200,
+      "loginRequests": 1,
+      "refreshRequests": 1,
+      "authChallenges": 1,
+      "sourceSha256": "fd011c31b8692b43de4ce286dd4bf3c235f643466857f5a41b6b082465f32bea",
+      "projectionSha256": "5e868d937b7e1ff5154a8aaf1b260c0e05e8d93ec99853c514263150c20fa2a0",
+      "target": {
+        "implementation": "owned SQLite product API with login, refresh and nested filter",
+        "auth": "JSON/Bearer",
+        "expiry": "first token expires after six protected probes"
+      },
+      "requestKinds": {
+        "POST /sessions": 1,
+        "GET /identity": 4,
+        "GET /api/products/search": 9,
+        "GET /api/help/search": 11,
+        "POST /api/products/filter": 33,
+        "POST /sessions/refresh": 1
+      }
+    },
+    {
+      "round": 5,
+      "application": "reference",
+      "mode": "fixed",
+      "status": "completed",
+      "stopReason": "complete",
+      "TP": 0,
+      "FP": 0,
+      "FN": 0,
+      "TN": 6,
+      "elapsedMs": 18953.05,
+      "provisionMs": 0.26,
+      "requests": 79,
+      "cap": 200,
+      "loginRequests": 1,
+      "refreshRequests": 1,
+      "authChallenges": 1,
+      "sourceSha256": "fd011c31b8692b43de4ce286dd4bf3c235f643466857f5a41b6b082465f32bea",
+      "projectionSha256": "5e868d937b7e1ff5154a8aaf1b260c0e05e8d93ec99853c514263150c20fa2a0",
+      "target": {
+        "implementation": "owned SQLite product API with login, refresh and nested filter",
+        "auth": "JSON/Bearer",
+        "expiry": "first token expires after six protected probes"
+      },
+      "requestKinds": {
+        "POST /sessions": 1,
+        "GET /identity": 4,
+        "GET /api/products/search": 14,
+        "GET /api/help/search": 16,
+        "POST /api/products/filter": 43,
+        "POST /sessions/refresh": 1
+      }
+    },
+    {
+      "round": 5,
+      "application": "juiceShop",
+      "mode": "vulnerable",
+      "status": "completed",
+      "stopReason": "complete",
+      "TP": 1,
+      "FP": 0,
+      "FN": 0,
+      "TN": 1,
+      "elapsedMs": 18352.64,
+      "provisionMs": 2029.54,
+      "requests": 14,
+      "cap": 200,
+      "loginRequests": 1,
+      "refreshRequests": 0,
+      "authChallenges": 0,
+      "sourceSha256": "5d7ed022c18cd64642ee9d9c98d62e0631bd35d41d76330b0aca393cccdeb0f0",
+      "projectionSha256": "e031f614c01c3f60b49323d96e7d26e3c9ec3fbfa1d3e692218c0976ee8a60cb",
+      "target": {
+        "image": "bkimminich/juice-shop@sha256:2765a26de7647609099a338d5b7f61085d95903c8703bb70f03fcc4b12f0818d",
+        "sourceCommit": "36870cbbdfe7864698e1adf644c7bf772f67ebb7",
+        "fix": "unmodified",
+        "routeSha256": "073059f1600484467f9039b3989314c7aacd6a806ec679d5afc4a8f91b6e9b3c",
+        "network": "none",
+        "transport": "owned loopback observer plus persistent Docker IPC to real container HTTP"
+      },
+      "requestKinds": {
+        "POST /rest/user/login": 1,
+        "GET /rest/basket/6": 3,
+        "GET /rest/products/search": 10
+      }
+    },
+    {
+      "round": 5,
+      "application": "juiceShop",
+      "mode": "fixed",
+      "status": "completed",
+      "stopReason": "complete",
+      "TP": 0,
+      "FP": 0,
+      "FN": 0,
+      "TN": 2,
+      "elapsedMs": 18186.17,
+      "provisionMs": 2089.09,
+      "requests": 18,
+      "cap": 200,
+      "loginRequests": 1,
+      "refreshRequests": 0,
+      "authChallenges": 0,
+      "sourceSha256": "5d7ed022c18cd64642ee9d9c98d62e0631bd35d41d76330b0aca393cccdeb0f0",
+      "projectionSha256": "e031f614c01c3f60b49323d96e7d26e3c9ec3fbfa1d3e692218c0976ee8a60cb",
+      "target": {
+        "image": "bkimminich/juice-shop@sha256:2765a26de7647609099a338d5b7f61085d95903c8703bb70f03fcc4b12f0818d",
+        "sourceCommit": "36870cbbdfe7864698e1adf644c7bf772f67ebb7",
+        "fix": "parameterized-search-only",
+        "routeSha256": "a26713609ed5a6622af93ef6e56863f4396f0e7d99b36c65395e836fe9d738a7",
+        "network": "none",
+        "transport": "owned loopback observer plus persistent Docker IPC to real container HTTP"
+      },
+      "requestKinds": {
+        "POST /rest/user/login": 1,
+        "GET /rest/basket/6": 3,
+        "GET /rest/products/search": 14
+      }
+    }
+  ],
+  "summaries": [
+    {
+      "application": "reference",
+      "mode": "vulnerable",
+      "repeats": 5,
+      "completed": 5,
+      "TP": [
+        4,
+        4,
+        4,
+        4,
+        4
+      ],
+      "FP": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "FN": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "TN": [
+        2,
+        2,
+        2,
+        2,
+        2
+      ],
+      "p50Ms": 18385.32,
+      "maxMs": 18797.64,
+      "requests": [
+        59,
+        59,
+        59,
+        59,
+        59
+      ]
+    },
+    {
+      "application": "reference",
+      "mode": "fixed",
+      "repeats": 5,
+      "completed": 5,
+      "TP": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "FP": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "FN": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "TN": [
+        6,
+        6,
+        6,
+        6,
+        6
+      ],
+      "p50Ms": 18985.66,
+      "maxMs": 19729.56,
+      "requests": [
+        79,
+        79,
+        79,
+        79,
+        79
+      ]
+    },
+    {
+      "application": "juiceShop",
+      "mode": "vulnerable",
+      "repeats": 5,
+      "completed": 5,
+      "TP": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "FP": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "FN": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "TN": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "p50Ms": 18352.64,
+      "maxMs": 18449.77,
+      "requests": [
+        14,
+        14,
+        14,
+        14,
+        14
+      ]
+    },
+    {
+      "application": "juiceShop",
+      "mode": "fixed",
+      "repeats": 5,
+      "completed": 5,
+      "TP": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "FP": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "FN": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "TN": [
+        2,
+        2,
+        2,
+        2,
+        2
+      ],
+      "p50Ms": 18291.99,
+      "maxMs": 18822.33,
+      "requests": [
+        18,
+        18,
+        18,
+        18,
+        18
+      ]
+    }
+  ],
+  "limits": [
+    "Paired scope only, not whole-service security or production accuracy.",
+    "Same API profile, selected operations, caps and engine for vulnerable/fixed comparisons.",
+    "Timed scan includes startup, login, renewal, controls, import, attack, shutdown and cleanup; provisioning is separate.",
+    "Juice Shop uses network-disabled Docker plus private IPC/HTTP observation; its transport time differs from direct reference HTTP.",
+    "Unsupported/not-selected challenges are explicitly not tested, never counted as TN.",
+    "No hidden split, agent/model comparison or optimization percentage is claimed."
+  ]
+}

@@ -1,4 +1,4 @@
-import { prepareZapPolicy, ZAP_POLICY_REVISION } from './zap-policy.js';
+import { prepareZapPolicy, ZAP_POLICY_REVISION, ZAP_OPENAPI_REVISION } from './zap-policy.js';
 import { parseDastPolicy, prepareDastPolicy, snapshotDastEnvironment, dastProfileRevision, dastDefaultMaxRequests, dastRequestPlan, DAST_MAX_REQUESTS } from './dast.js';
 import { normalizeUrl, validateStaticTarget } from './url-network.js';
 import { preflightApiPolicy, API_MAX_TIMEOUT_MS, type ApiPreflightResult } from './api.js';
@@ -62,10 +62,10 @@ export async function planMain(argv: readonly string[]): Promise<number> {
   try {
     const input = await readJsonInput(file, 1024 * 1024);
     if (kind === '--zap-policy') {
-      const { policy, policySha256 } = prepareZapPolicy(input, allowPrivate);
+      const { policy, policySha256, requests, loginEnv } = prepareZapPolicy(input, allowPrivate);
       process.stdout.write(JSON.stringify({ version: 1, kind: 'zap-active-plan', status: 'ready', origin: policy.origin,
-        policySha256, profileRevision: ZAP_POLICY_REVISION, seedRequests: policy.requests.length,
-        minimumRequests: policy.requests.length + (policy.authentication ? 3 : 0) + 1,
+        policySha256, profileRevision: policy.version === 2 ? ZAP_OPENAPI_REVISION : ZAP_POLICY_REVISION, seedRequests: requests.length,
+        minimumRequests: requests.length * (policy.version === 2 ? 2 : 1) + (policy.authentication ? 3 : 0) + (loginEnv ? 1 : 0) + 1,
         authenticated: !!policy.authentication, notes: ['Configuration only; no DNS lookup or request was made.'] }, null, 2) + '\n');
       return 0;
     }

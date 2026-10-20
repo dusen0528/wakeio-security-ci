@@ -9,6 +9,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { runZap } from '../src/zap.js';
 import { runExecutionPlan } from '../src/agent-dast/runner.js';
 import { zapPolicyTarget } from './fixtures/zap-policy-target.js';
+import { zapSessionTarget } from './fixtures/zap-session-target.js';
 import { zapPolicyEngine } from './fixtures/zap-policy-engine.js';
 const ROOT = process.cwd(), CLI = join(ROOT, 'build/src/cli.js');
 const sha = (value: string | Buffer) => createHash('sha256').update(value).digest('hex');
@@ -105,7 +106,7 @@ test('ZAP CLI verifies owned HTTPS CA and hostname despite disabled global TLS, 
 });
 
 test('real ZAP run-plan Action publishes matching DB, evidence, report and shared request ledger', { skip: !process.env.WAKEIO_ZAP_PATH, timeout: 180000 }, async context => {
-  const top = await mkdtemp(join(tmpdir(), 'owned-zap-plan-action-')), target = await zapPolicyTarget();
+  const top = await mkdtemp(join(tmpdir(), 'owned-zap-plan-action-')), target = await zapSessionTarget({ expire: true });
   try {
     await mkdir(join(top, 'actions/run-plan'), { recursive: true }); await mkdir(join(top, 'dist-action'));
     for (const file of ['run.mjs', 'supervise.mjs']) await copyFile(join(ROOT, 'actions/run-plan', file), join(top, 'actions/run-plan', file));
@@ -122,16 +123,18 @@ test('real ZAP run-plan Action publishes matching DB, evidence, report and share
     assert.equal(result.code, 1, result.err + result.out);
     const outputs = await readFile(join(top, 'outputs'), 'utf8'); assert.match(outputs, /delivery-status=delivered/); assert.match(outputs, /exit-code=1/);
     const out = join(top, 'result'), reportBytes = await readFile(join(out, 'tasks/t-zap/report.json')), report = JSON.parse(reportBytes.toString());
-    const check = report.checks.find((c: any) => c.id === 'url.zap'); assert.equal(check.status, 'completed'); assert.equal(check.findings.length, 3);
+    const check = report.checks.find((c: any) => c.id === 'url.zap'); assert.equal(check.status, 'completed'); assert.equal(check.findings.length, 4);
+    assert.equal(check.metrics.nativeAuthentication, 'json'); assert.equal(check.metrics.importedOperations, 3);
+    assert.ok(check.metrics.refreshRequests >= 1);
     assert.equal(check.metrics.requestCount, target.seen.length);
     const db = new DatabaseSync(join(out, 'run.db'), { readOnly: true });
-    try { const rows = db.prepare('SELECT * FROM findings').all(); assert.equal(rows.length, 3);
+    try { const rows = db.prepare('SELECT * FROM findings').all(); assert.equal(rows.length, 4);
       for (const row of rows) { const evidence = JSON.parse(await readFile(join(out, row.evidence_ref as string), 'utf8'));
         assert.equal(evidence.taskId, 't-zap'); assert.equal(evidence.reportPath, 'tasks/t-zap/report.json'); assert.ok(check.findings.some((f: any) => f.id === evidence.findingId)); }
-      const surfaces = db.prepare('SELECT * FROM surface').all(); assert.ok(surfaces.some(row => row.method === 'POST' && row.location === 'body'));
+      const surfaces = db.prepare('SELECT * FROM surface').all(); for (const parameter of ['/filter/name', '/tags/0']) assert.ok(surfaces.some(row => row.method === 'POST' && row.location === 'body' && row.param === parameter && row.auth_state === 'user'), JSON.stringify(surfaces));
     } finally { db.close(); }
     const agent = JSON.parse(await readFile(join(out, 'tasks/t-zap/agent-report.json'), 'utf8')); assert.equal(agent.reportArtifact.digest, sha(reportBytes));
-    for (const file of ['report.md', 'report.sarif', 'agent-report.json', 'report.json']) assert.equal((await readFile(join(out, 'tasks/t-zap', file), 'utf8')).includes(target.authorization), false);
+    for (const file of ['report.md', 'report.sarif', 'agent-report.json', 'report.json']) for (const secret of target.privateValues) assert.equal((await readFile(join(out, 'tasks/t-zap', file), 'utf8')).includes(secret), false);
     assert.ok((await readdir(out)).includes('run-receipt.json'));
     context.diagnostic(JSON.stringify({ requestCount: check.metrics.requestCount, findings: check.findings.length, actionGate: result.code }));
   } finally { await target.close(); await rm(top, { recursive: true, force: true }); }
@@ -185,4 +188,31 @@ test('real ZAP DAST Action runs its bundled CLI and delivers four reports with a
     for (const name of ['report.json', 'report.sarif', 'report.md', 'agent-report.json']) assert.equal((await readFile(join(top, 'reports', name), 'utf8')).includes(target.authorization), false);
     context.diagnostic(JSON.stringify({ requests: target.seen.length, actionGate: result.code, fourReports: true }));
   } finally { await target.close(); await rm(top, { recursive: true, force: true }); }
+});
+
+
+test('ZAP v2 public CLI and DAST Action retain JSON/Bearer and form/cookie policy scope without credentials', { timeout: 20000 }, async () => {
+ const top=await mkdtemp(join(tmpdir(),'owned-zap-v2-entry-'));
+ try {
+  const engine=await zapPolicyEngine(top,12);
+  for(const cookie of [false,true]) {
+   const target=await zapSessionTarget({fixed:true,cookie,format:cookie?'form':'json'});
+   try {
+    await writeFile(join(top,'policy.json'),JSON.stringify(target.policy));
+    for(const action of [false,true]) {
+     const out=join(top,`out-${cookie}-${action}`),before=target.seen.length;
+     const result=action?await child(join(ROOT,'scripts/action-run.mjs'),[],{...target.env,WAKEIO_MODE:'dast',WAKEIO_ACTION_PATH:ROOT,GITHUB_WORKSPACE:top,
+      GITHUB_EVENT_NAME:'workflow_dispatch',GITHUB_OUTPUT:join(top,'outputs'),WAKEIO_ACTIVE_CONSENT:'true',WAKEIO_ALLOWED_ORIGINS:target.origin,
+      WAKEIO_URL:target.origin,WAKEIO_ENGINES:'zap',WAKEIO_ZAP_PATH:engine,WAKEIO_ZAP_POLICY:'policy.json',WAKEIO_ZAP_RATE_LIMIT:'50',WAKEIO_ZAP_MAX_REQUESTS:'100',WAKEIO_ALLOW_PRIVATE:'true',WAKEIO_OUT:out,WAKEIO_FAIL_ON:'none'},top)
+      :await child(CLI,['scan','--url',target.origin,'--engine','zap','--zap-policy',join(top,'policy.json'),'--zap',engine,'--zap-rate-limit','50','--active-consent','--allow-private','--tools','none','--fail-on','none','--out',out],target.env);
+     assert.equal(result.code,0,result.err+result.out);
+     const report=JSON.parse(await readFile(join(out,'report.json'),'utf8')),check=report.checks.find((c:any)=>c.id==='url.zap');
+     assert.equal(check.status,'completed');assert.equal(check.metrics.importedOperations,3);assert.equal(check.metrics.nativeAuthentication,cookie?'form':'json');
+     assert.equal(check.metrics.requestCount,target.seen.length-before);assert.equal(check.metrics.policyRevision,'zap-openapi-session-v2');
+     for(const file of ['report.json','report.md','report.sarif','agent-report.json']) for(const secret of target.privateValues) assert.equal((await readFile(join(out,file),'utf8')).includes(secret),false);
+     for(const secret of target.privateValues) assert.equal((result.err+result.out).includes(secret),false);
+    }
+   } finally {await target.close();}
+  }
+ } finally {await rm(top,{recursive:true,force:true});}
 });

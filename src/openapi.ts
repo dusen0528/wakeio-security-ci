@@ -143,6 +143,8 @@ function references(document: RecordValue): (value: unknown) => RecordValue {
   };
 }
 
+export { references as openApiReferences };
+
 function pathParts(value: unknown): string[] {
   if (typeof value !== "string" || value.length > 2048 || !value.startsWith("/") || value.startsWith("//")) invalid();
   const parts = value.slice(1).split("/");

@@ -24,7 +24,7 @@ inputs:
     required: false
     default: ''
   zap-policy:
-    description: Reviewed GET/query or single-field POST JSON policy; optional Node-only credential and principal controls
+    description: Reviewed v1 seeds or v2 local OpenAPI/API session policy; Node-only auth and bounded GET/JSON POST
     required: false
     default: ''
   zap-path:

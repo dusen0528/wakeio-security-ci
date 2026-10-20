@@ -11,8 +11,9 @@ import { parseSchemathesisAuthPolicy, snapshotSchemathesisCredential, type Schem
 import { validateSchemathesisAuthSchema } from '../schemathesis-auth-run.js';
 import { selectOpenApiLiveOperations } from '../openapi.js';
 import { runNuclei } from '../nuclei.js';
+import type { ZapCompiledRequest } from '../zap-openapi.js';
 import { runZap } from '../zap.js';
-import { prepareZapPolicy, zapSurfaceKey, type ZapPolicy } from '../zap-policy.js';
+import { prepareZapPolicy, zapSurfaceKey, type ZapPolicyInput } from '../zap-policy.js';
 import { normalizeUrl, validateStaticTarget } from '../url-network.js';
 import { createReport, evaluateGate, RULESET_VERSION, writeArtifacts, writeReports } from '../report.js';
 import { RunAdmission, type AdmissionSnapshot, type TaskAdmission } from './admission.js';
@@ -85,7 +86,7 @@ async function readStable(path: string, cap: number): Promise<Buffer> {
     return bytes.subarray(0, used);
   } finally { await handle.close(); }
 }
-type PreparedTask = { task: ExecutionTask; policy?: DastPolicy; zapPolicy?: ZapPolicy; document?: unknown; authPolicy?: SchemathesisAuthPolicy; env?: NodeJS.ProcessEnv };
+type PreparedTask = { task: ExecutionTask; policy?: DastPolicy; zapPolicy?: ZapPolicyInput; zapRequests?: ZapCompiledRequest[]; document?: unknown; authPolicy?: SchemathesisAuthPolicy; env?: NodeJS.ProcessEnv };
 async function prepareTasks(options: ReturnType<typeof optionsSnapshot>): Promise<PreparedTask[]> {
   const data = new Map<string, unknown>();
   const required = new Set(options.plan.tasks.flatMap(task => task.engine === 'native-dast' || task.engine === 'zap' ? [task.policy] : task.engine === 'schemathesis' ? [task.schema, ...(task.authPolicy ? [task.authPolicy] : [])] : []));
@@ -99,8 +100,8 @@ async function prepareTasks(options: ReturnType<typeof optionsSnapshot>): Promis
     if (task.engine === 'zap') {
       const prepared = prepareZapPolicy(data.get(task.policy), options.allowPrivate, options.env);
       if (prepared.policy.origin !== options.plan.origin || options.ratePerSecond > 50
-        || task.maxRequests < prepared.policy.requests.length + (prepared.policy.authentication ? 3 : 0) + 1) invalid();
-      return { task, zapPolicy: prepared.policy, env: prepared.policy.authentication ? { [prepared.policy.authentication.authorizationEnv]: prepared.authorization } : {} };
+        || task.maxRequests < prepared.requests.length * (prepared.policy.version === 2 ? 2 : 1) + (prepared.policy.authentication ? 3 : 0) + (prepared.loginEnv ? 1 : 0) + 1) invalid();
+      return { task, zapPolicy: prepared.policy, zapRequests: prepared.requests, env: prepared.loginEnv ?? (prepared.policy.authentication && 'authorizationEnv' in prepared.policy.authentication ? { [prepared.policy.authentication.authorizationEnv]: prepared.authorization } : {}) };
     }
     if (task.engine === 'native-dast') {
       const parsed = parseDastPolicy(data.get(task.policy));
@@ -170,12 +171,12 @@ function findingSurface(prepared: PreparedTask, finding: Finding): NewSurface {
   if (!finding.location.url) invalid();
   const url = new URL(finding.location.url);
   if (prepared.zapPolicy) {
-    for (const request of prepared.zapPolicy.requests) {
+    for (const request of prepared.zapRequests!) {
       const selected = new URL(request.path, prepared.zapPolicy.origin);
       if (url.origin !== selected.origin || url.pathname !== selected.pathname) continue;
-      const params = request.method === 'POST' ? Object.keys(request.body) : [...selected.searchParams.keys()];
-      const parameter = params.find(param => zapSurfaceKey(finding.ruleId.replace(/^zap\./, ''), request, param) === finding.comparisonKey);
-      if (parameter !== undefined) return { surfaceId: '', method: request.method, path: selected.pathname, param: parameter,
+      const params = request.method === 'POST' ? Object.keys(request.body!) : [...selected.searchParams.keys()];
+      const parameter = params.find(param => zapSurfaceKey(finding.ruleId.replace(/^zap\./, ''), request, request.fields?.find(field => field.alias === param)?.pointer ?? param) === finding.comparisonKey);
+      if (parameter !== undefined) return { surfaceId: '', method: request.method, path: selected.pathname, param: request.fields?.find(field => field.alias === parameter)?.pointer ?? parameter,
         location: request.method === 'POST' ? 'body' : 'query', authState: prepared.zapPolicy.authentication ? 'user' : 'anonymous' };
     }
     invalid();

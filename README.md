@@ -130,7 +130,7 @@ External engines are opt-in in the examples. The source CLI historically default
 | Bandit | 1.9.4 | Optional Python AST checks | Separately installed executable; selected Python files only and no target execution |
 | Semgrep CE | 1.147.0 | Six WakeIO-owned Go rules: SQL, trusted HTML, TLS, command execution, SSRF and file paths | Local rules only; not the Semgrep registry, general auth/authz verification or complete SAST |
 | govulncheck | 1.9.0 | Known Go module vulnerabilities with observed symbol reachability | One complete root module and prepared Go/cache; nested/local-replacement modules remain incomplete |
-| OWASP ZAP | 2.17.0 | Reviewed HTTP(S) GET queries and single-field POST JSON SQLi/reflected-XSS | Optional Node-only Authorization/principal controls; no spider, login flow, arbitrary bodies or policies |
+| OWASP ZAP | 2.17.0 | Reviewed HTTP(S) queries and bounded nested/array JSON SQLi/reflected-XSS | Selected local OpenAPI import, Node-only JSON/form login, Bearer/cookie renewal; no browser/MFA/OAuth or spider |
 
 Examples:
 
@@ -179,7 +179,7 @@ Trivy also inspects `uv.lock`, `requirements-dev.txt` and `requirements-prod.txt
 
 ### Explicit ZAP active scan
 
-Use a disposable target you own or are authorized to test. Prepare the official ZAP 2.17.0 cross-platform installation and Java; no engine download occurs inside scan. The legacy `--zap-path` lane remains HTTP GET-only. A reviewed [`--zap-policy`](benchmarks/dast-zap/policy.example.json) enables HTTP(S) GET queries and a POST with exactly one top-level string or integer JSON field. No passive URL collection is added.
+Use a disposable target you own or are authorized to test. Prepare the official ZAP 2.17.0 cross-platform installation and Java; no engine download occurs inside scan. The legacy `--zap-path` lane remains HTTP GET-only. A reviewed version-1 [`--zap-policy`](benchmarks/dast-zap/policy.example.json) retains HTTP(S) GET queries and single-field POST JSON. The [version-2 example](benchmarks/dast-zap/policy.openapi.example.json) adds selected operations from an embedded local OpenAPI 3.0/3.1 document, nested objects/arrays and JSON/form API login with Bearer or cookie renewal. No passive URL collection is added.
 
 ```sh
 # Offline validation: no engine, DNS or target traffic.
@@ -191,9 +191,9 @@ node build/src/cli.js scan --url http://127.0.0.1:3000 \
   --zap-max-requests 200 --zap-rate-limit 10 --zap-timeout-ms 120000
 ```
 
-The Node gate maps a virtual HTTP origin to the validated, DNS-pinned target. HTTPS uses normal CA/hostname verification; CONNECT is refused. The gate validates path/method/query names and the complete bounded JSON body before forwarding. Optional Authorization is snapshotted from one selected environment variable and injected by Node; it never enters ZAP plans, child environment or shared reports. Principal-before/after and anonymous-denied controls consume the same request budget as seeds and probes. They do not prove continuous authentication or business authorization.
+The Node gate maps a virtual HTTP origin to the validated, DNS-pinned target. HTTPS uses normal CA/hostname verification; CONNECT is refused. The gate validates path/method/query names and the complete bounded JSON body before forwarding. Optional Authorization is snapshotted from one selected environment variable and injected by Node; it never enters ZAP plans, child environment or shared reports. Principal-before/after and anonymous-denied controls consume the same request budget as seeds and probes. Version 2 can instead snapshot selected login fields from environment variables, extract a declared token/cookie and refresh or log in again after HTTP 401. Native ZAP authentication uses synthetic aliases; Node keeps the actual credentials/session and checks the principal again after renewal. All actual login/refresh attempts consume the same budget. These checks do not prove continuous authentication or business authorization.
 
-Every seed must return HTTP 200. Each run uses an OS-assigned loopback listener, exact request cap, paced rate and deadline. Only rules 40012/40018 run; no spider, OAST, scripts, login/token refresh or updates. Active GET/POST can have side effects. The installed engine is trusted to honor its proxy; this is not an OS network sandbox. Raw attacks, responses and engine reports are temporary. Normalized findings, remediation and counts enter the four shared reports. Caps, cancellation, scope violations, redirects, auth denial and control failures remain incomplete (exit 2).
+Every seed must return HTTP 200. Each run uses an OS-assigned loopback listener, exact request cap, paced rate and deadline. Only rules 40012/40018 run; no spider, OAST, arbitrary scripts or updates. API login/renewal runs only with the explicit v2 authentication profile. Active GET/POST can have side effects. The installed engine is trusted to honor its proxy; this is not an OS network sandbox. Raw attacks, responses and engine reports are temporary. Normalized findings, remediation and counts enter the four shared reports. Caps, cancellation, execution errors, redirects, unresolved auth denial and control failures remain incomplete (exit 2).
 
 In the separate `dast` Action, set `engines: zap`, `url`, `zap-policy`, `zap-path`, the optional `zap-max-requests`/`zap-rate-limit`/`zap-timeout-ms`, `active-consent: 'true'` and `allowed-origins`. Fork/trigger/consent and policy checks precede engine setup. In a `run-plan` task use `{"id":"t-zap","engine":"zap","policy":"owner-alias","maxRequests":200}` with a SHA-bound input alias and the operator's `--zap` / Action `zap-path`. All tasks share one global admission cap/rate/deadline; ZAP plans require a rate of at most 50/s. See the [reproduction, measurement and limits](benchmarks/dast-zap/README.md). This does not add ZAP to the separate experimental agent-eval schema.
 

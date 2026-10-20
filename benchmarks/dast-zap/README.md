@@ -1,4 +1,4 @@
-# Bounded ZAP policy, shared execution and owned pilot
+# Bounded ZAP policy, OpenAPI sessions and application measurements
 
 ## Problem and scope
 
@@ -6,7 +6,26 @@ Previously ZAP was a standalone HTTP query adapter. A fixed-plan or CI user coul
 
 Success means the real pinned engine finds three declared owned SQLite/XSS flaws and rejects their three fixed controls, every received request equals the admitted count, and CLI/Action/run-plan preserve findings, incomplete gates and current artifact bindings. This is a deliberately small public pilot, not a production recall estimate or evidence that agents outperform a fixed plan.
 
-## Operator contract
+## Current v2 extension
+
+The [OpenAPI/session operator guide](openapi-sessions.md) and [v2 policy example](policy.openapi.example.json) add native selected local OpenAPI import, bounded nested/array JSON and JSON/form login with Node-only Bearer/cookie renewal. Both Actions and the shared runner retain existing budgets, report gates and stored-result binding. The version-1 contract and its earlier small pilot remain below as historical baseline. Paired application results are recorded separately in `application-results.json`; the original pilot is not representative application evidence.
+
+## Observed application pairs (2026-10-20)
+
+Each row is five fresh completed scans with cap 200 and rate 50/s. Counts are **per repetition**, not pooled unique vulnerabilities across repeated targets.
+
+| Application / mode | TP / FP / FN / TN | Requests each | Scan p50 | Scan maximum |
+| --- | --- | --- | --- | --- |
+| Owned reference API / vulnerable | 4 / 0 / 0 / 2 | 59 | 18,385.32 ms | 18,797.64 ms |
+| Owned reference API / fixed | 0 / 0 / 0 / 6 | 79 | 18,985.66 ms | 19,729.56 ms |
+| Pinned Juice Shop search / vulnerable | 1 / 0 / 0 / 1 | 14 | 18,352.64 ms | 18,449.77 ms |
+| Pinned Juice Shop search / fixed query | 0 / 0 / 0 / 2 | 18 | 18,291.99 ms | 18,822.33 ms |
+
+The reference pair used the same JSON/Bearer login and forced expiry/refresh on both sides; every scan performed one login, one refresh, one challenge and four identity observations (including anonymous denial). Juice Shop used one actual login and three basket/principal controls. All independent target request counts matched the gate. Label and runtime digests were unchanged during measurement; [raw per-round metadata](application-results.json) includes the pinned image/source/patch identity and explicit exclusions. No raw payloads, credentials or responses are stored there. Target provisioning/teardown is outside scan elapsed time; engine startup, auth/import/probes and engine cleanup are included. Docker IPC adds different overhead from the direct reference transport, so do not compare these two applications as a speed ranking.
+
+These public small-scope results do not estimate whole-app production accuracy, browser/MFA/OAuth coverage or autonomous-agent benefit. In particular the fixed Juice Shop image changes only the selected search query. The [operator and reproduction guide](openapi-sessions.md) explains the bounded subset.
+
+## Version-1 operator contract
 
 - Prepare ZAP **2.17.0**, Automation Framework **0.58.0**, active scan rules **78**, and Java (validated with 21). The scan never downloads/updates engines, installs target dependencies or starts the target.
 - `policy.example.json` is a shape example. Replace the origin, reviewed seed paths, principal assertion and credential variable for an approved disposable target. The credential value never belongs in JSON.
@@ -44,7 +63,7 @@ On Node 22.23.1 / macOS arm64, five repetitions each returned TP **3**, FP **0**
 
 Tests cover malformed owner input and request bodies with zero upstream traffic; worker credential/cookie stripping; private principal controls; initial anonymous-access failure and trailing principal expiry; global cap/rate across concurrent ZAP/native tasks; cancellation; trusted/untrusted/wrong-host TLS including unsafe global settings; actual ZAP detections; both actual bundled Actions; DB/evidence/report identity and four-report digests. The required-engine harness names these tests explicitly and refuses skips. Protocol stand-ins test transport failure semantics only; detection claims use the actual pinned engine.
 
-The default two rules cover reflected XSS and SQL injection at selected inputs. No spider, browser/DOM XSS, OAST, arbitrary writes, OpenAPI-to-ZAP auto-import, stateful workflow, role/IDOR matrix, external-target benchmark, autonomous selection or production vulnerability coverage is claimed. Existing Schemathesis OpenAPI and explicit native/API actor controls remain separate lanes. The experimental agent-eval engine schema has not been changed.
+The default two rules cover reflected XSS and SQL injection at selected inputs. Version 2 adds native local selected OpenAPI import and API session automation as documented above. No spider, browser/DOM XSS, OAST, arbitrary writes, business workflow, role/IDOR matrix, autonomous selection or production vulnerability coverage is claimed. Application measurements are limited to the declared owned/pinned pairs. Existing Schemathesis OpenAPI and explicit native/API actor controls remain separate lanes. The experimental agent-eval engine schema has not been changed.
 
 The trusted installed ZAP process must honor its configured proxy. Node is an application-level gate, not an OS sandbox. Active requests can change state even with GET, so use an explicitly approved disposable target. Auth identity checks are start/end observations; transient identity changes returning HTTP 200 may be undetectable.
 
@@ -52,5 +71,5 @@ The trusted installed ZAP process must honor its configured proxy. Node is an ap
 
 - [ZAP requestor contract](https://www.zaproxy.org/docs/desktop/addons/automation-framework/job-requestor/) and [pinned source](https://github.com/zaproxy/zap-extensions/blob/8b171e1c8704d2996b75d4bc119cbf9495d9aa12/addOns/automation/src/main/java/org/zaproxy/addon/automation/jobs/RequestorJob.java): request headers deserialize from strings, e.g. `Content-Type:application/json`; a list of objects failed real-engine initialization and was corrected before measurement.
 - [Active-scan vectors](https://www.zaproxy.org/docs/desktop/addons/automation-framework/job-ascanconfig/): enable JSON only when POST seeds exist; disable multipart/XML/GWT/DWR, header/cookie/path/script vectors.
-- [OpenAPI automation](https://www.zaproxy.org/docs/desktop/addons/openapi-support/automation/) has import-specific behavior. This change keeps reviewed seeds instead of allowing import/fetch/redirect behavior to widen the declared boundary.
+- [OpenAPI automation](https://www.zaproxy.org/docs/desktop/addons/openapi-support/automation/) has import-specific behavior. Version 1 retains explicit seeds; version 2 imports a sanitized local projection with selected operations only. Fetch/redirect behavior never widens the declared boundary.
 - Core [2.17.0 source](https://github.com/zaproxy/zaproxy/tree/8a1bff313f4d183dba5aa154ecbe89ad751c9153); extensions [pinned implementation](https://github.com/zaproxy/zap-extensions/tree/8b171e1c8704d2996b75d4bc119cbf9495d9aa12).

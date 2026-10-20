@@ -131,7 +131,7 @@ SARIF는 `steps.wakeio.outputs.report-sarif`, `checkout_path: wakeio-source`, `c
 | Bandit | 1.9.4 | 선택적인 Python AST 검사 | 별도 실행 파일을 준비해야 하며 선택한 Python 파일만 검사하고 대상 코드는 실행하지 않음 |
 | Semgrep CE | 1.147.0 | WakeIO Go 규칙 6개: SQL·HTML·TLS·명령 실행·SSRF·파일 경로 | 자체 로컬 규칙만 사용. 전체 SAST나 인증·인가 검증을 보장하지 않음 |
 | govulncheck | 1.9.0 | Go 의존성의 알려진 취약점과 정적 호출 경로 | 준비된 Go·module cache와 완전한 루트 module 하나 필요 |
-| OWASP ZAP | 2.17.0 | 검토한 HTTP(S) GET 쿼리·단일 필드 POST JSON의 SQLi·반사형 XSS | 선택형 Authorization·principal 대조; 자동 크롤링·로그인 흐름·임의 본문은 범위 밖 |
+| OWASP ZAP | 2.17.0 | 검토한 HTTP(S) 쿼리·중첩/배열 JSON의 SQLi·반사형 XSS | 선택한 로컬 OpenAPI, JSON/form 로그인·Bearer/쿠키 갱신; 브라우저·MFA·OAuth·크롤링 제외 |
 
 예시는 다음과 같습니다.
 
@@ -180,7 +180,7 @@ Trivy는 자체 분석기로 `uv.lock`, `requirements-dev.txt`, `requirements-pr
 
 ### ZAP 능동 검사
 
-소유하거나 허가받은 폐기 가능한 대상에서 실행하세요. ZAP 2.17.0과 Java는 미리 준비합니다. 기존 `--zap-path`는 HTTP GET 전용이며, [`--zap-policy` 예시](benchmarks/dast-zap/policy.example.json)는 HTTP(S) GET 쿼리와 문자열·정수 필드 하나인 POST JSON을 지원합니다. 수동 URL 수집 요청은 추가하지 않습니다.
+소유하거나 허가받은 폐기 가능한 대상에서 실행하세요. ZAP 2.17.0과 Java는 미리 준비합니다. 기존 `--zap-path`는 HTTP GET 전용이며, [`--zap-policy` 예시](benchmarks/dast-zap/policy.example.json)는 HTTP(S) GET 쿼리와 문자열·정수 필드 하나인 POST JSON을 지원합니다. [버전 2 예시](benchmarks/dast-zap/policy.openapi.example.json)는 파일 안에 포함한 로컬 OpenAPI 3.0/3.1의 선택 연산, 중첩 객체·배열 JSON, JSON/form API 로그인과 Bearer·쿠키 갱신을 추가합니다. 수동 URL 수집 요청은 추가하지 않습니다.
 
 ```sh
 # 정책·선택한 인증정보만 점검합니다. DNS·HTTP·엔진 실행은 없습니다.
@@ -191,9 +191,9 @@ node build/src/cli.js scan --url http://127.0.0.1:3000 \
   --zap-max-requests 200 --zap-rate-limit 10 --zap-timeout-ms 120000
 ```
 
-정책이 지정한 Authorization 환경변수는 외부에서 설정합니다. Node가 DNS를 고정한 실제 대상에 요청을 전달하고 인증정보를 주입합니다. ZAP에는 가상 HTTP origin만 제공하며 HTTPS는 Node에서 CA·호스트명을 검증합니다. CONNECT는 허용하지 않습니다. 경로·method·쿼리 이름·전체 JSON 본문을 검증한 뒤 전달합니다. 검사 전후 principal 일치와 무인증 401/403 대조를 요구하며 시드·공격·대조 요청 모두 같은 예산에 포함합니다. 이 대조만으로 지속적인 인증이나 업무 인가의 정확성을 증명하지는 않습니다.
+정책이 지정한 Authorization 환경변수는 외부에서 설정합니다. Node가 DNS를 고정한 실제 대상에 요청을 전달하고 인증정보를 주입합니다. ZAP에는 가상 HTTP origin만 제공하며 HTTPS는 Node에서 CA·호스트명을 검증합니다. CONNECT는 허용하지 않습니다. 경로·method·쿼리 이름·전체 JSON 본문을 검증한 뒤 전달합니다. 검사 전후 principal 일치와 무인증 401/403 대조를 요구하며 시드·공격·대조 요청 모두 같은 예산에 포함합니다. 버전 2에서는 선택한 로그인 필드의 환경변수를 읽어 토큰·쿠키를 추출하고, HTTP 401 후 선언한 갱신 API나 재로그인을 실행합니다. 실제 인증정보는 Node 안에 유지하고 ZAP에는 가상 별칭만 전달하며 갱신 후 principal도 다시 대조합니다. 실제 로그인·갱신 역시 같은 요청 예산에 포함합니다. 이 대조만으로 지속적인 인증이나 업무 인가의 정확성을 증명하지는 않습니다.
 
-시드는 HTTP 200이어야 합니다. 실행마다 빈 loopback 포트를 배정하고 요청 수·속도·응답 크기·시간을 제한합니다. SQLi/XSS 규칙 40018/40012만 켜며 spider·OAST·script·로그인·토큰 갱신·업데이트는 끕니다. GET·POST 능동 요청은 부작용이 있을 수 있습니다. 설치한 엔진이 설정된 프록시를 따른다는 신뢰 경계이며 OS 네트워크 sandbox는 아닙니다. 원본 공격·응답·엔진 보고서는 임시 영역에서 삭제하고 공통 보고서에는 발견·수정 방향·집계를 남깁니다. 예산 소진·취소·범위 위반·리다이렉트·인증 거절·대조 실패는 미완료(exit 2)입니다.
+시드는 HTTP 200이어야 합니다. 실행마다 빈 loopback 포트를 배정하고 요청 수·속도·응답 크기·시간을 제한합니다. SQLi/XSS 규칙 40018/40012만 켜며 spider·OAST·임의 script·업데이트는 끕니다. API 로그인·갱신은 명시한 버전 2 인증 정책에서만 실행합니다. GET·POST 능동 요청은 부작용이 있을 수 있습니다. 설치한 엔진이 설정된 프록시를 따른다는 신뢰 경계이며 OS 네트워크 sandbox는 아닙니다. 원본 공격·응답·엔진 보고서는 임시 영역에서 삭제하고 공통 보고서에는 발견·수정 방향·집계를 남깁니다. 예산 소진·취소·실행 오류·리다이렉트·해결되지 않은 인증 거절·대조 실패는 미완료(exit 2)입니다.
 
 별도 `dast` Action에는 `engines: zap`, `url`, `zap-policy`, `zap-path`, 선택형 `zap-max-requests`·`zap-rate-limit`·`zap-timeout-ms`와 기존 승인·허용 origin을 전달합니다. `run-plan`에는 `{"id":"t-zap","engine":"zap","policy":"owner-alias","maxRequests":200}`와 SHA로 묶인 입력을 추가하고 운영자가 `--zap` 또는 Action `zap-path`를 지정합니다. 모든 작업이 전역 요청 예산·속도·마감 시간을 공유하며 ZAP 포함 계획은 최대 50회/초입니다. [재현 절차·측정·한계](benchmarks/dast-zap/README.md)를 확인하세요. 별도 실험용 agent-eval 형식에 ZAP을 추가한 것은 아닙니다.
 
