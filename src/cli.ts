@@ -32,6 +32,7 @@ import { selectOpenApiLiveOperations } from "./openapi.js";
 import { NUCLEI_MAX_RATE_LIMIT, NUCLEI_MAX_REQUESTS, NUCLEI_SCOPES, runNuclei, type NucleiScope } from "./nuclei.js";
 
 import { runZap, ZAP_DEFAULT_MAX_REQUESTS, ZAP_MAX_REQUESTS, ZAP_DEFAULT_TIMEOUT_MS, ZAP_DEFAULT_RATE_LIMIT, ZAP_MAX_RATE_LIMIT } from './zap.js';
+import { prepareZapPolicy, ZAP_POLICY_REVISION, ZAP_OPENAPI_REVISION, type ZapPolicyInput } from './zap-policy.js';
 import { runTrivyVulnerabilities } from './trivy-vuln.js';
 import { normalizeGoBuildTags } from './source/govulncheck.js';
 import { SEMGREP_RULE_REVISION } from './source/semgrep-rules.js';
@@ -80,6 +81,7 @@ export interface CliOptions {
   imageArchive?: string;
   engines: Array<"nuclei" | "zap">;
   zapPath?: string;
+  zapPolicyFile?: string;
   zapPaths: string[];
   zapMaxRequests?: number;
   zapRateLimit?: number;
@@ -173,6 +175,7 @@ Active DAST (off by default; sends generated or template requests to the target)
   --schemathesis-python PATH   Python with workers/schemathesis/requirements.lock.txt
   --engine nuclei|zap         Explicit active engine selection (comma-separated)
   --zap PATH                   Prepared local zap.sh executable
+  --zap-policy FILE            Reviewed v1 seeds or v2 local OpenAPI/API session policy
   --zap-path PATH              Explicit GET URL path with query (repeatable, at most 16)
   --zap-max-requests N         ZAP gate request cap (default ${ZAP_DEFAULT_MAX_REQUESTS}, maximum ${ZAP_MAX_REQUESTS})
   --zap-rate-limit N           ZAP requests per second (default ${ZAP_DEFAULT_RATE_LIMIT}, maximum ${ZAP_MAX_RATE_LIMIT})
@@ -387,6 +390,7 @@ export function parseCliArgs(argv: readonly string[]): CliOptions | { help: true
       options.engines = engines as CliOptions["engines"];
     }
     else if ((value = valueFlag('--zap')) !== undefined) options.zapPath = value;
+    else if ((value = valueFlag('--zap-policy')) !== undefined) options.zapPolicyFile = value;
     else if ((value = valueFlag('--zap-max-requests')) !== undefined) options.zapMaxRequests = parseBoundedInteger('--zap-max-requests', value, ZAP_MAX_REQUESTS);
     else if ((value = valueFlag('--zap-rate-limit')) !== undefined) options.zapRateLimit = parseBoundedInteger('--zap-rate-limit', value, ZAP_MAX_RATE_LIMIT);
     else if ((value = valueFlag('--zap-timeout-ms')) !== undefined) options.zapTimeoutMs = parseBoundedInteger('--zap-timeout-ms', value, MAX_TOOL_TIMEOUT_MS);
@@ -435,10 +439,11 @@ export function parseCliArgs(argv: readonly string[]): CliOptions | { help: true
   const nucleiOnly = options.nucleiPath !== undefined || options.nucleiTemplates !== undefined || options.nucleiScopes.length > 0 || options.nucleiMaxRequests !== undefined || options.nucleiRateLimit !== undefined || options.nucleiTimeoutMs !== undefined;
   if (nucleiOnly && !options.engines.includes("nuclei")) throw new CliUsageError("--nuclei* options require --engine nuclei");
   if (options.engines.includes("nuclei") && (!options.url || !options.nucleiTemplates)) throw new CliUsageError("--engine nuclei requires --url and --nuclei-templates");
-  const zapOnly = options.zapPath !== undefined || options.zapPaths.length > 0 || options.zapMaxRequests !== undefined || options.zapRateLimit !== undefined || options.zapTimeoutMs !== undefined;
+  const zapOnly = options.zapPath !== undefined || options.zapPolicyFile !== undefined || options.zapPaths.length > 0 || options.zapMaxRequests !== undefined || options.zapRateLimit !== undefined || options.zapTimeoutMs !== undefined;
   if (zapOnly && !options.engines.includes('zap')) throw new CliUsageError('--zap* options require --engine zap');
   if (options.engines.includes('zap') && (options.pages.length > 0 || options.maxPages !== undefined)) throw new CliUsageError('--page and --max-pages cannot be combined with ZAP; select every active query URL with --zap-path');
-  if (options.engines.includes('zap') && (!options.url || new URL(options.url).protocol !== 'http:' || options.zapPaths.length === 0)) throw new CliUsageError('--engine zap requires an HTTP --url and at least one explicit --zap-path');
+  if (options.zapPolicyFile && options.zapPaths.length) throw new CliUsageError('--zap-policy cannot be combined with --zap-path');
+  if (options.engines.includes('zap') && (!options.url || !options.zapPolicyFile && (new URL(options.url).protocol !== 'http:' || options.zapPaths.length === 0))) throw new CliUsageError('--engine zap requires --url and either --zap-policy or explicit HTTP --zap-path values');
   if ((options.goPath || options.goModuleCache || options.govulnDatabase || options.goBuildTags) && (!options.source || !options.tools.includes('govulncheck'))) throw new CliUsageError('Go options require --source and --tools govulncheck');
   if ((options.trivyCache || options.trivyOffline || options.imageArchive) && (!options.source || !options.imageArchive && !options.tools.includes('trivy-vuln'))) throw new CliUsageError('Trivy CVE options require --source and --tools trivy-vuln or --image-archive');
   if (options.dastMaxRequests !== undefined && !options.dastPolicy) throw new CliUsageError("--dast-max-requests requires --dast-policy");
@@ -644,7 +649,7 @@ async function runReplay(argv: readonly string[]): Promise<number> {
 }
 
 async function declaredScope(options: CliOptions, apiPolicy: ApiPolicy | undefined, dastPolicySha256?: string, dastPolicy?: DastPolicy,
-  schemathesisAuthPolicy?: ScanScope['schemathesisAuthPolicy']): Promise<ScanScope> {
+  schemathesisAuthPolicy?: ScanScope['schemathesisAuthPolicy'], zapPolicySha256?: string, zapPolicyVersion?: number): Promise<ScanScope> {
   const scope = await buildScanScope({
     mode: modeFor(options),
     source: options.source,
@@ -680,7 +685,8 @@ async function declaredScope(options: CliOptions, apiPolicy: ApiPolicy | undefin
       ...(options.dastPolicy ? { native: { policySha256: dastPolicySha256 ?? null, profileRevision: dastPolicy ? dastProfileRevision(dastPolicy) : null, maxRequests: options.dastMaxRequests ?? (dastPolicy ? dastDefaultMaxRequests(dastPolicy) : DAST_DEFAULT_MAX_REQUESTS), timeoutMs: Math.min(options.timeoutMs, API_MAX_TIMEOUT_MS) } } : {}),
       ...(options.openapi ? { schemathesis: { apiBase: options.apiBase, operations: [...options.operations], maxRequests: options.apiMaxRequests ?? 32, seed: options.seed ?? 1 } } : {}),
       ...(options.schemathesisAuthPolicy ? { schemathesisAuthPolicy: schemathesisAuthPolicy ?? { profileRevision: SCHEMATHESIS_AUTH_REVISION, policySha256: null, schemaSha256: null } } : {}),
-      ...(options.engines.includes('zap') ? { zap: { paths: options.zapPaths.map(path => createHash('sha256').update(path).digest('hex')), maxRequests: options.zapMaxRequests ?? ZAP_DEFAULT_MAX_REQUESTS, rateLimit: options.zapRateLimit ?? ZAP_DEFAULT_RATE_LIMIT, timeoutMs: options.zapTimeoutMs ?? ZAP_DEFAULT_TIMEOUT_MS, profile: 'query-sqli-xss-v2' } } : {}),
+      ...(options.engines.includes('zap') ? { zap: { paths: options.zapPaths.map(path => createHash('sha256').update(path).digest('hex')), maxRequests: options.zapMaxRequests ?? ZAP_DEFAULT_MAX_REQUESTS, rateLimit: options.zapRateLimit ?? ZAP_DEFAULT_RATE_LIMIT, timeoutMs: options.zapTimeoutMs ?? ZAP_DEFAULT_TIMEOUT_MS,
+        ...(options.zapPolicyFile ? { policySha256: zapPolicySha256 ?? null } : {}), profile: options.zapPolicyFile ? zapPolicyVersion === 2 ? ZAP_OPENAPI_REVISION : ZAP_POLICY_REVISION : 'query-sqli-xss-v2' } } : {}),
       ...(options.engines.includes("nuclei") ? { nuclei: { scopes: [...options.nucleiScopes].sort(), maxRequests: options.nucleiMaxRequests ?? null, rateLimit: options.nucleiRateLimit ?? null } } : {}),
     } } : {}),
   });
@@ -721,6 +727,15 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
   process.stderr.write(`Wakeio: scanning ${mode === "both" ? "source and URL" : mode} scope...\n`);
   const checks = [] as Awaited<ReturnType<typeof runSource>>;
   let apiPolicy: ApiPolicy | undefined;
+  let zapPolicy: ZapPolicyInput | undefined, zapPolicySha256: string | undefined, zapEnv: NodeJS.ProcessEnv | undefined;
+  if (parsed.zapPolicyFile) {
+    try {
+      const prepared = prepareZapPolicy(await readJsonInput(parsed.zapPolicyFile, 1024 * 1024), parsed.allowPrivate);
+      if (prepared.policy.origin !== new URL(parsed.url!).origin) throw Error('origin_mismatch');
+      zapPolicy = prepared.policy; zapPolicySha256 = prepared.policySha256;
+      zapEnv = prepared.loginEnv ?? (zapPolicy.authentication && 'authorizationEnv' in zapPolicy.authentication ? { [zapPolicy.authentication.authorizationEnv]: prepared.authorization } : {});
+    } catch { checks.push(runtimeErrorCheck('url.zap', 'ZAP policy, selected credential or transport is invalid; no ZAP requests were made.')); }
+  }
   if (parsed.apiPolicy) {
     try {
       apiPolicy = parseApiPolicy(await readJsonInput(parsed.apiPolicy, 1024 * 1024)).policy;
@@ -819,9 +834,9 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
       checks.push(runtimeErrorCheck('api.runtime', 'API authorization scanning could not be completed.'));
     }
   }
-  if (parsed.engines.includes('zap') && parsed.url && !controller.signal.aborted) {
+  if (parsed.engines.includes('zap') && parsed.url && (!parsed.zapPolicyFile || zapPolicy) && !controller.signal.aborted) {
     try {
-      checks.push(...await runZap({ url: parsed.url, paths: parsed.zapPaths, executable: parsed.zapPath, consent: parsed.activeConsent,
+      checks.push(...await runZap({ url: parsed.url, ...(zapPolicy ? { policy: zapPolicy, env: zapEnv } : { paths: parsed.zapPaths }), executable: parsed.zapPath, consent: parsed.activeConsent,
         allowPrivate: parsed.allowPrivate, maxRequests: parsed.zapMaxRequests, rateLimit: parsed.zapRateLimit,
         timeoutMs: parsed.zapTimeoutMs, signal: controller.signal }));
     } catch { checks.push(runtimeErrorCheck('url.zap', 'ZAP scanning could not be completed.')); }
@@ -860,7 +875,7 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
       checks.push(runtimeErrorCheck(DAST_CHECK_ID, 'Native DAST could not be completed.'));
     }
   }
-  const scope = await declaredScope(parsed, apiPolicy, dastPolicySha256, dastPolicy, schemathesisAuthScope);
+  const scope = await declaredScope(parsed, apiPolicy, dastPolicySha256, dastPolicy, schemathesisAuthScope, zapPolicySha256, zapPolicy?.version);
   const markCancelled = (): void => {
     if (controller.signal.aborted && !checks.some((check) => check.id === 'scan.cancelled')) checks.push({ id: 'scan.cancelled', status: 'partial', findings: [], notes: ['The command was cancelled; completed stages do not establish command completion.'] });
   };

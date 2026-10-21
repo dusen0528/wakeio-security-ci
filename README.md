@@ -130,7 +130,7 @@ External engines are opt-in in the examples. The source CLI historically default
 | Bandit | 1.9.4 | Optional Python AST checks | Separately installed executable; selected Python files only and no target execution |
 | Semgrep CE | 1.147.0 | Six WakeIO-owned Go rules: SQL, trusted HTML, TLS, command execution, SSRF and file paths | Local rules only; not the Semgrep registry, general auth/authz verification or complete SAST |
 | govulncheck | 1.9.0 | Known Go module vulnerabilities with observed symbol reachability | One complete root module and prepared Go/cache; nested/local-replacement modules remain incomplete |
-| OWASP ZAP | 2.17.0 | Explicit HTTP GET query SQLi/reflected-XSS active scan | Approved paths only; no HTTPS, spider, login, writes or arbitrary policies in this adapter |
+| OWASP ZAP | 2.17.0 | Reviewed HTTP(S) queries and bounded nested/array JSON SQLi/reflected-XSS | Selected local OpenAPI import, Node-only JSON/form login, Bearer/cookie renewal; no browser/MFA/OAuth or spider |
 
 Examples:
 
@@ -169,7 +169,7 @@ node build/src/cli.js scan --source /path/to/app --tools trivy-vuln \
 
 All four report formats retain advisory IDs, affected package/version, reported fixes and references. Govulncheck's protocol has no severity rating; this adapter explicitly uses medium rather than implying a CVSS score. It distinguishes module/package presence from an observed call path. Package advisories do not satisfy code-analysis coverage. A completed Semgrep file means its selected six rules ran, not that the Go application is secure. Runtime/database provenance remains unknown where it cannot be established, so report comparison does not invent a verified fix.
 
-The composite Action accepts `tools: semgrep,govulncheck,trivy-vuln`, `semgrep-path`, `govulncheck-path`, `go-path`, `go-module-cache`, `govuln-db`, `go-build-tags`, `trivy-cache`, `trivy-offline`, and `image-archive`. Prepare Go and the two executables before invoking it; `trivy-vuln` reuses the existing pinned Trivy installer. ZAP is available through the CLI/SDK, not the existing `actions/dast` or `run-plan` engine list.
+The composite Action accepts `tools: semgrep,govulncheck,trivy-vuln`, `semgrep-path`, `govulncheck-path`, `go-path`, `go-module-cache`, `govuln-db`, `go-build-tags`, `trivy-cache`, `trivy-offline`, and `image-archive`. Prepare Go and the two executables before invoking it; `trivy-vuln` reuses the existing pinned Trivy installer. ZAP is available through CLI/SDK, the separate `dast` Action and `actions/run-plan` with a reviewed policy.
 
 Semgrep's engine and its maintained rules have different [licensing terms](https://semgrep.dev/blog/2024/important-updates-to-semgrep-oss/). WakeIO ships its own Apache-2.0 Go rules and does not download registry rules, log in, enable metrics, or bundle the Semgrep engine.
 
@@ -179,17 +179,23 @@ Trivy also inspects `uv.lock`, `requirements-dev.txt` and `requirements-prod.txt
 
 ### Explicit ZAP active scan
 
-Use a disposable target you own or are authorized to test. Prepare the official ZAP 2.17.0 cross-platform installation and Java; no engine download occurs inside scan. HTTP is the currently enforceable scope: opaque HTTPS CONNECT is refused before target traffic. Only the listed GET query paths are scanned; passive URL collection is not added to a ZAP invocation.
+Use a disposable target you own or are authorized to test. Prepare the official ZAP 2.17.0 cross-platform installation and Java; no engine download occurs inside scan. The legacy `--zap-path` lane remains HTTP GET-only. A reviewed version-1 [`--zap-policy`](benchmarks/dast-zap/policy.example.json) retains HTTP(S) GET queries and single-field POST JSON. The [version-2 example](benchmarks/dast-zap/policy.openapi.example.json) adds selected operations from an embedded local OpenAPI 3.0/3.1 document, nested objects/arrays and JSON/form API login with Bearer or cookie renewal. No passive URL collection is added.
 
 ```sh
-node build/src/cli.js scan --url http://127.0.0.1:8080 \
-  --engine zap --zap /path/to/ZAP_2.17.0/zap.sh \
-  --zap-path '/search?q=test' --zap-path '/profile?name=test' \
-  --active-consent --allow-private --allowed-origin http://127.0.0.1:8080 \
-  --zap-max-requests 200 --zap-rate-limit 10 --zap-timeout-ms 300000
+# Offline validation: no engine, DNS or target traffic.
+node build/src/cli.js plan --zap-policy owner-policy.json --allow-private
+# Set the policy's selected Authorization environment variable outside the file.
+node build/src/cli.js scan --url http://127.0.0.1:3000 \
+  --engine zap --zap /prepared/ZAP_2.17.0/zap.sh --zap-policy owner-policy.json \
+  --active-consent --allow-private --allowed-origin http://127.0.0.1:3000 \
+  --zap-max-requests 200 --zap-rate-limit 10 --zap-timeout-ms 120000
 ```
 
-Every seed GET must return HTTP 200; a mismatched response makes the automation run incomplete. Distinct query findings retain hashed identities without exposing parameter names or values. Each ZAP run binds its local listener to an OS-assigned loopback port so simultaneous scans do not compete for port 8080. The authenticated egress gate enforces origin/path/method, request/body caps, rate and deadline. ZAP uses query-only rules 40012/40018; no spider, OAST, scripts, login, or updates. GET attacks can still cause side effects. The adapter trusts the installed engine to use its configured proxy; it is not an OS network sandbox. Raw payloads, responses and engine reports stay temporary and are removed; shared reports contain normalized findings and counts. Cap/deadline/cancel/scope failures are incomplete, not clean. Authentication and business authorization still require the existing explicit API policies and actor/control tests.
+The Node gate maps a virtual HTTP origin to the validated, DNS-pinned target. HTTPS uses normal CA/hostname verification; CONNECT is refused. The gate validates path/method/query names and the complete bounded JSON body before forwarding. Optional Authorization is snapshotted from one selected environment variable and injected by Node; it never enters ZAP plans, child environment or shared reports. Principal-before/after and anonymous-denied controls consume the same request budget as seeds and probes. Version 2 can instead snapshot selected login fields from environment variables, extract a declared token/cookie and refresh or log in again after HTTP 401. Native ZAP authentication uses synthetic aliases; Node keeps the actual credentials/session and checks the principal again after renewal. All actual login/refresh attempts consume the same budget. These checks do not prove continuous authentication or business authorization.
+
+Every seed must return HTTP 200. Each run uses an OS-assigned loopback listener, exact request cap, paced rate and deadline. Only rules 40012/40018 run; no spider, OAST, arbitrary scripts or updates. API login/renewal runs only with the explicit v2 authentication profile. Active GET/POST can have side effects. The installed engine is trusted to honor its proxy; this is not an OS network sandbox. Raw attacks, responses and engine reports are temporary. Normalized findings, remediation and counts enter the four shared reports. Caps, cancellation, execution errors, redirects, unresolved auth denial and control failures remain incomplete (exit 2).
+
+In the separate `dast` Action, set `engines: zap`, `url`, `zap-policy`, `zap-path`, the optional `zap-max-requests`/`zap-rate-limit`/`zap-timeout-ms`, `active-consent: 'true'` and `allowed-origins`. Fork/trigger/consent and policy checks precede engine setup. In a `run-plan` task use `{"id":"t-zap","engine":"zap","policy":"owner-alias","maxRequests":200}` with a SHA-bound input alias and the operator's `--zap` / Action `zap-path`. All tasks share one global admission cap/rate/deadline; ZAP plans require a rate of at most 50/s. See the [reproduction, measurement and limits](benchmarks/dast-zap/README.md). This does not add ZAP to the separate experimental agent-eval schema.
 
 ## Reports and exit codes
 

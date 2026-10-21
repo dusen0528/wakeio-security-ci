@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "kind": "zap-active",
+  "origin": "http://127.0.0.1:3000",
+  "authentication": {
+    "authorizationEnv": "WAKEIO_SCAN_AUTH",
+    "identity": { "path": "/identity", "status": 200, "jsonPointer": "/principal", "equals": "owner" }
+  },
+  "requests": [
+    { "method": "GET", "path": "/search?q=hello" },
+    { "method": "POST", "path": "/items/search", "body": { "id": "1" } }
+  ]
+}

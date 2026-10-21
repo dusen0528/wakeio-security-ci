@@ -1,5 +1,5 @@
 name: Wakeio Security CI (active DAST)
-description: Opt-in active DAST with Schemathesis and pinned Nuclei against an explicitly consented, allowlisted origin
+description: Opt-in active DAST with Schemathesis, pinned Nuclei and prepared ZAP against an explicitly consented, allowlisted origin
 author: Wakeio Security CI contributors
 
 # Separate from the root Action so passive scans can never start active testing.
@@ -16,11 +16,31 @@ inputs:
     description: Newline or comma-separated origins (scheme://host[:port]) the scan may target, e.g. a repository variable
     required: true
   url:
-    description: Target URL for Nuclei; the scan uses its origin root
+    description: Target origin for Nuclei/ZAP; ZAP must match its reviewed policy
     required: false
     default: ''
   engines:
-    description: Template engine to run; "nuclei" or empty
+    description: Active engines; "nuclei", "zap", "nuclei,zap" or empty
+    required: false
+    default: ''
+  zap-policy:
+    description: Reviewed v1 seeds or v2 local OpenAPI/API session policy; Node-only auth and bounded GET/JSON POST
+    required: false
+    default: ''
+  zap-path:
+    description: Prepared trusted ZAP 2.17.0 zap.sh path (Java 17+); never downloaded by the scan
+    required: false
+    default: ''
+  zap-max-requests:
+    description: Exact ZAP HTTP attempt cap including seeds and authentication controls, 1..2000
+    required: false
+    default: ''
+  zap-rate-limit:
+    description: ZAP requests per second, 1..50
+    required: false
+    default: ''
+  zap-timeout-ms:
+    description: ZAP time budget in milliseconds, 1..600000
     required: false
     default: ''
   nuclei-templates:
@@ -169,6 +189,11 @@ runs:
         WAKEIO_ALLOWED_ORIGINS: ${{ inputs.allowed-origins }}
         WAKEIO_URL: ${{ inputs.url }}
         WAKEIO_ENGINES: ${{ inputs.engines }}
+        WAKEIO_ZAP_POLICY: ${{ inputs.zap-policy }}
+        WAKEIO_ZAP_PATH: ${{ inputs.zap-path }}
+        WAKEIO_ZAP_MAX_REQUESTS: ${{ inputs.zap-max-requests }}
+        WAKEIO_ZAP_RATE_LIMIT: ${{ inputs.zap-rate-limit }}
+        WAKEIO_ZAP_TIMEOUT_MS: ${{ inputs.zap-timeout-ms }}
         WAKEIO_NUCLEI_TEMPLATES: ${{ inputs.nuclei-templates }}
         WAKEIO_NUCLEI_TEMPLATES_SHA256: ${{ inputs.nuclei-templates-sha256 }}
         WAKEIO_DAST_POLICY: ${{ inputs.dast-policy }}
@@ -206,6 +231,11 @@ runs:
         WAKEIO_ALLOWED_ORIGINS: ${{ inputs.allowed-origins }}
         WAKEIO_URL: ${{ inputs.url }}
         WAKEIO_ENGINES: ${{ inputs.engines }}
+        WAKEIO_ZAP_POLICY: ${{ inputs.zap-policy }}
+        WAKEIO_ZAP_PATH: ${{ inputs.zap-path }}
+        WAKEIO_ZAP_MAX_REQUESTS: ${{ inputs.zap-max-requests }}
+        WAKEIO_ZAP_RATE_LIMIT: ${{ inputs.zap-rate-limit }}
+        WAKEIO_ZAP_TIMEOUT_MS: ${{ inputs.zap-timeout-ms }}
         WAKEIO_NUCLEI_TEMPLATES: ${{ inputs.nuclei-templates }}
         WAKEIO_NUCLEI_PATH: ${{ inputs.nuclei-path }}
         WAKEIO_NUCLEI_TEMPLATES_SHA256: ${{ inputs.nuclei-templates-sha256 }}

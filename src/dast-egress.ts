@@ -6,6 +6,9 @@ import type { TLSSocket } from 'node:tls';
 import { normalizeUrl, resolveAddresses, type DnsAddress, type NormalizedUrl } from "./url-network.js";
 import { operationPathMatches } from './schemathesis-auth.js';
 import { DastAdmissionError, type AttemptPermit, type TaskAdmission, type AdmissionMethod } from './agent-dast/admission.js';
+import { reconstructZapBody, type ZapCompiledRequest } from './zap-openapi.js';
+import { ZAP_SESSION_PATH, type ZapSessionBridge } from './zap-session.js';
+import { parsePropertyJsonText } from './api-property-policy.js';
 
 /**
  * Loopback forward proxy that every active DAST engine must use. It inherits
@@ -31,6 +34,9 @@ export interface EgressPolicy {
   operations?: readonly string[];
   /** Private Node-only authority. The worker receives only the ordinary proxy credential. */
   authentication?: { authorization: string; operations: readonly string[]; controlPaths: readonly string[]; generatedMaxRequests: number };
+  /** Trusted Node-only relay: the engine sees HTTP; Node validates and sends the real HTTP(S) request. */
+  relay?: { virtualOrigin: string; authorization?: string; session?: ZapSessionBridge; controlPaths: readonly string[];
+    requests: readonly { method: 'GET' | 'POST'; path: string; query?: readonly string[]; parameter?: string; compiled?: ZapCompiledRequest }[] };
 }
 
 export interface EgressCounters {
@@ -65,6 +71,7 @@ export interface EgressGate {
     observations: Array<{ attempt: number; operationIndex: number; status: number | null; completed: boolean }>;
     control(path: string, anonymous: boolean): Promise<{ attempt: number; status: number; body: Buffer }>;
   };
+  relay?: { deniedResponses: number; redirectResponses: number; authenticate(): Promise<{attempt:number;status:number;body:Buffer}>; control(path: string, anonymous: boolean): Promise<{ attempt: number; status: number; body: Buffer }> };
   close(): Promise<void>;
 }
 
@@ -129,6 +136,7 @@ export async function startEgressGate(policy: EgressPolicy, runtime?: TaskAdmiss
   const controlToken = randomBytes(24).toString('base64url');
   const controlExpected = Buffer.from(`Basic ${Buffer.from(`wakeio-control:${controlToken}`).toString('base64')}`);
   const observations: Array<{ attempt:number; operationIndex:number; status:number|null; completed:boolean }> = [];
+  const relayCounters = { deniedResponses: 0, redirectResponses: 0 };
   let generating = false;
   let authenticatedTransportStopped = false;
   const counters: EgressCounters = { forwarded: 0, tunnels: 0, blockedOrigin: 0, blockedMethod: 0, blockedBudget: 0, upstreamErrors: 0, rejectedEncoding: 0, responseBytes: 0 };
@@ -171,13 +179,69 @@ export async function startEgressGate(policy: EgressPolicy, runtime?: TaskAdmiss
   };
 
   const onRequest = async (request: IncomingMessage, response: ServerResponse) => {
-    const auth = policy.authentication;
-    const control = !!auth && authorized(request.headers,controlExpected);
-    if (!control && !authorized(request.headers)) { response.writeHead(407, { "proxy-authenticate": "Basic", "content-length": "0", connection: "close" }); response.end(); return; }
-    const target = auth ? sameOrigin(request.url, normalizeUrl('http://wakeio-schemathesis.invalid'))
+    const auth = policy.authentication, relay = policy.relay;
+    const control = !!(auth || relay) && authorized(request.headers,controlExpected);
+    // Native ZAP user senders omit proxy credentials. Their per-run unguessable virtual origin is the engine capability; controller auth remains separate.
+    const nativeCapability = relay?.session && relay.virtualOrigin === relay.session.virtualOrigin && sameOrigin(request.url, normalizeUrl(relay.session.virtualOrigin));
+    if (!control && !authorized(request.headers) && !nativeCapability) { response.writeHead(407, { "proxy-authenticate": "Basic", "content-length": "0", connection: "close" }); response.end(); return; }
+    let target = auth || relay ? sameOrigin(request.url, normalizeUrl(relay?.virtualOrigin ?? 'http://wakeio-schemathesis.invalid'))
       : policy.origin.protocol === "http:" ? sameOrigin(request.url, policy.origin) : undefined;
     if (!target) { counters.blockedOrigin += 1; request.resume(); refuse(response, 502); return; }
     let operationIndex = -1;
+    let bufferedBody: Buffer | undefined, loginContentType: string | undefined;
+    const sessionLogin = !!(relay?.session && target.pathname === ZAP_SESSION_PATH);
+    if (relay) {
+      if (sessionLogin && request.method === 'GET' && !target.search && !request.headers['transfer-encoding'] && Number(request.headers['content-length'] ?? 0) === 0) {
+        response.writeHead(200, {'content-type':'application/json', connection:'close'}); response.end('{"login":true}'); return;
+      }
+      const selectedPath = target.pathname;
+      operationIndex = relay.requests.findIndex(item => item.method === request.method && item.path === selectedPath);
+      const selected = relay.requests[operationIndex];
+      if (!sessionLogin && (control ? !relay.controlPaths.includes(`${target.pathname}${target.search}`) || request.method !== 'GET'
+        : !selected || request.headers['x-wakeio-control-mode'] !== undefined)) {
+        counters.blockedOrigin++; request.resume(); refuse(response, 502); return;
+      }
+      if (request.headers['transfer-encoding'] !== undefined || request.method === 'GET' && Number(request.headers['content-length'] ?? 0) !== 0) {
+        counters.blockedMethod++; request.resume(); refuse(response, 405); return;
+      }
+      if (!sessionLogin && !control && selected.method === 'GET') {
+        const keys = [...target.searchParams.keys()];
+        if (keys.length !== selected.query?.length || keys.some(key => !selected.query!.includes(key)) || new Set(keys).size !== keys.length) {
+          counters.blockedOrigin++; request.resume(); refuse(response, 502); return;
+        }
+      }
+      if (sessionLogin && request.method !== 'POST' || !control && !sessionLogin && relay.session && (!relay.session.ready || !relay.session.accepts(request.headers.cookie))) {
+        counters.blockedOrigin++; request.resume(); refuse(response, 502); return;
+      }
+      if (request.method === 'POST') {
+        const expectedType = sessionLogin && relay.session!.policy.login.format === 'form' ? /^application\/x-www-form-urlencoded(?:;\s*charset=utf-8)?$/i : /^application\/json(?:;\s*charset=utf-8)?$/i;
+        if (target.search || !expectedType.test(String(request.headers['content-type'] ?? ''))) {
+          counters.blockedMethod++; request.resume(); refuse(response, 405); return;
+        }
+        const chunks: Buffer[] = []; let length = 0;
+        for await (const chunk of request) {
+          const bytes = Buffer.from(chunk); length += bytes.length;
+          if (length > 4096) { stop('body_limit'); request.destroy(); response.destroy(); return; }
+          chunks.push(bytes);
+        }
+        bufferedBody = Buffer.concat(chunks);
+        try {
+          if (sessionLogin) {
+            const login = relay.session!.prepare(bufferedBody);
+            if ('cached' in login) { response.writeHead(200, { 'content-type': 'application/json', 'set-cookie': relay.session!.engineCookie + '; Path=/', 'x-wakeio-session': 'valid', connection: 'close' }); response.end('{"authenticated":true}'); return; }
+            target = new URL(login.path, relay.virtualOrigin); bufferedBody = login.body; loginContentType = login.contentType;
+            if (bufferedBody.length > 16384) { stop('body_limit'); response.destroy(); return; }
+          } else {
+            const value = parsePropertyJsonText(new TextDecoder('utf-8', { fatal: true }).decode(bufferedBody)) as Record<string, unknown>;
+            const fields = selected.compiled?.body ? Object.keys(selected.compiled.body) : [selected.parameter!];
+            if (!value || typeof value !== 'object' || Array.isArray(value) || Object.keys(value).length !== fields.length || fields.some(key => !Object.hasOwn(value, key)
+              || !(typeof value[key] === 'string' && (value[key] as string).length <= 2048 || typeof value[key] === 'number' && Number.isFinite(value[key])))) throw Error('invalid_body');
+            if (selected.compiled) bufferedBody = Buffer.from(JSON.stringify(reconstructZapBody(selected.compiled, value as Record<string, string | number>)));
+            if (bufferedBody.length > 16384) { stop('body_limit'); response.destroy(); return; }
+          }
+        } catch { counters.blockedMethod++; refuse(response, 405); return; }
+      }
+    }
     if (auth) {
       let validPath = true;
       try { for (const part of target.pathname.split('/')) { const decoded = decodeURIComponent(part); if (decoded === '.' || decoded === '..' || /[%\\/;\u0000-\u001f\u007f]/.test(decoded)) validPath=false; } } catch { validPath=false; }
@@ -190,12 +254,12 @@ export async function startEgressGate(policy: EgressPolicy, runtime?: TaskAdmiss
         counters.blockedMethod += 1; request.resume(); refuse(response,405); return;
       }
     }
-    if (!auth && policy.operations) {
+    if (!auth && !relay && policy.operations) {
       operationIndex = policy.operations.findIndex(path => operationPathMatches(path, target.pathname));
       if (operationIndex < 0) { counters.blockedOrigin++; request.resume(); refuse(response, 502); return; }
     }
     if (!policy.methods.has(request.method ?? "")) { counters.blockedMethod += 1; request.resume(); refuse(response, 405); return; }
-    if (closing || stopped || policy.signal.aborted || auth && (authenticatedTransportStopped || Date.now()>=policy.deadlineAt) || counters.forwarded >= policy.maxRequests || auth && !control && observations.length >= auth.generatedMaxRequests) {
+    if (closing || stopped || policy.signal.aborted || (auth || relay) && authenticatedTransportStopped || auth && Date.now()>=policy.deadlineAt || counters.forwarded >= policy.maxRequests || auth && !control && observations.length >= auth.generatedMaxRequests) {
       counters.blockedBudget += 1;
       if (counters.forwarded >= policy.maxRequests || auth && !control && observations.length >= auth.generatedMaxRequests) stop("request_limit");
       request.resume(); refuse(response, 503); return;
@@ -206,7 +270,7 @@ export async function startEgressGate(policy: EgressPolicy, runtime?: TaskAdmiss
     response.once('close', cancelWaiting);
     request.once('error', cancelWaiting);
     const admissionAbort = AbortSignal.any([policy.signal, downstream.signal]);
-    try { permit = runtime ? await runtime.reserve({ method: request.method as AdmissionMethod, kind: control ? 'control' : 'probe',
+    try { permit = runtime ? await runtime.reserve({ method: request.method as AdmissionMethod, kind: control || sessionLogin ? 'control' : 'probe',
       ...(operationIndex >= 0 ? { operationIndex } : {}) }, admissionAbort) : undefined; }
     catch (error) {
       counters.blockedBudget++;
@@ -214,7 +278,7 @@ export async function startEgressGate(policy: EgressPolicy, runtime?: TaskAdmiss
       request.resume(); if (!response.destroyed) refuse(response, 503); return;
     }
     // The rate wait can outlive a downstream socket, local cap or cancellation.
-    if (response.destroyed || request.destroyed || closing || stopped || policy.signal.aborted || Date.now() >= policy.deadlineAt
+    if (response.destroyed || (bufferedBody ? request.aborted : request.destroyed) || closing || stopped || policy.signal.aborted || Date.now() >= policy.deadlineAt
       || counters.forwarded >= policy.maxRequests || auth && !control && observations.length >= auth.generatedMaxRequests) {
       permit?.finish('transport_error'); counters.blockedBudget++; request.resume();
       if (counters.forwarded >= policy.maxRequests) stop('request_limit');
@@ -230,17 +294,22 @@ export async function startEgressGate(policy: EgressPolicy, runtime?: TaskAdmiss
       permit?.finish('transport_error');
       // A lost response cannot authorize another authenticated wire attempt,
       // including a worker's failure reproduction or a trailing control.
-      if (auth && !closing) authenticatedTransportStopped = true;
+      if ((auth || relay) && !closing) authenticatedTransportStopped = true;
       if (!failed && !closing && !response.destroyed) { failed = true; counters.upstreamErrors += 1; }
       response.destroy();
     };
     const headersToForward = forwardHeaders(request.headers, new URL(policy.origin.href).host);
-    if (auth) {
+    if (auth || relay) {
       for (const name of Object.keys(headersToForward)) if (['authorization','cookie','x-wakeio-control-mode'].includes(name.toLowerCase())) delete headersToForward[name];
-      if (!control || request.headers['x-wakeio-control-mode'] !== 'anonymous') headersToForward.authorization = auth.authorization;
+      if (!sessionLogin && (!control || request.headers['x-wakeio-control-mode'] !== 'anonymous')) {
+        if (relay?.session) Object.assign(headersToForward, relay.session.headers(control));
+        else if (auth?.authorization ?? relay?.authorization) headersToForward.authorization = (auth?.authorization ?? relay?.authorization)!;
+      }
+      if (bufferedBody) headersToForward['content-length'] = String(bufferedBody.length);
+      if (loginContentType) headersToForward['content-type'] = loginContentType;
     }
-    const upstream = (auth && policy.origin.protocol === 'https:' ? httpsRequest : httpRequest)({
-      ...(auth ? {hostname:policy.origin.hostname, lookup:((_host:unknown,_options:unknown,callback:any)=>callback(null,policy.address.address,policy.address.family)) as never,
+    const upstream = ((auth || relay) && policy.origin.protocol === 'https:' ? httpsRequest : httpRequest)({
+      ...(auth || relay ? {hostname:policy.origin.hostname, lookup:((_host:unknown,_options:unknown,callback:any)=>callback(null,policy.address.address,policy.address.family)) as never,
         autoSelectFamily:false, rejectUnauthorized:true, servername:isIP(policy.origin.hostname)===0?policy.origin.hostname:undefined}
         : {host: policy.address.address}),
       port: defaultPort(policy.origin), family: policy.address.family,
@@ -248,10 +317,15 @@ export async function startEgressGate(policy: EgressPolicy, runtime?: TaskAdmiss
       headers: headersToForward,
       agent: false, timeout: remaining(),
     }, (incoming) => {
-      if (!sameAddress(incoming.socket?.remoteAddress, policy.address.address) || auth && policy.origin.protocol === 'https:' && !(incoming.socket as TLSSocket).authorized) {
+      if (!sameAddress(incoming.socket?.remoteAddress, policy.address.address) || (auth || relay) && policy.origin.protocol === 'https:' && !(incoming.socket as TLSSocket).authorized) {
         incoming.destroy(); counters.upstreamErrors += 1; stop("peer_mismatch"); response.destroy(); return;
       }
       if (observation) observation.status = incoming.statusCode ?? null;
+      if (relay && !control && !sessionLogin) {
+        relay.session?.observe(incoming.statusCode ?? 0);
+        if (incoming.statusCode === 401 || incoming.statusCode === 403) relayCounters.deniedResponses++;
+        if (incoming.statusCode && incoming.statusCode >= 300 && incoming.statusCode < 400) relayCounters.redirectResponses++;
+      }
       const encoding = String(incoming.headers["content-encoding"] ?? "identity").trim().toLowerCase();
       if (encoding !== "identity" && encoding !== "") {
         incoming.destroy(); counters.rejectedEncoding += 1; refuse(response, 502); return;
@@ -262,7 +336,7 @@ export async function startEgressGate(policy: EgressPolicy, runtime?: TaskAdmiss
       }
       const headers: Record<string, string | string[]> = {};
       for (const [name, value] of Object.entries(incoming.headers)) {
-        if (value !== undefined && !HOP_BY_HOP.has(name.toLowerCase()) && name.toLowerCase() !== "content-length" && (!auth || !['set-cookie','x-wakeio-attempt'].includes(name.toLowerCase()))) headers[name] = value;
+        if (value !== undefined && !HOP_BY_HOP.has(name.toLowerCase()) && name.toLowerCase() !== "content-length" && (!(auth || relay) || !['set-cookie','x-wakeio-attempt'].includes(name.toLowerCase()))) headers[name] = value;
       }
       const chunks: Buffer[] = [];
       let single = 0;
@@ -273,13 +347,22 @@ export async function startEgressGate(policy: EgressPolicy, runtime?: TaskAdmiss
         chunks.push(chunk);
       });
       incoming.once("end", () => {
+        void (async () => {
         if (response.destroyed) return;
         permit?.finish('response');
         const body = Buffer.concat(chunks);
         if (observation) observation.completed = true;
+        if (sessionLogin) {
+          const ok = await relay!.session!.receive(incoming.statusCode ?? 0, incoming.headers, body);
+          response.writeHead(ok ? 200 : 401, { 'content-type': 'application/json', 'set-cookie': relay!.session!.engineCookie + '; Path=/',
+            ...(control ? { 'x-wakeio-attempt': String(attempt) } : {}), 'x-wakeio-session': ok ? 'valid' : 'expired', connection: 'close' });
+          response.end(JSON.stringify({ authenticated: ok })); return;
+        }
+        if (relay?.session && !control) headers['x-wakeio-session'] = relay.session.ready ? 'valid' : 'expired';
         if (control) headers['x-wakeio-attempt'] = String(attempt);
         response.writeHead(incoming.statusCode ?? 502, { ...headers, "content-length": String(body.byteLength), connection: "close" });
         response.end(body);
+        })().catch(fail);
       });
       incoming.on("error", fail);
     });
@@ -294,6 +377,7 @@ export async function startEgressGate(policy: EgressPolicy, runtime?: TaskAdmiss
     upstream.on("error", fail);
     request.on("error", () => upstream.destroy());
     let sent = 0;
+    if (bufferedBody) { upstream.end(bufferedBody); return; }
     request.on("data", (chunk: Buffer) => {
       sent += chunk.byteLength;
       if (sent > EGRESS_MAX_REQUEST_BODY_BYTES) { upstream.destroy(); response.destroy(); return; }
@@ -303,13 +387,13 @@ export async function startEgressGate(policy: EgressPolicy, runtime?: TaskAdmiss
   };
 
   const server = createServer({ maxHeaderSize: 16 * 1024 }, (request, response) => {
-    void onRequest(request, response).catch(() => { request.destroy(); response.destroy(); });
+    void onRequest(request, response).catch(() => { if (policy.relay) counters.blockedMethod++; request.destroy(); response.destroy(); });
   });
   server.on("connection", trackSocket);
   server.on("connect", (request: IncomingMessage, client: Socket) => {
     const reject = (status: string) => { client.end(`HTTP/1.1 ${status}\r\nconnection: close\r\ncontent-length: 0\r\n\r\n`); };
     if (!authorized(request.headers)) { reject("407 Proxy Authentication Required"); return; }
-    if (runtime || policy.authentication || policy.origin.protocol !== "https:" || (request.url ?? "").toLowerCase() !== authority(policy.origin)) {
+    if (runtime || policy.authentication || policy.relay || policy.origin.protocol !== "https:" || (request.url ?? "").toLowerCase() !== authority(policy.origin)) {
       counters.blockedOrigin += 1; reject("502 Bad Gateway"); return;
     }
     if (closing || stopped || policy.signal.aborted || counters.tunnels >= policy.maxRequests) {
@@ -350,29 +434,33 @@ export async function startEgressGate(policy: EgressPolicy, runtime?: TaskAdmiss
   });
   const address = server.address();
   const port = typeof address === "object" && address ? address.port : 0;
-  return {
-    proxyUrl: `http://wakeio:${token}@127.0.0.1:${port}`,
-    port,
-    counters,
-    stopReason: () => stopped,
-    onStop(listener) { listeners.push(listener); if (stopped) listener(stopped); },
-    ...(policy.authentication ? { authenticated: {
-      observations,
-      beginGeneration() { generating=true; },
-      finishGeneration() { generating=false; },
-      control(path:string, anonymous:boolean) {
+  const controlRequest = (path: string, anonymous: boolean, body?: string): Promise<{ attempt: number; status: number; body: Buffer }> => {
         return new Promise<{attempt:number;status:number;body:Buffer}>((resolve,reject)=>{
-          const local = httpRequest({hostname:'127.0.0.1',port,method:'GET',path:`http://wakeio-schemathesis.invalid${path}`,agent:false,timeout:remaining(),
-            headers:{'proxy-authorization':controlExpected.toString(),'x-wakeio-control-mode':anonymous?'anonymous':'authenticated',accept:'application/json'}},incoming=>{
+          const local = httpRequest({hostname:'127.0.0.1',port,method:body === undefined ? 'GET' : 'POST',path:`${policy.relay?.virtualOrigin ?? 'http://wakeio-schemathesis.invalid'}${path}`,agent:false,timeout:remaining(),
+            headers:{'proxy-authorization':controlExpected.toString(),'x-wakeio-control-mode':anonymous?'anonymous':'authenticated',accept:'application/json', ...(body !== undefined ? { 'content-type': policy.relay?.session?.policy.login.format === 'form' ? 'application/x-www-form-urlencoded' : 'application/json', 'content-length': String(Buffer.byteLength(body)) } : {})}},incoming=>{
             const chunks:Buffer[]=[]; let bytes=0;
             incoming.on('data',(chunk:Buffer)=>{ bytes+=chunk.length; if (bytes>policy.maxSingleBodyBytes) incoming.destroy(); else chunks.push(chunk); });
             incoming.on('error',()=>reject(new Error('control_transport')));
             incoming.once('end',()=>{ const attempt=Number(incoming.headers['x-wakeio-attempt']); if (!Number.isSafeInteger(attempt) || attempt<1) reject(new Error('control_transport')); else resolve({attempt,status:incoming.statusCode ?? 0,body:Buffer.concat(chunks)}); });
           });
           upstreams.set(local,new Promise<void>(resolveClose=>local.once('close',()=>{upstreams.delete(local);resolveClose();})));
-          local.once('socket',trackSocket); local.once('timeout',()=>local.destroy(new Error('timeout'))); local.on('error',()=>reject(new Error('control_transport'))); local.end();
+          local.once('socket',trackSocket); local.once('timeout',()=>local.destroy(new Error('timeout'))); local.on('error',()=>reject(new Error('control_transport'))); local.end(body);
         });
-      },
+  };
+  return {
+    proxyUrl: `http://wakeio:${token}@127.0.0.1:${port}`,
+    port,
+    counters,
+    stopReason: () => stopped,
+    onStop(listener) { listeners.push(listener); if (stopped) listener(stopped); },
+    ...(policy.relay ? { relay: { get deniedResponses() { return relayCounters.deniedResponses; },
+      get redirectResponses() { return relayCounters.redirectResponses; }, control: controlRequest,
+      authenticate: () => controlRequest(ZAP_SESSION_PATH, false, policy.relay!.session!.policy.login.format === 'form' ? 'username=wakeio-user&password=wakeio-password' : JSON.stringify({username:'wakeio-user',password:'wakeio-password'})) } } : {}),
+    ...(policy.authentication ? { authenticated: {
+      observations,
+      beginGeneration() { generating=true; },
+      finishGeneration() { generating=false; },
+      control: controlRequest,
     }} : {}),
     close() {
       if (closePromise) return closePromise;

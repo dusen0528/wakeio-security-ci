@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "unit": "distinct rule/method/path/parameter or JSON pointer",
+  "reference": [
+    { "id": "query-sqli", "rule": "zap.40018", "method": "GET", "path": "/api/products/search", "parameter": "q", "vulnerable": true },
+    { "id": "help-xss", "rule": "zap.40012", "method": "GET", "path": "/api/help/search", "parameter": "q", "vulnerable": true },
+    { "id": "nested-sqli", "rule": "zap.40018", "method": "POST", "path": "/api/products/filter", "parameter": "/filter/name", "vulnerable": true },
+    { "id": "array-sqli", "rule": "zap.40018", "method": "POST", "path": "/api/products/filter", "parameter": "/tags/0", "vulnerable": true },
+    { "id": "unused-limit-control", "rule": "zap.40018", "method": "POST", "path": "/api/products/filter", "parameter": "/limit", "vulnerable": false },
+    { "id": "html-sql-control", "rule": "zap.40018", "method": "GET", "path": "/api/help/search", "parameter": "q", "vulnerable": false }
+  ],
+  "juiceShop": [
+    { "id": "upstream-search-sqli", "rule": "zap.40018", "method": "GET", "path": "/rest/products/search", "parameter": "q", "vulnerable": true },
+    { "id": "json-response-xss-control", "rule": "zap.40012", "method": "GET", "path": "/rest/products/search", "parameter": "q", "vulnerable": false }
+  ],
+  "fixedLabelRule": "Every listed label has vulnerable=false in its paired fixed mode; unexpected distinct findings remain FP.",
+  "notTested": ["Juice Shop login SQL injection", "Juice Shop DOM XSS", "Juice Shop IDOR and other challenges", "Interactive browser/MFA/OAuth"]
+}

@@ -6,24 +6,24 @@ import { runExecutionPlan, type ExecutionRunOptions } from './runner.js';
 export const RUN_PLAN_USAGE = `Usage:
   wakeio-security-ci run-plan --plan FILE --inputs FILE --active-consent --allowed-origin ORIGIN --out NEW_DIR
     [--max-requests N] [--timeout-ms N] [--rate-per-second N] [--concurrency N] [--fail-on LEVEL]
-    [--allow-private] [--schemathesis-python PATH] [--nuclei PATH] [--nuclei-templates DIR]
+    [--allow-private] [--schemathesis-python PATH] [--nuclei PATH] [--nuclei-templates DIR] [--zap PATH]
 
-Execute 1..16 built-in native DAST, Schemathesis or Nuclei tasks from a reviewed JSON plan.
+Execute 1..16 built-in native DAST, Schemathesis, Nuclei or ZAP tasks from a reviewed JSON plan.
 The agent supplies data only. No model, arbitrary code, installation, patch, or direct agent DB access.
 Owner limits: admitted HTTP attempts 1..20000 (default 64), deadline 1..600000ms (default 120000),
-rate 1..150/sec (default 10), concurrency 1..4 (default 2). Active consent and one exact allowed origin are required.
+rate 1..150/sec (1..50 if ZAP selected; default 10), concurrency 1..4 (default 2). Active consent and one exact allowed origin are required.
 Input aliases bind raw-file SHA256. The output directory must be new; incomplete work or delivery returns 2.
 `;
 export interface RunPlanCliOptions {
   planFile: string; inputsFile: string; outDir: string; allowedOrigin: string; consent: true; allowPrivate: boolean;
   maxRequests?: number; timeoutMs?: number; ratePerSecond?: number; concurrency?: number;
-  failOn?: ExecutionRunOptions['failOn']; schemathesisPython?: string; nucleiPath?: string; nucleiTemplates?: string;
+  failOn?: ExecutionRunOptions['failOn']; schemathesisPython?: string; nucleiPath?: string; nucleiTemplates?: string; zapPath?: string;
 }
 export function parseRunPlanArgs(argv: readonly string[]): RunPlanCliOptions | { help: true } {
   if (argv[0] !== 'run-plan') throw new TypeError('invalid_run_plan_arguments');
   if (argv.length === 2 && ['--help', '-h'].includes(argv[1])) return { help: true };
   const values = new Map<string, string>(), flags = new Set<string>();
-  const names = ['--plan', '--inputs', '--out', '--allowed-origin', '--max-requests', '--timeout-ms', '--rate-per-second', '--concurrency', '--fail-on', '--schemathesis-python', '--nuclei', '--nuclei-templates'];
+  const names = ['--plan', '--inputs', '--out', '--allowed-origin', '--max-requests', '--timeout-ms', '--rate-per-second', '--concurrency', '--fail-on', '--schemathesis-python', '--nuclei', '--nuclei-templates', '--zap'];
   for (let index = 1; index < argv.length; index++) {
     const [name, ...parts] = argv[index].split('=');
     if (name === '--active-consent' || name === '--allow-private') {
@@ -44,7 +44,7 @@ export function parseRunPlanArgs(argv: readonly string[]): RunPlanCliOptions | {
   return { planFile: values.get('--plan')!, inputsFile: values.get('--inputs')!, outDir: values.get('--out')!, allowedOrigin: values.get('--allowed-origin')!,
     consent: true, allowPrivate: flags.has('--allow-private'), maxRequests: number('--max-requests', 20_000), timeoutMs: number('--timeout-ms', 600_000),
     ratePerSecond: number('--rate-per-second', 150), concurrency: number('--concurrency', 4), failOn: failOn as RunPlanCliOptions['failOn'],
-    schemathesisPython: values.get('--schemathesis-python'), nucleiPath: values.get('--nuclei'), nucleiTemplates: values.get('--nuclei-templates') };
+    schemathesisPython: values.get('--schemathesis-python'), nucleiPath: values.get('--nuclei'), nucleiTemplates: values.get('--nuclei-templates'), zapPath: values.get('--zap') };
 }
 export async function runPlanMain(argv: readonly string[]): Promise<number> {
   let options: RunPlanCliOptions | { help: true };
@@ -60,7 +60,7 @@ export async function runPlanMain(argv: readonly string[]): Promise<number> {
     const result = await runExecutionPlan({ plan, inputs, inputBaseDir: dirname(resolve(options.inputsFile)), outDir: options.outDir,
       consent: true, allowedOrigin: options.allowedOrigin, allowPrivate: options.allowPrivate, maxRequests: options.maxRequests, timeoutMs: options.timeoutMs,
       ratePerSecond: options.ratePerSecond, concurrency: options.concurrency, failOn: options.failOn, nucleiPath: options.nucleiPath,
-      nucleiTemplates: options.nucleiTemplates, schemathesisPython: options.schemathesisPython, env: process.env, signal: controller.signal });
+      nucleiTemplates: options.nucleiTemplates, schemathesisPython: options.schemathesisPython, zapPath: options.zapPath, env: process.env, signal: controller.signal });
     process.stdout.write(JSON.stringify(result) + '\n');
     return controller.signal.aborted ? 2 : result.exitCode;
   } catch { process.stderr.write('Run plan refused: the bounded local plan or owner inputs could not be read.\n'); return 2; }

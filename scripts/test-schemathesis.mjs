@@ -106,6 +106,31 @@ try {
     'runner engines independent: real Schemathesis and native execution consume one global cap rather than per-engine caps',
     'runner engines independent: fabricated Nuclei exit0/progress100 with no wire traffic cannot complete the public run',
   ], join(root, 'build/tests/agent-dast-runner-engines.test.js'));
+  receipt.zapPolicy = validateTestEvents(events, [
+    'ZAP owner policy rejects normalization, duplicate seeds, unbounded bodies and unsafe auth transport',
+    'ZAP relay validates JSON before forwarding, strips worker credentials and isolates principal controls',
+    'real ZAP policy detects authenticated query and JSON SQLi/XSS and rejects fixed controls',
+  ], join(root, 'build/tests/zap-policy.test.js'));
+  receipt.zapIntegration = validateTestEvents(events, [
+    'ZAP principal controls, shared cap and cancellation prevent a false completed result',
+    'ZAP and native DAST share one request budget and paced admission across concurrent tasks',
+    'ZAP CLI verifies owned HTTPS CA and hostname despite disabled global TLS, and refuses invalid input with zero traffic',
+    'real ZAP run-plan Action publishes matching DB, evidence, report and shared request ledger',
+    'ZAP v2 public CLI and DAST Action retain JSON/Bearer and form/cookie policy scope without credentials',
+    'ZAP DAST Action refuses missing consent, credentials, policy and budgets before engine launch or target traffic',
+    'real ZAP DAST Action runs its bundled CLI and delivers four reports with a digest-bound finding gate',
+  ], join(root, 'build/tests/zap-integration.test.js'));
+  receipt.zapOpenApiSession = validateTestEvents(events, [
+    'ZAP OpenAPI compiler binds selected nested/array inputs, rejects remote refs and preserves other body fields',
+    'real ZAP native OpenAPI and JSON authentication handle expiry/refresh and bind nested findings',
+    'real ZAP native form/cookie session reauthenticates and leaves the fixed API without findings',
+    'ZAP v2 login refusals and all global admission attempts include session controls and cancellation',
+    'ZAP session snapshots never expose credentials and reject malformed, cross-scope and exhausted renewal',
+    'ZAP native session capability isolates the random virtual origin, controller and pending principal verification',
+    'real ZAP refuses renewed principal drift before sending more authenticated probes',
+    'ZAP v2 native projection preserves unauthenticated and static Authorization policies',
+    'ZAP OpenAPI bounds reject duplicate operations, oversized arrays, mixed bodies and unknown fields before traffic',
+  ], join(root, 'build/tests/zap-openapi-session.test.js'));
   receipt.agentDastRunnerTemplate = validateTestEvents(events, [
     'runner template independent: actual generated path-parameter vulnerable/fixed findings retain declared template context and completed1/0 gates',
   ], join(root, 'build/tests/agent-dast-runner-template.test.js'));

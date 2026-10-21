@@ -5,9 +5,10 @@ export const EXECUTION_PLAN_MAX_TASKS = 16;
 export const EXECUTION_INPUT_MAX_BYTES = 1024 * 1024;
 export const EXECUTION_TASK_ID = /^t-[a-z0-9-]{1,40}$/;
 const ALIAS = /^[a-z][a-z0-9_-]{0,39}$/;
-export type ExecutionEngine = 'native-dast' | 'schemathesis' | 'nuclei';
+export type ExecutionEngine = 'native-dast' | 'schemathesis' | 'nuclei' | 'zap';
 export type ExecutionTask =
   | { id: string; engine: 'native-dast'; policy: string; maxRequests: number }
+  | { id: string; engine: 'zap'; policy: string; maxRequests: number }
   | { id: string; engine: 'schemathesis'; schema: string; authPolicy?: string; operations: string[]; seed: number; maxRequests: number }
   | { id: string; engine: 'nuclei'; scopes: Array<'misconfiguration' | 'exposures'>; maxRequests: number };
 export interface ExecutionPlan { version: 1; kind: typeof EXECUTION_PLAN_KIND; origin: string; tasks: ExecutionTask[] }
@@ -38,8 +39,8 @@ export function parseExecutionPlan(raw: unknown): ExecutionPlan {
     object(item);
     if (typeof item.id !== 'string' || !EXECUTION_TASK_ID.test(item.id) || seen.has(item.id)) fail();
     seen.add(item.id);
-    if (item.engine === 'native-dast') {
-      keys(item, ['id', 'engine', 'policy', 'maxRequests']); alias(item.policy); count(item.maxRequests, 64);
+    if (item.engine === 'native-dast' || item.engine === 'zap') {
+      keys(item, ['id', 'engine', 'policy', 'maxRequests']); alias(item.policy); count(item.maxRequests, item.engine === 'zap' ? 2000 : 64);
       return { id: item.id, engine: item.engine, policy: item.policy, maxRequests: item.maxRequests };
     }
     if (item.engine === 'schemathesis') {

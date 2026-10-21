@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "kind": "owned-zap-pilot",
+  "unit": "distinct rule / method / path / parameter",
+  "labels": [
+    { "id": "reflected-xss", "method": "GET", "path": "/xss", "parameter": "q", "rule": "zap.40012", "vulnerable": true },
+    { "id": "encoded-xss", "method": "GET", "path": "/xss-fixed", "parameter": "q", "rule": "zap.40012", "vulnerable": false },
+    { "id": "query-sqli", "method": "GET", "path": "/sql", "parameter": "id", "rule": "zap.40018", "vulnerable": true },
+    { "id": "bound-query", "method": "GET", "path": "/sql-fixed", "parameter": "id", "rule": "zap.40018", "vulnerable": false },
+    { "id": "json-sqli", "method": "POST", "path": "/json", "parameter": "id", "rule": "zap.40018", "vulnerable": true },
+    { "id": "bound-json", "method": "POST", "path": "/json-fixed", "parameter": "id", "rule": "zap.40018", "vulnerable": false }
+  ]
+}

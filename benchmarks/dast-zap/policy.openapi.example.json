@@ -1,0 +1,159 @@
+{
+  "version": 2,
+  "kind": "zap-active",
+  "origin": "http://127.0.0.1:3000",
+  "openapi": {
+    "document": {
+      "openapi": "3.0.3",
+      "info": {
+        "title": "Owned product API",
+        "version": "1"
+      },
+      "paths": {
+        "/api/products/search": {
+          "get": {
+            "parameters": [
+              {
+                "name": "q",
+                "in": "query",
+                "required": true,
+                "schema": {
+                  "type": "string",
+                  "default": "apple"
+                }
+              }
+            ],
+            "responses": {
+              "200": {
+                "description": "Owned successful response"
+              }
+            }
+          }
+        },
+        "/api/help/search": {
+          "get": {
+            "parameters": [
+              {
+                "name": "q",
+                "in": "query",
+                "required": true,
+                "schema": {
+                  "type": "string",
+                  "default": "apple"
+                }
+              }
+            ],
+            "responses": {
+              "200": {
+                "description": "Owned successful response"
+              }
+            }
+          }
+        },
+        "/api/products/filter": {
+          "post": {
+            "requestBody": {
+              "required": true,
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Filter"
+                  }
+                }
+              }
+            },
+            "responses": {
+              "200": {
+                "description": "Owned successful response"
+              }
+            }
+          }
+        }
+      },
+      "components": {
+        "schemas": {
+          "Filter": {
+            "type": "object",
+            "required": [
+              "filter",
+              "tags",
+              "limit",
+              "includeDeleted"
+            ],
+            "properties": {
+              "filter": {
+                "type": "object",
+                "required": [
+                  "name"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "default": "apple"
+                  }
+                }
+              },
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "default": "daily"
+                },
+                "minItems": 1,
+                "maxItems": 1
+              },
+              "limit": {
+                "type": "integer",
+                "default": 5
+              },
+              "includeDeleted": {
+                "type": "boolean",
+                "default": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "operations": [
+      {
+        "method": "GET",
+        "path": "/api/products/search"
+      },
+      {
+        "method": "GET",
+        "path": "/api/help/search"
+      },
+      {
+        "method": "POST",
+        "path": "/api/products/filter"
+      }
+    ]
+  },
+  "authentication": {
+    "login": {
+      "path": "/sessions",
+      "format": "json",
+      "fields": {
+        "email": "WAKEIO_LOGIN_EMAIL",
+        "password": "WAKEIO_LOGIN_PASSWORD"
+      }
+    },
+    "session": {
+      "type": "bearer",
+      "tokenPointer": "/access",
+      "refreshPointer": "/refresh"
+    },
+    "refresh": {
+      "path": "/sessions/refresh",
+      "field": "refreshToken"
+    },
+    "identity": {
+      "path": "/identity",
+      "status": 200,
+      "jsonPointer": "/principal",
+      "equals": "owner"
+    },
+    "maxAttempts": 4
+  }
+}

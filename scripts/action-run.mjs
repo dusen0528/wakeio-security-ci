@@ -234,11 +234,16 @@ async function dastMain(env) {
         : await installTools(actionPath, toolsRoot, 'nuclei', env);
       state.cacheMetadata = installed.metadata ?? {};
       if (typeof installed.paths?.nuclei !== 'string' || !installed.paths.nuclei) throw new Error('pinned nuclei installation returned no executable');
-      args.push('--url', plan.nuclei, '--engine', 'nuclei', '--nuclei', installed.paths.nuclei, '--nuclei-templates', templates);
+      args.push('--url', plan.nuclei, '--engine', plan.zap ? 'nuclei,zap' : 'nuclei', '--nuclei', installed.paths.nuclei, '--nuclei-templates', templates);
       addValueOption(args, '--nuclei-scope', env.WAKEIO_NUCLEI_SCOPE);
       addValueOption(args, '--nuclei-max-requests', env.WAKEIO_NUCLEI_MAX_REQUESTS);
       addValueOption(args, '--nuclei-rate-limit', env.WAKEIO_NUCLEI_RATE_LIMIT);
       addValueOption(args, '--nuclei-timeout-ms', env.WAKEIO_NUCLEI_TIMEOUT_MS);
+    }
+    if (plan.zap) {
+      if (!plan.nuclei) args.push('--url', plan.zap.origin, '--engine', 'zap');
+      args.push('--zap-policy', plan.zap.file, '--zap', plan.zap.executable);
+      for (const [flag, name] of [['--zap-max-requests', 'WAKEIO_ZAP_MAX_REQUESTS'], ['--zap-rate-limit', 'WAKEIO_ZAP_RATE_LIMIT'], ['--zap-timeout-ms', 'WAKEIO_ZAP_TIMEOUT_MS']]) addValueOption(args, flag, env[name]);
     }
     if (plan.apiBase) {
       args.push('--openapi', value(env.WAKEIO_OPENAPI), '--api-base', plan.apiBase);
@@ -356,7 +361,7 @@ async function dastPolicy(env) {
   if (allowed.size === 0) return refuse('allowed-origins is required');
   if (value(env.WAKEIO_SCHEMATHESIS_AUTH_POLICY) && !value(env.WAKEIO_OPENAPI)) return refuse('schemathesis-auth-policy requires openapi');
   const engines = value(env.WAKEIO_ENGINES).split(',').map((item) => item.trim()).filter(Boolean);
-  if (engines.some((engine) => engine !== 'nuclei') || new Set(engines).size !== engines.length) return refuse('engines must be nuclei or empty');
+  if (engines.some((engine) => !['nuclei', 'zap'].includes(engine)) || new Set(engines).size !== engines.length) return refuse('engines must be nuclei, zap, nuclei,zap or empty');
   const plan = {};
   if (engines.includes('nuclei')) {
     const target = originOf(value(env.WAKEIO_URL), true);
@@ -366,6 +371,22 @@ async function dastPolicy(env) {
     if (!allowed.has(target)) return refuse('the url origin is not in allowed-origins');
     plan.nuclei = `${target}/`;
   }
+  if (engines.includes('zap')) {
+    if (!value(env.WAKEIO_ZAP_POLICY) || !value(env.WAKEIO_ZAP_PATH)) return refuse('engines: zap requires a reviewed zap-policy and prepared zap-path');
+    try {
+      const workspace = resolve(env.GITHUB_WORKSPACE || process.cwd());
+      const cli = await findCliEntry(resolve(env.WAKEIO_ACTION_PATH || env.GITHUB_ACTION_PATH || process.cwd()));
+      const file = resolve(workspace, value(env.WAKEIO_ZAP_POLICY));
+      const args = [cli, 'plan', '--zap-policy', file];
+      if (asBoolean(env.WAKEIO_ALLOW_PRIVATE)) args.push('--allow-private');
+      const checked = await runCommand(process.execPath, args, { cwd: workspace, env, capture: true, acceptedStatuses: [0, 2] });
+      const zap = JSON.parse(checked.stdout), target = originOf(value(env.WAKEIO_URL));
+      if (checked.status !== 0 || zap.kind !== 'zap-active-plan' || zap.status !== 'ready' || !allowed.has(zap.origin) || target !== zap.origin) return refuse('ZAP policy is invalid or differs from the allowed url origin');
+      const cap = value(env.WAKEIO_ZAP_MAX_REQUESTS) || '200', rate = value(env.WAKEIO_ZAP_RATE_LIMIT) || '10', timeout = value(env.WAKEIO_ZAP_TIMEOUT_MS) || '300000';
+      if (!/^\d+$/.test(cap) || Number(cap) < zap.minimumRequests || Number(cap) > 2000 || !/^\d+$/.test(rate) || Number(rate) < 1 || Number(rate) > 50 || !/^\d+$/.test(timeout) || Number(timeout) < 1 || Number(timeout) > 600000) return refuse('invalid ZAP request, rate or time budget');
+      plan.zap = { file, origin: zap.origin, executable: resolve(workspace, value(env.WAKEIO_ZAP_PATH)) };
+    } catch { return refuse('ZAP policy preflight failed'); }
+  } else if (['WAKEIO_ZAP_POLICY', 'WAKEIO_ZAP_MAX_REQUESTS', 'WAKEIO_ZAP_RATE_LIMIT', 'WAKEIO_ZAP_TIMEOUT_MS'].some(name => value(env[name]))) return refuse('zap inputs require engines: zap');
   if (value(env.WAKEIO_OPENAPI)) {
     const target = originOf(value(env.WAKEIO_API_BASE));
     if (!target || !value(env.WAKEIO_OPERATIONS)) return refuse('openapi requires an origin api-base and at least one operation');
@@ -392,7 +413,7 @@ async function dastPolicy(env) {
       plan.allowedOrigins = [...allowed];
     } catch { return refuse('native DAST policy preflight failed'); }
   } else if (value(env.WAKEIO_DAST_MAX_REQUESTS)) return refuse('dast-max-requests requires dast-policy');
-  if (!plan.nuclei && !plan.apiBase && !plan.native) return refuse('select dast-policy, engines: nuclei and/or openapi');
+  if (!plan.nuclei && !plan.apiBase && !plan.native && !plan.zap) return refuse('select dast-policy, engines: nuclei/zap and/or openapi');
   return plan;
 }
 
@@ -622,7 +643,7 @@ async function writeStepSummary(env, reportDirectory, state, reportSummary, dast
   const lines = [
     dastPlan ? '## Wakeio Security CI (active DAST)' : '## Wakeio Security CI',
     '',
-    ...(dastPlan ? [`- Active targets: ${escapeMarkdown([dastPlan.nuclei && `nuclei ${dastPlan.nuclei}`, dastPlan.apiBase && `schemathesis ${dastPlan.apiBase}`, dastPlan.native && `native ${dastPlan.native.origin}`].filter(Boolean).join(', ') || 'none (refused before setup)')}`] : []),
+    ...(dastPlan ? [`- Active targets: ${escapeMarkdown([dastPlan.nuclei && `nuclei ${dastPlan.nuclei}`, dastPlan.zap && `zap ${dastPlan.zap.origin}`, dastPlan.apiBase && `schemathesis ${dastPlan.apiBase}`, dastPlan.native && `native ${dastPlan.native.origin}`].filter(Boolean).join(', ') || 'none (refused before setup)')}`] : []),
     `- Setup: **${state.setupStatus}**`,
     `- Scan: **${state.scanStatus}**`,
     `- Final Action exit: **${state.exitCode}**`,
