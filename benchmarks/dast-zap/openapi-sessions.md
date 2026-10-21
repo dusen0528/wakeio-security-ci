@@ -39,6 +39,8 @@ On HTTP 401 the synthetic session becomes invalid and native reauthentication in
 
 Every actual target login, refresh, identity/anonymous control, import seed, requestor seed and attack consumes the existing shared cap/rate/deadline. A cached synthetic exchange and the local login-page placeholder are not target requests and consume no target request permit. Synthetic exchanges are separately capped at 32. ZAP's upstream import `maxMessages` is a soft limit; the Node gate remains authoritative.
 
+Engine version readiness and active execution use the same overall scan deadline. Readiness does not get a new time budget or send target requests. A stalled version check can consume the configured total timeout; cancellation or exhaustion returns `engine_version_incomplete`, while an actual version mismatch stays `unsupported_engine_version`. Slow startup leaves less time for active work.
+
 For JSON, the engine gets deterministic scalar aliases. Node validates the exact alias key set and reconstructs only the prevalidated target object. Findings map back to distinct actual JSON pointers such as `/filter/name` and `/tags/0`; the shared runner persists POST/body and authenticated state through DB → evidence → engine finding → task report. Source OpenAPI and canonical projection SHA256 values are reported. Projection hashing uses a constant virtual origin so random session capabilities do not make equivalent scopes appear different.
 
 ## Bounded OpenAPI subset

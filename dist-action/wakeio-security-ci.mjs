@@ -243149,7 +243149,9 @@ async function runZap(options, runtime) {
       "-config",
       "network.connection.httpProxy.authEnabled=true"
     ];
-    const version = await runProcess(executable3, [...args, "-version"], { cwd: work, home: work, timeoutMs: Math.min(3e4, timeoutMs), signal: control.signal });
+    const version = await runProcess(executable3, [...args, "-version"], { cwd: work, home: work, timeoutMs: Math.max(1, control.deadlineAt - Date.now()), signal: control.signal });
+    if (version.timedOut || version.cancelled || control.signal.aborted)
+      return error("engine_version_incomplete", "ZAP version readiness was cancelled or exceeded the shared scan deadline; no target requests were made.");
     if (version.exitCode !== 0 || !version.stdout.split(/\r?\n/).includes(ZAP_VERSION))
       return error("unsupported_engine_version", `This adapter requires a working ZAP ${ZAP_VERSION}; no target requests were made.`);
     let resolved;

@@ -101,14 +101,14 @@ async function fixture() {
   return { server, origin, requests, close: () => new Promise<void>(resolve => server.close(() => { database.close(); resolve(); })) };
 }
 
-async function fakeEngine(directory: string, behavior: { requests?: number; exit?: number; report?: 'missing' | 'invalid'; forbidden?: boolean; delay?: number } = {}) {
+async function fakeEngine(directory: string, behavior: { requests?: number; exit?: number; report?: 'missing' | 'invalid'; forbidden?: boolean; delay?: number; versionDelay?: number } = {}) {
   const file = join(directory, `fake-zap-${Math.random().toString(16).slice(2)}`);
   await writeFile(file, `#!/usr/bin/env node
 import { request } from 'node:http';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 const args = process.argv.slice(2);
-if (args.includes('-version')) { console.log('${ZAP_VERSION}'); process.exit(0); }
+if (args.includes('-version')) { ${behavior.versionDelay ? `await new Promise(resolve => setTimeout(resolve, ${behavior.versionDelay}));` : ''} console.log('${ZAP_VERSION}'); process.exit(0); }
 const plan = JSON.parse(readFileSync(args[args.indexOf('-autorun') + 1], 'utf8'));
 const proxy = plan.env.proxy;
 const url = plan.jobs.find(job => job.type === 'requestor').requests[0].url;
@@ -158,6 +158,31 @@ test('ZAP requires report and observed active requests, and preserves AF warning
     assert.equal(scoped.metrics!.blockedMethod, 1);
     assert.equal(scoped.metrics!.blockedOrigin, 1);
     assert.ok(target.requests.every(req => req.method === 'GET' && req.path === '/vulnerable'));
+  } finally { await target.close(); await rm(directory, { recursive: true, force: true }); }
+});
+
+test('ZAP slow version readiness can complete within the shared scan deadline', { timeout: 55_000 }, async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'wakeio-zap-readiness-')), target = await fixture();
+  try {
+    const check = (await runZap({ url: target.origin, paths: ['/safe?q=test'], consent: true, allowPrivate: true,
+      executable: await fakeEngine(directory, { versionDelay: 31_000 }), rateLimit: 50, timeoutMs: 40_000 }))[0]!;
+    assert.equal(check.status, 'completed', JSON.stringify(check));
+    assert.equal(check.metrics!.requestCount, 3); assert.equal(target.requests.length, 3);
+  } finally { await target.close(); await rm(directory, { recursive: true, force: true }); }
+});
+
+test('ZAP stalled or cancelled version readiness makes no target requests', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'wakeio-zap-readiness-stop-')), target = await fixture();
+  try {
+    const options: ZapOptions = { url: target.origin, paths: ['/safe?q=test'], consent: true, allowPrivate: true,
+      executable: await fakeEngine(directory, { versionDelay: 1000 }), timeoutMs: 200 };
+    const timedOut = (await runZap(options))[0]!;
+    assert.equal(timedOut.status, 'error'); assert.equal(timedOut.metrics!.errorCode, 'engine_version_incomplete');
+    const controller = new AbortController(), pending = runZap({ ...options, timeoutMs: 10_000, signal: controller.signal });
+    const timer = setTimeout(() => controller.abort(), 100);
+    try { assert.equal((await pending)[0]!.metrics!.errorCode, 'engine_version_incomplete'); } finally { clearTimeout(timer); }
+    assert.equal(target.requests.length, 0);
+    await new Promise(resolve => setTimeout(resolve, 100)); assert.equal(target.requests.length, 0);
   } finally { await target.close(); await rm(directory, { recursive: true, force: true }); }
 });
 

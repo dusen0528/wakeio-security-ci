@@ -100,6 +100,10 @@ try {
       'real ZAP runs simultaneous owned scans with independent listeners and request accounting',
       'real ZAP request cap stops the engine and leaves a partial result'],
     join(root, 'build/tests/zap.test.js'));
+  receipt.zapReadiness = validateTestEvents(events, [
+    'ZAP slow version readiness can complete within the shared scan deadline',
+    'ZAP stalled or cancelled version readiness makes no target requests',
+  ], join(root, 'build/tests/zap.test.js'));
   receipt.agentDastRunner = validateTestEvents(events, [
     'runner engines independent: real Schemathesis vulnerable/fixed contract pair and irrecoverable transport errors propagate 1/0/2',
     'runner engines independent: real signed one-template Nuclei and native SQL tasks overlap and share observed run counts',
