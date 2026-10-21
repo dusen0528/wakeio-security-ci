@@ -53,11 +53,11 @@ try {
   if (!files.length) throw Error('no_test_files');
   const eventsPath = join(directory, 'tests.ndjson');
   // Linux CI exhausted 480s with no failed assertions, in the final ZAP controls.
-  // Allow nine minutes for the aggregate suite; per-test/engine/request limits,
+  // Allow ten minutes including the 31s readiness regression; per-test/engine/request limits,
   // cancellation, cleanup and the zero-skip contract are unchanged.
   await stage('tests', process.execPath, ['--test', '--test-concurrency=2', '--test-reporter=spec', '--test-reporter-destination=stdout',
     '--test-reporter=' + join(root, 'scripts/ci-test-reporter.mjs'), '--test-reporter-destination=' + eventsPath, ...files],
-    540000, { ...engineEnvironment, WAKEIO_SCHEMATHESIS_PYTHON: python,
+    600000, { ...engineEnvironment, WAKEIO_SCHEMATHESIS_PYTHON: python,
       WAKEIO_REQUIRE_SCHEMATHESIS: '1', WAKEIO_REQUIRE_RUNNER_ENGINES: '1' });
   const bytes = await readFile(eventsPath);
   await chmod(eventsPath, 0o600);
