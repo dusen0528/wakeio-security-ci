@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { snapshotJsonData } from './json-snapshot.js';
+import { snapshotJsonData, JSON_MAX_INPUT_NODES } from './json-snapshot.js';
 import { openApiReferences } from './openapi.js';
 
 export type ZapJson = null | boolean | string | number | ZapJson[] | { [key: string]: ZapJson };
@@ -9,6 +9,7 @@ export interface ZapCompiledRequest { method: 'GET' | 'POST'; path: string; body
 export interface ZapOpenApiInput { document: unknown; operations: Array<{ method: 'GET' | 'POST'; path: string;
   pathParameters?: Record<string, string | number>; query?: Record<string, string | number>; body?: ZapJson }> }
 const obj = (v: unknown): v is Record<string, any> => !!v && typeof v === 'object' && !Array.isArray(v);
+const SEED_MAX_BYTES = 8192;
 function bad(): never { throw new TypeError('invalid_zap_openapi'); }
 function exact(v: unknown, required: string[], optional: string[] = []): asserts v is Record<string, any> {
   if (!obj(v) || required.some(k => !Object.hasOwn(v, k)) || Object.keys(v).some(k => !required.includes(k) && !optional.includes(k))) bad();
@@ -24,8 +25,12 @@ export function compileZapOpenApi(input: unknown): { openapi: ZapOpenApiInput; r
   if (!obj(doc) || !/^3\.(0|1)\.\d+$/.test(doc.openapi) || !obj(doc.paths) || Object.keys(doc.paths).length > 1000
     || !Array.isArray(value.operations) || !value.operations.length || value.operations.length > 16) bad();
   const ref = openApiReferences(doc), resolve = (v: unknown): Record<string, any> => ref(v), seen = new Set<string>();
-  const seed = (schemaInput: unknown, supplied: unknown, provided: boolean, depth = 0): ZapJson => {
-    if (depth > 6) bad(); const schema = resolve(schemaInput);
+  const charge = (budget: { nodes: number; bytes: number }, bytes: number) => {
+    budget.bytes += bytes; if (budget.bytes > SEED_MAX_BYTES) bad();
+  };
+  // Source limits do not bound a shared-ref DAG after expansion; charge before allocating children.
+  const seed = (schemaInput: unknown, supplied: unknown, provided: boolean, depth = 0, budget = { nodes: 0, bytes: 0 }): ZapJson => {
+    if (depth > 6 || ++budget.nodes > JSON_MAX_INPUT_NODES) bad(); const schema = resolve(schemaInput);
     if (['allOf', 'oneOf', 'anyOf', 'not'].some(k => Object.hasOwn(schema, k))) bad();
     if (!provided && Object.hasOwn(schema, 'example')) { supplied = schema.example; provided = true; }
     if (!provided && Object.hasOwn(schema, 'default')) { supplied = schema.default; provided = true; }
@@ -35,10 +40,11 @@ export function compileZapOpenApi(input: unknown): { openapi: ZapOpenApiInput; r
       const source = supplied as Record<string, unknown> | undefined;
       if (source && Object.keys(source).some(k => !Object.hasOwn(schema.properties, k))) bad();
       if (schema.required !== undefined && (!Array.isArray(schema.required) || schema.required.some((k: unknown) => typeof k !== 'string' || !Object.hasOwn(schema.properties, k)))) bad();
-      const result: Record<string, ZapJson> = {};
+      charge(budget, 2); const result: Record<string, ZapJson> = {}; let count = 0;
       for (const key of Object.keys(schema.properties)) {
         name(key); if (provided && !Object.hasOwn(source!, key)) { if (schema.required?.includes(key)) bad(); continue; }
-        result[key] = seed(schema.properties[key], source?.[key], !!source && Object.hasOwn(source, key), depth + 1);
+        charge(budget, Buffer.byteLength(JSON.stringify(key)) + 1 + (count++ ? 1 : 0));
+        result[key] = seed(schema.properties[key], source?.[key], !!source && Object.hasOwn(source, key), depth + 1, budget);
       }
       return result;
     }
@@ -47,16 +53,17 @@ export function compileZapOpenApi(input: unknown): { openapi: ZapOpenApiInput; r
       if (schema.minItems !== undefined && (!Number.isSafeInteger(schema.minItems) || schema.minItems < 0 || schema.minItems > 8)) bad();
       const list = provided ? supplied as unknown[] : Array.from({ length: Math.max(1, Number(schema.minItems ?? 1)) }, () => undefined);
       if (!Number.isSafeInteger(list.length) || list.length > 8 || list.length < Number(schema.minItems ?? 0) || list.length > Number(schema.maxItems ?? 8)) bad();
-      return list.map(item => seed(schema.items, item, provided, depth + 1));
+      charge(budget, 2 + Math.max(0, list.length - 1));
+      return list.map(item => seed(schema.items, item, provided, depth + 1, budget));
     }
     let result = provided ? supplied : schema.type === 'string' ? 'wakeio' : schema.type === 'integer' || schema.type === 'number' ? Math.max(1, Number(schema.minimum ?? 1)) : schema.type === 'boolean' ? false : schema.type === 'null' ? null : bad();
-    if (result === null && (schema.nullable === true || schema.type === 'null')) return null;
+    if (result === null && (schema.nullable === true || schema.type === 'null')) { charge(budget, 4); return null; }
     if (schema.type === 'string' ? typeof result !== 'string' || !scalar(result) : schema.type === 'integer' ? !Number.isSafeInteger(result)
       : schema.type === 'number' ? typeof result !== 'number' || !Number.isFinite(result) : schema.type === 'boolean' ? typeof result !== 'boolean' : true) bad();
     if (schema.enum && (!Array.isArray(schema.enum) || !schema.enum.includes(result))) bad();
     if (typeof result === 'number' && (result < Number(schema.minimum ?? -Infinity) || result > Number(schema.maximum ?? Infinity))) bad();
     if (typeof result === 'string' && (result.length < Number(schema.minLength ?? 0) || result.length > Number(schema.maxLength ?? 512))) bad();
-    return result as ZapJson;
+    charge(budget, Buffer.byteLength(JSON.stringify(result))); return result as ZapJson;
   };
   const requests: ZapCompiledRequest[] = value.operations.map((item: unknown) => {
     exact(item, ['method', 'path'], ['pathParameters', 'query', 'body']);
@@ -93,11 +100,11 @@ export function compileZapOpenApi(input: unknown): { openapi: ZapOpenApiInput; r
     const template = seed(media.schema, Object.hasOwn(item, 'body') ? item.body : media.example, Object.hasOwn(item, 'body') || Object.hasOwn(media, 'example'));
     const fields: Array<{ alias: string; pointer: string }> = [], body: Record<string, string | number> = {};
     const walk = (v: ZapJson, pointer: string) => {
-      if (typeof v === 'string' || typeof v === 'number') { const alias = `p${fields.length}`; fields.push({ alias, pointer }); body[alias] = v; }
+      if (typeof v === 'string' || typeof v === 'number') { if (fields.length === 16) bad(); const alias = `p${fields.length}`; fields.push({ alias, pointer }); body[alias] = v; }
       else if (v && typeof v === 'object') for (const [key, child] of Object.entries(v)) walk(child, pointer + '/' + key);
     };
     walk(template, '');
-    if (!obj(template) || !fields.length || fields.length > 16 || Buffer.byteLength(JSON.stringify(template)) > 8192) bad();
+    if (!obj(template) || !fields.length || fields.length > 16 || Buffer.byteLength(JSON.stringify(template)) > SEED_MAX_BYTES) bad();
     return { method: 'POST', path, body, template, fields };
   });
   if (new Set(requests.map(r => `${r.method}:${r.path.split('?')[0]}`)).size !== requests.length) bad();

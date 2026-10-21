@@ -131,6 +131,11 @@ try {
     'ZAP v2 native projection preserves unauthenticated and static Authorization policies',
     'ZAP OpenAPI bounds reject duplicate operations, oversized arrays, mixed bodies and unknown fields before traffic',
   ], join(root, 'build/tests/zap-openapi-session.test.js'));
+  receipt.zapOpenApiMemory = validateTestEvents(events, [
+    'ZAP OpenAPI memory: shared references reject without exhausting a 64 MiB heap',
+    'ZAP OpenAPI memory: encoded byte and field boundaries keep independent valid operations',
+    'ZAP OpenAPI memory: public plan scan and run-plan refuse amplification with zero target traffic',
+  ], join(root, 'build/tests/zap-openapi-memory.test.js'));
   receipt.agentDastRunnerTemplate = validateTestEvents(events, [
     'runner template independent: actual generated path-parameter vulnerable/fixed findings retain declared template context and completed1/0 gates',
   ], join(root, 'build/tests/agent-dast-runner-template.test.js'));

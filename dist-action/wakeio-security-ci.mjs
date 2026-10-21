@@ -240371,8 +240371,13 @@ function compileZapOpenApi(input) {
   if (!obj(doc) || !/^3\.(0|1)\.\d+$/.test(doc.openapi) || !obj(doc.paths) || Object.keys(doc.paths).length > 1e3 || !Array.isArray(value.operations) || !value.operations.length || value.operations.length > 16)
     bad();
   const ref = references(doc), resolve24 = (v) => ref(v), seen = /* @__PURE__ */ new Set();
-  const seed = (schemaInput, supplied, provided, depth = 0) => {
-    if (depth > 6)
+  const charge = (budget2, bytes) => {
+    budget2.bytes += bytes;
+    if (budget2.bytes > SEED_MAX_BYTES)
+      bad();
+  };
+  const seed = (schemaInput, supplied, provided, depth = 0, budget2 = { nodes: 0, bytes: 0 }) => {
+    if (depth > 6 || ++budget2.nodes > JSON_MAX_INPUT_NODES)
       bad();
     const schema2 = resolve24(schemaInput);
     if (["allOf", "oneOf", "anyOf", "not"].some((k) => Object.hasOwn(schema2, k)))
@@ -240397,7 +240402,9 @@ function compileZapOpenApi(input) {
         bad();
       if (schema2.required !== void 0 && (!Array.isArray(schema2.required) || schema2.required.some((k) => typeof k !== "string" || !Object.hasOwn(schema2.properties, k))))
         bad();
+      charge(budget2, 2);
       const result4 = {};
+      let count5 = 0;
       for (const key2 of Object.keys(schema2.properties)) {
         name(key2);
         if (provided && !Object.hasOwn(source, key2)) {
@@ -240405,7 +240412,8 @@ function compileZapOpenApi(input) {
             bad();
           continue;
         }
-        result4[key2] = seed(schema2.properties[key2], source?.[key2], !!source && Object.hasOwn(source, key2), depth + 1);
+        charge(budget2, Buffer.byteLength(JSON.stringify(key2)) + 1 + (count5++ ? 1 : 0));
+        result4[key2] = seed(schema2.properties[key2], source?.[key2], !!source && Object.hasOwn(source, key2), depth + 1, budget2);
       }
       return result4;
     }
@@ -240417,11 +240425,14 @@ function compileZapOpenApi(input) {
       const list = provided ? supplied : Array.from({ length: Math.max(1, Number(schema2.minItems ?? 1)) }, () => void 0);
       if (!Number.isSafeInteger(list.length) || list.length > 8 || list.length < Number(schema2.minItems ?? 0) || list.length > Number(schema2.maxItems ?? 8))
         bad();
-      return list.map((item) => seed(schema2.items, item, provided, depth + 1));
+      charge(budget2, 2 + Math.max(0, list.length - 1));
+      return list.map((item) => seed(schema2.items, item, provided, depth + 1, budget2));
     }
     let result3 = provided ? supplied : schema2.type === "string" ? "wakeio" : schema2.type === "integer" || schema2.type === "number" ? Math.max(1, Number(schema2.minimum ?? 1)) : schema2.type === "boolean" ? false : schema2.type === "null" ? null : bad();
-    if (result3 === null && (schema2.nullable === true || schema2.type === "null"))
+    if (result3 === null && (schema2.nullable === true || schema2.type === "null")) {
+      charge(budget2, 4);
       return null;
+    }
     if (schema2.type === "string" ? typeof result3 !== "string" || !scalar4(result3) : schema2.type === "integer" ? !Number.isSafeInteger(result3) : schema2.type === "number" ? typeof result3 !== "number" || !Number.isFinite(result3) : schema2.type === "boolean" ? typeof result3 !== "boolean" : true)
       bad();
     if (schema2.enum && (!Array.isArray(schema2.enum) || !schema2.enum.includes(result3)))
@@ -240430,6 +240441,7 @@ function compileZapOpenApi(input) {
       bad();
     if (typeof result3 === "string" && (result3.length < Number(schema2.minLength ?? 0) || result3.length > Number(schema2.maxLength ?? 512)))
       bad();
+    charge(budget2, Buffer.byteLength(JSON.stringify(result3)));
     return result3;
   };
   const requests = value.operations.map((item) => {
@@ -240496,6 +240508,8 @@ function compileZapOpenApi(input) {
     const fields = [], body = {};
     const walk = (v, pointer4) => {
       if (typeof v === "string" || typeof v === "number") {
+        if (fields.length === 16)
+          bad();
         const alias2 = `p${fields.length}`;
         fields.push({ alias: alias2, pointer: pointer4 });
         body[alias2] = v;
@@ -240504,7 +240518,7 @@ function compileZapOpenApi(input) {
           walk(child, pointer4 + "/" + key3);
     };
     walk(template, "");
-    if (!obj(template) || !fields.length || fields.length > 16 || Buffer.byteLength(JSON.stringify(template)) > 8192)
+    if (!obj(template) || !fields.length || fields.length > 16 || Buffer.byteLength(JSON.stringify(template)) > SEED_MAX_BYTES)
       bad();
     return { method: "POST", path: path3, body, template, fields };
   });
@@ -240537,13 +240551,14 @@ function projectedZapOpenApi(requests, origin) {
   }
   return { openapi: "3.0.3", info: { title: "Reviewed WakeIO projection", version: "1" }, servers: [{ url: origin }], paths };
 }
-var obj;
+var obj, SEED_MAX_BYTES;
 var init_zap_openapi = __esm({
   "build/src/zap-openapi.js"() {
     "use strict";
     init_json_snapshot();
     init_openapi();
     obj = (v) => !!v && typeof v === "object" && !Array.isArray(v);
+    SEED_MAX_BYTES = 8192;
   }
 });
 
