@@ -11,3 +11,9 @@ Increasing the heap would only delay exhaustion. A separate production worker co
 3. Run actual ZAP/session integration and the required zero-skip engine suite, contract checks and installed-package regression. Update the v2 operator contract and changelog, then open a follow-up PR against dev. No merge, publication or deployment is included.
 
 Success: amplified invalid input is a normal bounded rejection under a 64 MiB V8 heap; source analysis, authenticated actual ZAP and common artifact/request gates remain unchanged. Test inputs are public synthetic data; active requests use only the previously authorized owned loopback fixtures.
+
+## CI follow-up and performance validation
+
+The same memory-fix SHA passed the Linux release gate and PR package gate on rerun. The remaining push gate failed a separate owned-write oracle: its 700 ms end-to-end pilot budget expired before the injected peer-response loss. Reproduce with an 800 ms earlier read delay, then use the existing 3000 ms pilot budget and destroy the peer response only after the actual handler commits. Keep fault-observed, exactly-one peer PATCH, preserved side effect/high finding, exit 2 and no-request-after-abort assertions unchanged. Product request/deadline limits and ZAP version checks remain unchanged; no test is skipped.
+
+Measure the compiler before/after on identical valid query, nested JSON and boundary-size inputs, including 16 independent operations. Check exact output equality, alternate paired execution order over 30 rounds after warmup, retain p50/p95 and environment metadata. Report compiler-only overhead separately from full ZAP/network latency; these measurements cannot establish general end-to-end speed or a whole-process RSS ceiling. Merge only after every final-head GitHub check succeeds.

@@ -112,6 +112,10 @@ Server.prototype.emit = function(event, ...args) {
     let body = '';
     req.on('data', chunk => { item.bytes += chunk.length; if (item.bytes <= 4096) body += chunk.toString(); });
     req.on('end', () => { try { const parsed = JSON.parse(body); if (typeof parsed.title === 'string') { item.title = parsed.title; markers.add(parsed.title); } } catch {} });
+    // Reach the lost-response fault even when a slow earlier read exceeds the old 700 ms pilot budget.
+    if (mode === 'lost-peer-response' && item.phase === 0 && item.ordinal === 0) {
+      setTimeout(() => Reflect.apply(emit, this, [event, ...args]), 800); return true;
+    }
   }
   return Reflect.apply(emit, this, [event, ...args]);
 };
@@ -134,7 +138,7 @@ ServerResponse.prototype.end = function(...args) {
       trace.faultFired = true; args[0] = JSON.stringify({ userId: 'owned-wrong-principal', orgId: 'owned-wrong-org' });
     }
     if (!trace.faultFired && mode === 'lost-peer-response' && item.phase === 1 && item.ordinal === 5) {
-      trace.faultFired = true; return this; // Actual handler write has happened; response is deliberately never sent.
+      trace.faultFired = true; this.destroy(); return this; // Actual handler write has happened; the peer loses the response.
     }
     if (!trace.faultFired && mode === 'abort-owner-response' && item.phase === 0 && item.ordinal === 3) {
       trace.faultFired = true; globalThis.__ownedWriteAbort();
@@ -168,7 +172,7 @@ if (process.env.OWNED_WRITE_RUN_KIND === 'cli') {
   await fs.writeFile(process.env.OWNED_WRITE_RESULT, JSON.stringify({code,stdout,stderr}));
 } else {
   const result = await sdk.runOwnedApiWriteStatePilot({candidate:process.env.OWNED_WRITE_CANDIDATE,activeConsent:true,
-    timeoutMs:process.env.OWNED_WRITE_FAULT === 'lost-peer-response' ? 700 : 3000,signal:controller.signal});
+    timeoutMs:3000,signal:controller.signal});
   await fs.writeFile(process.env.OWNED_WRITE_RESULT, JSON.stringify(result));
 }
 `;
