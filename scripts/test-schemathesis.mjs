@@ -52,12 +52,12 @@ try {
   await stage('build', 'npm', ['run', 'build'], 120000);
   if (!files.length) throw Error('no_test_files');
   const eventsPath = join(directory, 'tests.ndjson');
-  // Three Linux runs exhausted 360s after 1,578/1,579 passes, in the final ZAP controls.
-  // Allow eight minutes for the aggregate suite; per-test/engine/request limits,
+  // Linux CI exhausted 480s with no failed assertions, in the final ZAP controls.
+  // Allow ten minutes including the 31s readiness regression; per-test/engine/request limits,
   // cancellation, cleanup and the zero-skip contract are unchanged.
   await stage('tests', process.execPath, ['--test', '--test-concurrency=2', '--test-reporter=spec', '--test-reporter-destination=stdout',
     '--test-reporter=' + join(root, 'scripts/ci-test-reporter.mjs'), '--test-reporter-destination=' + eventsPath, ...files],
-    480000, { ...engineEnvironment, WAKEIO_SCHEMATHESIS_PYTHON: python,
+    600000, { ...engineEnvironment, WAKEIO_SCHEMATHESIS_PYTHON: python,
       WAKEIO_REQUIRE_SCHEMATHESIS: '1', WAKEIO_REQUIRE_RUNNER_ENGINES: '1' });
   const bytes = await readFile(eventsPath);
   await chmod(eventsPath, 0o600);
@@ -100,6 +100,10 @@ try {
       'real ZAP runs simultaneous owned scans with independent listeners and request accounting',
       'real ZAP request cap stops the engine and leaves a partial result'],
     join(root, 'build/tests/zap.test.js'));
+  receipt.zapReadiness = validateTestEvents(events, [
+    'ZAP slow version readiness can complete within the shared scan deadline',
+    'ZAP stalled or cancelled version readiness makes no target requests',
+  ], join(root, 'build/tests/zap.test.js'));
   receipt.agentDastRunner = validateTestEvents(events, [
     'runner engines independent: real Schemathesis vulnerable/fixed contract pair and irrecoverable transport errors propagate 1/0/2',
     'runner engines independent: real signed one-template Nuclei and native SQL tasks overlap and share observed run counts',
@@ -131,6 +135,11 @@ try {
     'ZAP v2 native projection preserves unauthenticated and static Authorization policies',
     'ZAP OpenAPI bounds reject duplicate operations, oversized arrays, mixed bodies and unknown fields before traffic',
   ], join(root, 'build/tests/zap-openapi-session.test.js'));
+  receipt.zapOpenApiMemory = validateTestEvents(events, [
+    'ZAP OpenAPI memory: shared references reject without exhausting a 64 MiB heap',
+    'ZAP OpenAPI memory: encoded byte and field boundaries keep independent valid operations',
+    'ZAP OpenAPI memory: public plan scan and run-plan refuse amplification with zero target traffic',
+  ], join(root, 'build/tests/zap-openapi-memory.test.js'));
   receipt.agentDastRunnerTemplate = validateTestEvents(events, [
     'runner template independent: actual generated path-parameter vulnerable/fixed findings retain declared template context and completed1/0 gates',
   ], join(root, 'build/tests/agent-dast-runner-template.test.js'));

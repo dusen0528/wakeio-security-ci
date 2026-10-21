@@ -188,7 +188,8 @@ export async function runZap(options: ZapOptions, runtime?: TaskAdmission): Prom
     const args = ['-Xmx512m', '-silent', '-dir', work, '-host', '127.0.0.1', '-config', 'network.localServers.mainProxy.port=0', '-config', 'start.checkForUpdates=false', '-config', 'start.checkAddonUpdates=false',
       '-config', 'start.downloadNewRelease=false', '-config', 'start.installAddonUpdates=false', '-config', 'start.installScannerRules=false',
       '-config', 'callhome.tel.enabled=false', '-config', 'network.connection.socksProxy.enabled=false', '-config', 'network.connection.httpProxy.authEnabled=true'];
-    const version = await runProcess(executable, [...args, '-version'], { cwd: work, home: work, timeoutMs: Math.min(30_000, timeoutMs), signal: control.signal });
+    const version = await runProcess(executable, [...args, '-version'], { cwd: work, home: work, timeoutMs: Math.max(1, control.deadlineAt - Date.now()), signal: control.signal });
+    if (version.timedOut || version.cancelled || control.signal.aborted) return error('engine_version_incomplete', 'ZAP version readiness was cancelled or exceeded the shared scan deadline; no target requests were made.');
     if (version.exitCode !== 0 || !version.stdout.split(/\r?\n/).includes(ZAP_VERSION)) return error('unsupported_engine_version', `This adapter requires a working ZAP ${ZAP_VERSION}; no target requests were made.`);
     let resolved;
     try { resolved = await resolveDastOrigin(targetUrl, options.allowPrivate === true, control.signal); }

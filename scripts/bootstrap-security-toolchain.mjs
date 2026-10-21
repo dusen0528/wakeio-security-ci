@@ -9,8 +9,8 @@ import { runBounded } from './ci-process.mjs';
 const root = fileURLToPath(new URL('../', import.meta.url));
 export const SECURITY_TOOLCHAIN_RELEASES = Object.freeze({
   semgrep: '1.147.0', govulncheck: 'v1.9.0',
-  go: { version: '1.27.2', url: 'https://go.dev/dl/go1.27.2.linux-amd64.tar.gz',
-    sha256: 'ecbadb99091a3f46e31f5f934b068b1864eafa7995211b39eaddf76996045fe5' },
+  go: { version: '1.27.3', url: 'https://go.dev/dl/go1.27.3.linux-amd64.tar.gz',
+    sha256: '65efbc80fdc1fa2cd2631cad5b481777a68e8725f34e89f50fc6ac714e379b40' },
   zap: { version: '2.17.0', url: 'https://github.com/zaproxy/zaproxy/releases/download/v2.17.0/ZAP_2.17.0_Crossplatform.zip',
     sha256: '94c8f767b1c2e94f0db66b3ae56514d5e3f5a728ee1b6c798e0c8fe2d61fbff0' },
   // Alpine 3.18.0 Linux AMD64 member of the official 02bb6f42... manifest list.
