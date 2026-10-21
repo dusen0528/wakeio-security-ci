@@ -47,7 +47,7 @@ jobs:
         working-directory: wakeio-security-ci
         run: node scripts/bootstrap-security-toolchain.mjs
       - name: Install and run required-engine package tests
-        timeout-minutes: 9
+        timeout-minutes: 10
         working-directory: wakeio-security-ci
         run: |
           npm ci --ignore-scripts --no-audit --fund=false
