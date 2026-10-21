@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "kind": "wakeio.oss-pilot-inventory",
+  "inputSource": "owner-authored",
+  "sourceCommit": "f189f521266f42c6bd05884468292000cee852ed",
+  "discoveryStatus": "not-run",
+  "coverage": "Reviewed subset only; not the application's complete API inventory",
+  "endpoints": [
+    {
+      "method": "GET",
+      "path": "/rest/admin/application-version",
+      "purpose": "readiness-only",
+      "authentication": "anonymous",
+      "source": "https://github.com/juice-shop/juice-shop/blob/f189f521266f42c6bd05884468292000cee852ed/server.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/rest/products/search",
+      "purpose": "scan",
+      "authentication": "anonymous",
+      "parameter": "q",
+      "inputSource": "owner-authored",
+      "sources": [
+        "https://github.com/juice-shop/juice-shop/blob/f189f521266f42c6bd05884468292000cee852ed/server.ts",
+        "https://github.com/juice-shop/juice-shop/blob/f189f521266f42c6bd05884468292000cee852ed/routes/search.ts",
+        "https://github.com/juice-shop/juice-shop/blob/f189f521266f42c6bd05884468292000cee852ed/test/api/search.test.ts"
+      ]
+    }
+  ]
+}
