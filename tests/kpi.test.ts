@@ -13,10 +13,12 @@ function sample(): any {
   const checks = ['source.inventory', 'source.builtin-ast', 'source.framework', 'source.code-coverage'].map(id => ({ id, status: 'completed' }));
   const runs = [30, 10, 20].map(reportMs => ({ reportMs, processMs: reportMs + 1, scanExitCode: 0, semanticSha256: hash, checks, complete: true }));
   return { schema: 'wakeio.kpi/v1', revision: 'a'.repeat(40), engineSha256: hash, fixtureDigest: hash, corpusDigest: hash, harnessDigest: hash,
-    environment: { os: 'linux', release: 'test', arch: 'arm64', node: 'v22.23.1', npm: '10', dependencyLock: hash },
+    environment: { os: 'linux', release: 'test', arch: 'arm64', node: 'v22.23.1', npm: '10', imageDigest: 'sha256:' + hash },
+    engine: { dependencyLock: hash },
     phase: 'source_offline_warm', parameters: { tools: 'none', runs: 3, analysisProfile: 'default', projectId: 'wakeio-kpi-nodegoat' },
     medium: { coverageComplete: true, runs }, measurementStatus: 'completed', metrics: [
       { id: 'first_report_ms', status: 'measured', value: 20, runs: [30, 10, 20] },
+      { id: 'analysis_ms', status: 'measured', value: 10, runs: [10, 10, 10] },
       ...['planned_state_completeness', 'wire_budget_overflow', 'loop_stop_reason_rate', 'inventory_recall']
         .map(id => ({ id, status: 'unavailable', value: null, reason: 'not_measured' })),
       { id: 'determinism', status: 'measured', value: 1, numerator: 3, denominator: 3 },
@@ -79,9 +81,12 @@ test('comparison preserves unavailable/null, reports latency without imposing a 
 
 test('forged successful numbers, missing metric identities and hidden incomplete coverage reject', () => {
   const changes = [
-    (x: any) => { x.metrics[1].value = 0; },
+    (x: any) => { x.metrics[2].value = 0; },
     (x: any) => { x.metrics[0].value = -1; },
     (x: any) => { x.metrics[0].value = 19; },
+    (x: any) => { x.metrics[1].runs = [1, 2, 3]; },
+    (x: any) => { x.engine.dependencyLock = 'invalid'; },
+    (x: any) => { x.environment.imageDigest = 'invalid'; },
     (x: any) => { x.metrics.at(-1).identities.fn = []; },
     (x: any) => { x.metrics.push(x.metrics[0]); },
     (x: any) => { x.environment = {}; },
@@ -96,8 +101,50 @@ test('medium coverage degradation fails even when synthetic TP/FP/FN counts do n
   after.medium.coverageComplete = false;
   for (const run of after.medium.runs) {
     run.complete = false; run.scanExitCode = 2;
-    run.checks = run.checks.map((check: any) => check.id === 'source.builtin-ast' ? { ...check, status: 'partial', reasons: ['module_export_unsupported'] } : check);
+    run.checks = run.checks.map((check: any) => check.id === 'source.builtin-ast' ? { ...check, status: 'partial', reasons: ['module_export_unsupported'], reasonCounts: [{ reason: 'module_export_unsupported', count: 1 }] } : check);
   }
   const result = kpi.compareKpi(before, after);
   assert.equal(result.exitCode, 1); assert.equal(result.newIncompleteChecks, 1);
+});
+
+test('dependency-only changes remain comparable while runtime image changes do not', () => {
+  const before = sample(), after = sample();
+  after.engine.dependencyLock = 'b'.repeat(64);
+  assert.equal(kpi.compareKpi(before, after).exitCode, 0);
+  after.environment.release = 'different kernel';
+  assert.equal(kpi.compareKpi(before, after).exitCode, 0);
+  after.environment.imageDigest = 'sha256:' + 'b'.repeat(64);
+  assert.equal(kpi.compareKpi(before, after).exitCode, 2);
+});
+
+test('analysis median exceeding 1.5x warns without failing the comparison', () => {
+  const before = sample(), after = sample();
+  const timing = after.metrics.find((m: any) => m.id === 'analysis_ms');
+  assert.ok(timing);
+  timing.runs = [16, 16, 16]; timing.value = 16;
+  const result = kpi.compareKpi(before, after);
+  assert.equal(result.exitCode, 0); assert.equal(result.analysisTiming.warning, true);
+  timing.runs = [15, 15, 15]; timing.value = 15;
+  assert.equal(kpi.compareKpi(before, after).analysisTiming.warning, false);
+});
+
+test('same incomplete reason with increased events is a regression and exposes both counts', () => {
+  const before = sample(), after = sample();
+  for (const [report, count] of [[before, 1], [after, 2]] as const) {
+    report.medium.coverageComplete = false;
+    for (const run of report.medium.runs) {
+      run.complete = false; run.scanExitCode = 2;
+      run.checks = run.checks.map((check: any) => check.id === 'source.builtin-ast' ? { ...check, status: 'partial',
+        reasons: ['module_export_unsupported'], reasonCounts: [{ reason: 'module_export_unsupported', count }] } : check);
+    }
+  }
+  const result = kpi.compareKpi(before, after);
+  assert.equal(result.exitCode, 1);
+  assert.deepEqual(result.incompleteReasonCounts, [{ checkId: 'source.builtin-ast', reason: 'module_export_unsupported', before: 1, after: 2 }]);
+  assert.equal(result.increasedIncompleteReasons, 1);
+  assert.equal(kpi.compareKpi(after, before).exitCode, 0);
+  for (const run of after.medium.runs) run.checks.find((c: any) => c.id === 'source.builtin-ast').reasonCounts[0].count = null;
+  assert.equal(kpi.compareKpi(before, after).exitCode, 2);
+  after.medium.runs[0].checks.find((c: any) => c.id === 'source.builtin-ast').reasonCounts[0].count = -1;
+  assert.throws(() => kpi.compareKpi(before, after));
 });

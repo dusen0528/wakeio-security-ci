@@ -13,7 +13,7 @@ import { runBounded } from './ci-process.mjs';
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const RUNS = 3;
 const REQUIRED = ['source.inventory', 'source.builtin-ast', 'source.framework', 'source.code-coverage'];
-const METRICS = ['first_report_ms', 'planned_state_completeness', 'determinism', 'wire_budget_overflow',
+const METRICS = ['first_report_ms', 'analysis_ms', 'planned_state_completeness', 'determinism', 'wire_budget_overflow',
   'loop_stop_reason_rate', 'inventory_recall', 'source_regression'];
 const sha = value => createHash('sha256').update(value).digest('hex');
 const stable = value => Array.isArray(value) ? value.map(stable) : value && typeof value === 'object'
@@ -119,7 +119,9 @@ async function measureOne(root, checkout, out, home, reportModule, compareModule
   return { reportMs: reportMs ?? performance.now() - start, processMs: result.elapsedMs,
     scanExitCode: result.exitCode, semanticSha256: semanticHash(raw),
     checks: report.checks.map(c => ({ id: c.id, status: c.status,
-      reasons: [...new Set((c.analysisGaps?.reasonSummary?.rows ?? []).map(row => row.reason))].sort() })),
+      reasons: [...new Set((c.analysisGaps?.reasonSummary?.rows ?? []).map(row => row.reason))].sort(),
+      reasonCounts: (c.analysisGaps?.reasonSummary?.rows ?? []).map(row => ({ reason: row.reason,
+        count: c.analysisGaps.reasonSummary.accounting === 'exact' ? row.eventsObserved : null })).sort((a, b) => a.reason.localeCompare(b.reason)) })),
     complete: report.checks.every(c => ['completed', 'not_applicable'].includes(c.status)) };
 }
 
@@ -140,24 +142,36 @@ export async function measure(options) {
     fixtureDigest: digest({ commit: verified.commit, tree: verified.tree, manifest: oss.sha256 }),
     corpusDigest: await corpusDigest(corpus),
     harnessDigest: digest(await Promise.all(['scripts/kpi.mjs', 'scripts/benchmark.mjs', 'scripts/benchmark-oss.mjs', 'scripts/ci-process.mjs', 'benchmarks/kpi.Dockerfile'].map(async name => [name, sha(await readFile(join(ROOT, name)))]))),
+    engine: { dependencyLock: sha(await readFile(join(root, 'package-lock.json'))) },
     environment: { os: platform(), release: release(), arch: arch(), node: process.version,
       npm: execFileSync(join(dirname(process.execPath), 'npm'), ['--version'], { encoding: 'utf8', timeout: 5000 }).trim(),
-      dependencyLock: sha(await readFile(join(root, 'package-lock.json'))) },
+      imageDigest: process.env.WAKEIO_KPI_IMAGE_DIGEST ?? null },
     phase: 'source_offline_warm', parameters: { tools: 'none', runs: RUNS, analysisProfile: 'default', projectId: 'wakeio-kpi-nodegoat' },
   };
   await mkdir(dirname(options.out), { recursive: true, mode: 0o700 });
   await mkdir(options.out, { mode: 0o700 });
   const home = await mkdtemp(join(tmpdir(), 'wakeio-kpi-home-'));
   try {
+    if (context.environment.imageDigest !== null && !/^sha256:[a-f0-9]{64}$/.test(context.environment.imageDigest)) throw Error('invalid_image_digest');
     await writeFile(join(home, 'user.npmrc'), ''); await writeFile(join(home, 'global.npmrc'), '');
     const runs = [];
     for (let i = 0; i < RUNS; i++) runs.push(await measureOne(root, verified.root, join(options.out, 'run-' + (i + 1)), home, reportModule, compareModule));
+    const analysisRuns = [];
+    // One untimed warmup; timing excludes process startup, imports and report serialization.
+    for (let i = 0; i <= RUNS; i++) {
+      const start = performance.now();
+      const checks = await engine.runSource({ root: verified.root, tools: [] });
+      const elapsed = performance.now() - start;
+      if (REQUIRED.some(id => checks.filter(c => c.id === id).length !== 1) || checks.some(c => c.status === 'error')
+        || !checks.find(c => c.id === 'source.inventory').sourceSnapshot?.digest) throw Error('invalid_analysis_evidence');
+      if (i) analysisRuns.push(elapsed);
+    }
     const accuracy = await runBenchmark(engine.runSource, { engine: { label: sourceRevision, version: pkg.version, modulePath: 'build/src/index.js' } });
     await writeBenchmarkReports(accuracy, join(options.out, 'accuracy'));
     if (!accuracy.success || !accuracy.cases.length || accuracy.summary.incompleteCases
       || engineSha256 !== await fixtureDigest(join(root, 'build/src')) || sourceRevision !== await revision(root)
       || context.corpusDigest !== await corpusDigest(corpus)
-      || context.environment.dependencyLock !== sha(await readFile(join(root, 'package-lock.json')))) throw Error('incomplete_or_changed_engine');
+      || context.engine.dependencyLock !== sha(await readFile(join(root, 'package-lock.json')))) throw Error('incomplete_or_changed_engine');
     await verifyCheckout(medium, verified.root);
     const deterministic = new Set(runs.map(run => run.semanticSha256)).size === 1;
     const report = { schema: 'wakeio.kpi/v1', ...context, measurementStatus: deterministic ? 'completed' : 'failed',
@@ -166,6 +180,8 @@ export async function measure(options) {
       metrics: [
         { id: 'first_report_ms', status: 'measured', value: runs.map(r => r.reportMs).sort((a, b) => a - b)[1],
           runs: runs.map(r => r.reportMs), timingBoundary: 'npx spawn to first parseable primary report, 2ms polling; warm checkout bin, no registry install' },
+        { id: 'analysis_ms', status: 'measured', value: [...analysisRuns].sort((a, b) => a - b)[1], runs: analysisRuns,
+          timingBoundary: 'in-process runSource({root, tools: []}) call; one untimed warmup, three samples; excludes npx/imports/report serialization' },
         unavailable('planned_state_completeness', 'no_predeclared_cell_denominator'),
         { id: 'determinism', status: 'measured', value: deterministic ? 1 : 0, numerator: deterministic ? RUNS : null, denominator: RUNS },
         unavailable('wire_budget_overflow', 'http_targets_excluded'),
@@ -186,7 +202,8 @@ function validate(report) {
     || !/^[a-f0-9]{40}$/.test(report.revision ?? '') || !report.environment || !report.parameters
     || !Array.isArray(report.metrics) || report.metrics.length !== METRICS.length) throw Error('invalid_kpi');
   if (report.phase !== 'source_offline_warm' || ['os', 'release', 'arch', 'node', 'npm'].some(key => typeof report.environment[key] !== 'string' || !report.environment[key])
-    || !/^[a-f0-9]{64}$/.test(report.environment.dependencyLock ?? '')
+    || !/^[a-f0-9]{64}$/.test(report.engine?.dependencyLock ?? '')
+    || report.environment.imageDigest !== null && !/^sha256:[a-f0-9]{64}$/.test(report.environment.imageDigest ?? '')
     || digest(report.parameters) !== digest({ tools: 'none', runs: RUNS, analysisProfile: 'default', projectId: 'wakeio-kpi-nodegoat' })
     || !Array.isArray(report.medium?.runs) || report.medium.runs.length !== RUNS) throw Error('invalid_kpi');
   for (const run of report.medium.runs) {
@@ -195,6 +212,11 @@ function validate(report) {
       || !Array.isArray(run.checks) || REQUIRED.some(id => run.checks.filter(c => c.id === id).length !== 1)
       || run.checks.some(c => !['completed', 'partial', 'skipped', 'not_applicable'].includes(c.status))
       || run.checks.some(c => c.reasons !== undefined && (!Array.isArray(c.reasons) || c.reasons.some(reason => !/^[a-z][a-z0-9_]{1,79}$/.test(reason))))
+      || run.checks.some(c => c.reasonCounts !== undefined && (!Array.isArray(c.reasonCounts)
+        || new Set(c.reasonCounts.map(row => row.reason)).size !== c.reasonCounts.length
+        || c.reasonCounts.some(row => !c.reasons?.includes(row.reason) || row.count !== null && (!Number.isSafeInteger(row.count) || row.count < 0))
+        || c.reasons.length !== c.reasonCounts.length))
+      || run.checks.some(c => c.reasons?.length && !c.reasonCounts)
       || run.complete !== run.checks.every(c => ['completed', 'not_applicable'].includes(c.status))
       || !run.complete && run.scanExitCode !== 2) throw Error('invalid_kpi');
   }
@@ -213,6 +235,9 @@ function validate(report) {
       } else if (!Number.isFinite(metric.value) || metric.value < 0 || id === 'determinism' && ![0, 1].includes(metric.value)) throw Error('invalid_kpi');
     }
   }
+  const analysis = report.metrics.find(m => m.id === 'analysis_ms');
+  if (analysis.status === 'measured' && (!Array.isArray(analysis.runs) || analysis.runs.length !== RUNS
+    || analysis.runs.some(n => !Number.isFinite(n) || n < 0) || analysis.value !== [...analysis.runs].sort((a, b) => a - b)[1])) throw Error('invalid_kpi');
   const latency = report.metrics.find(m => m.id === 'first_report_ms');
   const determinism = report.metrics.find(m => m.id === 'determinism');
   if (latency.status === 'measured' && (latency.value !== report.medium.runs.map(r => r.reportMs).sort((a, b) => a - b)[1]
@@ -223,8 +248,11 @@ function validate(report) {
 
 export function compareKpi(before, after) {
   validate(before); validate(after);
-  const incompatible = ['fixtureDigest', 'corpusDigest', 'harnessDigest', 'environment', 'phase', 'parameters']
+  const incompatible = ['fixtureDigest', 'corpusDigest', 'harnessDigest', 'phase', 'parameters']
     .filter(key => digest(before[key]) !== digest(after[key]));
+  for (const key of ['os', 'arch', 'node', 'npm', 'imageDigest']) {
+    if (before.environment[key] !== after.environment[key]) incompatible.push('environment.' + key);
+  }
   if (incompatible.length) return { schema: 'wakeio.kpi-comparison/v1', comparable: false, status: 'incomparable', exitCode: 2, reasons: incompatible };
   if (before.measurementStatus !== 'completed' || after.measurementStatus !== 'completed'
     || after.metrics.some(metric => metric.status === 'failed')) {
@@ -238,11 +266,37 @@ export function compareKpi(before, after) {
   const newFn = accuracy.identities.fn.filter(id => !oldAccuracy.identities.fn.includes(id));
   const missing = before.metrics.filter(m => m.status === 'measured' && after.metrics.find(n => n.id === m.id).status !== 'measured').map(m => m.id);
   if (missing.length) return { schema: 'wakeio.kpi-comparison/v1', comparable: true, status: 'failed', exitCode: 2, reasons: missing };
-  const incomplete = report => report.medium.runs[0].checks.filter(c => !['completed', 'not_applicable'].includes(c.status)).map(c => digest([c.id, c.status, c.reasons ?? []]));
-  const previousIncomplete = incomplete(before), newIncomplete = incomplete(after).filter(key => !previousIncomplete.includes(key));
-  const regression = newFp.length || newFn.length || newIncomplete.length || after.metrics.find(m => m.id === 'determinism').value !== 1;
+  const incomplete = report => report.medium.runs.flatMap(run => run.checks).filter(c => !['completed', 'not_applicable'].includes(c.status)).map(c => digest([c.id, c.status, c.reasons ?? []]));
+  const previousIncomplete = incomplete(before), newIncomplete = [...new Set(incomplete(after))].filter(key => !previousIncomplete.includes(key));
+  // Max across the three runs prevents an intermittent increase from being hidden.
+  const reasonCounts = report => {
+    const counts = new Map();
+    for (const run of report.medium.runs) for (const check of run.checks) {
+      if (['completed', 'not_applicable'].includes(check.status)) continue;
+      for (const row of check.reasonCounts ?? []) {
+        const key = check.id + ':' + row.reason;
+        const previous = counts.has(key) ? counts.get(key) : 0;
+        counts.set(key, previous === null || row.count === null ? null : Math.max(previous, row.count));
+      }
+    }
+    return counts;
+  };
+  const oldCounts = reasonCounts(before), counts = reasonCounts(after);
+  const incompleteReasonCounts = [...new Set([...oldCounts.keys(), ...counts.keys()])].sort().map(key => ({
+    checkId: key.split(':')[0], reason: key.split(':')[1],
+    before: oldCounts.has(key) ? oldCounts.get(key) : 0, after: counts.has(key) ? counts.get(key) : 0 }));
+  const increasedIncompleteReasons = incompleteReasonCounts.filter(row => row.before !== null && row.after !== null && row.after > row.before).length;
+  if (incompleteReasonCounts.some(row => row.before !== null && row.after === null)) {
+    return { schema: 'wakeio.kpi-comparison/v1', comparable: true, status: 'failed', exitCode: 2,
+      reasons: ['incomplete_reason_count_unknown'], incompleteReasonCounts };
+  }
+  const oldAnalysis = before.metrics.find(m => m.id === 'analysis_ms').value, analysis = after.metrics.find(m => m.id === 'analysis_ms').value;
+  const regression = newFp.length || newFn.length || newIncomplete.length || increasedIncompleteReasons || after.metrics.find(m => m.id === 'determinism').value !== 1;
   return { schema: 'wakeio.kpi-comparison/v1', comparable: true, status: regression ? 'regression' : 'no_regression', exitCode: regression ? 1 : 0,
     newFalsePositives: newFp.length, newFalseNegatives: newFn.length, newIncompleteChecks: newIncomplete.length,
+    incompleteReasonCounts, increasedIncompleteReasons,
+    analysisTiming: { beforeMedianMs: oldAnalysis, afterMedianMs: analysis, ratio: oldAnalysis > 0 ? analysis / oldAnalysis : null,
+      warning: analysis > oldAnalysis * 1.5, threshold: 1.5, gating: false },
     firstReportDeltaMs: after.metrics.find(m => m.id === 'first_report_ms').value - before.metrics.find(m => m.id === 'first_report_ms').value,
     performanceTarget: null, unavailable: after.metrics.filter(m => m.status === 'unavailable').map(m => m.id) };
 }

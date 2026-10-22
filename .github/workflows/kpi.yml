@@ -48,13 +48,14 @@ jobs:
       - name: Measure base and candidate under the same network-disabled runtime
         timeout-minutes: 5
         run: |
-          docker run --rm --network none --user "$(id -u):$(id -g)" \
+          kpi_image_digest="$(docker image inspect --format '{{.Id}}' wakeio-kpi)"
+          docker run --rm --network none -e WAKEIO_KPI_IMAGE_DIGEST="$kpi_image_digest" --user "$(id -u):$(id -g)" \
             -v "$GITHUB_WORKSPACE:/workspace" -w /workspace/candidate wakeio-kpi \
             node scripts/kpi.mjs --engine-root /workspace/baseline --checkout /workspace/fixture --out /workspace/results/main
-          docker run --rm --network none --user "$(id -u):$(id -g)" \
+          docker run --rm --network none -e WAKEIO_KPI_IMAGE_DIGEST="$kpi_image_digest" --user "$(id -u):$(id -g)" \
             -v "$GITHUB_WORKSPACE:/workspace" -w /workspace/candidate wakeio-kpi \
             node scripts/kpi.mjs --checkout /workspace/fixture --out /workspace/results/candidate
-          docker run --rm --network none --user "$(id -u):$(id -g)" \
+          docker run --rm --network none -e WAKEIO_KPI_IMAGE_DIGEST="$kpi_image_digest" --user "$(id -u):$(id -g)" \
             -v "$GITHUB_WORKSPACE:/workspace" -w /workspace/candidate wakeio-kpi \
             node scripts/kpi.mjs compare --before /workspace/results/main/kpi.json --after /workspace/results/candidate/kpi.json --out /workspace/results/comparison
       - name: Summarize measured scope
@@ -67,6 +68,15 @@ jobs:
             const value = JSON.parse(await readFile('results/comparison/comparison.json', 'utf8'));
             console.log('Comparison: ' + value.status + '; exit ' + value.exitCode);
             if (value.firstReportDeltaMs !== undefined) console.log('\nWarm npx report delta: ' + value.firstReportDeltaMs.toFixed(2) + ' ms. No latency target is imposed.');
+            if (value.analysisTiming) {
+              const timing = value.analysisTiming;
+              console.log('\nAnalysis median: ' + timing.beforeMedianMs.toFixed(2) + ' → ' + timing.afterMedianMs.toFixed(2) + ' ms.');
+              if (timing.warning) console.log('\n⚠️ Analysis median exceeds 1.5× baseline. Warning only; this is not a release gate.');
+            }
+            if (value.incompleteReasonCounts?.length) {
+              console.log('\n| Incomplete check / reason (events) | Base | Candidate |\n| --- | ---: | ---: |');
+              for (const row of value.incompleteReasonCounts) console.log('| ' + row.checkId + ' / ' + row.reason + ' | ' + (row.before ?? 'unknown') + ' | ' + (row.after ?? 'unknown') + ' |');
+            }
           } catch { console.log('No complete comparison artifact. Check the failed step.'); }
           console.log('\nPartial source analysis and unavailable loop/inventory/HTTP metrics remain explicit. No target HTTP scan, model or deployment is run.');
           JS
