@@ -1,0 +1,62 @@
+{
+  "sourceSha": "536d968357c31a7c681164ef7afa6307b138d1a7",
+  "toolVersion": "0.5.0",
+  "schemaVersion": "1.0.0",
+  "ruleset": "2026-10-14.5",
+  "cases": [
+    {
+      "id": "pass",
+      "fixture": "sql-parameterized",
+      "exitCode": 0,
+      "artifacts": {
+        "report.json": "623674238a2fcd18f9343dcaaf78f552e44f8572781806dff1d22ed39bdffb1a",
+        "agent-report.json": "b6f10b990c4158d7a24b1ecdade0cd38014b3268f50ba392ed0fc413062f010a",
+        "report.sarif": "2b0fc2fcf548560c2a3bdc6753f385ea539cee086e91964e0ded72b10396b4bc",
+        "report.md": "ca599b09bfbb654514b0673e4821864984151ea27494f75f70170f3b07320d58"
+      },
+      "compareSelfExitCode": 0
+    },
+    {
+      "id": "findings",
+      "fixture": "sql-direct",
+      "exitCode": 1,
+      "artifacts": {
+        "report.json": "3e88b0983bf51521e123065e30e1131a2dd1182e4de4fe8f7897eca524fcac60",
+        "agent-report.json": "096d7facb6955bc804bc52b8c29155b0ffa56847aad38006ccdeee51d6a5e714",
+        "report.sarif": "2e152d6f0bb61f7f2e4e3180b576be1814b27b6331da63a2426c9816becbd73a",
+        "report.md": "08f9ffc857ed0090f763c6e7be7825ced43c5a8702cc39bb13b09d9255455ec8"
+      },
+      "compareSelfExitCode": 0
+    },
+    {
+      "id": "partial",
+      "fixture": "sql-parameterized",
+      "exitCode": 2,
+      "artifacts": {
+        "report.json": "4eea5b6597c56266eab427241a27938026ae7ef378e4be1d75e8685408e315dc",
+        "agent-report.json": "aa1e9838fc23510dce1eb01f641060f3f2d310834993aa91cd704c249af47b04",
+        "report.sarif": "21651a206af61a81daf33d5d9d322ad90e1ec3f57724c898229712c2ccefce02",
+        "report.md": "08356867c1df92839b794c427d0809259a459f3d67ec331ed072d350ec051d23"
+      },
+      "compareSelfExitCode": 2
+    }
+  ],
+  "serializedStates": {
+    "producer": "unchanged main 0.5 serializer; synthetic checks, no scan",
+    "path": "states/reports",
+    "states": [
+      "completed",
+      "partial",
+      "error",
+      "skipped",
+      "not_applicable"
+    ],
+    "artifacts": {
+      "report.json": "edd40a250646b85eaee63d28917ee1fd2c4c2b1bd9c48d97a5148026bdb26fcc",
+      "agent-report.json": "96961ea54ecd2b5f6d7a5da5dbef20aa1d9c93f02b026c0c1339967d4d7d490d",
+      "report.md": "baf694bdc689c3e031a4f1ec117801f10ebfc7d9d80157e7a9392ea3e63f7148",
+      "report.sarif": "4724e8d1aae80135a1edab248d33848073617c766e4fe06075395806969cf768"
+    },
+    "exitCode": 2
+  }
+}

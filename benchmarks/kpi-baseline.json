@@ -1,0 +1,196 @@
+{
+  "schema": "wakeio.kpi/v1",
+  "measuredAt": "2026-10-22T06:55:29.430Z",
+  "revision": "536d968357c31a7c681164ef7afa6307b138d1a7",
+  "engineSha256": "1b6c55c86c646fb31dbe9f8c6b386368b228229eddb4d06e10ad3176108ae569",
+  "toolVersion": "0.5.0",
+  "fixtureDigest": "4f5ccf841cbac6bbc67a8a270c29e95eb22bd14b55ba41f0c55bf3be76b67702",
+  "corpusDigest": "51b1afdd951af3ace8aa2425f4bb533d204421ff5368b0d1c5797cbe73af67d5",
+  "harnessDigest": "776f0104266f77d67251296777d59f9e68163e0fcce26f437daffb46e1f54942",
+  "environment": {
+    "os": "linux",
+    "release": "7.0.14-linuxkit",
+    "arch": "arm64",
+    "node": "v22.23.4",
+    "npm": "10.9.9",
+    "dependencyLock": "033e0ef135f3e6c112d806af5a4bcc267ce3152119397e4fdd8d842b5ca4f96b"
+  },
+  "phase": "source_offline_warm",
+  "parameters": {
+    "tools": "none",
+    "runs": 3,
+    "analysisProfile": "default",
+    "projectId": "wakeio-kpi-nodegoat"
+  },
+  "measurementStatus": "completed",
+  "medium": {
+    "id": "nodegoat",
+    "commit": "c5cb68a7084e4ae7dcc60e6a98768720a81841e8",
+    "tree": "839d7b6856ec6da992d649b2423d5f9fcefdcf1f",
+    "files": 111,
+    "runs": [
+      {
+        "reportMs": 930.048959,
+        "processMs": 957,
+        "scanExitCode": 2,
+        "semanticSha256": "19bb25630b7c1ee737c1f6db09a1085fbfa6461ddfe2f11d26f7095276e9c2eb",
+        "checks": [
+          {
+            "id": "source.inventory",
+            "status": "completed",
+            "reasons": []
+          },
+          {
+            "id": "source.builtin-ast",
+            "status": "partial",
+            "reasons": [
+              "module_export_unsupported"
+            ]
+          },
+          {
+            "id": "source.framework",
+            "status": "not_applicable",
+            "reasons": []
+          },
+          {
+            "id": "source.code-coverage",
+            "status": "completed",
+            "reasons": []
+          }
+        ],
+        "complete": false
+      },
+      {
+        "reportMs": 877.4013329999998,
+        "processMs": 902,
+        "scanExitCode": 2,
+        "semanticSha256": "19bb25630b7c1ee737c1f6db09a1085fbfa6461ddfe2f11d26f7095276e9c2eb",
+        "checks": [
+          {
+            "id": "source.inventory",
+            "status": "completed",
+            "reasons": []
+          },
+          {
+            "id": "source.builtin-ast",
+            "status": "partial",
+            "reasons": [
+              "module_export_unsupported"
+            ]
+          },
+          {
+            "id": "source.framework",
+            "status": "not_applicable",
+            "reasons": []
+          },
+          {
+            "id": "source.code-coverage",
+            "status": "completed",
+            "reasons": []
+          }
+        ],
+        "complete": false
+      },
+      {
+        "reportMs": 979.2745,
+        "processMs": 998,
+        "scanExitCode": 2,
+        "semanticSha256": "19bb25630b7c1ee737c1f6db09a1085fbfa6461ddfe2f11d26f7095276e9c2eb",
+        "checks": [
+          {
+            "id": "source.inventory",
+            "status": "completed",
+            "reasons": []
+          },
+          {
+            "id": "source.builtin-ast",
+            "status": "partial",
+            "reasons": [
+              "module_export_unsupported"
+            ]
+          },
+          {
+            "id": "source.framework",
+            "status": "not_applicable",
+            "reasons": []
+          },
+          {
+            "id": "source.code-coverage",
+            "status": "completed",
+            "reasons": []
+          }
+        ],
+        "complete": false
+      }
+    ],
+    "coverageComplete": false,
+    "scope": "whole pinned source; partial analysis is preserved, not clean coverage"
+  },
+  "metrics": [
+    {
+      "id": "first_report_ms",
+      "status": "measured",
+      "value": 930.048959,
+      "runs": [
+        930.048959,
+        877.4013329999998,
+        979.2745
+      ],
+      "timingBoundary": "npx spawn to first parseable primary report, 2ms polling; warm checkout bin, no registry install"
+    },
+    {
+      "id": "planned_state_completeness",
+      "status": "unavailable",
+      "value": null,
+      "reason": "no_predeclared_cell_denominator"
+    },
+    {
+      "id": "determinism",
+      "status": "measured",
+      "value": 1,
+      "numerator": 3,
+      "denominator": 3
+    },
+    {
+      "id": "wire_budget_overflow",
+      "status": "unavailable",
+      "value": null,
+      "reason": "http_targets_excluded"
+    },
+    {
+      "id": "loop_stop_reason_rate",
+      "status": "unavailable",
+      "value": null,
+      "reason": "run_loop_not_implemented"
+    },
+    {
+      "id": "inventory_recall",
+      "status": "unavailable",
+      "value": null,
+      "reason": "surface_inventory_not_implemented"
+    },
+    {
+      "id": "source_regression",
+      "status": "measured",
+      "value": {
+        "tp": 27,
+        "fp": 0,
+        "fn": 1,
+        "completedCases": 56,
+        "totalCases": 56
+      },
+      "identities": {
+        "fp": [],
+        "fn": [
+          "ff7c8ee156432718b77b88e536f2a78699e30ea0a61cc0c10ebccf57ba46083a"
+        ]
+      }
+    }
+  ],
+  "limits": [
+    "network isolation is enforced externally, not attested by this script",
+    "registry cold install and HTTP/model/release KPIs are not measured",
+    "no absolute latency gate; compare only identical environments and inputs"
+  ],
+  "performanceTarget": null
+}

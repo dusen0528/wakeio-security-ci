@@ -1,0 +1,174 @@
+{
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [
+    {
+      "automationDetails": {
+        "id": "wakeio-security-ci/source"
+      },
+      "tool": {
+        "driver": {
+          "name": "wakeio-security-ci",
+          "version": "0.5.0",
+          "rules": []
+        }
+      },
+      "results": [],
+      "invocations": [
+        {
+          "executionSuccessful": true,
+          "startTimeUtc": "2026-10-22T06:37:25.273Z",
+          "endTimeUtc": "2026-10-22T06:37:25.296Z",
+          "properties": {
+            "mode": "source",
+            "category": "wakeio-security-ci/source",
+            "codeCoverages": [
+              {
+                "checkId": "source.code-coverage",
+                "codeCoverage": {
+                  "version": 1,
+                  "basis": "collected_code_inputs",
+                  "requireCodeAnalysis": false,
+                  "collectionComplete": true,
+                  "accounting": "exact",
+                  "languages": [
+                    {
+                      "language": "typescript",
+                      "collected": 1,
+                      "eligible": 1,
+                      "completed": 1,
+                      "uncovered": 0,
+                      "providers": [
+                        {
+                          "provider": "builtin_ast",
+                          "selected": true,
+                          "status": "completed",
+                          "eligible": 1,
+                          "completed": 1
+                        },
+                        {
+                          "provider": "bandit",
+                          "selected": false,
+                          "status": "not_selected",
+                          "eligible": 0,
+                          "completed": 0
+                        },
+                        {
+                          "provider": "opengrep_native",
+                          "selected": false,
+                          "status": "not_selected",
+                          "eligible": 0,
+                          "completed": 0
+                        }
+                      ]
+                    }
+                  ],
+                  "totals": {
+                    "collected": 1,
+                    "eligible": 1,
+                    "completed": 1,
+                    "uncovered": 0
+                  }
+                }
+              }
+            ],
+            "statuses": {
+              "source.inventory": "completed",
+              "source.builtin-ast": "completed",
+              "source.framework": "not_applicable",
+              "source.code-coverage": "completed"
+            }
+          }
+        }
+      ],
+      "properties": {
+        "mode": "source",
+        "category": "wakeio-security-ci/source",
+        "schemaVersion": "1.0.0",
+        "analysisBudget": {
+          "revision": "ast-work-v1",
+          "requestedProfile": "default",
+          "effectiveProfile": "default",
+          "limits": {
+            "indexWork": 300000,
+            "flowWork": 200000,
+            "nodeVisits": 500000,
+            "functions": 2000,
+            "summaryWork": 5000,
+            "moduleEdges": 2000,
+            "callDepth": 8,
+            "aliasSteps": 64,
+            "traceSteps": 24
+          }
+        },
+        "collectionBudget": {
+          "revision": "collection-v1",
+          "limits": {
+            "maxFiles": 1000,
+            "maxBytes": 26214400,
+            "maxFileBytes": 2097152,
+            "maxEntries": 8000
+          }
+        },
+        "collectionInventories": [
+          {
+            "checkIndex": 0,
+            "checkId": "source.inventory",
+            "collectionBudget": {
+              "revision": "collection-v1",
+              "limits": {
+                "maxFiles": 1000,
+                "maxBytes": 26214400,
+                "maxFileBytes": 2097152,
+                "maxEntries": 8000
+              }
+            },
+            "collectionEvidence": {
+              "revision": "collection-v1",
+              "issueCount": 0,
+              "issues": []
+            }
+          }
+        ],
+        "sourceSnapshots": [
+          {
+            "checkIndex": 0,
+            "checkId": "source.inventory",
+            "sourceSnapshot": {
+              "revision": "source-snapshot-v1",
+              "basis": "collected_utf8_strings",
+              "algorithm": "sha256",
+              "digest": "f79e676d3a60e0268b4df7edb2ca1da383e02b6653ceb4ed647bdcb65424f04c",
+              "filesSelected": 1,
+              "bytesSelected": 116,
+              "complete": true,
+              "outputDirectoryExcluded": false
+            }
+          }
+        ],
+        "analysisBudgets": [
+          {
+            "checkIndex": 1,
+            "checkId": "source.builtin-ast",
+            "analysisBudget": {
+              "revision": "ast-work-v1",
+              "requestedProfile": "default",
+              "effectiveProfile": "default",
+              "limits": {
+                "indexWork": 300000,
+                "flowWork": 200000,
+                "nodeVisits": 500000,
+                "functions": 2000,
+                "summaryWork": 5000,
+                "moduleEdges": 2000,
+                "callDepth": 8,
+                "aliasSteps": 64,
+                "traceSteps": 24
+              }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
