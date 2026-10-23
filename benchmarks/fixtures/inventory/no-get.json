@@ -1,0 +1,19 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Owned offline inventory fixture",
+    "version": "1"
+  },
+  "paths": {
+    "/write": {
+      "post": {
+        "responses": {}
+      }
+    },
+    "/health": {
+      "head": {
+        "responses": {}
+      }
+    }
+  }
+}

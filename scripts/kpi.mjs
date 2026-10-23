@@ -59,6 +59,59 @@ export function accuracyIdentities(report) {
   return { fp: fp.sort(), fn: fn.sort() };
 }
 
+function inventoryStatistics(cases) {
+  if (!Array.isArray(cases) || !cases.length || new Set(cases.map(c => c.id)).size !== cases.length) throw Error('invalid_inventory_evidence');
+  let numerator = 0, denominator = 0, missing = 0, unexpected = 0, exactSetMatch = true;
+  for (const item of cases) {
+    if (typeof item.id !== 'string' || !/^[a-z-]+$/.test(item.id)
+      || !['expectedGetKeys', 'observedGetKeys'].every(key => Array.isArray(item[key]) && item[key].every(value => typeof value === 'string' && /^GET \/[^\r\n]*$/.test(value)))
+      || new Set(item.expectedGetKeys).size !== item.expectedGetKeys.length
+      || !['expectedDeclaredGetOperations', 'declaredGetOperations'].every(key => item[key] === null || Number.isSafeInteger(item[key]) && item[key] >= 0)
+      || !['expectedUnresolvedPathItems', 'unresolvedPathItems'].every(key => Number.isSafeInteger(item[key]) && item[key] >= 0)
+      || !['expectedState', 'state'].every(key => ['observed', 'none_detected', 'partial'].includes(item[key]))
+      || !Array.isArray(item.hashes) || item.hashes.length !== RUNS || item.hashes.some(hash => !/^[a-f0-9]{64}$/.test(hash))) throw Error('invalid_inventory_evidence');
+    const expected = new Set(item.expectedGetKeys), observed = new Set(item.observedGetKeys);
+    const missed = [...expected].filter(key => !observed.has(key)).length, added = [...observed].filter(key => !expected.has(key)).length;
+    missing += missed; unexpected += added;
+    if (item.expectedDeclaredGetOperations > 0) { denominator += expected.size; numerator += expected.size - missed; }
+    const status = item.expectedDeclaredGetOperations === null ? 'unavailable' : item.expectedDeclaredGetOperations === 0 ? 'not_applicable' : 'measured';
+    const value = status === 'measured' ? (expected.size - missed) / expected.size : null;
+    if (item.value !== value || item.status !== status || item.expectedDeclaredGetOperations !== null && item.expectedDeclaredGetOperations !== expected.size) throw Error('invalid_inventory_evidence');
+    exactSetMatch &&= missed === 0 && added === 0 && observed.size === item.observedGetKeys.length
+      && item.expectedDeclaredGetOperations === item.declaredGetOperations && item.expectedUnresolvedPathItems === item.unresolvedPathItems
+      && item.expectedState === item.state && new Set(item.hashes).size === 1;
+  }
+  if (!denominator) throw Error('empty_inventory_denominator');
+  return { value: numerator / denominator, numerator, denominator, missingGetOperations: missing, unexpectedGetOperations: unexpected, exactSetMatch };
+}
+
+/** Independent reviewed sets, not detector-generated expectations. Unknown/zero denominators stay explicit. */
+export async function measureInventory(enumerate) {
+  if (typeof enumerate !== 'function') return unavailable('inventory_recall', 'surface_inventory_not_implemented');
+  const corpus = JSON.parse(await readFile(join(ROOT, 'benchmarks/inventory-corpus.json'), 'utf8'));
+  if (corpus.schema !== 'wakeio.inventory-corpus/v1' || corpus.cases.length !== 8) throw Error('invalid_inventory_corpus');
+  const cases = [];
+  for (const fixture of corpus.cases) {
+    if (!/^fixtures\/inventory\/[a-z-]+\.json$/.test(fixture.fixture)) throw Error('invalid_inventory_fixture');
+    const bytes = await readFile(join(ROOT, 'benchmarks', fixture.fixture));
+    if (sha(bytes) !== fixture.sha256) throw Error('inventory_fixture_changed');
+    const results = [];
+    for (let i = 0; i < RUNS; i++) results.push(await enumerate(JSON.parse(bytes.toString('utf8'))));
+    const result = results[0];
+    if (!Array.isArray(result?.operations) || !Array.isArray(result.unresolved)
+      || result.operations.some(item => item.method !== 'GET' || typeof item.path !== 'string')) throw Error('invalid_inventory_result');
+    const matched = fixture.expectedGetKeys.filter(key => result.operations.some(item => key === 'GET ' + item.path)).length;
+    cases.push({ id: fixture.id, value: fixture.declaredGetOperations > 0 ? matched / fixture.expectedGetKeys.length : null,
+      status: fixture.declaredGetOperations === null ? 'unavailable' : fixture.declaredGetOperations === 0 ? 'not_applicable' : 'measured',
+      expectedGetKeys: fixture.expectedGetKeys, observedGetKeys: result.operations.map(item => 'GET ' + item.path).sort(),
+      expectedDeclaredGetOperations: fixture.declaredGetOperations, declaredGetOperations: result.unresolved.length ? null : result.operations.length,
+      expectedUnresolvedPathItems: fixture.unresolvedPathItems, unresolvedPathItems: result.unresolved.length,
+      expectedState: fixture.state, state: result.unresolved.length ? 'partial' : result.operations.length ? 'observed' : 'none_detected',
+      hashes: results.map(result => sha(JSON.stringify(result))) });
+  }
+  return { id: 'inventory_recall', status: 'measured', ...inventoryStatistics(cases), cases };
+}
+
 async function fixtureDigest(root) {
   const files = [];
   async function walk(directory, prefix = '') {
@@ -77,7 +130,8 @@ async function fixtureDigest(root) {
 }
 
 async function corpusDigest(corpus) {
-  return digest({ manifest: sha(await readFile(corpus.corpusPath)), files: await fixtureDigest(join(ROOT, 'benchmarks/fixtures')) });
+  return digest({ manifest: sha(await readFile(corpus.corpusPath)), files: await fixtureDigest(join(ROOT, 'benchmarks/fixtures')),
+    inventory: sha(await readFile(join(ROOT, 'benchmarks/inventory-corpus.json'))) });
 }
 
 async function revision(root) {
@@ -168,13 +222,14 @@ export async function measure(options) {
     }
     const accuracy = await runBenchmark(engine.runSource, { engine: { label: sourceRevision, version: pkg.version, modulePath: 'build/src/index.js' } });
     await writeBenchmarkReports(accuracy, join(options.out, 'accuracy'));
+    const inventory = await measureInventory(engine.enumerateOpenApiGetOperations);
     if (!accuracy.success || !accuracy.cases.length || accuracy.summary.incompleteCases
       || engineSha256 !== await fixtureDigest(join(root, 'build/src')) || sourceRevision !== await revision(root)
       || context.corpusDigest !== await corpusDigest(corpus)
       || context.engine.dependencyLock !== sha(await readFile(join(root, 'package-lock.json')))) throw Error('incomplete_or_changed_engine');
     await verifyCheckout(medium, verified.root);
     const deterministic = new Set(runs.map(run => run.semanticSha256)).size === 1;
-    const report = { schema: 'wakeio.kpi/v1', ...context, measurementStatus: deterministic ? 'completed' : 'failed',
+    const report = { schema: 'wakeio.kpi/v1', ...context, measurementStatus: deterministic && inventory.exactSetMatch !== false ? 'completed' : 'failed',
       medium: { id: medium.id, commit: verified.commit, tree: verified.tree, files: verified.trackedFiles, runs,
         coverageComplete: runs.every(run => run.complete), scope: 'whole pinned source; partial analysis is preserved, not clean coverage' },
       metrics: [
@@ -186,7 +241,7 @@ export async function measure(options) {
         { id: 'determinism', status: 'measured', value: deterministic ? 1 : 0, numerator: deterministic ? RUNS : null, denominator: RUNS },
         unavailable('wire_budget_overflow', 'http_targets_excluded'),
         unavailable('loop_stop_reason_rate', 'run_loop_not_implemented'),
-        unavailable('inventory_recall', 'surface_inventory_not_implemented'),
+        inventory,
         { id: 'source_regression', status: 'measured', value: { tp: accuracy.summary.truePositives, fp: accuracy.summary.falsePositives,
           fn: accuracy.summary.falseNegatives, completedCases: accuracy.summary.completedCases, totalCases: accuracy.summary.totalCases },
           identities: accuracyIdentities(accuracy) },
@@ -233,6 +288,10 @@ function validate(report) {
           || !['fp', 'fn'].every(k => Array.isArray(metric.identities?.[k]) && metric.identities[k].every(x => /^[a-f0-9]{64}$/.test(x))
             && new Set(metric.identities[k]).size === metric.identities[k].length && metric.identities[k].length === metric.value[k])) throw Error('invalid_kpi');
       } else if (!Number.isFinite(metric.value) || metric.value < 0 || id === 'determinism' && ![0, 1].includes(metric.value)) throw Error('invalid_kpi');
+      if (id === 'inventory_recall') {
+        const expected = inventoryStatistics(metric.cases);
+        if (Object.keys(expected).some(key => metric[key] !== expected[key])) throw Error('invalid_kpi');
+      }
     }
   }
   const analysis = report.metrics.find(m => m.id === 'analysis_ms');
@@ -291,10 +350,14 @@ export function compareKpi(before, after) {
       reasons: ['incomplete_reason_count_unknown'], incompleteReasonCounts };
   }
   const oldAnalysis = before.metrics.find(m => m.id === 'analysis_ms').value, analysis = after.metrics.find(m => m.id === 'analysis_ms').value;
-  const regression = newFp.length || newFn.length || newIncomplete.length || increasedIncompleteReasons || after.metrics.find(m => m.id === 'determinism').value !== 1;
+  const inventory = after.metrics.find(m => m.id === 'inventory_recall');
+  const regression = newFp.length || newFn.length || newIncomplete.length || increasedIncompleteReasons
+    || inventory.status === 'measured' && !inventory.exactSetMatch || after.metrics.find(m => m.id === 'determinism').value !== 1;
   return { schema: 'wakeio.kpi-comparison/v1', comparable: true, status: regression ? 'regression' : 'no_regression', exitCode: regression ? 1 : 0,
     newFalsePositives: newFp.length, newFalseNegatives: newFn.length, newIncompleteChecks: newIncomplete.length,
     incompleteReasonCounts, increasedIncompleteReasons,
+    inventoryRecall: { status: inventory.status, value: inventory.value,
+      ...(inventory.status === 'measured' ? { exactSetMatch: inventory.exactSetMatch, unexpectedGetOperations: inventory.unexpectedGetOperations } : {}) },
     analysisTiming: { beforeMedianMs: oldAnalysis, afterMedianMs: analysis, ratio: oldAnalysis > 0 ? analysis / oldAnalysis : null,
       warning: analysis > oldAnalysis * 1.5, threshold: 1.5, gating: false },
     firstReportDeltaMs: after.metrics.find(m => m.id === 'first_report_ms').value - before.metrics.find(m => m.id === 'first_report_ms').value,

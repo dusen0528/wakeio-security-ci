@@ -31,7 +31,7 @@ Per-reason counts are weighted analysis gap events, not unique sites or vulnerab
 
 NodeGoat may retain partial AST analysis (module_export_unsupported). A successful *measurement* does not make its source coverage complete: coverageComplete=false and scan exit2 remain visible. Synthetic accuracy is measured separately across the existing 56 cases, including the known Koa miss.
 
-Loop termination, inventory recall, predeclared-cell completeness and actual HTTP budget KPIs are unavailable/null until their implementations/authorized measurements exist. Source requests=0 is not used as a wire-budget success.
+Loop termination, predeclared-cell completeness and actual HTTP budget KPIs remain unavailable/null. P1a now measures OpenAPI GET inventory recall against eight pinned fixtures; zero/unknown denominators retain explicit not_applicable/unavailable case results. A base engine without the enumerator remains unavailable. Source requests=0 is not used as a wire-budget success.
 
 Comparison rejects missing/malformed fields, inconsistent samples/counts, incomplete accuracy or differing fixture/corpus/harness/parameters or runtime os/arch/node/npm/image digest. It detects new FP/FN identities even if aggregate totals stay unchanged, new medium incomplete checks, increased event counts for the same check/reason, lost measurements and nondeterminism. Exit0=no measured regression, exit1=measured regression, exit2=failed/incomparable measurement. Dependency-only PRs remain comparable: engine.dependencyLock is metadata and an intra-run mutation guard, not a cross-revision match condition. Kernel release is recorded for diagnosis only. No millisecond gate or automatic baseline replacement is imposed.
 
@@ -51,11 +51,11 @@ The committed kpi-baseline.json records a measured main revision/environment. An
 
 tests/fixtures/compat-0.5 contains original main 0.5 report/agent-report/Markdown/SARIF artifacts plus their hashes and expected gates. Tests consume those frozen artifacts rather than regenerating the expected output from new code. Existing error/not_applicable and scan/compare gate differences are retained. The v1 plan validator is not widened for future loop metadata.
 
-This P0 implements the measurement/compatibility prerequisites for approved D1–D6. It does not implement init-dast, execution-plan v2, state-snapshot, run-loop, agent providers or deployment.
+P0 provides the measurement/compatibility prerequisites for approved D1–D6. P1a adds offline init-dast and the inventory_recall measurement; see ../docs/surface-inventory-p1a.md for its limited GET-only scope. Execution-plan v2, source route discovery, state-snapshot, run-loop, agent providers and deployment remain separate work.
 
 ## Recorded main reference
 
-The committed Linux/Docker reference is main 536d968357c31a7c681164ef7afa6307b138d1a7, with NodeGoat commit c5cb68a7084e4ae7dcc60e6a98768720a81841e8 (111 tracked files), three runs and Node22.23.4. Median first report: 795.268ms; median analysis-only: 267.716ms (one excluded warmup, three samples); normalized primary hashes3/3 agree. The independent synthetic corpus remains TP27/FP0/FN1 across56 completed cases. NodeGoat AST remains partial with module_export_unsupported; loop/inventory/wire-budget metrics are unavailable. This is a reference measurement, not an adopted latency target.
+The committed kpi-baseline.json is the freshly measured main reference for the current harness. It records revision, exact environment/image, raw samples, source accuracy and explicit inventory availability. NodeGoat is pinned to c5cb68a7084e4ae7dcc60e6a98768720a81841e8 (111 tracked files); AST remains partial with module_export_unsupported and the synthetic corpus retains the known Koa miss. Read the JSON for measured values. A base engine without P1a keeps inventory_recall unavailable; the candidate is measured separately. This is a reference, not an adopted latency target.
 
 ## Proposed main trend storage (deferred)
 

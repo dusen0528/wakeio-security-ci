@@ -19,6 +19,7 @@ import { DEFAULT_TOOL_TIMEOUT_MS, MAX_TOOL_TIMEOUT_MS } from "./source/process.j
 import { buildScanScope, validateProjectId } from "./scan-scope.js";
 import { doctorMain } from "./doctor.js";
 import { initMain } from "./init.js";
+import { initDastMain } from './init-dast.js';
 import { planMain } from "./plan.js";
 import { repairMain } from "./repair.js";
 import { adviseMain } from "./agent-advice.js";
@@ -98,6 +99,7 @@ export const USAGE = `Usage:
   wakeio-security-ci replay --report report.json --dast-policy FILE --finding ID --active-consent --out NEW_DIR [--allow-private]
   wakeio-security-ci doctor [--source DIR] [--tools ...] [--json] [--strict]
   wakeio-security-ci init [--source DIR] [--workflow FILE] [--out DIR] [--tools ...]
+  wakeio-security-ci init-dast --source DIR --openapi LOCAL_JSON --out NEW_DIR [--url ORIGIN]
   wakeio-security-ci repair --source DIR --policy FILE --out NEW_DIR --proposal FILE
   wakeio-security-ci repair --help
   wakeio-security-ci api-write-state --candidate fixed|ineffective|all-deny|normal-regression|status-only|wrong-object --active-consent --out NEW_DIR
@@ -619,6 +621,7 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
   if (argv[0] === 'replay') return runReplay(argv);
   if (argv[0] === 'doctor') return doctorMain(argv);
   if (argv[0] === 'init') return initMain(argv);
+  if (argv[0] === 'init-dast') return initDastMain(argv);
   if (argv[0] === 'repair') return repairMain(argv);
   if (argv[0] === 'advise') return adviseMain(argv);
   if (argv[0] === 'handoff') return handoffMain(argv);
