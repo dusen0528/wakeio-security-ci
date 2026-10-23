@@ -4,6 +4,7 @@ import { preflightApiPolicy, API_MAX_TIMEOUT_MS, type ApiPreflightResult } from 
 import { preflightOpenApiPolicy, type OpenApiPolicyInput } from './openapi.js';
 import { readJsonInput } from './json-input.js';
 import { DEFAULT_TOOL_TIMEOUT_MS } from './source/process.js';
+import { PRESET_USAGE, presetPlanMain } from './preset-plan.js';
 
 const USAGE = `Usage:
   wakeio-security-ci plan --api-policy FILE [--allow-private] [--timeout-ms N]
@@ -13,7 +14,7 @@ const USAGE = `Usage:
 Validate local JSON and print a redacted fixed request plan without DNS, HTTP or scan reports.
 Use exactly one input. Timeout is 1..120000 ms (default: ${DEFAULT_TOOL_TIMEOUT_MS}, matching scan). Exit 0 means configuration ready;
 exit 2 means blocked. Neither exit is a security result or permission to scan.
-`;
+${PRESET_USAGE}`;
 
 function failure(code: string, location: string, message: string): ApiPreflightResult {
   const result = preflightApiPolicy({ policy: null });
@@ -23,6 +24,7 @@ function failure(code: string, location: string, message: string): ApiPreflightR
 
 /** Deliberately isolated from scan: no source/URL mode, report output or execution fallback. */
 export async function planMain(argv: readonly string[]): Promise<number> {
+  if (argv.some(arg => arg === '--preset' || arg.startsWith('--preset='))) return presetPlanMain(argv);
   if (argv.length === 2 && ['--help', '-h'].includes(argv[1]!)) { process.stdout.write(USAGE); return 0; }
   let kind: '--api-policy' | '--openapi-input' | '--dast-policy' | undefined, file: string | undefined;
   let allowPrivate = false, timeoutMs = DEFAULT_TOOL_TIMEOUT_MS, maxRequests: number | undefined, result: ApiPreflightResult;

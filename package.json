@@ -37,6 +37,7 @@
   "files": [
     "build/src",
     "schemas",
+    "presets",
     "workers/api-state",
     "workers/api-write-state",
     "workers/schemathesis/worker.py",

@@ -22,7 +22,7 @@ export async function readJsonInputBytes(path: string, maxBytes: number): Promis
     }
     const after = await handle.stat();
     if (length !== before.size || after.size !== before.size || after.mtimeMs !== before.mtimeMs || after.ctimeMs !== before.ctimeMs) {
-      throw new Error('JSON input changed while reading');
+      throw Object.assign(new Error('JSON input changed while reading'), { code: 'input_changed' });
     }
     return buffer.subarray(0, length);
   } finally {
