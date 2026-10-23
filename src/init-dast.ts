@@ -1,8 +1,8 @@
-import { lstat, mkdir, realpath, writeFile } from 'node:fs/promises';
 import { basename, dirname, join, resolve, sep } from 'node:path';
 import { createHash } from 'node:crypto';
 import { readJsonInputBytes } from './json-input.js';
-import { enumerateOpenApiGetOperations, OPENAPI_MAX_INPUT_BYTES, OpenApiPolicyError, type OpenApiInventoryGapReason } from './openapi.js';
+import { enumerateOpenApiGetOperations, OPENAPI_MAX_INPUT_BYTES, type OpenApiInventoryGapReason } from './openapi.js';
+import { offlineDirectory, offlineErrorCode, writeOfflineBundle } from './offline-output.js';
 
 export interface SurfaceInventory {
   schema: 'wakeio.surface-inventory/v1';
@@ -50,21 +50,6 @@ Output must be new, outside source, with an existing parent directory.
 Exit 0: inventory produced, including explicit partial/unverified scope. Exit 2: input/output error.
 `;
 
-// Same directory policy as run-plan: no caller symlinks, except verified macOS system aliases.
-async function directory(path: string): Promise<string> {
-  const target = resolve(path), root = resolve(target, '/');
-  let current = root;
-  for (const part of target.slice(root.length).split(sep).filter(Boolean)) {
-    current = join(current, part);
-    let info;
-    try { info = await lstat(current); } catch { throw Error('unsafe_path'); }
-    if (info.isSymbolicLink()) {
-      if (process.platform !== 'darwin' || !['/tmp', '/var'].includes(current) || await realpath(current) !== '/private' + current) throw Error('unsafe_path');
-    } else if (!info.isDirectory()) throw Error('unsafe_path');
-  }
-  return realpath(target);
-}
-
 export async function initDastMain(argv: readonly string[]): Promise<number> {
   const args = argv[0] === 'init-dast' ? argv.slice(1) : [...argv];
   if (args.length === 1 && ['--help', '-h'].includes(args[0]!)) { process.stdout.write(HELP); return 0; }
@@ -77,31 +62,17 @@ export async function initDastMain(argv: readonly string[]): Promise<number> {
       flags.set(flag, value);
     }
     if (!['--source', '--openapi', '--out'].every(flag => flags.has(flag))) throw Error('invalid_arguments');
-    const source = await directory(flags.get('--source')!);
+    const source = await offlineDirectory(flags.get('--source')!);
     const input = resolve(flags.get('--openapi')!), destination = resolve(flags.get('--out')!);
-    await directory(dirname(input));
-    const parent = await directory(dirname(destination)), output = join(parent, basename(destination));
+    await offlineDirectory(dirname(input));
+    const parent = await offlineDirectory(dirname(destination)), output = join(parent, basename(destination));
     if (output === source || output.startsWith(source.endsWith(sep) ? source : source + sep)) throw Error('unsafe_path');
     const inventory = buildSurfaceInventory(await readJsonInputBytes(input, OPENAPI_MAX_INPUT_BYTES), flags.get('--url'));
-    try {
-      await mkdir(output, { mode: 0o700 });
-      await writeFile(join(output, 'inventory.json'), JSON.stringify(inventory, null, 2) + '\n', { mode: 0o600, flag: 'wx' });
-    } catch (error) {
-      throw Error((error as NodeJS.ErrnoException).code === 'EEXIST' ? 'output_exists' : 'output_error');
-    }
+    await writeOfflineBundle(output, [['inventory.json', JSON.stringify(inventory, null, 2) + '\n']]);
     process.stdout.write(`Inventory status=${inventory.scope.openapi_get} unresolved=${inventory.counts.unresolvedPathItems} unverified=${inventory.unverified.length} GET=${inventory.surfaces.length}\n`);
     return 0;
   } catch (error) {
-    let reason = 'invalid_openapi';
-    if (error instanceof OpenApiPolicyError) reason = error.code === 'openapi_limit' ? 'input_limit'
-      : error.code === 'unsupported_openapi' ? 'unsupported_openapi' : 'invalid_openapi';
-    else if (error instanceof Error) {
-      const code = (error as NodeJS.ErrnoException).code;
-      if (['ELOOP', 'ENOENT', 'ENOTDIR', 'EACCES', 'EPERM', 'unsafe_path'].includes(code ?? '')) reason = 'unsafe_path';
-      else if (code === 'input_limit') reason = 'input_limit';
-      else if (['invalid_arguments', 'unsafe_path', 'output_exists', 'output_error', 'invalid_origin', 'input_limit'].includes(error.message)) reason = error.message;
-    }
-    process.stderr.write(reason + '\n');
+    process.stderr.write(offlineErrorCode(error, 'invalid_openapi') + '\n');
     return 2;
   }
 }

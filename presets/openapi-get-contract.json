@@ -1,0 +1,7 @@
+{
+  "schema": "wakeio.plan-preset/v1",
+  "id": "openapi-get-contract",
+  "operations": "all",
+  "seed": 1,
+  "maxRequests": 64
+}
