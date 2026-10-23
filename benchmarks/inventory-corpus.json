@@ -1,0 +1,94 @@
+{
+  "schema": "wakeio.inventory-corpus/v1",
+  "cases": [
+    {
+      "id": "existing-live",
+      "fixture": "fixtures/inventory/existing-live.json",
+      "sha256": "88a35d939252115082d51cc9da58975b9fec3c723601d7bdd2a73f4eec2cf06a",
+      "expectedGetKeys": [
+        "GET /items/{id}",
+        "GET /search"
+      ],
+      "declaredGetOperations": 2,
+      "state": "observed",
+      "unresolvedPathItems": 0
+    },
+    {
+      "id": "existing-worker",
+      "fixture": "fixtures/inventory/existing-worker.json",
+      "sha256": "9f15efba08727a03356340bf9aaba9bd2940f7d189408341f025ec641a2adb4a",
+      "expectedGetKeys": [
+        "GET /items"
+      ],
+      "declaredGetOperations": 1,
+      "state": "observed",
+      "unresolvedPathItems": 0
+    },
+    {
+      "id": "existing-preflight",
+      "fixture": "fixtures/inventory/existing-preflight.json",
+      "sha256": "257e8fee83c3267249c7196866a3e835e09e100502cc8ed7459e92a8f27ce0ba",
+      "expectedGetKeys": [
+        "GET /documents/{id}",
+        "GET /whoami"
+      ],
+      "declaredGetOperations": 2,
+      "state": "observed",
+      "unresolvedPathItems": 0
+    },
+    {
+      "id": "inline-unselected",
+      "fixture": "fixtures/inventory/inline-unselected.json",
+      "sha256": "6f747d2cf38517f339088596457d675bbdadb575da268a5afe2cf79f25e1a14c",
+      "expectedGetKeys": [
+        "GET /documents/{id}",
+        "GET /unselected",
+        "GET /whoami"
+      ],
+      "declaredGetOperations": 3,
+      "state": "observed",
+      "unresolvedPathItems": 0
+    },
+    {
+      "id": "local-path-item-alias",
+      "fixture": "fixtures/inventory/local-path-item-alias.json",
+      "sha256": "aa1cf9004f846392370608c96f660bd342f68f9e63c46c0c3bf093114154e3b0",
+      "expectedGetKeys": [
+        "GET /archived-items",
+        "GET /items"
+      ],
+      "declaredGetOperations": 2,
+      "state": "observed",
+      "unresolvedPathItems": 0
+    },
+    {
+      "id": "no-get",
+      "fixture": "fixtures/inventory/no-get.json",
+      "sha256": "4b8c396209f182a3a70c9f213aa0a05c497c6d59d4cb6f99a6c66d86fdc2ec29",
+      "expectedGetKeys": [],
+      "declaredGetOperations": 0,
+      "state": "none_detected",
+      "unresolvedPathItems": 0
+    },
+    {
+      "id": "empty-paths",
+      "fixture": "fixtures/inventory/empty-paths.json",
+      "sha256": "69e47f8304808b6c48589509ab27da7e46cfddb4f9674008c767a96242062969",
+      "expectedGetKeys": [],
+      "declaredGetOperations": 0,
+      "state": "none_detected",
+      "unresolvedPathItems": 0
+    },
+    {
+      "id": "unresolved-path-item",
+      "fixture": "fixtures/inventory/unresolved-path-item.json",
+      "sha256": "70842d6fc11d62c5b52cf8812cdb32c5c10dfa8d0db924d6f9521edfeecfea36",
+      "expectedGetKeys": [
+        "GET /local"
+      ],
+      "declaredGetOperations": null,
+      "state": "partial",
+      "unresolvedPathItems": 1
+    }
+  ]
+}

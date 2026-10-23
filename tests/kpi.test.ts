@@ -148,3 +148,38 @@ test('same incomplete reason with increased events is a regression and exposes b
   after.medium.runs[0].checks.find((c: any) => c.id === 'source.builtin-ast').reasonCounts[0].count = -1;
   assert.throws(() => kpi.compareKpi(before, after));
 });
+
+test('inventory recall measures exact reviewed GET sets and preserves zero/unknown denominator status', async () => {
+  const { enumerateOpenApiGetOperations } = await import('../src/openapi.js');
+  const metric = await kpi.measureInventory(enumerateOpenApiGetOperations);
+  assert.equal(metric.status, 'measured'); assert.equal(metric.value, 1);
+  assert.equal(metric.numerator, 10); assert.equal(metric.denominator, 10);
+  assert.equal(metric.unexpectedGetOperations, 0); assert.equal(metric.missingGetOperations, 0); assert.equal(metric.exactSetMatch, true);
+  assert.equal(metric.cases.length, 8);
+  assert.equal(metric.cases.filter((c: any) => c.status === 'not_applicable' && c.value === null).length, 2);
+  assert.equal(metric.cases.filter((c: any) => c.status === 'unavailable' && c.value === null).length, 1);
+  assert.equal((await kpi.measureInventory(undefined)).status, 'unavailable');
+  const after = sample(); after.metrics = after.metrics.map((m: any) => m.id === 'inventory_recall' ? metric : m);
+  assert.equal(kpi.compareKpi(sample(), after).exitCode, 0);
+  const forged = structuredClone(after); forged.metrics.find((m: any) => m.id === 'inventory_recall').denominator = 11;
+  assert.throws(() => kpi.compareKpi(sample(), forged));
+});
+
+test('inventory gate rejects unexpected, equal-sized wrong, duplicate and nondeterministic GET sets', async () => {
+  const { enumerateOpenApiGetOperations } = await import('../src/openapi.js');
+  let calls = 0;
+  for (const mode of ['added', 'wrong', 'duplicate', 'nondeterministic']) {
+    const metric = await kpi.measureInventory((document: unknown) => {
+      const result = enumerateOpenApiGetOperations(document);
+      if (!result.operations.length) return result;
+      if (mode === 'wrong' || mode === 'nondeterministic' && ++calls % 3 === 0) result.operations[0]!.path = '/unexpected';
+      else if (mode === 'added') result.operations.push({ method: 'GET', path: '/unexpected' });
+      else if (mode === 'duplicate') result.operations.push({ ...result.operations[0]! });
+      return result;
+    });
+    assert.equal(metric.exactSetMatch, false, mode);
+    if (mode === 'added') { assert.equal(metric.value, 1); assert.ok(metric.unexpectedGetOperations > 0); }
+    const after = sample(); after.metrics = after.metrics.map((m: any) => m.id === 'inventory_recall' ? metric : m);
+    assert.equal(kpi.compareKpi(sample(), after).exitCode, 1, mode);
+  }
+});

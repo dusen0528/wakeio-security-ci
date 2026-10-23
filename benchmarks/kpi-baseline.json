@@ -1,12 +1,12 @@
 {
   "schema": "wakeio.kpi/v1",
-  "measuredAt": "2026-10-22T08:34:04.167Z",
-  "revision": "536d968357c31a7c681164ef7afa6307b138d1a7",
+  "measuredAt": "2026-10-23T03:11:14.842Z",
+  "revision": "7c13b24624af44f9192a1df49908aa25e1d074c9",
   "engineSha256": "1b6c55c86c646fb31dbe9f8c6b386368b228229eddb4d06e10ad3176108ae569",
   "toolVersion": "0.5.0",
   "fixtureDigest": "4f5ccf841cbac6bbc67a8a270c29e95eb22bd14b55ba41f0c55bf3be76b67702",
-  "corpusDigest": "51b1afdd951af3ace8aa2425f4bb533d204421ff5368b0d1c5797cbe73af67d5",
-  "harnessDigest": "48b32da28b09c2b007d1e83d24afc535337cb06d6f9ab3b9c7c9a3742543e389",
+  "corpusDigest": "ec15ed4c71a53debc9b1c82689c73f9c61a40f7d042238dc5d6a5d6394161cef",
+  "harnessDigest": "1d6277c73089a31b708b36e2c065d046af16ffb04b036dd4d137ed3cd0df6196",
   "engine": {
     "dependencyLock": "033e0ef135f3e6c112d806af5a4bcc267ce3152119397e4fdd8d842b5ca4f96b"
   },
@@ -33,8 +33,8 @@
     "files": 111,
     "runs": [
       {
-        "reportMs": 899.6926259999999,
-        "processMs": 929,
+        "reportMs": 842.5821679999999,
+        "processMs": 871,
         "scanExitCode": 2,
         "semanticSha256": "19bb25630b7c1ee737c1f6db09a1085fbfa6461ddfe2f11d26f7095276e9c2eb",
         "checks": [
@@ -73,8 +73,8 @@
         "complete": false
       },
       {
-        "reportMs": 790.4605829999998,
-        "processMs": 807,
+        "reportMs": 781.500125,
+        "processMs": 795,
         "scanExitCode": 2,
         "semanticSha256": "19bb25630b7c1ee737c1f6db09a1085fbfa6461ddfe2f11d26f7095276e9c2eb",
         "checks": [
@@ -113,8 +113,8 @@
         "complete": false
       },
       {
-        "reportMs": 795.2677089999997,
-        "processMs": 812,
+        "reportMs": 777.1542089999998,
+        "processMs": 793,
         "scanExitCode": 2,
         "semanticSha256": "19bb25630b7c1ee737c1f6db09a1085fbfa6461ddfe2f11d26f7095276e9c2eb",
         "checks": [
@@ -160,22 +160,22 @@
     {
       "id": "first_report_ms",
       "status": "measured",
-      "value": 795.2677089999997,
+      "value": 781.500125,
       "runs": [
-        899.6926259999999,
-        790.4605829999998,
-        795.2677089999997
+        842.5821679999999,
+        781.500125,
+        777.1542089999998
       ],
       "timingBoundary": "npx spawn to first parseable primary report, 2ms polling; warm checkout bin, no registry install"
     },
     {
       "id": "analysis_ms",
       "status": "measured",
-      "value": 267.7163340000002,
+      "value": 276.06383300000016,
       "runs": [
-        278.777333,
-        267.7163340000002,
-        260.27979200000027
+        296.36820799999987,
+        276.06383300000016,
+        261.0394999999994
       ],
       "timingBoundary": "in-process runSource({root, tools: []}) call; one untimed warmup, three samples; excludes npx/imports/report serialization"
     },
