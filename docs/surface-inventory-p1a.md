@@ -10,25 +10,41 @@ wakeio-security-ci init-dast --source /absolute/project \
   --url https://owner-selected.invalid
 ```
 
-`--source`, `--openapi` and `--out` are required. `--url` is optional and validates/normalizes only an HTTP(S) origin; no hostname is resolved. Userinfo, query, fragment and a non-root path are refused. OpenAPI `servers` is never used. The source directory must exist; its tree is not traversed and no source code/configuration is read or run. Only the explicitly selected OpenAPI JSON file is read, including when that file is inside source. Output must not exist, must be outside source, and its parent must already exist. Caller symlinks are refused; verified macOS `/tmp` and `/var` system aliases are accepted. The OpenAPI file is a stable, bounded regular UTF-8 JSON file read with the existing no-follow reader.
+`--source`, `--openapi` and `--out` are required. `--url` is optional and validates/normalizes only an HTTP(S) origin; no hostname is resolved. Userinfo, query, fragment and a non-root path are refused. OpenAPI `servers` is never used. `--source` is used only to validate the output location in P1a. The source directory must exist; its tree is not traversed and no source code/configuration is read or run. Only the explicitly selected OpenAPI JSON file is read, including when that file is inside source. Output must not exist, must be outside source, and its parent must already exist. Caller symlinks are refused; verified macOS `/tmp` and `/var` system aliases are accepted. The OpenAPI file is a stable, bounded regular UTF-8 JSON file read with the existing no-follow reader.
 
 Only private `inventory.json` is written (directory0700/file0600). Existing files are never overwritten. Failure to publish is exit2; a leftover output from an unsuccessful publication must not be treated as successful evidence or reused.
 
 The first successful stdout line is a scope summary, for example:
 
 ```text
-Inventory status=partial partial=1 unverified=2 GET=1
+Inventory status=partial unresolved=1 unverified=2 GET=1
 ```
 
-`status` is the OpenAPI GET enumeration state. `partial` counts unresolved path-items; `unverified` counts emitted unverified entries, including the always-present source-routes entry. This is not a vulnerability or whole-project coverage summary.
+`status` is the OpenAPI GET enumeration state. `unresolved` counts unresolved path-items; `unverified` counts emitted unverified entries, including the always-present source-routes entry. This is not a vulnerability or whole-project coverage summary.
 
 Exit0 means an inventory was produced, including explicitly partial/unverified results. Exit2 means invalid arguments/input/path/origin or output failure. No finding gate1 is introduced. Existing `init`, its npm/Action modes, flags, workflow templates and exit meanings are unchanged. Frozen pre-P1a main templates are in `tests/fixtures/compat-0.5/init/`.
+
+stderr contains exactly one fixed reason code followed by a newline, never an exception message, path or input content:
+
+| Code | Meaning |
+| --- | --- |
+| `invalid_arguments` | Missing, unknown, duplicate or malformed CLI flag/value |
+| `unsafe_path` | Missing/unreadable/non-regular input, unsafe directory/symlink, or output inside source |
+| `output_exists` | Destination already exists; nothing is overwritten |
+| `invalid_origin` | Invalid optional HTTP(S) origin string |
+| `unsupported_openapi` | Unsupported version or feature in the existing enumerator |
+| `invalid_openapi` | Invalid UTF-8/JSON or invalid OpenAPI structure |
+| `input_limit` | Raw byte or existing enumeration resource limit exceeded |
+| `output_error` | Other failure to publish the private output |
+
+Partial enumeration is a successful output, not an error code. If several inputs are invalid, the first validation failure is reported.
 
 ## Minimal emitted contract
 
 [JSON Schema](surface-inventory.v1.schema.json) describes only emitted P1a fields:
 
 - `schema`: `wakeio.surface-inventory/v1`.
+- `openapiDigest`: lowercase SHA256 hex of the exact input file bytes, before UTF-8 decoding/JSON parsing. Whitespace or a one-byte change changes the digest; repeated identical bytes keep it identical.
 - `origin`: normalized caller-supplied origin or null.
 - `scope.openapi_get`: `observed`, `none_detected` or `partial`.
 - `scope.source_routes`: always `unverified`.
@@ -46,7 +62,7 @@ Output contains endpoint templates, so treat it as private. Description/default/
 
 ## Pure enumeration and existing boundaries
 
-`enumerateOpenApiGetOperations` in `src/openapi.ts` accepts JSON data only. It reuses `snapshotJsonData`, the existing limits and shared same-document pointer grammar. It resolves path-item references only; nested response/parameter data are not executed or fetched. A remote path-item, unresolved local pointer, cyclic path-item or unsupported ref siblings produces a fixed unresolved reason. Structural errors and hard limits fail.
+`enumerateOpenApiGetOperations` in `src/openapi.ts` accepts JSON data only. It reuses `snapshotJsonData`, the existing limits and shared same-document pointer grammar. It resolves path-item references only; nested response/parameter data are not executed or fetched. A remote path-item, unresolved local pointer, cyclic path-item or unsupported ref siblings produces a fixed unresolved reason. Structural errors and hard limits fail. Path-items combining `$ref` with sibling `summary`/`description` remain `unsupported_path_item` in P1a; support is only a P1b-or-later candidate, with no behavior or fixture expansion here.
 
 The existing execution compiler/selector retains its whole-document reference validation, explicit operation selection, GET execution restrictions and failure behavior. P1a's support for empty paths/partial enumeration does not widen those execution parsers.
 
@@ -67,7 +83,7 @@ Limits:1MiB JSON,20,000 nodes,depth40,1,000 paths,256 path-item reference steps.
 | empty-paths | none | 0 |
 | unresolved-path-item | known subset `/local`; remote item unknown | null |
 
-The first three are static copies of existing repository documents; preflight copies only its `document`, excluding actors/assertions. Inline-unselected materializes the previously-inline paths; `/unselected` must be included despite not being in the old execution allowlist. The alias fixture includes the existing `~1`/`~0` pointer escapes. Expected output is never generated from the detector.
+The first three are static copies of existing repository documents; preflight copies only its `document`, excluding actors/assertions. Inline-unselected materializes the previously-inline paths; `/unselected` must be included despite not being in the old execution allowlist. The alias fixture includes the existing `~1`/`~0` pointer escapes. Each corpus `sha256` is also the expected emitted `openapiDigest`; fixture bytes and GET expectations remain unchanged. Expected output is never generated from the detector.
 
 `kpi.mjs` measures the selected trusted engine's exported enumerator. Each fixture is evaluated three times. It checks exact known GET sets, absence of duplicates/unexpected GETs, declared counts, state and unresolved counts. Evidence includes per-case expected/observed sets and deterministic bytes. SHA256 values and the corpus are bound into the KPI context.
 

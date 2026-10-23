@@ -5,6 +5,10 @@
     "schema": {
       "const": "wakeio.surface-inventory/v1"
     },
+    "openapiDigest": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
     "origin": {
       "anyOf": [
         {
@@ -141,6 +145,7 @@
   },
   "required": [
     "schema",
+    "openapiDigest",
     "origin",
     "scope",
     "surfaces",
