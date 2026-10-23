@@ -1,0 +1,237 @@
+{
+  "schema": "wakeio.kpi/v1",
+  "measuredAt": "2026-10-22T08:34:04.167Z",
+  "revision": "536d968357c31a7c681164ef7afa6307b138d1a7",
+  "engineSha256": "1b6c55c86c646fb31dbe9f8c6b386368b228229eddb4d06e10ad3176108ae569",
+  "toolVersion": "0.5.0",
+  "fixtureDigest": "4f5ccf841cbac6bbc67a8a270c29e95eb22bd14b55ba41f0c55bf3be76b67702",
+  "corpusDigest": "51b1afdd951af3ace8aa2425f4bb533d204421ff5368b0d1c5797cbe73af67d5",
+  "harnessDigest": "48b32da28b09c2b007d1e83d24afc535337cb06d6f9ab3b9c7c9a3742543e389",
+  "engine": {
+    "dependencyLock": "033e0ef135f3e6c112d806af5a4bcc267ce3152119397e4fdd8d842b5ca4f96b"
+  },
+  "environment": {
+    "os": "linux",
+    "release": "7.0.14-linuxkit",
+    "arch": "arm64",
+    "node": "v22.23.4",
+    "npm": "10.9.9",
+    "imageDigest": "sha256:6a2bd456325830ec19d9178650419a18854690b99f0523d20b180ed5b31eef75"
+  },
+  "phase": "source_offline_warm",
+  "parameters": {
+    "tools": "none",
+    "runs": 3,
+    "analysisProfile": "default",
+    "projectId": "wakeio-kpi-nodegoat"
+  },
+  "measurementStatus": "completed",
+  "medium": {
+    "id": "nodegoat",
+    "commit": "c5cb68a7084e4ae7dcc60e6a98768720a81841e8",
+    "tree": "839d7b6856ec6da992d649b2423d5f9fcefdcf1f",
+    "files": 111,
+    "runs": [
+      {
+        "reportMs": 899.6926259999999,
+        "processMs": 929,
+        "scanExitCode": 2,
+        "semanticSha256": "19bb25630b7c1ee737c1f6db09a1085fbfa6461ddfe2f11d26f7095276e9c2eb",
+        "checks": [
+          {
+            "id": "source.inventory",
+            "status": "completed",
+            "reasons": [],
+            "reasonCounts": []
+          },
+          {
+            "id": "source.builtin-ast",
+            "status": "partial",
+            "reasons": [
+              "module_export_unsupported"
+            ],
+            "reasonCounts": [
+              {
+                "reason": "module_export_unsupported",
+                "count": 318
+              }
+            ]
+          },
+          {
+            "id": "source.framework",
+            "status": "not_applicable",
+            "reasons": [],
+            "reasonCounts": []
+          },
+          {
+            "id": "source.code-coverage",
+            "status": "completed",
+            "reasons": [],
+            "reasonCounts": []
+          }
+        ],
+        "complete": false
+      },
+      {
+        "reportMs": 790.4605829999998,
+        "processMs": 807,
+        "scanExitCode": 2,
+        "semanticSha256": "19bb25630b7c1ee737c1f6db09a1085fbfa6461ddfe2f11d26f7095276e9c2eb",
+        "checks": [
+          {
+            "id": "source.inventory",
+            "status": "completed",
+            "reasons": [],
+            "reasonCounts": []
+          },
+          {
+            "id": "source.builtin-ast",
+            "status": "partial",
+            "reasons": [
+              "module_export_unsupported"
+            ],
+            "reasonCounts": [
+              {
+                "reason": "module_export_unsupported",
+                "count": 318
+              }
+            ]
+          },
+          {
+            "id": "source.framework",
+            "status": "not_applicable",
+            "reasons": [],
+            "reasonCounts": []
+          },
+          {
+            "id": "source.code-coverage",
+            "status": "completed",
+            "reasons": [],
+            "reasonCounts": []
+          }
+        ],
+        "complete": false
+      },
+      {
+        "reportMs": 795.2677089999997,
+        "processMs": 812,
+        "scanExitCode": 2,
+        "semanticSha256": "19bb25630b7c1ee737c1f6db09a1085fbfa6461ddfe2f11d26f7095276e9c2eb",
+        "checks": [
+          {
+            "id": "source.inventory",
+            "status": "completed",
+            "reasons": [],
+            "reasonCounts": []
+          },
+          {
+            "id": "source.builtin-ast",
+            "status": "partial",
+            "reasons": [
+              "module_export_unsupported"
+            ],
+            "reasonCounts": [
+              {
+                "reason": "module_export_unsupported",
+                "count": 318
+              }
+            ]
+          },
+          {
+            "id": "source.framework",
+            "status": "not_applicable",
+            "reasons": [],
+            "reasonCounts": []
+          },
+          {
+            "id": "source.code-coverage",
+            "status": "completed",
+            "reasons": [],
+            "reasonCounts": []
+          }
+        ],
+        "complete": false
+      }
+    ],
+    "coverageComplete": false,
+    "scope": "whole pinned source; partial analysis is preserved, not clean coverage"
+  },
+  "metrics": [
+    {
+      "id": "first_report_ms",
+      "status": "measured",
+      "value": 795.2677089999997,
+      "runs": [
+        899.6926259999999,
+        790.4605829999998,
+        795.2677089999997
+      ],
+      "timingBoundary": "npx spawn to first parseable primary report, 2ms polling; warm checkout bin, no registry install"
+    },
+    {
+      "id": "analysis_ms",
+      "status": "measured",
+      "value": 267.7163340000002,
+      "runs": [
+        278.777333,
+        267.7163340000002,
+        260.27979200000027
+      ],
+      "timingBoundary": "in-process runSource({root, tools: []}) call; one untimed warmup, three samples; excludes npx/imports/report serialization"
+    },
+    {
+      "id": "planned_state_completeness",
+      "status": "unavailable",
+      "value": null,
+      "reason": "no_predeclared_cell_denominator"
+    },
+    {
+      "id": "determinism",
+      "status": "measured",
+      "value": 1,
+      "numerator": 3,
+      "denominator": 3
+    },
+    {
+      "id": "wire_budget_overflow",
+      "status": "unavailable",
+      "value": null,
+      "reason": "http_targets_excluded"
+    },
+    {
+      "id": "loop_stop_reason_rate",
+      "status": "unavailable",
+      "value": null,
+      "reason": "run_loop_not_implemented"
+    },
+    {
+      "id": "inventory_recall",
+      "status": "unavailable",
+      "value": null,
+      "reason": "surface_inventory_not_implemented"
+    },
+    {
+      "id": "source_regression",
+      "status": "measured",
+      "value": {
+        "tp": 27,
+        "fp": 0,
+        "fn": 1,
+        "completedCases": 56,
+        "totalCases": 56
+      },
+      "identities": {
+        "fp": [],
+        "fn": [
+          "ff7c8ee156432718b77b88e536f2a78699e30ea0a61cc0c10ebccf57ba46083a"
+        ]
+      }
+    }
+  ],
+  "limits": [
+    "network isolation is enforced externally, not attested by this script",
+    "registry cold install and HTTP/model/release KPIs are not measured",
+    "no absolute latency gate; compare only identical environments and inputs"
+  ],
+  "performanceTarget": null
+}

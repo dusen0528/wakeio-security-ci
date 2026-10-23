@@ -1,0 +1,88 @@
+name: offline-kpi
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source-kpi:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          path: candidate
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.event.pull_request.base.sha || 'main' }}
+          path: baseline
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: OWASP/NodeGoat
+          ref: c5cb68a7084e4ae7dcc60e6a98768720a81841e8
+          path: fixture
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      # Prepare only WakeIO itself; never install or run the fixture project.
+      - name: Prepare trusted scanner builds and measurement runtime
+        run: |
+          npm ci --ignore-scripts --no-audit --fund=false --prefix candidate
+          npm ci --ignore-scripts --no-audit --fund=false --prefix baseline
+          npm run build --prefix candidate
+          npm run build --prefix baseline
+          docker build -f candidate/benchmarks/kpi.Dockerfile -t wakeio-kpi candidate/benchmarks
+          mkdir -p results
+      - name: Verify 0.5 compatibility with network disabled
+        run: |
+          docker run --rm --network none --user "$(id -u):$(id -g)" \
+            -v "$GITHUB_WORKSPACE:/workspace" -w /workspace/candidate wakeio-kpi \
+            node --test build/tests/kpi.test.js build/tests/compat-0.5.test.js
+      - name: Measure base and candidate under the same network-disabled runtime
+        timeout-minutes: 5
+        run: |
+          kpi_image_digest="$(docker image inspect --format '{{.Id}}' wakeio-kpi)"
+          docker run --rm --network none -e WAKEIO_KPI_IMAGE_DIGEST="$kpi_image_digest" --user "$(id -u):$(id -g)" \
+            -v "$GITHUB_WORKSPACE:/workspace" -w /workspace/candidate wakeio-kpi \
+            node scripts/kpi.mjs --engine-root /workspace/baseline --checkout /workspace/fixture --out /workspace/results/main
+          docker run --rm --network none -e WAKEIO_KPI_IMAGE_DIGEST="$kpi_image_digest" --user "$(id -u):$(id -g)" \
+            -v "$GITHUB_WORKSPACE:/workspace" -w /workspace/candidate wakeio-kpi \
+            node scripts/kpi.mjs --checkout /workspace/fixture --out /workspace/results/candidate
+          docker run --rm --network none -e WAKEIO_KPI_IMAGE_DIGEST="$kpi_image_digest" --user "$(id -u):$(id -g)" \
+            -v "$GITHUB_WORKSPACE:/workspace" -w /workspace/candidate wakeio-kpi \
+            node scripts/kpi.mjs compare --before /workspace/results/main/kpi.json --after /workspace/results/candidate/kpi.json --out /workspace/results/comparison
+      - name: Summarize measured scope
+        if: always()
+        run: |
+          node --input-type=module <<'JS' >> "$GITHUB_STEP_SUMMARY"
+          import { readFile } from 'node:fs/promises';
+          console.log('## Offline source KPI\n');
+          try {
+            const value = JSON.parse(await readFile('results/comparison/comparison.json', 'utf8'));
+            console.log('Comparison: ' + value.status + '; exit ' + value.exitCode);
+            if (value.firstReportDeltaMs !== undefined) console.log('\nWarm npx report delta: ' + value.firstReportDeltaMs.toFixed(2) + ' ms. No latency target is imposed.');
+            if (value.analysisTiming) {
+              const timing = value.analysisTiming;
+              console.log('\nAnalysis median: ' + timing.beforeMedianMs.toFixed(2) + ' → ' + timing.afterMedianMs.toFixed(2) + ' ms.');
+              if (timing.warning) console.log('\n⚠️ Analysis median exceeds 1.5× baseline. Warning only; this is not a release gate.');
+            }
+            if (value.incompleteReasonCounts?.length) {
+              console.log('\n| Incomplete check / reason (events) | Base | Candidate |\n| --- | ---: | ---: |');
+              for (const row of value.incompleteReasonCounts) console.log('| ' + row.checkId + ' / ' + row.reason + ' | ' + (row.before ?? 'unknown') + ' | ' + (row.after ?? 'unknown') + ' |');
+            }
+          } catch { console.log('No complete comparison artifact. Check the failed step.'); }
+          console.log('\nPartial source analysis and unavailable loop/inventory/HTTP metrics remain explicit. No target HTTP scan, model or deployment is run.');
+          JS
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: offline-kpi
+          path: results
+          if-no-files-found: error
