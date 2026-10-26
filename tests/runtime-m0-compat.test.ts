@@ -119,6 +119,9 @@ async function runCase(item: MatrixCase, source: string, top: string, missing: s
 test('M0 source dispatch preserves all 23 frozen pre-refactor report hashes and scan exits', async t => {
   const value = await reference();
   const unsupported = await nativeUnsupported(value);
+  // R9 measured darwin/arm64 and linux/arm64. Other platforms reuse the unsupported row:
+  // both 7a4ada1 and the candidate guard !darwin || !arm64 before executable file access,
+  // returning unsupported_platform. This does not independently measure every OS/arch.
   const nativeSupported = process.platform === 'darwin' && process.arch === 'arm64';
   const top = await mkdtemp(join(tmpdir(), 'wakeio-runtime-m0-compat-'));
   const empty = join(top, 'empty'), missing = join(top, 'intentionally-absent-tools');
