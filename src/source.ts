@@ -33,6 +33,8 @@ interface ToolContext {
   signal?: AbortSignal;
 }
 
+const LEGACY_SCANNERS = Object.freeze({ gitleaks: runGitleaks, osv: runOsv, trivy: runTrivy });
+
 const SOURCE_CODE_EXTENSIONS = /\.(?:[cm]?[jt]sx?)$/i;
 const SOURCE_PYTHON_EXTENSION = /\.py$/i;
 const SOURCE_SQL_EXTENSION = /\.sql$/i;
@@ -621,15 +623,17 @@ async function runTool(tool: ToolName, snapshot: SourceSnapshot, stageDir: strin
   timeoutMs: number, blockedConfigCount = 0): Promise<CheckResult> {
   const analyzer = toolAnalyzer(tool);
   const context: AnalyzerRunContext = { snapshot, stageDir, options, timeoutMs, blockedConfigCount,
-    toolPath: '', legacy: { gitleaks: runGitleaks, osv: runOsv, trivy: runTrivy } };
+    toolPath: '', legacy: LEGACY_SCANNERS };
   // Legacy no-input checks precede executable resolution and cancellation.
-  if (!analyzer.resolveBeforeInput && !(analyzer.stage === 'safe-config'
+  // applicable() reports supported candidates; safe-config also enforces the external-reference
+  // filter before resolving an executable.
+  if (!analyzer.adapterOwnsPreflight && !(analyzer.stage === 'safe-config'
     ? trivyPaths(snapshot).length > 0 : analyzer.applicable(snapshot))) return analyzer.run(context);
-  if (!analyzer.resolveBeforeInput && options.signal?.aborted) {
+  if (!analyzer.adapterOwnsPreflight && options.signal?.aborted) {
     return partialCheck(analyzer.checkId, 'Source scanner was cancelled before execution.');
   }
   const executable = await findExecutable(analyzer.executable(options));
-  if (!executable && !analyzer.resolveBeforeInput) {
+  if (!executable && !analyzer.adapterOwnsPreflight) {
     return partialCheck(analyzer.checkId, `${tool} executable was not found; this scanner's coverage is unavailable.`);
   }
   return analyzer.run({ ...context, toolPath: executable ?? '' });
@@ -668,7 +672,7 @@ export async function runSource(options: SourceOptions): Promise<CheckResult[]> 
   if (options.signal?.aborted) return finish([inventoryCheck(snapshot, tools, !!options.nativePreview, options.outDir), partialCheck('source.cancelled', 'Source scan was cancelled after collection.')], snapshot);
   const analyzerContext: AnalyzerRunContext = { snapshot, options, stageDir: '', toolPath: '', timeoutMs,
     builtinAst: () => runBuiltinAst(snapshot, hasOtherSecurityCheck(snapshot, tools, !!options.nativePreview),
-      analysisBudget.limits, analysisBudget), legacy: { gitleaks: runGitleaks, osv: runOsv, trivy: runTrivy } };
+      analysisBudget.limits, analysisBudget), legacy: LEGACY_SCANNERS };
   const checks: CheckResult[] = [
     inventoryCheck(snapshot, tools, !!options.nativePreview, options.outDir),
     ...SYNC_ANALYZERS.map(analyzer => analyzer.run(analyzerContext)),

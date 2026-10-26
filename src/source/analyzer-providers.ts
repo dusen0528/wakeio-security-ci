@@ -21,7 +21,8 @@ export interface AnalyzerRunContext extends ToolInput {
 }
 export interface SourceAnalyzer extends AnalyzerProvider<AnalyzerRunContext> {
   tool?: ToolName;
-  resolveBeforeInput?: boolean;
+  /** The adapter owns input, cancellation and missing-executable classification. */
+  adapterOwnsPreflight?: boolean;
   stageFailure?: string;
   failureMessage?: string;
 }
@@ -91,7 +92,7 @@ export const nativePreviewMetadata = provider({
 export const semgrepMetadata = provider({
   id: 'semgrep', checkId: 'source.semgrep', selection: 'tool', tool: 'semgrep',
   selected: options => options.tools.includes('semgrep'), applicable: snapshot => semgrepFiles(snapshot).length > 0,
-  executable: options => options.toolPaths?.semgrep ?? 'semgrep', resolveBeforeInput: true,
+  executable: options => options.toolPaths?.semgrep ?? 'semgrep', adapterOwnsPreflight: true,
   notApplicable: () => empty('semgrep', 'No applicable source input was collected.', { files: 0 }),
   run: context => runSemgrep(toolInput(context)),
   codeCoverage: { languages: ['go'], inputs: semgrepFiles,
@@ -142,7 +143,7 @@ export const trivyAnalyzer = tool({
   run: context => context.legacy.trivy({ ...toolInput(context), blockedConfigCount: context.blockedConfigCount }),
 });
 export const govulncheckAnalyzer = tool({
-  tool: 'govulncheck', applicable: govulncheckHasApplicableInput, resolveBeforeInput: true,
+  tool: 'govulncheck', applicable: govulncheckHasApplicableInput, adapterOwnsPreflight: true,
   executable: options => options.toolPaths?.govulncheck ?? 'govulncheck',
   notApplicable: () => empty('govulncheck', 'No applicable source input was collected.', { files: 0 }),
   run: context => runGovulncheck({ ...toolInput(context), goPath: context.options.goPath,
@@ -151,7 +152,7 @@ export const govulncheckAnalyzer = tool({
 });
 export const trivyVulnerabilityAnalyzer = tool({
   tool: 'trivy-vuln', applicable: snapshot => snapshot.files.some(file => file.category === 'dependency'),
-  resolveBeforeInput: true,
+  adapterOwnsPreflight: true,
   executable: options => options.toolPaths?.['trivy-vuln'] ?? options.toolPaths?.trivy ?? 'trivy',
   notApplicable: () => empty('trivy-vuln', 'No applicable source input was collected.', { files: 0 }),
   run: context => runTrivyVulnerabilities({ ...toolInput(context), cacheDir: context.options.trivyCache,

@@ -38,6 +38,10 @@ test('source analyzer registration fixes the trusted ten adapters and rejects un
     totalBytes: 0, complete: true };
   for (const analyzer of ANALYZERS.filter(p => isSourceTool(p.id))) {
     assert.ok(Object.isFrozen(analyzer));
+    if (analyzer.stage && analyzer.stage !== 'shared') {
+      assert.ok(analyzer.stageFailure?.trim());
+      assert.ok(analyzer.failureMessage?.trim());
+    }
     const result = toolAnalyzer(analyzer.id as never).notApplicable(snapshot);
     assert.equal(result.id, analyzer.checkId);
     assert.equal(result.status, 'not_applicable');
