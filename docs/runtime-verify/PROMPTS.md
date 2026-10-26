@@ -15,8 +15,8 @@
 
 작업 방식:
 1. origin/dev 기준으로 codex/rv-m0-registry 브랜치를 만든다. 첫 커밋은 docs/runtime-verify/**, scripts/handoff/claude-review.mjs, .gitignore의 `.handoff/` 추가만 담는다. 이 파일들은 그 뒤로 수정하지 않는다 (HANDOFF 보호 파일).
-2. 각 마일스톤은 HANDOFF.md의 체크포인트(CP1 설계 → CP2 구현 → 필요 시 CPx → GATE)를 따른다. 각 지점에서 코드를 커밋하고 .handoff/M<N>-<CP>.request.md를 쓴 뒤 `node scripts/handoff/claude-review.mjs --request <요청서>`를 실행한다. 게이트는 `--budget-usd 8 --max-turns 150 --timeout-min 60`을 붙인다.
-3. 래퍼 종료 코드: 0이면 다음 단계(GATE면 dev로 PR을 만들고 정지), 10이면 .response.md의 blocking 항목을 모두 고쳐 -r<k> 요청서로 다시 호출, 11·12·2이면 정지하고 응답 파일 경로와 오류를 보고한다.
+2. 각 마일스톤은 HANDOFF.md의 체크포인트(CP1 설계 → CP2 구현 → 필요 시 CPx → GATE)를 따른다. 각 지점에서 코드를 커밋하고 .handoff/M<N>-<CP>.request.md를 쓴 뒤 `node scripts/handoff/claude-review.mjs --request <요청서>`를 실행한다. 게이트는 `--budget-usd 8 --max-turns 200 --timeout-min 60`을 붙인다.
+3. 래퍼 종료 코드: 0이면 다음 단계(GATE면 dev로 PR을 만들고 정지), 10이면 .response.md의 blocking 항목을 모두 고쳐 -r<k> 요청서로 다시 호출, 11·12이면 정지하고 응답 파일 경로를 보고한다. 2이면 HANDOFF.md의 "종료 코드 2 처리" 표대로 .handoff/<요청 이름>.error.json의 cause를 보고 직접 고치거나 한 번 재시도하고, 표가 정지하라고 할 때만 정지한다.
 4. 게이트 PR이 병합됐다는 지시를 받기 전에는 다음 마일스톤을 시작하지 않는다.
 
 원칙:
@@ -41,7 +41,7 @@
 M<N> 게이트 PR을 병합했다. origin/dev를 다시 받아 M<N+1> 브랜치를 만들고 HANDOFF.md 절차대로 계속 진행해.
 ```
 
-종료 코드 11·12·2로 멈춘 경우, 판단을 적어서:
+종료 코드 11·12, 또는 2의 정지 대상 cause로 멈춘 경우, 판단을 적어서:
 
 ```text
 .handoff/<파일>.response.md 를 확인했다. 결정: <예: B3은 PLAN 변경 제안대로 진행 / UNVERIFIED 항목은 CI 결과로 확인 완료>.
