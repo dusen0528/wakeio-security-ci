@@ -1,0 +1,39 @@
+{
+  "schemaVersion": "1.0.0",
+  "toolVersion": "0.5.0",
+  "mode": "source",
+  "startedAt": "2026-10-22T00:00:00.000Z",
+  "finishedAt": "2026-10-22T06:58:49.810Z",
+  "checks": [
+    {
+      "id": "compat.state-0",
+      "status": "completed",
+      "findings": [],
+      "notes": []
+    },
+    {
+      "id": "compat.state-1",
+      "status": "partial",
+      "findings": [],
+      "notes": []
+    },
+    {
+      "id": "compat.state-2",
+      "status": "error",
+      "findings": [],
+      "notes": []
+    },
+    {
+      "id": "compat.state-3",
+      "status": "skipped",
+      "findings": [],
+      "notes": []
+    },
+    {
+      "id": "compat.state-4",
+      "status": "not_applicable",
+      "findings": [],
+      "notes": []
+    }
+  ]
+}

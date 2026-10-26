@@ -1,0 +1,30 @@
+{
+  "sourceCommit": "7c13b24624af44f9192a1df49908aa25e1d074c9",
+  "sourceInitSha256": "7d3dfd08cffe1b04677fed21a6368df56aef9b408bce58014620653f913bbfeb",
+  "cases": [
+    {
+      "name": "npm",
+      "options": {
+        "out": "wakeio-security-reports",
+        "tools": [
+          "none"
+        ],
+        "pythonFiles": 0
+      },
+      "sha256": "1c991de2e1c2fc3500e989df47b1b0220ba97828a3944b62ec71b578a4495cb1"
+    },
+    {
+      "name": "action",
+      "options": {
+        "mode": "action",
+        "actionRef": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "out": "wakeio-security-reports",
+        "tools": [
+          "none"
+        ],
+        "pythonFiles": 0
+      },
+      "sha256": "28fe6dc1be619670fff41a108c35ec684b8e58897197f28ab7c15c53ffd23128"
+    }
+  ]
+}

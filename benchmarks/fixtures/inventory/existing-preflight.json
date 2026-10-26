@@ -1,0 +1,45 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Synthetic offline preflight example",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/whoami": {
+      "get": {
+        "operationId": "identity",
+        "responses": {
+          "200": {
+            "description": "Synthetic identity control"
+          }
+        }
+      }
+    },
+    "/documents/{id}": {
+      "get": {
+        "operationId": "readDocument",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Synthetic owner control"
+          },
+          "403": {
+            "description": "Synthetic denial control"
+          },
+          "404": {
+            "description": "Synthetic denial control"
+          }
+        }
+      }
+    }
+  }
+}
