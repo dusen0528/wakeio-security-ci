@@ -41,7 +41,8 @@ test('runtime registry has exactly the four immutable v1 engine identities', () 
   }
 });
 
-test('emitted plan and provider recording imports exclude engine execution and network modules', async () => {
+// Only static import/export declarations are inspected; opt-in dynamic SDK imports are outside this check.
+test('static plan and provider recording imports exclude engine execution and network modules', async () => {
   for (const entry of ['plan', 'providers/record']) {
     const pending = [new URL(`../src/agent-dast/${entry}.js`, import.meta.url).href];
     const graph = new Set<string>();
