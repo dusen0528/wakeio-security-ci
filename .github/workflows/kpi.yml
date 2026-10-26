@@ -44,7 +44,7 @@ jobs:
         run: |
           docker run --rm --network none --user "$(id -u):$(id -g)" \
             -v "$GITHUB_WORKSPACE:/workspace" -w /workspace/candidate wakeio-kpi \
-            node --test build/tests/kpi.test.js build/tests/compat-0.5.test.js
+            node --test build/tests/kpi.test.js build/tests/compat-0.5.test.js build/tests/inventory.test.js
       - name: Measure base and candidate under the same network-disabled runtime
         timeout-minutes: 5
         run: |
@@ -68,6 +68,7 @@ jobs:
             const value = JSON.parse(await readFile('results/comparison/comparison.json', 'utf8'));
             console.log('Comparison: ' + value.status + '; exit ' + value.exitCode);
             if (value.firstReportDeltaMs !== undefined) console.log('\nWarm npx report delta: ' + value.firstReportDeltaMs.toFixed(2) + ' ms. No latency target is imposed.');
+            if (value.inventoryRecall) console.log('\nOpenAPI GET recall: ' + value.inventoryRecall.status + ', value=' + value.inventoryRecall.value + ', exactSetMatch=' + value.inventoryRecall.exactSetMatch + ', unexpected GET=' + value.inventoryRecall.unexpectedGetOperations);
             if (value.analysisTiming) {
               const timing = value.analysisTiming;
               console.log('\nAnalysis median: ' + timing.beforeMedianMs.toFixed(2) + ' → ' + timing.afterMedianMs.toFixed(2) + ' ms.');
@@ -78,7 +79,7 @@ jobs:
               for (const row of value.incompleteReasonCounts) console.log('| ' + row.checkId + ' / ' + row.reason + ' | ' + (row.before ?? 'unknown') + ' | ' + (row.after ?? 'unknown') + ' |');
             }
           } catch { console.log('No complete comparison artifact. Check the failed step.'); }
-          console.log('\nPartial source analysis and unavailable loop/inventory/HTTP metrics remain explicit. No target HTTP scan, model or deployment is run.');
+          console.log('\nSource route discovery remains unverified. Partial source analysis and unavailable planned/loop/HTTP metrics remain explicit. No target HTTP scan, model or deployment is run.');
           JS
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
