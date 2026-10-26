@@ -1,11 +1,11 @@
 import { snapshotJsonData } from '../json-snapshot.js';
 import { attackEngine, type AttackEngineId } from '../runtime/registry.js';
+import { alias, fail, keys } from './plan-validation.js';
 
 export const EXECUTION_PLAN_KIND = 'wakeio.execution-plan' as const;
 export const EXECUTION_PLAN_MAX_TASKS = 16;
 export const EXECUTION_INPUT_MAX_BYTES = 1024 * 1024;
 export const EXECUTION_TASK_ID = /^t-[a-z0-9-]{1,40}$/;
-const ALIAS = /^[a-z][a-z0-9_-]{0,39}$/;
 export type ExecutionEngine = AttackEngineId;
 export type ExecutionTask =
   | { id: string; engine: 'native-dast'; policy: string; maxRequests: number }
@@ -15,14 +15,9 @@ export type ExecutionTask =
 export interface ExecutionPlan { version: 1; kind: typeof EXECUTION_PLAN_KIND; origin: string; tasks: ExecutionTask[] }
 export interface ExecutionInput { id: string; path: string; sha256: string }
 export interface ExecutionInputs { version: 1; inputs: ExecutionInput[] }
-function fail(): never { throw new TypeError('invalid_execution_plan'); }
 function object(value: unknown): asserts value is Record<string, unknown> {
   if (!value || typeof value !== 'object' || Array.isArray(value)) fail();
 }
-function keys(value: Record<string, unknown>, required: string[], optional: string[] = []): void {
-  if (required.some(key => !Object.hasOwn(value, key)) || Object.keys(value).some(key => !required.includes(key) && !optional.includes(key))) fail();
-}
-function alias(value: unknown): asserts value is string { if (typeof value !== 'string' || !ALIAS.test(value)) fail(); }
 /** Exact origin only; no userinfo, query, fragments or request path authority. */
 export function executionOrigin(value: unknown): string {
   if (typeof value !== 'string' || value.length > 2048 || /[\u0000-\u0020\u007f]/.test(value)) fail();

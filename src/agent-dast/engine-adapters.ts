@@ -10,23 +10,13 @@ import { runZap } from '../zap.js';
 import { prepareZapPolicy } from '../zap-policy.js';
 import type { ExecutionTask } from './plan.js';
 import type { RegisteredAttackEngine } from '../runtime/types.js';
+import { alias, count, fail, keys } from './plan-validation.js';
 
 type Task<E extends ExecutionTask['engine']> = Extract<ExecutionTask, { engine: E }>;
 function defineEngine<T extends ExecutionTask>(definition: RegisteredAttackEngine<T>) {
   return Object.freeze(definition);
 }
-function fail(): never { throw new TypeError('invalid_execution_plan'); }
 function invalid(): never { throw new TypeError('invalid_run_plan'); }
-function keys(value: Record<string, unknown>, required: string[], optional: string[] = []): void {
-  if (required.some(key => !Object.hasOwn(value, key))
-    || Object.keys(value).some(key => !required.includes(key) && !optional.includes(key))) fail();
-}
-function alias(value: unknown): asserts value is string {
-  if (typeof value !== 'string' || !/^[a-z][a-z0-9_-]{0,39}$/.test(value)) fail();
-}
-function count(value: unknown, max: number): asserts value is number {
-  if (!Number.isSafeInteger(value) || Number(value) < 1 || Number(value) > max) fail();
-}
 function policyTask<E extends 'native-dast' | 'zap'>(raw: Record<string, unknown>, engine: E, max: number) {
   if (raw.engine !== engine) fail();
   keys(raw, ['id', 'engine', 'policy', 'maxRequests']); alias(raw.policy); count(raw.maxRequests, max);
