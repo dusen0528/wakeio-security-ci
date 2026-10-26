@@ -1,11 +1,12 @@
 import { snapshotJsonData } from '../json-snapshot.js';
+import { attackEngine, type AttackEngineId } from '../runtime/registry.js';
 
 export const EXECUTION_PLAN_KIND = 'wakeio.execution-plan' as const;
 export const EXECUTION_PLAN_MAX_TASKS = 16;
 export const EXECUTION_INPUT_MAX_BYTES = 1024 * 1024;
 export const EXECUTION_TASK_ID = /^t-[a-z0-9-]{1,40}$/;
 const ALIAS = /^[a-z][a-z0-9_-]{0,39}$/;
-export type ExecutionEngine = 'native-dast' | 'schemathesis' | 'nuclei' | 'zap';
+export type ExecutionEngine = AttackEngineId;
 export type ExecutionTask =
   | { id: string; engine: 'native-dast'; policy: string; maxRequests: number }
   | { id: string; engine: 'zap'; policy: string; maxRequests: number }
@@ -22,7 +23,6 @@ function keys(value: Record<string, unknown>, required: string[], optional: stri
   if (required.some(key => !Object.hasOwn(value, key)) || Object.keys(value).some(key => !required.includes(key) && !optional.includes(key))) fail();
 }
 function alias(value: unknown): asserts value is string { if (typeof value !== 'string' || !ALIAS.test(value)) fail(); }
-function count(value: unknown, max: number): asserts value is number { if (!Number.isSafeInteger(value) || Number(value) < 1 || Number(value) > max) fail(); }
 /** Exact origin only; no userinfo, query, fragments or request path authority. */
 export function executionOrigin(value: unknown): string {
   if (typeof value !== 'string' || value.length > 2048 || /[\u0000-\u0020\u007f]/.test(value)) fail();
@@ -39,26 +39,7 @@ export function parseExecutionPlan(raw: unknown): ExecutionPlan {
     object(item);
     if (typeof item.id !== 'string' || !EXECUTION_TASK_ID.test(item.id) || seen.has(item.id)) fail();
     seen.add(item.id);
-    if (item.engine === 'native-dast' || item.engine === 'zap') {
-      keys(item, ['id', 'engine', 'policy', 'maxRequests']); alias(item.policy); count(item.maxRequests, item.engine === 'zap' ? 2000 : 64);
-      return { id: item.id, engine: item.engine, policy: item.policy, maxRequests: item.maxRequests };
-    }
-    if (item.engine === 'schemathesis') {
-      keys(item, ['id', 'engine', 'schema', 'operations', 'seed', 'maxRequests'], ['authPolicy']);
-      alias(item.schema); if (Object.hasOwn(item, 'authPolicy')) alias(item.authPolicy);
-      count(item.seed, 2147483647); count(item.maxRequests, 64);
-      if (!Array.isArray(item.operations) || !item.operations.length || item.operations.length > 16 || new Set(item.operations).size !== item.operations.length
-        || item.operations.some(path => typeof path !== 'string' || !path.startsWith('/') || path.length > 2048 || /[\u0000-\u0020\u007f?#\\]/.test(path))) fail();
-      return { id: item.id, engine: item.engine, schema: item.schema, operations: item.operations as string[], seed: item.seed, maxRequests: item.maxRequests,
-        ...(typeof item.authPolicy === 'string' ? { authPolicy: item.authPolicy } : {}) };
-    }
-    if (item.engine === 'nuclei') {
-      keys(item, ['id', 'engine', 'scopes', 'maxRequests']); count(item.maxRequests, 20_000);
-      if (!Array.isArray(item.scopes) || !item.scopes.length || item.scopes.length > 2 || new Set(item.scopes).size !== item.scopes.length
-        || item.scopes.some(scope => scope !== 'misconfiguration' && scope !== 'exposures')) fail();
-      return { id: item.id, engine: item.engine, scopes: item.scopes as Array<'misconfiguration' | 'exposures'>, maxRequests: item.maxRequests };
-    }
-    fail();
+    return attackEngine(item.engine).parseTask(item);
   });
   return { version: 1, kind: EXECUTION_PLAN_KIND, origin, tasks };
 }
