@@ -13,3 +13,4 @@ benchmarks/results/
 __pycache__/
 .hypothesis/
 .venv-schemathesis/
+.handoff/
