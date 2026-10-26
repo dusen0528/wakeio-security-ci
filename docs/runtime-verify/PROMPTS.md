@@ -9,8 +9,9 @@
 목표: wakeio-security-ci에 다언어 실행 검증 모드(`verify`)를 docs/runtime-verify/PLAN.md에 따라 M0→M5 순서로 구현한다.
 
 먼저 읽을 것:
-- docs/runtime-verify/PLAN.md — 설계 기준(Source of Truth). 특히 4장(인터페이스), 6장(Oracle), 7장(보안·격리), 11장(요소별 검증 방법), 12장(로드맵·게이트).
+- docs/runtime-verify/PLAN.md — 설계 기준(Source of Truth). 특히 4장(인터페이스), 6장(Oracle), 7장(보안·격리), 11장(요소별 검증 방법), 12장(로드맵·게이트), 14장(권한 Oracle·계정 모델·워크플로 발견).
 - docs/runtime-verify/HANDOFF.md — 체크포인트마다 Claude 리뷰를 받는 절차. 반드시 지킨다.
+- docs/runtime-verify/SUBAGENTS.md — 서브에이전트 운영 지침 (누적 역할 최대 10, 동시 최대 4). 반드시 지킨다.
 - docs/surface-inventory-p1a.md, benchmarks/kpi.md — 기존 계약과 KPI 하네스.
 
 작업 방식:

@@ -281,6 +281,7 @@ sanitizers:
 - **대조군 필수:** 같은 라우트에 무해한 마커(예: `wk…` 단독)도 보내고, 두 관측의 차이로 판정합니다. 기존 차등 검사(differential) 계약과 같은 원칙입니다.
 - **고정 예제로 검증:** 모든 Oracle은 취약 버전·수정 버전 쌍을 갖습니다. 수정 버전에서 `confirmed`가 나오면 회귀 실패입니다.
 - **관측 실패는 미완료:** Observer가 붙지 못하면 해당 유형은 `unknown`입니다. 절대 "안전"으로 표시하지 않습니다.
+- **권한(BOLA/IDOR·테넌트 격리) 판정:** 14.1의 권한 Oracle을 따른다 (M2).
 
 ## 7. 보안·격리 모델
 
@@ -508,6 +509,8 @@ budget:
 
 각 게이트는 기존 KPI 하네스로 측정합니다. 게이트를 통과하지 못하면 다음 마일스톤으로 넘어가지 않습니다.
 
+M2~M4에는 14.4의 추가 작업과 완료 조건이 더해집니다.
+
 ### 마일스톤 상세
 
 기간은 Codex 서브에이전트 병행을 가정한 **제안값**이며, M0 완료 후 실측으로 다시 맞춥니다.
@@ -581,3 +584,67 @@ tests/runtime-*.test.ts
 - [Gradle — Protecting Project Integrity](https://blog.gradle.org/project-integrity)
 - [Spring Boot Actuator mappings](https://docs.spring.io/spring-boot/3.5/api/rest/actuator/mappings.html)
 - [JaCoCo로 실행 중인 Java 앱 커버리지 측정](https://dev.to/arturmkr/how-to-measure-code-coverage-in-a-running-java-application-using-jacoco-5b13)
+
+## 14. 추가 결정 (2026-10-27): 권한 Oracle · 계정 모델 · 워크플로 발견
+
+다중 사용자 권한 검증과 업무 흐름 이해가 실사용 가치가 가장 큰 영역이라 범위에 추가한다. M0·M1 범위는 바꾸지 않고 M2~M4를 넓힌다.
+저장소에 이미 있는 자산(읽기 전용 API 정책 v2의 소유자·다른 계정·익명 사례와 보호 카나리, 소유 PATCH 상태 검증)을 verify 구조로 옮기는 것이 핵심이다.
+
+### 14.1 권한 Oracle (M2)
+
+- **목적:** 소유하지 않은 계정·익명 사용자·다른 테넌트가 소유자의 데이터를 읽거나 바꿀 수 있는지 확인한다 (BOLA/IDOR, 테넌트 격리).
+- **준비:** 시드 단계에서 소유자 리소스마다 고유 보호 카나리 값을 심는다. 기존 API 정책 v2의 protected canary와 같은 개념이다.
+- **실행:** 같은 요청을 역할별 주체(소유자, 같은 테넌트의 다른 사용자, 익명, 다른 테넌트 사용자, 관리자)로 보낸다. 기대 접근은 `wakeio.target.yml`의 접근 규칙(14.2)에서 가져온다.
+- **관측:** 응답 본문의 카나리 포함 여부, 쓰기 요청 뒤 소유자 리소스의 DB 상태 변화(스냅샷 비교).
+
+| 등급 | 조건 |
+| --- | --- |
+| confirmed | 접근 규칙상 거부여야 할 주체의 응답에 소유자 보호 카나리가 나타남, 또는 그 주체의 쓰기 요청 뒤 소유자 리소스 상태가 바뀜 |
+| strong | 거부여야 할 주체가 성공 응답(2xx)을 받았지만 카나리는 없음 |
+| observed | 상태 코드·응답 크기 차이 등 간접 신호만 있음 |
+
+- **대조군:** 같은 요청을 소유자 본인이 보냈을 때 정상 성공해야 판정이 유효하다. 소유자 요청이 실패하거나 인증 확인(identity)이 어긋나면 `unknown`이다. 기존 owner control 원칙과 같다.
+- **쓰기 검사:** 소유 고정 예제에서만, 요청마다 DB 스냅샷 복원과 함께 한다.
+- **재사용:** `src/api.ts` 정책 v2의 identity 확인·사례 구성·카나리 비교, `src/api-write-state.ts`의 상태 비교를 Oracle 인터페이스로 옮긴다. 기존 `scan` 쪽 API 정책 동작과 보고서는 바꾸지 않는다.
+- **고정 예제:** Spring·Express·Flask 각각 취약(소유자 확인 누락)·수정(소유자 확인) 쌍과 테넌트 격리 쌍.
+
+### 14.2 계정·역할·접근 모델 (M2)
+
+`wakeio.target.yml`의 `accounts`에 역할·테넌트를 추가하고, 기대 접근을 선언하는 `access` 블록을 둔다.
+
+```yaml
+accounts:                       # 값은 환경변수 이름만
+  - { name: alice, role: user,  tenant: t1, usernameEnv: WK_ALICE_USER, passwordEnv: WK_ALICE_PASS }
+  - { name: bob,   role: user,  tenant: t1, usernameEnv: WK_BOB_USER,   passwordEnv: WK_BOB_PASS }
+  - { name: carol, role: user,  tenant: t2, usernameEnv: WK_CAROL_USER, passwordEnv: WK_CAROL_PASS }
+  - { name: admin, role: admin, tenant: t1, usernameEnv: WK_ADMIN_USER, passwordEnv: WK_ADMIN_PASS }
+access:
+  default: owner-only           # 리소스 기본 규칙
+  rules:
+    - match: "/api/admin/**"
+      allow: [role:admin]
+    - match: "/api/teams/{teamId}/**"
+      allow: [same-tenant]
+```
+
+- 인증은 테스트 계정 로그인, 환경변수로 주입한 토큰·쿠키, 테스트 모드 IdP만 지원한다. 실제 SSO·MFA 절차를 자동화하는 것은 비목표다.
+- 접근 규칙이 없는 라우트는 권한 판정을 `unknown`으로 남긴다 (추측하지 않음).
+
+### 14.3 워크플로 발견 (M3 결정적 추론, M4 에이전트 보완)
+
+- **결정적 추론 우선:** OpenAPI `links`와, 응답 필드와 다음 요청 파라미터의 이름·타입 대응으로 생산자-소비자 의존 관계를 추론한다 (RESTler·Schemathesis stateful 방식). 실제 응답으로 추론을 보정한다.
+- **기록:** Surface Inventory v2에 `sequences`(생성 → 조회 → 수정 → 삭제 체인)와 각 연결의 출처(provenance: openapi-links / inferred / observed / agent)를 남긴다.
+- **에이전트:** Scenario Writer는 결정적 추론이 비어 있는 곳만 시퀀스를 제안하고, 제안은 실행 계획 데이터로만 낸다. 판정에는 관여하지 않는다.
+- **KPI:** 고정 예제의 기대 시퀀스 대비 recall, 시퀀스로 도달한 라우트 비율, 권한 Oracle이 평가할 수 있게 된 라우트 수.
+
+### 14.4 로드맵 반영
+
+| 마일스톤 | 추가 작업 | 추가 완료 조건 |
+| --- | --- | --- |
+| M2 | 권한 Oracle, 계정·역할·테넌트·접근 모델, 3개 언어 권한 취약/수정·테넌트 예제 | 권한 예제에서 기대한 confirmed만 나오고 수정본은 0건, 소유자 대조 실패 시 `unknown` |
+| M3 | 결정적 워크플로 추론, Inventory v2 `sequences` | 고정 예제 시퀀스 recall 측정·공개 |
+| M4 | Scenario Writer가 빈 시퀀스만 제안 | 에이전트 사용 유무에 따라 판정이 바뀌지 않음, 도달률 향상폭 측정 |
+
+### 14.5 포지셔닝 문장
+
+AI가 짠 코드를 실제로 띄워 **LLM 없이도 재현되는 증거**로 확정하고, **검사하지 못한 범위까지** 밝혀서, 코딩 에이전트가 바로 고칠 수 있는 형태(agent-report)로 돌려주는 오픈소스 CI 엔진.
