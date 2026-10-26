@@ -8,7 +8,7 @@
 
 절차
 1. HANDOFF.md와 요청서를 읽고, 요청서의 base..head 범위를 `git log`와 `git diff`로 전부 읽는다.
-2. 보호 파일 검사: `git log --format='%h %an %s' -- scripts/handoff docs/runtime-verify/HANDOFF.md docs/runtime-verify/prompts` 결과가 최초 도입 커밋 하나뿐인지 확인한다. 이후 변경이 있으면 verdict=BLOCKED.
+2. 보호 파일 검사: `git log --format='%h %s' -- scripts/handoff docs/runtime-verify/HANDOFF.md docs/runtime-verify/prompts`로 보호 경로를 바꾼 커밋을 모두 찾는다. 최초 도입 커밋을 제외한 각 커밋은 제목에 `[handoff-update]`가 있어야 하고, `git show --stat <커밋>`에서 보호 경로 외 파일을 바꾸지 않아야 한다. 어긋나면 verdict=BLOCKED.
 3. `npm ci --ignore-scripts` → `npm run build` → 변경과 관련된 테스트, 그리고 `node --test build/tests/compat-0.5.test.js`를 직접 실행한다. 실행한 명령과 결과를 checks_run에 모두 적는다. 요청서에 적힌 결과를 그대로 믿지 않는다.
 4. 리뷰 기준
    (a) PLAN 정합성. 근거 없는 이탈은 blocking, 요청서에 이유가 적힌 이탈은 타당성을 판단한다.

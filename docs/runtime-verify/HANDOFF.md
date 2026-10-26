@@ -21,13 +21,15 @@ docs/runtime-verify/prompts/gate.md      # 게이트 검사 프롬프트
 docs/runtime-verify/prompts/response.schema.json
 ```
 
-Claude 리뷰어는 매번 `git log`로 이 경로의 변경 이력을 확인하고, 최초 도입 커밋 이후 변경이 있으면 `BLOCKED`를 낸다.
+보호 파일은 사람(또는 사람이 Claude 앱에서 받은 수정본)만 바꾼다. 바꿀 때는 그 변경만 담은 커밋을 따로 만들고 제목에 `[handoff-update]`를 붙인다.
+Claude 리뷰어는 매번 `git log`로 이 경로를 바꾼 커밋을 확인하고, 최초 도입 커밋 외에 `[handoff-update]`가 없거나 다른 파일과 섞인 커밋이 있으면 `BLOCKED`를 낸다.
+응답 `.response.json`의 `meta.scriptSha256`으로 실제 실행된 래퍼를 확인할 수 있다.
 
 ## 브랜치
 
 - 기준 브랜치: `origin/dev`. 마일스톤마다 `codex/rv-m<N>-<slug>` 브랜치를 만든다 (예: `codex/rv-m1-spring-sql`).
 - 게이트 승인(종료 코드 0) 후 사람이 확인하고 `dev`로 PR을 병합한다.
-- 리뷰 요청 시점에는 작업 트리가 깨끗해야 한다 (코드 변경은 모두 커밋, `.handoff/`는 gitignore).
+- 리뷰 요청 시점에는 추적 중인 파일에 커밋 안 된 변경이 없어야 한다 (추적되지 않은 파일과 gitignore된 `.handoff/`는 무관).
 
 ## 체크포인트
 
@@ -47,8 +49,9 @@ Claude 리뷰어는 매번 `git log`로 이 경로의 변경 이력을 확인하
    node scripts/handoff/claude-review.mjs --request .handoff/M1-CP2.request.md
    ```
 
-   - 래퍼는 깨끗한 작업 트리와 요청서의 head SHA를 확인한 뒤, 그 커밋의 임시 worktree에서 `claude --print`를 읽기 전용 권한(`--permission-mode dontAsk` + 허용 명령 목록)으로 실행한다.
-   - 결과는 `.handoff/M1-CP2.response.md`와 `.response.json`으로 저장된다.
+   - 래퍼는 커밋 상태와 요청서의 head SHA를 확인한 뒤, 그 커밋의 임시 worktree에서 `claude --print`를 읽기 전용 권한(`--permission-mode dontAsk` + 허용 명령 목록)으로 실행한다.
+   - 사용자 전역 훅·플러그인·CLAUDE.md·MCP는 `--safe-mode`로 끈다 (로그인 인증은 유지). 그래서 Intent Loop 같은 전역 훅이 리뷰 턴을 소모하지 않는다.
+   - 결과는 `.handoff/M1-CP2.response.md`와 `.response.json`으로 저장된다. 실행 오류면 `.handoff/M1-CP2.error.json`에 원인이 남는다.
 3. 종료 코드에 따라 행동한다.
 
 | 종료 코드 | 의미 | Codex의 다음 행동 |
@@ -57,7 +60,18 @@ Claude 리뷰어는 매번 `git log`로 이 경로의 변경 이력을 확인하
 | 10 | 수정 요청 | 모든 blocking 항목을 고치고 `-r<k>` 요청서로 다시 호출 |
 | 11 | BLOCKED | 정지하고 사람에게 보고 |
 | 12 | 사람 판단 필요 (게이트 미검증 항목, 또는 같은 체크포인트 3회 초과) | 정지하고 사람에게 보고 |
-| 2 | 실행 오류 (CLI 미설치·인증·네트워크·잘못된 요청서) | 래퍼를 고치지 말고 정지, 오류 메시지를 보고 |
+| 2 | 실행 오류 | 아래 표에 따라 처리 |
+
+### 종료 코드 2 처리 (`.error.json`의 `cause`)
+
+| cause | Codex의 행동 |
+| --- | --- |
+| `not_clean`, `head_mismatch` | 직접 고친다(커밋하거나 요청서의 head SHA를 갱신). 다시 호출한다. 정지하지 않는다 |
+| `max_turns`, `budget`, `timeout` | 해당 한도를 1.5배로 올려 **한 번만** 다시 호출한다 (`--max-turns`, `--budget-usd`, `--timeout-min` 인자 사용). 두 번째도 실패하면 정지 |
+| `no_structured_output`, `schema_mismatch`, `claude_error`, `not_json` | 같은 인자로 **한 번만** 다시 호출한다. 두 번째도 실패하면 정지 |
+| `claude_not_found`, `auth`, `permission` | 정지하고 `.error.json` 경로와 `cause`, `permissionDenials`를 보고한다 |
+
+정지할 때는 `.error.json`을 그대로 첨부한다. 래퍼·프롬프트를 고쳐서 우회하지 않는다.
 
 ## 요청서 형식 (`*.request.md`)
 
@@ -87,8 +101,8 @@ Claude 리뷰어는 매번 `git log`로 이 경로의 변경 이력을 확인하
 5. Docker가 필요한 검증은 직접 실행하고 결과를 `.handoff/evidence/M<N>/`에 남긴다. M1부터 같은 검증을 GitHub Actions 워크플로로도 돌린다.
 6. 요청서·증거에 비밀값, 토큰, 대상 데이터 원문을 넣지 않는다.
 7. 새 코드(`src/runtime/**`)는 한 줄 120자, 한 함수 60줄 이내를 기본으로 한다. 기존 파일의 밀집 스타일을 새 코드로 퍼뜨리지 않는다.
-8. 보호 파일을 수정하지 않는다. 래퍼가 동작하지 않으면 정지하고 보고한다.
-9. 래퍼 호출은 리뷰 비용이 든다. 기본 상한은 리뷰 3 USD, 80턴, 40분이며, 게이트는 `--budget-usd 8 --max-turns 150 --timeout-min 60`을 쓴다.
+8. 보호 파일을 수정하지 않는다. 래퍼가 동작하지 않으면 위 종료 코드 2 표대로 처리한다. 사람이 보호 파일 수정본을 주면 그 파일들만 `[handoff-update]` 커밋으로 넣는다.
+9. 래퍼 호출은 리뷰 비용이 든다. 기본 상한은 리뷰 3 USD, 120턴, 40분이며, 게이트는 `--budget-usd 8 --max-turns 200 --timeout-min 60`을 쓴다.
 
 ## 대화형 대체 경로
 

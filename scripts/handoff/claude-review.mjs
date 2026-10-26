@@ -1,8 +1,10 @@
 #!/usr/bin/env node
 // Codex가 체크포인트·게이트마다 호출하는 비대화식 Claude 리뷰 래퍼.
 // 사용: node scripts/handoff/claude-review.mjs --request .handoff/M1-CP2.request.md
-//        [--auth login|api-key] [--budget-usd 3] [--max-turns 80] [--timeout-min 40] [--claude PATH]
+//        [--auth login|api-key] [--budget-usd 3] [--max-turns 120] [--timeout-min 40] [--claude PATH]
 // 종료 코드: 0 승인 · 10 수정 요청 · 11 BLOCKED · 12 사람 판단 필요 · 2 실행 오류
+// 실행 오류(2)일 때는 원인을 .handoff/<요청 이름>.error.json 에 남긴다 (cause: max_turns | budget | permission | auth | not_clean | ...).
+// 사용자 전역 훅·플러그인·CLAUDE.md는 --safe-mode(로그인) / --bare(API 키)로 끈다.
 // 이 파일과 docs/runtime-verify/prompts/* 는 Codex가 수정하지 않는다 (HANDOFF.md 규칙 8).
 import { spawnSync } from 'node:child_process';
 import { cpSync, existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
@@ -22,7 +24,7 @@ const git = (args, cwd) => {
 };
 
 function parseArgs(argv) {
-  const opts = { auth: 'login', budgetUsd: '3', maxTurns: '80', timeoutMin: '40', claude: process.env.WAKEIO_CLAUDE_BIN || 'claude' };
+  const opts = { auth: 'login', budgetUsd: '3', maxTurns: '120', timeoutMin: '40', claude: process.env.WAKEIO_CLAUDE_BIN || 'claude' };
   for (let i = 0; i < argv.length; i += 2) {
     const key = argv[i], value = argv[i + 1];
     if (value === undefined) fail(`missing value for ${key}`);
@@ -48,13 +50,20 @@ const prefix = match[1];
 const mode = match[2] === 'GATE' ? 'gate' : 'review';
 const requestPath = join(root, '.handoff', name);
 if (!existsSync(requestPath)) fail(`request not found: ${requestPath}`);
+const base = name.replace('.request.md', '');
+const errorPath = join(root, '.handoff', `${base}.error.json`);
+// 실행 오류는 원인을 파일로 남기고 종료한다. Codex는 이 파일의 cause로 재시도 여부를 정한다.
+const failWith = (cause, message, details = {}) => {
+  writeFileSync(errorPath, JSON.stringify({ cause, message, at: new Date().toISOString(), ...details }, null, 2));
+  fail(`${cause}: ${message} (details: .handoff/${base}.error.json)`);
+};
 
-// 1) 작업 트리가 깨끗하고 요청서의 head SHA가 실제 HEAD와 같아야 한다.
-if (git(['status', '--porcelain'], root) !== '') fail('working tree is not clean; commit before requesting review');
+// 1) 추적 중인 파일에 커밋 안 된 변경이 없고, 요청서의 head SHA가 실제 HEAD와 같아야 한다.
+if (git(['status', '--porcelain', '--untracked-files=no'], root) !== '') failWith('not_clean', 'tracked files have uncommitted changes; commit before requesting review');
 const head = git(['rev-parse', 'HEAD'], root);
 const request = readFileSync(requestPath, 'utf8');
-const declared = /head SHA:\s*([0-9a-f]{7,40})/i.exec(request)?.[1];
-if (!declared || !head.startsWith(declared)) fail(`request head SHA (${declared ?? 'missing'}) != HEAD (${head})`);
+const declared = /head SHA:\s*`?([0-9a-f]{7,40})/i.exec(request)?.[1];
+if (!declared || !head.startsWith(declared)) failWith('head_mismatch', `request head SHA (${declared ?? 'missing'}) != HEAD (${head})`);
 
 // 2) 같은 체크포인트 왕복 횟수 제한. 넘으면 사람이 판단한다.
 const rounds = readdirSync(join(root, '.handoff')).filter((f) => f.startsWith(prefix) && f.endsWith('.response.json')).length;
@@ -75,31 +84,53 @@ const prompt = template.replaceAll('{{REQUEST}}', `.handoff/${name}`).replaceAll
 
 const allowed = [
   'Read', 'Grep', 'Glob',
-  'Bash(git diff:*)', 'Bash(git log:*)', 'Bash(git show:*)', 'Bash(git status:*)', 'Bash(git rev-parse:*)',
-  'Bash(npm ci --ignore-scripts:*)', 'Bash(npm run build:*)', 'Bash(node --test:*)', 'Bash(npm test:*)',
-  'Bash(shasum -a 256:*)', 'Bash(ls:*)', 'Bash(wc:*)',
-  ...(mode === 'gate' ? ['Bash(node scripts/kpi.mjs:*)', 'Bash(node build/src/cli.js:*)', 'Bash(docker ps:*)',
-    'Bash(docker compose ps:*)', 'Bash(gh run list:*)', 'Bash(gh run view:*)'] : []),
+  'Bash(git diff *)', 'Bash(git log *)', 'Bash(git show *)', 'Bash(git status *)', 'Bash(git rev-parse *)',
+  'Bash(npm ci --ignore-scripts *)', 'Bash(npm run build *)', 'Bash(node --test *)', 'Bash(npm test *)',
+  'Bash(shasum -a 256 *)', 'Bash(ls *)', 'Bash(wc *)',
+  ...(mode === 'gate' ? ['Bash(node scripts/kpi.mjs *)', 'Bash(node build/src/cli.js *)', 'Bash(docker ps *)',
+    'Bash(docker compose ps *)', 'Bash(gh run list *)', 'Bash(gh run view *)'] : []),
 ];
+// --safe-mode: 사용자 전역 훅(예: Intent Loop review_gate)·플러그인·CLAUDE.md·MCP를 끄고 로그인 인증은 유지한다.
+// --bare: API 키 전용 최소 모드(훅·플러그인·키체인 미사용).
 const args = ['--print', '--output-format', 'json', '--json-schema', schema,
   '--permission-mode', 'dontAsk', '--tools', 'Read,Grep,Glob,Bash', '--allowedTools', ...allowed,
   '--max-turns', opts.maxTurns, '--max-budget-usd', opts.budgetUsd,
   '--no-session-persistence', '--strict-mcp-config', '--mcp-config', '{"mcpServers":{}}', '--disable-slash-commands',
-  ...(opts.auth === 'api-key' ? ['--bare'] : [])];
-if (opts.auth === 'api-key' && !process.env.ANTHROPIC_API_KEY) fail('ANTHROPIC_API_KEY is required for --auth api-key');
+  ...(opts.auth === 'api-key' ? ['--bare'] : ['--safe-mode'])];
+if (opts.auth === 'api-key' && !process.env.ANTHROPIC_API_KEY) failWith('auth', 'ANTHROPIC_API_KEY is required for --auth api-key');
 
 console.error(`claude-review: ${mode} ${prefix} @ ${head.slice(0, 12)} (round ${rounds + 1}/${MAX_ROUNDS})`);
 const result = run(opts.claude, args, { cwd: tree, input: prompt, timeout: Number(opts.timeoutMin) * 60_000 });
 try { git(['worktree', 'remove', '--force', tree], root); rmSync(work, { recursive: true, force: true }); } catch { /* best effort */ }
-if (result.error || result.status !== 0) fail(`claude exited ${result.status ?? result.error?.message}: ${(result.stderr || '').slice(-2000)}`);
 
-// 4) 응답 검증: 구조화 출력이 있어야 하고 판정과 지적 사항이 서로 모순되면 안 된다.
-let envelope;
-try { envelope = JSON.parse(result.stdout); } catch { fail('claude output is not JSON'); }
+// 4) 응답 검증. 실패해도 원인(subtype·턴 수·권한 거부·비용)을 .error.json에 남긴다.
+let envelope = null;
+try { envelope = JSON.parse(result.stdout); } catch { /* 아래에서 분류 */ }
 const out = envelope?.structured_output;
-if (envelope?.type !== 'result' || envelope?.subtype !== 'success' || envelope?.is_error !== false || !out) fail('claude did not return a successful structured result');
+const ok = !result.error && result.status === 0 && envelope?.type === 'result' && envelope?.subtype === 'success' && envelope?.is_error === false && out;
+if (!ok) {
+  const subtype = String(envelope?.subtype ?? '');
+  const reason = String(envelope?.terminal_reason ?? '');
+  const denials = Array.isArray(envelope?.permission_denials) ? envelope.permission_denials : [];
+  const stderr = String(result.stderr ?? '');
+  const cause = result.error?.code === 'ENOENT' ? 'claude_not_found'
+    : result.error?.code === 'ETIMEDOUT' || result.signal ? 'timeout'
+    : /max_turns/.test(subtype + reason) ? 'max_turns'
+    : /budget/.test(subtype + reason) ? 'budget'
+    : /auth|login|api key|401|403/i.test(stderr + String(envelope?.result ?? '')) ? 'auth'
+    : envelope && !out && envelope.subtype === 'success' ? 'no_structured_output'
+    : denials.length ? 'permission'
+    : envelope ? 'claude_error' : 'not_json';
+  failWith(cause, `claude did not return a successful structured result (exit ${result.status ?? result.error?.code})`, {
+    exitStatus: result.status ?? null, signal: result.signal ?? null, subtype: subtype || null, terminalReason: reason || null,
+    numTurns: envelope?.num_turns ?? null, costUsd: envelope?.total_cost_usd ?? null, maxTurns: Number(opts.maxTurns), budgetUsd: Number(opts.budgetUsd),
+    permissionDenials: denials.slice(0, 20).map((d) => ({ tool: d?.tool_name ?? null, input: JSON.stringify(d?.tool_input ?? '').slice(0, 200) })),
+    resultExcerpt: String(envelope?.result ?? '').slice(0, 1000), stderrTail: stderr.slice(-2000),
+  });
+}
 const verdicts = ['APPROVE', 'APPROVE_WITH_NITS', 'CHANGES_REQUESTED', 'BLOCKED'];
-if (!verdicts.includes(out.verdict) || !Array.isArray(out.findings) || !Array.isArray(out.gate)) fail('structured output does not match schema');
+if (!verdicts.includes(out.verdict) || !Array.isArray(out.findings) || !Array.isArray(out.gate)) failWith('schema_mismatch', 'structured output does not match schema', { output: out });
+try { rmSync(errorPath, { force: true }); } catch { /* 이전 실패 기록 정리 */ }
 const blocking = out.findings.filter((f) => f.severity === 'blocking');
 const gateFail = out.gate.filter((g) => g.status === 'FAIL');
 const gateUnverified = out.gate.filter((g) => g.status === 'UNVERIFIED');
@@ -108,7 +139,6 @@ if (code === 0 && (blocking.length || gateFail.length)) code = 10;           // 
 if (mode === 'gate' && code === 0 && (out.gate.length === 0 || gateUnverified.length)) code = 12; // 게이트 미검증은 사람 판단
 
 // 5) 응답 기록. Codex는 이 파일을 수정하지 않는다.
-const base = name.replace('.request.md', '');
 const meta = {
   head, mode, round: rounds + 1, exitCode: code,
   claudeSession: envelope.session_id ?? null, costUsd: envelope.total_cost_usd ?? null,

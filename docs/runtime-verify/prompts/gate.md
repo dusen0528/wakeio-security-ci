@@ -8,7 +8,7 @@
 
 절차
 1. PLAN 12장에서 이 마일스톤의 게이트 기준과 완료 조건을 직접 뽑는다. 요청서가 정리한 기준 목록을 쓰지 않는다. 기준마다 gate 배열에 한 항목을 만든다.
-2. 보호 파일 검사: `git log --format='%h %an %s' -- scripts/handoff docs/runtime-verify/HANDOFF.md docs/runtime-verify/prompts` 결과가 최초 도입 커밋 하나뿐인지 확인한다. 아니면 verdict=BLOCKED.
+2. 보호 파일 검사: `git log --format='%h %s' -- scripts/handoff docs/runtime-verify/HANDOFF.md docs/runtime-verify/prompts`로 보호 경로를 바꾼 커밋을 모두 찾는다. 최초 도입 커밋을 제외한 각 커밋은 제목에 `[handoff-update]`가 있어야 하고, `git show --stat <커밋>`에서 보호 경로 외 파일을 바꾸지 않아야 한다. 어긋나면 verdict=BLOCKED.
 3. 이 마일스톤의 이전 체크포인트 blocking 항목이 모두 해결됐는지 확인한다.
 4. `npm ci --ignore-scripts` → `npm run build` → `npm test`(전체) → compat-0.5 테스트 → 가능하면 KPI compare를 실행한다.
 5. Docker가 필요한 기준: 요청서의 재현 명령 중 허용된 것(`node build/src/cli.js ...`)은 직접 다시 실행한다. 실행할 수 없으면 증거 파일의 `shasum -a 256` 대조, 고정 관측 로그를 입력으로 한 Oracle 단위 테스트, `gh run list` / `gh run view`의 CI 결과로 확인한다. 끝내 확인하지 못한 기준은 UNVERIFIED와 그 이유를 적는다.
