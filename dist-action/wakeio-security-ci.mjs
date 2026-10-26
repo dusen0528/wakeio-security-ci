@@ -182,7 +182,7 @@ import { types as types2 } from "node:util";
 function fail() {
   throw new TypeError("invalid_bounded_json");
 }
-function snapshotJsonData(input, invalid8 = fail, limit2 = fail) {
+function snapshotJsonData(input, invalid9 = fail, limit2 = fail) {
   let nodes = 0, bytes = 0;
   const active = /* @__PURE__ */ new Set();
   const count5 = (value) => {
@@ -208,18 +208,18 @@ function snapshotJsonData(input, invalid8 = fail, limit2 = fail) {
     }
     if (typeof value === "number") {
       if (!Number.isFinite(value))
-        invalid8();
+        invalid9();
       count5(String(value));
       return value;
     }
     if (typeof value !== "object" || types2.isProxy(value) || active.has(value))
-      invalid8();
+      invalid9();
     const array = Array.isArray(value);
     const prototype = Object.getPrototypeOf(value);
     if (array ? prototype !== Array.prototype : prototype !== Object.prototype && prototype !== null)
-      invalid8();
+      invalid9();
     if (Object.getOwnPropertySymbols(value).length !== 0)
-      invalid8();
+      invalid9();
     const descriptors = Object.getOwnPropertyDescriptors(value);
     const names = Object.keys(descriptors);
     if (names.length > JSON_MAX_INPUT_NODES - nodes)
@@ -228,12 +228,12 @@ function snapshotJsonData(input, invalid8 = fail, limit2 = fail) {
     count5("{}");
     if (array) {
       if (value.length > JSON_MAX_INPUT_NODES - nodes || names.length !== value.length + 1)
-        invalid8();
+        invalid9();
       const result4 = [];
       for (let i = 0; i < value.length; i++) {
         const descriptor = descriptors[String(i)];
         if (!descriptor || !descriptor.enumerable || !("value" in descriptor))
-          invalid8();
+          invalid9();
         if (i > 0)
           count5(",");
         result4.push(copy(descriptor.value, depth + 1));
@@ -246,7 +246,7 @@ function snapshotJsonData(input, invalid8 = fail, limit2 = fail) {
       const name2 = names[i];
       const descriptor = descriptors[name2];
       if (!descriptor.enumerable || !("value" in descriptor))
-        invalid8();
+        invalid9();
       if (i > 0)
         count5(",");
       string(name2);
@@ -78716,9 +78716,9 @@ ${lanes.join("\n")}
             } else if (source.flags & 4194304 && target.flags & 4194304) {
               inferFromContravariantTypes(source.type, target.type);
             } else if ((isLiteralType(source) || source.flags & 4) && target.flags & 4194304) {
-              const empty = createEmptyObjectTypeFromStringLiteral(source);
+              const empty2 = createEmptyObjectTypeFromStringLiteral(source);
               inferFromContravariantTypesWithPriority(
-                empty,
+                empty2,
                 target.type,
                 256
                 /* LiteralKeyof */
@@ -211991,21 +211991,21 @@ var init_nosql_role = __esm({
           const last = ts2.isBlock(prior.thenStatement) ? prior.thenStatement.statements.at(-1) : prior.thenStatement;
           if (!last || !(ts2.isReturnStatement(last) || ts2.isThrowStatement(last)))
             continue;
-          let invalid8 = false;
+          let invalid9 = false;
           const visit = (node) => {
             if (!this.tick()) {
-              invalid8 = true;
+              invalid9 = true;
               return;
             }
             if (node !== statement && (ts2.isArrowFunction(node) || ts2.isFunctionExpression(node) || ts2.isFunctionDeclaration(node)))
               return;
             if (ts2.isCallExpression(node) && node !== sink || ts2.isNewExpression(node) || ts2.isDeleteExpression(node) || ts2.isPrefixUnaryExpression(node) || ts2.isPostfixUnaryExpression(node) || ts2.isBinaryExpression(node) && node.operatorToken.kind >= ts2.SyntaxKind.FirstAssignment && node.operatorToken.kind <= ts2.SyntaxKind.LastAssignment)
-              invalid8 = true;
+              invalid9 = true;
             node.forEachChild(visit);
           };
           for (let j = i + 1; j <= index; j++)
             visit(siblings[j]);
-          return !invalid8;
+          return !invalid9;
         }
         return false;
       }
@@ -214346,20 +214346,20 @@ var init_modules = __esm({
               link3(consumer, group);
             }
         }
-        const invalid8 = [...this.objectExports.values()].filter((group) => !group.valid);
-        for (let i = 0; i < invalid8.length; i += 1) {
+        const invalid9 = [...this.objectExports.values()].filter((group) => !group.valid);
+        for (let i = 0; i < invalid9.length; i += 1) {
           if (!this.tick()) {
             workComplete = false;
             break;
           }
-          for (const group of dependents.get(invalid8[i]) ?? []) {
+          for (const group of dependents.get(invalid9[i]) ?? []) {
             if (!this.tick()) {
               workComplete = false;
               break;
             }
             if (group.valid) {
               group.valid = false;
-              invalid8.push(group);
+              invalid9.push(group);
             }
           }
         }
@@ -218185,8 +218185,8 @@ var init_filesystem_role = __esm({
           return void 0;
         const metadata = this.metadata(call.getSourceFile());
         const external = imported.specifier === "glob";
-        const provider = external ? void 0 : this.localProvider(call);
-        const known = external ? this.version(call.getSourceFile(), "glob", "10.4.5") : !!provider && metadata?.manifest.name === "glob" && metadata.manifest.version === "10.4.5";
+        const provider2 = external ? void 0 : this.localProvider(call);
+        const known = external ? this.version(call.getSourceFile(), "glob", "10.4.5") : !!provider2 && metadata?.manifest.name === "glob" && metadata.manifest.version === "10.4.5";
         if (!known || !imported.valid) {
           this.unsupportedUses++;
           this.gap("module_export_unsupported", call);
@@ -218221,7 +218221,7 @@ var init_filesystem_role = __esm({
           return void 0;
         }
         this.streamsRecognized++;
-        return { origin: call, provider, valid: imported.valid, identity: {} };
+        return { origin: call, provider: provider2, valid: imported.valid, identity: {} };
       }
       accumulator(name2) {
         const cached = this.accumulatorShapes.get(name2);
@@ -231901,10 +231901,10 @@ function runProcess(executable3, args, options) {
   });
 }
 function runAgentProcess(executable3, args, options) {
-  const empty = { exitCode: null, signal: null, stdout: "", stderr: "", timedOut: false, outputLimitExceeded: false };
+  const empty2 = { exitCode: null, signal: null, stdout: "", stderr: "", timedOut: false, outputLimitExceeded: false };
   if (options.signal?.aborted)
     return Promise.resolve({
-      ...empty,
+      ...empty2,
       cancelled: true,
       stopReason: "cancelled",
       cleanupState: "not_started",
@@ -231913,7 +231913,7 @@ function runAgentProcess(executable3, args, options) {
     });
   if (!["darwin", "linux"].includes(process.platform) || !options.home || options.environment || options.runtimePath || options.authentication && options.codexHome)
     return Promise.resolve({
-      ...empty,
+      ...empty2,
       spawnError: "invalid agent process profile",
       stopReason: "spawn_error",
       cleanupState: "not_started",
@@ -231924,7 +231924,7 @@ function runAgentProcess(executable3, args, options) {
   const maxOutputBytes = Math.min(options.maxOutputBytes ?? MAX_PROCESS_OUTPUT_BYTES, MAX_PROCESS_OUTPUT_BYTES);
   if (!Number.isSafeInteger(maxOutputBytes) || maxOutputBytes < 1)
     return Promise.resolve({
-      ...empty,
+      ...empty2,
       spawnError: "invalid output budget",
       stopReason: "spawn_error",
       cleanupState: "not_started",
@@ -231943,7 +231943,7 @@ function runAgentProcess(executable3, args, options) {
     });
   } catch {
     return Promise.resolve({
-      ...empty,
+      ...empty2,
       spawnError: "agent could not be started",
       stopReason: "spawn_error",
       cleanupState: "not_started",
@@ -232101,17 +232101,17 @@ function observeOwnedGroup(pid) {
   }
 }
 async function runStrictProcess(executable3, args, options) {
-  const empty = { exitCode: null, signal: null, stdout: "", stderr: "", timedOut: false, outputLimitExceeded: false };
+  const empty2 = { exitCode: null, signal: null, stdout: "", stderr: "", timedOut: false, outputLimitExceeded: false };
   if (options.signal?.aborted)
-    return { ...empty, cancelled: true, stopReason: "cancelled", exited: false, closeConfirmed: false, cleanupState: "not_started", cleanupConfirmed: true };
+    return { ...empty2, cancelled: true, stopReason: "cancelled", exited: false, closeConfirmed: false, cleanupState: "not_started", cleanupConfirmed: true };
   if (!["darwin", "linux"].includes(process.platform) || !options.home || !options.tmpdir || options.authentication || options.environment || options.runtimePath || options.input !== void 0) {
-    return { ...empty, spawnError: "invalid strict process profile", stopReason: "spawn_error", cleanupState: "not_started", cleanupConfirmed: true };
+    return { ...empty2, spawnError: "invalid strict process profile", stopReason: "spawn_error", cleanupState: "not_started", cleanupConfirmed: true };
   }
   const started = Date.now();
   const timeoutMs = Math.min(safeTimeout(options.timeoutMs), 1e4);
   const maxOutputBytes = Math.min(options.maxOutputBytes ?? MAX_PROCESS_OUTPUT_BYTES, MAX_PROCESS_OUTPUT_BYTES);
   if (!Number.isSafeInteger(maxOutputBytes) || maxOutputBytes < 1)
-    return { ...empty, spawnError: "invalid output budget", stopReason: "spawn_error" };
+    return { ...empty2, spawnError: "invalid output budget", stopReason: "spawn_error" };
   const rss = { assessment: "unassessed", samples: 0, failedSamples: 0, peakBytes: 0, capBytes: STRICT_RSS_CAP };
   let child;
   try {
@@ -232123,7 +232123,7 @@ async function runStrictProcess(executable3, args, options) {
       stdio: ["ignore", "pipe", "pipe"]
     });
   } catch {
-    return { ...empty, spawnError: "scanner could not be started", stopReason: "spawn_error", cleanupState: "not_started", cleanupConfirmed: true, rss };
+    return { ...empty2, spawnError: "scanner could not be started", stopReason: "spawn_error", cleanupState: "not_started", cleanupConfirmed: true, rss };
   }
   let exitCode2 = null, exitSignal = null;
   let exited = false, closed = false, finished = false, stopping = false;
@@ -232310,8 +232310,549 @@ var init_process = __esm({
   }
 });
 
+// build/src/source/opengrep-rules.js
+var OPENGREP_PROFILE, OPENGREP_VERSION, OPENGREP_SHA256, OPENGREP_SIZE, OWN_RULES_SHA256, OWN_RULE_IDS, OWN_RULES;
+var init_opengrep_rules = __esm({
+  "build/src/source/opengrep-rules.js"() {
+    "use strict";
+    OPENGREP_PROFILE = "native-preview-v1";
+    OPENGREP_VERSION = "1.30.0";
+    OPENGREP_SHA256 = "9d101457981b1dea39013cf61cabbf896cefbb7e664c19efdb21ee8be4a598de";
+    OPENGREP_SIZE = 173348760;
+    OWN_RULES_SHA256 = "596df423168083551b64ccc74806353b04f031889bd3d06ec8bbd6afe48b32c1";
+    OWN_RULE_IDS = ["wakeio.w06.sql.js-ts.v1", "wakeio.w06.command.js-ts.v1", "wakeio.w06.sql.python.v1", "wakeio.w06.command.python.v1"];
+    OWN_RULES = "# SPDX-License-Identifier: Apache-2.0\n# Copyright 2026 Wakeio Security CI contributors\n# Original experimental patterns; no downloaded registry/security rule content.\nrules:\n  - id: wakeio.w06.sql.js-ts.v1\n    languages: [javascript, typescript]\n    mode: taint\n    message: Request-shaped input reaches a selected injection argument; candidate requires independent review.\n    severity: ERROR\n    metadata:\n      license: Apache-2.0\n      confidence: LOW\n      cwe: CWE-89\n      experiment: W06-owned-prototype-v1\n      verification: not_run\n    pattern-sources:\n      - patterns:\n          - pattern-either:\n              - pattern: $REQ.query\n              - pattern: $REQ.body\n              - pattern: $REQ.params\n          - metavariable-regex:\n              metavariable: $REQ\n              regex: '^(req|request)$'\n        exact: true\n    pattern-sinks:\n      - patterns:\n          - pattern-either:\n              - pattern: $DB.query($SQL, ...)\n              - pattern: $DB.execute($SQL, ...)\n          - focus-metavariable: $SQL\n  - id: wakeio.w06.command.js-ts.v1\n    languages: [javascript, typescript]\n    mode: taint\n    message: Request-shaped input reaches a selected injection argument; candidate requires independent review.\n    severity: ERROR\n    metadata:\n      license: Apache-2.0\n      confidence: LOW\n      cwe: CWE-78\n      experiment: W06-owned-prototype-v1\n      verification: not_run\n    pattern-sources:\n      - patterns:\n          - pattern-either:\n              - pattern: $REQ.query\n              - pattern: $REQ.body\n              - pattern: $REQ.params\n          - metavariable-regex:\n              metavariable: $REQ\n              regex: '^(req|request)$'\n        exact: true\n    pattern-sinks:\n      - patterns:\n          - pattern-either:\n              - pattern: exec($CMD, ...)\n              - pattern: execSync($CMD, ...)\n              - pattern: $CP.exec($CMD, ...)\n              - pattern: $CP.execSync($CMD, ...)\n          - focus-metavariable: $CMD\n  - id: wakeio.w06.sql.python.v1\n    languages: [python]\n    mode: taint\n    message: Request-shaped input reaches a selected injection argument; candidate requires independent review.\n    severity: ERROR\n    metadata:\n      license: Apache-2.0\n      confidence: LOW\n      cwe: CWE-89\n      experiment: W06-owned-prototype-v1\n      verification: not_run\n    pattern-sources:\n      - pattern-either:\n          - pattern: request.args.get(...)\n          - pattern: request.args[$KEY]\n          - pattern: request.form.get(...)\n          - pattern: request.form[$KEY]\n          - pattern: request.json[$KEY]\n        exact: true\n    pattern-sinks:\n      - patterns:\n          - pattern-either:\n              - pattern: $DB.execute($SQL, ...)\n          - focus-metavariable: $SQL\n  - id: wakeio.w06.command.python.v1\n    languages: [python]\n    mode: taint\n    message: Request-shaped input reaches a selected injection argument; candidate requires independent review.\n    severity: ERROR\n    metadata:\n      license: Apache-2.0\n      confidence: LOW\n      cwe: CWE-78\n      experiment: W06-owned-prototype-v1\n      verification: not_run\n    pattern-sources:\n      - pattern-either:\n          - pattern: request.args.get(...)\n          - pattern: request.args[$KEY]\n          - pattern: request.form.get(...)\n          - pattern: request.form[$KEY]\n          - pattern: request.json[$KEY]\n        exact: true\n    pattern-sinks:\n      - patterns:\n          - pattern-either:\n              - pattern: subprocess.run($CMD, ..., shell=True, ...)\n              - pattern: subprocess.call($CMD, ..., shell=True, ...)\n              - pattern: subprocess.Popen($CMD, ..., shell=True, ...)\n              - pattern: subprocess.check_output($CMD, ..., shell=True, ...)\n              - pattern: subprocess.check_call($CMD, ..., shell=True, ...)\n              - pattern: os.system($CMD)\n              - pattern: os.popen($CMD, ...)\n          - focus-metavariable: $CMD\n";
+  }
+});
+
+// build/src/source/opengrep.js
+import { createHash } from "node:crypto";
+import { constants as constants2 } from "node:fs";
+import { access as access2, lstat as lstat2, mkdir, mkdtemp, open, readdir, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { dirname as dirname2, isAbsolute as isAbsolute2, join as join2, relative, resolve as resolve2, sep } from "node:path";
+function nativeJson(text4) {
+  if (Buffer.byteLength(text4) > MAX_JSON_BYTES)
+    throw new Error("output budget");
+  let cursor = 0, nodes = 0;
+  const space = () => {
+    while (/\s/.test(text4[cursor] ?? "") && cursor < text4.length)
+      cursor++;
+  };
+  const string = () => {
+    if (text4[cursor] !== '"')
+      throw new Error("string");
+    const start = cursor++;
+    while (cursor < text4.length) {
+      if (text4[cursor] === "\\") {
+        cursor += 2;
+        continue;
+      }
+      if (text4[cursor++] === '"')
+        return JSON.parse(text4.slice(start, cursor));
+    }
+    throw new Error("unterminated");
+  };
+  const value = (depth) => {
+    if (++nodes > 2e5 || depth > 64)
+      throw new Error("json budget");
+    space();
+    if (text4[cursor] === "{") {
+      cursor++;
+      space();
+      const keys6 = /* @__PURE__ */ new Set();
+      if (text4[cursor] === "}") {
+        cursor++;
+        return;
+      }
+      while (true) {
+        space();
+        const key2 = string();
+        if (keys6.has(key2))
+          throw new Error("duplicate");
+        keys6.add(key2);
+        space();
+        if (text4[cursor++] !== ":")
+          throw new Error("colon");
+        value(depth + 1);
+        space();
+        const next = text4[cursor++];
+        if (next === "}")
+          return;
+        if (next !== ",")
+          throw new Error("object");
+      }
+    }
+    if (text4[cursor] === "[") {
+      cursor++;
+      space();
+      if (text4[cursor] === "]") {
+        cursor++;
+        return;
+      }
+      while (true) {
+        value(depth + 1);
+        space();
+        const next = text4[cursor++];
+        if (next === "]")
+          return;
+        if (next !== ",")
+          throw new Error("array");
+      }
+    }
+    if (text4[cursor] === '"') {
+      string();
+      return;
+    }
+    const match = /^(?:true|false|null|-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?)/.exec(text4.slice(cursor));
+    if (!match)
+      throw new Error("primitive");
+    if (!Number.isFinite(Number(match[0])) && !["true", "false", "null"].includes(match[0]))
+      throw new Error("nonfinite");
+    cursor += match[0].length;
+  };
+  value(0);
+  space();
+  if (cursor !== text4.length)
+    throw new Error("trailing");
+  return JSON.parse(text4);
+}
+function fileFor(path3, stage, files) {
+  if (typeof path3 !== "string" || !path3 || path3.includes("\0") || path3.includes("\\"))
+    return void 0;
+  const absolute = isAbsolute2(path3) ? resolve2(path3) : resolve2(stage, path3);
+  const local = relative(resolve2(stage), absolute).split(sep).join("/");
+  if (local === ".." || local.startsWith("../") || isAbsolute2(local))
+    return void 0;
+  return files.get(local);
+}
+function point(raw, file, cache) {
+  if (!object6(raw) || !exactKeys3(raw, ["line", "col", "offset"]) || !["line", "col", "offset"].every((key2) => Number.isSafeInteger(raw[key2])) || raw.line < 1 || raw.col < 1 || raw.offset < 0)
+    throw new Error("position");
+  let prepared2 = cache.get(file.path);
+  if (!prepared2) {
+    const bytes2 = Buffer.from(file.text, "utf8"), starts2 = [0];
+    for (let index = 0; index < bytes2.length; index++)
+      if (bytes2[index] === 10)
+        starts2.push(index + 1);
+    prepared2 = { bytes: bytes2, starts: starts2, points: /* @__PURE__ */ new Map() };
+    cache.set(file.path, prepared2);
+  }
+  const { bytes, starts } = prepared2, offset = raw.offset, line = raw.line;
+  if (offset > bytes.length || offset < bytes.length && (bytes[offset] & 192) === 128)
+    throw new Error("byte boundary");
+  const lineStart = starts[line - 1];
+  if (lineStart === void 0 || offset < lineStart || line < starts.length && offset >= starts[line] || raw.col !== offset - lineStart + 1)
+    throw new Error("byte column");
+  let normal = prepared2.points.get(offset);
+  if (!normal) {
+    normal = { offset, line, column: bytes.subarray(lineStart, offset).toString("utf8").length + 1 };
+    prepared2.points.set(offset, normal);
+  }
+  return normal;
+}
+function range(raw, stage, files, cache) {
+  if (!object6(raw) || !exactKeys3(raw, ["path", "start", "end"]))
+    throw new Error("location");
+  const file = fileFor(raw.path, stage, files);
+  if (!file)
+    throw new Error("outside");
+  const start = point(raw.start, file, cache), end = point(raw.end, file, cache);
+  if (end.offset <= start.offset)
+    throw new Error("empty range");
+  return { file, start, end };
+}
+function nativeTrace(raw, sink, stage, files, cache) {
+  if (!object6(raw) || !exactKeys3(raw, ["taint_source", "taint_sink", "intermediate_vars"]) || !Array.isArray(raw.intermediate_vars))
+    throw new Error("trace schema");
+  const steps = [];
+  const add2 = (role, loc, content) => {
+    const item = range(loc, stage, files, cache);
+    if (item.file.path !== sink.file.path)
+      throw new Error("intrafile trace");
+    if (typeof content !== "string" || Buffer.from(item.file.text).subarray(item.start.offset, item.end.offset).toString("utf8") !== content)
+      throw new Error("trace bytes");
+    steps.push({ role, location: { path: item.file.path, line: item.start.line, column: item.start.column } });
+    return item;
+  };
+  const cliLoc = (role, value) => {
+    if (!Array.isArray(value) || value.length !== 2 || value[0] !== "CliLoc" || !Array.isArray(value[1]) || value[1].length !== 2)
+      throw new Error("trace variant");
+    return add2(role, value[1][0], value[1][1]);
+  };
+  cliLoc("source", raw.taint_source);
+  if (raw.intermediate_vars.length > 1e4)
+    throw new Error("trace budget");
+  for (const item of raw.intermediate_vars) {
+    if (!object6(item) || !exactKeys3(item, ["location", "content"]))
+      throw new Error("intermediate");
+    add2("intermediate", item.location, item.content);
+  }
+  const last = cliLoc("sink", raw.taint_sink);
+  if (last.file.path !== sink.file.path || last.start.offset !== sink.start.offset || last.end.offset !== sink.end.offset)
+    throw new Error("trace sink mismatch");
+  return { kind: "static_flow", steps: steps.length > 24 ? [...steps.slice(0, 23), steps.at(-1)] : steps, truncated: true };
+}
+function parseNativeOutput(stdout, exitCode2, stage, inputFiles) {
+  const findings = [], reasons = /* @__PURE__ */ new Set();
+  const files = new Map(inputFiles.map((file) => [file.path, file]));
+  const positionCache = /* @__PURE__ */ new Map();
+  let ignored = 0, invalid9 = 0, errors = 0, skipped = 0, scanned = 0;
+  const metrics = () => ({
+    profile: OPENGREP_PROFILE,
+    filesDeclared: inputFiles.length,
+    filesScanned: scanned,
+    nativeErrors: errors,
+    skippedRules: skipped,
+    ignoredFindings: ignored,
+    invalidFindings: invalid9,
+    engineExit: exitCode2 ?? "unknown",
+    incompleteReasons: [...reasons].sort().join(","),
+    rulePackSha256: OWN_RULES_SHA256
+  });
+  let parsed;
+  try {
+    parsed = nativeJson(stdout);
+  } catch {
+    return { id: NATIVE_CHECK_ID, status: "error", findings, notes: ["Native preview returned invalid bounded JSON."], metrics: { ...metrics(), incompleteReasons: "invalid_json" } };
+  }
+  if (!object6(parsed) || parsed.version !== OPENGREP_VERSION || !Array.isArray(parsed.results)) {
+    return { id: NATIVE_CHECK_ID, status: "error", findings, notes: ["Native preview protocol or version did not match the selected profile."], metrics: { ...metrics(), incompleteReasons: "invalid_protocol" } };
+  }
+  if (!Array.isArray(parsed.errors)) {
+    reasons.add("invalid_protocol");
+    parsed.errors = [];
+  }
+  if (!Array.isArray(parsed.skipped_rules)) {
+    reasons.add("invalid_protocol");
+    parsed.skipped_rules = [];
+  }
+  if (!Array.isArray(parsed.interfile_languages_used)) {
+    reasons.add("invalid_protocol");
+    parsed.interfile_languages_used = [];
+  }
+  if (!object6(parsed.paths)) {
+    reasons.add("invalid_protocol");
+    parsed.paths = {};
+  }
+  const paths = parsed.paths;
+  if (!Array.isArray(paths.scanned)) {
+    reasons.add("invalid_protocol");
+    paths.scanned = [];
+  }
+  if (!exactKeys3(parsed, ["version", "results", "errors", "paths", "skipped_rules", "interfile_languages_used"]))
+    reasons.add("unknown_schema");
+  if (!exactKeys3(paths, ["scanned", "skipped"]))
+    reasons.add("unknown_paths");
+  errors = parsed.errors.length;
+  skipped = parsed.skipped_rules.length;
+  if (errors)
+    reasons.add("native_errors");
+  if (skipped)
+    reasons.add("skipped_rules");
+  if (parsed.interfile_languages_used.length)
+    reasons.add("unexpected_interfile");
+  if (paths.skipped !== void 0 && (!Array.isArray(paths.skipped) || paths.skipped.length))
+    reasons.add("skipped_files");
+  const seen = /* @__PURE__ */ new Set();
+  for (const path3 of paths.scanned) {
+    const file = fileFor(path3, stage, files);
+    if (!file || seen.has(file.path))
+      reasons.add("coverage_mismatch");
+    else
+      seen.add(file.path);
+  }
+  scanned = seen.size;
+  if (seen.size !== files.size)
+    reasons.add("coverage_mismatch");
+  if (parsed.results.length > 1e4)
+    reasons.add("finding_limit");
+  for (const raw of parsed.results.slice(0, 1e4)) {
+    try {
+      if (!object6(raw) || typeof raw.check_id !== "string" || !OWN_RULE_IDS.includes(raw.check_id) || !object6(raw.extra))
+        throw new Error("finding");
+      const loc = range({ path: raw.path, start: raw.start, end: raw.end }, stage, files, positionCache);
+      const extra = raw.extra;
+      if (!exactKeys3(raw, ["check_id", "path", "start", "end", "extra"]) || !exactKeys3(extra, ["metavars", "message", "metadata", "severity", "fingerprint", "lines", "is_ignored", "validation_state", "dataflow_trace", "engine_kind"]))
+        reasons.add("unknown_finding_schema");
+      const isPython = raw.check_id.includes(".python.");
+      if (isPython !== /\.py$/i.test(loc.file.path))
+        throw new Error("language mismatch");
+      if (extra.is_ignored !== false) {
+        ignored++;
+        reasons.add("ignored_finding");
+      }
+      if (extra.severity !== "ERROR" || extra.validation_state !== "NO_VALIDATOR" || extra.engine_kind !== "OSS" || !object6(extra.metadata))
+        reasons.add("finding_state");
+      let staticFlow;
+      if (extra.dataflow_trace !== void 0 && extra.dataflow_trace !== null) {
+        try {
+          staticFlow = nativeTrace(extra.dataflow_trace, loc, stage, files, positionCache);
+        } catch {
+          reasons.add("invalid_trace");
+        }
+      }
+      const sql = raw.check_id.includes(".sql.");
+      findings.push({
+        ruleId: raw.check_id,
+        title: sql ? "Request-shaped input in SQL argument" : "Request-shaped input in command argument",
+        description: "The selected native rule reported a static input candidate. Binding identity and runtime exploitability require independent review.",
+        severity: "high",
+        confidence: "low",
+        kind: "candidate",
+        location: { path: loc.file.path, line: loc.start.line, column: loc.start.column },
+        remediation: sql ? "Review the SQL statement argument and use parameter binding; verify the risky, fixed and normal paths independently." : "Review shell interpretation and prefer an explicit executable with separate arguments; verify the risky, fixed and normal paths independently.",
+        references: [sql ? "https://cwe.mitre.org/data/definitions/89.html" : "https://cwe.mitre.org/data/definitions/78.html"],
+        ...staticFlow ? { staticFlow } : {}
+      });
+    } catch {
+      invalid9++;
+      reasons.add("invalid_finding");
+    }
+  }
+  if (![0, 1].includes(exitCode2) || exitCode2 === 0 && parsed.results.length > 0 || exitCode2 === 1 && parsed.results.length === 0)
+    reasons.add("exit_mismatch");
+  return {
+    id: NATIVE_CHECK_ID,
+    status: reasons.size ? "partial" : "completed",
+    findings,
+    notes: [NOTE, ...reasons.size ? ["Native preview completion is unverified; inspect incompleteReasons and retained candidates."] : []],
+    metrics: metrics()
+  };
+}
+function nativeCheckFromProcess(result3, stage, files, snapshotComplete) {
+  const check2 = parseNativeOutput(result3.stdout, result3.exitCode, stage, files);
+  const reasons = new Set(String(check2.metrics?.incompleteReasons ?? "").split(",").filter(Boolean));
+  if (result3.spawnError)
+    reasons.add("spawn_error");
+  if (result3.signal !== null)
+    reasons.add("process_signal");
+  if (result3.stopReason)
+    reasons.add(result3.stopReason);
+  if (result3.timedOut)
+    reasons.add("timeout");
+  if (result3.outputLimitExceeded)
+    reasons.add("output_limit");
+  if (result3.cancelled)
+    reasons.add("cancelled");
+  if (result3.exited !== true || result3.closeConfirmed !== true)
+    reasons.add("close_unknown");
+  if (result3.cleanupConfirmed !== true || !["terminated", "terminated_zombies"].includes(result3.cleanupState ?? "unknown"))
+    reasons.add("cleanup_unknown");
+  if (result3.rss?.assessment !== "measured" || !Number.isSafeInteger(result3.rss.samples) || result3.rss.samples < 1 || result3.rss.failedSamples !== 0 || !Number.isSafeInteger(result3.rss.peakBytes) || result3.rss.peakBytes < 0 || result3.rss.capBytes !== 512 * 1024 * 1024)
+    reasons.add("rss_unassessed");
+  if (result3.rss && result3.rss.peakBytes > 512 * 1024 * 1024)
+    reasons.add("rss_limit");
+  if (!snapshotComplete)
+    reasons.add("snapshot_incomplete");
+  if (reasons.size && check2.status === "completed")
+    check2.status = "partial";
+  if (!result3.spawnError && (result3.timedOut || result3.cancelled || result3.outputLimitExceeded || result3.stopReason === "observer_unknown" || result3.stopReason === "rss_limit"))
+    check2.status = "partial";
+  check2.metrics = {
+    ...check2.metrics,
+    incompleteReasons: [...reasons].sort().join(","),
+    closeConfirmed: result3.closeConfirmed === true,
+    cleanupConfirmed: result3.cleanupConfirmed === true,
+    cleanupState: result3.cleanupState ?? "unknown",
+    rssAssessment: result3.rss?.assessment ?? "unassessed",
+    rssSamples: result3.rss?.samples ?? 0,
+    rssPeakBytes: result3.rss?.peakBytes ?? 0,
+    snapshotComplete
+  };
+  if (reasons.size && !check2.notes.some((note2) => note2.includes("completion is unverified")))
+    check2.notes.push("Native preview completion is unverified; inspect incompleteReasons and retained candidates.");
+  return check2;
+}
+function nativeSandboxCommand(policyPath, executable3, args) {
+  if (!isAbsolute2(policyPath) || !isAbsolute2(executable3))
+    throw new Error("absolute native paths required");
+  return { executable: "/usr/bin/sandbox-exec", args: ["-f", policyPath, executable3, ...args] };
+}
+async function hashRegular(path3, expectedSize) {
+  const handle = await open(path3, constants2.O_RDONLY | constants2.O_NOFOLLOW | constants2.O_NONBLOCK);
+  try {
+    const before = await handle.stat();
+    if (!before.isFile() || before.size !== expectedSize)
+      throw new Error("identity size");
+    const hash2 = createHash("sha256"), buffer = Buffer.alloc(64 * 1024);
+    let position2 = 0;
+    while (position2 <= expectedSize) {
+      const result3 = await handle.read(buffer, 0, Math.min(buffer.length, expectedSize + 1 - position2), position2);
+      if (!result3.bytesRead)
+        break;
+      hash2.update(buffer.subarray(0, result3.bytesRead));
+      position2 += result3.bytesRead;
+    }
+    const after = await handle.stat();
+    if (position2 !== expectedSize || before.ino !== after.ino || before.size !== after.size || before.mtimeMs !== after.mtimeMs || before.ctimeMs !== after.ctimeMs)
+      throw new Error("changed file");
+    return hash2.digest("hex");
+  } finally {
+    await handle.close();
+  }
+}
+async function inventoryMatches(stage, files) {
+  const expected = new Map(files.map((file) => [file.path, file]));
+  let count5 = 0;
+  const walk = async (directory3) => {
+    for (const entry of await readdir(directory3, { withFileTypes: true })) {
+      const path3 = join2(directory3, entry.name), stat2 = await lstat2(path3);
+      if (stat2.isSymbolicLink())
+        throw new Error("stage link");
+      if (stat2.isDirectory()) {
+        await walk(path3);
+        continue;
+      }
+      const local = relative(stage, path3).split(sep).join("/"), file = expected.get(local);
+      if (!file || !stat2.isFile() || ++count5 > files.length || stat2.nlink !== 1 || await hashRegular(path3, file.bytes) !== digest(file.text))
+        throw new Error("stage identity");
+    }
+  };
+  try {
+    await walk(stage);
+    return count5 === files.length;
+  } catch {
+    return false;
+  }
+}
+async function verifyNativePostRun(check2, stage, files, pack, policy, executable3) {
+  let stable = false;
+  try {
+    stable = await inventoryMatches(stage, files) && await hashRegular(pack, Buffer.byteLength(OWN_RULES)) === OWN_RULES_SHA256 && await hashRegular(policy, Buffer.byteLength(NATIVE_DENY_POLICY)) === digest(NATIVE_DENY_POLICY) && await hashRegular(executable3, OPENGREP_SIZE) === OPENGREP_SHA256;
+  } catch {
+  }
+  if (!stable) {
+    check2.status = "partial";
+    check2.metrics = {
+      ...check2.metrics,
+      identityUnchanged: false,
+      incompleteReasons: [check2.metrics?.incompleteReasons, "identity_changed"].filter(Boolean).join(",")
+    };
+    check2.notes.push("Post-run native input or engine identity could not be verified.");
+  } else
+    check2.metrics = { ...check2.metrics, identityUnchanged: true, engineSha256: OPENGREP_SHA256 };
+}
+async function runNativePreview(snapshot4, options) {
+  const files = nativeFiles(snapshot4);
+  const failed = (reason2, status = "error") => ({
+    id: NATIVE_CHECK_ID,
+    status,
+    findings: [],
+    notes: ["Selected native preview could not be verified."],
+    metrics: { profile: OPENGREP_PROFILE, filesDeclared: files.length, incompleteReasons: reason2 }
+  });
+  if (options.signal?.aborted)
+    return failed("cancelled", "partial");
+  const executable3 = options.nativePreview?.executable;
+  if (typeof executable3 !== "string" || !isAbsolute2(executable3) || executable3.includes("\0"))
+    return failed("invalid_executable_path");
+  if (process.platform !== "darwin" || process.arch !== "arm64")
+    return failed("unsupported_platform");
+  if (!snapshot4.complete && snapshot4.rootError)
+    return failed("snapshot_incomplete", "partial");
+  if (files.length === 0)
+    return { id: NATIVE_CHECK_ID, status: "not_applicable", findings: [], notes: ["No collected JS/TS/Python code file was available for the selected native preview."], metrics: { filesDeclared: 0, profile: OPENGREP_PROFILE } };
+  let top, check2;
+  try {
+    if (await hashRegular(executable3, OPENGREP_SIZE) !== OPENGREP_SHA256 || digest(OWN_RULES) !== OWN_RULES_SHA256)
+      return failed("identity_mismatch");
+    await access2(executable3, constants2.X_OK);
+    if (!(await lstat2("/usr/bin/sandbox-exec")).isFile())
+      return failed("network_boundary_unavailable");
+    top = await mkdtemp(join2(tmpdir(), "wakeio-native-"));
+    const stage = join2(top, "snapshot"), home = join2(top, "home"), temporary = join2(top, "tmp");
+    for (const path3 of [stage, home, temporary])
+      await mkdir(path3, { mode: 448 });
+    for (const file of files) {
+      const path3 = join2(stage, file.path);
+      await mkdir(dirname2(path3), { recursive: true, mode: 448 });
+      await writeFile(path3, file.text, { flag: "wx", mode: 384 });
+    }
+    const pack = join2(top, "owned-rules.yaml"), policy = join2(top, "deny-network.sb");
+    await writeFile(pack, OWN_RULES, { mode: 384, flag: "wx" });
+    await writeFile(policy, NATIVE_DENY_POLICY, { mode: 384, flag: "wx" });
+    if (!await inventoryMatches(stage, files))
+      throw new Error("stage identity");
+    const args = [
+      "scan",
+      "--experimental",
+      "--disable-version-check",
+      "--json",
+      "--error",
+      "--strict",
+      "--no-autofix",
+      "--disable-nosem",
+      "--no-rewrite-rule-ids",
+      "--no-git-ignore",
+      "--taint-intrafile",
+      "--jobs",
+      "1",
+      "--max-memory",
+      "256",
+      "--timeout",
+      "2",
+      "--timeout-threshold",
+      "1",
+      "--project-root",
+      stage,
+      "--config",
+      pack,
+      stage
+    ];
+    const command = nativeSandboxCommand(policy, executable3, args);
+    const result3 = await runProcess(command.executable, command.args, {
+      cwd: stage,
+      home,
+      tmpdir: temporary,
+      timeoutMs: Math.min(options.timeoutMs ?? 1e4, 1e4),
+      maxOutputBytes: MAX_JSON_BYTES,
+      supervision: "native-offline",
+      signal: options.signal
+    });
+    check2 = nativeCheckFromProcess(result3, stage, files, snapshot4.complete);
+    await verifyNativePostRun(check2, stage, files, pack, policy, executable3);
+  } catch {
+    if (!check2)
+      check2 = failed("native_execution_error");
+    else {
+      check2.status = "partial";
+      check2.metrics = { ...check2.metrics, incompleteReasons: [check2.metrics?.incompleteReasons, "native_execution_error"].filter(Boolean).join(",") };
+    }
+  } finally {
+    if (top) {
+      try {
+        await rm(top, { recursive: true, force: true });
+        if (check2)
+          check2.metrics = { ...check2.metrics, stageCleanupConfirmed: true };
+      } catch {
+        check2 ??= failed("stage_cleanup_unknown", "partial");
+        check2.status = "partial";
+        check2.metrics = { ...check2.metrics, stageCleanupConfirmed: false, incompleteReasons: [check2.metrics?.incompleteReasons, "stage_cleanup_unknown"].filter(Boolean).join(",") };
+      }
+    }
+  }
+  return check2 ?? failed("native_execution_error");
+}
+var NATIVE_CHECK_ID, NATIVE_DENY_POLICY, MAX_JSON_BYTES, NOTE, object6, exactKeys3, digest, nativeFiles;
+var init_opengrep = __esm({
+  "build/src/source/opengrep.js"() {
+    "use strict";
+    init_process();
+    init_opengrep_rules();
+    NATIVE_CHECK_ID = "source.opengrep.preview";
+    NATIVE_DENY_POLICY = "(version 1)\n(allow default)\n(deny network*)\n";
+    MAX_JSON_BYTES = 8 * 1024 * 1024;
+    NOTE = "Experimental native candidate positions only; binding identity, exploitability and complete dataflow edges are not verified.";
+    object6 = (value) => !!value && typeof value === "object" && !Array.isArray(value);
+    exactKeys3 = (value, allowed) => Object.keys(value).every((key2) => allowed.includes(key2));
+    digest = (bytes) => createHash("sha256").update(bytes).digest("hex");
+    nativeFiles = (snapshot4) => snapshot4.files.filter((file) => file.category === "code" && !file.sensitive && /\.(?:[cm]?[jt]sx?|py)$/i.test(file.path));
+  }
+});
+
 // build/src/source/python.js
-import { dirname as dirname2, isAbsolute as isAbsolute2, join as join2, relative, resolve as resolve2 } from "node:path";
+import { dirname as dirname3, isAbsolute as isAbsolute3, join as join3, relative as relative2, resolve as resolve3 } from "node:path";
 function objectValue(value) {
   return value !== null && typeof value === "object" && !Array.isArray(value) ? value : void 0;
 }
@@ -232349,10 +232890,10 @@ function pathFromBandit(value, stageDir, allowed) {
   if (typeof value !== "string" || value.length === 0)
     return void 0;
   const candidate = value.replaceAll("\\", "/");
-  const absoluteCandidate = isAbsolute2(candidate) ? resolve2(candidate) : resolve2(stageDir, candidate);
-  const stage = resolve2(stageDir);
-  const relativePath2 = relative(stage, absoluteCandidate).replaceAll("\\", "/");
-  if (relativePath2 && relativePath2 !== "." && !relativePath2.startsWith("../") && relativePath2 !== ".." && !isAbsolute2(relativePath2) && allowed.has(relativePath2)) {
+  const absoluteCandidate = isAbsolute3(candidate) ? resolve3(candidate) : resolve3(stageDir, candidate);
+  const stage = resolve3(stageDir);
+  const relativePath2 = relative2(stage, absoluteCandidate).replaceAll("\\", "/");
+  if (relativePath2 && relativePath2 !== "." && !relativePath2.startsWith("../") && relativePath2 !== ".." && !isAbsolute3(relativePath2) && allowed.has(relativePath2)) {
     return relativePath2;
   }
   const normalized = candidate.replace(/^\.\//, "");
@@ -232546,11 +233087,11 @@ async function runBandit(context) {
   }
   if (!context.toolPath)
     return { id: "source.bandit", status: "partial", findings: [], notes: ["Bandit executable was not found; Python SAST coverage is unavailable."], metrics: { files: files.length } };
-  const args = ["-f", "json", "--ignore-nosec", "--", ...files.map((file) => join2(context.stageDir, ...file.path.split("/")))];
+  const args = ["-f", "json", "--ignore-nosec", "--", ...files.map((file) => join3(context.stageDir, ...file.path.split("/")))];
   const result3 = await runProcess(context.toolPath, args, {
     cwd: context.stageDir,
     timeoutMs: context.timeoutMs,
-    home: join2(dirname2(context.stageDir), "home"),
+    home: join3(dirname3(context.stageDir), "home"),
     signal: context.signal
   });
   const failure3 = processFailure(result3, context.timeoutMs);
@@ -232639,547 +233180,6 @@ var init_python = __esm({
         reference: "https://bandit.readthedocs.io/en/latest/plugins/b608_hardcoded_sql_expressions.html"
       }
     };
-  }
-});
-
-// build/src/source/opengrep-rules.js
-var OPENGREP_PROFILE, OPENGREP_VERSION, OPENGREP_SHA256, OPENGREP_SIZE, OWN_RULES_SHA256, OWN_RULE_IDS, OWN_RULES;
-var init_opengrep_rules = __esm({
-  "build/src/source/opengrep-rules.js"() {
-    "use strict";
-    OPENGREP_PROFILE = "native-preview-v1";
-    OPENGREP_VERSION = "1.30.0";
-    OPENGREP_SHA256 = "9d101457981b1dea39013cf61cabbf896cefbb7e664c19efdb21ee8be4a598de";
-    OPENGREP_SIZE = 173348760;
-    OWN_RULES_SHA256 = "596df423168083551b64ccc74806353b04f031889bd3d06ec8bbd6afe48b32c1";
-    OWN_RULE_IDS = ["wakeio.w06.sql.js-ts.v1", "wakeio.w06.command.js-ts.v1", "wakeio.w06.sql.python.v1", "wakeio.w06.command.python.v1"];
-    OWN_RULES = "# SPDX-License-Identifier: Apache-2.0\n# Copyright 2026 Wakeio Security CI contributors\n# Original experimental patterns; no downloaded registry/security rule content.\nrules:\n  - id: wakeio.w06.sql.js-ts.v1\n    languages: [javascript, typescript]\n    mode: taint\n    message: Request-shaped input reaches a selected injection argument; candidate requires independent review.\n    severity: ERROR\n    metadata:\n      license: Apache-2.0\n      confidence: LOW\n      cwe: CWE-89\n      experiment: W06-owned-prototype-v1\n      verification: not_run\n    pattern-sources:\n      - patterns:\n          - pattern-either:\n              - pattern: $REQ.query\n              - pattern: $REQ.body\n              - pattern: $REQ.params\n          - metavariable-regex:\n              metavariable: $REQ\n              regex: '^(req|request)$'\n        exact: true\n    pattern-sinks:\n      - patterns:\n          - pattern-either:\n              - pattern: $DB.query($SQL, ...)\n              - pattern: $DB.execute($SQL, ...)\n          - focus-metavariable: $SQL\n  - id: wakeio.w06.command.js-ts.v1\n    languages: [javascript, typescript]\n    mode: taint\n    message: Request-shaped input reaches a selected injection argument; candidate requires independent review.\n    severity: ERROR\n    metadata:\n      license: Apache-2.0\n      confidence: LOW\n      cwe: CWE-78\n      experiment: W06-owned-prototype-v1\n      verification: not_run\n    pattern-sources:\n      - patterns:\n          - pattern-either:\n              - pattern: $REQ.query\n              - pattern: $REQ.body\n              - pattern: $REQ.params\n          - metavariable-regex:\n              metavariable: $REQ\n              regex: '^(req|request)$'\n        exact: true\n    pattern-sinks:\n      - patterns:\n          - pattern-either:\n              - pattern: exec($CMD, ...)\n              - pattern: execSync($CMD, ...)\n              - pattern: $CP.exec($CMD, ...)\n              - pattern: $CP.execSync($CMD, ...)\n          - focus-metavariable: $CMD\n  - id: wakeio.w06.sql.python.v1\n    languages: [python]\n    mode: taint\n    message: Request-shaped input reaches a selected injection argument; candidate requires independent review.\n    severity: ERROR\n    metadata:\n      license: Apache-2.0\n      confidence: LOW\n      cwe: CWE-89\n      experiment: W06-owned-prototype-v1\n      verification: not_run\n    pattern-sources:\n      - pattern-either:\n          - pattern: request.args.get(...)\n          - pattern: request.args[$KEY]\n          - pattern: request.form.get(...)\n          - pattern: request.form[$KEY]\n          - pattern: request.json[$KEY]\n        exact: true\n    pattern-sinks:\n      - patterns:\n          - pattern-either:\n              - pattern: $DB.execute($SQL, ...)\n          - focus-metavariable: $SQL\n  - id: wakeio.w06.command.python.v1\n    languages: [python]\n    mode: taint\n    message: Request-shaped input reaches a selected injection argument; candidate requires independent review.\n    severity: ERROR\n    metadata:\n      license: Apache-2.0\n      confidence: LOW\n      cwe: CWE-78\n      experiment: W06-owned-prototype-v1\n      verification: not_run\n    pattern-sources:\n      - pattern-either:\n          - pattern: request.args.get(...)\n          - pattern: request.args[$KEY]\n          - pattern: request.form.get(...)\n          - pattern: request.form[$KEY]\n          - pattern: request.json[$KEY]\n        exact: true\n    pattern-sinks:\n      - patterns:\n          - pattern-either:\n              - pattern: subprocess.run($CMD, ..., shell=True, ...)\n              - pattern: subprocess.call($CMD, ..., shell=True, ...)\n              - pattern: subprocess.Popen($CMD, ..., shell=True, ...)\n              - pattern: subprocess.check_output($CMD, ..., shell=True, ...)\n              - pattern: subprocess.check_call($CMD, ..., shell=True, ...)\n              - pattern: os.system($CMD)\n              - pattern: os.popen($CMD, ...)\n          - focus-metavariable: $CMD\n";
-  }
-});
-
-// build/src/source/opengrep.js
-import { createHash } from "node:crypto";
-import { constants as constants2 } from "node:fs";
-import { access as access2, lstat as lstat2, mkdir, mkdtemp, open, readdir, rm, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { dirname as dirname3, isAbsolute as isAbsolute3, join as join3, relative as relative2, resolve as resolve3, sep } from "node:path";
-function nativeJson(text4) {
-  if (Buffer.byteLength(text4) > MAX_JSON_BYTES)
-    throw new Error("output budget");
-  let cursor = 0, nodes = 0;
-  const space = () => {
-    while (/\s/.test(text4[cursor] ?? "") && cursor < text4.length)
-      cursor++;
-  };
-  const string = () => {
-    if (text4[cursor] !== '"')
-      throw new Error("string");
-    const start = cursor++;
-    while (cursor < text4.length) {
-      if (text4[cursor] === "\\") {
-        cursor += 2;
-        continue;
-      }
-      if (text4[cursor++] === '"')
-        return JSON.parse(text4.slice(start, cursor));
-    }
-    throw new Error("unterminated");
-  };
-  const value = (depth) => {
-    if (++nodes > 2e5 || depth > 64)
-      throw new Error("json budget");
-    space();
-    if (text4[cursor] === "{") {
-      cursor++;
-      space();
-      const keys6 = /* @__PURE__ */ new Set();
-      if (text4[cursor] === "}") {
-        cursor++;
-        return;
-      }
-      while (true) {
-        space();
-        const key2 = string();
-        if (keys6.has(key2))
-          throw new Error("duplicate");
-        keys6.add(key2);
-        space();
-        if (text4[cursor++] !== ":")
-          throw new Error("colon");
-        value(depth + 1);
-        space();
-        const next = text4[cursor++];
-        if (next === "}")
-          return;
-        if (next !== ",")
-          throw new Error("object");
-      }
-    }
-    if (text4[cursor] === "[") {
-      cursor++;
-      space();
-      if (text4[cursor] === "]") {
-        cursor++;
-        return;
-      }
-      while (true) {
-        value(depth + 1);
-        space();
-        const next = text4[cursor++];
-        if (next === "]")
-          return;
-        if (next !== ",")
-          throw new Error("array");
-      }
-    }
-    if (text4[cursor] === '"') {
-      string();
-      return;
-    }
-    const match = /^(?:true|false|null|-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?)/.exec(text4.slice(cursor));
-    if (!match)
-      throw new Error("primitive");
-    if (!Number.isFinite(Number(match[0])) && !["true", "false", "null"].includes(match[0]))
-      throw new Error("nonfinite");
-    cursor += match[0].length;
-  };
-  value(0);
-  space();
-  if (cursor !== text4.length)
-    throw new Error("trailing");
-  return JSON.parse(text4);
-}
-function fileFor(path3, stage, files) {
-  if (typeof path3 !== "string" || !path3 || path3.includes("\0") || path3.includes("\\"))
-    return void 0;
-  const absolute = isAbsolute3(path3) ? resolve3(path3) : resolve3(stage, path3);
-  const local = relative2(resolve3(stage), absolute).split(sep).join("/");
-  if (local === ".." || local.startsWith("../") || isAbsolute3(local))
-    return void 0;
-  return files.get(local);
-}
-function point(raw, file, cache) {
-  if (!object6(raw) || !exactKeys3(raw, ["line", "col", "offset"]) || !["line", "col", "offset"].every((key2) => Number.isSafeInteger(raw[key2])) || raw.line < 1 || raw.col < 1 || raw.offset < 0)
-    throw new Error("position");
-  let prepared2 = cache.get(file.path);
-  if (!prepared2) {
-    const bytes2 = Buffer.from(file.text, "utf8"), starts2 = [0];
-    for (let index = 0; index < bytes2.length; index++)
-      if (bytes2[index] === 10)
-        starts2.push(index + 1);
-    prepared2 = { bytes: bytes2, starts: starts2, points: /* @__PURE__ */ new Map() };
-    cache.set(file.path, prepared2);
-  }
-  const { bytes, starts } = prepared2, offset = raw.offset, line = raw.line;
-  if (offset > bytes.length || offset < bytes.length && (bytes[offset] & 192) === 128)
-    throw new Error("byte boundary");
-  const lineStart = starts[line - 1];
-  if (lineStart === void 0 || offset < lineStart || line < starts.length && offset >= starts[line] || raw.col !== offset - lineStart + 1)
-    throw new Error("byte column");
-  let normal = prepared2.points.get(offset);
-  if (!normal) {
-    normal = { offset, line, column: bytes.subarray(lineStart, offset).toString("utf8").length + 1 };
-    prepared2.points.set(offset, normal);
-  }
-  return normal;
-}
-function range(raw, stage, files, cache) {
-  if (!object6(raw) || !exactKeys3(raw, ["path", "start", "end"]))
-    throw new Error("location");
-  const file = fileFor(raw.path, stage, files);
-  if (!file)
-    throw new Error("outside");
-  const start = point(raw.start, file, cache), end = point(raw.end, file, cache);
-  if (end.offset <= start.offset)
-    throw new Error("empty range");
-  return { file, start, end };
-}
-function nativeTrace(raw, sink, stage, files, cache) {
-  if (!object6(raw) || !exactKeys3(raw, ["taint_source", "taint_sink", "intermediate_vars"]) || !Array.isArray(raw.intermediate_vars))
-    throw new Error("trace schema");
-  const steps = [];
-  const add2 = (role, loc, content) => {
-    const item = range(loc, stage, files, cache);
-    if (item.file.path !== sink.file.path)
-      throw new Error("intrafile trace");
-    if (typeof content !== "string" || Buffer.from(item.file.text).subarray(item.start.offset, item.end.offset).toString("utf8") !== content)
-      throw new Error("trace bytes");
-    steps.push({ role, location: { path: item.file.path, line: item.start.line, column: item.start.column } });
-    return item;
-  };
-  const cliLoc = (role, value) => {
-    if (!Array.isArray(value) || value.length !== 2 || value[0] !== "CliLoc" || !Array.isArray(value[1]) || value[1].length !== 2)
-      throw new Error("trace variant");
-    return add2(role, value[1][0], value[1][1]);
-  };
-  cliLoc("source", raw.taint_source);
-  if (raw.intermediate_vars.length > 1e4)
-    throw new Error("trace budget");
-  for (const item of raw.intermediate_vars) {
-    if (!object6(item) || !exactKeys3(item, ["location", "content"]))
-      throw new Error("intermediate");
-    add2("intermediate", item.location, item.content);
-  }
-  const last = cliLoc("sink", raw.taint_sink);
-  if (last.file.path !== sink.file.path || last.start.offset !== sink.start.offset || last.end.offset !== sink.end.offset)
-    throw new Error("trace sink mismatch");
-  return { kind: "static_flow", steps: steps.length > 24 ? [...steps.slice(0, 23), steps.at(-1)] : steps, truncated: true };
-}
-function parseNativeOutput(stdout, exitCode2, stage, inputFiles) {
-  const findings = [], reasons = /* @__PURE__ */ new Set();
-  const files = new Map(inputFiles.map((file) => [file.path, file]));
-  const positionCache = /* @__PURE__ */ new Map();
-  let ignored = 0, invalid8 = 0, errors = 0, skipped = 0, scanned = 0;
-  const metrics = () => ({
-    profile: OPENGREP_PROFILE,
-    filesDeclared: inputFiles.length,
-    filesScanned: scanned,
-    nativeErrors: errors,
-    skippedRules: skipped,
-    ignoredFindings: ignored,
-    invalidFindings: invalid8,
-    engineExit: exitCode2 ?? "unknown",
-    incompleteReasons: [...reasons].sort().join(","),
-    rulePackSha256: OWN_RULES_SHA256
-  });
-  let parsed;
-  try {
-    parsed = nativeJson(stdout);
-  } catch {
-    return { id: NATIVE_CHECK_ID, status: "error", findings, notes: ["Native preview returned invalid bounded JSON."], metrics: { ...metrics(), incompleteReasons: "invalid_json" } };
-  }
-  if (!object6(parsed) || parsed.version !== OPENGREP_VERSION || !Array.isArray(parsed.results)) {
-    return { id: NATIVE_CHECK_ID, status: "error", findings, notes: ["Native preview protocol or version did not match the selected profile."], metrics: { ...metrics(), incompleteReasons: "invalid_protocol" } };
-  }
-  if (!Array.isArray(parsed.errors)) {
-    reasons.add("invalid_protocol");
-    parsed.errors = [];
-  }
-  if (!Array.isArray(parsed.skipped_rules)) {
-    reasons.add("invalid_protocol");
-    parsed.skipped_rules = [];
-  }
-  if (!Array.isArray(parsed.interfile_languages_used)) {
-    reasons.add("invalid_protocol");
-    parsed.interfile_languages_used = [];
-  }
-  if (!object6(parsed.paths)) {
-    reasons.add("invalid_protocol");
-    parsed.paths = {};
-  }
-  const paths = parsed.paths;
-  if (!Array.isArray(paths.scanned)) {
-    reasons.add("invalid_protocol");
-    paths.scanned = [];
-  }
-  if (!exactKeys3(parsed, ["version", "results", "errors", "paths", "skipped_rules", "interfile_languages_used"]))
-    reasons.add("unknown_schema");
-  if (!exactKeys3(paths, ["scanned", "skipped"]))
-    reasons.add("unknown_paths");
-  errors = parsed.errors.length;
-  skipped = parsed.skipped_rules.length;
-  if (errors)
-    reasons.add("native_errors");
-  if (skipped)
-    reasons.add("skipped_rules");
-  if (parsed.interfile_languages_used.length)
-    reasons.add("unexpected_interfile");
-  if (paths.skipped !== void 0 && (!Array.isArray(paths.skipped) || paths.skipped.length))
-    reasons.add("skipped_files");
-  const seen = /* @__PURE__ */ new Set();
-  for (const path3 of paths.scanned) {
-    const file = fileFor(path3, stage, files);
-    if (!file || seen.has(file.path))
-      reasons.add("coverage_mismatch");
-    else
-      seen.add(file.path);
-  }
-  scanned = seen.size;
-  if (seen.size !== files.size)
-    reasons.add("coverage_mismatch");
-  if (parsed.results.length > 1e4)
-    reasons.add("finding_limit");
-  for (const raw of parsed.results.slice(0, 1e4)) {
-    try {
-      if (!object6(raw) || typeof raw.check_id !== "string" || !OWN_RULE_IDS.includes(raw.check_id) || !object6(raw.extra))
-        throw new Error("finding");
-      const loc = range({ path: raw.path, start: raw.start, end: raw.end }, stage, files, positionCache);
-      const extra = raw.extra;
-      if (!exactKeys3(raw, ["check_id", "path", "start", "end", "extra"]) || !exactKeys3(extra, ["metavars", "message", "metadata", "severity", "fingerprint", "lines", "is_ignored", "validation_state", "dataflow_trace", "engine_kind"]))
-        reasons.add("unknown_finding_schema");
-      const isPython = raw.check_id.includes(".python.");
-      if (isPython !== /\.py$/i.test(loc.file.path))
-        throw new Error("language mismatch");
-      if (extra.is_ignored !== false) {
-        ignored++;
-        reasons.add("ignored_finding");
-      }
-      if (extra.severity !== "ERROR" || extra.validation_state !== "NO_VALIDATOR" || extra.engine_kind !== "OSS" || !object6(extra.metadata))
-        reasons.add("finding_state");
-      let staticFlow;
-      if (extra.dataflow_trace !== void 0 && extra.dataflow_trace !== null) {
-        try {
-          staticFlow = nativeTrace(extra.dataflow_trace, loc, stage, files, positionCache);
-        } catch {
-          reasons.add("invalid_trace");
-        }
-      }
-      const sql = raw.check_id.includes(".sql.");
-      findings.push({
-        ruleId: raw.check_id,
-        title: sql ? "Request-shaped input in SQL argument" : "Request-shaped input in command argument",
-        description: "The selected native rule reported a static input candidate. Binding identity and runtime exploitability require independent review.",
-        severity: "high",
-        confidence: "low",
-        kind: "candidate",
-        location: { path: loc.file.path, line: loc.start.line, column: loc.start.column },
-        remediation: sql ? "Review the SQL statement argument and use parameter binding; verify the risky, fixed and normal paths independently." : "Review shell interpretation and prefer an explicit executable with separate arguments; verify the risky, fixed and normal paths independently.",
-        references: [sql ? "https://cwe.mitre.org/data/definitions/89.html" : "https://cwe.mitre.org/data/definitions/78.html"],
-        ...staticFlow ? { staticFlow } : {}
-      });
-    } catch {
-      invalid8++;
-      reasons.add("invalid_finding");
-    }
-  }
-  if (![0, 1].includes(exitCode2) || exitCode2 === 0 && parsed.results.length > 0 || exitCode2 === 1 && parsed.results.length === 0)
-    reasons.add("exit_mismatch");
-  return {
-    id: NATIVE_CHECK_ID,
-    status: reasons.size ? "partial" : "completed",
-    findings,
-    notes: [NOTE, ...reasons.size ? ["Native preview completion is unverified; inspect incompleteReasons and retained candidates."] : []],
-    metrics: metrics()
-  };
-}
-function nativeCheckFromProcess(result3, stage, files, snapshotComplete) {
-  const check2 = parseNativeOutput(result3.stdout, result3.exitCode, stage, files);
-  const reasons = new Set(String(check2.metrics?.incompleteReasons ?? "").split(",").filter(Boolean));
-  if (result3.spawnError)
-    reasons.add("spawn_error");
-  if (result3.signal !== null)
-    reasons.add("process_signal");
-  if (result3.stopReason)
-    reasons.add(result3.stopReason);
-  if (result3.timedOut)
-    reasons.add("timeout");
-  if (result3.outputLimitExceeded)
-    reasons.add("output_limit");
-  if (result3.cancelled)
-    reasons.add("cancelled");
-  if (result3.exited !== true || result3.closeConfirmed !== true)
-    reasons.add("close_unknown");
-  if (result3.cleanupConfirmed !== true || !["terminated", "terminated_zombies"].includes(result3.cleanupState ?? "unknown"))
-    reasons.add("cleanup_unknown");
-  if (result3.rss?.assessment !== "measured" || !Number.isSafeInteger(result3.rss.samples) || result3.rss.samples < 1 || result3.rss.failedSamples !== 0 || !Number.isSafeInteger(result3.rss.peakBytes) || result3.rss.peakBytes < 0 || result3.rss.capBytes !== 512 * 1024 * 1024)
-    reasons.add("rss_unassessed");
-  if (result3.rss && result3.rss.peakBytes > 512 * 1024 * 1024)
-    reasons.add("rss_limit");
-  if (!snapshotComplete)
-    reasons.add("snapshot_incomplete");
-  if (reasons.size && check2.status === "completed")
-    check2.status = "partial";
-  if (!result3.spawnError && (result3.timedOut || result3.cancelled || result3.outputLimitExceeded || result3.stopReason === "observer_unknown" || result3.stopReason === "rss_limit"))
-    check2.status = "partial";
-  check2.metrics = {
-    ...check2.metrics,
-    incompleteReasons: [...reasons].sort().join(","),
-    closeConfirmed: result3.closeConfirmed === true,
-    cleanupConfirmed: result3.cleanupConfirmed === true,
-    cleanupState: result3.cleanupState ?? "unknown",
-    rssAssessment: result3.rss?.assessment ?? "unassessed",
-    rssSamples: result3.rss?.samples ?? 0,
-    rssPeakBytes: result3.rss?.peakBytes ?? 0,
-    snapshotComplete
-  };
-  if (reasons.size && !check2.notes.some((note2) => note2.includes("completion is unverified")))
-    check2.notes.push("Native preview completion is unverified; inspect incompleteReasons and retained candidates.");
-  return check2;
-}
-function nativeSandboxCommand(policyPath, executable3, args) {
-  if (!isAbsolute3(policyPath) || !isAbsolute3(executable3))
-    throw new Error("absolute native paths required");
-  return { executable: "/usr/bin/sandbox-exec", args: ["-f", policyPath, executable3, ...args] };
-}
-async function hashRegular(path3, expectedSize) {
-  const handle = await open(path3, constants2.O_RDONLY | constants2.O_NOFOLLOW | constants2.O_NONBLOCK);
-  try {
-    const before = await handle.stat();
-    if (!before.isFile() || before.size !== expectedSize)
-      throw new Error("identity size");
-    const hash2 = createHash("sha256"), buffer = Buffer.alloc(64 * 1024);
-    let position2 = 0;
-    while (position2 <= expectedSize) {
-      const result3 = await handle.read(buffer, 0, Math.min(buffer.length, expectedSize + 1 - position2), position2);
-      if (!result3.bytesRead)
-        break;
-      hash2.update(buffer.subarray(0, result3.bytesRead));
-      position2 += result3.bytesRead;
-    }
-    const after = await handle.stat();
-    if (position2 !== expectedSize || before.ino !== after.ino || before.size !== after.size || before.mtimeMs !== after.mtimeMs || before.ctimeMs !== after.ctimeMs)
-      throw new Error("changed file");
-    return hash2.digest("hex");
-  } finally {
-    await handle.close();
-  }
-}
-async function inventoryMatches(stage, files) {
-  const expected = new Map(files.map((file) => [file.path, file]));
-  let count5 = 0;
-  const walk = async (directory3) => {
-    for (const entry of await readdir(directory3, { withFileTypes: true })) {
-      const path3 = join3(directory3, entry.name), stat2 = await lstat2(path3);
-      if (stat2.isSymbolicLink())
-        throw new Error("stage link");
-      if (stat2.isDirectory()) {
-        await walk(path3);
-        continue;
-      }
-      const local = relative2(stage, path3).split(sep).join("/"), file = expected.get(local);
-      if (!file || !stat2.isFile() || ++count5 > files.length || stat2.nlink !== 1 || await hashRegular(path3, file.bytes) !== digest(file.text))
-        throw new Error("stage identity");
-    }
-  };
-  try {
-    await walk(stage);
-    return count5 === files.length;
-  } catch {
-    return false;
-  }
-}
-async function verifyNativePostRun(check2, stage, files, pack, policy, executable3) {
-  let stable = false;
-  try {
-    stable = await inventoryMatches(stage, files) && await hashRegular(pack, Buffer.byteLength(OWN_RULES)) === OWN_RULES_SHA256 && await hashRegular(policy, Buffer.byteLength(NATIVE_DENY_POLICY)) === digest(NATIVE_DENY_POLICY) && await hashRegular(executable3, OPENGREP_SIZE) === OPENGREP_SHA256;
-  } catch {
-  }
-  if (!stable) {
-    check2.status = "partial";
-    check2.metrics = {
-      ...check2.metrics,
-      identityUnchanged: false,
-      incompleteReasons: [check2.metrics?.incompleteReasons, "identity_changed"].filter(Boolean).join(",")
-    };
-    check2.notes.push("Post-run native input or engine identity could not be verified.");
-  } else
-    check2.metrics = { ...check2.metrics, identityUnchanged: true, engineSha256: OPENGREP_SHA256 };
-}
-async function runNativePreview(snapshot4, options) {
-  const files = nativeFiles(snapshot4);
-  const failed = (reason2, status = "error") => ({
-    id: NATIVE_CHECK_ID,
-    status,
-    findings: [],
-    notes: ["Selected native preview could not be verified."],
-    metrics: { profile: OPENGREP_PROFILE, filesDeclared: files.length, incompleteReasons: reason2 }
-  });
-  if (options.signal?.aborted)
-    return failed("cancelled", "partial");
-  const executable3 = options.nativePreview?.executable;
-  if (typeof executable3 !== "string" || !isAbsolute3(executable3) || executable3.includes("\0"))
-    return failed("invalid_executable_path");
-  if (process.platform !== "darwin" || process.arch !== "arm64")
-    return failed("unsupported_platform");
-  if (!snapshot4.complete && snapshot4.rootError)
-    return failed("snapshot_incomplete", "partial");
-  if (files.length === 0)
-    return { id: NATIVE_CHECK_ID, status: "not_applicable", findings: [], notes: ["No collected JS/TS/Python code file was available for the selected native preview."], metrics: { filesDeclared: 0, profile: OPENGREP_PROFILE } };
-  let top, check2;
-  try {
-    if (await hashRegular(executable3, OPENGREP_SIZE) !== OPENGREP_SHA256 || digest(OWN_RULES) !== OWN_RULES_SHA256)
-      return failed("identity_mismatch");
-    await access2(executable3, constants2.X_OK);
-    if (!(await lstat2("/usr/bin/sandbox-exec")).isFile())
-      return failed("network_boundary_unavailable");
-    top = await mkdtemp(join3(tmpdir(), "wakeio-native-"));
-    const stage = join3(top, "snapshot"), home = join3(top, "home"), temporary = join3(top, "tmp");
-    for (const path3 of [stage, home, temporary])
-      await mkdir(path3, { mode: 448 });
-    for (const file of files) {
-      const path3 = join3(stage, file.path);
-      await mkdir(dirname3(path3), { recursive: true, mode: 448 });
-      await writeFile(path3, file.text, { flag: "wx", mode: 384 });
-    }
-    const pack = join3(top, "owned-rules.yaml"), policy = join3(top, "deny-network.sb");
-    await writeFile(pack, OWN_RULES, { mode: 384, flag: "wx" });
-    await writeFile(policy, NATIVE_DENY_POLICY, { mode: 384, flag: "wx" });
-    if (!await inventoryMatches(stage, files))
-      throw new Error("stage identity");
-    const args = [
-      "scan",
-      "--experimental",
-      "--disable-version-check",
-      "--json",
-      "--error",
-      "--strict",
-      "--no-autofix",
-      "--disable-nosem",
-      "--no-rewrite-rule-ids",
-      "--no-git-ignore",
-      "--taint-intrafile",
-      "--jobs",
-      "1",
-      "--max-memory",
-      "256",
-      "--timeout",
-      "2",
-      "--timeout-threshold",
-      "1",
-      "--project-root",
-      stage,
-      "--config",
-      pack,
-      stage
-    ];
-    const command = nativeSandboxCommand(policy, executable3, args);
-    const result3 = await runProcess(command.executable, command.args, {
-      cwd: stage,
-      home,
-      tmpdir: temporary,
-      timeoutMs: Math.min(options.timeoutMs ?? 1e4, 1e4),
-      maxOutputBytes: MAX_JSON_BYTES,
-      supervision: "native-offline",
-      signal: options.signal
-    });
-    check2 = nativeCheckFromProcess(result3, stage, files, snapshot4.complete);
-    await verifyNativePostRun(check2, stage, files, pack, policy, executable3);
-  } catch {
-    if (!check2)
-      check2 = failed("native_execution_error");
-    else {
-      check2.status = "partial";
-      check2.metrics = { ...check2.metrics, incompleteReasons: [check2.metrics?.incompleteReasons, "native_execution_error"].filter(Boolean).join(",") };
-    }
-  } finally {
-    if (top) {
-      try {
-        await rm(top, { recursive: true, force: true });
-        if (check2)
-          check2.metrics = { ...check2.metrics, stageCleanupConfirmed: true };
-      } catch {
-        check2 ??= failed("stage_cleanup_unknown", "partial");
-        check2.status = "partial";
-        check2.metrics = { ...check2.metrics, stageCleanupConfirmed: false, incompleteReasons: [check2.metrics?.incompleteReasons, "stage_cleanup_unknown"].filter(Boolean).join(",") };
-      }
-    }
-  }
-  return check2 ?? failed("native_execution_error");
-}
-var NATIVE_CHECK_ID, NATIVE_DENY_POLICY, MAX_JSON_BYTES, NOTE, object6, exactKeys3, digest, nativeFiles;
-var init_opengrep = __esm({
-  "build/src/source/opengrep.js"() {
-    "use strict";
-    init_process();
-    init_opengrep_rules();
-    NATIVE_CHECK_ID = "source.opengrep.preview";
-    NATIVE_DENY_POLICY = "(version 1)\n(allow default)\n(deny network*)\n";
-    MAX_JSON_BYTES = 8 * 1024 * 1024;
-    NOTE = "Experimental native candidate positions only; binding identity, exploitability and complete dataflow edges are not verified.";
-    object6 = (value) => !!value && typeof value === "object" && !Array.isArray(value);
-    exactKeys3 = (value, allowed) => Object.keys(value).every((key2) => allowed.includes(key2));
-    digest = (bytes) => createHash("sha256").update(bytes).digest("hex");
-    nativeFiles = (snapshot4) => snapshot4.files.filter((file) => file.category === "code" && !file.sensitive && /\.(?:[cm]?[jt]sx?|py)$/i.test(file.path));
   }
 });
 
@@ -233883,6 +233883,1562 @@ var init_semgrep = __esm({
   }
 });
 
+// build/src/source/framework.js
+import { posix as posix7 } from "node:path";
+function isMigration(file) {
+  return file.category === "text" && MIGRATION_PATH.test(file.path.replaceAll("\\", "/"));
+}
+function isNextConfigPath(path3) {
+  return /(?:^|\/)next\.config\.(?:[cm]?[jt]s)$/i.test(path3.replaceAll("\\", "/"));
+}
+function scriptKind2(path3) {
+  if (/\.tsx$/i.test(path3))
+    return ts21.ScriptKind.TSX;
+  if (/\.jsx$/i.test(path3))
+    return ts21.ScriptKind.JSX;
+  if (/\.(?:ts|mts|cts)$/i.test(path3))
+    return ts21.ScriptKind.TS;
+  return ts21.ScriptKind.JS;
+}
+function parseError(sourceFile) {
+  const diagnostics = sourceFile.parseDiagnostics;
+  return Array.isArray(diagnostics) && diagnostics.length > 0;
+}
+function hasUseClientDirective(sourceFile) {
+  const first = sourceFile.statements[0];
+  return !!first && ts21.isExpressionStatement(first) && ts21.isStringLiteral(first.expression) && first.expression.text === "use client";
+}
+function hasUseServerDirective(sourceFile) {
+  const first = sourceFile.statements[0];
+  return !!first && ts21.isExpressionStatement(first) && ts21.isStringLiteral(first.expression) && first.expression.text === "use server";
+}
+function isSecretPublicName(name2) {
+  if (!/^NEXT_PUBLIC_[A-Z0-9_]+$/i.test(name2))
+    return false;
+  return /(?:SECRET|SERVICE[_-]?ROLE|PRIVATE[_-]?KEY|PASSWORD|TOKEN|CREDENTIAL|API[_-]?KEY|ACCESS[_-]?KEY|SIGNING[_-]?KEY|ENCRYPTION[_-]?KEY)/i.test(name2);
+}
+function isPublicKeyName(name2) {
+  return /^NEXT_PUBLIC_(?:[A-Z0-9]+_)*(?:ANON|PUBLISHABLE)(?:_[A-Z0-9]+)*$/i.test(name2);
+}
+function jwtPayloadRole(value) {
+  const parts = value.split(".");
+  if (parts.length !== 3 || parts.some((part) => part.length === 0))
+    return void 0;
+  try {
+    const payload = JSON.parse(Buffer.from(parts[1], "base64url").toString("utf8"));
+    if (payload === null || typeof payload !== "object" || Array.isArray(payload))
+      return void 0;
+    const role = payload.role;
+    return typeof role === "string" ? role : void 0;
+  } catch {
+    return void 0;
+  }
+}
+function jwtPayloadHasServiceRole(value) {
+  return jwtPayloadRole(value) === "service_role";
+}
+function isActualServerSecretLiteral(value) {
+  return /(?:^|[^A-Za-z0-9_])sb_secret_[A-Za-z0-9_-]{8,}(?:$|[^A-Za-z0-9_-])/i.test(value) || jwtPayloadHasServiceRole(value);
+}
+function isPublicSupabaseKeyLiteral(value) {
+  return /^sb_(?:anon|publishable)_[A-Za-z0-9_-]{4,}$/i.test(value) || jwtPayloadRole(value) === "anon";
+}
+function initializerHasActualServerSecret(initializer) {
+  let found = false;
+  const visit = (node) => {
+    if (found)
+      return;
+    if ((ts21.isStringLiteral(node) || ts21.isNoSubstitutionTemplateLiteral(node)) && isActualServerSecretLiteral(node.text)) {
+      found = true;
+      return;
+    }
+    ts21.forEachChild(node, visit);
+  };
+  visit(initializer);
+  return found;
+}
+function initializerHasPublicSupabaseKey(initializer) {
+  let found = false;
+  const visit = (node) => {
+    if (found)
+      return;
+    if ((ts21.isStringLiteral(node) || ts21.isNoSubstitutionTemplateLiteral(node)) && isPublicSupabaseKeyLiteral(node.text)) {
+      found = true;
+      return;
+    }
+    ts21.forEachChild(node, visit);
+  };
+  visit(initializer);
+  return found;
+}
+function staticEnvName(node) {
+  if (!ts21.isPropertyAccessExpression(node) && !ts21.isElementAccessExpression(node))
+    return void 0;
+  const property = ts21.isPropertyAccessExpression(node) ? node.name.text : ts21.isStringLiteral(node.argumentExpression) || ts21.isNoSubstitutionTemplateLiteral(node.argumentExpression) ? node.argumentExpression.text : void 0;
+  if (property === void 0)
+    return void 0;
+  const receiver = node.expression;
+  if (!ts21.isPropertyAccessExpression(receiver) || !ts21.isIdentifier(receiver.expression) || receiver.expression.text !== "process" || receiver.name.text !== "env")
+    return void 0;
+  return property;
+}
+function staticPropertyName(name2) {
+  if (ts21.isIdentifier(name2) || ts21.isStringLiteral(name2) || ts21.isNoSubstitutionTemplateLiteral(name2) || ts21.isNumericLiteral(name2))
+    return name2.text;
+  return void 0;
+}
+function importSpecifier(node) {
+  if (ts21.isImportDeclaration(node) || ts21.isExportDeclaration(node)) {
+    return node.moduleSpecifier && ts21.isStringLiteral(node.moduleSpecifier) ? node.moduleSpecifier.text : void 0;
+  }
+  if (ts21.isCallExpression(node)) {
+    const expression = node.expression;
+    const isRequire = ts21.isIdentifier(expression) && expression.text === "require";
+    const isDynamicImport = expression.kind === ts21.SyntaxKind.ImportKeyword;
+    const argument = node.arguments[0];
+    if ((isRequire || isDynamicImport) && argument && ts21.isStringLiteral(argument))
+      return argument.text;
+  }
+  return void 0;
+}
+function analyzeFrontend(file) {
+  const sourceFile = ts21.createSourceFile(file.path, file.text, ts21.ScriptTarget.Latest, true, scriptKind2(file.path));
+  const publicSecretDeclarations = [];
+  const serverSecretLiterals = [];
+  let reactImport = false;
+  const envReferences = [];
+  const relativeImports = [];
+  const envConfigDeclarations = [];
+  const visit = (node) => {
+    if (ts21.isVariableDeclaration(node) && ts21.isIdentifier(node.name) && node.initializer && isSecretPublicName(node.name.text)) {
+      publicSecretDeclarations.push(node);
+    }
+    if (ts21.isStringLiteral(node) || ts21.isNoSubstitutionTemplateLiteral(node)) {
+      if (isActualServerSecretLiteral(node.text)) {
+        serverSecretLiterals.push(node);
+      }
+    }
+    if (ts21.isImportDeclaration(node) && ts21.isStringLiteral(node.moduleSpecifier) && /^react(?:\/|$)/i.test(node.moduleSpecifier.text)) {
+      reactImport = true;
+    }
+    if (ts21.isCallExpression(node) && ts21.isIdentifier(node.expression) && node.expression.text === "require") {
+      const first = node.arguments[0];
+      if (first && ts21.isStringLiteral(first) && /^react(?:\/|$)/i.test(first.text))
+        reactImport = true;
+    }
+    if (staticEnvName(node))
+      envReferences.push(node);
+    const imported = importSpecifier(node);
+    if (imported?.startsWith("."))
+      relativeImports.push(imported);
+    if (isNextConfigPath(file.path) && ts21.isPropertyAssignment(node)) {
+      const parent = node.parent.parent;
+      const isEnvObject = ts21.isPropertyAssignment(parent) && staticPropertyName(parent.name)?.toLowerCase() === "env" && parent.initializer === node.parent;
+      if (isEnvObject) {
+        envConfigDeclarations.push(node);
+      }
+    }
+    ts21.forEachChild(node, visit);
+  };
+  visit(sourceFile);
+  return {
+    file,
+    sourceFile,
+    parseError: parseError(sourceFile),
+    useClient: hasUseClientDirective(sourceFile),
+    useServer: hasUseServerDirective(sourceFile),
+    publicSecretDeclarations,
+    serverSecretLiterals,
+    reactImport,
+    nextConfig: isNextConfigPath(file.path),
+    envReferences,
+    relativeImports,
+    envConfigDeclarations
+  };
+}
+function frontendRelevant(analysis) {
+  return analysis.useClient || analysis.publicSecretDeclarations.length > 0 || analysis.reactImport || analysis.envReferences.some((node) => /^NEXT_PUBLIC_[A-Z0-9_]+$/i.test(staticEnvName(node) ?? "")) || analysis.nextConfig && analysis.envConfigDeclarations.length > 0;
+}
+function frameworkHasApplicableInput(snapshot4) {
+  for (const file of snapshot4.files) {
+    if (isMigration(file))
+      return true;
+    if (file.category === "code" && FRONTEND_EXTENSIONS.test(file.path) && frontendRelevant(analyzeFrontend(file)))
+      return true;
+  }
+  return false;
+}
+function isDotEnvPath(path3) {
+  const name2 = path3.slice(path3.lastIndexOf("/") + 1).toLowerCase();
+  return name2 === ".env" || name2.startsWith(".env.") || name2.endsWith(".env");
+}
+function envValue(value) {
+  const trimmed = value.trim();
+  if (trimmed.startsWith('"') && trimmed.endsWith('"') || trimmed.startsWith("'") && trimmed.endsWith("'")) {
+    return trimmed.slice(1, -1);
+  }
+  return trimmed;
+}
+function collectStaticEnv(snapshot4) {
+  const signals = /* @__PURE__ */ new Map();
+  for (const file of snapshot4.files) {
+    if (file.category !== "secret" || !isDotEnvPath(file.path))
+      continue;
+    for (const rawLine of file.text.replace(/^\uFEFF/, "").split(/\r\n|\r|\n/)) {
+      const match = /^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*?)\s*$/.exec(rawLine);
+      if (!match || match[1].startsWith("#"))
+        continue;
+      const name2 = match[1];
+      const value = envValue(match[2]);
+      const existing = signals.get(name2);
+      signals.set(name2, {
+        actualSecret: !!existing?.actualSecret || isActualServerSecretLiteral(value),
+        publicKey: !!existing?.publicKey || isPublicKeyName(name2) || isPublicSupabaseKeyLiteral(value)
+      });
+    }
+  }
+  return signals;
+}
+function resolveRelativeImport(fromPath, specifier, available) {
+  const normalized = posix7.normalize(posix7.join(posix7.dirname(fromPath), specifier)).replace(/^\.\//, "");
+  if (normalized.startsWith("../") || normalized === "..")
+    return void 0;
+  const candidates = [normalized];
+  if (!/\.[A-Za-z0-9]+$/.test(normalized)) {
+    for (const extension2 of [".ts", ".tsx", ".js", ".jsx", ".mts", ".cts", ".mjs", ".cjs"])
+      candidates.push(`${normalized}${extension2}`);
+    for (const extension2 of [".ts", ".tsx", ".js", ".jsx", ".mts", ".cts", ".mjs", ".cjs"])
+      candidates.push(`${normalized}/index${extension2}`);
+  } else if (/\.(?:[cm]?js|jsx)$/i.test(normalized)) {
+    const withoutExtension = normalized.replace(/\.(?:[cm]?js|jsx)$/i, "");
+    for (const extension2 of [".ts", ".tsx", ".mts", ".cts"])
+      candidates.push(`${withoutExtension}${extension2}`);
+  }
+  for (const candidate of candidates) {
+    const analysis = available.get(candidate);
+    if (analysis)
+      return analysis;
+  }
+  return void 0;
+}
+function reachableFrontend(entry, available) {
+  const result3 = [];
+  const seen = /* @__PURE__ */ new Set();
+  const visit = (analysis) => {
+    if (analysis.useServer)
+      return;
+    if (seen.has(analysis.file.path))
+      return;
+    seen.add(analysis.file.path);
+    result3.push(analysis);
+    for (const specifier of analysis.relativeImports) {
+      const imported = resolveRelativeImport(analysis.file.path, specifier, available);
+      if (imported)
+        visit(imported);
+    }
+  };
+  visit(entry);
+  return result3;
+}
+function blank(value, index) {
+  if (value[index] !== "\n" && value[index] !== "\r")
+    value[index] = " ";
+}
+function dollarDelimiter(text4, index) {
+  if (text4[index] !== "$")
+    return void 0;
+  const match = text4.slice(index).match(/^\$(?:[A-Za-z_][A-Za-z0-9_]*)?\$/);
+  return match?.[0];
+}
+function maskSql(text4) {
+  const output = text4.split("");
+  const identifierOutput = text4.split("");
+  let state = "normal";
+  let delimiter = "";
+  let blockDepth = 0;
+  let singleEscapesBackslash = false;
+  let index = 0;
+  const blankBoth = (at) => {
+    blank(output, at);
+    blank(identifierOutput, at);
+  };
+  while (index < text4.length) {
+    const character = text4[index];
+    if (state === "line") {
+      if (character === "\n" || character === "\r")
+        state = "normal";
+      else
+        blankBoth(index);
+      index += 1;
+      continue;
+    }
+    if (state === "block") {
+      if (text4.startsWith("/*", index)) {
+        blankBoth(index);
+        blankBoth(index + 1);
+        blockDepth += 1;
+        index += 2;
+        continue;
+      }
+      if (text4.startsWith("*/", index)) {
+        blankBoth(index);
+        blankBoth(index + 1);
+        index += 2;
+        blockDepth -= 1;
+        if (blockDepth <= 0) {
+          blockDepth = 0;
+          state = "normal";
+        }
+      } else {
+        blankBoth(index);
+        index += 1;
+      }
+      continue;
+    }
+    if (state === "single") {
+      blankBoth(index);
+      if (character === "\\" && singleEscapesBackslash && index + 1 < text4.length) {
+        blankBoth(index + 1);
+        index += 2;
+      } else if (character === "'" && text4[index + 1] === "'") {
+        blankBoth(index + 1);
+        index += 2;
+      } else if (character === "'") {
+        index += 1;
+        state = "normal";
+        singleEscapesBackslash = false;
+      } else {
+        index += 1;
+      }
+      continue;
+    }
+    if (state === "double") {
+      blank(output, index);
+      if (character === '"' && text4[index + 1] === '"') {
+        blank(output, index + 1);
+        index += 2;
+      } else if (character === '"') {
+        index += 1;
+        state = "normal";
+      } else {
+        index += 1;
+      }
+      continue;
+    }
+    if (state === "dollar") {
+      if (delimiter && text4.startsWith(delimiter, index)) {
+        for (let offset = 0; offset < delimiter.length; offset += 1)
+          blankBoth(index + offset);
+        index += delimiter.length;
+        state = "normal";
+        delimiter = "";
+      } else {
+        blankBoth(index);
+        index += 1;
+      }
+      continue;
+    }
+    if (text4.startsWith("--", index)) {
+      blankBoth(index);
+      blankBoth(index + 1);
+      index += 2;
+      state = "line";
+    } else if (text4.startsWith("/*", index)) {
+      blankBoth(index);
+      blankBoth(index + 1);
+      index += 2;
+      blockDepth = 1;
+      state = "block";
+    } else if (character === "'") {
+      blankBoth(index);
+      index += 1;
+      const previous = text4[index - 2];
+      singleEscapesBackslash = (previous === "e" || previous === "E") && (index - 2 === 0 || !/[A-Za-z0-9_]/.test(text4[index - 3] ?? ""));
+      state = "single";
+    } else if (character === '"') {
+      blank(output, index);
+      index += 1;
+      state = "double";
+    } else {
+      const foundDelimiter = dollarDelimiter(text4, index);
+      if (foundDelimiter) {
+        for (let offset = 0; offset < foundDelimiter.length; offset += 1)
+          blankBoth(index + offset);
+        index += foundDelimiter.length;
+        delimiter = foundDelimiter;
+        state = "dollar";
+      } else {
+        index += 1;
+      }
+    }
+  }
+  const masked = { text: output.join(""), complete: state === "normal" || state === "line", identifierText: identifierOutput.join("") };
+  Object.defineProperty(masked, "identifierText", { enumerable: false, value: identifierOutput.join("") });
+  return masked;
+}
+function statements(masked) {
+  const result3 = [];
+  let start = 0;
+  for (let index = 0; index <= masked.length; index += 1) {
+    if (index !== masked.length && masked[index] !== ";")
+      continue;
+    result3.push({ text: masked.slice(start, index), start });
+    start = index + 1;
+  }
+  return result3;
+}
+function location(text4, index) {
+  const before = text4.slice(0, index);
+  const lineStart = Math.max(before.lastIndexOf("\n"), before.lastIndexOf("\r"));
+  return { line: before.split(/\r\n|\r|\n/).length, column: index - lineStart };
+}
+function normalizedTable(value) {
+  const segments = [];
+  let current = "";
+  let quoted2 = false;
+  let wasQuoted = false;
+  const pushSegment = () => {
+    const value2 = wasQuoted ? current : current.trim().toLowerCase();
+    segments.push(value2);
+    current = "";
+    wasQuoted = false;
+  };
+  for (let index = 0; index < value.length; index += 1) {
+    const character = value[index];
+    if (quoted2) {
+      if (character === '"' && value[index + 1] === '"') {
+        current += '"';
+        index += 1;
+      } else if (character === '"') {
+        quoted2 = false;
+      } else {
+        current += character;
+      }
+      continue;
+    }
+    if (character === '"') {
+      quoted2 = true;
+      wasQuoted = true;
+    } else if (character === ".") {
+      pushSegment();
+    } else if (!/\s/.test(character)) {
+      current += character;
+    }
+  }
+  if (quoted2)
+    return JSON.stringify([value.trim()]);
+  pushSegment();
+  return JSON.stringify(segments);
+}
+function rlsOperation(statement, identifierStatement = statement) {
+  const action = /\b(DISABLE|ENABLE)\s+ROW\s+LEVEL\s+SECURITY\b/i.exec(statement);
+  if (!action)
+    return void 0;
+  const identifier4 = '(?:"(?:[^"]|"")*"|[A-Za-z_][A-Za-z0-9_$]*)';
+  const prefix = /\bALTER\s+TABLE\s+?(?:(?:IF\s+)?EXISTS\s+)?(?:ONLY\s+)?/i.exec(statement);
+  const tableMatch = prefix ? new RegExp(`^(${identifier4}(?:\\s*\\.\\s*${identifier4})?)`, "i").exec(identifierStatement.slice(prefix.index + prefix[0].length)) : null;
+  return { action: action[1].toLowerCase(), ...tableMatch ? { table: normalizedTable(tableMatch[1]) } : {} };
+}
+function finding(input) {
+  const position2 = location(input.source, input.index);
+  return {
+    ruleId: input.ruleId,
+    title: input.title,
+    description: input.description,
+    severity: input.severity,
+    confidence: "low",
+    kind: "candidate",
+    location: { path: input.path, line: position2.line, column: position2.column },
+    remediation: input.remediation
+  };
+}
+function migrationFindings(file) {
+  const masked = maskSql(file.text);
+  const findings = [];
+  const sqlStatements = statements(masked.text);
+  const operations = sqlStatements.map((statement) => rlsOperation(statement.text, masked.identifierText.slice(statement.start, statement.start + statement.text.length)));
+  for (const [statementIndex, statement] of sqlStatements.entries()) {
+    const disable = /\bALTER\s+TABLE\b[\s\S]{0,500}?\bDISABLE\s+ROW\s+LEVEL\s+SECURITY\b/i.exec(statement.text);
+    const operation = operations[statementIndex];
+    const laterSameTableOperation = operation?.table ? operations.slice(statementIndex + 1).reverse().find((candidate) => candidate?.table === operation.table) : void 0;
+    if (disable && !(operation?.action === "disable" && laterSameTableOperation?.action === "enable")) {
+      const absoluteIndex = statement.start + disable.index + disable[0].toUpperCase().lastIndexOf("DISABLE");
+      findings.push(finding({
+        ruleId: "supabase:disable-row-level-security",
+        title: "Supabase migration explicitly disables row level security",
+        description: "A bounded Supabase migration contains an explicit DISABLE ROW LEVEL SECURITY statement. This is a local migration candidate; live database state and later deployment changes were not checked.",
+        severity: "high",
+        path: file.path,
+        source: file.text,
+        index: absoluteIndex,
+        remediation: "Review whether this migration should disable RLS, and verify the effective RLS state and grants separately before exposing the table."
+      }));
+    }
+    const createsPolicy = /\bCREATE\s+POLICY\b/i.test(statement.text);
+    const restrictive = /\bAS\s+RESTRICTIVE\b/i.test(statement.text);
+    const toClause = /\bTO\s+([^\s;]+(?:\s*,\s*[^\s;]+)*)/i.exec(statement.text);
+    const appliesToPublic = toClause ? /\bPUBLIC\b/i.test(toClause[1]) : createsPolicy;
+    const permissivePredicate = /\b(?:USING\s*\(\s*TRUE\s*\)|WITH\s+CHECK\s*\(\s*TRUE\s*\))/i;
+    const policy = createsPolicy && appliesToPublic && !restrictive ? permissivePredicate.exec(statement.text) : null;
+    if (policy) {
+      findings.push(finding({
+        ruleId: "supabase:permissive-public-policy",
+        title: "Supabase migration contains a permissive public policy candidate",
+        description: "A bounded Supabase migration creates a policy that applies to PUBLIC, explicitly or by PostgreSQL's default, with USING (true) or WITH CHECK (true). This is a medium review candidate; grants, table contents, and live database behavior were not checked.",
+        severity: "medium",
+        path: file.path,
+        source: file.text,
+        index: statement.start + policy.index,
+        remediation: "Review the policy role and predicate, then restrict access to the intended roles and ownership conditions; verify the effective policy and grants separately."
+      }));
+    }
+  }
+  return { findings, incomplete: !masked.complete };
+}
+function tableReference(statement, identifierStatement, keyword) {
+  const identifier4 = '(?:"(?:[^"]|"")*"|[A-Za-z_][A-Za-z0-9_$]*)';
+  const prefix = keyword === "CREATE TABLE" ? /\bCREATE\s+TABLE\s+?(?:(?:IF\s+)?NOT\s+EXISTS\s+)?(?:ONLY\s+)?/i.exec(statement) : /\bGRANT\b[\s\S]*?\bON\s+?(?:TABLE\s+)?/i.exec(statement);
+  if (!prefix)
+    return void 0;
+  const match = new RegExp(`^(${identifier4}(?:\\s*\\.\\s*${identifier4})?)`, "i").exec(identifierStatement.slice(prefix.index + prefix[0].length));
+  return match ? { table: normalizedTable(match[1]), index: prefix.index + prefix[0].length + match.index } : void 0;
+}
+function grantExposesRows(statement) {
+  const privileges = /^\s*GRANT\s+([\s\S]*?)\s+ON\s+/i.exec(statement)?.[1] ?? "";
+  return /(?:^|,)\s*(?:SELECT|INSERT|UPDATE|DELETE|ALL)(?:\s+PRIVILEGES)?\s*(?:,|$)/i.test(privileges);
+}
+function migrationStateFindings(files) {
+  const states = /* @__PURE__ */ new Map();
+  for (const file of files) {
+    const masked = maskSql(file.text);
+    const sqlStatements = statements(masked.text);
+    for (const statement of sqlStatements) {
+      const identifierStatement = masked.identifierText.slice(statement.start, statement.start + statement.text.length);
+      const create = tableReference(statement.text, identifierStatement, "CREATE TABLE");
+      if (create) {
+        const existing = states.get(create.table);
+        states.set(create.table, existing ?? {
+          path: file.path,
+          createIndex: statement.start + create.index,
+          created: true,
+          granted: false,
+          enabled: false,
+          disabled: false
+        });
+      }
+      const grant = tableReference(statement.text, identifierStatement, "GRANT");
+      if (grant && grantExposesRows(statement.text)) {
+        const roleClause = /\bTO\s+([\s\S]*)$/i.exec(statement.text);
+        if (roleClause && /\b(?:PUBLIC|anon|authenticated)\b/i.test(roleClause[1])) {
+          const existing = states.get(grant.table) ?? {
+            path: file.path,
+            createIndex: statement.start + grant.index,
+            created: false,
+            granted: false,
+            enabled: false,
+            disabled: false
+          };
+          existing.granted = true;
+          existing.grantPath = file.path;
+          existing.grantIndex = statement.start + grant.index;
+          states.set(grant.table, existing);
+        }
+      }
+      const operation = rlsOperation(statement.text, identifierStatement);
+      if (operation?.table) {
+        const existing = states.get(operation.table) ?? {
+          path: file.path,
+          createIndex: statement.start,
+          created: false,
+          granted: false,
+          enabled: false,
+          disabled: false
+        };
+        if (operation.action === "enable")
+          existing.enabled = true;
+        else {
+          existing.disabled = true;
+          existing.enabled = false;
+        }
+        states.set(operation.table, existing);
+      }
+    }
+  }
+  const findings = [];
+  for (const state of states.values()) {
+    if (!state.created || !state.granted || state.enabled)
+      continue;
+    const reportPath = state.grantPath ?? state.path;
+    const reportSource = files.find((file) => file.path === reportPath)?.text ?? "";
+    findings.push(finding({
+      ruleId: "supabase:grant-without-observed-rls",
+      title: "Supabase table grant has no observed RLS enable",
+      description: "The bounded migration history creates a table and grants it to PUBLIC, anon, or authenticated without an observed ENABLE ROW LEVEL SECURITY. This is an uncertain local candidate; later migrations, rollback order, and live database state were not checked.",
+      severity: "medium",
+      path: reportPath,
+      source: reportSource,
+      index: state.grantIndex ?? state.createIndex,
+      remediation: "Enable row level security before granting table access, add role-specific policies, and verify the effective database state separately."
+    }));
+  }
+  return findings;
+}
+function likelySecretName(name2) {
+  return /(?:SECRET|SERVICE[_-]?ROLE|PRIVATE[_-]?KEY|PASSWORD|TOKEN|CREDENTIAL|API[_-]?KEY|ACCESS[_-]?KEY|SIGNING[_-]?KEY|ENCRYPTION[_-]?KEY)/i.test(name2);
+}
+function frontendFindings(analysis, available, envSignals) {
+  const findings = [];
+  const seen = /* @__PURE__ */ new Set();
+  const push = (input) => {
+    const position2 = location(input.source.text, input.node.getStart());
+    const key2 = `${input.ruleId}:${input.source.path}:${position2.line}:${position2.column}`;
+    if (seen.has(key2))
+      return;
+    seen.add(key2);
+    findings.push({
+      ruleId: input.ruleId,
+      title: input.title,
+      description: input.description,
+      severity: input.severity,
+      confidence: input.confidence,
+      kind: "candidate",
+      location: { path: input.source.path, line: position2.line, column: position2.column },
+      remediation: input.remediation
+    });
+  };
+  const clientEntry = analysis.useClient;
+  const reachable = clientEntry ? reachableFrontend(analysis, available) : [analysis];
+  for (const candidate of reachable) {
+    if (clientEntry) {
+      const imported = candidate.file.path !== analysis.file.path;
+      const literal2 = candidate.serverSecretLiterals[0];
+      if (literal2) {
+        push({
+          ruleId: "next:client-server-secret-literal",
+          title: imported ? "Server secret literal is reachable from a client module" : "Server secret literal appears in a client module",
+          description: imported ? "A bounded relative import or re-export from a use client module reaches a server-secret-shaped literal. The value is intentionally omitted; the finding does not validate the deployed bundle." : "A use client module contains a server-secret-shaped literal. The value is intentionally omitted; the finding does not validate whether a deployed bundle contains it.",
+          severity: "critical",
+          confidence: "high",
+          source: candidate.file,
+          node: literal2,
+          remediation: "Remove the server secret from the client module and keep privileged Supabase operations behind a server-side boundary."
+        });
+      }
+    }
+    if (!clientEntry)
+      continue;
+    for (const reference2 of candidate.envReferences) {
+      const name2 = staticEnvName(reference2);
+      if (!name2)
+        continue;
+      const signal = envSignals.get(name2);
+      const actualSecret = !!signal?.actualSecret;
+      const publicKey = isPublicKeyName(name2) || !!signal?.publicKey;
+      if (!actualSecret && publicKey)
+        continue;
+      if (!actualSecret && !isSecretPublicName(name2) && !likelySecretName(name2))
+        continue;
+      push({
+        ruleId: "next:client-server-secret-env",
+        title: "Client module references a server-secret-shaped environment value",
+        description: actualSecret ? "A bounded client import graph references an environment value whose collected .env value matches a server-secret shape. The value is intentionally omitted." : "A bounded client import graph references an environment name associated with a server secret. This name-only candidate has low confidence; public and publishable/anon Supabase keys are excluded.",
+        severity: actualSecret ? "critical" : "medium",
+        confidence: actualSecret ? "high" : "low",
+        source: candidate.file,
+        node: reference2,
+        remediation: "Remove the server credential from the NEXT_PUBLIC namespace and keep privileged values behind a server-side boundary."
+      });
+    }
+  }
+  for (const candidate of clientEntry ? reachable : [analysis]) {
+    for (const declaration of candidate.publicSecretDeclarations) {
+      const actualSecret = !!declaration.initializer && initializerHasActualServerSecret(declaration.initializer);
+      const publicKey = isPublicKeyName(ts21.isIdentifier(declaration.name) ? declaration.name.text : "") || !!declaration.initializer && initializerHasPublicSupabaseKey(declaration.initializer);
+      if (!actualSecret && publicKey)
+        continue;
+      push({
+        ruleId: "next:public-server-secret-variable",
+        title: "NEXT_PUBLIC variable appears to carry a server secret",
+        description: actualSecret ? "A bounded JavaScript or TypeScript declaration exposes a server-secret-shaped value through a NEXT_PUBLIC name. The value is intentionally omitted." : "A bounded JavaScript or TypeScript declaration uses a NEXT_PUBLIC name associated with a server secret. This name-only candidate has low confidence; public and publishable/anon Supabase keys are excluded.",
+        severity: actualSecret ? "critical" : "medium",
+        confidence: actualSecret ? "high" : "low",
+        source: candidate.file,
+        node: declaration.name,
+        remediation: "Rename the variable without the NEXT_PUBLIC prefix and keep the server secret out of client modules and browser bundles."
+      });
+    }
+  }
+  if (analysis.nextConfig) {
+    for (const declaration of analysis.envConfigDeclarations) {
+      const key2 = staticPropertyName(declaration.name);
+      if (!key2)
+        continue;
+      const sourceName = staticEnvName(declaration.initializer);
+      const sourceSignal = sourceName ? envSignals.get(sourceName) : void 0;
+      const actualSecret = initializerHasActualServerSecret(declaration.initializer) || !!sourceSignal?.actualSecret;
+      const publicKey = isPublicKeyName(key2) || !!sourceSignal?.publicKey || initializerHasPublicSupabaseKey(declaration.initializer);
+      const nameLooksSecret = likelySecretName(key2) || (sourceName ? likelySecretName(sourceName) : false);
+      if (!actualSecret && publicKey)
+        continue;
+      if (!actualSecret && !nameLooksSecret)
+        continue;
+      push({
+        ruleId: "next:config-env-server-secret",
+        title: "Next config env object may expose a server secret",
+        description: actualSecret ? "A bounded next.config env object contains a server-secret-shaped value. Next.js exposes entries from this object to application code; the value is intentionally omitted." : "A bounded next.config env object uses a name associated with a server secret. This is a low-confidence candidate because build-time resolution and the effective value were not checked.",
+        severity: actualSecret ? "critical" : "medium",
+        confidence: actualSecret ? "high" : "low",
+        source: analysis.file,
+        node: declaration.name,
+        remediation: "Keep server credentials out of next.config env and expose only intentionally public, non-privileged configuration."
+      });
+    }
+  }
+  return findings;
+}
+function runFrameworkRules(snapshot4) {
+  if (snapshot4.rootError)
+    return { id: "source.framework", status: "error", findings: [], notes: ["The source root could not be scanned by the framework rules."] };
+  const migrations = snapshot4.files.filter(isMigration);
+  const frontendAnalyses = snapshot4.files.filter((file) => file.category === "code" && FRONTEND_EXTENSIONS.test(file.path)).map(analyzeFrontend);
+  const frontend = frontendAnalyses.filter(frontendRelevant);
+  if (migrations.length === 0 && frontend.length === 0) {
+    return { id: "source.framework", status: "not_applicable", findings: [], notes: ["No recognized Supabase migration or Next/React source file was available for the bounded framework rules."], metrics: { filesAnalyzed: 0, migrationFiles: 0, frontendFiles: 0, findingCount: 0 } };
+  }
+  const migrationResults = migrations.map(migrationFindings);
+  const available = new Map(frontendAnalyses.map((analysis) => [analysis.file.path, analysis]));
+  const envSignals = collectStaticEnv(snapshot4);
+  const rawFindings = [
+    ...migrationResults.flatMap((result3) => result3.findings),
+    ...migrationStateFindings(migrations),
+    ...frontend.flatMap((analysis) => frontendFindings(analysis, available, envSignals))
+  ];
+  const findingKeys = /* @__PURE__ */ new Set();
+  const findings = rawFindings.filter((candidate) => {
+    const location2 = candidate.location;
+    const key2 = `${candidate.ruleId}\0${location2.path ?? ""}\0${location2.line ?? ""}\0${location2.column ?? ""}`;
+    if (findingKeys.has(key2))
+      return false;
+    findingKeys.add(key2);
+    return true;
+  });
+  const reachableParseErrors = /* @__PURE__ */ new Set();
+  for (const analysis of frontend) {
+    if (analysis.parseError)
+      reachableParseErrors.add(analysis.file.path);
+    if (analysis.useClient) {
+      for (const candidate of reachableFrontend(analysis, available)) {
+        if (candidate.parseError)
+          reachableParseErrors.add(candidate.file.path);
+      }
+    }
+  }
+  const parseErrorCount = reachableParseErrors.size;
+  const incomplete2 = !snapshot4.complete || parseErrorCount > 0 || migrationResults.some((result3) => result3.incomplete);
+  return {
+    id: "source.framework",
+    status: incomplete2 ? "partial" : "completed",
+    findings,
+    notes: [
+      `Bounded framework rules inspected ${migrations.length + frontend.length} recognized file${migrations.length + frontend.length === 1 ? "" : "s"}.`,
+      "These are local candidates; live database state, grants, deployed bundles, and complete import/build boundaries were not checked.",
+      "Next environment references and relative imports are followed only when their names and paths are static; build-time replacement, package imports, non-literal or conditional dynamic imports, and generated bundles remain unresolved.",
+      ...parseErrorCount > 0 ? [`${parseErrorCount} frontend file${parseErrorCount === 1 ? " had" : "s had"} syntax diagnostics; framework findings may be incomplete.`] : [],
+      ...migrationResults.some((result3) => result3.incomplete) ? ["At least one migration had an unterminated SQL comment or literal; migration candidates may be incomplete."] : [],
+      ...!snapshot4.complete ? ["The collected source snapshot was incomplete; framework coverage may be incomplete."] : []
+    ],
+    metrics: { filesAnalyzed: migrations.length + frontend.length, migrationFiles: migrations.length, frontendFiles: frontend.length, parseErrorCount, findingCount: findings.length }
+  };
+}
+var ts21, FRONTEND_EXTENSIONS, MIGRATION_PATH;
+var init_framework = __esm({
+  "build/src/source/framework.js"() {
+    "use strict";
+    ts21 = __toESM(require_typescript(), 1);
+    FRONTEND_EXTENSIONS = /\.(?:[cm]?[jt]sx?)$/i;
+    MIGRATION_PATH = /(?:^|\/)supabase\/migrations\/(?:[^/]+\/)*[^/]+\.sql$/i;
+  }
+});
+
+// build/src/source/govulncheck.js
+import { mkdir as mkdir4 } from "node:fs/promises";
+import { dirname as dirname5, join as join6, resolve as resolve6 } from "node:path";
+function normalizeGoBuildTags(tags = []) {
+  if (!Array.isArray(tags) || tags.length > 32 || tags.some((tag) => typeof tag !== "string" || !/^[A-Za-z0-9_][A-Za-z0-9_.]{0,63}$/.test(tag)))
+    throw new TypeError("invalid_go_build_tags");
+  return [...new Set(tags)].sort();
+}
+function govulncheckFiles(snapshot4) {
+  return snapshot4.files.filter((file) => !file.sensitive && (/\.go$/.test(file.path) || /(?:^|\/)go\.(?:mod|sum)$/.test(file.path)));
+}
+function govulncheckHasApplicableInput(snapshot4) {
+  return govulncheckFiles(snapshot4).some((file) => /(?:^|\/)go\.mod$/.test(file.path));
+}
+function object8(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value))
+    throw new Error("invalid object");
+  return value;
+}
+function token(value) {
+  if (typeof value !== "string" || !/^[A-Za-z0-9][A-Za-z0-9._/+!@~-]{0,511}$/.test(value))
+    throw new Error("invalid identifier");
+  return value;
+}
+function messages(text4) {
+  if (Buffer.byteLength(text4) > 8 * 1024 * 1024)
+    throw new Error("output limit");
+  const result3 = [];
+  let start = -1, depth = 0, quoted2 = false, escaped = false;
+  for (let i = 0; i < text4.length; i++) {
+    const char = text4[i];
+    if (start < 0) {
+      if (/\s/.test(char))
+        continue;
+      if (char !== "{")
+        throw new Error("invalid stream");
+      start = i;
+    }
+    if (quoted2) {
+      if (escaped)
+        escaped = false;
+      else if (char === "\\")
+        escaped = true;
+      else if (char === '"')
+        quoted2 = false;
+    } else if (char === '"')
+      quoted2 = true;
+    else if (char === "{" || char === "[") {
+      if (++depth > 100)
+        throw new Error("nesting limit");
+    } else if (char === "}" || char === "]") {
+      if (--depth < 0)
+        throw new Error("invalid stream");
+      if (depth === 0) {
+        result3.push(object8(JSON.parse(text4.slice(start, i + 1))));
+        if (result3.length > 5e4)
+          throw new Error("message limit");
+        start = -1;
+      }
+    }
+  }
+  if (start !== -1 || !result3.length)
+    throw new Error("incomplete stream");
+  return result3;
+}
+function parseGovulncheckOutput(text4, files) {
+  const moduleMatches = [...(files.find((file) => file.path === "go.mod")?.text ?? "").matchAll(/^\s*module\s+(?:"([^"\r\n]+)"|([^\s]+))/gm)];
+  if (moduleMatches.length !== 1)
+    throw new Error("missing or ambiguous main module");
+  const mainModule = token(moduleMatches[0][1] ?? moduleMatches[0][2]);
+  if (mainModule.split("/").some((part) => !part || part === "." || part === ".."))
+    throw new Error("invalid main module");
+  const stream = messages(text4);
+  const config = object8(stream[0]?.config);
+  if (Object.keys(stream[0]).length !== 1 || config.protocol_version !== "v1.0.0" || config.scan_level !== "symbol" || config.scan_mode !== "source")
+    throw new Error("unsupported protocol");
+  const entries = /* @__PURE__ */ new Set();
+  const records = [];
+  const modules = /* @__PURE__ */ new Map();
+  let sbomSeen = false, roots = 0;
+  for (const message of stream.slice(1)) {
+    const keys6 = Object.keys(message);
+    if (keys6.length !== 1)
+      throw new Error("invalid message");
+    const key2 = keys6[0], value = object8(message[key2]);
+    if (key2 === "osv") {
+      if (typeof value.id !== "string" || !/^GO-\d{4}-\d{4,}$/.test(value.id))
+        throw new Error("invalid advisory");
+      entries.add(value.id);
+    } else if (key2 === "finding")
+      records.push(value);
+    else if (key2 === "SBOM") {
+      if (sbomSeen || !Array.isArray(value.roots) || !value.roots.length || !Array.isArray(value.modules))
+        throw new Error("invalid inventory");
+      const rootPaths = value.roots.map(token);
+      if (new Set(rootPaths).size !== rootPaths.length || rootPaths.some((path3) => path3 !== mainModule && !path3.startsWith(`${mainModule}/`) || path3.split("/").some((part) => !part || part === "." || part === "..")))
+        throw new Error("unbound roots");
+      const modulePaths = value.modules.map((module) => {
+        const m = object8(module), path3 = token(m.path);
+        modules.set(path3, m.version ? token(m.version) : "unknown");
+        return path3;
+      });
+      if (modulePaths.filter((path3) => path3 === mainModule).length !== 1 || new Set(modulePaths).size !== modulePaths.length)
+        throw new Error("unbound module inventory");
+      sbomSeen = true;
+      roots = value.roots.length;
+    } else if (key2 !== "progress")
+      throw new Error("unknown message");
+  }
+  if (!sbomSeen)
+    throw new Error("missing inventory");
+  const findings = /* @__PURE__ */ new Map();
+  for (const record10 of records) {
+    const id = token(record10.osv);
+    if (!entries.has(id) || !Array.isArray(record10.trace) || !record10.trace.length || record10.trace.length > 1024)
+      throw new Error("invalid finding");
+    const trace = record10.trace.map(object8), frame = trace[0];
+    const module = token(frame.module), version = frame.version ? token(frame.version) : "unknown";
+    if (modules.get(module) !== version)
+      throw new Error("unbound finding module or version");
+    const fixed = record10.fixed_version ? token(record10.fixed_version) : void 0;
+    const rank = frame.function ? 2 : frame.package ? 1 : 0;
+    const location2 = { path: "go.mod" };
+    for (const current of trace) {
+      token(current.module);
+      if (current.package)
+        token(current.package);
+      if (current.function !== void 0 && (typeof current.function !== "string" || current.function.length > 1024))
+        throw new Error("invalid symbol");
+      if (!current.position || current.module !== mainModule)
+        continue;
+      const position2 = object8(current.position);
+      const file = files.find((candidate) => candidate.path === position2.filename);
+      const line = position2.line;
+      if (!file || !Number.isSafeInteger(line) || Number(line) < 1 || Number(line) > file.text.split("\n").length)
+        throw new Error("unmapped position");
+      location2.path = file.path;
+      location2.line = Number(line);
+    }
+    const key2 = `${id}:${module}:${version}`;
+    if ((findings.get(key2)?.rank ?? -1) >= rank)
+      continue;
+    findings.set(key2, { rank, finding: {
+      ruleId: `govulncheck:${id}`,
+      title: `${id} in ${module}`,
+      description: `${module} ${version} is affected by a known Go vulnerability. ${rank === 2 ? "Govulncheck reports a static call path to an affected symbol." : rank === 1 ? "An affected package is imported; a call to an affected symbol was not observed." : "The affected module is required; an affected package import was not observed."} Severity is medium because the Go advisory protocol does not supply a severity rating.`,
+      severity: "medium",
+      confidence: rank === 2 ? "high" : "medium",
+      kind: "advisory",
+      location: location2,
+      remediation: fixed ? `Upgrade ${module === "stdlib" ? "the Go toolchain" : module} to ${fixed} or a newer unaffected version, then rerun the scan.` : "No fixed version was reported. Review the Go advisory and remove or isolate the affected dependency until a fix is available.",
+      references: [`https://pkg.go.dev/vuln/${id}`]
+    } });
+  }
+  const values = [...findings.values()];
+  return {
+    findings: values.map((value) => value.finding),
+    status: "completed",
+    notes: ["Go module advisories are deduplicated by vulnerability and module version; the strongest observed reachability is retained. Static reachability is build-specific and cannot prove runtime exploitability or cover reflect/unsafe calls. No source snippets or raw scanner messages are retained."],
+    metrics: {
+      rootsAnalyzed: roots,
+      findingCount: values.length,
+      reachableFindings: values.filter((value) => value.rank === 2).length,
+      goVersion: typeof config.go_version === "string" && /^go[0-9][A-Za-z0-9.+_-]{0,79}$/.test(config.go_version) ? config.go_version : "unknown",
+      scannerVersion: typeof config.scanner_version === "string" && /^[A-Za-z0-9.+_-]{1,80}$/.test(config.scanner_version) ? config.scanner_version : "unknown"
+    }
+  };
+}
+async function runGovulncheck(context) {
+  const check2 = (status, note2) => ({ id: "source.govulncheck", status, findings: [], notes: [note2] });
+  let buildTags;
+  try {
+    buildTags = normalizeGoBuildTags(context.buildTags);
+  } catch {
+    return check2("error", "Invalid Go build tags; no engine was started.");
+  }
+  const files = govulncheckFiles(context.snapshot), modules = files.filter((file) => /(?:^|\/)go\.mod$/.test(file.path));
+  if (!modules.length)
+    return check2("not_applicable", "No collected Go module was available for govulncheck.");
+  if (!context.snapshot.complete || modules.length !== 1 || modules[0]?.path !== "go.mod")
+    return check2("partial", "Govulncheck requires one complete root Go module. Incomplete snapshots and nested modules must be scanned separately.");
+  if (/=>\s*(?:"|`)?(?:\.{1,2}[\\/]|[\\/]|[A-Za-z]:[\\/])/.test(modules[0].text))
+    return check2("partial", "Local Go module replacements are unsupported because they can leave the staged source boundary.");
+  if (!context.toolPath)
+    return check2("partial", "Govulncheck executable was not found; Go vulnerability analysis was not performed.");
+  const go = await findExecutable(context.goPath ?? "go");
+  if (!go)
+    return check2("partial", "Go executable was not found. Supply a prepared Go toolchain; WakeIO does not install or download it during a scan.");
+  let staged;
+  try {
+    staged = await stageSnapshot({ ...context.snapshot, files });
+    const privateRoot = join6(dirname5(staged.dir), "govulncheck");
+    const home = join6(privateRoot, "home"), cache = join6(privateRoot, "build-cache"), gopath = join6(privateRoot, "gopath");
+    await Promise.all([home, cache, gopath].map((path3) => mkdir4(path3, { recursive: true, mode: 448 })));
+    const args = [
+      "-json",
+      "-mode",
+      "source",
+      "-scan",
+      "symbol",
+      ...context.database ? ["-db", context.database] : [],
+      ...buildTags.length ? ["-tags", buildTags.join(",")] : [],
+      "./..."
+    ];
+    const result3 = await runProcess(context.toolPath, args, {
+      cwd: staged.dir,
+      timeoutMs: context.timeoutMs,
+      home,
+      signal: context.signal,
+      runtimePath: dirname5(go),
+      environment: { GOTOOLCHAIN: "local", GOWORK: "off", GOFLAGS: "-mod=readonly", CGO_ENABLED: "0", GOENV: "off", GOPROXY: "off", GOSUMDB: "off", GOPATH: gopath, GOCACHE: cache, GOMODCACHE: context.moduleCache ? resolve6(context.moduleCache) : join6(gopath, "pkg", "mod") }
+    });
+    if (result3.cancelled || result3.spawnError || result3.timedOut || result3.outputLimitExceeded || result3.signal || result3.exitCode !== 0)
+      return check2("error", "Govulncheck did not complete. Check the prepared Go toolchain/module cache, build compatibility, vulnerability database, and timeout. Target dependencies and toolchains are never downloaded automatically.");
+    const parsed = parseGovulncheckOutput(result3.stdout, files);
+    return {
+      id: "source.govulncheck",
+      status: parsed.status ?? "completed",
+      findings: parsed.findings,
+      notes: [...parsed.notes, `Go build tags: ${buildTags.join(",") || "default"}; test packages: excluded. Other build configurations were not analyzed.`],
+      metrics: { ...parsed.metrics, buildTags: buildTags.join(","), testPackages: false }
+    };
+  } catch {
+    return check2("error", "Govulncheck output or staged runtime was invalid; Go vulnerability analysis is incomplete.");
+  } finally {
+    await staged?.cleanup();
+  }
+}
+var init_govulncheck = __esm({
+  "build/src/source/govulncheck.js"() {
+    "use strict";
+    init_process();
+    init_collector();
+  }
+});
+
+// build/src/source/requirements.js
+function inspectRequirementsFile(text4) {
+  let packageCount = 0;
+  let unresolved = false;
+  for (const rawLine of text4.replace(/^\uFEFF/, "").split(/\r\n|\r|\n/)) {
+    const line = rawLine.replace(/\s+#.*$/, "").trim();
+    if (!line || line.startsWith("#"))
+      continue;
+    if (/^(?:-r|--requirement|-c|--constraint)(?:\s+|=)/i.test(line)) {
+      unresolved = true;
+      continue;
+    }
+    if (/^--(?:hash(?:=|\s)|require-hashes(?:=|\s|$)|index-url(?:=|\s)|extra-index-url(?:=|\s)|trusted-host(?:=|\s)|find-links(?:=|\s)|no-index(?:=|\s|$)|only-binary(?:=|\s)|no-binary(?:=|\s)|prefer-binary(?:=|\s)|pre(?:=|\s|$))/i.test(line))
+      continue;
+    if (/^(?:-|git\+|hg\+|svn\+|bzr\+|https?:|file:|ssh:|\.?\.?\/|[A-Za-z0-9_.-]+\s*@\s*)/i.test(line)) {
+      unresolved = true;
+      continue;
+    }
+    const withoutHash = line.split(/\s+--hash(?:=|\s+)/i, 1)[0].trim();
+    const spec = withoutHash.split(";", 1)[0].trim();
+    const match = /^([A-Za-z0-9][A-Za-z0-9._-]*)(?:\[[^\]\r\n]+\])?\s*==\s*([^\s,;#=]+)$/i.exec(spec);
+    if (!match || (spec.match(/==/g)?.length ?? 0) !== 1 || /(?:[<>~!]=?|\*|,)/.test(spec.replace(/==/g, ""))) {
+      unresolved = true;
+      continue;
+    }
+    packageCount += 1;
+  }
+  return { pinned: !unresolved && packageCount > 0, packageCount };
+}
+var init_requirements = __esm({
+  "build/src/source/requirements.js"() {
+    "use strict";
+  }
+});
+
+// build/src/trivy-vuln.js
+import { lstat as lstat4, mkdir as mkdir5, mkdtemp as mkdtemp4, rm as rm4, writeFile as writeFile4 } from "node:fs/promises";
+import { tmpdir as tmpdir4 } from "node:os";
+import { basename as basename2, isAbsolute as isAbsolute6, join as join7, relative as relative5, resolve as resolve7 } from "node:path";
+function isTrivyVulnerabilityManifest(path3) {
+  return MANIFESTS.has(basename2(path3));
+}
+function trivyVulnerabilityFiles(snapshot4) {
+  return snapshot4.files.filter((file) => !file.sensitive && file.category === "dependency" && isTrivyVulnerabilityManifest(file.path));
+}
+function object9(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value))
+    throw new Error("invalid record");
+  return value;
+}
+function identifier(value, max = 512) {
+  if (typeof value !== "string" || value.length < 1 || value.length > max || !/^[A-Za-z0-9@][A-Za-z0-9_@./+!~:,*()=<> -]*$/.test(value))
+    throw new Error("invalid identifier");
+  return value;
+}
+function sourcePath(value, options) {
+  if (typeof value !== "string" || !options.stageDir)
+    throw new Error("invalid path");
+  const path3 = relative5(resolve7(options.stageDir), resolve7(options.stageDir, value)).replaceAll("\\", "/");
+  if (isAbsolute6(path3) || path3.startsWith("../") || !(options.allowedPaths ?? []).includes(path3))
+    throw new Error("unmapped path");
+  return path3;
+}
+function parseTrivyVulnerabilityOutput(text4, options) {
+  if (Buffer.byteLength(text4) > 8 * 1024 * 1024)
+    throw new Error("output limit");
+  const root = object9(JSON.parse(text4));
+  if (root.SchemaVersion !== 2 || !Array.isArray(root.Results))
+    throw new Error("invalid report envelope");
+  if (options.image ? root.ArtifactType !== "container_image" : root.ArtifactType !== "filesystem")
+    throw new Error("wrong artifact type");
+  const findings = /* @__PURE__ */ new Map(), scanned = /* @__PURE__ */ new Set();
+  let packages = 0, resultCount = 0;
+  for (const raw of root.Results) {
+    const result3 = object9(raw);
+    if (result3.Class !== "lang-pkgs" && result3.Class !== "os-pkgs")
+      throw new Error("unexpected result class");
+    if (!options.image && result3.Class !== "lang-pkgs")
+      throw new Error("unexpected OS input");
+    if (typeof result3.Type !== "string" || !/^[a-z0-9-]{1,40}$/.test(result3.Type))
+      throw new Error("invalid package type");
+    const path3 = options.image ? `image/${result3.Class}/${result3.Type}` : sourcePath(result3.Target, options);
+    scanned.add(path3);
+    resultCount++;
+    if (!Array.isArray(result3.Packages))
+      throw new Error("missing package inventory");
+    packages += result3.Packages.length;
+    for (const rawPackage of result3.Packages) {
+      const pkg = object9(rawPackage);
+      identifier(pkg.Name);
+      if (pkg.Version !== void 0 || pkg.Relationship !== "root")
+        identifier(pkg.Version);
+    }
+    if (result3.Vulnerabilities != null && !Array.isArray(result3.Vulnerabilities))
+      throw new Error("invalid vulnerability list");
+    for (const rawVuln of result3.Vulnerabilities ?? []) {
+      const vuln = object9(rawVuln), id = identifier(vuln.VulnerabilityID, 128), name2 = identifier(vuln.PkgName), installed = identifier(vuln.InstalledVersion);
+      if (!/^[A-Za-z0-9][A-Za-z0-9_.:-]{1,127}$/.test(id) || typeof vuln.Severity !== "string" || !Object.hasOwn(SEVERITIES, vuln.Severity))
+        throw new Error("invalid vulnerability");
+      const fixed = vuln.FixedVersion ? identifier(vuln.FixedVersion) : void 0;
+      if (!result3.Packages.some((rawPackage) => {
+        const pkg = object9(rawPackage);
+        return pkg.Name === name2 && pkg.Version === installed;
+      }))
+        throw new Error("unbound package");
+      const key2 = `${id}:${path3}:${name2}:${installed}`;
+      const references2 = [];
+      if (/^CVE-\d{4}-\d{4,}$/.test(id))
+        references2.push(`https://nvd.nist.gov/vuln/detail/${id}`);
+      else if (/^GHSA-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}$/.test(id))
+        references2.push(`https://github.com/advisories/${id}`);
+      findings.set(key2, {
+        ruleId: `trivy-vuln:${id}`,
+        title: `${id} in ${name2}`,
+        description: `${name2} ${installed} matches a known ${result3.Class === "os-pkgs" ? "OS" : "application"} package advisory. Package presence does not establish runtime reachability or exploitability.${vuln.Severity === "UNKNOWN" ? " The advisory has no severity rating; info is used rather than inferring a score." : ""}`,
+        severity: SEVERITIES[vuln.Severity],
+        confidence: "high",
+        kind: "advisory",
+        location: { path: path3 },
+        remediation: fixed ? `Upgrade ${name2} to an unaffected version listed by the advisory (reported fixed versions: ${fixed}), rebuild the ${options.image ? "image" : "dependency lockfile"}, and rerun the scan.` : `No fixed version was reported for ${name2}. Review the advisory, update the base image/dependency when a fix becomes available, or remove the affected package.`,
+        ...references2.length ? { references: references2 } : {}
+      });
+    }
+  }
+  const unreported = options.image ? 0 : (options.allowedPaths ?? []).filter((path3) => !scanned.has(path3) && !(basename2(path3) === "go.sum" && scanned.has(path3.replace(/go\.sum$/, "go.mod")))).length;
+  return {
+    findings: [...findings.values()],
+    status: unreported > 0 || resultCount === 0 || packages === 0 ? "partial" : "completed",
+    notes: [
+      `Trivy inspected ${packages} package records in ${resultCount} inventories. Findings identify affected package versions, not reachable application flaws.`,
+      ...unreported ? [`${unreported} selected dependency files did not produce an inventory; package coverage is incomplete.`] : [],
+      ...resultCount === 0 || packages === 0 ? ["No package inventory was reported; an empty result is not accepted as a clean vulnerability scan."] : [],
+      ...options.image ? ["Image locations are synthetic inventory paths, not host source files. Only the supplied archive was inspected; the image was not run."] : []
+    ],
+    metrics: { inventories: resultCount, packages, findingCount: findings.size, unreportedInputs: unreported }
+  };
+}
+async function runTrivyVulnerabilities(options) {
+  const image = options.imageArchive !== void 0, id = image ? "image.trivy" : "source.trivy-vuln";
+  const check2 = (status, note2) => ({ id, status, findings: [], notes: [note2] });
+  const files = options.snapshot ? trivyVulnerabilityFiles(options.snapshot) : [];
+  const unresolvedRequirements = files.filter((file) => /^requirements(?:-(?:dev|prod))?\.txt$/.test(basename2(file.path)) && !inspectRequirementsFile(file.text).pinned).length;
+  if (image && (options.snapshot || options.stageDir))
+    return check2("error", "Choose exactly one Trivy target: a staged source snapshot or a local image archive.");
+  if (!image && (!options.snapshot || !options.stageDir))
+    return check2("error", "Trivy filesystem vulnerability scanning requires a staged source snapshot.");
+  if (!image && files.length === 0)
+    return check2("not_applicable", "No supported dependency inventory was collected for Trivy vulnerability scanning.");
+  if (!options.toolPath)
+    return check2("partial", "Trivy executable was not found; the selected package/image vulnerability scan was not performed.");
+  let privateRoot, staged;
+  try {
+    if (image) {
+      const stat2 = await lstat4(options.imageArchive);
+      if (!stat2.isFile() || stat2.isSymbolicLink())
+        return check2("error", "The image target must be a regular local Docker/OCI tar archive.");
+    }
+    if (!image)
+      staged = await stageSnapshot({ ...options.snapshot, files });
+    privateRoot = await mkdtemp4(join7(tmpdir4(), "wakeio-trivy-vuln-"));
+    const home = join7(privateRoot, "home"), modules = join7(privateRoot, "modules"), cache = options.cacheDir ? resolve7(options.cacheDir) : join7(privateRoot, "cache");
+    await Promise.all([home, modules, cache].map((path3) => mkdir5(path3, { recursive: true, mode: 448 })));
+    const config = join7(privateRoot, "trivy.yaml"), ignore = join7(privateRoot, "empty.ignore");
+    await writeFile4(config, "{}\n", { mode: 384 });
+    await writeFile4(ignore, "", { mode: 384 });
+    const args = [image ? "image" : "fs", "--quiet", "--disable-telemetry", "--skip-version-check", "--format", "json", "--exit-code", "0", "--scanners", "vuln", "--list-all-pkgs", "--pkg-types", image ? "os,library" : "library", "--config", config, "--ignorefile", ignore, "--cache-dir", cache, "--module-dir", modules, "--offline-scan", ...!image ? ["--file-patterns", "pip:(^|/)requirements-(dev|prod)\\.txt$"] : [], ...options.offline ? ["--skip-db-update", "--skip-java-db-update"] : [], ...image ? ["--input", resolve7(options.imageArchive)] : [staged.dir]];
+    const result3 = await runProcess(options.toolPath, args, { cwd: image ? privateRoot : staged.dir, timeoutMs: options.timeoutMs, home, signal: options.signal });
+    if (result3.cancelled || result3.spawnError || result3.timedOut || result3.outputLimitExceeded || result3.signal || result3.exitCode !== 0)
+      return check2("error", "Trivy vulnerability scanning did not complete. Check the prepared database/cache, archive format, and timeout; no clean result is inferred from missing output.");
+    const parsed = parseTrivyVulnerabilityOutput(result3.stdout, { image, stageDir: staged?.dir, allowedPaths: files.map((file) => file.path) });
+    const incomplete2 = !image && options.snapshot?.complete === false;
+    return {
+      id,
+      status: incomplete2 || unresolvedRequirements ? "partial" : parsed.status ?? "completed",
+      findings: parsed.findings,
+      notes: [
+        ...parsed.notes,
+        ...incomplete2 ? ["The collected snapshot was incomplete; dependency coverage is incomplete."] : [],
+        ...unresolvedRequirements ? ["Python requirements contain an unresolved range, include, URL or option; only inventoried versions were checked and dependency coverage is incomplete."] : []
+      ],
+      metrics: { ...parsed.metrics, unresolvedRequirements }
+    };
+  } catch {
+    return check2("error", "Trivy returned invalid vulnerability data or its target/cache could not be read.");
+  } finally {
+    await staged?.cleanup();
+    if (privateRoot)
+      await rm4(privateRoot, { recursive: true, force: true });
+  }
+}
+var MANIFESTS, SEVERITIES;
+var init_trivy_vuln = __esm({
+  "build/src/trivy-vuln.js"() {
+    "use strict";
+    init_process();
+    init_collector();
+    init_requirements();
+    MANIFESTS = /* @__PURE__ */ new Set(["package-lock.json", "npm-shrinkwrap.json", "yarn.lock", "pnpm-lock.yaml", "go.mod", "go.sum", "Cargo.lock", "Gemfile.lock", "poetry.lock", "Pipfile.lock", "uv.lock", "requirements.txt", "requirements-dev.txt", "requirements-prod.txt", "packages.lock.json", "composer.lock"]);
+    SEVERITIES = { UNKNOWN: "info", LOW: "low", MEDIUM: "medium", HIGH: "high", CRITICAL: "critical" };
+  }
+});
+
+// build/src/source/analyzer-inputs.js
+function trivyInputCandidate(path3, text4) {
+  const lower = path3.toLowerCase();
+  const name2 = lower.slice(lower.lastIndexOf("/") + 1);
+  if (name2 === "dockerfile" || name2.endsWith(".dockerfile"))
+    return true;
+  if (/\.(?:yaml|yml)$/.test(lower))
+    return true;
+  if (/\.(?:tf|tfvars|hcl)(?:\.json)?$/.test(lower))
+    return true;
+  if (!lower.endsWith(".json"))
+    return false;
+  try {
+    const parsed = JSON.parse(text4);
+    if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed))
+      return false;
+    const object19 = parsed;
+    return typeof object19.apiVersion === "string" && typeof object19.kind === "string";
+  } catch {
+    return false;
+  }
+}
+function fileBasename(path3) {
+  return path3.slice(path3.lastIndexOf("/") + 1).toLowerCase();
+}
+function packageManifestHasExplicitlyEmptyDependencies(text4) {
+  try {
+    const parsed = JSON.parse(text4);
+    if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed))
+      return false;
+    const object19 = parsed;
+    const fields = [
+      "dependencies",
+      "devDependencies",
+      "peerDependencies",
+      "optionalDependencies",
+      "bundledDependencies",
+      "bundleDependencies"
+    ];
+    if (!fields.some((key2) => Object.prototype.hasOwnProperty.call(object19, key2)))
+      return false;
+    for (const key2 of [
+      "dependencies",
+      "devDependencies",
+      "peerDependencies",
+      "optionalDependencies",
+      "bundledDependencies",
+      "bundleDependencies",
+      "require",
+      "require-dev"
+    ]) {
+      const value = object19[key2];
+      if (Array.isArray(value) && value.length > 0)
+        return false;
+      if (value !== void 0 && (value === null || typeof value !== "object" || Object.keys(value).length > 0))
+        return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+function dependencyManifestNeedsLockfile(file) {
+  const name2 = fileBasename(file.path);
+  return name2 !== "package.json" || !packageManifestHasExplicitlyEmptyDependencies(file.text);
+}
+function requirementsInspection(snapshot4) {
+  const pinned = [];
+  const unresolved = [];
+  for (const file of snapshot4.files) {
+    if (file.category !== "dependency" || !/^requirements(?:-[^/]+)?\.txt$/i.test(fileBasename(file.path)))
+      continue;
+    if (inspectRequirementsFile(file.text).pinned)
+      pinned.push(file.path);
+    else
+      unresolved.push(file.path);
+  }
+  return { pinned, unresolved };
+}
+function osvLockfiles(snapshot4) {
+  const requirements = new Set(requirementsInspection(snapshot4).pinned);
+  return snapshot4.files.filter((file) => file.category === "dependency" && (OSV_LOCKFILE_NAMES.has(fileBasename(file.path)) || requirements.has(file.path))).map((file) => file.path);
+}
+function osvManifestDeclaresDependencies(snapshot4) {
+  return snapshot4.files.some((file) => file.category === "dependency" && OSV_MANIFEST_NAMES.has(fileBasename(file.path)) && dependencyManifestNeedsLockfile(file));
+}
+function osvHasApplicableInput(snapshot4) {
+  return osvLockfiles(snapshot4).length > 0 || osvManifestDeclaresDependencies(snapshot4);
+}
+var OSV_LOCKFILE_NAMES, OSV_MANIFEST_NAMES;
+var init_analyzer_inputs = __esm({
+  "build/src/source/analyzer-inputs.js"() {
+    "use strict";
+    init_requirements();
+    OSV_LOCKFILE_NAMES = /* @__PURE__ */ new Set([
+      "package-lock.json",
+      "npm-shrinkwrap.json",
+      "yarn.lock",
+      "pnpm-lock.yaml",
+      "bun.lock",
+      "bun.lockb",
+      "cargo.lock",
+      "go.sum",
+      "gemfile.lock",
+      "composer.lock",
+      "pipfile.lock",
+      "poetry.lock",
+      "uv.lock",
+      "deno.lock"
+    ]);
+    OSV_MANIFEST_NAMES = /* @__PURE__ */ new Set([
+      "package.json",
+      "composer.json",
+      "cargo.toml",
+      "go.mod",
+      "gemfile",
+      "pipfile",
+      "pyproject.toml",
+      "requirements.txt",
+      "requirements-dev.txt",
+      "requirements-prod.txt"
+    ]);
+  }
+});
+
+// build/src/source/analyzer-providers.js
+function provider(value) {
+  return Object.freeze({ ...value, codeCoverage: Object.freeze({
+    ...value.codeCoverage,
+    languages: Object.freeze([...value.codeCoverage.languages])
+  }) });
+}
+function toolInput(context) {
+  const { snapshot: snapshot4, stageDir, toolPath, timeoutMs, options } = context;
+  return { snapshot: snapshot4, stageDir, toolPath, timeoutMs, signal: options.signal };
+}
+function empty(tool2, message, metrics) {
+  return { id: `source.${tool2}`, status: "not_applicable", findings: [], notes: [message], metrics };
+}
+function tool(value) {
+  return Object.freeze({
+    ...value,
+    id: value.tool,
+    checkId: `source.${value.tool}`,
+    selection: "tool",
+    selected: (options) => options.tools.includes(value.tool)
+  });
+}
+var parsedFilesComplete, requestedFiles, builtinAstMetadata, banditMetadata, nativePreviewMetadata, semgrepMetadata, frameworkAnalyzer, gitleaksAnalyzer, osvAnalyzer, trivyAnalyzer, govulncheckAnalyzer, trivyVulnerabilityAnalyzer;
+var init_analyzer_providers = __esm({
+  "build/src/source/analyzer-providers.js"() {
+    "use strict";
+    init_ast();
+    init_opengrep();
+    init_python();
+    init_semgrep();
+    init_framework();
+    init_govulncheck();
+    init_trivy_vuln();
+    init_analyzer_inputs();
+    parsedFilesComplete = (check2, n) => check2.metrics?.filesRequested === n && check2.metrics?.filesAnalyzed === n && check2.metrics?.errorCount === 0;
+    requestedFiles = (check2) => check2.metrics?.filesRequested ?? check2.metrics?.files;
+    builtinAstMetadata = provider({
+      id: "builtin_ast",
+      checkId: "source.builtin-ast",
+      selection: "always",
+      selected: () => true,
+      applicable: (snapshot4) => builtinAstFiles(snapshot4).length > 0,
+      run: (context) => context.builtinAst(),
+      codeCoverage: {
+        languages: ["javascript", "typescript"],
+        inputs: builtinAstFiles,
+        complete: (check2, n) => check2.metrics?.filesAnalyzed === n && check2.metrics?.filesParseValid === n,
+        inputCount: (check2) => check2.metrics?.filesAnalyzed
+      }
+    });
+    banditMetadata = provider({
+      id: "bandit",
+      checkId: "source.bandit",
+      selection: "tool",
+      tool: "bandit",
+      selected: (options) => options.tools.includes("bandit"),
+      applicable: (snapshot4) => pythonFiles(snapshot4).length > 0,
+      executable: (options) => options.toolPaths?.bandit ?? "bandit",
+      stage: "python",
+      stageFailure: "The bounded Python snapshot could not be staged for Bandit.",
+      failureMessage: "Bandit scanning could not be completed.",
+      notApplicable: () => empty("bandit", "No allowlisted Python file was available for Bandit.", { files: 0 }),
+      run: (context) => runBandit(toolInput(context)),
+      codeCoverage: {
+        languages: ["python"],
+        inputs: pythonFiles,
+        complete: parsedFilesComplete,
+        inputCount: requestedFiles
+      }
+    });
+    nativePreviewMetadata = provider({
+      id: "opengrep_native",
+      checkId: "source.opengrep.preview",
+      selection: "native-preview",
+      selected: (options) => options.nativePreview,
+      applicable: (snapshot4) => nativeFiles(snapshot4).length > 0,
+      run: (context) => runNativePreview(context.snapshot, context.options),
+      codeCoverage: {
+        languages: ["javascript", "typescript", "python"],
+        inputs: nativeFiles,
+        complete: (check2, n) => check2.metrics?.filesDeclared === n && check2.metrics?.filesScanned === n && check2.metrics?.identityUnchanged === true && check2.metrics?.closeConfirmed === true && check2.metrics?.stageCleanupConfirmed === true,
+        inputCount: (check2) => check2.metrics?.filesDeclared
+      }
+    });
+    semgrepMetadata = provider({
+      id: "semgrep",
+      checkId: "source.semgrep",
+      selection: "tool",
+      tool: "semgrep",
+      selected: (options) => options.tools.includes("semgrep"),
+      applicable: (snapshot4) => semgrepFiles(snapshot4).length > 0,
+      executable: (options) => options.toolPaths?.semgrep ?? "semgrep",
+      adapterOwnsPreflight: true,
+      notApplicable: () => empty("semgrep", "No applicable source input was collected.", { files: 0 }),
+      run: (context) => runSemgrep(toolInput(context)),
+      codeCoverage: {
+        languages: ["go"],
+        inputs: semgrepFiles,
+        complete: parsedFilesComplete,
+        inputCount: requestedFiles
+      }
+    });
+    frameworkAnalyzer = Object.freeze({
+      id: "framework",
+      checkId: "source.framework",
+      selection: "always",
+      selected: () => true,
+      applicable: frameworkHasApplicableInput,
+      run: (context) => runFrameworkRules(context.snapshot)
+    });
+    gitleaksAnalyzer = tool({
+      tool: "gitleaks",
+      applicable: (snapshot4) => snapshot4.files.length > 0,
+      executable: (options) => options.toolPaths?.gitleaks ?? "gitleaks",
+      notApplicable: () => empty("gitleaks", "No allowlisted source file was available for Gitleaks.", { files: 0 }),
+      run: (context) => context.legacy.gitleaks(toolInput(context))
+    });
+    osvAnalyzer = tool({
+      tool: "osv",
+      applicable: osvHasApplicableInput,
+      executable: (options) => options.toolPaths?.osv ?? "osv-scanner",
+      notApplicable: () => empty("osv", "No allowlisted dependency manifest or supported lockfile was available for OSV-Scanner.", { lockfiles: 0, dependencyManifest: false }),
+      run: (context) => context.legacy.osv({
+        ...toolInput(context),
+        ...context.options.osvOffline ? { osvOffline: true } : {}
+      })
+    });
+    trivyAnalyzer = tool({
+      tool: "trivy",
+      stage: "safe-config",
+      applicable: (snapshot4) => snapshot4.files.some((file) => file.category === "config" && trivyInputCandidate(file.path, file.text)),
+      executable: (options) => options.toolPaths?.trivy ?? "trivy",
+      stageFailure: "The bounded Trivy snapshot could not be staged for Trivy.",
+      failureMessage: "Trivy scanning could not be completed.",
+      notApplicable: () => empty("trivy", "No supported Dockerfile, Kubernetes manifest, or Terraform configuration was available for Trivy config scanning.", { configFiles: 0, blockedConfigFiles: 0 }),
+      run: (context) => context.legacy.trivy({ ...toolInput(context), blockedConfigCount: context.blockedConfigCount })
+    });
+    govulncheckAnalyzer = tool({
+      tool: "govulncheck",
+      applicable: govulncheckHasApplicableInput,
+      adapterOwnsPreflight: true,
+      executable: (options) => options.toolPaths?.govulncheck ?? "govulncheck",
+      notApplicable: () => empty("govulncheck", "No applicable source input was collected.", { files: 0 }),
+      run: (context) => runGovulncheck({
+        ...toolInput(context),
+        goPath: context.options.goPath,
+        moduleCache: context.options.goModuleCache,
+        database: context.options.govulnDatabase,
+        buildTags: context.options.goBuildTags
+      })
+    });
+    trivyVulnerabilityAnalyzer = tool({
+      tool: "trivy-vuln",
+      applicable: (snapshot4) => snapshot4.files.some((file) => file.category === "dependency"),
+      adapterOwnsPreflight: true,
+      executable: (options) => options.toolPaths?.["trivy-vuln"] ?? options.toolPaths?.trivy ?? "trivy",
+      notApplicable: () => empty("trivy-vuln", "No applicable source input was collected.", { files: 0 }),
+      run: (context) => runTrivyVulnerabilities({
+        ...toolInput(context),
+        cacheDir: context.options.trivyCache,
+        offline: context.options.trivyOffline
+      })
+    });
+  }
+});
+
+// build/src/runtime/analyzer-registry.js
+function codeAnalyzer(id) {
+  const analyzer = CODE_ANALYZERS.find((candidate) => candidate.id === id);
+  if (!analyzer)
+    throw new TypeError("invalid_code_provider");
+  return analyzer;
+}
+function sourceAnalyzer(id) {
+  const analyzer = ANALYZERS.find((candidate) => candidate.id === id);
+  if (!analyzer)
+    throw new TypeError("invalid_source_analyzer");
+  return analyzer;
+}
+function isSourceTool(id) {
+  return ANALYZERS.some((analyzer) => analyzer.selection === "tool" && analyzer.tool === id);
+}
+function toolAnalyzer(id) {
+  const analyzer = sourceAnalyzer(id);
+  if (analyzer.selection !== "tool")
+    throw new TypeError("invalid_source_tool");
+  return analyzer;
+}
+var CODE_ANALYZERS, ANALYZERS, SYNC_ANALYZERS;
+var init_analyzer_registry = __esm({
+  "build/src/runtime/analyzer-registry.js"() {
+    "use strict";
+    init_analyzer_providers();
+    CODE_ANALYZERS = Object.freeze([
+      builtinAstMetadata,
+      banditMetadata,
+      nativePreviewMetadata,
+      semgrepMetadata
+    ]);
+    ANALYZERS = Object.freeze([
+      builtinAstMetadata,
+      frameworkAnalyzer,
+      nativePreviewMetadata,
+      gitleaksAnalyzer,
+      osvAnalyzer,
+      trivyAnalyzer,
+      banditMetadata,
+      semgrepMetadata,
+      govulncheckAnalyzer,
+      trivyVulnerabilityAnalyzer
+    ]);
+    SYNC_ANALYZERS = Object.freeze(ANALYZERS.filter((analyzer) => analyzer.selection === "always"));
+  }
+});
+
 // build/src/source/code-coverage.js
 function collectedCodeMetrics(snapshot4) {
   const result3 = Object.fromEntries(CODE_LANGUAGES.map((language) => [`codeFiles_${language}`, 0]));
@@ -233903,35 +235459,33 @@ function codeCoverageCheck(snapshot4, checks, options) {
   const files = snapshot4.files.filter((f) => f.category === "code");
   if (files.some((f) => !EXTENSIONS[f.path.toLowerCase().slice(f.path.lastIndexOf("."))]))
     return coverageCheck(unknownCodeCoverage(required));
-  const selected = { builtin_ast: true, bandit: options.tools.includes("bandit"), opengrep_native: !!options.nativePreview, semgrep: options.tools.includes("semgrep") };
-  const providers = selected.semgrep ? PROVIDERS : LEGACY_PROVIDERS;
-  const inputSets = { builtin_ast: builtinAstFiles(snapshot4), bandit: pythonFiles(snapshot4), opengrep_native: nativeFiles(snapshot4), semgrep: semgrepFiles(snapshot4) };
+  const selectionOptions = { tools: options.tools, nativePreview: !!options.nativePreview };
+  const selected = Object.fromEntries(CODE_PROVIDERS_V1.map((p) => [p, codeAnalyzer(p).selected(selectionOptions)]));
+  const providers = selected.semgrep ? CODE_PROVIDERS_V1 : LEGACY_CODE_PROVIDERS_V1;
+  const inputSets = Object.fromEntries(CODE_PROVIDERS_V1.map((p) => [p, codeAnalyzer(p).codeCoverage.inputs(snapshot4)]));
   const inputs2 = (p) => inputSets[p];
-  const statuses = Object.fromEntries(PROVIDERS.map((p) => [p, checks.find((c) => c.id === IDS[p])?.status ?? "unknown"]));
+  const statuses = Object.fromEntries(CODE_PROVIDERS_V1.map((p) => [
+    p,
+    checks.find((c) => c.id === codeAnalyzer(p).checkId)?.status ?? "unknown"
+  ]));
   const completed2 = (p) => {
-    const check2 = checks.find((c) => c.id === IDS[p]), n = inputs2(p).length;
-    if (!selected[p] || check2?.status !== "completed" || n === 0)
-      return false;
-    if (p === "builtin_ast")
-      return check2.metrics?.filesAnalyzed === n && check2.metrics?.filesParseValid === n;
-    if (p === "bandit" || p === "semgrep")
-      return check2.metrics?.filesRequested === n && check2.metrics?.filesAnalyzed === n && check2.metrics?.errorCount === 0;
-    return check2.metrics?.filesDeclared === n && check2.metrics?.filesScanned === n && check2.metrics?.identityUnchanged === true && check2.metrics?.closeConfirmed === true && check2.metrics?.stageCleanupConfirmed === true;
+    const analyzer = codeAnalyzer(p), check2 = checks.find((c) => c.id === analyzer.checkId), n = inputs2(p).length;
+    return selected[p] && check2?.status === "completed" && n > 0 && analyzer.codeCoverage.complete(check2, n);
   };
   const languages = CODE_LANGUAGES.flatMap((language) => {
     const collected = files.filter((f) => EXTENSIONS[f.path.toLowerCase().slice(f.path.lastIndexOf("."))] === language).length;
     if (!collected)
       return [];
-    const perProvider = (provider) => inputs2(provider).filter((f) => EXTENSIONS[f.path.toLowerCase().slice(f.path.lastIndexOf("."))] === language);
-    const providerRows = providers.map((provider) => ({
-      provider,
-      selected: selected[provider],
-      status: selected[provider] ? statuses[provider] : "not_selected",
-      eligible: selected[provider] ? perProvider(provider).length : 0,
-      completed: selected[provider] && completed2(provider) ? perProvider(provider).length : 0
+    const perProvider = (provider2) => inputs2(provider2).filter((f) => EXTENSIONS[f.path.toLowerCase().slice(f.path.lastIndexOf("."))] === language);
+    const providerRows = providers.map((provider2) => ({
+      provider: provider2,
+      selected: selected[provider2],
+      status: selected[provider2] ? statuses[provider2] : "not_selected",
+      eligible: selected[provider2] ? perProvider(provider2).length : 0,
+      completed: selected[provider2] && completed2(provider2) ? perProvider(provider2).length : 0
     }));
-    const eligible = new Set(PROVIDERS.flatMap((p) => selected[p] ? perProvider(p).map((f) => f.path) : [])).size;
-    const done = new Set(PROVIDERS.flatMap((p) => selected[p] && completed2(p) ? perProvider(p).map((f) => f.path) : [])).size;
+    const eligible = new Set(CODE_PROVIDERS_V1.flatMap((p) => selected[p] ? perProvider(p).map((f) => f.path) : [])).size;
+    const done = new Set(CODE_PROVIDERS_V1.flatMap((p) => selected[p] && completed2(p) ? perProvider(p).map((f) => f.path) : [])).size;
     return [{ language, collected, eligible, completed: done, uncovered: collected - done, providers: providerRows }];
   });
   const totals = { collected: files.length, eligible: 0, completed: 0, uncovered: 0 };
@@ -233976,7 +235530,7 @@ function parseCodeCoverage(input) {
   const sums = { collected: 0, eligible: 0, completed: 0, uncovered: 0 };
   const providerIdentity = /* @__PURE__ */ new Map();
   for (const raw of v.languages) {
-    if (!exact(raw, ["language", "collected", "eligible", "completed", "uncovered", "providers"]) || !CODE_LANGUAGES.includes(raw.language) || !Array.isArray(raw.providers) || ![LEGACY_PROVIDERS.length, PROVIDERS.length].includes(raw.providers.length))
+    if (!exact(raw, ["language", "collected", "eligible", "completed", "uncovered", "providers"]) || !CODE_LANGUAGES.includes(raw.language) || !Array.isArray(raw.providers) || ![LEGACY_CODE_PROVIDERS_V1.length, CODE_PROVIDERS_V1.length].includes(raw.providers.length))
       return void 0;
     if (providerCount !== void 0 && providerCount !== raw.providers.length)
       return void 0;
@@ -233990,11 +235544,11 @@ function parseCodeCoverage(input) {
     let eligible = 0, done = 0;
     for (let i = 0; i < raw.providers.length; i++) {
       const p = raw.providers[i];
-      if (!exact(p, ["provider", "selected", "status", "eligible", "completed"]) || p.provider !== PROVIDERS[i] || typeof p.selected !== "boolean" || !count(p.eligible) || !count(p.completed) || p.completed > p.eligible || p.eligible > raw.collected)
+      if (!exact(p, ["provider", "selected", "status", "eligible", "completed"]) || p.provider !== CODE_PROVIDERS_V1[i] || typeof p.selected !== "boolean" || !count(p.eligible) || !count(p.completed) || p.completed > p.eligible || p.eligible > raw.collected)
         return void 0;
       if (!p.selected ? p.status !== "not_selected" || p.eligible !== 0 || p.completed !== 0 : typeof p.status !== "string" || !["completed", "partial", "error", "not_applicable", "skipped", "unknown"].includes(p.status))
         return void 0;
-      if ((!supports(PROVIDERS[i], raw.language) || p.status === "not_applicable") && (p.eligible !== 0 || p.completed !== 0) || p.status !== "completed" && p.completed !== 0 || p.completed !== 0 && p.completed !== p.eligible)
+      if ((!supports(CODE_PROVIDERS_V1[i], raw.language) || p.status === "not_applicable") && (p.eligible !== 0 || p.completed !== 0) || p.status !== "completed" && p.completed !== 0 || p.completed !== 0 && p.completed !== p.eligible)
         return void 0;
       const identity = JSON.stringify([p.selected, p.status]);
       if (providerIdentity.has(String(p.provider)) && providerIdentity.get(String(p.provider)) !== identity)
@@ -234033,23 +235587,26 @@ function codeCoverageConsistent(v, checks) {
     return false;
   if (requested.split(",").includes("semgrep") && v.languages.some((row) => !row.providers.some((p) => p.provider === "semgrep")))
     return false;
-  for (const provider of PROVIDERS) {
-    const rows = v.languages.flatMap((row) => row.providers.filter((p) => p.provider === provider));
+  for (const provider2 of CODE_PROVIDERS_V1) {
+    const rows = v.languages.flatMap((row) => row.providers.filter((p) => p.provider === provider2));
     if (!rows.length)
       continue;
-    const identity = rows[0], expectedSelected = provider === "builtin_ast" || (provider === "opengrep_native" ? nativeSelected : requested.split(",").includes(provider));
+    const analyzer = codeAnalyzer(provider2);
+    const identity = rows[0], expectedSelected = analyzer.selected({
+      tools: requested.split(","),
+      nativePreview: nativeSelected
+    });
     if (identity.selected !== expectedSelected)
       return false;
-    const actual = checks.filter((c) => c.id === IDS[provider]);
+    const actual = checks.filter((c) => c.id === analyzer.checkId);
     if (identity.selected && (actual.length !== 1 || actual[0].status !== identity.status) || !identity.selected && actual.length !== 0)
       return false;
     const eligible = rows.reduce((sum, row) => sum + row.eligible, 0), done = rows.reduce((sum, row) => sum + row.completed, 0);
-    const m = actual[0]?.metrics;
-    const inputCount = provider === "builtin_ast" ? m?.filesAnalyzed : provider === "bandit" || provider === "semgrep" ? m?.filesRequested ?? m?.files : m?.filesDeclared;
+    const inputCount = actual[0] && analyzer.codeCoverage.inputCount(actual[0]);
     if (identity.selected && inputCount !== void 0 && (!count(inputCount) || inputCount !== eligible))
       return false;
     if (done > 0) {
-      if (provider === "builtin_ast" ? m?.filesAnalyzed !== eligible || m?.filesParseValid !== eligible : provider === "bandit" || provider === "semgrep" ? m?.filesRequested !== eligible || m?.filesAnalyzed !== eligible || m?.errorCount !== 0 : m?.filesDeclared !== eligible || m?.filesScanned !== eligible || m?.identityUnchanged !== true || m?.closeConfirmed !== true || m?.stageCleanupConfirmed !== true)
+      if (!actual[0] || !analyzer.codeCoverage.complete(actual[0], eligible))
         return false;
       if (done !== eligible)
         return false;
@@ -234057,31 +235614,31 @@ function codeCoverageConsistent(v, checks) {
   }
   return true;
 }
-var CODE_COVERAGE_ID, CODE_LANGUAGES, LEGACY_PROVIDERS, PROVIDERS, IDS, EXTENSIONS, count, exact, emptyCounts, supports;
+var CODE_COVERAGE_ID, CODE_LANGUAGES, LEGACY_CODE_PROVIDERS_V1, CODE_PROVIDERS_V1, EXTENSIONS, count, exact, emptyCounts, supports;
 var init_code_coverage = __esm({
   "build/src/source/code-coverage.js"() {
     "use strict";
     init_json_snapshot();
-    init_ast();
-    init_python();
-    init_opengrep();
-    init_semgrep();
+    init_analyzer_registry();
     CODE_COVERAGE_ID = "source.code-coverage";
     CODE_LANGUAGES = ["javascript", "typescript", "python", "c", "cpp", "csharp", "go", "java", "kotlin", "php", "ruby", "rust", "shell", "swift", "vue"];
-    LEGACY_PROVIDERS = ["builtin_ast", "bandit", "opengrep_native"];
-    PROVIDERS = [...LEGACY_PROVIDERS, "semgrep"];
-    IDS = { builtin_ast: "source.builtin-ast", bandit: "source.bandit", opengrep_native: "source.opengrep.preview", semgrep: "source.semgrep" };
+    LEGACY_CODE_PROVIDERS_V1 = Object.freeze([
+      "builtin_ast",
+      "bandit",
+      "opengrep_native"
+    ]);
+    CODE_PROVIDERS_V1 = Object.freeze([...LEGACY_CODE_PROVIDERS_V1, "semgrep"]);
     EXTENSIONS = { ".js": "javascript", ".jsx": "javascript", ".mjs": "javascript", ".cjs": "javascript", ".ts": "typescript", ".tsx": "typescript", ".mts": "typescript", ".cts": "typescript", ".py": "python", ".c": "c", ".h": "c", ".cc": "cpp", ".cpp": "cpp", ".hh": "cpp", ".hpp": "cpp", ".cs": "csharp", ".go": "go", ".java": "java", ".kt": "kotlin", ".php": "php", ".rb": "ruby", ".rs": "rust", ".sh": "shell", ".swift": "swift", ".vue": "vue" };
     count = (v) => Number.isSafeInteger(v) && Number(v) >= 0 && Number(v) <= 1e4;
     exact = (v, keys6) => !!v && typeof v === "object" && !Array.isArray(v) && Object.keys(v).length === keys6.length && keys6.every((k) => Object.hasOwn(v, k));
     emptyCounts = () => ({ collected: null, eligible: null, completed: null, uncovered: null });
-    supports = (p, l) => p === "semgrep" ? l === "go" : p === "bandit" ? l === "python" : l === "javascript" || l === "typescript" || p === "opengrep_native" && l === "python";
+    supports = (p, l) => codeAnalyzer(p).codeCoverage.languages.includes(l);
   }
 });
 
 // build/src/source/snapshot-evidence.js
 import { createHash as createHash3 } from "node:crypto";
-import { isAbsolute as isAbsolute6, relative as relative5, resolve as resolve6 } from "node:path";
+import { isAbsolute as isAbsolute7, relative as relative6, resolve as resolve8 } from "node:path";
 import { types as types4 } from "node:util";
 function sourceSnapshotEvidence(snapshot4, outDir) {
   const hash2 = createHash3("sha256");
@@ -234089,7 +235646,7 @@ function sourceSnapshotEvidence(snapshot4, outDir) {
   for (const file of [...snapshot4.files].sort((a, b) => a.path < b.path ? -1 : a.path > b.path ? 1 : 0)) {
     hash2.update(JSON.stringify([file.path, file.category, file.sensitive, file.bytes, file.text]));
   }
-  const output = outDir === void 0 ? void 0 : relative5(resolve6(snapshot4.root), resolve6(outDir));
+  const output = outDir === void 0 ? void 0 : relative6(resolve8(snapshot4.root), resolve8(outDir));
   return {
     revision: "source-snapshot-v1",
     basis: "collected_utf8_strings",
@@ -234098,7 +235655,7 @@ function sourceSnapshotEvidence(snapshot4, outDir) {
     filesSelected: snapshot4.files.length,
     bytesSelected: snapshot4.totalBytes,
     complete: snapshot4.complete && !snapshot4.rootError && !!sanitiseCollectionBudget(snapshot4.collectionBudget),
-    outputDirectoryExcluded: output !== void 0 && (output === "" || output !== ".." && !output.startsWith("../") && !output.startsWith("..\\") && !isAbsolute6(output))
+    outputDirectoryExcluded: output !== void 0 && (output === "" || output !== ".." && !output.startsWith("../") && !output.startsWith("..\\") && !isAbsolute7(output))
   };
 }
 function sanitiseSourceSnapshotEvidence(input) {
@@ -236614,7 +238171,7 @@ function selectedTools(report) {
   if (typeof metrics.requestedTools !== "string")
     return "unknown";
   const tools = metrics.requestedTools.split(",");
-  return tools.length > 0 && tools.every((tool) => ["gitleaks", "osv", "trivy", "bandit", "semgrep", "govulncheck", "trivy-vuln"].includes(tool)) ? "external_tools_selected" : "unknown";
+  return tools.length > 0 && tools.every((tool2) => ["gitleaks", "osv", "trivy", "bandit", "semgrep", "govulncheck", "trivy-vuln"].includes(tool2)) ? "external_tools_selected" : "unknown";
 }
 function projectReportSummary(report, gate) {
   const blocking = new Set(gate.blockingFindingIds);
@@ -241961,18 +243518,18 @@ function workerOutput(raw, labels, max, expectedHash) {
   const lines = raw.split("\n");
   if (lines.at(-1) === "")
     lines.pop();
-  let metadata, finalResult, invalid8 = false;
+  let metadata, finalResult, invalid9 = false;
   const records = [];
   for (let i = 0; i < lines.length; i++) {
     let event;
     try {
       event = JSON.parse(lines[i]);
     } catch {
-      invalid8 = true;
+      invalid9 = true;
       break;
     }
     if (!object16(event) || event.version !== 3 || finalResult) {
-      invalid8 = true;
+      invalid9 = true;
       break;
     }
     if (event.event === "metadata" && !metadata && !records.length && keys3(event, ["version", "event", "workerSha256", "engineVersion", "runtime"]))
@@ -241983,16 +243540,16 @@ function workerOutput(raw, labels, max, expectedHash) {
       try {
         finalResult = projectLiveResult(JSON.stringify(event.result), labels, max);
       } catch {
-        invalid8 = true;
+        invalid9 = true;
         break;
       }
       if (JSON.stringify(finalResult.records) !== JSON.stringify(records)) {
-        invalid8 = true;
+        invalid9 = true;
         finalResult = void 0;
         break;
       }
     } else {
-      invalid8 = true;
+      invalid9 = true;
       break;
     }
   }
@@ -242019,7 +243576,7 @@ function workerOutput(raw, labels, max, expectedHash) {
   } catch {
     return { invalid: true, final: false };
   }
-  return { result: finalResult ?? prefix, invalid: invalid8, final: !!finalResult };
+  return { result: finalResult ?? prefix, invalid: invalid9, final: !!finalResult };
 }
 function observations(e, gate, origin) {
   const findings = [];
@@ -243378,13 +244935,9 @@ var init_zap = __esm({
   }
 });
 
-// build/src/agent-dast/plan.js
+// build/src/agent-dast/plan-validation.js
 function fail8() {
   throw new TypeError("invalid_execution_plan");
-}
-function object18(value) {
-  if (!value || typeof value !== "object" || Array.isArray(value))
-    fail8();
 }
 function keys4(value, required, optional = []) {
   if (required.some((key2) => !Object.hasOwn(value, key2)) || Object.keys(value).some((key2) => !required.includes(key2) && !optional.includes(key2)))
@@ -243396,6 +244949,104 @@ function alias(value) {
 }
 function count4(value, max) {
   if (!Number.isSafeInteger(value) || Number(value) < 1 || Number(value) > max)
+    fail8();
+}
+var ALIAS;
+var init_plan_validation = __esm({
+  "build/src/agent-dast/plan-validation.js"() {
+    "use strict";
+    ALIAS = /^[a-z][a-z0-9_-]{0,39}$/;
+  }
+});
+
+// build/src/agent-dast/task-parsers.js
+function policyTask(raw, engine, max) {
+  if (raw.engine !== engine)
+    fail8();
+  keys4(raw, ["id", "engine", "policy", "maxRequests"]);
+  alias(raw.policy);
+  count4(raw.maxRequests, max);
+  return { id: raw.id, engine, policy: raw.policy, maxRequests: raw.maxRequests };
+}
+function taskDescriptor(id) {
+  const descriptor = EXECUTION_TASKS.find((candidate) => candidate.id === id);
+  if (!descriptor)
+    fail8();
+  return descriptor;
+}
+var nativeDastTask, schemathesisTask, nucleiTask, zapTask, EXECUTION_TASKS;
+var init_task_parsers = __esm({
+  "build/src/agent-dast/task-parsers.js"() {
+    "use strict";
+    init_plan_validation();
+    nativeDastTask = Object.freeze({
+      id: "native-dast",
+      category: "injection",
+      reportMode: "url",
+      parseTask: (raw) => policyTask(raw, "native-dast", 64),
+      requiredInputs: (task) => [task.policy]
+    });
+    schemathesisTask = Object.freeze({
+      id: "schemathesis",
+      category: "config",
+      reportMode: "api",
+      parseTask(raw) {
+        if (raw.engine !== "schemathesis")
+          fail8();
+        keys4(raw, ["id", "engine", "schema", "operations", "seed", "maxRequests"], ["authPolicy"]);
+        alias(raw.schema);
+        if (Object.hasOwn(raw, "authPolicy"))
+          alias(raw.authPolicy);
+        count4(raw.seed, 2147483647);
+        count4(raw.maxRequests, 64);
+        if (!Array.isArray(raw.operations) || !raw.operations.length || raw.operations.length > 16 || new Set(raw.operations).size !== raw.operations.length || raw.operations.some((path3) => typeof path3 !== "string" || !path3.startsWith("/") || path3.length > 2048 || /[\u0000-\u0020\u007f?#\\]/.test(path3)))
+          fail8();
+        return {
+          id: raw.id,
+          engine: "schemathesis",
+          schema: raw.schema,
+          operations: raw.operations,
+          seed: raw.seed,
+          maxRequests: raw.maxRequests,
+          ...typeof raw.authPolicy === "string" ? { authPolicy: raw.authPolicy } : {}
+        };
+      },
+      requiredInputs: (task) => [task.schema, ...task.authPolicy ? [task.authPolicy] : []]
+    });
+    nucleiTask = Object.freeze({
+      id: "nuclei",
+      category: "config",
+      reportMode: "url",
+      parseTask(raw) {
+        if (raw.engine !== "nuclei")
+          fail8();
+        keys4(raw, ["id", "engine", "scopes", "maxRequests"]);
+        count4(raw.maxRequests, 2e4);
+        if (!Array.isArray(raw.scopes) || !raw.scopes.length || raw.scopes.length > 2 || new Set(raw.scopes).size !== raw.scopes.length || raw.scopes.some((scope) => scope !== "misconfiguration" && scope !== "exposures"))
+          fail8();
+        return {
+          id: raw.id,
+          engine: "nuclei",
+          scopes: raw.scopes,
+          maxRequests: raw.maxRequests
+        };
+      },
+      requiredInputs: () => []
+    });
+    zapTask = Object.freeze({
+      id: "zap",
+      category: "injection",
+      reportMode: "url",
+      parseTask: (raw) => policyTask(raw, "zap", 2e3),
+      requiredInputs: (task) => [task.policy]
+    });
+    EXECUTION_TASKS = Object.freeze([nativeDastTask, schemathesisTask, nucleiTask, zapTask]);
+  }
+});
+
+// build/src/agent-dast/plan.js
+function object18(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value))
     fail8();
 }
 function executionOrigin(value) {
@@ -243423,39 +245074,7 @@ function parseExecutionPlan(raw) {
     if (typeof item.id !== "string" || !EXECUTION_TASK_ID.test(item.id) || seen.has(item.id))
       fail8();
     seen.add(item.id);
-    if (item.engine === "native-dast" || item.engine === "zap") {
-      keys4(item, ["id", "engine", "policy", "maxRequests"]);
-      alias(item.policy);
-      count4(item.maxRequests, item.engine === "zap" ? 2e3 : 64);
-      return { id: item.id, engine: item.engine, policy: item.policy, maxRequests: item.maxRequests };
-    }
-    if (item.engine === "schemathesis") {
-      keys4(item, ["id", "engine", "schema", "operations", "seed", "maxRequests"], ["authPolicy"]);
-      alias(item.schema);
-      if (Object.hasOwn(item, "authPolicy"))
-        alias(item.authPolicy);
-      count4(item.seed, 2147483647);
-      count4(item.maxRequests, 64);
-      if (!Array.isArray(item.operations) || !item.operations.length || item.operations.length > 16 || new Set(item.operations).size !== item.operations.length || item.operations.some((path3) => typeof path3 !== "string" || !path3.startsWith("/") || path3.length > 2048 || /[\u0000-\u0020\u007f?#\\]/.test(path3)))
-        fail8();
-      return {
-        id: item.id,
-        engine: item.engine,
-        schema: item.schema,
-        operations: item.operations,
-        seed: item.seed,
-        maxRequests: item.maxRequests,
-        ...typeof item.authPolicy === "string" ? { authPolicy: item.authPolicy } : {}
-      };
-    }
-    if (item.engine === "nuclei") {
-      keys4(item, ["id", "engine", "scopes", "maxRequests"]);
-      count4(item.maxRequests, 2e4);
-      if (!Array.isArray(item.scopes) || !item.scopes.length || item.scopes.length > 2 || new Set(item.scopes).size !== item.scopes.length || item.scopes.some((scope) => scope !== "misconfiguration" && scope !== "exposures"))
-        fail8();
-      return { id: item.id, engine: item.engine, scopes: item.scopes, maxRequests: item.maxRequests };
-    }
-    fail8();
+    return taskDescriptor(item.engine).parseTask(item);
   });
   return { version: 1, kind: EXECUTION_PLAN_KIND, origin, tasks };
 }
@@ -243477,16 +245096,237 @@ function parseExecutionInputs(raw) {
   });
   return { version: 1, inputs: inputs2 };
 }
-var EXECUTION_PLAN_KIND, EXECUTION_PLAN_MAX_TASKS, EXECUTION_INPUT_MAX_BYTES, EXECUTION_TASK_ID, ALIAS;
+var EXECUTION_PLAN_KIND, EXECUTION_PLAN_MAX_TASKS, EXECUTION_INPUT_MAX_BYTES, EXECUTION_TASK_ID;
 var init_plan = __esm({
   "build/src/agent-dast/plan.js"() {
     "use strict";
     init_json_snapshot();
+    init_task_parsers();
+    init_plan_validation();
     EXECUTION_PLAN_KIND = "wakeio.execution-plan";
     EXECUTION_PLAN_MAX_TASKS = 16;
     EXECUTION_INPUT_MAX_BYTES = 1024 * 1024;
     EXECUTION_TASK_ID = /^t-[a-z0-9-]{1,40}$/;
-    ALIAS = /^[a-z][a-z0-9_-]{0,39}$/;
+  }
+});
+
+// build/src/agent-dast/engine-adapters.js
+function defineEngine(definition) {
+  Object.freeze(definition);
+  const engine = {
+    id: definition.id,
+    category: definition.category,
+    reportMode: definition.reportMode,
+    parseTask: definition.parseTask,
+    requiredInputs: definition.requiredInputs,
+    prepare(task, data, options) {
+      const state = definition.prepare(task, data, options);
+      return Object.freeze({
+        task,
+        execute: (context, runtime, remaining) => definition.execute(state, context, runtime, remaining),
+        complete: (check2, observed) => definition.complete(state, check2, observed),
+        findingSurface: (finding2) => definition.findingSurface(state, finding2)
+      });
+    }
+  };
+  return Object.freeze(engine);
+}
+function invalid6() {
+  throw new TypeError("invalid_run_plan");
+}
+function findingUrl(finding2) {
+  if (!finding2.location.url)
+    invalid6();
+  return new URL(finding2.location.url);
+}
+var nativeDastEngine, schemathesisEngine, nucleiEngine, zapEngine;
+var init_engine_adapters = __esm({
+  "build/src/agent-dast/engine-adapters.js"() {
+    "use strict";
+    init_dast();
+    init_schemathesis_live();
+    init_schemathesis_auth();
+    init_schemathesis_auth_run();
+    init_openapi();
+    init_nuclei();
+    init_zap();
+    init_zap_policy();
+    init_task_parsers();
+    nativeDastEngine = defineEngine({
+      ...nativeDastTask,
+      prepare(task, data, options) {
+        const parsed = parseDastPolicy(data.get(task.policy));
+        const env = snapshotDastEnvironment(parsed.policy, options.env);
+        const { policy } = prepareDastPolicy(parsed.policy, { allowPrivate: options.allowPrivate, env });
+        if (new URL(policy.baseUrl).origin !== options.plan.origin || task.maxRequests < dastDefaultMaxRequests(policy))
+          invalid6();
+        return { task, policy, env };
+      },
+      execute(prepared2, options, runtime, remaining) {
+        return runDast({
+          policy: prepared2.policy,
+          env: prepared2.env,
+          consent: true,
+          allowPrivate: options.allowPrivate,
+          maxRequests: prepared2.task.maxRequests,
+          timeoutMs: Math.min(remaining, 12e4),
+          signal: options.signal
+        }, runtime);
+      },
+      complete: (_prepared, check2) => check2.dastExecution?.status === "complete",
+      findingSurface(prepared2) {
+        const policy = prepared2.policy;
+        return {
+          surfaceId: "",
+          method: policy.version === 4 ? "POST" : "GET",
+          path: new URL(policy.url).pathname,
+          param: policy.parameter,
+          location: policy.version === 4 ? "body" : "query",
+          authState: hasDastAuthentication(policy) ? "user" : "anonymous"
+        };
+      }
+    });
+    schemathesisEngine = defineEngine({
+      ...schemathesisTask,
+      prepare(task, data, options) {
+        const selection2 = selectOpenApiLiveOperations(data.get(task.schema), task.operations.map((path3) => ({ method: "GET", path: path3 })));
+        if (!task.authPolicy) {
+          if (new URL(options.plan.origin).protocol === "https:")
+            invalid6();
+          return { task, document: selection2.document };
+        }
+        const { policy } = parseSchemathesisAuthPolicy(data.get(task.authPolicy));
+        if (new URL(policy.baseUrl).origin !== options.plan.origin || policy.operations.length !== task.operations.length || task.operations.some((path3) => !policy.operations.some((operation) => operation.path === path3)) || task.maxRequests < 2 + 4 * task.operations.length)
+          invalid6();
+        validateSchemathesisAuthSchema(selection2);
+        if (new URL(policy.baseUrl).protocol === "http:" && (!options.allowPrivate || !["127.0.0.1", "[::1]"].includes(new URL(policy.baseUrl).hostname)))
+          invalid6();
+        const credential2 = snapshotSchemathesisCredential(policy, options.env);
+        return { task, document: selection2.document, authPolicy: policy, env: { [policy.authorizationEnv]: credential2 } };
+      },
+      execute(prepared2, options, runtime, remaining) {
+        const task = prepared2.task;
+        return runSchemathesisLive({
+          document: prepared2.document,
+          baseUrl: `${options.plan.origin}/`,
+          operations: task.operations.map((path3) => ({ method: "GET", path: path3 })),
+          ...prepared2.authPolicy ? { authPolicy: prepared2.authPolicy, env: prepared2.env } : {},
+          consent: true,
+          allowPrivate: options.allowPrivate,
+          python: options.schemathesisPython,
+          maxRequests: task.maxRequests,
+          timeoutMs: Math.min(remaining, 12e4),
+          seed: task.seed,
+          signal: options.signal
+        }, runtime);
+      },
+      complete(prepared2, check2, observed) {
+        if (prepared2.authPolicy)
+          return check2.schemathesisAuth?.status === "completed" && check2.schemathesisAuth.requests.attempted === observed.requestCount;
+        return check2.metrics?.operationsExercised === prepared2.task.operations.length;
+      },
+      findingSurface(prepared2, finding2) {
+        const url = findingUrl(finding2);
+        const template = prepared2.task.operations.find((candidate) => candidate === url.pathname || new URL(candidate, url.origin).pathname === url.pathname);
+        if (!template)
+          invalid6();
+        return { surfaceId: "", method: "GET", path: template, authState: prepared2.authPolicy ? "user" : "anonymous" };
+      }
+    });
+    nucleiEngine = defineEngine({
+      ...nucleiTask,
+      prepare(task, _data, options) {
+        if (!options.nucleiTemplates || new URL(options.plan.origin).protocol === "https:")
+          invalid6();
+        return { task };
+      },
+      execute(prepared2, options, runtime, remaining) {
+        return runNuclei({
+          url: `${options.plan.origin}/`,
+          executable: options.nucleiPath,
+          templatesDir: options.nucleiTemplates,
+          scopes: prepared2.task.scopes,
+          consent: true,
+          allowPrivate: options.allowPrivate,
+          maxRequests: prepared2.task.maxRequests,
+          rateLimit: options.ratePerSecond,
+          timeoutMs: Math.min(remaining, 6e5),
+          signal: options.signal
+        }, runtime);
+      },
+      complete: () => true,
+      findingSurface: (_prepared, finding2) => ({ surfaceId: "", method: "GET", path: findingUrl(finding2).pathname, authState: "anonymous" })
+    });
+    zapEngine = defineEngine({
+      ...zapTask,
+      prepare(task, data, options) {
+        const prepared2 = prepareZapPolicy(data.get(task.policy), options.allowPrivate, options.env);
+        if (prepared2.policy.origin !== options.plan.origin || options.ratePerSecond > 50 || task.maxRequests < prepared2.requests.length * (prepared2.policy.version === 2 ? 2 : 1) + (prepared2.policy.authentication ? 3 : 0) + (prepared2.loginEnv ? 1 : 0) + 1)
+          invalid6();
+        return {
+          task,
+          zapPolicy: prepared2.policy,
+          zapRequests: prepared2.requests,
+          env: prepared2.loginEnv ?? (prepared2.policy.authentication && "authorizationEnv" in prepared2.policy.authentication ? { [prepared2.policy.authentication.authorizationEnv]: prepared2.authorization } : {})
+        };
+      },
+      execute(prepared2, options, runtime, remaining) {
+        return runZap({
+          url: options.plan.origin,
+          policy: prepared2.zapPolicy,
+          env: prepared2.env,
+          executable: options.zapPath,
+          consent: true,
+          allowPrivate: options.allowPrivate,
+          maxRequests: prepared2.task.maxRequests,
+          rateLimit: options.ratePerSecond,
+          timeoutMs: Math.min(remaining, 6e5),
+          signal: options.signal
+        }, runtime);
+      },
+      complete: () => true,
+      findingSurface(prepared2, finding2) {
+        const url = findingUrl(finding2);
+        for (const request2 of prepared2.zapRequests) {
+          const selected = new URL(request2.path, prepared2.zapPolicy.origin);
+          if (url.origin !== selected.origin || url.pathname !== selected.pathname)
+            continue;
+          const params = request2.method === "POST" ? Object.keys(request2.body) : [...selected.searchParams.keys()];
+          const parameter = params.find((param) => zapSurfaceKey(finding2.ruleId.replace(/^zap\./, ""), request2, request2.fields?.find((field3) => field3.alias === param)?.pointer ?? param) === finding2.comparisonKey);
+          if (parameter !== void 0)
+            return {
+              surfaceId: "",
+              method: request2.method,
+              path: selected.pathname,
+              param: request2.fields?.find((field3) => field3.alias === parameter)?.pointer ?? parameter,
+              location: request2.method === "POST" ? "body" : "query",
+              authState: prepared2.zapPolicy.authentication ? "user" : "anonymous"
+            };
+        }
+        invalid6();
+      }
+    });
+  }
+});
+
+// build/src/runtime/registry.js
+function attackEngine(id) {
+  const engine = ATTACK_ENGINES.find((candidate) => candidate.id === id);
+  if (!engine)
+    throw new TypeError("invalid_execution_plan");
+  return engine;
+}
+var ATTACK_ENGINES;
+var init_registry = __esm({
+  "build/src/runtime/registry.js"() {
+    "use strict";
+    init_engine_adapters();
+    ATTACK_ENGINES = Object.freeze([
+      nativeDastEngine,
+      schemathesisEngine,
+      nucleiEngine,
+      zapEngine
+    ]);
   }
 });
 
@@ -243494,19 +245334,19 @@ var init_plan = __esm({
 import { createHash as createHash26 } from "node:crypto";
 import { closeSync, constants as constants12, fstatSync as fstatSync2, lstatSync as lstatSync2, openSync, readSync as readSync2, realpathSync } from "node:fs";
 import { basename as basename6, dirname as dirname14, resolve as resolve20 } from "node:path";
-function invalid6(field3) {
+function invalid7(field3) {
   throw new RunStoreError("invalid_input", field3);
 }
 function check(ok, field3) {
   if (!ok)
-    invalid6(field3);
+    invalid7(field3);
 }
 function member2(value, options, field3) {
   check(typeof value === "string" && options.includes(value), field3);
   return value;
 }
 function snapshot3(input, field3) {
-  return snapshotJsonData(input, () => invalid6(field3), () => invalid6(field3));
+  return snapshotJsonData(input, () => invalid7(field3), () => invalid7(field3));
 }
 function keys5(value, required, optional, field3) {
   check(value !== null && typeof value === "object" && !Array.isArray(value), field3);
@@ -243726,14 +245566,14 @@ async function openRunStore(path3) {
     throw new RunStoreError("storage_error");
   }
 }
-var SURFACE_ID, PROVIDERS2, AUTH_STATES, PARAM_LOCATIONS, FINDING_STATES, TASK_STATUSES, RUN_STATUSES, MAX_COVERAGE_PLAN, MAX_STORE_BATCH, MAX_RUN_ITEMS, MAX_TASK_OBSERVATIONS, MAX_LEDGER_COUNT, MAX_LEDGER_BYTES, quoted, MIGRATIONS, RUN_DB_VERSION, RunStoreError, nonNegative, CHECK, zeros, RunStore, V1_TABLES, TABLE_COLUMNS;
+var SURFACE_ID, PROVIDERS, AUTH_STATES, PARAM_LOCATIONS, FINDING_STATES, TASK_STATUSES, RUN_STATUSES, MAX_COVERAGE_PLAN, MAX_STORE_BATCH, MAX_RUN_ITEMS, MAX_TASK_OBSERVATIONS, MAX_LEDGER_COUNT, MAX_LEDGER_BYTES, quoted, MIGRATIONS, RUN_DB_VERSION, RunStoreError, nonNegative, CHECK, zeros, RunStore, V1_TABLES, TABLE_COLUMNS;
 var init_store = __esm({
   "build/src/agent-dast/store.js"() {
     "use strict";
     init_json_snapshot();
     init_result();
     SURFACE_ID = /^s-[0-9a-z-]{1,60}$/;
-    PROVIDERS2 = ["codex", "claude", "mixed", "fixed"];
+    PROVIDERS = ["codex", "claude", "mixed", "fixed"];
     AUTH_STATES = ["anonymous", "user", "other_user", "admin"];
     PARAM_LOCATIONS = ["query", "body", "header", "path", "cookie"];
     FINDING_STATES = ["candidate", "confirmed", "rejected"];
@@ -243752,7 +245592,7 @@ var init_store = __esm({
     run_id        TEXT PRIMARY KEY,
     target_origin TEXT NOT NULL,
     scope_hash    TEXT NOT NULL,
-    provider      TEXT NOT NULL CHECK (provider IN (${quoted(PROVIDERS2)})),
+    provider      TEXT NOT NULL CHECK (provider IN (${quoted(PROVIDERS)})),
     started_at    TEXT NOT NULL,
     finished_at   TEXT,
     status        TEXT NOT NULL CHECK (status IN (${quoted(RUN_STATUSES)}))
@@ -243771,7 +245611,7 @@ var init_store = __esm({
     run_id      TEXT NOT NULL REFERENCES runs(run_id),
     category    TEXT NOT NULL CHECK (category IN (${quoted(WORKER_CATEGORIES)})),
     surface_ids TEXT NOT NULL,
-    provider    TEXT NOT NULL CHECK (provider IN (${quoted(PROVIDERS2)})),
+    provider    TEXT NOT NULL CHECK (provider IN (${quoted(PROVIDERS)})),
     script_ref  TEXT NOT NULL,
     status      TEXT NOT NULL CHECK (status IN (${quoted(TASK_STATUSES)})),
     next_hint   TEXT,
@@ -243805,7 +245645,7 @@ var init_store = __esm({
   );
   CREATE TABLE ledger (
     task_id       TEXT PRIMARY KEY REFERENCES tasks(task_id),
-    provider      TEXT NOT NULL CHECK (provider IN (${quoted(PROVIDERS2)})),
+    provider      TEXT NOT NULL CHECK (provider IN (${quoted(PROVIDERS)})),
     input_tokens  INTEGER,
     output_tokens INTEGER,
     request_count INTEGER NOT NULL DEFAULT 0,
@@ -243922,11 +245762,11 @@ var init_store = __esm({
         try {
           origin = new URL(run.targetOrigin);
         } catch {
-          invalid6("targetOrigin");
+          invalid7("targetOrigin");
         }
         check(["http:", "https:"].includes(origin.protocol) && origin.origin === run.targetOrigin, "targetOrigin");
         identifier3(run.scopeHash, /^[0-9a-f]{64}$/, "scopeHash");
-        member2(run.provider, PROVIDERS2, "provider");
+        member2(run.provider, PROVIDERS, "provider");
         timestamp2(run.startedAt);
         this.transaction(() => {
           this.belowLimit("SELECT count(*) n FROM runs WHERE ? IS NOT NULL", run.runId, MAX_RUN_ITEMS);
@@ -243981,7 +245821,7 @@ var init_store = __esm({
         keys5(task, ["taskId", "runId", "category", "surfaceIds", "coveragePlan", "provider", "scriptRef"], [], "task");
         identifier3(task.taskId, TASK_ID, "taskId");
         member2(task.category, WORKER_CATEGORIES, "category");
-        member2(task.provider, PROVIDERS2, "provider");
+        member2(task.provider, PROVIDERS, "provider");
         boundedArray(task.surfaceIds, MAX_COVERAGE_PLAN, "surfaceIds");
         boundedArray(task.coveragePlan, MAX_COVERAGE_PLAN, "coveragePlan");
         task.surfaceIds.forEach((id) => identifier3(id, SURFACE_ID, "surfaceIds"));
@@ -244090,7 +245930,7 @@ var init_store = __esm({
         try {
           result3 = validateWorkerResult(result3);
         } catch {
-          invalid6("workerResult");
+          invalid7("workerResult");
         }
         check([
           result3.duration_ms,
@@ -244103,7 +245943,7 @@ var init_store = __esm({
         ].every((value) => Number.isSafeInteger(value) && value >= 0 && value <= MAX_LEDGER_COUNT), "workerResult");
         ledger2 = snapshot3(ledger2, "ledger");
         keys5(ledger2, ["provider", "requestCount", "bytes", "exitCode", "stdoutBytes", "truncated"], ["inputTokens", "outputTokens"], "ledger");
-        member2(ledger2.provider, PROVIDERS2, "provider");
+        member2(ledger2.provider, PROVIDERS, "provider");
         check([ledger2.inputTokens, ledger2.outputTokens, ledger2.requestCount, ledger2.stdoutBytes].every((value) => nonNegative(value) && (value === void 0 || value <= MAX_LEDGER_COUNT)), "ledger");
         check(nonNegative(ledger2.bytes) && ledger2.bytes <= MAX_LEDGER_BYTES, "ledger");
         check(ledger2.exitCode === null || Number.isInteger(ledger2.exitCode) && ledger2.exitCode >= 0 && ledger2.exitCode <= 255, "exitCode");
@@ -244204,51 +246044,51 @@ import { constants as constants13 } from "node:fs";
 import { lstat as lstat21, mkdir as mkdir15, open as open10, readdir as readdir6, realpath as realpath9, unlink as unlink4 } from "node:fs/promises";
 import { dirname as dirname15, join as join20, resolve as resolve21 } from "node:path";
 import { types as types16 } from "node:util";
-function invalid7() {
+function invalid8() {
   throw new TypeError("invalid_run_plan");
 }
 function bounded4(value, fallback, max) {
   const result3 = value ?? fallback;
   if (!Number.isSafeInteger(result3) || Number(result3) < 1 || Number(result3) > max)
-    invalid7();
+    invalid8();
   return Number(result3);
 }
 function pathOption(value) {
   if (value === void 0)
     return void 0;
   if (typeof value !== "string" || !value || value.length > 4096 || /[\u0000-\u001f\u007f]/.test(value))
-    invalid7();
+    invalid8();
   return value;
 }
 function optionsSnapshot2(raw) {
   if (!raw || typeof raw !== "object" || types16.isProxy(raw) || Array.isArray(raw))
-    invalid7();
+    invalid8();
   const prototype = Object.getPrototypeOf(raw);
   if (prototype !== Object.prototype && prototype !== null || Object.getOwnPropertySymbols(raw).length)
-    invalid7();
+    invalid8();
   const descriptors = Object.getOwnPropertyDescriptors(raw);
   const names = ["plan", "inputs", "inputBaseDir", "outDir", "consent", "allowedOrigin", "allowPrivate", "maxRequests", "timeoutMs", "ratePerSecond", "concurrency", "failOn", "nucleiPath", "nucleiTemplates", "schemathesisPython", "zapPath", "env", "signal"];
   if (Object.keys(descriptors).some((key2) => !names.includes(key2) || !descriptors[key2].enumerable || !("value" in descriptors[key2])) || ["plan", "inputs", "outDir", "consent", "allowedOrigin"].some((key2) => !Object.hasOwn(descriptors, key2)))
-    invalid7();
+    invalid8();
   const read = (key2) => descriptors[key2]?.value;
   const plan = parseExecutionPlan(read("plan")), inputs2 = parseExecutionInputs(read("inputs"));
   if (read("consent") !== true || executionOrigin(read("allowedOrigin")) !== plan.origin || read("allowPrivate") !== void 0 && typeof read("allowPrivate") !== "boolean")
-    invalid7();
+    invalid8();
   const signal = read("signal");
   if (signal !== void 0 && (types16.isProxy(signal) || !(signal instanceof AbortSignal)))
-    invalid7();
+    invalid8();
   const failOn = read("failOn") ?? "high";
   if (typeof failOn !== "string" || !["critical", "high", "medium", "low", "info", "none"].includes(failOn))
-    invalid7();
+    invalid8();
   const sourceEnv = read("env") ?? process.env;
   if (!sourceEnv || typeof sourceEnv !== "object" || types16.isProxy(sourceEnv) || Array.isArray(sourceEnv))
-    invalid7();
+    invalid8();
   const envPrototype = Object.getPrototypeOf(sourceEnv);
   if (sourceEnv !== process.env && envPrototype !== Object.prototype && envPrototype !== null)
-    invalid7();
+    invalid8();
   const outDir = pathOption(read("outDir"));
   if (!outDir)
-    invalid7();
+    invalid8();
   const allowPrivate = read("allowPrivate") === true;
   validateStaticTarget(normalizeUrl(plan.origin), allowPrivate);
   return {
@@ -244277,7 +246117,7 @@ async function readStable(path3, cap) {
   try {
     const before = await handle.stat();
     if (!before.isFile() || before.size > cap)
-      invalid7();
+      invalid8();
     const bytes = Buffer.alloc(before.size + 1);
     let used = 0;
     while (used < bytes.length) {
@@ -244288,7 +246128,7 @@ async function readStable(path3, cap) {
     }
     const after = await handle.stat();
     if (used !== before.size || after.size !== before.size || after.ctimeMs !== before.ctimeMs || after.mtimeMs !== before.mtimeMs)
-      invalid7();
+      invalid8();
     return bytes.subarray(0, used);
   } finally {
     await handle.close();
@@ -244296,181 +246136,53 @@ async function readStable(path3, cap) {
 }
 async function prepareTasks(options) {
   const data = /* @__PURE__ */ new Map();
-  const required = new Set(options.plan.tasks.flatMap((task) => task.engine === "native-dast" || task.engine === "zap" ? [task.policy] : task.engine === "schemathesis" ? [task.schema, ...task.authPolicy ? [task.authPolicy] : []] : []));
+  const required = new Set(options.plan.tasks.flatMap((task) => attackEngine(task.engine).requiredInputs(task)));
   for (const id of required) {
     const input = options.inputs.inputs.find((item) => item.id === id);
     if (!input)
-      invalid7();
+      invalid8();
     const bytes = await readStable(resolve21(options.inputBaseDir ?? process.cwd(), input.path), EXECUTION_INPUT_MAX_BYTES);
     if (sha(bytes) !== input.sha256)
-      invalid7();
+      invalid8();
     data.set(id, JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes)));
   }
-  return options.plan.tasks.map((task) => {
-    if (task.engine === "zap") {
-      const prepared2 = prepareZapPolicy(data.get(task.policy), options.allowPrivate, options.env);
-      if (prepared2.policy.origin !== options.plan.origin || options.ratePerSecond > 50 || task.maxRequests < prepared2.requests.length * (prepared2.policy.version === 2 ? 2 : 1) + (prepared2.policy.authentication ? 3 : 0) + (prepared2.loginEnv ? 1 : 0) + 1)
-        invalid7();
-      return { task, zapPolicy: prepared2.policy, zapRequests: prepared2.requests, env: prepared2.loginEnv ?? (prepared2.policy.authentication && "authorizationEnv" in prepared2.policy.authentication ? { [prepared2.policy.authentication.authorizationEnv]: prepared2.authorization } : {}) };
-    }
-    if (task.engine === "native-dast") {
-      const parsed = parseDastPolicy(data.get(task.policy));
-      const env = snapshotDastEnvironment(parsed.policy, options.env);
-      const { policy } = prepareDastPolicy(parsed.policy, { allowPrivate: options.allowPrivate, env });
-      if (new URL(policy.baseUrl).origin !== options.plan.origin || task.maxRequests < dastDefaultMaxRequests(policy))
-        invalid7();
-      return { task, policy, env };
-    }
-    if (task.engine === "schemathesis") {
-      const selection2 = selectOpenApiLiveOperations(data.get(task.schema), task.operations.map((path3) => ({ method: "GET", path: path3 })));
-      if (!task.authPolicy) {
-        if (new URL(options.plan.origin).protocol === "https:")
-          invalid7();
-        return { task, document: selection2.document };
-      }
-      const { policy } = parseSchemathesisAuthPolicy(data.get(task.authPolicy));
-      if (new URL(policy.baseUrl).origin !== options.plan.origin || policy.operations.length !== task.operations.length || task.operations.some((path3) => !policy.operations.some((operation) => operation.path === path3)) || task.maxRequests < 2 + 4 * task.operations.length)
-        invalid7();
-      validateSchemathesisAuthSchema(selection2);
-      if (new URL(policy.baseUrl).protocol === "http:" && (!options.allowPrivate || !["127.0.0.1", "[::1]"].includes(new URL(policy.baseUrl).hostname)))
-        invalid7();
-      const credential2 = snapshotSchemathesisCredential(policy, options.env);
-      return { task, document: selection2.document, authPolicy: policy, env: { [policy.authorizationEnv]: credential2 } };
-    }
-    if (!options.nucleiTemplates || new URL(options.plan.origin).protocol === "https:")
-      invalid7();
-    return { task };
-  });
+  return options.plan.tasks.map((task) => attackEngine(task.engine).prepare(task, data, options));
 }
 async function safeParent(path3, depth = 0) {
   if (depth > 128)
-    invalid7();
+    invalid8();
   const parent = dirname15(path3);
   if (parent !== path3)
     await safeParent(parent, depth + 1);
   const stat2 = await lstat21(path3);
   if (stat2.isSymbolicLink()) {
     if (process.platform !== "darwin" || !["/var", "/tmp"].includes(path3) || await realpath9(path3) !== `/private${path3}`)
-      invalid7();
+      invalid8();
     const target = await lstat21(`/private${path3}`);
     if (!target.isDirectory() || target.isSymbolicLink())
-      invalid7();
+      invalid8();
   } else if (!stat2.isDirectory())
-    invalid7();
+    invalid8();
 }
 function gapCheck(reason2) {
   return { id: "agent-dast.execution", status: "partial", findings: [], notes: ["The assigned built-in engine group was not fully observed."], metrics: { reason: reason2 } };
 }
 async function execute(prepared2, options, runtime) {
-  const task = prepared2.task, remaining = Math.max(1, runtime.deadlineAt - Date.now());
+  const remaining = Math.max(1, runtime.deadlineAt - Date.now());
   if (runtime.signal.aborted || Date.now() >= runtime.deadlineAt)
     return [gapCheck("not_started")];
-  if (task.engine === "zap")
-    return runZap({
-      url: options.plan.origin,
-      policy: prepared2.zapPolicy,
-      env: prepared2.env,
-      executable: options.zapPath,
-      consent: true,
-      allowPrivate: options.allowPrivate,
-      maxRequests: task.maxRequests,
-      rateLimit: options.ratePerSecond,
-      timeoutMs: Math.min(remaining, 6e5),
-      signal: options.signal
-    }, runtime);
-  if (task.engine === "native-dast")
-    return runDast({
-      policy: prepared2.policy,
-      env: prepared2.env,
-      consent: true,
-      allowPrivate: options.allowPrivate,
-      maxRequests: task.maxRequests,
-      timeoutMs: Math.min(remaining, 12e4),
-      signal: options.signal
-    }, runtime);
-  if (task.engine === "schemathesis")
-    return runSchemathesisLive({
-      document: prepared2.document,
-      baseUrl: `${options.plan.origin}/`,
-      operations: task.operations.map((path3) => ({ method: "GET", path: path3 })),
-      ...prepared2.authPolicy ? { authPolicy: prepared2.authPolicy, env: prepared2.env } : {},
-      consent: true,
-      allowPrivate: options.allowPrivate,
-      python: options.schemathesisPython,
-      maxRequests: task.maxRequests,
-      timeoutMs: Math.min(remaining, 12e4),
-      seed: task.seed,
-      signal: options.signal
-    }, runtime);
-  return runNuclei({
-    url: `${options.plan.origin}/`,
-    executable: options.nucleiPath,
-    templatesDir: options.nucleiTemplates,
-    scopes: task.scopes,
-    consent: true,
-    allowPrivate: options.allowPrivate,
-    maxRequests: task.maxRequests,
-    rateLimit: options.ratePerSecond,
-    timeoutMs: Math.min(remaining, 6e5),
-    signal: options.signal
-  }, runtime);
+  return prepared2.execute(options, runtime, remaining);
 }
 function observedGroup(prepared2, checks, observed) {
   if (!observed.requestCount || observed.pending || observed.transportErrors || observed.refused || checks.length !== 1 || checks[0].status !== "completed" || checks[0].metrics?.requestCount !== observed.requestCount)
     return false;
-  const check2 = checks[0];
-  if (prepared2.task.engine === "native-dast")
-    return check2.dastExecution?.status === "complete";
-  if (prepared2.authPolicy)
-    return check2.schemathesisAuth?.status === "completed" && check2.schemathesisAuth.requests.attempted === observed.requestCount;
-  return prepared2.task.engine === "nuclei" || prepared2.task.engine === "zap" || prepared2.task.engine === "schemathesis" && check2.metrics?.operationsExercised === prepared2.task.operations.length;
-}
-function findingSurface(prepared2, finding2) {
-  if (prepared2.policy)
-    return {
-      surfaceId: "",
-      method: prepared2.policy.version === 4 ? "POST" : "GET",
-      path: new URL(prepared2.policy.url).pathname,
-      param: prepared2.policy.parameter,
-      location: prepared2.policy.version === 4 ? "body" : "query",
-      authState: hasDastAuthentication(prepared2.policy) ? "user" : "anonymous"
-    };
-  if (!finding2.location.url)
-    invalid7();
-  const url = new URL(finding2.location.url);
-  if (prepared2.zapPolicy) {
-    for (const request2 of prepared2.zapRequests) {
-      const selected = new URL(request2.path, prepared2.zapPolicy.origin);
-      if (url.origin !== selected.origin || url.pathname !== selected.pathname)
-        continue;
-      const params = request2.method === "POST" ? Object.keys(request2.body) : [...selected.searchParams.keys()];
-      const parameter = params.find((param) => zapSurfaceKey(finding2.ruleId.replace(/^zap\./, ""), request2, request2.fields?.find((field3) => field3.alias === param)?.pointer ?? param) === finding2.comparisonKey);
-      if (parameter !== void 0)
-        return {
-          surfaceId: "",
-          method: request2.method,
-          path: selected.pathname,
-          param: request2.fields?.find((field3) => field3.alias === parameter)?.pointer ?? parameter,
-          location: request2.method === "POST" ? "body" : "query",
-          authState: prepared2.zapPolicy.authentication ? "user" : "anonymous"
-        };
-    }
-    invalid7();
-  }
-  let path3 = url.pathname;
-  if (prepared2.task.engine === "schemathesis") {
-    const template = prepared2.task.operations.find((candidate) => candidate === path3 || new URL(candidate, url.origin).pathname === path3);
-    if (!template)
-      invalid7();
-    path3 = template;
-  }
-  return { surfaceId: "", method: "GET", path: path3, authState: prepared2.authPolicy ? "user" : "anonymous" };
+  return prepared2.complete(checks[0], observed);
 }
 async function storeTask(store, runId, prepared2, report, complete, observed, duration, out) {
   const task = prepared2.task, groupSurfaceId = `s-${task.id.slice(2)}`, groupCheck = `group.${task.engine}`;
-  const category = task.engine === "native-dast" || task.engine === "zap" ? "injection" : "config";
+  const category = attackEngine(task.engine).category;
   const rows = report.checks.flatMap((item) => item.findings).map((finding2, index) => {
-    const surface = findingSurface(prepared2, finding2);
+    const surface = prepared2.findingSurface(finding2);
     surface.surfaceId = `s-${sha(JSON.stringify(surface)).slice(0, 40)}`;
     return { finding: finding2, id: `f-${sha(`${task.id}:${index}`).slice(0, 32)}`, surface, check: `observation.${sha(finding2.ruleId).slice(0, 24)}` };
   });
@@ -244493,7 +246205,7 @@ async function storeTask(store, runId, prepared2, report, complete, observed, du
       findingIds.set(recorded.findingId, finding2.severity);
   }
   if (findingIds.size > MAX_FINDING_IDS)
-    invalid7();
+    invalid8();
   const bySeverity = {};
   for (const severity of findingIds.values())
     bySeverity[severity] = (bySeverity[severity] ?? 0) + 1;
@@ -244519,7 +246231,8 @@ async function artifact(path3, base) {
   return { path: path3, bytes: bytes.byteLength, sha256: sha(bytes) };
 }
 function closeFailedTask(store, runId, task, observed, duration) {
-  const category = task.engine === "native-dast" || task.engine === "zap" ? "injection" : "config", surfaceId = `s-${task.id.slice(2)}`, check2 = `group.${task.engine}`;
+  const category = attackEngine(task.engine).category;
+  const surfaceId = `s-${task.id.slice(2)}`, check2 = `group.${task.engine}`;
   try {
     store.addSurfaces(runId, [{ surfaceId, method: "GET", path: "/", authState: "anonymous" }]);
     try {
@@ -244617,7 +246330,7 @@ async function runExecutionPlan(raw) {
           checks = [gapCheck("execution_incomplete")];
         }
         const observed = runtime.snapshot();
-        let report = createReport(checks, task.engine === "native-dast" ? "url" : task.engine === "schemathesis" ? "api" : "url", new Date(start).toISOString(), { fingerprint: sha(`${scopeHash}:${task.id}`), ruleset: RULESET_VERSION });
+        let report = createReport(checks, attackEngine(task.engine).reportMode, new Date(start).toISOString(), { fingerprint: sha(`${scopeHash}:${task.id}`), ruleset: RULESET_VERSION });
         const complete = observedGroup(item, report.checks, observed) && !runtime.signal.aborted;
         if (!complete && !report.checks.some((check2) => check2.status === "partial" || check2.status === "error" || check2.status === "skipped")) {
           report = createReport([...report.checks, gapCheck("execution_incomplete")], report.mode, report.startedAt, report.scope);
@@ -244714,13 +246427,13 @@ ${note}
     if (deliveryFailed)
       return { version: 1, runId, exitCode: 2, status: "error", delivery: "failed", outDir: out, manifestSha256: null, tasks, requests };
     if ((control.signal.aborted || Date.now() >= control.deadlineAt) && exitCode2 !== 2)
-      invalid7();
+      invalid8();
     const manifest = { version: 1, profileRevision: EXECUTION_RUN_REVISION, runId, planSha256, scopeHash, artifacts: artifacts.sort((a, b) => a.path.localeCompare(b.path)) };
     const manifestText = JSON.stringify(manifest, null, 2) + "\n";
     await writeArtifacts(out, [["run-manifest.json", manifestText]]);
     const manifestSha256 = sha(manifestText);
     if ((control.signal.aborted || Date.now() >= control.deadlineAt) && exitCode2 !== 2)
-      invalid7();
+      invalid8();
     const receipt = await open10(join20(out, "run-receipt.json"), "wx", 384);
     receiptOwned = true;
     try {
@@ -244739,7 +246452,7 @@ ${note}
       await receipt.close();
     }
     if ((control.signal.aborted || Date.now() >= control.deadlineAt) && exitCode2 !== 2)
-      invalid7();
+      invalid8();
     return { version: 1, runId, exitCode: exitCode2, status, delivery: "published", outDir: out, manifestSha256, tasks, requests };
   } catch {
     if (receiptOwned)
@@ -244759,14 +246472,7 @@ var init_runner = __esm({
   "build/src/agent-dast/runner.js"() {
     "use strict";
     init_api();
-    init_dast();
-    init_schemathesis_live();
-    init_schemathesis_auth();
-    init_schemathesis_auth_run();
-    init_openapi();
-    init_nuclei();
-    init_zap();
-    init_zap_policy();
+    init_registry();
     init_url_network();
     init_report();
     init_admission();
@@ -245533,784 +247239,14 @@ init_snapshot_evidence();
 var ts22 = __toESM(require_typescript(), 1);
 init_ast();
 init_collector();
+init_framework();
 import { types as utilTypes } from "node:util";
 import { createHash as createHash4 } from "node:crypto";
 import { mkdir as mkdir6, writeFile as writeFile5 } from "node:fs/promises";
 import { dirname as dirname6, join as join8 } from "node:path";
 
-// build/src/source/framework.js
-var ts21 = __toESM(require_typescript(), 1);
-import { posix as posix7 } from "node:path";
-var FRONTEND_EXTENSIONS = /\.(?:[cm]?[jt]sx?)$/i;
-var MIGRATION_PATH = /(?:^|\/)supabase\/migrations\/(?:[^/]+\/)*[^/]+\.sql$/i;
-function isMigration(file) {
-  return file.category === "text" && MIGRATION_PATH.test(file.path.replaceAll("\\", "/"));
-}
-function isNextConfigPath(path3) {
-  return /(?:^|\/)next\.config\.(?:[cm]?[jt]s)$/i.test(path3.replaceAll("\\", "/"));
-}
-function scriptKind2(path3) {
-  if (/\.tsx$/i.test(path3))
-    return ts21.ScriptKind.TSX;
-  if (/\.jsx$/i.test(path3))
-    return ts21.ScriptKind.JSX;
-  if (/\.(?:ts|mts|cts)$/i.test(path3))
-    return ts21.ScriptKind.TS;
-  return ts21.ScriptKind.JS;
-}
-function parseError(sourceFile) {
-  const diagnostics = sourceFile.parseDiagnostics;
-  return Array.isArray(diagnostics) && diagnostics.length > 0;
-}
-function hasUseClientDirective(sourceFile) {
-  const first = sourceFile.statements[0];
-  return !!first && ts21.isExpressionStatement(first) && ts21.isStringLiteral(first.expression) && first.expression.text === "use client";
-}
-function hasUseServerDirective(sourceFile) {
-  const first = sourceFile.statements[0];
-  return !!first && ts21.isExpressionStatement(first) && ts21.isStringLiteral(first.expression) && first.expression.text === "use server";
-}
-function isSecretPublicName(name2) {
-  if (!/^NEXT_PUBLIC_[A-Z0-9_]+$/i.test(name2))
-    return false;
-  return /(?:SECRET|SERVICE[_-]?ROLE|PRIVATE[_-]?KEY|PASSWORD|TOKEN|CREDENTIAL|API[_-]?KEY|ACCESS[_-]?KEY|SIGNING[_-]?KEY|ENCRYPTION[_-]?KEY)/i.test(name2);
-}
-function isPublicKeyName(name2) {
-  return /^NEXT_PUBLIC_(?:[A-Z0-9]+_)*(?:ANON|PUBLISHABLE)(?:_[A-Z0-9]+)*$/i.test(name2);
-}
-function jwtPayloadRole(value) {
-  const parts = value.split(".");
-  if (parts.length !== 3 || parts.some((part) => part.length === 0))
-    return void 0;
-  try {
-    const payload = JSON.parse(Buffer.from(parts[1], "base64url").toString("utf8"));
-    if (payload === null || typeof payload !== "object" || Array.isArray(payload))
-      return void 0;
-    const role = payload.role;
-    return typeof role === "string" ? role : void 0;
-  } catch {
-    return void 0;
-  }
-}
-function jwtPayloadHasServiceRole(value) {
-  return jwtPayloadRole(value) === "service_role";
-}
-function isActualServerSecretLiteral(value) {
-  return /(?:^|[^A-Za-z0-9_])sb_secret_[A-Za-z0-9_-]{8,}(?:$|[^A-Za-z0-9_-])/i.test(value) || jwtPayloadHasServiceRole(value);
-}
-function isPublicSupabaseKeyLiteral(value) {
-  return /^sb_(?:anon|publishable)_[A-Za-z0-9_-]{4,}$/i.test(value) || jwtPayloadRole(value) === "anon";
-}
-function initializerHasActualServerSecret(initializer) {
-  let found = false;
-  const visit = (node) => {
-    if (found)
-      return;
-    if ((ts21.isStringLiteral(node) || ts21.isNoSubstitutionTemplateLiteral(node)) && isActualServerSecretLiteral(node.text)) {
-      found = true;
-      return;
-    }
-    ts21.forEachChild(node, visit);
-  };
-  visit(initializer);
-  return found;
-}
-function initializerHasPublicSupabaseKey(initializer) {
-  let found = false;
-  const visit = (node) => {
-    if (found)
-      return;
-    if ((ts21.isStringLiteral(node) || ts21.isNoSubstitutionTemplateLiteral(node)) && isPublicSupabaseKeyLiteral(node.text)) {
-      found = true;
-      return;
-    }
-    ts21.forEachChild(node, visit);
-  };
-  visit(initializer);
-  return found;
-}
-function staticEnvName(node) {
-  if (!ts21.isPropertyAccessExpression(node) && !ts21.isElementAccessExpression(node))
-    return void 0;
-  const property = ts21.isPropertyAccessExpression(node) ? node.name.text : ts21.isStringLiteral(node.argumentExpression) || ts21.isNoSubstitutionTemplateLiteral(node.argumentExpression) ? node.argumentExpression.text : void 0;
-  if (property === void 0)
-    return void 0;
-  const receiver = node.expression;
-  if (!ts21.isPropertyAccessExpression(receiver) || !ts21.isIdentifier(receiver.expression) || receiver.expression.text !== "process" || receiver.name.text !== "env")
-    return void 0;
-  return property;
-}
-function staticPropertyName(name2) {
-  if (ts21.isIdentifier(name2) || ts21.isStringLiteral(name2) || ts21.isNoSubstitutionTemplateLiteral(name2) || ts21.isNumericLiteral(name2))
-    return name2.text;
-  return void 0;
-}
-function importSpecifier(node) {
-  if (ts21.isImportDeclaration(node) || ts21.isExportDeclaration(node)) {
-    return node.moduleSpecifier && ts21.isStringLiteral(node.moduleSpecifier) ? node.moduleSpecifier.text : void 0;
-  }
-  if (ts21.isCallExpression(node)) {
-    const expression = node.expression;
-    const isRequire = ts21.isIdentifier(expression) && expression.text === "require";
-    const isDynamicImport = expression.kind === ts21.SyntaxKind.ImportKeyword;
-    const argument = node.arguments[0];
-    if ((isRequire || isDynamicImport) && argument && ts21.isStringLiteral(argument))
-      return argument.text;
-  }
-  return void 0;
-}
-function analyzeFrontend(file) {
-  const sourceFile = ts21.createSourceFile(file.path, file.text, ts21.ScriptTarget.Latest, true, scriptKind2(file.path));
-  const publicSecretDeclarations = [];
-  const serverSecretLiterals = [];
-  let reactImport = false;
-  const envReferences = [];
-  const relativeImports = [];
-  const envConfigDeclarations = [];
-  const visit = (node) => {
-    if (ts21.isVariableDeclaration(node) && ts21.isIdentifier(node.name) && node.initializer && isSecretPublicName(node.name.text)) {
-      publicSecretDeclarations.push(node);
-    }
-    if (ts21.isStringLiteral(node) || ts21.isNoSubstitutionTemplateLiteral(node)) {
-      if (isActualServerSecretLiteral(node.text)) {
-        serverSecretLiterals.push(node);
-      }
-    }
-    if (ts21.isImportDeclaration(node) && ts21.isStringLiteral(node.moduleSpecifier) && /^react(?:\/|$)/i.test(node.moduleSpecifier.text)) {
-      reactImport = true;
-    }
-    if (ts21.isCallExpression(node) && ts21.isIdentifier(node.expression) && node.expression.text === "require") {
-      const first = node.arguments[0];
-      if (first && ts21.isStringLiteral(first) && /^react(?:\/|$)/i.test(first.text))
-        reactImport = true;
-    }
-    if (staticEnvName(node))
-      envReferences.push(node);
-    const imported = importSpecifier(node);
-    if (imported?.startsWith("."))
-      relativeImports.push(imported);
-    if (isNextConfigPath(file.path) && ts21.isPropertyAssignment(node)) {
-      const parent = node.parent.parent;
-      const isEnvObject = ts21.isPropertyAssignment(parent) && staticPropertyName(parent.name)?.toLowerCase() === "env" && parent.initializer === node.parent;
-      if (isEnvObject) {
-        envConfigDeclarations.push(node);
-      }
-    }
-    ts21.forEachChild(node, visit);
-  };
-  visit(sourceFile);
-  return {
-    file,
-    sourceFile,
-    parseError: parseError(sourceFile),
-    useClient: hasUseClientDirective(sourceFile),
-    useServer: hasUseServerDirective(sourceFile),
-    publicSecretDeclarations,
-    serverSecretLiterals,
-    reactImport,
-    nextConfig: isNextConfigPath(file.path),
-    envReferences,
-    relativeImports,
-    envConfigDeclarations
-  };
-}
-function frontendRelevant(analysis) {
-  return analysis.useClient || analysis.publicSecretDeclarations.length > 0 || analysis.reactImport || analysis.envReferences.some((node) => /^NEXT_PUBLIC_[A-Z0-9_]+$/i.test(staticEnvName(node) ?? "")) || analysis.nextConfig && analysis.envConfigDeclarations.length > 0;
-}
-function frameworkHasApplicableInput(snapshot4) {
-  for (const file of snapshot4.files) {
-    if (isMigration(file))
-      return true;
-    if (file.category === "code" && FRONTEND_EXTENSIONS.test(file.path) && frontendRelevant(analyzeFrontend(file)))
-      return true;
-  }
-  return false;
-}
-function isDotEnvPath(path3) {
-  const name2 = path3.slice(path3.lastIndexOf("/") + 1).toLowerCase();
-  return name2 === ".env" || name2.startsWith(".env.") || name2.endsWith(".env");
-}
-function envValue(value) {
-  const trimmed = value.trim();
-  if (trimmed.startsWith('"') && trimmed.endsWith('"') || trimmed.startsWith("'") && trimmed.endsWith("'")) {
-    return trimmed.slice(1, -1);
-  }
-  return trimmed;
-}
-function collectStaticEnv(snapshot4) {
-  const signals = /* @__PURE__ */ new Map();
-  for (const file of snapshot4.files) {
-    if (file.category !== "secret" || !isDotEnvPath(file.path))
-      continue;
-    for (const rawLine of file.text.replace(/^\uFEFF/, "").split(/\r\n|\r|\n/)) {
-      const match = /^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*?)\s*$/.exec(rawLine);
-      if (!match || match[1].startsWith("#"))
-        continue;
-      const name2 = match[1];
-      const value = envValue(match[2]);
-      const existing = signals.get(name2);
-      signals.set(name2, {
-        actualSecret: !!existing?.actualSecret || isActualServerSecretLiteral(value),
-        publicKey: !!existing?.publicKey || isPublicKeyName(name2) || isPublicSupabaseKeyLiteral(value)
-      });
-    }
-  }
-  return signals;
-}
-function resolveRelativeImport(fromPath, specifier, available) {
-  const normalized = posix7.normalize(posix7.join(posix7.dirname(fromPath), specifier)).replace(/^\.\//, "");
-  if (normalized.startsWith("../") || normalized === "..")
-    return void 0;
-  const candidates = [normalized];
-  if (!/\.[A-Za-z0-9]+$/.test(normalized)) {
-    for (const extension2 of [".ts", ".tsx", ".js", ".jsx", ".mts", ".cts", ".mjs", ".cjs"])
-      candidates.push(`${normalized}${extension2}`);
-    for (const extension2 of [".ts", ".tsx", ".js", ".jsx", ".mts", ".cts", ".mjs", ".cjs"])
-      candidates.push(`${normalized}/index${extension2}`);
-  } else if (/\.(?:[cm]?js|jsx)$/i.test(normalized)) {
-    const withoutExtension = normalized.replace(/\.(?:[cm]?js|jsx)$/i, "");
-    for (const extension2 of [".ts", ".tsx", ".mts", ".cts"])
-      candidates.push(`${withoutExtension}${extension2}`);
-  }
-  for (const candidate of candidates) {
-    const analysis = available.get(candidate);
-    if (analysis)
-      return analysis;
-  }
-  return void 0;
-}
-function reachableFrontend(entry, available) {
-  const result3 = [];
-  const seen = /* @__PURE__ */ new Set();
-  const visit = (analysis) => {
-    if (analysis.useServer)
-      return;
-    if (seen.has(analysis.file.path))
-      return;
-    seen.add(analysis.file.path);
-    result3.push(analysis);
-    for (const specifier of analysis.relativeImports) {
-      const imported = resolveRelativeImport(analysis.file.path, specifier, available);
-      if (imported)
-        visit(imported);
-    }
-  };
-  visit(entry);
-  return result3;
-}
-function blank(value, index) {
-  if (value[index] !== "\n" && value[index] !== "\r")
-    value[index] = " ";
-}
-function dollarDelimiter(text4, index) {
-  if (text4[index] !== "$")
-    return void 0;
-  const match = text4.slice(index).match(/^\$(?:[A-Za-z_][A-Za-z0-9_]*)?\$/);
-  return match?.[0];
-}
-function maskSql(text4) {
-  const output = text4.split("");
-  const identifierOutput = text4.split("");
-  let state = "normal";
-  let delimiter = "";
-  let blockDepth = 0;
-  let singleEscapesBackslash = false;
-  let index = 0;
-  const blankBoth = (at) => {
-    blank(output, at);
-    blank(identifierOutput, at);
-  };
-  while (index < text4.length) {
-    const character = text4[index];
-    if (state === "line") {
-      if (character === "\n" || character === "\r")
-        state = "normal";
-      else
-        blankBoth(index);
-      index += 1;
-      continue;
-    }
-    if (state === "block") {
-      if (text4.startsWith("/*", index)) {
-        blankBoth(index);
-        blankBoth(index + 1);
-        blockDepth += 1;
-        index += 2;
-        continue;
-      }
-      if (text4.startsWith("*/", index)) {
-        blankBoth(index);
-        blankBoth(index + 1);
-        index += 2;
-        blockDepth -= 1;
-        if (blockDepth <= 0) {
-          blockDepth = 0;
-          state = "normal";
-        }
-      } else {
-        blankBoth(index);
-        index += 1;
-      }
-      continue;
-    }
-    if (state === "single") {
-      blankBoth(index);
-      if (character === "\\" && singleEscapesBackslash && index + 1 < text4.length) {
-        blankBoth(index + 1);
-        index += 2;
-      } else if (character === "'" && text4[index + 1] === "'") {
-        blankBoth(index + 1);
-        index += 2;
-      } else if (character === "'") {
-        index += 1;
-        state = "normal";
-        singleEscapesBackslash = false;
-      } else {
-        index += 1;
-      }
-      continue;
-    }
-    if (state === "double") {
-      blank(output, index);
-      if (character === '"' && text4[index + 1] === '"') {
-        blank(output, index + 1);
-        index += 2;
-      } else if (character === '"') {
-        index += 1;
-        state = "normal";
-      } else {
-        index += 1;
-      }
-      continue;
-    }
-    if (state === "dollar") {
-      if (delimiter && text4.startsWith(delimiter, index)) {
-        for (let offset = 0; offset < delimiter.length; offset += 1)
-          blankBoth(index + offset);
-        index += delimiter.length;
-        state = "normal";
-        delimiter = "";
-      } else {
-        blankBoth(index);
-        index += 1;
-      }
-      continue;
-    }
-    if (text4.startsWith("--", index)) {
-      blankBoth(index);
-      blankBoth(index + 1);
-      index += 2;
-      state = "line";
-    } else if (text4.startsWith("/*", index)) {
-      blankBoth(index);
-      blankBoth(index + 1);
-      index += 2;
-      blockDepth = 1;
-      state = "block";
-    } else if (character === "'") {
-      blankBoth(index);
-      index += 1;
-      const previous = text4[index - 2];
-      singleEscapesBackslash = (previous === "e" || previous === "E") && (index - 2 === 0 || !/[A-Za-z0-9_]/.test(text4[index - 3] ?? ""));
-      state = "single";
-    } else if (character === '"') {
-      blank(output, index);
-      index += 1;
-      state = "double";
-    } else {
-      const foundDelimiter = dollarDelimiter(text4, index);
-      if (foundDelimiter) {
-        for (let offset = 0; offset < foundDelimiter.length; offset += 1)
-          blankBoth(index + offset);
-        index += foundDelimiter.length;
-        delimiter = foundDelimiter;
-        state = "dollar";
-      } else {
-        index += 1;
-      }
-    }
-  }
-  const masked = { text: output.join(""), complete: state === "normal" || state === "line", identifierText: identifierOutput.join("") };
-  Object.defineProperty(masked, "identifierText", { enumerable: false, value: identifierOutput.join("") });
-  return masked;
-}
-function statements(masked) {
-  const result3 = [];
-  let start = 0;
-  for (let index = 0; index <= masked.length; index += 1) {
-    if (index !== masked.length && masked[index] !== ";")
-      continue;
-    result3.push({ text: masked.slice(start, index), start });
-    start = index + 1;
-  }
-  return result3;
-}
-function location(text4, index) {
-  const before = text4.slice(0, index);
-  const lineStart = Math.max(before.lastIndexOf("\n"), before.lastIndexOf("\r"));
-  return { line: before.split(/\r\n|\r|\n/).length, column: index - lineStart };
-}
-function normalizedTable(value) {
-  const segments = [];
-  let current = "";
-  let quoted2 = false;
-  let wasQuoted = false;
-  const pushSegment = () => {
-    const value2 = wasQuoted ? current : current.trim().toLowerCase();
-    segments.push(value2);
-    current = "";
-    wasQuoted = false;
-  };
-  for (let index = 0; index < value.length; index += 1) {
-    const character = value[index];
-    if (quoted2) {
-      if (character === '"' && value[index + 1] === '"') {
-        current += '"';
-        index += 1;
-      } else if (character === '"') {
-        quoted2 = false;
-      } else {
-        current += character;
-      }
-      continue;
-    }
-    if (character === '"') {
-      quoted2 = true;
-      wasQuoted = true;
-    } else if (character === ".") {
-      pushSegment();
-    } else if (!/\s/.test(character)) {
-      current += character;
-    }
-  }
-  if (quoted2)
-    return JSON.stringify([value.trim()]);
-  pushSegment();
-  return JSON.stringify(segments);
-}
-function rlsOperation(statement, identifierStatement = statement) {
-  const action = /\b(DISABLE|ENABLE)\s+ROW\s+LEVEL\s+SECURITY\b/i.exec(statement);
-  if (!action)
-    return void 0;
-  const identifier4 = '(?:"(?:[^"]|"")*"|[A-Za-z_][A-Za-z0-9_$]*)';
-  const prefix = /\bALTER\s+TABLE\s+?(?:(?:IF\s+)?EXISTS\s+)?(?:ONLY\s+)?/i.exec(statement);
-  const tableMatch = prefix ? new RegExp(`^(${identifier4}(?:\\s*\\.\\s*${identifier4})?)`, "i").exec(identifierStatement.slice(prefix.index + prefix[0].length)) : null;
-  return { action: action[1].toLowerCase(), ...tableMatch ? { table: normalizedTable(tableMatch[1]) } : {} };
-}
-function finding(input) {
-  const position2 = location(input.source, input.index);
-  return {
-    ruleId: input.ruleId,
-    title: input.title,
-    description: input.description,
-    severity: input.severity,
-    confidence: "low",
-    kind: "candidate",
-    location: { path: input.path, line: position2.line, column: position2.column },
-    remediation: input.remediation
-  };
-}
-function migrationFindings(file) {
-  const masked = maskSql(file.text);
-  const findings = [];
-  const sqlStatements = statements(masked.text);
-  const operations = sqlStatements.map((statement) => rlsOperation(statement.text, masked.identifierText.slice(statement.start, statement.start + statement.text.length)));
-  for (const [statementIndex, statement] of sqlStatements.entries()) {
-    const disable = /\bALTER\s+TABLE\b[\s\S]{0,500}?\bDISABLE\s+ROW\s+LEVEL\s+SECURITY\b/i.exec(statement.text);
-    const operation = operations[statementIndex];
-    const laterSameTableOperation = operation?.table ? operations.slice(statementIndex + 1).reverse().find((candidate) => candidate?.table === operation.table) : void 0;
-    if (disable && !(operation?.action === "disable" && laterSameTableOperation?.action === "enable")) {
-      const absoluteIndex = statement.start + disable.index + disable[0].toUpperCase().lastIndexOf("DISABLE");
-      findings.push(finding({
-        ruleId: "supabase:disable-row-level-security",
-        title: "Supabase migration explicitly disables row level security",
-        description: "A bounded Supabase migration contains an explicit DISABLE ROW LEVEL SECURITY statement. This is a local migration candidate; live database state and later deployment changes were not checked.",
-        severity: "high",
-        path: file.path,
-        source: file.text,
-        index: absoluteIndex,
-        remediation: "Review whether this migration should disable RLS, and verify the effective RLS state and grants separately before exposing the table."
-      }));
-    }
-    const createsPolicy = /\bCREATE\s+POLICY\b/i.test(statement.text);
-    const restrictive = /\bAS\s+RESTRICTIVE\b/i.test(statement.text);
-    const toClause = /\bTO\s+([^\s;]+(?:\s*,\s*[^\s;]+)*)/i.exec(statement.text);
-    const appliesToPublic = toClause ? /\bPUBLIC\b/i.test(toClause[1]) : createsPolicy;
-    const permissivePredicate = /\b(?:USING\s*\(\s*TRUE\s*\)|WITH\s+CHECK\s*\(\s*TRUE\s*\))/i;
-    const policy = createsPolicy && appliesToPublic && !restrictive ? permissivePredicate.exec(statement.text) : null;
-    if (policy) {
-      findings.push(finding({
-        ruleId: "supabase:permissive-public-policy",
-        title: "Supabase migration contains a permissive public policy candidate",
-        description: "A bounded Supabase migration creates a policy that applies to PUBLIC, explicitly or by PostgreSQL's default, with USING (true) or WITH CHECK (true). This is a medium review candidate; grants, table contents, and live database behavior were not checked.",
-        severity: "medium",
-        path: file.path,
-        source: file.text,
-        index: statement.start + policy.index,
-        remediation: "Review the policy role and predicate, then restrict access to the intended roles and ownership conditions; verify the effective policy and grants separately."
-      }));
-    }
-  }
-  return { findings, incomplete: !masked.complete };
-}
-function tableReference(statement, identifierStatement, keyword) {
-  const identifier4 = '(?:"(?:[^"]|"")*"|[A-Za-z_][A-Za-z0-9_$]*)';
-  const prefix = keyword === "CREATE TABLE" ? /\bCREATE\s+TABLE\s+?(?:(?:IF\s+)?NOT\s+EXISTS\s+)?(?:ONLY\s+)?/i.exec(statement) : /\bGRANT\b[\s\S]*?\bON\s+?(?:TABLE\s+)?/i.exec(statement);
-  if (!prefix)
-    return void 0;
-  const match = new RegExp(`^(${identifier4}(?:\\s*\\.\\s*${identifier4})?)`, "i").exec(identifierStatement.slice(prefix.index + prefix[0].length));
-  return match ? { table: normalizedTable(match[1]), index: prefix.index + prefix[0].length + match.index } : void 0;
-}
-function grantExposesRows(statement) {
-  const privileges = /^\s*GRANT\s+([\s\S]*?)\s+ON\s+/i.exec(statement)?.[1] ?? "";
-  return /(?:^|,)\s*(?:SELECT|INSERT|UPDATE|DELETE|ALL)(?:\s+PRIVILEGES)?\s*(?:,|$)/i.test(privileges);
-}
-function migrationStateFindings(files) {
-  const states = /* @__PURE__ */ new Map();
-  for (const file of files) {
-    const masked = maskSql(file.text);
-    const sqlStatements = statements(masked.text);
-    for (const statement of sqlStatements) {
-      const identifierStatement = masked.identifierText.slice(statement.start, statement.start + statement.text.length);
-      const create = tableReference(statement.text, identifierStatement, "CREATE TABLE");
-      if (create) {
-        const existing = states.get(create.table);
-        states.set(create.table, existing ?? {
-          path: file.path,
-          createIndex: statement.start + create.index,
-          created: true,
-          granted: false,
-          enabled: false,
-          disabled: false
-        });
-      }
-      const grant = tableReference(statement.text, identifierStatement, "GRANT");
-      if (grant && grantExposesRows(statement.text)) {
-        const roleClause = /\bTO\s+([\s\S]*)$/i.exec(statement.text);
-        if (roleClause && /\b(?:PUBLIC|anon|authenticated)\b/i.test(roleClause[1])) {
-          const existing = states.get(grant.table) ?? {
-            path: file.path,
-            createIndex: statement.start + grant.index,
-            created: false,
-            granted: false,
-            enabled: false,
-            disabled: false
-          };
-          existing.granted = true;
-          existing.grantPath = file.path;
-          existing.grantIndex = statement.start + grant.index;
-          states.set(grant.table, existing);
-        }
-      }
-      const operation = rlsOperation(statement.text, identifierStatement);
-      if (operation?.table) {
-        const existing = states.get(operation.table) ?? {
-          path: file.path,
-          createIndex: statement.start,
-          created: false,
-          granted: false,
-          enabled: false,
-          disabled: false
-        };
-        if (operation.action === "enable")
-          existing.enabled = true;
-        else {
-          existing.disabled = true;
-          existing.enabled = false;
-        }
-        states.set(operation.table, existing);
-      }
-    }
-  }
-  const findings = [];
-  for (const state of states.values()) {
-    if (!state.created || !state.granted || state.enabled)
-      continue;
-    const reportPath = state.grantPath ?? state.path;
-    const reportSource = files.find((file) => file.path === reportPath)?.text ?? "";
-    findings.push(finding({
-      ruleId: "supabase:grant-without-observed-rls",
-      title: "Supabase table grant has no observed RLS enable",
-      description: "The bounded migration history creates a table and grants it to PUBLIC, anon, or authenticated without an observed ENABLE ROW LEVEL SECURITY. This is an uncertain local candidate; later migrations, rollback order, and live database state were not checked.",
-      severity: "medium",
-      path: reportPath,
-      source: reportSource,
-      index: state.grantIndex ?? state.createIndex,
-      remediation: "Enable row level security before granting table access, add role-specific policies, and verify the effective database state separately."
-    }));
-  }
-  return findings;
-}
-function likelySecretName(name2) {
-  return /(?:SECRET|SERVICE[_-]?ROLE|PRIVATE[_-]?KEY|PASSWORD|TOKEN|CREDENTIAL|API[_-]?KEY|ACCESS[_-]?KEY|SIGNING[_-]?KEY|ENCRYPTION[_-]?KEY)/i.test(name2);
-}
-function frontendFindings(analysis, available, envSignals) {
-  const findings = [];
-  const seen = /* @__PURE__ */ new Set();
-  const push = (input) => {
-    const position2 = location(input.source.text, input.node.getStart());
-    const key2 = `${input.ruleId}:${input.source.path}:${position2.line}:${position2.column}`;
-    if (seen.has(key2))
-      return;
-    seen.add(key2);
-    findings.push({
-      ruleId: input.ruleId,
-      title: input.title,
-      description: input.description,
-      severity: input.severity,
-      confidence: input.confidence,
-      kind: "candidate",
-      location: { path: input.source.path, line: position2.line, column: position2.column },
-      remediation: input.remediation
-    });
-  };
-  const clientEntry = analysis.useClient;
-  const reachable = clientEntry ? reachableFrontend(analysis, available) : [analysis];
-  for (const candidate of reachable) {
-    if (clientEntry) {
-      const imported = candidate.file.path !== analysis.file.path;
-      const literal2 = candidate.serverSecretLiterals[0];
-      if (literal2) {
-        push({
-          ruleId: "next:client-server-secret-literal",
-          title: imported ? "Server secret literal is reachable from a client module" : "Server secret literal appears in a client module",
-          description: imported ? "A bounded relative import or re-export from a use client module reaches a server-secret-shaped literal. The value is intentionally omitted; the finding does not validate the deployed bundle." : "A use client module contains a server-secret-shaped literal. The value is intentionally omitted; the finding does not validate whether a deployed bundle contains it.",
-          severity: "critical",
-          confidence: "high",
-          source: candidate.file,
-          node: literal2,
-          remediation: "Remove the server secret from the client module and keep privileged Supabase operations behind a server-side boundary."
-        });
-      }
-    }
-    if (!clientEntry)
-      continue;
-    for (const reference2 of candidate.envReferences) {
-      const name2 = staticEnvName(reference2);
-      if (!name2)
-        continue;
-      const signal = envSignals.get(name2);
-      const actualSecret = !!signal?.actualSecret;
-      const publicKey = isPublicKeyName(name2) || !!signal?.publicKey;
-      if (!actualSecret && publicKey)
-        continue;
-      if (!actualSecret && !isSecretPublicName(name2) && !likelySecretName(name2))
-        continue;
-      push({
-        ruleId: "next:client-server-secret-env",
-        title: "Client module references a server-secret-shaped environment value",
-        description: actualSecret ? "A bounded client import graph references an environment value whose collected .env value matches a server-secret shape. The value is intentionally omitted." : "A bounded client import graph references an environment name associated with a server secret. This name-only candidate has low confidence; public and publishable/anon Supabase keys are excluded.",
-        severity: actualSecret ? "critical" : "medium",
-        confidence: actualSecret ? "high" : "low",
-        source: candidate.file,
-        node: reference2,
-        remediation: "Remove the server credential from the NEXT_PUBLIC namespace and keep privileged values behind a server-side boundary."
-      });
-    }
-  }
-  for (const candidate of clientEntry ? reachable : [analysis]) {
-    for (const declaration of candidate.publicSecretDeclarations) {
-      const actualSecret = !!declaration.initializer && initializerHasActualServerSecret(declaration.initializer);
-      const publicKey = isPublicKeyName(ts21.isIdentifier(declaration.name) ? declaration.name.text : "") || !!declaration.initializer && initializerHasPublicSupabaseKey(declaration.initializer);
-      if (!actualSecret && publicKey)
-        continue;
-      push({
-        ruleId: "next:public-server-secret-variable",
-        title: "NEXT_PUBLIC variable appears to carry a server secret",
-        description: actualSecret ? "A bounded JavaScript or TypeScript declaration exposes a server-secret-shaped value through a NEXT_PUBLIC name. The value is intentionally omitted." : "A bounded JavaScript or TypeScript declaration uses a NEXT_PUBLIC name associated with a server secret. This name-only candidate has low confidence; public and publishable/anon Supabase keys are excluded.",
-        severity: actualSecret ? "critical" : "medium",
-        confidence: actualSecret ? "high" : "low",
-        source: candidate.file,
-        node: declaration.name,
-        remediation: "Rename the variable without the NEXT_PUBLIC prefix and keep the server secret out of client modules and browser bundles."
-      });
-    }
-  }
-  if (analysis.nextConfig) {
-    for (const declaration of analysis.envConfigDeclarations) {
-      const key2 = staticPropertyName(declaration.name);
-      if (!key2)
-        continue;
-      const sourceName = staticEnvName(declaration.initializer);
-      const sourceSignal = sourceName ? envSignals.get(sourceName) : void 0;
-      const actualSecret = initializerHasActualServerSecret(declaration.initializer) || !!sourceSignal?.actualSecret;
-      const publicKey = isPublicKeyName(key2) || !!sourceSignal?.publicKey || initializerHasPublicSupabaseKey(declaration.initializer);
-      const nameLooksSecret = likelySecretName(key2) || (sourceName ? likelySecretName(sourceName) : false);
-      if (!actualSecret && publicKey)
-        continue;
-      if (!actualSecret && !nameLooksSecret)
-        continue;
-      push({
-        ruleId: "next:config-env-server-secret",
-        title: "Next config env object may expose a server secret",
-        description: actualSecret ? "A bounded next.config env object contains a server-secret-shaped value. Next.js exposes entries from this object to application code; the value is intentionally omitted." : "A bounded next.config env object uses a name associated with a server secret. This is a low-confidence candidate because build-time resolution and the effective value were not checked.",
-        severity: actualSecret ? "critical" : "medium",
-        confidence: actualSecret ? "high" : "low",
-        source: analysis.file,
-        node: declaration.name,
-        remediation: "Keep server credentials out of next.config env and expose only intentionally public, non-privileged configuration."
-      });
-    }
-  }
-  return findings;
-}
-function runFrameworkRules(snapshot4) {
-  if (snapshot4.rootError)
-    return { id: "source.framework", status: "error", findings: [], notes: ["The source root could not be scanned by the framework rules."] };
-  const migrations = snapshot4.files.filter(isMigration);
-  const frontendAnalyses = snapshot4.files.filter((file) => file.category === "code" && FRONTEND_EXTENSIONS.test(file.path)).map(analyzeFrontend);
-  const frontend = frontendAnalyses.filter(frontendRelevant);
-  if (migrations.length === 0 && frontend.length === 0) {
-    return { id: "source.framework", status: "not_applicable", findings: [], notes: ["No recognized Supabase migration or Next/React source file was available for the bounded framework rules."], metrics: { filesAnalyzed: 0, migrationFiles: 0, frontendFiles: 0, findingCount: 0 } };
-  }
-  const migrationResults = migrations.map(migrationFindings);
-  const available = new Map(frontendAnalyses.map((analysis) => [analysis.file.path, analysis]));
-  const envSignals = collectStaticEnv(snapshot4);
-  const rawFindings = [
-    ...migrationResults.flatMap((result3) => result3.findings),
-    ...migrationStateFindings(migrations),
-    ...frontend.flatMap((analysis) => frontendFindings(analysis, available, envSignals))
-  ];
-  const findingKeys = /* @__PURE__ */ new Set();
-  const findings = rawFindings.filter((candidate) => {
-    const location2 = candidate.location;
-    const key2 = `${candidate.ruleId}\0${location2.path ?? ""}\0${location2.line ?? ""}\0${location2.column ?? ""}`;
-    if (findingKeys.has(key2))
-      return false;
-    findingKeys.add(key2);
-    return true;
-  });
-  const reachableParseErrors = /* @__PURE__ */ new Set();
-  for (const analysis of frontend) {
-    if (analysis.parseError)
-      reachableParseErrors.add(analysis.file.path);
-    if (analysis.useClient) {
-      for (const candidate of reachableFrontend(analysis, available)) {
-        if (candidate.parseError)
-          reachableParseErrors.add(candidate.file.path);
-      }
-    }
-  }
-  const parseErrorCount = reachableParseErrors.size;
-  const incomplete2 = !snapshot4.complete || parseErrorCount > 0 || migrationResults.some((result3) => result3.incomplete);
-  return {
-    id: "source.framework",
-    status: incomplete2 ? "partial" : "completed",
-    findings,
-    notes: [
-      `Bounded framework rules inspected ${migrations.length + frontend.length} recognized file${migrations.length + frontend.length === 1 ? "" : "s"}.`,
-      "These are local candidates; live database state, grants, deployed bundles, and complete import/build boundaries were not checked.",
-      "Next environment references and relative imports are followed only when their names and paths are static; build-time replacement, package imports, non-literal or conditional dynamic imports, and generated bundles remain unresolved.",
-      ...parseErrorCount > 0 ? [`${parseErrorCount} frontend file${parseErrorCount === 1 ? " had" : "s had"} syntax diagnostics; framework findings may be incomplete.`] : [],
-      ...migrationResults.some((result3) => result3.incomplete) ? ["At least one migration had an unterminated SQL comment or literal; migration candidates may be incomplete."] : [],
-      ...!snapshot4.complete ? ["The collected source snapshot was incomplete; framework coverage may be incomplete."] : []
-    ],
-    metrics: { filesAnalyzed: migrations.length + frontend.length, migrationFiles: migrations.length, frontendFiles: frontend.length, parseErrorCount, findingCount: findings.length }
-  };
-}
-
 // build/src/source/parsers.js
-import { isAbsolute as isAbsolute7, relative as relative6, resolve as resolve7 } from "node:path";
+import { isAbsolute as isAbsolute8, relative as relative7, resolve as resolve9 } from "node:path";
 function own(object19, key2) {
   return Object.prototype.hasOwnProperty.call(object19, key2) ? object19[key2] : void 0;
 }
@@ -246385,10 +247321,10 @@ function pathFromScanner(value, stageDir, allowed) {
   if (typeof value !== "string" || value.length === 0)
     return void 0;
   const candidate = value.replaceAll("\\", "/");
-  const absoluteCandidate = isAbsolute7(candidate) ? resolve7(candidate) : resolve7(stageDir, candidate);
-  const stage = resolve7(stageDir);
-  const relativePath2 = relative6(stage, absoluteCandidate).replaceAll("\\", "/");
-  if (relativePath2 && relativePath2 !== "." && !relativePath2.startsWith("../") && relativePath2 !== ".." && !isAbsolute7(relativePath2) && allowed.has(relativePath2))
+  const absoluteCandidate = isAbsolute8(candidate) ? resolve9(candidate) : resolve9(stageDir, candidate);
+  const stage = resolve9(stageDir);
+  const relativePath2 = relative7(stage, absoluteCandidate).replaceAll("\\", "/");
+  if (relativePath2 && relativePath2 !== "." && !relativePath2.startsWith("../") && relativePath2 !== ".." && !isAbsolute8(relativePath2) && allowed.has(relativePath2))
     return relativePath2;
   const normalized = candidate.replace(/^\.\//, "");
   return allowed.has(normalized) ? normalized : void 0;
@@ -246410,38 +247346,38 @@ function makeFinding(input) {
     ...input.references ? { references: input.references } : {}
   };
 }
-function parseJson2(text4, tool) {
+function parseJson2(text4, tool2) {
   const trimmed = text4.trim();
   if (!trimmed)
-    throw new Error(`${tool} produced no JSON output`);
+    throw new Error(`${tool2} produced no JSON output`);
   try {
     return JSON.parse(trimmed);
   } catch {
-    throw new Error(`${tool} produced malformed JSON output`);
+    throw new Error(`${tool2} produced malformed JSON output`);
   }
 }
-function requiredArray2(value, key2, tool) {
+function requiredArray2(value, key2, tool2) {
   const child = own(value, key2);
   if (!Array.isArray(child))
-    throw new Error(`${tool} output has an invalid ${key2} field`);
+    throw new Error(`${tool2} output has an invalid ${key2} field`);
   return child;
 }
-function requiredObject2(value, field3, tool) {
+function requiredObject2(value, field3, tool2) {
   const object19 = objectValue2(value);
   if (!object19)
-    throw new Error(`${tool} output has an invalid ${field3} record`);
+    throw new Error(`${tool2} output has an invalid ${field3} record`);
   return object19;
 }
-function requiredPositiveInt(value, key2, tool) {
+function requiredPositiveInt(value, key2, tool2) {
   const child = own(value, key2);
   if (typeof child !== "number" || !Number.isSafeInteger(child) || child < 1 || child > 1e7)
-    throw new Error(`${tool} output has an invalid ${key2} field`);
+    throw new Error(`${tool2} output has an invalid ${key2} field`);
   return child;
 }
-function requiredString2(value, key2, tool) {
+function requiredString2(value, key2, tool2) {
   const child = own(value, key2);
   if (typeof child !== "string" || child.length === 0)
-    throw new Error(`${tool} output has an invalid ${key2} field`);
+    throw new Error(`${tool2} output has an invalid ${key2} field`);
   return child;
 }
 function parseGitleaksOutput(text4, stageDir, files) {
@@ -246745,462 +247681,10 @@ function parseTrivyOutput(text4, stageDir, files) {
 // build/src/source.js
 init_process();
 init_python();
-init_opengrep();
-init_semgrep();
-
-// build/src/source/govulncheck.js
-init_process();
-init_collector();
-import { mkdir as mkdir4 } from "node:fs/promises";
-import { dirname as dirname5, join as join6, resolve as resolve8 } from "node:path";
-function normalizeGoBuildTags(tags = []) {
-  if (!Array.isArray(tags) || tags.length > 32 || tags.some((tag) => typeof tag !== "string" || !/^[A-Za-z0-9_][A-Za-z0-9_.]{0,63}$/.test(tag)))
-    throw new TypeError("invalid_go_build_tags");
-  return [...new Set(tags)].sort();
-}
-function govulncheckFiles(snapshot4) {
-  return snapshot4.files.filter((file) => !file.sensitive && (/\.go$/.test(file.path) || /(?:^|\/)go\.(?:mod|sum)$/.test(file.path)));
-}
-function govulncheckHasApplicableInput(snapshot4) {
-  return govulncheckFiles(snapshot4).some((file) => /(?:^|\/)go\.mod$/.test(file.path));
-}
-function object8(value) {
-  if (!value || typeof value !== "object" || Array.isArray(value))
-    throw new Error("invalid object");
-  return value;
-}
-function token(value) {
-  if (typeof value !== "string" || !/^[A-Za-z0-9][A-Za-z0-9._/+!@~-]{0,511}$/.test(value))
-    throw new Error("invalid identifier");
-  return value;
-}
-function messages(text4) {
-  if (Buffer.byteLength(text4) > 8 * 1024 * 1024)
-    throw new Error("output limit");
-  const result3 = [];
-  let start = -1, depth = 0, quoted2 = false, escaped = false;
-  for (let i = 0; i < text4.length; i++) {
-    const char = text4[i];
-    if (start < 0) {
-      if (/\s/.test(char))
-        continue;
-      if (char !== "{")
-        throw new Error("invalid stream");
-      start = i;
-    }
-    if (quoted2) {
-      if (escaped)
-        escaped = false;
-      else if (char === "\\")
-        escaped = true;
-      else if (char === '"')
-        quoted2 = false;
-    } else if (char === '"')
-      quoted2 = true;
-    else if (char === "{" || char === "[") {
-      if (++depth > 100)
-        throw new Error("nesting limit");
-    } else if (char === "}" || char === "]") {
-      if (--depth < 0)
-        throw new Error("invalid stream");
-      if (depth === 0) {
-        result3.push(object8(JSON.parse(text4.slice(start, i + 1))));
-        if (result3.length > 5e4)
-          throw new Error("message limit");
-        start = -1;
-      }
-    }
-  }
-  if (start !== -1 || !result3.length)
-    throw new Error("incomplete stream");
-  return result3;
-}
-function parseGovulncheckOutput(text4, files) {
-  const moduleMatches = [...(files.find((file) => file.path === "go.mod")?.text ?? "").matchAll(/^\s*module\s+(?:"([^"\r\n]+)"|([^\s]+))/gm)];
-  if (moduleMatches.length !== 1)
-    throw new Error("missing or ambiguous main module");
-  const mainModule = token(moduleMatches[0][1] ?? moduleMatches[0][2]);
-  if (mainModule.split("/").some((part) => !part || part === "." || part === ".."))
-    throw new Error("invalid main module");
-  const stream = messages(text4);
-  const config = object8(stream[0]?.config);
-  if (Object.keys(stream[0]).length !== 1 || config.protocol_version !== "v1.0.0" || config.scan_level !== "symbol" || config.scan_mode !== "source")
-    throw new Error("unsupported protocol");
-  const entries = /* @__PURE__ */ new Set();
-  const records = [];
-  const modules = /* @__PURE__ */ new Map();
-  let sbomSeen = false, roots = 0;
-  for (const message of stream.slice(1)) {
-    const keys6 = Object.keys(message);
-    if (keys6.length !== 1)
-      throw new Error("invalid message");
-    const key2 = keys6[0], value = object8(message[key2]);
-    if (key2 === "osv") {
-      if (typeof value.id !== "string" || !/^GO-\d{4}-\d{4,}$/.test(value.id))
-        throw new Error("invalid advisory");
-      entries.add(value.id);
-    } else if (key2 === "finding")
-      records.push(value);
-    else if (key2 === "SBOM") {
-      if (sbomSeen || !Array.isArray(value.roots) || !value.roots.length || !Array.isArray(value.modules))
-        throw new Error("invalid inventory");
-      const rootPaths = value.roots.map(token);
-      if (new Set(rootPaths).size !== rootPaths.length || rootPaths.some((path3) => path3 !== mainModule && !path3.startsWith(`${mainModule}/`) || path3.split("/").some((part) => !part || part === "." || part === "..")))
-        throw new Error("unbound roots");
-      const modulePaths = value.modules.map((module) => {
-        const m = object8(module), path3 = token(m.path);
-        modules.set(path3, m.version ? token(m.version) : "unknown");
-        return path3;
-      });
-      if (modulePaths.filter((path3) => path3 === mainModule).length !== 1 || new Set(modulePaths).size !== modulePaths.length)
-        throw new Error("unbound module inventory");
-      sbomSeen = true;
-      roots = value.roots.length;
-    } else if (key2 !== "progress")
-      throw new Error("unknown message");
-  }
-  if (!sbomSeen)
-    throw new Error("missing inventory");
-  const findings = /* @__PURE__ */ new Map();
-  for (const record10 of records) {
-    const id = token(record10.osv);
-    if (!entries.has(id) || !Array.isArray(record10.trace) || !record10.trace.length || record10.trace.length > 1024)
-      throw new Error("invalid finding");
-    const trace = record10.trace.map(object8), frame = trace[0];
-    const module = token(frame.module), version = frame.version ? token(frame.version) : "unknown";
-    if (modules.get(module) !== version)
-      throw new Error("unbound finding module or version");
-    const fixed = record10.fixed_version ? token(record10.fixed_version) : void 0;
-    const rank = frame.function ? 2 : frame.package ? 1 : 0;
-    const location2 = { path: "go.mod" };
-    for (const current of trace) {
-      token(current.module);
-      if (current.package)
-        token(current.package);
-      if (current.function !== void 0 && (typeof current.function !== "string" || current.function.length > 1024))
-        throw new Error("invalid symbol");
-      if (!current.position || current.module !== mainModule)
-        continue;
-      const position2 = object8(current.position);
-      const file = files.find((candidate) => candidate.path === position2.filename);
-      const line = position2.line;
-      if (!file || !Number.isSafeInteger(line) || Number(line) < 1 || Number(line) > file.text.split("\n").length)
-        throw new Error("unmapped position");
-      location2.path = file.path;
-      location2.line = Number(line);
-    }
-    const key2 = `${id}:${module}:${version}`;
-    if ((findings.get(key2)?.rank ?? -1) >= rank)
-      continue;
-    findings.set(key2, { rank, finding: {
-      ruleId: `govulncheck:${id}`,
-      title: `${id} in ${module}`,
-      description: `${module} ${version} is affected by a known Go vulnerability. ${rank === 2 ? "Govulncheck reports a static call path to an affected symbol." : rank === 1 ? "An affected package is imported; a call to an affected symbol was not observed." : "The affected module is required; an affected package import was not observed."} Severity is medium because the Go advisory protocol does not supply a severity rating.`,
-      severity: "medium",
-      confidence: rank === 2 ? "high" : "medium",
-      kind: "advisory",
-      location: location2,
-      remediation: fixed ? `Upgrade ${module === "stdlib" ? "the Go toolchain" : module} to ${fixed} or a newer unaffected version, then rerun the scan.` : "No fixed version was reported. Review the Go advisory and remove or isolate the affected dependency until a fix is available.",
-      references: [`https://pkg.go.dev/vuln/${id}`]
-    } });
-  }
-  const values = [...findings.values()];
-  return {
-    findings: values.map((value) => value.finding),
-    status: "completed",
-    notes: ["Go module advisories are deduplicated by vulnerability and module version; the strongest observed reachability is retained. Static reachability is build-specific and cannot prove runtime exploitability or cover reflect/unsafe calls. No source snippets or raw scanner messages are retained."],
-    metrics: {
-      rootsAnalyzed: roots,
-      findingCount: values.length,
-      reachableFindings: values.filter((value) => value.rank === 2).length,
-      goVersion: typeof config.go_version === "string" && /^go[0-9][A-Za-z0-9.+_-]{0,79}$/.test(config.go_version) ? config.go_version : "unknown",
-      scannerVersion: typeof config.scanner_version === "string" && /^[A-Za-z0-9.+_-]{1,80}$/.test(config.scanner_version) ? config.scanner_version : "unknown"
-    }
-  };
-}
-async function runGovulncheck(context) {
-  const check2 = (status, note2) => ({ id: "source.govulncheck", status, findings: [], notes: [note2] });
-  let buildTags;
-  try {
-    buildTags = normalizeGoBuildTags(context.buildTags);
-  } catch {
-    return check2("error", "Invalid Go build tags; no engine was started.");
-  }
-  const files = govulncheckFiles(context.snapshot), modules = files.filter((file) => /(?:^|\/)go\.mod$/.test(file.path));
-  if (!modules.length)
-    return check2("not_applicable", "No collected Go module was available for govulncheck.");
-  if (!context.snapshot.complete || modules.length !== 1 || modules[0]?.path !== "go.mod")
-    return check2("partial", "Govulncheck requires one complete root Go module. Incomplete snapshots and nested modules must be scanned separately.");
-  if (/=>\s*(?:"|`)?(?:\.{1,2}[\\/]|[\\/]|[A-Za-z]:[\\/])/.test(modules[0].text))
-    return check2("partial", "Local Go module replacements are unsupported because they can leave the staged source boundary.");
-  if (!context.toolPath)
-    return check2("partial", "Govulncheck executable was not found; Go vulnerability analysis was not performed.");
-  const go = await findExecutable(context.goPath ?? "go");
-  if (!go)
-    return check2("partial", "Go executable was not found. Supply a prepared Go toolchain; WakeIO does not install or download it during a scan.");
-  let staged;
-  try {
-    staged = await stageSnapshot({ ...context.snapshot, files });
-    const privateRoot = join6(dirname5(staged.dir), "govulncheck");
-    const home = join6(privateRoot, "home"), cache = join6(privateRoot, "build-cache"), gopath = join6(privateRoot, "gopath");
-    await Promise.all([home, cache, gopath].map((path3) => mkdir4(path3, { recursive: true, mode: 448 })));
-    const args = [
-      "-json",
-      "-mode",
-      "source",
-      "-scan",
-      "symbol",
-      ...context.database ? ["-db", context.database] : [],
-      ...buildTags.length ? ["-tags", buildTags.join(",")] : [],
-      "./..."
-    ];
-    const result3 = await runProcess(context.toolPath, args, {
-      cwd: staged.dir,
-      timeoutMs: context.timeoutMs,
-      home,
-      signal: context.signal,
-      runtimePath: dirname5(go),
-      environment: { GOTOOLCHAIN: "local", GOWORK: "off", GOFLAGS: "-mod=readonly", CGO_ENABLED: "0", GOENV: "off", GOPROXY: "off", GOSUMDB: "off", GOPATH: gopath, GOCACHE: cache, GOMODCACHE: context.moduleCache ? resolve8(context.moduleCache) : join6(gopath, "pkg", "mod") }
-    });
-    if (result3.cancelled || result3.spawnError || result3.timedOut || result3.outputLimitExceeded || result3.signal || result3.exitCode !== 0)
-      return check2("error", "Govulncheck did not complete. Check the prepared Go toolchain/module cache, build compatibility, vulnerability database, and timeout. Target dependencies and toolchains are never downloaded automatically.");
-    const parsed = parseGovulncheckOutput(result3.stdout, files);
-    return {
-      id: "source.govulncheck",
-      status: parsed.status ?? "completed",
-      findings: parsed.findings,
-      notes: [...parsed.notes, `Go build tags: ${buildTags.join(",") || "default"}; test packages: excluded. Other build configurations were not analyzed.`],
-      metrics: { ...parsed.metrics, buildTags: buildTags.join(","), testPackages: false }
-    };
-  } catch {
-    return check2("error", "Govulncheck output or staged runtime was invalid; Go vulnerability analysis is incomplete.");
-  } finally {
-    await staged?.cleanup();
-  }
-}
-
-// build/src/trivy-vuln.js
-init_process();
-init_collector();
-import { lstat as lstat4, mkdir as mkdir5, mkdtemp as mkdtemp4, rm as rm4, writeFile as writeFile4 } from "node:fs/promises";
-import { tmpdir as tmpdir4 } from "node:os";
-import { basename as basename2, isAbsolute as isAbsolute8, join as join7, relative as relative7, resolve as resolve9 } from "node:path";
-
-// build/src/source/requirements.js
-function inspectRequirementsFile(text4) {
-  let packageCount = 0;
-  let unresolved = false;
-  for (const rawLine of text4.replace(/^\uFEFF/, "").split(/\r\n|\r|\n/)) {
-    const line = rawLine.replace(/\s+#.*$/, "").trim();
-    if (!line || line.startsWith("#"))
-      continue;
-    if (/^(?:-r|--requirement|-c|--constraint)(?:\s+|=)/i.test(line)) {
-      unresolved = true;
-      continue;
-    }
-    if (/^--(?:hash(?:=|\s)|require-hashes(?:=|\s|$)|index-url(?:=|\s)|extra-index-url(?:=|\s)|trusted-host(?:=|\s)|find-links(?:=|\s)|no-index(?:=|\s|$)|only-binary(?:=|\s)|no-binary(?:=|\s)|prefer-binary(?:=|\s)|pre(?:=|\s|$))/i.test(line))
-      continue;
-    if (/^(?:-|git\+|hg\+|svn\+|bzr\+|https?:|file:|ssh:|\.?\.?\/|[A-Za-z0-9_.-]+\s*@\s*)/i.test(line)) {
-      unresolved = true;
-      continue;
-    }
-    const withoutHash = line.split(/\s+--hash(?:=|\s+)/i, 1)[0].trim();
-    const spec = withoutHash.split(";", 1)[0].trim();
-    const match = /^([A-Za-z0-9][A-Za-z0-9._-]*)(?:\[[^\]\r\n]+\])?\s*==\s*([^\s,;#=]+)$/i.exec(spec);
-    if (!match || (spec.match(/==/g)?.length ?? 0) !== 1 || /(?:[<>~!]=?|\*|,)/.test(spec.replace(/==/g, ""))) {
-      unresolved = true;
-      continue;
-    }
-    packageCount += 1;
-  }
-  return { pinned: !unresolved && packageCount > 0, packageCount };
-}
-
-// build/src/trivy-vuln.js
-var MANIFESTS = /* @__PURE__ */ new Set(["package-lock.json", "npm-shrinkwrap.json", "yarn.lock", "pnpm-lock.yaml", "go.mod", "go.sum", "Cargo.lock", "Gemfile.lock", "poetry.lock", "Pipfile.lock", "uv.lock", "requirements.txt", "requirements-dev.txt", "requirements-prod.txt", "packages.lock.json", "composer.lock"]);
-var SEVERITIES = { UNKNOWN: "info", LOW: "low", MEDIUM: "medium", HIGH: "high", CRITICAL: "critical" };
-function isTrivyVulnerabilityManifest(path3) {
-  return MANIFESTS.has(basename2(path3));
-}
-function trivyVulnerabilityFiles(snapshot4) {
-  return snapshot4.files.filter((file) => !file.sensitive && file.category === "dependency" && isTrivyVulnerabilityManifest(file.path));
-}
-function object9(value) {
-  if (!value || typeof value !== "object" || Array.isArray(value))
-    throw new Error("invalid record");
-  return value;
-}
-function identifier(value, max = 512) {
-  if (typeof value !== "string" || value.length < 1 || value.length > max || !/^[A-Za-z0-9@][A-Za-z0-9_@./+!~:,*()=<> -]*$/.test(value))
-    throw new Error("invalid identifier");
-  return value;
-}
-function sourcePath(value, options) {
-  if (typeof value !== "string" || !options.stageDir)
-    throw new Error("invalid path");
-  const path3 = relative7(resolve9(options.stageDir), resolve9(options.stageDir, value)).replaceAll("\\", "/");
-  if (isAbsolute8(path3) || path3.startsWith("../") || !(options.allowedPaths ?? []).includes(path3))
-    throw new Error("unmapped path");
-  return path3;
-}
-function parseTrivyVulnerabilityOutput(text4, options) {
-  if (Buffer.byteLength(text4) > 8 * 1024 * 1024)
-    throw new Error("output limit");
-  const root = object9(JSON.parse(text4));
-  if (root.SchemaVersion !== 2 || !Array.isArray(root.Results))
-    throw new Error("invalid report envelope");
-  if (options.image ? root.ArtifactType !== "container_image" : root.ArtifactType !== "filesystem")
-    throw new Error("wrong artifact type");
-  const findings = /* @__PURE__ */ new Map(), scanned = /* @__PURE__ */ new Set();
-  let packages = 0, resultCount = 0;
-  for (const raw of root.Results) {
-    const result3 = object9(raw);
-    if (result3.Class !== "lang-pkgs" && result3.Class !== "os-pkgs")
-      throw new Error("unexpected result class");
-    if (!options.image && result3.Class !== "lang-pkgs")
-      throw new Error("unexpected OS input");
-    if (typeof result3.Type !== "string" || !/^[a-z0-9-]{1,40}$/.test(result3.Type))
-      throw new Error("invalid package type");
-    const path3 = options.image ? `image/${result3.Class}/${result3.Type}` : sourcePath(result3.Target, options);
-    scanned.add(path3);
-    resultCount++;
-    if (!Array.isArray(result3.Packages))
-      throw new Error("missing package inventory");
-    packages += result3.Packages.length;
-    for (const rawPackage of result3.Packages) {
-      const pkg = object9(rawPackage);
-      identifier(pkg.Name);
-      if (pkg.Version !== void 0 || pkg.Relationship !== "root")
-        identifier(pkg.Version);
-    }
-    if (result3.Vulnerabilities != null && !Array.isArray(result3.Vulnerabilities))
-      throw new Error("invalid vulnerability list");
-    for (const rawVuln of result3.Vulnerabilities ?? []) {
-      const vuln = object9(rawVuln), id = identifier(vuln.VulnerabilityID, 128), name2 = identifier(vuln.PkgName), installed = identifier(vuln.InstalledVersion);
-      if (!/^[A-Za-z0-9][A-Za-z0-9_.:-]{1,127}$/.test(id) || typeof vuln.Severity !== "string" || !Object.hasOwn(SEVERITIES, vuln.Severity))
-        throw new Error("invalid vulnerability");
-      const fixed = vuln.FixedVersion ? identifier(vuln.FixedVersion) : void 0;
-      if (!result3.Packages.some((rawPackage) => {
-        const pkg = object9(rawPackage);
-        return pkg.Name === name2 && pkg.Version === installed;
-      }))
-        throw new Error("unbound package");
-      const key2 = `${id}:${path3}:${name2}:${installed}`;
-      const references2 = [];
-      if (/^CVE-\d{4}-\d{4,}$/.test(id))
-        references2.push(`https://nvd.nist.gov/vuln/detail/${id}`);
-      else if (/^GHSA-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}$/.test(id))
-        references2.push(`https://github.com/advisories/${id}`);
-      findings.set(key2, {
-        ruleId: `trivy-vuln:${id}`,
-        title: `${id} in ${name2}`,
-        description: `${name2} ${installed} matches a known ${result3.Class === "os-pkgs" ? "OS" : "application"} package advisory. Package presence does not establish runtime reachability or exploitability.${vuln.Severity === "UNKNOWN" ? " The advisory has no severity rating; info is used rather than inferring a score." : ""}`,
-        severity: SEVERITIES[vuln.Severity],
-        confidence: "high",
-        kind: "advisory",
-        location: { path: path3 },
-        remediation: fixed ? `Upgrade ${name2} to an unaffected version listed by the advisory (reported fixed versions: ${fixed}), rebuild the ${options.image ? "image" : "dependency lockfile"}, and rerun the scan.` : `No fixed version was reported for ${name2}. Review the advisory, update the base image/dependency when a fix becomes available, or remove the affected package.`,
-        ...references2.length ? { references: references2 } : {}
-      });
-    }
-  }
-  const unreported = options.image ? 0 : (options.allowedPaths ?? []).filter((path3) => !scanned.has(path3) && !(basename2(path3) === "go.sum" && scanned.has(path3.replace(/go\.sum$/, "go.mod")))).length;
-  return {
-    findings: [...findings.values()],
-    status: unreported > 0 || resultCount === 0 || packages === 0 ? "partial" : "completed",
-    notes: [
-      `Trivy inspected ${packages} package records in ${resultCount} inventories. Findings identify affected package versions, not reachable application flaws.`,
-      ...unreported ? [`${unreported} selected dependency files did not produce an inventory; package coverage is incomplete.`] : [],
-      ...resultCount === 0 || packages === 0 ? ["No package inventory was reported; an empty result is not accepted as a clean vulnerability scan."] : [],
-      ...options.image ? ["Image locations are synthetic inventory paths, not host source files. Only the supplied archive was inspected; the image was not run."] : []
-    ],
-    metrics: { inventories: resultCount, packages, findingCount: findings.size, unreportedInputs: unreported }
-  };
-}
-async function runTrivyVulnerabilities(options) {
-  const image = options.imageArchive !== void 0, id = image ? "image.trivy" : "source.trivy-vuln";
-  const check2 = (status, note2) => ({ id, status, findings: [], notes: [note2] });
-  const files = options.snapshot ? trivyVulnerabilityFiles(options.snapshot) : [];
-  const unresolvedRequirements = files.filter((file) => /^requirements(?:-(?:dev|prod))?\.txt$/.test(basename2(file.path)) && !inspectRequirementsFile(file.text).pinned).length;
-  if (image && (options.snapshot || options.stageDir))
-    return check2("error", "Choose exactly one Trivy target: a staged source snapshot or a local image archive.");
-  if (!image && (!options.snapshot || !options.stageDir))
-    return check2("error", "Trivy filesystem vulnerability scanning requires a staged source snapshot.");
-  if (!image && files.length === 0)
-    return check2("not_applicable", "No supported dependency inventory was collected for Trivy vulnerability scanning.");
-  if (!options.toolPath)
-    return check2("partial", "Trivy executable was not found; the selected package/image vulnerability scan was not performed.");
-  let privateRoot, staged;
-  try {
-    if (image) {
-      const stat2 = await lstat4(options.imageArchive);
-      if (!stat2.isFile() || stat2.isSymbolicLink())
-        return check2("error", "The image target must be a regular local Docker/OCI tar archive.");
-    }
-    if (!image)
-      staged = await stageSnapshot({ ...options.snapshot, files });
-    privateRoot = await mkdtemp4(join7(tmpdir4(), "wakeio-trivy-vuln-"));
-    const home = join7(privateRoot, "home"), modules = join7(privateRoot, "modules"), cache = options.cacheDir ? resolve9(options.cacheDir) : join7(privateRoot, "cache");
-    await Promise.all([home, modules, cache].map((path3) => mkdir5(path3, { recursive: true, mode: 448 })));
-    const config = join7(privateRoot, "trivy.yaml"), ignore = join7(privateRoot, "empty.ignore");
-    await writeFile4(config, "{}\n", { mode: 384 });
-    await writeFile4(ignore, "", { mode: 384 });
-    const args = [image ? "image" : "fs", "--quiet", "--disable-telemetry", "--skip-version-check", "--format", "json", "--exit-code", "0", "--scanners", "vuln", "--list-all-pkgs", "--pkg-types", image ? "os,library" : "library", "--config", config, "--ignorefile", ignore, "--cache-dir", cache, "--module-dir", modules, "--offline-scan", ...!image ? ["--file-patterns", "pip:(^|/)requirements-(dev|prod)\\.txt$"] : [], ...options.offline ? ["--skip-db-update", "--skip-java-db-update"] : [], ...image ? ["--input", resolve9(options.imageArchive)] : [staged.dir]];
-    const result3 = await runProcess(options.toolPath, args, { cwd: image ? privateRoot : staged.dir, timeoutMs: options.timeoutMs, home, signal: options.signal });
-    if (result3.cancelled || result3.spawnError || result3.timedOut || result3.outputLimitExceeded || result3.signal || result3.exitCode !== 0)
-      return check2("error", "Trivy vulnerability scanning did not complete. Check the prepared database/cache, archive format, and timeout; no clean result is inferred from missing output.");
-    const parsed = parseTrivyVulnerabilityOutput(result3.stdout, { image, stageDir: staged?.dir, allowedPaths: files.map((file) => file.path) });
-    const incomplete2 = !image && options.snapshot?.complete === false;
-    return {
-      id,
-      status: incomplete2 || unresolvedRequirements ? "partial" : parsed.status ?? "completed",
-      findings: parsed.findings,
-      notes: [
-        ...parsed.notes,
-        ...incomplete2 ? ["The collected snapshot was incomplete; dependency coverage is incomplete."] : [],
-        ...unresolvedRequirements ? ["Python requirements contain an unresolved range, include, URL or option; only inventoried versions were checked and dependency coverage is incomplete."] : []
-      ],
-      metrics: { ...parsed.metrics, unresolvedRequirements }
-    };
-  } catch {
-    return check2("error", "Trivy returned invalid vulnerability data or its target/cache could not be read.");
-  } finally {
-    await staged?.cleanup();
-    if (privateRoot)
-      await rm4(privateRoot, { recursive: true, force: true });
-  }
-}
-
-// build/src/source.js
+init_analyzer_registry();
+init_analyzer_inputs();
 var DEFAULT_SOURCE_TOOLS = ["gitleaks", "osv", "trivy"];
-var OSV_LOCKFILE_NAMES = /* @__PURE__ */ new Set([
-  "package-lock.json",
-  "npm-shrinkwrap.json",
-  "yarn.lock",
-  "pnpm-lock.yaml",
-  "bun.lock",
-  "bun.lockb",
-  "cargo.lock",
-  "go.sum",
-  "gemfile.lock",
-  "composer.lock",
-  "pipfile.lock",
-  "poetry.lock",
-  "uv.lock",
-  "deno.lock"
-]);
-var OSV_MANIFEST_NAMES = /* @__PURE__ */ new Set([
-  "package.json",
-  "composer.json",
-  "cargo.toml",
-  "go.mod",
-  "gemfile",
-  "pipfile",
-  "pyproject.toml",
-  "requirements.txt",
-  "requirements-dev.txt",
-  "requirements-prod.txt"
-]);
+var LEGACY_SCANNERS = Object.freeze({ gitleaks: runGitleaks, osv: runOsv, trivy: runTrivy });
 var SOURCE_CODE_EXTENSIONS = /\.(?:[cm]?[jt]sx?)$/i;
 var SOURCE_PYTHON_EXTENSION = /\.py$/i;
 var SOURCE_SQL_EXTENSION = /\.sql$/i;
@@ -247485,13 +247969,10 @@ function normalizeTimeout(value) {
     return DEFAULT_TOOL_TIMEOUT_MS;
   return Math.min(value, MAX_TOOL_TIMEOUT_MS);
 }
-function isToolName(value) {
-  return value === "gitleaks" || value === "osv" || value === "trivy" || value === "bandit" || value === "semgrep" || value === "govulncheck" || value === "trivy-vuln";
-}
 function requestedTools(options) {
   if (!Array.isArray(options.tools))
     return [...DEFAULT_SOURCE_TOOLS];
-  return [...new Set(options.tools.filter(isToolName))];
+  return [...new Set(options.tools.filter(isSourceTool))];
 }
 function checkStatusForSnapshot(snapshot4) {
   if (snapshot4.rootError)
@@ -247543,19 +248024,19 @@ function partialCheck(id, message, metrics) {
 function notApplicableCheck(id, message, metrics) {
   return { id, status: "not_applicable", findings: [], notes: [message], ...metrics ? { metrics } : {} };
 }
-function processFailure2(result3, tool, timeoutMs) {
+function processFailure2(result3, tool2, timeoutMs) {
   if (result3.cancelled)
-    return `${tool} was cancelled; coverage is incomplete.`;
+    return `${tool2} was cancelled; coverage is incomplete.`;
   if (result3.spawnError)
-    return `${tool} could not be started.`;
+    return `${tool2} could not be started.`;
   if (result3.timedOut)
-    return `${tool} exceeded the ${timeoutMs} ms scanner timeout.`;
+    return `${tool2} exceeded the ${timeoutMs} ms scanner timeout.`;
   if (result3.outputLimitExceeded)
-    return `${tool} exceeded the scanner output limit.`;
+    return `${tool2} exceeded the scanner output limit.`;
   if (result3.exitCode !== null && result3.exitCode > 1)
-    return `${tool} exited with code ${result3.exitCode}.`;
+    return `${tool2} exited with code ${result3.exitCode}.`;
   if (result3.signal)
-    return `${tool} was terminated by ${result3.signal}.`;
+    return `${tool2} was terminated by ${result3.signal}.`;
   return void 0;
 }
 function ensureParsedResult(id, parsed) {
@@ -247567,105 +248048,11 @@ function ensureParsedResult(id, parsed) {
     ...parsed.metrics ? { metrics: parsed.metrics } : {}
   };
 }
-function trivyInputCandidate(path3, text4) {
-  const lower = path3.toLowerCase();
-  const name2 = lower.slice(lower.lastIndexOf("/") + 1);
-  if (name2 === "dockerfile" || name2.endsWith(".dockerfile"))
-    return true;
-  if (/\.(?:yaml|yml)$/.test(lower))
-    return true;
-  if (/\.(?:tf|tfvars|hcl)(?:\.json)?$/.test(lower))
-    return true;
-  if (!lower.endsWith(".json"))
-    return false;
-  try {
-    const parsed = JSON.parse(text4);
-    if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed))
-      return false;
-    const object19 = parsed;
-    return typeof object19.apiVersion === "string" && typeof object19.kind === "string";
-  } catch {
-    return false;
-  }
-}
-function fileBasename(path3) {
-  return path3.slice(path3.lastIndexOf("/") + 1).toLowerCase();
-}
-function packageManifestHasExplicitlyEmptyDependencies(text4) {
-  try {
-    const parsed = JSON.parse(text4);
-    if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed))
-      return false;
-    const object19 = parsed;
-    const fields = ["dependencies", "devDependencies", "peerDependencies", "optionalDependencies", "bundledDependencies", "bundleDependencies"];
-    if (!fields.some((key2) => Object.prototype.hasOwnProperty.call(object19, key2)))
-      return false;
-    for (const key2 of ["dependencies", "devDependencies", "peerDependencies", "optionalDependencies", "bundledDependencies", "bundleDependencies", "require", "require-dev"]) {
-      const value = object19[key2];
-      if (Array.isArray(value) && value.length > 0)
-        return false;
-      if (value !== void 0 && (value === null || typeof value !== "object" || Object.keys(value).length > 0))
-        return false;
-    }
-    return true;
-  } catch {
-    return false;
-  }
-}
-function dependencyManifestNeedsLockfile(file) {
-  const name2 = fileBasename(file.path);
-  return name2 !== "package.json" || !packageManifestHasExplicitlyEmptyDependencies(file.text);
-}
-function requirementsInspection(snapshot4) {
-  const pinned = [];
-  const unresolved = [];
-  for (const file of snapshot4.files) {
-    if (file.category !== "dependency" || !/^requirements(?:-[^/]+)?\.txt$/i.test(fileBasename(file.path)))
-      continue;
-    if (inspectRequirementsFile(file.text).pinned)
-      pinned.push(file.path);
-    else
-      unresolved.push(file.path);
-  }
-  return { pinned, unresolved };
-}
-function osvLockfiles(snapshot4) {
-  const requirements = new Set(requirementsInspection(snapshot4).pinned);
-  return snapshot4.files.filter((file) => file.category === "dependency" && (OSV_LOCKFILE_NAMES.has(fileBasename(file.path)) || requirements.has(file.path))).map((file) => file.path);
-}
-function osvManifestDeclaresDependencies(snapshot4) {
-  return snapshot4.files.some((file) => file.category === "dependency" && OSV_MANIFEST_NAMES.has(fileBasename(file.path)) && dependencyManifestNeedsLockfile(file));
-}
-function osvHasApplicableInput(snapshot4) {
-  return osvLockfiles(snapshot4).length > 0 || osvManifestDeclaresDependencies(snapshot4);
-}
-function trivyHasApplicableInput(snapshot4) {
-  return snapshot4.files.some((file) => file.category === "config" && trivyInputCandidate(file.path, file.text));
-}
 function hasOtherSecurityCheck(snapshot4, tools, nativeSelected = false) {
-  return nativeSelected && nativeFiles(snapshot4).length > 0 || tools.some((tool) => {
-    if (tool === "gitleaks")
-      return snapshot4.files.length > 0;
-    if (tool === "osv")
-      return osvHasApplicableInput(snapshot4);
-    if (tool === "trivy")
-      return trivyHasApplicableInput(snapshot4);
-    if (tool === "semgrep")
-      return semgrepFiles(snapshot4).length > 0;
-    if (tool === "govulncheck")
-      return govulncheckHasApplicableInput(snapshot4);
-    if (tool === "trivy-vuln")
-      return snapshot4.files.some((file) => file.category === "dependency");
-    return pythonFiles(snapshot4).length > 0;
-  }) || frameworkHasApplicableInput(snapshot4);
+  return nativeSelected && sourceAnalyzer("opengrep_native").applicable(snapshot4) || tools.some((tool2) => toolAnalyzer(tool2).applicable(snapshot4)) || sourceAnalyzer("framework").applicable(snapshot4);
 }
-function pathForTool(snapshot4, tool) {
-  if (tool === "osv") {
-    return osvLockfiles(snapshot4);
-  }
-  if (tool === "trivy")
-    return snapshot4.files.filter((file) => file.category === "config" && trivyInputCandidate(file.path, file.text) && isTrivyConfigSafe(file.path, file.text)).map((file) => file.path);
-  return snapshot4.files.map((file) => file.path);
+function trivyPaths(snapshot4) {
+  return snapshot4.files.filter((file) => file.category === "config" && trivyInputCandidate(file.path, file.text) && isTrivyConfigSafe(file.path, file.text)).map((file) => file.path);
 }
 function isTrivyConfigSafe(path3, text4) {
   const lower = path3.toLowerCase();
@@ -247727,7 +248114,7 @@ async function runGitleaks(context) {
   }
 }
 async function runOsv(context) {
-  const lockfiles = pathForTool(context.snapshot, "osv");
+  const lockfiles = osvLockfiles(context.snapshot);
   const requirements = requirementsInspection(context.snapshot);
   if (lockfiles.length === 0) {
     return osvManifestDeclaresDependencies(context.snapshot) ? partialCheck("source.osv", requirements.unresolved.length > 0 ? "Python requirements input contains an unresolved range, URL, option, or include; OSV coverage is partial until a pinned lockfile is supplied." : "A dependency manifest declares packages, but no supported lockfile was available for OSV-Scanner.", { lockfiles: 0, dependencyManifest: true, unresolvedRequirements: requirements.unresolved.length }) : notApplicableCheck("source.osv", "No allowlisted dependency manifest or supported lockfile was available for OSV-Scanner.", { lockfiles: 0, dependencyManifest: false });
@@ -247784,7 +248171,7 @@ async function runOsv(context) {
   }
 }
 async function runTrivy(context) {
-  const configs = pathForTool(context.snapshot, "trivy");
+  const configs = trivyPaths(context.snapshot);
   if (configs.length === 0) {
     return context.blockedConfigCount ? partialCheck("source.trivy", "Terraform configuration requiring module or external file resolution was excluded from Trivy to prevent network or filesystem egress.", { configFiles: 0, blockedConfigFiles: context.blockedConfigCount }) : notApplicableCheck("source.trivy", "No supported Dockerfile, Kubernetes manifest, or Terraform configuration was available for Trivy config scanning.", { configFiles: 0, blockedConfigFiles: 0 });
   }
@@ -247839,39 +248226,27 @@ async function runTrivy(context) {
     return errorCheck2("source.trivy", "Trivy returned an invalid or incomplete JSON report.");
   }
 }
-async function runTool(tool, snapshot4, stageDir, options, timeoutMs, blockedConfigCount = 0) {
-  if (tool === "semgrep" || tool === "govulncheck" || tool === "trivy-vuln") {
-    const command = options.toolPaths?.[tool] ?? (tool === "trivy-vuln" ? options.toolPaths?.trivy ?? "trivy" : tool);
-    const toolPath = await findExecutable(command) ?? "";
-    const context = { snapshot: snapshot4, stageDir, toolPath, timeoutMs, signal: options.signal };
-    if (tool === "semgrep")
-      return runSemgrep(context);
-    if (tool === "govulncheck")
-      return runGovulncheck({ ...context, goPath: options.goPath, moduleCache: options.goModuleCache, database: options.govulnDatabase, buildTags: options.goBuildTags });
-    return runTrivyVulnerabilities({ ...context, cacheDir: options.trivyCache, offline: options.trivyOffline });
+async function runTool(tool2, snapshot4, stageDir, options, timeoutMs, blockedConfigCount = 0) {
+  const analyzer = toolAnalyzer(tool2);
+  const context = {
+    snapshot: snapshot4,
+    stageDir,
+    options,
+    timeoutMs,
+    blockedConfigCount,
+    toolPath: "",
+    legacy: LEGACY_SCANNERS
+  };
+  if (!analyzer.adapterOwnsPreflight && !(analyzer.stage === "safe-config" ? trivyPaths(snapshot4).length > 0 : analyzer.applicable(snapshot4)))
+    return analyzer.run(context);
+  if (!analyzer.adapterOwnsPreflight && options.signal?.aborted) {
+    return partialCheck(analyzer.checkId, "Source scanner was cancelled before execution.");
   }
-  if (tool === "trivy" && pathForTool(snapshot4, "trivy").length === 0) {
-    return runTrivy({ snapshot: snapshot4, stageDir, timeoutMs, toolPath: "", blockedConfigCount });
+  const executable3 = await findExecutable(analyzer.executable(options));
+  if (!executable3 && !analyzer.adapterOwnsPreflight) {
+    return partialCheck(analyzer.checkId, `${tool2} executable was not found; this scanner's coverage is unavailable.`);
   }
-  if (tool === "osv" && !osvHasApplicableInput(snapshot4)) {
-    return runOsv({ snapshot: snapshot4, stageDir, timeoutMs, toolPath: "" });
-  }
-  if (tool === "bandit" && pythonFiles(snapshot4).length === 0) {
-    return runBandit({ snapshot: snapshot4, stageDir, timeoutMs, toolPath: "" });
-  }
-  if (options.signal?.aborted)
-    return partialCheck(`source.${tool}`, "Source scanner was cancelled before execution.");
-  const configuredPath = options.toolPaths?.[tool];
-  const executable3 = await findExecutable(configuredPath ?? (tool === "osv" ? "osv-scanner" : tool));
-  if (!executable3)
-    return partialCheck(`source.${tool}`, `${tool} executable was not found; this scanner's coverage is unavailable.`);
-  if (tool === "gitleaks")
-    return runGitleaks({ snapshot: snapshot4, stageDir, timeoutMs, toolPath: executable3, signal: options.signal });
-  if (tool === "osv")
-    return runOsv({ snapshot: snapshot4, stageDir, timeoutMs, toolPath: executable3, signal: options.signal, ...options.osvOffline ? { osvOffline: true } : {} });
-  if (tool === "bandit")
-    return runBandit({ snapshot: snapshot4, stageDir, timeoutMs, toolPath: executable3, signal: options.signal });
-  return runTrivy({ snapshot: snapshot4, stageDir, timeoutMs, toolPath: executable3, blockedConfigCount, signal: options.signal });
+  return analyzer.run({ ...context, toolPath: executable3 ?? "" });
 }
 async function runSource(options) {
   let tools = [];
@@ -247909,36 +248284,36 @@ async function runSource(options) {
   }
   if (options.signal?.aborted)
     return finish([inventoryCheck(snapshot4, tools, !!options.nativePreview, options.outDir), partialCheck("source.cancelled", "Source scan was cancelled after collection.")], snapshot4);
+  const analyzerContext = {
+    snapshot: snapshot4,
+    options,
+    stageDir: "",
+    toolPath: "",
+    timeoutMs,
+    builtinAst: () => runBuiltinAst(snapshot4, hasOtherSecurityCheck(snapshot4, tools, !!options.nativePreview), analysisBudget.limits, analysisBudget),
+    legacy: LEGACY_SCANNERS
+  };
   const checks = [
     inventoryCheck(snapshot4, tools, !!options.nativePreview, options.outDir),
-    runBuiltinAst(snapshot4, hasOtherSecurityCheck(snapshot4, tools, !!options.nativePreview), analysisBudget.limits, analysisBudget),
-    runFrameworkRules(snapshot4)
+    ...SYNC_ANALYZERS.map((analyzer) => analyzer.run(analyzerContext))
   ];
-  if (options.nativePreview)
-    checks.push(await runNativePreview(snapshot4, options));
+  for (const analyzer of ANALYZERS.filter((provider2) => provider2.selection === "native-preview")) {
+    if (analyzer.selected({ tools, nativePreview: !!options.nativePreview }))
+      checks.push(await analyzer.run(analyzerContext));
+  }
   if (options.signal?.aborted) {
     checks.push(partialCheck("source.cancelled", "Source scan was cancelled; later stages were not started."));
     return finish(checks, snapshot4);
   }
   if (tools.length === 0 || snapshot4.files.length === 0 || snapshot4.rootError) {
     if (snapshot4.files.length === 0 && !snapshot4.rootError) {
-      checks.push(...tools.map((tool) => {
-        if (tool === "trivy")
-          return notApplicableCheck("source.trivy", "No supported Dockerfile, Kubernetes manifest, or Terraform configuration was available for Trivy config scanning.", { configFiles: 0, blockedConfigFiles: 0 });
-        if (tool === "osv")
-          return notApplicableCheck("source.osv", "No allowlisted dependency manifest or supported lockfile was available for OSV-Scanner.", { lockfiles: 0, dependencyManifest: false });
-        if (tool === "bandit")
-          return notApplicableCheck("source.bandit", "No allowlisted Python file was available for Bandit.", { files: 0 });
-        if (tool === "semgrep" || tool === "govulncheck" || tool === "trivy-vuln")
-          return notApplicableCheck(`source.${tool}`, "No applicable source input was collected.", { files: 0 });
-        return notApplicableCheck("source.gitleaks", "No allowlisted source file was available for Gitleaks.", { files: 0 });
-      }));
+      checks.push(...tools.map((tool2) => toolAnalyzer(tool2).notApplicable(snapshot4)));
       if (tools.length > 0 && checks.filter((check2) => check2.id !== "source.inventory").every((check2) => check2.status === "not_applicable")) {
         checks.push(partialCheck("source.coverage", "No applicable security check could run for this source snapshot; coverage is incomplete."));
       }
     }
     if (snapshot4.rootError)
-      checks.push(...tools.map((tool) => errorCheck2(`source.${tool}`, `The source root could not be scanned by ${tool}.`)));
+      checks.push(...tools.map((tool2) => errorCheck2(`source.${tool2}`, `The source root could not be scanned by ${tool2}.`)));
     return finish(checks, snapshot4);
   }
   let staged;
@@ -247946,13 +248321,13 @@ async function runSource(options) {
     staged = await stageSnapshot(snapshot4);
     await mkdir6(join8(dirname6(staged.dir), "home"), { recursive: true, mode: 448 });
   } catch {
-    checks.push(...tools.map((tool) => errorCheck2(`source.${tool}`, `The bounded snapshot could not be staged for ${tool}.`)));
+    checks.push(...tools.map((tool2) => errorCheck2(`source.${tool2}`, `The bounded snapshot could not be staged for ${tool2}.`)));
     return finish(checks, snapshot4);
   }
   let trivyStaged;
   let trivySnapshot;
   let blockedConfigCount = 0;
-  if (tools.includes("trivy") && !options.signal?.aborted) {
+  if (tools.some((tool2) => toolAnalyzer(tool2).stage === "safe-config") && !options.signal?.aborted) {
     const trivyCandidates = snapshot4.files.filter((file) => file.category === "config" && trivyInputCandidate(file.path, file.text));
     const trivyFiles = trivyCandidates.filter((file) => isTrivyConfigSafe(file.path, file.text));
     blockedConfigCount = trivyCandidates.filter((file) => !isTrivyConfigSafe(file.path, file.text)).length;
@@ -247968,7 +248343,7 @@ async function runSource(options) {
   }
   let banditStaged;
   let banditSnapshot;
-  if (tools.includes("bandit") && !options.signal?.aborted) {
+  if (tools.some((tool2) => toolAnalyzer(tool2).stage === "python") && !options.signal?.aborted) {
     const banditFiles = pythonFiles(snapshot4);
     banditSnapshot = { ...snapshot4, files: banditFiles };
     if (banditFiles.length > 0) {
@@ -247981,31 +248356,32 @@ async function runSource(options) {
     }
   }
   try {
-    const external = await Promise.all(tools.map(async (tool) => {
-      if (tool === "trivy" && trivySnapshot) {
+    const external = await Promise.all(tools.map(async (tool2) => {
+      const analyzer = toolAnalyzer(tool2);
+      if (analyzer.stage === "safe-config" && trivySnapshot) {
         if (trivySnapshot.files.length > 0 && !trivyStaged) {
-          return errorCheck2("source.trivy", "The bounded Trivy snapshot could not be staged for Trivy.");
+          return errorCheck2(analyzer.checkId, analyzer.stageFailure);
         }
         try {
-          return await runTool(tool, trivySnapshot, trivyStaged?.dir ?? staged.dir, options, timeoutMs, blockedConfigCount);
+          return await runTool(tool2, trivySnapshot, trivyStaged?.dir ?? staged.dir, options, timeoutMs, blockedConfigCount);
         } catch {
-          return errorCheck2("source.trivy", "Trivy scanning could not be completed.");
+          return errorCheck2(analyzer.checkId, analyzer.failureMessage);
         }
       }
-      if (tool === "bandit" && banditSnapshot) {
+      if (analyzer.stage === "python" && banditSnapshot) {
         if (banditSnapshot.files.length > 0 && !banditStaged) {
-          return errorCheck2("source.bandit", "The bounded Python snapshot could not be staged for Bandit.");
+          return errorCheck2(analyzer.checkId, analyzer.stageFailure);
         }
         try {
-          return await runTool(tool, banditSnapshot, banditStaged?.dir ?? staged.dir, options, timeoutMs);
+          return await runTool(tool2, banditSnapshot, banditStaged?.dir ?? staged.dir, options, timeoutMs);
         } catch {
-          return errorCheck2("source.bandit", "Bandit scanning could not be completed.");
+          return errorCheck2(analyzer.checkId, analyzer.failureMessage);
         }
       }
       try {
-        return await runTool(tool, snapshot4, staged.dir, options, timeoutMs);
+        return await runTool(tool2, snapshot4, staged.dir, options, timeoutMs);
       } catch {
-        return errorCheck2(`source.${tool}`, `${tool} scanning could not be completed.`);
+        return errorCheck2(`source.${tool2}`, `${tool2} scanning could not be completed.`);
       }
     }));
     checks.push(...external);
@@ -249593,102 +249969,102 @@ var severities = ["info", "low", "medium", "high", "critical"];
 var record6 = (x) => !!x && typeof x === "object" && !Array.isArray(x);
 var text = (x) => typeof x === "string";
 function parseScanReport(input) {
-  const invalid8 = () => {
+  const invalid9 = () => {
     throw new Error("Invalid scan report");
   };
   if (!record6(input))
-    return invalid8();
+    return invalid9();
   if (input.schemaVersion !== "1.0.0" || !text(input.toolVersion) || !input.toolVersion || !["source", "url", "both", "api", "combined"].includes(input.mode) || !text(input.startedAt) || !Number.isFinite(Date.parse(input.startedAt)) || !text(input.finishedAt) || !Number.isFinite(Date.parse(input.finishedAt)) || !Array.isArray(input.checks) || input.checks.length > 1e3)
-    return invalid8();
+    return invalid9();
   const checkIds = /* @__PURE__ */ new Set();
   let count5 = 0;
   for (const check2 of input.checks) {
     if (!record6(check2) || !text(check2.id) || !check2.id || checkIds.has(check2.id) || !["completed", "partial", "error", "skipped", "not_applicable"].includes(check2.status) || !Array.isArray(check2.findings) || !Array.isArray(check2.notes) || !check2.notes.every(text))
-      return invalid8();
+      return invalid9();
     if (check2.analysisBudget !== void 0 && !sanitiseAnalysisBudget(check2.analysisBudget))
-      return invalid8();
+      return invalid9();
     const codeField = collectionField(check2, "codeCoverage");
     const authRequired = collectionField(check2, "schemathesisAuthRequired");
     const authField = collectionField(check2, "schemathesisAuth");
     const auth = authField.valid ? sanitiseSchemathesisAuth(authField.value) : void 0;
     if (authRequired.present || authField.present) {
       if (check2.id !== "api.schemathesis" || !authRequired.valid || authRequired.value !== true || authField.present && (!authField.valid || !auth) || !auth && ["completed", "not_applicable"].includes(check2.status) || auth && (check2.metrics?.requestCount !== auth.requests.attempted || auth.status !== "completed" && ["completed", "not_applicable"].includes(check2.status)))
-        return invalid8();
+        return invalid9();
     }
     const codeCoverage = codeField.valid ? parseCodeCoverage(codeField.value) : void 0;
     if (codeField.present && (!codeField.valid || !codeCoverage || check2.id !== CODE_COVERAGE_ID) || check2.id === CODE_COVERAGE_ID && (!codeCoverage || !codeCoverageConsistent(codeCoverage, input.checks) || coverageIncomplete(codeCoverage) && ["completed", "not_applicable"].includes(check2.status) || check2.status === "not_applicable" || check2.findings.length > 0))
-      return invalid8();
+      return invalid9();
     const collectionBudget = collectionField(check2, "collectionBudget");
     const collectionEvidence2 = collectionField(check2, "collectionEvidence");
     const snapshotField = collectionField(check2, "sourceSnapshot");
     const sourceSnapshot = snapshotField.present ? sanitiseSourceSnapshotEvidence(snapshotField.value) : void 0;
     const snapshotBudget = sanitiseCollectionBudget(collectionBudget.value);
     if (!snapshotField.valid || snapshotField.present && (!sourceSnapshot || check2.id !== "source.inventory" || !snapshotBudget || sourceSnapshot.filesSelected > snapshotBudget.limits.maxFiles || sourceSnapshot.bytesSelected > snapshotBudget.limits.maxBytes || check2.metrics?.filesSelected !== sourceSnapshot.filesSelected || check2.metrics?.bytesSelected !== sourceSnapshot.bytesSelected || !sourceSnapshot.complete && ["completed", "not_applicable"].includes(check2.status)))
-      return invalid8();
+      return invalid9();
     if (!collectionBudget.valid || !collectionEvidence2.valid || collectionBudget.present && !sanitiseCollectionBudget(collectionBudget.value) || collectionEvidence2.present && !sanitiseCollectionEvidence(collectionEvidence2.value) || (collectionBudget.present || collectionEvidence2.present) && check2.id !== "source.inventory")
-      return invalid8();
+      return invalid9();
     const evidence2 = collectionEvidence2.present ? sanitiseCollectionEvidence(collectionEvidence2.value) : void 0;
     if (evidence2?.issues.some((issue2) => issue2.code === "root_error") && check2.status !== "error" || evidence2?.issues.some((issue2) => issue2.code !== "unsupported_file") && ["completed", "not_applicable"].includes(check2.status))
-      return invalid8();
+      return invalid9();
     const nativeField = collectionField(check2, "dastExecution");
     const nativeVersion = nativeField.valid && nativeField.value && typeof nativeField.value === "object" && !utilTypes3.isProxy(nativeField.value) ? Object.getOwnPropertyDescriptor(nativeField.value, "version") : void 0;
     const nativeV1 = nativeVersion && "value" in nativeVersion && nativeVersion.value === 1;
     if (nativeField.present && !nativeField.valid)
-      return invalid8();
+      return invalid9();
     let nativeExecution = null;
     if (nativeField.present && !nativeV1) {
       const execution = sanitizeDastExecution(nativeField.value);
       if (!execution || isLegacyDastExecution(execution) || check2.id !== "url.sql-boolean" || check2.metrics?.requestCount !== execution.counts.httpAttempts || execution.status !== "complete" && ["completed", "not_applicable"].includes(check2.status) || isDastObservedEvidence(execution) && check2.findings.length !== 1 && ["completed", "not_applicable"].includes(check2.status) || check2.findings.length > 0 && !isDastObservedEvidence(execution))
-        return invalid8();
+        return invalid9();
       nativeExecution = execution;
     }
     checkIds.add(check2.id);
     const writeEvidence = collectionField(check2, "apiWriteStateEvidence");
     if (writeEvidence.present && (!writeEvidence.valid || check2.id !== "api.owned-write-state-oracle" || !parseApiWriteStateEvidence(writeEvidence.value)))
-      return invalid8();
+      return invalid9();
     const propertyField = collectionField(check2, "propertyWriteEvidence");
     if (propertyField.present || check2.id === API_PROPERTY_CHECK) {
       const evidence3 = propertyField.valid ? parseApiPropertyWriteEvidence(propertyField.value) : void 0;
       if (!evidence3 || !apiPropertyCheckConsistent({ id: check2.id, findings: check2.findings, metrics: check2.metrics }, evidence3) || evidence3.execution !== "completed" && ["completed", "not_applicable"].includes(check2.status))
-        return invalid8();
+        return invalid9();
     }
     count5 += check2.findings.length;
     if (count5 > 5e4 || check2.status === "not_applicable" && check2.findings.length)
-      return invalid8();
+      return invalid9();
     for (const finding2 of check2.findings) {
       if (finding2 && typeof finding2 === "object" && utilTypes3.isProxy(finding2))
-        return invalid8();
+        return invalid9();
       if (!record6(finding2) || !text(finding2.ruleId) || !finding2.ruleId || !text(finding2.title) || !text(finding2.description) || !text(finding2.remediation) || !severities.includes(finding2.severity) || !["low", "medium", "high"].includes(finding2.confidence) || !["observation", "candidate", "advisory"].includes(finding2.kind) || !record6(finding2.location))
-        return invalid8();
+        return invalid9();
       if (nativeExecution && !isLegacyDastExecution(nativeExecution) && (finding2.kind !== "candidate" || finding2.confidence === "high" || (nativeExecution.status !== "complete" || check2.status !== "completed") && finding2.confidence !== "low"))
-        return invalid8();
+        return invalid9();
       const context = collectionField(finding2, "staticContext");
       if (!context.valid || context.present && (!sanitiseStaticContext(context.value) || finding2.confidence !== "low" || finding2.kind !== "candidate" || ["completed", "not_applicable"].includes(check2.status) || finding2.staticFlow !== void 0 && finding2.staticFlow.truncated !== true))
-        return invalid8();
+        return invalid9();
       if (finding2.comparisonKey !== void 0 && (!text(finding2.comparisonKey) || !/^[a-f0-9]{64}$/.test(finding2.comparisonKey)))
-        return invalid8();
+        return invalid9();
       if (finding2.staticFlow?.sourceKind !== void 0 && !["filesystem_filename", "archive_entry_path"].includes(finding2.staticFlow.sourceKind))
-        return invalid8();
+        return invalid9();
       for (const key2 of ["path", "url"])
         if (finding2.location[key2] !== void 0 && !text(finding2.location[key2]))
-          return invalid8();
+          return invalid9();
       for (const key2 of ["line", "column"])
         if (finding2.location[key2] !== void 0 && (!Number.isSafeInteger(finding2.location[key2]) || finding2.location[key2] < 1))
-          return invalid8();
+          return invalid9();
     }
   }
   if (input.scope !== void 0 && !validScope(input.scope))
-    return invalid8();
+    return invalid9();
   const coverage = input.checks.find((check2) => check2.id === CODE_COVERAGE_ID)?.codeCoverage;
   if (input.scope?.codeAnalysisPolicy && (!coverage || coverage.requireCodeAnalysis !== true))
-    return invalid8();
+    return invalid9();
   const safe = sanitiseReport(input);
   for (const check2 of input.checks) {
     if ((collectionField(check2, "schemathesisAuthRequired").present || collectionField(check2, "schemathesisAuth").present) && check2.status === "completed" && safe.checks.find((next) => next.id === check2.id)?.status !== "completed")
-      return invalid8();
+      return invalid9();
   }
   if (new Set(safe.checks.map((check2) => check2.id)).size !== safe.checks.length)
-    return invalid8();
+    return invalid9();
   return safe;
 }
 async function readScanReport(path3) {
@@ -250522,6 +250898,7 @@ init_collection_budget();
 init_analysis_budget();
 init_process();
 init_collector();
+init_trivy_vuln();
 import { access as access4, constants as constants5, lstat as lstat7, readdir as readdir4, stat } from "node:fs/promises";
 import { extname, join as join9, relative as relative9, resolve as resolve12, sep as sep6 } from "node:path";
 var DEFAULT_TOOLS = ["gitleaks", "osv", "trivy"];
@@ -250613,7 +250990,7 @@ async function doctorMain(argv = process.argv.slice(2)) {
     pythonFiles: Math.max(inventory.pythonFiles, codeMetadata.languages.get("python") ?? 0)
   }, codeMetadata);
   const codeAnalysisReadiness = codeReadiness(codeMetadata, options.tools, toolStatuses);
-  const expectedTransfers = toolStatuses.filter((tool) => tool.availability === "missing" && tool.applicability !== "not_applicable").map((tool) => tool.name === "bandit" ? "separately prepared trusted Bandit executable or Python environment (the native archive installer does not provide Bandit)" : tool.name === "semgrep" || tool.name === "govulncheck" ? `separately prepared trusted ${tool.name} executable${tool.name === "govulncheck" ? ", Go toolchain and module cache" : " (bundled WakeIO Go rules only)"}` : `pinned ${tool.name === "trivy-vuln" ? "trivy" : tool.name} release archive (installer verifies the upstream SHA-256 before extraction)`);
+  const expectedTransfers = toolStatuses.filter((tool2) => tool2.availability === "missing" && tool2.applicability !== "not_applicable").map((tool2) => tool2.name === "bandit" ? "separately prepared trusted Bandit executable or Python environment (the native archive installer does not provide Bandit)" : tool2.name === "semgrep" || tool2.name === "govulncheck" ? `separately prepared trusted ${tool2.name} executable${tool2.name === "govulncheck" ? ", Go toolchain and module cache" : " (bundled WakeIO Go rules only)"}` : `pinned ${tool2.name === "trivy-vuln" ? "trivy" : tool2.name} release archive (installer verifies the upstream SHA-256 before extraction)`);
   const runtimeNetwork = [];
   if (options.tools.includes("osv") && inventory.dependencyManifests > 0) {
     runtimeNetwork.push("OSV package/version and vulnerability lookups may use the public service unless an explicit prepared offline DB is supplied");
@@ -250621,9 +250998,9 @@ async function doctorMain(argv = process.argv.slice(2)) {
   if (options.tools.includes("trivy") && inventory.configFiles > 0) {
     runtimeNetwork.push("Trivy policy/DB traffic may be scanner-managed and is not verified by this Action");
   }
-  if (toolStatuses.some((tool) => tool.name === "govulncheck" && tool.applicability === "applicable"))
+  if (toolStatuses.some((tool2) => tool2.name === "govulncheck" && tool2.applicability === "applicable"))
     runtimeNetwork.push("Go vulnerability database lookups; module and toolchain downloads are disabled, prepared module cache required");
-  if (toolStatuses.some((tool) => tool.name === "trivy-vuln" && tool.applicability === "applicable"))
+  if (toolStatuses.some((tool2) => tool2.name === "trivy-vuln" && tool2.applicability === "applicable"))
     runtimeNetwork.push("Trivy vulnerability database download unless --trivy-offline uses a prepared cache; no image pull/build");
   const dast = options.dast ? await inspectDast(options) : void 0;
   const result3 = {
@@ -250648,9 +251025,9 @@ async function doctorMain(argv = process.argv.slice(2)) {
   } else {
     process.stdout.write(renderDoctorText(result3));
   }
-  if (options.strict && (inventory.truncated || toolStatuses.some((tool) => tool.availability === "missing" && tool.applicability !== "not_applicable")))
+  if (options.strict && (inventory.truncated || toolStatuses.some((tool2) => tool2.availability === "missing" && tool2.applicability !== "not_applicable")))
     return 2;
-  if (options.strict && toolStatuses.some((tool) => ["semgrep", "govulncheck", "trivy-vuln"].includes(tool.name) && tool.applicability === "unknown"))
+  if (options.strict && toolStatuses.some((tool2) => ["semgrep", "govulncheck", "trivy-vuln"].includes(tool2.name) && tool2.applicability === "unknown"))
     return 2;
   if (options.strict && options.requireCodeAnalysis && codeAnalysisReadiness.state !== "ready")
     return 2;
@@ -250790,8 +251167,8 @@ async function inspectDast(options) {
 function parseTools(value) {
   if (value.trim().toLowerCase() === "none")
     return [];
-  const tools = value.split(",").map((tool) => tool.trim().toLowerCase()).filter(Boolean);
-  if (tools.length === 0 || tools.includes("none") || tools.some((tool) => !TOOL_NAMES.has(tool)) || new Set(tools).size !== tools.length) {
+  const tools = value.split(",").map((tool2) => tool2.trim().toLowerCase()).filter(Boolean);
+  if (tools.length === 0 || tools.includes("none") || tools.some((tool2) => !TOOL_NAMES.has(tool2)) || new Set(tools).size !== tools.length) {
     throw new Error("--tools must be a comma-separated list of gitleaks, osv, trivy, bandit, semgrep, govulncheck, trivy-vuln, or none");
   }
   return tools;
@@ -250978,9 +251355,9 @@ function codeReadiness(metadata, selected, tools) {
     const selectedProviders = language === "javascript" || language === "typescript" ? ["builtin_ast"] : language === "python" && selected.includes("bandit") ? ["bandit"] : language === "go" && selected.includes("semgrep") ? ["semgrep"] : [];
     if (!selectedProviders.length)
       reasons.add("unsupported_language");
-    if (selectedProviders.includes("semgrep") && tools.find((tool) => tool.name === "semgrep")?.availability !== "available")
+    if (selectedProviders.includes("semgrep") && tools.find((tool2) => tool2.name === "semgrep")?.availability !== "available")
       reasons.add("provider_missing");
-    if (selectedProviders.includes("bandit") && tools.find((tool) => tool.name === "bandit")?.availability !== "available")
+    if (selectedProviders.includes("bandit") && tools.find((tool2) => tool2.name === "bandit")?.availability !== "available")
       reasons.add("provider_missing");
     return [{ language, observedFiles, selectedProviders }];
   });
@@ -251040,7 +251417,7 @@ function renderDoctorText(result3) {
     ...result3.codeAnalysisReadiness.languages.some((row) => row.language === "python" && !row.selectedProviders.length) ? ["Python code analysis requires explicitly selecting a separately prepared trusted Bandit executable (--tools bandit)."] : [],
     ...result3.codeAnalysisReadiness.limitations,
     "Target execution: none; network: none; package manager: none",
-    ...result3.tools.map((tool) => `Tool ${tool.name}: ${tool.availability} (${tool.applicability})${tool.path ? ` at ${tool.path}` : ""}`),
+    ...result3.tools.map((tool2) => `Tool ${tool2.name}: ${tool2.availability} (${tool2.applicability})${tool2.path ? ` at ${tool2.path}` : ""}`),
     `Expected transfers: ${result3.expectedTransfers.length > 0 ? result3.expectedTransfers.join("; ") : "none"}`,
     `Runtime network expectations: ${result3.runtimeNetwork.length > 0 ? result3.runtimeNetwork.join("; ") : "none"}`,
     `OSV database cache: ${result3.databaseCaches.osv}; Trivy database cache: ${result3.databaseCaches.trivy}`,
@@ -251330,7 +251707,7 @@ function validateActionPath(value, reports) {
 }
 function renderActionWorkflow(options) {
   validateActionPath(options.out, true);
-  if (!Array.isArray(options.tools) || options.tools.length > 7 || !options.tools.every((tool) => typeof tool === "string"))
+  if (!Array.isArray(options.tools) || options.tools.length > 7 || !options.tools.every((tool2) => typeof tool2 === "string"))
     throw new Error("Invalid Action tools");
   const tools = parseTools(options.tools.length ? options.tools.join(",") : "none");
   if (!Number.isSafeInteger(options.pythonFiles) || options.pythonFiles < 0 || options.pythonFiles > 2e4)
@@ -254240,6 +254617,8 @@ init_openapi();
 init_nuclei();
 init_zap();
 init_zap_policy();
+init_trivy_vuln();
+init_govulncheck();
 init_semgrep_rules();
 var SEVERITY_VALUES = /* @__PURE__ */ new Set(["critical", "high", "medium", "low", "info", "none"]);
 var TOOL_VALUES = /* @__PURE__ */ new Set(["gitleaks", "osv", "trivy", "bandit", "semgrep", "govulncheck", "trivy-vuln"]);

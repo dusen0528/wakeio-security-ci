@@ -1,0 +1,829 @@
+{
+  "revision": "7a4ada160963fd6e9e0b700bf4ed638a0043a1ac",
+  "engineRoot": "/tmp/wakeio-m0-cp1-base-9fesHH/wt",
+  "sourceRoot": "/Users/inho/Desktop/wakeio-security-ci",
+  "fixtureRoot": "/Users/inho/Desktop/wakeio-security-ci/.handoff/evidence/M0/fixtures",
+  "node": "v22.22.1",
+  "command": "node .handoff/evidence/M0/scan-compat-matrix.mjs <built-engine-root> <new-output-json>",
+  "hashRule": "scripts/kpi.mjs semanticHash: excludes top-level startedAt and finishedAt only",
+  "toolMode": "named tools resolve only absent absolute executable paths; trivy and trivy-vuln share one CLI path; no scanner or target executed",
+  "sourceFiles": {
+    "compat-pass": [
+      {
+        "name": "app.ts",
+        "sha256": "712686bb1da640d1d84a54dd6c00e0e5fdfbc60ba7487d09c4580653abd87db7"
+      }
+    ],
+    "compat-findings": [
+      {
+        "name": "app.ts",
+        "sha256": "70990f8e7fa2a4934a2fea3ce16c510941d7e1b645fa8981b945857777447118"
+      }
+    ],
+    "compat-partial": [
+      {
+        "name": "app.ts",
+        "sha256": "712686bb1da640d1d84a54dd6c00e0e5fdfbc60ba7487d09c4580653abd87db7"
+      },
+      {
+        "name": "extra.ts",
+        "sha256": "712686bb1da640d1d84a54dd6c00e0e5fdfbc60ba7487d09c4580653abd87db7"
+      }
+    ],
+    "matrix": [
+      {
+        "name": "Dockerfile",
+        "sha256": "bb57c7da220a8753d7bdabac0d3afdb6efa742e4c736c5bc93ab40dfd5e23b9b"
+      },
+      {
+        "name": "app.go",
+        "sha256": "15dfc4f51b4ed90211b566886f456d23d6984e1bb298460786c9740b01ac183e"
+      },
+      {
+        "name": "app.py",
+        "sha256": "0a775022744f64c352863f165f2e125898419999bc57c83204772036d0ef6b2e"
+      },
+      {
+        "name": "app.ts",
+        "sha256": "a2098bd92b10bf8b816d24b7556b1ce8c49a879d130489065ef1051c17e042f6"
+      },
+      {
+        "name": "go.mod",
+        "sha256": "5fe80b4cadebf4cd7a7d1550531e86c6899bc78d26a8c0a1a9a318de53f13a4e"
+      },
+      {
+        "name": "main.tf",
+        "sha256": "42d676c16e66c94d734bbdcc1226f9295937eb45e6db6c583ef9a9a78e06e5bd"
+      },
+      {
+        "name": "package.json",
+        "sha256": "35d2970a8ffbb6622bc65aec5be00ddc46426ea8ff7272ec4b150607bf09cbbe"
+      }
+    ],
+    "empty": []
+  },
+  "cases": [
+    {
+      "id": "compat-pass-high",
+      "sourceId": "compat-pass",
+      "tools": [],
+      "nativePreview": false,
+      "failOn": "high",
+      "exitCode": 0,
+      "semanticHash": "b522276681db7114415038058cba2e187319612eff16e1dbcd6c5abf9bfb6569",
+      "checks": [
+        {
+          "id": "source.inventory",
+          "status": "completed"
+        },
+        {
+          "id": "source.builtin-ast",
+          "status": "completed"
+        },
+        {
+          "id": "source.framework",
+          "status": "not_applicable"
+        },
+        {
+          "id": "source.code-coverage",
+          "status": "completed"
+        }
+      ]
+    },
+    {
+      "id": "compat-pass-none",
+      "sourceId": "compat-pass",
+      "tools": [],
+      "nativePreview": false,
+      "failOn": "none",
+      "exitCode": 0,
+      "semanticHash": "b522276681db7114415038058cba2e187319612eff16e1dbcd6c5abf9bfb6569",
+      "checks": [
+        {
+          "id": "source.inventory",
+          "status": "completed"
+        },
+        {
+          "id": "source.builtin-ast",
+          "status": "completed"
+        },
+        {
+          "id": "source.framework",
+          "status": "not_applicable"
+        },
+        {
+          "id": "source.code-coverage",
+          "status": "completed"
+        }
+      ]
+    },
+    {
+      "id": "compat-pass-critical",
+      "sourceId": "compat-pass",
+      "tools": [],
+      "nativePreview": false,
+      "failOn": "critical",
+      "exitCode": 0,
+      "semanticHash": "b522276681db7114415038058cba2e187319612eff16e1dbcd6c5abf9bfb6569",
+      "checks": [
+        {
+          "id": "source.inventory",
+          "status": "completed"
+        },
+        {
+          "id": "source.builtin-ast",
+          "status": "completed"
+        },
+        {
+          "id": "source.framework",
+          "status": "not_applicable"
+        },
+        {
+          "id": "source.code-coverage",
+          "status": "completed"
+        }
+      ]
+    },
+    {
+      "id": "compat-findings-high",
+      "sourceId": "compat-findings",
+      "tools": [],
+      "nativePreview": false,
+      "failOn": "high",
+      "exitCode": 1,
+      "semanticHash": "918026b98bc360febf94a865caa1c9a9027a20781ed0d8a751e272ddcf9922f2",
+      "checks": [
+        {
+          "id": "source.inventory",
+          "status": "completed"
+        },
+        {
+          "id": "source.builtin-ast",
+          "status": "completed"
+        },
+        {
+          "id": "source.framework",
+          "status": "not_applicable"
+        },
+        {
+          "id": "source.code-coverage",
+          "status": "completed"
+        }
+      ]
+    },
+    {
+      "id": "compat-findings-none",
+      "sourceId": "compat-findings",
+      "tools": [],
+      "nativePreview": false,
+      "failOn": "none",
+      "exitCode": 0,
+      "semanticHash": "918026b98bc360febf94a865caa1c9a9027a20781ed0d8a751e272ddcf9922f2",
+      "checks": [
+        {
+          "id": "source.inventory",
+          "status": "completed"
+        },
+        {
+          "id": "source.builtin-ast",
+          "status": "completed"
+        },
+        {
+          "id": "source.framework",
+          "status": "not_applicable"
+        },
+        {
+          "id": "source.code-coverage",
+          "status": "completed"
+        }
+      ]
+    },
+    {
+      "id": "compat-findings-critical",
+      "sourceId": "compat-findings",
+      "tools": [],
+      "nativePreview": false,
+      "failOn": "critical",
+      "exitCode": 0,
+      "semanticHash": "918026b98bc360febf94a865caa1c9a9027a20781ed0d8a751e272ddcf9922f2",
+      "checks": [
+        {
+          "id": "source.inventory",
+          "status": "completed"
+        },
+        {
+          "id": "source.builtin-ast",
+          "status": "completed"
+        },
+        {
+          "id": "source.framework",
+          "status": "not_applicable"
+        },
+        {
+          "id": "source.code-coverage",
+          "status": "completed"
+        }
+      ]
+    },
+    {
+      "id": "compat-partial-high",
+      "sourceId": "compat-partial",
+      "tools": [],
+      "nativePreview": false,
+      "failOn": "high",
+      "sourceMaxFiles": 1,
+      "exitCode": 2,
+      "semanticHash": "d3c85440d5d6db59c5714c3304b323b54f21f629b22e2c918ec1787bff01775b",
+      "checks": [
+        {
+          "id": "source.inventory",
+          "status": "partial"
+        },
+        {
+          "id": "source.builtin-ast",
+          "status": "completed"
+        },
+        {
+          "id": "source.framework",
+          "status": "not_applicable"
+        },
+        {
+          "id": "source.code-coverage",
+          "status": "completed"
+        }
+      ]
+    },
+    {
+      "id": "compat-partial-none",
+      "sourceId": "compat-partial",
+      "tools": [],
+      "nativePreview": false,
+      "failOn": "none",
+      "sourceMaxFiles": 1,
+      "exitCode": 2,
+      "semanticHash": "d3c85440d5d6db59c5714c3304b323b54f21f629b22e2c918ec1787bff01775b",
+      "checks": [
+        {
+          "id": "source.inventory",
+          "status": "partial"
+        },
+        {
+          "id": "source.builtin-ast",
+          "status": "completed"
+        },
+        {
+          "id": "source.framework",
+          "status": "not_applicable"
+        },
+        {
+          "id": "source.code-coverage",
+          "status": "completed"
+        }
+      ]
+    },
+    {
+      "id": "compat-partial-critical",
+      "sourceId": "compat-partial",
+      "tools": [],
+      "nativePreview": false,
+      "failOn": "critical",
+      "sourceMaxFiles": 1,
+      "exitCode": 2,
+      "semanticHash": "d3c85440d5d6db59c5714c3304b323b54f21f629b22e2c918ec1787bff01775b",
+      "checks": [
+        {
+          "id": "source.inventory",
+          "status": "partial"
+        },
+        {
+          "id": "source.builtin-ast",
+          "status": "completed"
+        },
+        {
+          "id": "source.framework",
+          "status": "not_applicable"
+        },
+        {
+          "id": "source.code-coverage",
+          "status": "completed"
+        }
+      ]
+    },
+    {
+      "id": "tool-gitleaks",
+      "sourceId": "matrix",
+      "tools": [
+        "gitleaks"
+      ],
+      "nativePreview": false,
+      "failOn": "none",
+      "exitCode": 2,
+      "semanticHash": "d3066272a257b72a927de633b51688ee942345ec9191fc24dfcc5aea7fab8a28",
+      "checks": [
+        {
+          "id": "source.inventory",
+          "status": "completed"
+        },
+        {
+          "id": "source.builtin-ast",
+          "status": "completed"
+        },
+        {
+          "id": "source.framework",
+          "status": "not_applicable"
+        },
+        {
+          "id": "source.gitleaks",
+          "status": "partial"
+        },
+        {
+          "id": "source.code-coverage",
+          "status": "completed"
+        }
+      ],
+      "goProviderRows": 3
+    },
+    {
+      "id": "tool-osv",
+      "sourceId": "matrix",
+      "tools": [
+        "osv"
+      ],
+      "nativePreview": false,
+      "failOn": "none",
+      "exitCode": 2,
+      "semanticHash": "34292282dcad30c90a3de65c2e95ab6c2b9171496c21759e759d2ae0e04e89b1",
+      "checks": [
+        {
+          "id": "source.inventory",
+          "status": "completed"
+        },
+        {
+          "id": "source.builtin-ast",
+          "status": "completed"
+        },
+        {
+          "id": "source.framework",
+          "status": "not_applicable"
+        },
+        {
+          "id": "source.osv",
+          "status": "partial"
+        },
+        {
+          "id": "source.code-coverage",
+          "status": "completed"
+        }
+      ],
+      "goProviderRows": 3
+    },
+    {
+      "id": "tool-trivy",
+      "sourceId": "matrix",
+      "tools": [
+        "trivy"
+      ],
+      "nativePreview": false,
+      "failOn": "none",
+      "exitCode": 2,
+      "semanticHash": "9af91afbcb97ca6457bc6d8b70fc44f226039bcadc73e58825350816ed7478dc",
+      "checks": [
+        {
+          "id": "source.inventory",
+          "status": "completed"
+        },
+        {
+          "id": "source.builtin-ast",
+          "status": "completed"
+        },
+        {
+          "id": "source.framework",
+          "status": "not_applicable"
+        },
+        {
+          "id": "source.trivy",
+          "status": "partial"
+        },
+        {
+          "id": "source.code-coverage",
+          "status": "completed"
+        }
+      ],
+      "goProviderRows": 3
+    },
+    {
+      "id": "tool-bandit",
+      "sourceId": "matrix",
+      "tools": [
+        "bandit"
+      ],
+      "nativePreview": false,
+      "failOn": "none",
+      "exitCode": 2,
+      "semanticHash": "a30bbd5ee95ae0c35b32927b28188fe1d115c0b3cd04c461e85f27af6d1a3856",
+      "checks": [
+        {
+          "id": "source.inventory",
+          "status": "completed"
+        },
+        {
+          "id": "source.builtin-ast",
+          "status": "completed"
+        },
+        {
+          "id": "source.framework",
+          "status": "not_applicable"
+        },
+        {
+          "id": "source.bandit",
+          "status": "partial"
+        },
+        {
+          "id": "source.code-coverage",
+          "status": "completed"
+        }
+      ],
+      "goProviderRows": 3
+    },
+    {
+      "id": "tool-semgrep",
+      "sourceId": "matrix",
+      "tools": [
+        "semgrep"
+      ],
+      "nativePreview": false,
+      "failOn": "none",
+      "exitCode": 2,
+      "semanticHash": "87861682b6d4348708f2b99bacfe237eac3618ccd072b905c895f9284c4d925e",
+      "checks": [
+        {
+          "id": "source.inventory",
+          "status": "completed"
+        },
+        {
+          "id": "source.builtin-ast",
+          "status": "completed"
+        },
+        {
+          "id": "source.framework",
+          "status": "not_applicable"
+        },
+        {
+          "id": "source.semgrep",
+          "status": "partial"
+        },
+        {
+          "id": "source.code-coverage",
+          "status": "completed"
+        }
+      ],
+      "goProviderRows": 4
+    },
+    {
+      "id": "tool-govulncheck",
+      "sourceId": "matrix",
+      "tools": [
+        "govulncheck"
+      ],
+      "nativePreview": false,
+      "failOn": "none",
+      "exitCode": 2,
+      "semanticHash": "123520fd83d06db61623faa5f8563189535ed9df6d040f1ef818eead686c5bdb",
+      "checks": [
+        {
+          "id": "source.inventory",
+          "status": "completed"
+        },
+        {
+          "id": "source.builtin-ast",
+          "status": "completed"
+        },
+        {
+          "id": "source.framework",
+          "status": "not_applicable"
+        },
+        {
+          "id": "source.govulncheck",
+          "status": "partial"
+        },
+        {
+          "id": "source.code-coverage",
+          "status": "completed"
+        }
+      ],
+      "goProviderRows": 3
+    },
+    {
+      "id": "tool-trivy-vuln",
+      "sourceId": "matrix",
+      "tools": [
+        "trivy-vuln"
+      ],
+      "nativePreview": false,
+      "failOn": "none",
+      "exitCode": 2,
+      "semanticHash": "5302b0ef9b6ab13e0e02bea3316f9074a1f5013194ca3ec0af830b3a7280647b",
+      "checks": [
+        {
+          "id": "source.inventory",
+          "status": "completed"
+        },
+        {
+          "id": "source.builtin-ast",
+          "status": "completed"
+        },
+        {
+          "id": "source.framework",
+          "status": "not_applicable"
+        },
+        {
+          "id": "source.trivy-vuln",
+          "status": "partial"
+        },
+        {
+          "id": "source.code-coverage",
+          "status": "completed"
+        }
+      ],
+      "goProviderRows": 3
+    },
+    {
+      "id": "tool-order-a",
+      "sourceId": "matrix",
+      "tools": [
+        "bandit",
+        "semgrep",
+        "gitleaks"
+      ],
+      "nativePreview": false,
+      "failOn": "none",
+      "exitCode": 2,
+      "semanticHash": "13c07fcac4abd256d7dd10fd2b56c222e0802d4c76fa3761a843b19f2879bf71",
+      "checks": [
+        {
+          "id": "source.inventory",
+          "status": "completed"
+        },
+        {
+          "id": "source.builtin-ast",
+          "status": "completed"
+        },
+        {
+          "id": "source.framework",
+          "status": "not_applicable"
+        },
+        {
+          "id": "source.bandit",
+          "status": "partial"
+        },
+        {
+          "id": "source.semgrep",
+          "status": "partial"
+        },
+        {
+          "id": "source.gitleaks",
+          "status": "partial"
+        },
+        {
+          "id": "source.code-coverage",
+          "status": "completed"
+        }
+      ],
+      "goProviderRows": 4
+    },
+    {
+      "id": "tool-order-b",
+      "sourceId": "matrix",
+      "tools": [
+        "gitleaks",
+        "semgrep",
+        "bandit"
+      ],
+      "nativePreview": false,
+      "failOn": "none",
+      "exitCode": 2,
+      "semanticHash": "d532aaf26256c5ef8e0c15cc949388118f66ee01b59a2e22c7f02b5a5a45087e",
+      "checks": [
+        {
+          "id": "source.inventory",
+          "status": "completed"
+        },
+        {
+          "id": "source.builtin-ast",
+          "status": "completed"
+        },
+        {
+          "id": "source.framework",
+          "status": "not_applicable"
+        },
+        {
+          "id": "source.gitleaks",
+          "status": "partial"
+        },
+        {
+          "id": "source.semgrep",
+          "status": "partial"
+        },
+        {
+          "id": "source.bandit",
+          "status": "partial"
+        },
+        {
+          "id": "source.code-coverage",
+          "status": "completed"
+        }
+      ],
+      "goProviderRows": 4
+    },
+    {
+      "id": "native-off-coverage-three",
+      "sourceId": "matrix",
+      "tools": [],
+      "nativePreview": false,
+      "failOn": "none",
+      "exitCode": 0,
+      "semanticHash": "7e17da0129368ee68b7dbee4de84a3d908a0a35bc1058c6af082494c4a9e0888",
+      "checks": [
+        {
+          "id": "source.inventory",
+          "status": "completed"
+        },
+        {
+          "id": "source.builtin-ast",
+          "status": "completed"
+        },
+        {
+          "id": "source.framework",
+          "status": "not_applicable"
+        },
+        {
+          "id": "source.code-coverage",
+          "status": "completed"
+        }
+      ],
+      "goProviderRows": 3
+    },
+    {
+      "id": "native-on",
+      "sourceId": "matrix",
+      "tools": [],
+      "nativePreview": true,
+      "failOn": "none",
+      "exitCode": 2,
+      "semanticHash": "c74d9c898d2ba522d9394fe84359cabe772f155aea4dd3274819d67affd2dffc",
+      "checks": [
+        {
+          "id": "source.inventory",
+          "status": "completed"
+        },
+        {
+          "id": "source.builtin-ast",
+          "status": "completed"
+        },
+        {
+          "id": "source.framework",
+          "status": "not_applicable"
+        },
+        {
+          "id": "source.opengrep.preview",
+          "status": "error"
+        },
+        {
+          "id": "source.code-coverage",
+          "status": "completed"
+        }
+      ],
+      "goProviderRows": 3
+    },
+    {
+      "id": "semgrep-coverage-four",
+      "sourceId": "matrix",
+      "tools": [
+        "semgrep"
+      ],
+      "nativePreview": false,
+      "failOn": "none",
+      "exitCode": 2,
+      "semanticHash": "87861682b6d4348708f2b99bacfe237eac3618ccd072b905c895f9284c4d925e",
+      "checks": [
+        {
+          "id": "source.inventory",
+          "status": "completed"
+        },
+        {
+          "id": "source.builtin-ast",
+          "status": "completed"
+        },
+        {
+          "id": "source.framework",
+          "status": "not_applicable"
+        },
+        {
+          "id": "source.semgrep",
+          "status": "partial"
+        },
+        {
+          "id": "source.code-coverage",
+          "status": "completed"
+        }
+      ],
+      "goProviderRows": 4
+    },
+    {
+      "id": "bandit-no-python",
+      "sourceId": "compat-pass",
+      "tools": [
+        "bandit"
+      ],
+      "nativePreview": false,
+      "failOn": "none",
+      "exitCode": 0,
+      "semanticHash": "27ab5fd868f5a419a26ad21b52b15c984472f7df249b0e0604100f7ffa155a82",
+      "checks": [
+        {
+          "id": "source.inventory",
+          "status": "completed"
+        },
+        {
+          "id": "source.builtin-ast",
+          "status": "completed"
+        },
+        {
+          "id": "source.framework",
+          "status": "not_applicable"
+        },
+        {
+          "id": "source.bandit",
+          "status": "not_applicable"
+        },
+        {
+          "id": "source.code-coverage",
+          "status": "completed"
+        }
+      ]
+    },
+    {
+      "id": "empty-all-not-applicable",
+      "sourceId": "empty",
+      "tools": [
+        "gitleaks",
+        "osv",
+        "trivy",
+        "bandit",
+        "semgrep",
+        "govulncheck",
+        "trivy-vuln"
+      ],
+      "nativePreview": false,
+      "failOn": "none",
+      "exitCode": 2,
+      "semanticHash": "3c542fe058ec64f49ac543cc33b25b57daaff35f21533a716a702a541464aac8",
+      "checks": [
+        {
+          "id": "source.inventory",
+          "status": "completed"
+        },
+        {
+          "id": "source.builtin-ast",
+          "status": "partial"
+        },
+        {
+          "id": "source.framework",
+          "status": "not_applicable"
+        },
+        {
+          "id": "source.gitleaks",
+          "status": "not_applicable"
+        },
+        {
+          "id": "source.osv",
+          "status": "not_applicable"
+        },
+        {
+          "id": "source.trivy",
+          "status": "not_applicable"
+        },
+        {
+          "id": "source.bandit",
+          "status": "not_applicable"
+        },
+        {
+          "id": "source.semgrep",
+          "status": "not_applicable"
+        },
+        {
+          "id": "source.govulncheck",
+          "status": "not_applicable"
+        },
+        {
+          "id": "source.trivy-vuln",
+          "status": "not_applicable"
+        },
+        {
+          "id": "source.code-coverage",
+          "status": "completed"
+        }
+      ]
+    }
+  ]
+}
