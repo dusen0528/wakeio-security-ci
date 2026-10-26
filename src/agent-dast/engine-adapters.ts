@@ -1,29 +1,67 @@
 import {
-  dastDefaultMaxRequests, parseDastPolicy, prepareDastPolicy, runDast, snapshotDastEnvironment,
+  dastDefaultMaxRequests, hasDastAuthentication, parseDastPolicy, prepareDastPolicy, runDast,
+  snapshotDastEnvironment, type DastPolicy,
 } from '../dast.js';
 import { runSchemathesisLive } from '../schemathesis-live.js';
-import { parseSchemathesisAuthPolicy, snapshotSchemathesisCredential } from '../schemathesis-auth.js';
+import { parseSchemathesisAuthPolicy, snapshotSchemathesisCredential,
+  type SchemathesisAuthPolicy } from '../schemathesis-auth.js';
 import { validateSchemathesisAuthSchema } from '../schemathesis-auth-run.js';
 import { selectOpenApiLiveOperations } from '../openapi.js';
 import { runNuclei } from '../nuclei.js';
 import { runZap } from '../zap.js';
-import { prepareZapPolicy } from '../zap-policy.js';
+import { prepareZapPolicy, zapSurfaceKey, type ZapPolicyInput } from '../zap-policy.js';
+import type { ZapCompiledRequest } from '../zap-openapi.js';
+import type { CheckResult, Finding } from '../contracts.js';
+import type { AdmissionSnapshot, TaskAdmission } from './admission.js';
+import type { NewSurface } from './store.js';
 import type { ExecutionTask } from './plan.js';
-import type { RegisteredAttackEngine } from '../runtime/types.js';
+import type { AttackContext, RegisteredAttackEngine } from '../runtime/types.js';
 import { alias, count, fail, keys } from './plan-validation.js';
 
 type Task<E extends ExecutionTask['engine']> = Extract<ExecutionTask, { engine: E }>;
-function defineEngine<T extends ExecutionTask>(definition: RegisteredAttackEngine<T>) {
-  return Object.freeze(definition);
+type NativeState = { task: Task<'native-dast'>; policy: DastPolicy; env?: NodeJS.ProcessEnv };
+type SchemaState = { task: Task<'schemathesis'>; document: unknown;
+  authPolicy?: SchemathesisAuthPolicy; env?: NodeJS.ProcessEnv };
+type NucleiState = { task: Task<'nuclei'> };
+type ZapState = { task: Task<'zap'>; zapPolicy: ZapPolicyInput;
+  zapRequests: ZapCompiledRequest[]; env: NodeJS.ProcessEnv };
+interface EngineDefinition<T extends ExecutionTask, State> extends Omit<RegisteredAttackEngine<T>, 'prepare'> {
+  prepare(task: T, data: ReadonlyMap<string, unknown>, options: AttackContext): State;
+  execute(state: State, options: AttackContext, runtime: TaskAdmission, remaining: number): Promise<CheckResult[]>;
+  complete(state: State, check: CheckResult, observed: AdmissionSnapshot): boolean;
+  findingSurface(state: State, finding: Finding): NewSurface;
+}
+function defineEngine<T extends ExecutionTask, State>(
+  definition: EngineDefinition<T, State>,
+): RegisteredAttackEngine<T> {
+  Object.freeze(definition);
+  const engine: RegisteredAttackEngine<T> = {
+    id: definition.id, category: definition.category, reportMode: definition.reportMode,
+    parseTask: definition.parseTask, requiredInputs: definition.requiredInputs,
+    prepare(task, data, options) {
+      const state = definition.prepare(task, data, options);
+      return Object.freeze({ task,
+        execute: (context: AttackContext, runtime: TaskAdmission, remaining: number) =>
+          definition.execute(state, context, runtime, remaining),
+        complete: (check: CheckResult, observed: AdmissionSnapshot) => definition.complete(state, check, observed),
+        findingSurface: (finding: Finding) => definition.findingSurface(state, finding),
+      });
+    },
+  };
+  return Object.freeze(engine);
 }
 function invalid(): never { throw new TypeError('invalid_run_plan'); }
+function findingUrl(finding: Finding): URL {
+  if (!finding.location.url) invalid();
+  return new URL(finding.location.url);
+}
 function policyTask<E extends 'native-dast' | 'zap'>(raw: Record<string, unknown>, engine: E, max: number) {
   if (raw.engine !== engine) fail();
   keys(raw, ['id', 'engine', 'policy', 'maxRequests']); alias(raw.policy); count(raw.maxRequests, max);
   return { id: raw.id as string, engine, policy: raw.policy, maxRequests: raw.maxRequests };
 }
 
-export const nativeDastEngine = defineEngine<Task<'native-dast'>>({
+export const nativeDastEngine = defineEngine<Task<'native-dast'>, NativeState>({
   id: 'native-dast', category: 'injection', reportMode: 'url',
   parseTask: raw => policyTask(raw, 'native-dast', 64),
   requiredInputs: task => [task.policy],
@@ -36,15 +74,20 @@ export const nativeDastEngine = defineEngine<Task<'native-dast'>>({
     return { task, policy, env };
   },
   execute(prepared, options, runtime, remaining) {
-    return runDast({ policy: prepared.policy!, env: prepared.env, consent: true, allowPrivate: options.allowPrivate,
+    return runDast({ policy: prepared.policy, env: prepared.env, consent: true, allowPrivate: options.allowPrivate,
       maxRequests: prepared.task.maxRequests, timeoutMs: Math.min(remaining, 120_000),
       signal: options.signal }, runtime);
   },
   complete: (_prepared, check) => check.dastExecution?.status === 'complete',
-  findingPath: (_prepared, url) => url.pathname,
+  findingSurface(prepared) {
+    const policy = prepared.policy;
+    return { surfaceId: '', method: policy.version === 4 ? 'POST' : 'GET', path: new URL(policy.url).pathname,
+      param: policy.parameter, location: policy.version === 4 ? 'body' : 'query',
+      authState: hasDastAuthentication(policy) ? 'user' : 'anonymous' };
+  },
 });
 
-export const schemathesisEngine = defineEngine<Task<'schemathesis'>>({
+export const schemathesisEngine = defineEngine<Task<'schemathesis'>, SchemaState>({
   id: 'schemathesis', category: 'config', reportMode: 'api',
   parseTask(raw) {
     if (raw.engine !== 'schemathesis') fail();
@@ -92,14 +135,16 @@ export const schemathesisEngine = defineEngine<Task<'schemathesis'>>({
       && check.schemathesisAuth.requests.attempted === observed.requestCount;
     return check.metrics?.operationsExercised === prepared.task.operations.length;
   },
-  findingPath(prepared, url) {
+  findingSurface(prepared, finding) {
+    const url = findingUrl(finding);
     const template = prepared.task.operations.find(candidate => candidate === url.pathname
       || new URL(candidate, url.origin).pathname === url.pathname);
-    if (!template) invalid(); return template;
+    if (!template) invalid();
+    return { surfaceId: '', method: 'GET', path: template, authState: prepared.authPolicy ? 'user' : 'anonymous' };
   },
 });
 
-export const nucleiEngine = defineEngine<Task<'nuclei'>>({
+export const nucleiEngine = defineEngine<Task<'nuclei'>, NucleiState>({
   id: 'nuclei', category: 'config', reportMode: 'url',
   parseTask(raw) {
     if (raw.engine !== 'nuclei') fail();
@@ -122,10 +167,11 @@ export const nucleiEngine = defineEngine<Task<'nuclei'>>({
       timeoutMs: Math.min(remaining, 600_000), signal: options.signal }, runtime);
   },
   complete: () => true,
-  findingPath: (_prepared, url) => url.pathname,
+  findingSurface: (_prepared, finding) =>
+    ({ surfaceId: '', method: 'GET', path: findingUrl(finding).pathname, authState: 'anonymous' }),
 });
 
-export const zapEngine = defineEngine<Task<'zap'>>({
+export const zapEngine = defineEngine<Task<'zap'>, ZapState>({
   id: 'zap', category: 'injection', reportMode: 'url',
   parseTask: raw => policyTask(raw, 'zap', 2000),
   requiredInputs: task => [task.policy],
@@ -140,11 +186,25 @@ export const zapEngine = defineEngine<Task<'zap'>>({
         ? { [prepared.policy.authentication.authorizationEnv]: prepared.authorization } : {}) };
   },
   execute(prepared, options, runtime, remaining) {
-    return runZap({ url: options.plan.origin, policy: prepared.zapPolicy!, env: prepared.env,
+    return runZap({ url: options.plan.origin, policy: prepared.zapPolicy, env: prepared.env,
       executable: options.zapPath, consent: true, allowPrivate: options.allowPrivate,
       maxRequests: prepared.task.maxRequests, rateLimit: options.ratePerSecond,
       timeoutMs: Math.min(remaining, 600_000), signal: options.signal }, runtime);
   },
   complete: () => true,
-  findingPath: (_prepared, url) => url.pathname,
+  findingSurface(prepared, finding) {
+    const url = findingUrl(finding);
+    for (const request of prepared.zapRequests) {
+      const selected = new URL(request.path, prepared.zapPolicy.origin);
+      if (url.origin !== selected.origin || url.pathname !== selected.pathname) continue;
+      const params = request.method === 'POST' ? Object.keys(request.body!) : [...selected.searchParams.keys()];
+      const parameter = params.find(param => zapSurfaceKey(finding.ruleId.replace(/^zap\./, ''), request,
+        request.fields?.find(field => field.alias === param)?.pointer ?? param) === finding.comparisonKey);
+      if (parameter !== undefined) return { surfaceId: '', method: request.method, path: selected.pathname,
+        param: request.fields?.find(field => field.alias === parameter)?.pointer ?? parameter,
+        location: request.method === 'POST' ? 'body' : 'query',
+        authState: prepared.zapPolicy.authentication ? 'user' : 'anonymous' };
+    }
+    invalid();
+  },
 });

@@ -3,17 +3,15 @@ import { constants } from 'node:fs';
 import { lstat, mkdir, open, readdir, realpath, unlink } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { types } from 'node:util';
-import type { CheckResult, FailOn, Finding, ScanReport } from '../contracts.js';
+import type { CheckResult, FailOn, ScanReport } from '../contracts.js';
 import { createApiRunControl } from '../api.js';
-import { hasDastAuthentication } from '../dast.js';
-import { zapSurfaceKey } from '../zap-policy.js';
 import { attackEngine } from '../runtime/registry.js';
 import type { PreparedAttackTask as PreparedTask } from '../runtime/types.js';
 import { normalizeUrl, validateStaticTarget } from '../url-network.js';
 import { createReport, evaluateGate, RULESET_VERSION, writeArtifacts, writeReports } from '../report.js';
 import { RunAdmission, type AdmissionSnapshot, type TaskAdmission } from './admission.js';
 import { executionOrigin, EXECUTION_INPUT_MAX_BYTES, parseExecutionInputs, parseExecutionPlan, type ExecutionEngine, type ExecutionInputs, type ExecutionPlan, type ExecutionTask } from './plan.js';
-import { openRunStore, type NewSurface, type RunStore } from './store.js';
+import { openRunStore, type RunStore } from './store.js';
 import { failedWorkerResult, MAX_FINDING_IDS, SEVERITIES, WORKER_RESULT_SCHEMA, validateWorkerResult, type WorkerResultV1 } from './result.js';
 
 export const EXECUTION_RUN_REVISION = 'built-in-plan-run-v1' as const;
@@ -107,41 +105,22 @@ function gapCheck(reason: 'not_started' | 'execution_incomplete' | 'store_error'
   return { id: 'agent-dast.execution', status: 'partial', findings: [], notes: ['The assigned built-in engine group was not fully observed.'], metrics: { reason } };
 }
 async function execute(prepared: PreparedTask, options: ReturnType<typeof optionsSnapshot>, runtime: TaskAdmission): Promise<CheckResult[]> {
-  const task = prepared.task, remaining = Math.max(1, runtime.deadlineAt - Date.now());
+  const remaining = Math.max(1, runtime.deadlineAt - Date.now());
   if (runtime.signal.aborted || Date.now() >= runtime.deadlineAt) return [gapCheck('not_started')];
-  return attackEngine(task.engine).execute(prepared, options, runtime, remaining);
+  return prepared.execute(options, runtime, remaining);
 }
 function observedGroup(prepared: PreparedTask, checks: CheckResult[], observed: AdmissionSnapshot): boolean {
   if (!observed.requestCount || observed.pending || observed.transportErrors || observed.refused || checks.length !== 1 || checks[0].status !== 'completed'
     || checks[0].metrics?.requestCount !== observed.requestCount) return false;
   // Trusted adapter completion is separate from the common observed-request checks above.
-  return attackEngine(prepared.task.engine).complete(prepared, checks[0], observed);
-}
-function findingSurface(prepared: PreparedTask, finding: Finding): NewSurface {
-  if (prepared.policy) return { surfaceId: '', method: prepared.policy.version === 4 ? 'POST' : 'GET', path: new URL(prepared.policy.url).pathname,
-    param: prepared.policy.parameter, location: prepared.policy.version === 4 ? 'body' : 'query', authState: hasDastAuthentication(prepared.policy) ? 'user' : 'anonymous' };
-  if (!finding.location.url) invalid();
-  const url = new URL(finding.location.url);
-  if (prepared.zapPolicy) {
-    for (const request of prepared.zapRequests!) {
-      const selected = new URL(request.path, prepared.zapPolicy.origin);
-      if (url.origin !== selected.origin || url.pathname !== selected.pathname) continue;
-      const params = request.method === 'POST' ? Object.keys(request.body!) : [...selected.searchParams.keys()];
-      const parameter = params.find(param => zapSurfaceKey(finding.ruleId.replace(/^zap\./, ''), request, request.fields?.find(field => field.alias === param)?.pointer ?? param) === finding.comparisonKey);
-      if (parameter !== undefined) return { surfaceId: '', method: request.method, path: selected.pathname, param: request.fields?.find(field => field.alias === parameter)?.pointer ?? parameter,
-        location: request.method === 'POST' ? 'body' : 'query', authState: prepared.zapPolicy.authentication ? 'user' : 'anonymous' };
-    }
-    invalid();
-  }
-  const path = attackEngine(prepared.task.engine).findingPath(prepared, url);
-  return { surfaceId: '', method: 'GET', path, authState: prepared.authPolicy ? 'user' : 'anonymous' };
+  return prepared.complete(checks[0], observed);
 }
 /** Post-execution audit: group completion and registered observations are separate from endpoint coverage. */
 async function storeTask(store: RunStore, runId: string, prepared: PreparedTask, report: ScanReport, complete: boolean, observed: AdmissionSnapshot, duration: number, out: string): Promise<void> {
   const task = prepared.task, groupSurfaceId = `s-${task.id.slice(2)}`, groupCheck = `group.${task.engine}`;
   const category = attackEngine(task.engine).category;
   const rows = report.checks.flatMap(item => item.findings).map((finding, index) => {
-    const surface = findingSurface(prepared, finding);
+    const surface = prepared.findingSurface(finding);
     surface.surfaceId = `s-${sha(JSON.stringify(surface)).slice(0, 40)}`;
     return { finding, id: `f-${sha(`${task.id}:${index}`).slice(0, 32)}`, surface, check: `observation.${sha(finding.ruleId).slice(0, 24)}` };
   });
