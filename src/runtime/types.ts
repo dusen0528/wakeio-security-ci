@@ -1,4 +1,4 @@
-import type { CheckResult, CodeLanguage, CodeProvider, Finding, SourceOptions } from '../contracts.js';
+import type { CheckResult, CodeLanguage, Finding, SourceOptions, ToolName } from '../contracts.js';
 import type { AdmissionSnapshot, TaskAdmission } from '../agent-dast/admission.js';
 import type { ExecutionPlan, ExecutionTask } from '../agent-dast/plan.js';
 import type { NewSurface } from '../agent-dast/store.js';
@@ -56,18 +56,22 @@ export interface Verdict<SurfaceRef, EvidenceRef> {
   evidence: EvidenceRef[];
 }
 
+export interface AnalyzerSelection {
+  tools: readonly ToolName[];
+  nativePreview: boolean;
+}
+
 export interface AnalyzerProvider<Context> {
   id: string;
   checkId: string;
   selection: 'always' | 'native-preview' | 'tool';
-  selected(options: SourceOptions): boolean;
+  selected(options: AnalyzerSelection): boolean;
   applicable(snapshot: SourceSnapshot): boolean;
   executable?(options: SourceOptions): string;
   stage?: 'shared' | 'python' | 'safe-config';
   notApplicable?(snapshot: SourceSnapshot): CheckResult;
   run(context: Context): Promise<CheckResult> | CheckResult;
   codeCoverage?: {
-    publicId: CodeProvider;
     languages: readonly CodeLanguage[];
     inputs(snapshot: SourceSnapshot): readonly CollectedFile[];
     complete(check: CheckResult, inputCount: number): boolean;

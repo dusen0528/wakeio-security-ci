@@ -112,4 +112,3 @@ export function osvManifestDeclaresDependencies(snapshot: SourceSnapshot): boole
 export function osvHasApplicableInput(snapshot: SourceSnapshot): boolean {
   return osvLockfiles(snapshot).length > 0 || osvManifestDeclaresDependencies(snapshot);
 }
-

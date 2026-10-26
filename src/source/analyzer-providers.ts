@@ -1,5 +1,5 @@
 import type { CheckResult, CodeProvider, SourceOptions, ToolName } from '../contracts.js';
-import type { AnalyzerProvider } from '../runtime/types.js';
+import type { AnalyzerProvider, AnalyzerSelection } from '../runtime/types.js';
 import { builtinAstFiles } from './ast.js';
 import { nativeFiles, runNativePreview } from './opengrep.js';
 import { pythonFiles, runBandit } from './python.js';
@@ -37,8 +37,8 @@ export interface SyncAnalyzer extends SourceAnalyzer {
 
 type CoverageMetadata = NonNullable<AnalyzerProvider<never>['codeCoverage']>;
 export interface CodeAnalyzerMetadata extends SourceAnalyzer {
+  id: CodeProvider;
   codeCoverage: CoverageMetadata & {
-    publicId: CodeProvider;
     inputCount(check: CheckResult): unknown;
   };
 }
@@ -57,7 +57,7 @@ export const builtinAstMetadata = provider({
   applicable: snapshot => builtinAstFiles(snapshot).length > 0,
   run: context => context.builtinAst!(),
   codeCoverage: {
-    publicId: 'builtin_ast', languages: ['javascript', 'typescript'], inputs: builtinAstFiles,
+    languages: ['javascript', 'typescript'], inputs: builtinAstFiles,
     complete: (check, n) => check.metrics?.filesAnalyzed === n && check.metrics?.filesParseValid === n,
     inputCount: check => check.metrics?.filesAnalyzed,
   },
@@ -71,16 +71,16 @@ export const banditMetadata = provider({
   failureMessage: 'Bandit scanning could not be completed.',
   notApplicable: () => empty('bandit', 'No allowlisted Python file was available for Bandit.', { files: 0 }),
   run: context => runBandit(toolInput(context)),
-  codeCoverage: { publicId: 'bandit', languages: ['python'], inputs: pythonFiles,
+  codeCoverage: { languages: ['python'], inputs: pythonFiles,
     complete: parsedFilesComplete, inputCount: requestedFiles },
 });
 
 export const nativePreviewMetadata = provider({
   id: 'opengrep_native', checkId: 'source.opengrep.preview', selection: 'native-preview',
-  selected: options => !!options.nativePreview, applicable: snapshot => nativeFiles(snapshot).length > 0,
+  selected: options => options.nativePreview, applicable: snapshot => nativeFiles(snapshot).length > 0,
   run: context => runNativePreview(context.snapshot, context.options),
   codeCoverage: {
-    publicId: 'opengrep_native', languages: ['javascript', 'typescript', 'python'], inputs: nativeFiles,
+    languages: ['javascript', 'typescript', 'python'], inputs: nativeFiles,
     complete: (check, n) => check.metrics?.filesDeclared === n && check.metrics?.filesScanned === n
       && check.metrics?.identityUnchanged === true && check.metrics?.closeConfirmed === true
       && check.metrics?.stageCleanupConfirmed === true,
@@ -94,7 +94,7 @@ export const semgrepMetadata = provider({
   executable: options => options.toolPaths?.semgrep ?? 'semgrep', resolveBeforeInput: true,
   notApplicable: () => empty('semgrep', 'No applicable source input was collected.', { files: 0 }),
   run: context => runSemgrep(toolInput(context)),
-  codeCoverage: { publicId: 'semgrep', languages: ['go'], inputs: semgrepFiles,
+  codeCoverage: { languages: ['go'], inputs: semgrepFiles,
     complete: parsedFilesComplete, inputCount: requestedFiles },
 });
 
@@ -107,7 +107,7 @@ function empty(tool: ToolName, message: string, metrics: Record<string, number |
 }
 function tool(value: Omit<ToolAnalyzer, 'id' | 'checkId' | 'selection' | 'selected'>): ToolAnalyzer {
   return Object.freeze({ ...value, id: value.tool, checkId: `source.${value.tool}`, selection: 'tool',
-    selected: (options: SourceOptions) => options.tools.includes(value.tool) });
+    selected: (options: AnalyzerSelection) => options.tools.includes(value.tool) });
 }
 
 export const frameworkAnalyzer: SyncAnalyzer = Object.freeze({

@@ -16,7 +16,7 @@ import { DEFAULT_TOOL_TIMEOUT_MS, MAX_TOOL_TIMEOUT_MS, findExecutable, runProces
 import { pythonFiles } from "./source/python.js";
 import type { ParsedToolResult, ProcessResult, SourceSnapshot } from "./source/types.js";
 
-import { ANALYZERS, SYNC_ANALYZERS, isSourceTool, sourceAnalyzer, toolAnalyzer } from './runtime/registry.js';
+import { ANALYZERS, SYNC_ANALYZERS, isSourceTool, sourceAnalyzer, toolAnalyzer } from './runtime/analyzer-registry.js';
 import type { AnalyzerRunContext } from './source/analyzer-providers.js';
 import { requirementsInspection, osvLockfiles, osvManifestDeclaresDependencies,
   trivyInputCandidate } from './source/analyzer-inputs.js';
@@ -675,7 +675,7 @@ export async function runSource(options: SourceOptions): Promise<CheckResult[]> 
   ];
   // Native owns a separate code-only stage and cleanup, including --tools none.
   for (const analyzer of ANALYZERS.filter(provider => provider.selection === 'native-preview')) {
-    if (analyzer.selected(options)) checks.push(await analyzer.run(analyzerContext));
+    if (analyzer.selected({ tools, nativePreview: !!options.nativePreview })) checks.push(await analyzer.run(analyzerContext));
   }
   if (options.signal?.aborted) { checks.push(partialCheck('source.cancelled', 'Source scan was cancelled; later stages were not started.')); return finish(checks, snapshot); }
   if (tools.length === 0 || snapshot.files.length === 0 || snapshot.rootError) {

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { ANALYZERS, SYNC_ANALYZERS, CODE_ANALYZERS, codeAnalyzer, isSourceTool,
-  sourceAnalyzer, toolAnalyzer } from '../src/runtime/registry.js';
+  sourceAnalyzer, toolAnalyzer } from '../src/runtime/analyzer-registry.js';
 import { CODE_PROVIDERS_V1, LEGACY_CODE_PROVIDERS_V1 } from '../src/source/code-coverage.js';
 import type { SourceSnapshot } from '../src/source/types.js';
 import { runSource } from '../src/source.js';
@@ -10,7 +10,7 @@ import { resolve } from 'node:path';
 test('code analyzer metadata matches the fixed v1 provider order, IDs and language support', () => {
   assert.deepEqual(LEGACY_CODE_PROVIDERS_V1, ['builtin_ast', 'bandit', 'opengrep_native']);
   assert.deepEqual(CODE_PROVIDERS_V1, ['builtin_ast', 'bandit', 'opengrep_native', 'semgrep']);
-  assert.deepEqual(CODE_ANALYZERS.map(p => p.codeCoverage.publicId), CODE_PROVIDERS_V1);
+  assert.deepEqual(CODE_ANALYZERS.map(p => p.id), CODE_PROVIDERS_V1);
   assert.deepEqual(CODE_ANALYZERS.map(p => [p.checkId, p.codeCoverage.languages]), [
     ['source.builtin-ast', ['javascript', 'typescript']], ['source.bandit', ['python']],
     ['source.opengrep.preview', ['javascript', 'typescript', 'python']], ['source.semgrep', ['go']],
@@ -65,10 +65,9 @@ test('code analyzer selection and admitted inputs retain provider-specific bound
       path, category: path.endsWith('.json') ? 'config' : 'code', text: '', bytes: 0, sensitive: false,
     })), issues: [], ignoredFiles: 0, totalBytes: 0, complete: true,
   };
-  assert.deepEqual(CODE_ANALYZERS.map(p => p.selected({ root: snapshot.root, tools: [] })),
+  assert.deepEqual(CODE_ANALYZERS.map(p => p.selected({ tools: [], nativePreview: false })),
     [true, false, false, false]);
-  const options = { root: snapshot.root, tools: ['bandit', 'semgrep'] as const,
-    nativePreview: { executable: '/owned/core' } };
+  const options = { tools: ['bandit', 'semgrep'] as const, nativePreview: true };
   assert.deepEqual(CODE_ANALYZERS.map(p => p.selected({ ...options, tools: [...options.tools] })),
     [true, true, true, true]);
   assert.deepEqual(CODE_ANALYZERS.map(p => p.codeCoverage.inputs(snapshot).map(f => f.path)),
