@@ -52,14 +52,15 @@ test('OpenAPI digest binds exact original bytes, including a single whitespace b
   assert.deepEqual(buildSurfaceInventory(original), first);
 });
 
-for (const reason of ['invalid_arguments', 'unsafe_path', 'output_exists', 'invalid_origin', 'unsupported_openapi', 'invalid_openapi', 'input_limit', 'output_error']) {
+for (const reason of ['invalid_arguments', 'unsafe_path', 'path_not_found', 'output_exists', 'invalid_origin', 'unsupported_openapi', 'invalid_openapi', 'input_limit', 'output_error']) {
   test(`CLI emits only fixed reason code: ${reason}`, async t => {
     const top = await mkdtemp(join(tmpdir(), 'wakeio-reason-')); t.after(() => rm(top, { recursive: true, force: true }));
     const source = join(top, 'source'), input = join(top, 'CANARY-input.json'), out = join(top, 'out'); await mkdir(source);
     await writeFile(input, '{"openapi":"3.1.0","paths":{}}');
     const args = ['init-dast', '--source', source, '--openapi', input, '--out', out];
     if (reason === 'invalid_arguments') args.push('--CANARY');
-    if (reason === 'unsafe_path') args[2] = join(top, 'CANARY-missing');
+    if (reason === 'unsafe_path') { const link = join(top, 'linked'); await symlink(source, link); args[2] = link; }
+    if (reason === 'path_not_found') args[4] = join(top, 'CANARY-missing.json');
     if (reason === 'output_error') args[6] = join(top, 'x'.repeat(300));
     if (reason === 'output_exists') { await mkdir(out); await writeFile(join(out, 'sentinel'), 'keep'); }
     if (reason === 'invalid_origin') args.push('--url', 'CANARY-invalid-url');

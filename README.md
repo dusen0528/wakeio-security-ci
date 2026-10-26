@@ -78,6 +78,35 @@ node build/src/cli.js scan \
 
 `doctor` is read-only: it inventories the target without running target code, package managers, scanners, or network requests. `--tools none` selects only the built-in checks and avoids optional engine setup. The scanner reads target files as data; it does not run the target project's install scripts, hooks, build, or tests.
 
+### Offline GET preset plan (development source)
+
+The `openapi-get-contract` preset is for a **loopback HTTP app**: only `127.0.0.1`, `[::1]`, and `localhost` are accepted. Other hosts, including private LAN IPs, are refused with `preset_remote_unsupported`. It generates
+files from a local OpenAPI JSON and P1a inventory without contacting the app,
+starting an engine, or invoking an LLM. HTTPS and authentication setup are outside
+this preset. After building the reviewed source checkout:
+
+```sh
+node build/src/cli.js init-dast --source /path/to/your-app \
+  --openapi /path/to/openapi.json --url http://127.0.0.1:3000 \
+  --out /path/outside/your-app/inventory
+node build/src/cli.js plan --preset presets/openapi-get-contract.json \
+  --inventory /path/outside/your-app/inventory/inventory.json \
+  --openapi /path/to/openapi.json --max-requests 128 \
+  --out /path/outside/your-app/plan-bundle
+```
+
+GETs are sorted and split into 16 operations per task, with at most 16 tasks
+(256 GETs). The sum of all task request caps must fit the owner budget; the
+default preset allocates 64 per task, so 17 GETs need a budget of at least 128.
+A smaller budget returns exit 2 with `insufficient_budget required=128`. Success
+prints a shell-quoted `run-plan` example using the same owner budget and origin,
+explicit consent and `--allow-private`, and a new `run` subdirectory. It only
+prints the command; no active check starts automatically.
+The six-file bundle records raw input hashes and a provenance sidecar.
+**Provenance is recorded only and is not yet verified at execution time.**
+`run-plan` is unchanged; generation grants no active consent or runtime validation
+of the provenance metadata. See the [contract and test plan](docs/f6-2-preset-design.md).
+
 For a URL-only check, name the root and any additional same-origin pages explicitly:
 
 ```sh

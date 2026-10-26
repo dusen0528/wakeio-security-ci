@@ -29,7 +29,9 @@ stderr contains exactly one fixed reason code followed by a newline, never an ex
 | Code | Meaning |
 | --- | --- |
 | `invalid_arguments` | Missing, unknown, duplicate or malformed CLI flag/value |
-| `unsafe_path` | Missing/unreadable/non-regular input, unsafe directory/symlink, or output inside source |
+| `path_not_found` | Input file or required directory does not exist |
+| `unsafe_path` | Unreadable/non-regular input, unsafe directory/symlink, or output inside source |
+| `input_changed` | Input size, timestamps or observed byte count changed while reading |
 | `output_exists` | Destination already exists; nothing is overwritten |
 | `invalid_origin` | Invalid optional HTTP(S) origin string |
 | `unsupported_openapi` | Unsupported version or feature in the existing enumerator |
@@ -38,6 +40,10 @@ stderr contains exactly one fixed reason code followed by a newline, never an ex
 | `output_error` | Other failure to publish the private output |
 
 Partial enumeration is a successful output, not an error code. If several inputs are invalid, the first validation failure is reported.
+
+On a write failure, only a newly claimed, still-empty output directory is removed.
+Existing directories and nonempty partial outputs are preserved; cleanup never
+replaces the original fixed error code.
 
 ## Minimal emitted contract
 

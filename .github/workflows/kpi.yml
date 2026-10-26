@@ -44,7 +44,7 @@ jobs:
         run: |
           docker run --rm --network none --user "$(id -u):$(id -g)" \
             -v "$GITHUB_WORKSPACE:/workspace" -w /workspace/candidate wakeio-kpi \
-            node --test build/tests/kpi.test.js build/tests/compat-0.5.test.js build/tests/inventory.test.js
+            node --test build/tests/kpi.test.js build/tests/compat-0.5.test.js build/tests/inventory.test.js build/tests/preset-plan.test.js
       - name: Measure base and candidate under the same network-disabled runtime
         timeout-minutes: 5
         run: |
