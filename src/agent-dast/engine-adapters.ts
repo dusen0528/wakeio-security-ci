@@ -16,7 +16,7 @@ import type { AdmissionSnapshot, TaskAdmission } from './admission.js';
 import type { NewSurface } from './store.js';
 import type { ExecutionTask } from './plan.js';
 import type { AttackContext, RegisteredAttackEngine } from '../runtime/types.js';
-import { alias, count, fail, keys } from './plan-validation.js';
+import { nativeDastTask, nucleiTask, schemathesisTask, zapTask } from './task-parsers.js';
 
 type Task<E extends ExecutionTask['engine']> = Extract<ExecutionTask, { engine: E }>;
 type NativeState = { task: Task<'native-dast'>; policy: DastPolicy; env?: NodeJS.ProcessEnv };
@@ -55,16 +55,8 @@ function findingUrl(finding: Finding): URL {
   if (!finding.location.url) invalid();
   return new URL(finding.location.url);
 }
-function policyTask<E extends 'native-dast' | 'zap'>(raw: Record<string, unknown>, engine: E, max: number) {
-  if (raw.engine !== engine) fail();
-  keys(raw, ['id', 'engine', 'policy', 'maxRequests']); alias(raw.policy); count(raw.maxRequests, max);
-  return { id: raw.id as string, engine, policy: raw.policy, maxRequests: raw.maxRequests };
-}
-
 export const nativeDastEngine = defineEngine<Task<'native-dast'>, NativeState>({
-  id: 'native-dast', category: 'injection', reportMode: 'url',
-  parseTask: raw => policyTask(raw, 'native-dast', 64),
-  requiredInputs: task => [task.policy],
+  ...nativeDastTask,
   prepare(task, data, options) {
     const parsed = parseDastPolicy(data.get(task.policy));
     const env = snapshotDastEnvironment(parsed.policy, options.env);
@@ -88,21 +80,7 @@ export const nativeDastEngine = defineEngine<Task<'native-dast'>, NativeState>({
 });
 
 export const schemathesisEngine = defineEngine<Task<'schemathesis'>, SchemaState>({
-  id: 'schemathesis', category: 'config', reportMode: 'api',
-  parseTask(raw) {
-    if (raw.engine !== 'schemathesis') fail();
-    keys(raw, ['id', 'engine', 'schema', 'operations', 'seed', 'maxRequests'], ['authPolicy']);
-    alias(raw.schema); if (Object.hasOwn(raw, 'authPolicy')) alias(raw.authPolicy);
-    count(raw.seed, 2147483647); count(raw.maxRequests, 64);
-    if (!Array.isArray(raw.operations) || !raw.operations.length || raw.operations.length > 16
-      || new Set(raw.operations).size !== raw.operations.length
-      || raw.operations.some(path => typeof path !== 'string' || !path.startsWith('/')
-        || path.length > 2048 || /[\u0000-\u0020\u007f?#\\]/.test(path))) fail();
-    return { id: raw.id as string, engine: 'schemathesis', schema: raw.schema,
-      operations: raw.operations as string[], seed: raw.seed, maxRequests: raw.maxRequests,
-      ...(typeof raw.authPolicy === 'string' ? { authPolicy: raw.authPolicy } : {}) };
-  },
-  requiredInputs: task => [task.schema, ...(task.authPolicy ? [task.authPolicy] : [])],
+  ...schemathesisTask,
   prepare(task, data, options) {
     const selection = selectOpenApiLiveOperations(data.get(task.schema),
       task.operations.map(path => ({ method: 'GET' as const, path })));
@@ -145,17 +123,7 @@ export const schemathesisEngine = defineEngine<Task<'schemathesis'>, SchemaState
 });
 
 export const nucleiEngine = defineEngine<Task<'nuclei'>, NucleiState>({
-  id: 'nuclei', category: 'config', reportMode: 'url',
-  parseTask(raw) {
-    if (raw.engine !== 'nuclei') fail();
-    keys(raw, ['id', 'engine', 'scopes', 'maxRequests']); count(raw.maxRequests, 20_000);
-    if (!Array.isArray(raw.scopes) || !raw.scopes.length || raw.scopes.length > 2
-      || new Set(raw.scopes).size !== raw.scopes.length
-      || raw.scopes.some(scope => scope !== 'misconfiguration' && scope !== 'exposures')) fail();
-    return { id: raw.id as string, engine: 'nuclei',
-      scopes: raw.scopes as Array<'misconfiguration' | 'exposures'>, maxRequests: raw.maxRequests };
-  },
-  requiredInputs: () => [],
+  ...nucleiTask,
   prepare(task, _data, options) {
     if (!options.nucleiTemplates || new URL(options.plan.origin).protocol === 'https:') invalid();
     return { task };
@@ -172,9 +140,7 @@ export const nucleiEngine = defineEngine<Task<'nuclei'>, NucleiState>({
 });
 
 export const zapEngine = defineEngine<Task<'zap'>, ZapState>({
-  id: 'zap', category: 'injection', reportMode: 'url',
-  parseTask: raw => policyTask(raw, 'zap', 2000),
-  requiredInputs: task => [task.policy],
+  ...zapTask,
   prepare(task, data, options) {
     const prepared = prepareZapPolicy(data.get(task.policy), options.allowPrivate, options.env);
     if (prepared.policy.origin !== options.plan.origin || options.ratePerSecond > 50

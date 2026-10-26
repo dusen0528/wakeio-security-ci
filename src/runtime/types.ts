@@ -1,6 +1,7 @@
 import type { CheckResult, CodeLanguage, Finding, SourceOptions, ToolName } from '../contracts.js';
 import type { AdmissionSnapshot, TaskAdmission } from '../agent-dast/admission.js';
 import type { ExecutionPlan, ExecutionTask } from '../agent-dast/plan.js';
+import type { ExecutionTaskDescriptor } from '../agent-dast/task-parsers.js';
 import type { NewSurface } from '../agent-dast/store.js';
 import type { CollectedFile, SourceSnapshot } from '../source/types.js';
 
@@ -99,11 +100,6 @@ export interface AttackContext {
 }
 
 /** Internal v1 adapter port; it grants no caller-supplied code or execution authority. */
-export interface RegisteredAttackEngine<T extends ExecutionTask = ExecutionTask> {
-  id: T['engine'];
-  category: 'injection' | 'config';
-  reportMode: 'url' | 'api';
-  parseTask(raw: Record<string, unknown>): T;
-  requiredInputs(task: T): readonly string[];
+export interface RegisteredAttackEngine<T extends ExecutionTask = ExecutionTask> extends ExecutionTaskDescriptor<T> {
   prepare(task: T, data: ReadonlyMap<string, unknown>, options: AttackContext): PreparedAttackTask<T>;
 }

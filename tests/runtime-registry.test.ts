@@ -1,9 +1,12 @@
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import test from 'node:test';
+import * as ts from 'typescript';
 import type { CheckResult, Finding } from '../src/contracts.js';
 import type { AdmissionSnapshot } from '../src/agent-dast/admission.js';
 import { parseExecutionPlan, type ExecutionTask } from '../src/agent-dast/plan.js';
 import { ATTACK_ENGINES, attackEngine } from '../src/runtime/registry.js';
+import { EXECUTION_TASKS, taskDescriptor } from '../src/agent-dast/task-parsers.js';
 import type { AttackContext } from '../src/runtime/types.js';
 import { zapSurfaceKey } from '../src/zap-policy.js';
 
@@ -22,11 +25,44 @@ test('runtime registry has exactly the four immutable v1 engine identities', () 
   assert.deepEqual(ATTACK_ENGINES.map(engine => engine.id), ['native-dast', 'schemathesis', 'nuclei', 'zap']);
   assert.equal(new Set(ATTACK_ENGINES.map(engine => engine.id)).size, 4);
   assert.ok(Object.isFrozen(ATTACK_ENGINES));
+  assert.ok(Object.isFrozen(EXECUTION_TASKS));
+  assert.deepEqual(EXECUTION_TASKS.map(descriptor => descriptor.id), ATTACK_ENGINES.map(engine => engine.id));
   for (const engine of ATTACK_ENGINES) {
     assert.ok(Object.isFrozen(engine)); assert.equal(attackEngine(engine.id), engine);
+    const descriptor = taskDescriptor(engine.id);
+    assert.ok(Object.isFrozen(descriptor));
+    assert.equal(engine.parseTask, descriptor.parseTask);
+    assert.equal(engine.requiredInputs, descriptor.requiredInputs);
+    assert.equal(engine.category, descriptor.category); assert.equal(engine.reportMode, descriptor.reportMode);
   }
   for (const id of ['browser', '__proto__', null, {}, ['zap']]) {
     assert.throws(() => attackEngine(id), /invalid_execution_plan/);
+    assert.throws(() => taskDescriptor(id), /invalid_execution_plan/);
+  }
+});
+
+test('emitted plan and provider recording imports exclude engine execution and network modules', async () => {
+  for (const entry of ['plan', 'providers/record']) {
+    const pending = [new URL(`../src/agent-dast/${entry}.js`, import.meta.url).href];
+    const graph = new Set<string>();
+    while (pending.length) {
+      const url = pending.pop()!;
+      if (graph.has(url)) continue;
+      graph.add(url);
+      const source = ts.createSourceFile(url, await readFile(new URL(url), 'utf8'), ts.ScriptTarget.ES2022);
+      for (const statement of source.statements) {
+        const specifier = ts.isImportDeclaration(statement) || ts.isExportDeclaration(statement)
+          ? statement.moduleSpecifier : undefined;
+        if (!specifier || !ts.isStringLiteral(specifier)) continue;
+        if (specifier.text.startsWith('.')) pending.push(new URL(specifier.text, url).href);
+        else graph.add(specifier.text);
+      }
+    }
+    assert.ok([...graph].some(url => url.endsWith('/agent-dast/task-parsers.js')));
+    for (const module of graph) {
+      assert.doesNotMatch(module, /(?:engine-adapters|schemathesis(?:-live)?|runtime\/registry)\.js$/);
+      assert.doesNotMatch(module, /^node:(?:child_process|net|https?|http2|tls|dgram)$/);
+    }
   }
 });
 

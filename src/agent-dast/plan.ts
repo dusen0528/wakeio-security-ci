@@ -1,5 +1,5 @@
 import { snapshotJsonData } from '../json-snapshot.js';
-import { attackEngine, type AttackEngineId } from '../runtime/registry.js';
+import { taskDescriptor, type AttackEngineId } from './task-parsers.js';
 import { alias, fail, keys } from './plan-validation.js';
 
 export const EXECUTION_PLAN_KIND = 'wakeio.execution-plan' as const;
@@ -34,7 +34,7 @@ export function parseExecutionPlan(raw: unknown): ExecutionPlan {
     object(item);
     if (typeof item.id !== 'string' || !EXECUTION_TASK_ID.test(item.id) || seen.has(item.id)) fail();
     seen.add(item.id);
-    return attackEngine(item.engine).parseTask(item);
+    return taskDescriptor(item.engine).parseTask(item);
   });
   return { version: 1, kind: EXECUTION_PLAN_KIND, origin, tasks };
 }

@@ -5,7 +5,7 @@ import type { RegisteredAttackEngine } from './types.js';
 export const ATTACK_ENGINES = Object.freeze([
   nativeDastEngine, schemathesisEngine, nucleiEngine, zapEngine,
 ]);
-export type AttackEngineId = typeof ATTACK_ENGINES[number]['id'];
+export type { AttackEngineId } from '../agent-dast/task-parsers.js';
 
 export function attackEngine(id: unknown): RegisteredAttackEngine {
   const engine = ATTACK_ENGINES.find(candidate => candidate.id === id);
