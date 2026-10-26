@@ -4,8 +4,8 @@
 
 ## 1. 기준과 범위
 
-- 원격 확인 시점: 2026-10-23. GitHub PR #79는 OPEN이고 main은 `7c13b24624af44f9192a1df49908aa25e1d074c9`였다. 머지됐다는 사용자 설명과 현재 원격 상태가 다르므로 머지 작업 없이 설계한다.
-- inventory 계약 기준은 검토 완료한 PR head `c094b49c2cddb91c2c2f656c91c1fb5692a26d74`; 플랜/inputs 검증기는 현재 main 기준이다. 구현 시작 시 머지 상태와 main을 다시 확인한다.
+- 2026-10-26: CI 5종 성공을 확인하고 사용자 승인으로 #79를 머지했다. origin/main은 `b26fd797d6464bca9f050234615f29946df17dcc`이며 #81의 base는 main이다.
+- inventory 계약과 기존 v1 플랜/inputs 검증기는 위 main 기준이다. 이번 수정에서 run-plan 및 v1 검증기는 변경하지 않는다.
 - 첫 프리셋은 `openapi-get-contract` 하나다. 인증 정책 생성, 다른 엔진, 소스 route, 자동 실행, LLM, 새 취약점 규칙, POST는 포함하지 않는다. 코드포인트 순 정렬 후 GET을 태스크당 16개씩, 최대 16태스크로 분할한다.
 - 생성은 DNS/HTTP·프로바이더·대상 스크립트·Python worker 없이 끝난다. 실행 예시는 계약 설명일 뿐 이번 작업에서 실행하지 않는다.
 - 기존 v1 plan/inputs 스키마를 넓히지 않는다. 기존 CLI 모드·플래그·종료 코드 의미를 보존한다.
@@ -24,7 +24,7 @@
 
 `inventory.json`에는 OpenAPI 응답 스키마/파라미터 본문이 없다. 두 JSON(inventory, preset)만으로는 현재 runner가 실행할 schema 입력을 만들 수 없으므로 **원본 로컬 OpenAPI JSON**도 필수다. 원본을 내려받거나 inventory에서 복원하지 않는다.
 
-이 프리셋은 **로컬에서 띄운 HTTP 앱용**이다. HTTPS·인증 생성은 이번 범위 밖이며 네트워크 요청이나 실행을 자동으로 시작하지 않는다.
+이 프리셋은 **loopback HTTP 앱용**이다. 정규화한 hostname이 127.0.0.1, [::1], localhost일 때만 허용하며 다른 원격 HTTP 및 192.168.x 등 사설망 IP는 preset_remote_unsupported로 거부한다. HTTPS·인증 생성은 이번 범위 밖이며 네트워크 요청이나 실행을 자동으로 시작하지 않는다.
 
 ## 3. 생성 입력 계약
 
@@ -43,9 +43,9 @@ wakeio-security-ci plan --preset presets/openapi-get-contract.json \
 | openapi | P1a에 사용한 원본 로컬 JSON, 최대 1MiB. 읽은 원본 SHA256이 inventory.openapiDigest와 같아야 함 |
 | origin | inventory.origin이 있으면 사용. `--url`도 있으면 정규화 후 같아야 함. inventory.origin=null이면 `--url` 필수. 스펙 servers에서 가져오지 않음 |
 | owner request budget B | `--max-requests` 1..20000, 기본 64. 생성 시 모든 task.maxRequests 합 ≤ B 확인. 플랜이 owner 예산을 올리지 않음 |
-| out | 기존 부모 아래의 새 private 디렉터리. caller symlink 거부 및 기존 파일/폴더 덮어쓰기 금지. 출력 경로는 생성 파일 본문에 넣지 않음 |
+| out | 기존 부모 아래의 새 private 디렉터리. caller symlink 거부 및 기존 파일/폴더 덮어쓰기 금지. 출력 경로는 6개 번들 파일 본문에 넣지 않음(stdout 예시 명령에는 포함) |
 
-origin은 기존 `executionOrigin` 문법을 사용하고, 이 프리셋은 추가로 HTTP만 허용한다. HTTPS 입력은 `preset_https_unsupported`로 거부한다. 인증된 HTTPS는 기존에 별도 경로가 있지만 첫 프리셋에 인증 정책/자격증명을 추가하지 않는다. HTTP 지원은 능동 검사의 허가나 대상 도달성을 뜻하지 않는다.
+origin은 기존 `executionOrigin` 문법을 사용하고, 이 프리셋은 추가로 HTTP만 허용한다. loopback 밖 hostname은 preset_remote_unsupported로 먼저 거부하고, loopback HTTPS는 `preset_https_unsupported`로 거부한다. 인증된 HTTPS는 기존에 별도 경로가 있지만 첫 프리셋에 인증 정책/자격증명을 추가하지 않는다. HTTP 지원은 능동 검사의 허가나 대상 도달성을 뜻하지 않는다.
 
 원본 OpenAPI에서 기존 열거기를 다시 호출하고 inventory의 전체 GET 집합·상태·카운트·gap과 비교한다. digest만 맞고 surface 목록이 변조된 inventory도 거부한다. source_routes=unverified는 이 GET 프리셋의 정상 범위이며 차단하지 않는다.
 
@@ -69,7 +69,7 @@ origin은 기존 `executionOrigin` 문법을 사용하고, 이 프리셋은 추�
 
 - operations: `"all"` 또는 비어 있지 않은 `{ "method": "GET", "pathTemplate": "/items/{id}" }` 배열. 배포 파일은 all이며 명시 선택도 같은 프리셋 계약으로 검증한다.
 - seed: 정수 1..2147483647.
-- maxRequests: 정수 1..64. 각 분할 태스크의 operation 수 이상이어야 하며, 태스크별 상한 합이 owner 예산 B 이하여야 한다. 실제 완료나 요청 수를 보장하는 값이 아니라 실행 상한이다.
+- maxRequests: 정수 1..64. 각 분할 태스크의 operation 수 이상이어야 하며, 태스크별 상한 합이 owner 예산 B 이하여야 한다. 예산 오류는 `insufficient_budget required=<태스크 상한 합>` 한 줄과 exit2로 반환한다. required에는 내부에서 계산한 정수만 출력하며 입력 문자열은 포함하지 않는다. 실제 완료나 요청 수를 보장하는 값이 아니라 실행 상한이다.
 - surface identity는 대소문자/후행 slash/alias를 보존한 정확한 `(GET, pathTemplate)`이다. operationId는 사용하지 않는다.
 - 명시 선택의 모든 항목이 inventory에 있어야 한다. 하나라도 없으면 `surface_not_in_inventory`; 교집합만 취하거나 조용히 건너뛰지 않는다. POST/잘못된 형식/중복도 거부한다.
 - 선택 결과는 코드포인트 순으로 정렬한다. 입력 배열 순서는 execution-plan.json 내용에 영향을 주지 않는다. 단, preset의 원본 바이트가 달라지면 preset 해시는 달라진다.
@@ -125,6 +125,12 @@ provenance는 기록만 되고 아직 실행 시 검증되지 않음
 
 Exit0=검증한 bundle 생성 성공. Exit2=입력·호환성·예산·출력 오류, stderr는 고정 코드 한 줄. 기존 plan의 다른 모드는 변경하지 않는다. --preset과 기존 --api-policy/--openapi-input/--dast-policy 모드를 섞으면 invalid_arguments로 거부한다.
 
+성공 stdout 마지막 줄에 현재 Node/CLI 경로를 사용하는 run-plan 예시를 출력한다. 원래 생성에 쓴 B와 정규화 origin을 그대로 쓰고 --active-consent, --allow-private, plan/inputs 파일, 새 run 하위 폴더를 포함한다. 동적 경로는 POSIX shell 단일 인용으로 보호한다. 명령을 출력할 뿐 실행하지 않는다.
+
+### 임시 폴더 + rename 공개는 F6-3으로 유예
+
+Node 기본 rename은 기존 빈 디렉터리를 교체할 수 있다. 사용자 지정 출력 경로에 대한 기존 no-clobber 계약을 유지하는 exclusive 공개 절차까지 이번 수정에 포함하면 범위가 커진다. 따라서 현재 새 디렉터리 claim/순차 쓰기와 빈 폴더만 정리하는 정책을 유지한다. 실패 시 비어 있지 않은 부분 출력이 남을 수 있고 원자적 bundle 공개를 보장하지 않는다. F6-3에서 전용 임시 폴더 및 배타적 공개/실패 정리 계약을 함께 정한다.
+
 ## 6. 해시 결합: v1을 유지하는 sidecar 권고안
 
 플랜에 추가 메타데이터를 넣는 방식은 기존 검증기가 거부한다. inputs에 미참조 alias만 넣으면 현재 runner가 실제 파일을 읽지 않는다. 따라서 **기존 inputs 형식 + sidecar 기록**까지만 구현한다. provenance는 기록만 되고 아직 실행 시 검증되지 않음. 실행 시 검증은 F6-4에서 정한다.
@@ -175,7 +181,7 @@ inputs는 현재 검증기가 허용하는 형태를 유지한다:
 
 ### 고정 오류 코드
 
-입출력 공통 코드에는 invalid_arguments/path_not_found/unsafe_path/input_changed/input_limit/output_exists/output_error/invalid_origin을 사용한다. 생성 계약은 invalid_inventory/invalid_preset/openapi_digest_mismatch/inventory_mismatch/origin_required/origin_mismatch/preset_https_unsupported/surface_not_in_inventory/no_operations/operation_limit/inventory_partial/insufficient_budget을 구분한다. OpenAPI 구조·지원 범위 오류는 기존 타입을 invalid_openapi/unsupported_openapi/input_limit에 매핑한다. 모두 고정 한 줄이며 입력 경로나 예외 메시지를 포함하지 않는다.
+입출력 공통 코드에는 invalid_arguments/path_not_found/unsafe_path/input_changed/input_limit/output_exists/output_error/invalid_origin을 사용한다. 생성 계약은 invalid_inventory/invalid_preset/openapi_digest_mismatch/inventory_mismatch/origin_required/origin_mismatch/preset_https_unsupported/preset_remote_unsupported/surface_not_in_inventory/no_operations/operation_limit/inventory_partial/insufficient_budget을 구분한다. OpenAPI 구조·지원 범위 오류는 기존 타입을 invalid_openapi/unsupported_openapi/input_limit에 매핑한다. 모두 고정 한 줄이며 입력 경로나 예외 메시지를 포함하지 않는다.
 
 검증 순서는 CLI/안전 읽기 → 각 JSON 구조 → OpenAPI digest/inventory 재검증 → origin/프리셋 선택/예산 → 기존 selector/plan/inputs 검증 → 출력이다. 여러 입력이 동시에 잘못되면 이 순서의 첫 오류를 반환한다. 미지원 HTTPS는 구조적으로 유효한 HTTP(S) origin을 확인한 뒤 해당 프리셋의 지원 범위 오류로 구분한다.
 
@@ -196,14 +202,15 @@ inputs는 현재 검증기가 허용하는 형태를 유지한다:
 | 기존 계약 | 성공 생성 plan/inputs는 기존 검증기 100% 통과. 플랜에 메타데이터 추가 시 기존처럼 거부. 기존 CLI 모든 모드/종료 코드/fixture 유지 |
 | inventory fixture 8개 | HTTP origin에서 기존 3개+inline-unselected+local-path-item-alias 5개는 정확한 GET 집합의 플랜 생성. no-get/empty-paths는 no_operations, unresolved-path-item은 inventory_partial로 거부 |
 | 집합/참조 | 없는 surface, 개수가 같아도 다른 surface, POST, 중복, 대소문자/후행 slash 차이 거부. alias는 별개 surface. all의 조용한 절단 0건 |
-| 상한 | 선택 수0/1/16/17/256/257, 16개씩 분할/연속 ID/중복·누락0, 태스크 예산 합이 B와 같을 때 허용/초과 시 거부, seed0/1/상한/상한+1, maxRequests0/1/64/65, operation 수보다 적은 예산, 소유자 B보다 큰 예산, 잘못된 정수 거부 |
+| 상한 | 선택 수0/1/16/17/256/257, 16개씩 분할/연속 ID/중복·누락0, 태스크 예산 합이 B와 같을 때 허용/초과 시 거부, seed0/1/상한/상한+1, maxRequests0/1/64/65, operation 수보다 적은 예산, 소유자 B보다 큰 예산은 required=태스크 상한 합을 출력하고 거부, 잘못된 정수 거부 |
 | 실행 준비 경계 | 기존 selector가 거부하는 requestBody/callbacks/remote/cycle/ref siblings 등을 우회하지 않고 거부. 실행 준비를 통과시키려고 원본을 고쳐 쓰지 않음 |
 | inventory 정합 | 원본 digest 불일치, digest만 맞는 surface 변조, counts/scope/gap 변조, 알 수 없는 스키마/추가 키 거부 |
-| origin | inventory origin 사용, null일 때 명시 URL 필수, origin 충돌 거부, servers 무시, 자격증명/query/fragment/path 거부, HTTPS 고정 거부. DNS 0건 |
+| origin | inventory origin 사용, null일 때 명시 URL 필수, origin 충돌 거부, servers 무시, 자격증명/query/fragment/path 거부, loopback 3종 허용, 원격/192.168.x/10.x/172.16.x 거부, loopback HTTPS 고정 거부. DNS 0건 |
 | 해시 | OpenAPI/preset/inventory 원본의 1바이트 변경, plan/sidecar/inputs의 alias/hash/path 교체를 각각 탐지. 상대 경로 bundle 이동 허용. 자기 참조 해시 없음 |
-| 재현성 | 같은 바이트+origin+B로 3회 생성 시 6파일 모두 바이트 동일. 생성기가 timestamp/run ID/실행 환경의 절대 경로/출력 위치를 결과 본문에 추가하지 않음(원본 입력 사본의 기존 내용은 그대로 유지) |
+| 실행 예시 | stdout 명령을 실행하지 않고 shell 인자만 추출해 기존 run-plan 인자 parser로 검증. B/origin/plan/inputs 경로 일치 및 quote/공백/명령 치환 문자가 있는 경로를 그대로 유지 |
+| 재현성 | 같은 바이트+origin+B로 3회 생성 시 6파일 모두 바이트 동일. 생성기가 timestamp/run ID/실행 환경의 절대 경로/출력 위치를 6개 번들 파일 본문에 추가하지 않음(stdout 예시 명령에는 포함)(원본 입력 사본의 기존 내용은 그대로 유지) |
 | 오프라인 | Docker --network none에서 모든 생성 fixture·origin 문자열·remote ref·없는 surface 거부 검사. worker/provider/자식 프로세스 시작 canary 0건. 의존성 준비와 본 테스트 분리 |
 | P1a 보완 | 읽기 중 변경→input_changed, 없음→path_not_found, symlink 등→unsafe_path. 쓰기 실패 시 빈 폴더 정리, 기존/비어 있지 않은 폴더 보존. 정리 실패에도 최초 stderr 한 줄 유지 |
 | 회귀 | inventory recall10/10·예상 밖 GET0·기존 init 스냅샷 불변. 기존 전체 테스트·0.5 호환·KPI 차이를 main과 같은 조건에서 측정. 미측정 KPI를 성공으로 취급하지 않음 |
 
-이 문서는 구현 전 수정한 계약이다. 검증 결과는 구현 PR에 별도로 기록한다. 대상 HTTP·대상 스크립트·LLM·배포·머지는 수행하지 않는다.
+이 문서는 구현 전 수정한 계약이다. 검증 결과는 구현 PR에 별도로 기록한다. 대상 HTTP·대상 스크립트·LLM·배포 및 #81 머지는 수행하지 않는다. #79 머지는 명시적 사용자 승인으로 완료했다.

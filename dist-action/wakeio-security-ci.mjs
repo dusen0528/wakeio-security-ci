@@ -248452,6 +248452,7 @@ var reasons = /* @__PURE__ */ new Set([
   "origin_required",
   "origin_mismatch",
   "preset_https_unsupported",
+  "preset_remote_unsupported",
   "surface_not_in_inventory",
   "no_operations",
   "operation_limit",
@@ -248580,7 +248581,8 @@ var PROVENANCE_NOTICE = "provenance\uB294 \uAE30\uB85D\uB9CC \uB418\uACE0 \uC544
 var PRESET_USAGE = `  wakeio-security-ci plan --preset FILE --inventory FILE --openapi LOCAL_JSON --out NEW_DIR
     [--url HTTP_ORIGIN] [--max-requests N]
 
-Generate a six-file offline bundle for a locally running HTTP app. No request or engine execution.
+Generate a six-file offline bundle for a loopback HTTP app (127.0.0.1, [::1], localhost).
+No request or engine execution. Success prints an example command; it does not execute it.
 GETs are sorted and split into 16 operations per task, at most 16 tasks (256 GETs).
 The sum of task maxRequests must fit the owner budget (default 64, range 1..20000).
 ${PROVENANCE_NOTICE}. Provenance is recorded only; runtime verification is not implemented.
@@ -248588,6 +248590,12 @@ Exit 0: bundle generated. Exit 2: refused. Existing run-plan is unchanged.
 `;
 function fail7(code) {
   throw Error(code);
+}
+function insufficientBudget(requiredBudget) {
+  throw Object.assign(Error("insufficient_budget"), { requiredBudget });
+}
+function shellQuote3(value) {
+  return "'" + value.replace(/'/g, "'\\''") + "'";
 }
 function keys4(value, names, code) {
   if (!value || typeof value !== "object" || Array.isArray(value) || Object.keys(value).length !== names.length || names.some((name) => !Object.hasOwn(value, name)))
@@ -248633,7 +248641,10 @@ function buildPresetBundle(presetBytes, inventoryBytes, openapiBytes, url, budge
   const selectedOrigin = inventory.origin === null ? url === void 0 ? fail7("origin_required") : origin(url) : origin(inventory.origin);
   if (url !== void 0 && origin(url) !== selectedOrigin)
     fail7("origin_mismatch");
-  if (new URL(selectedOrigin).protocol !== "http:")
+  const target = new URL(selectedOrigin);
+  if (!["127.0.0.1", "[::1]", "localhost"].includes(target.hostname))
+    fail7("preset_remote_unsupported");
+  if (target.protocol !== "http:")
     fail7("preset_https_unsupported");
   if (expected.scope.openapi_get === "partial")
     fail7("inventory_partial");
@@ -248660,11 +248671,12 @@ function buildPresetBundle(presetBytes, inventoryBytes, openapiBytes, url, budge
     fail7("no_operations");
   if (operations.length > EXECUTION_PLAN_MAX_TASKS * OPENAPI_MAX_LIVE_OPERATIONS)
     fail7("operation_limit");
+  const requiredBudget = Math.ceil(operations.length / OPENAPI_MAX_LIVE_OPERATIONS) * Number(preset.maxRequests);
   const tasks = [];
   for (let index = 0; index < operations.length; index += OPENAPI_MAX_LIVE_OPERATIONS) {
     const chunk = operations.slice(index, index + OPENAPI_MAX_LIVE_OPERATIONS);
     if (Number(preset.maxRequests) < chunk.length)
-      fail7("insufficient_budget");
+      insufficientBudget(requiredBudget);
     tasks.push({
       id: `t-openapi-get-contract-${String(tasks.length + 1).padStart(2, "0")}`,
       engine: "schemathesis",
@@ -248674,8 +248686,8 @@ function buildPresetBundle(presetBytes, inventoryBytes, openapiBytes, url, budge
       maxRequests: preset.maxRequests
     });
   }
-  if (tasks.reduce((total, task) => total + Number(task.maxRequests), 0) > budget2)
-    fail7("insufficient_budget");
+  if (requiredBudget > budget2)
+    insufficientBudget(requiredBudget);
   for (const task of tasks)
     selectOpenApiLiveOperations(document, task.operations.map((path2) => ({ method: "GET", path: path2 })));
   const plan = parseExecutionPlan({ version: 1, kind: "wakeio.execution-plan", origin: selectedOrigin, tasks });
@@ -248739,9 +248751,14 @@ async function presetPlanMain(argv) {
 ${PROVENANCE_NOTICE}
 Provenance is recorded only; it is not yet verified at execution time.
 `);
+    process.stdout.write(`${shellQuote3(process.execPath)} ${shellQuote3(resolve13(process.argv[1]))} run-plan --plan ${shellQuote3(join10(output, "execution-plan.json"))} --inputs ${shellQuote3(join10(output, "inputs.json"))} --active-consent --allowed-origin ${shellQuote3(bundle.plan.origin)} --max-requests ${budget2} --allow-private --out ${shellQuote3(join10(output, "run"))}
+`);
     return 0;
   } catch (error) {
-    process.stderr.write(offlineErrorCode(error, "invalid_preset") + "\n");
+    const reason = offlineErrorCode(error, "invalid_preset");
+    const required = error instanceof Error ? error.requiredBudget : void 0;
+    const detail = reason === "insufficient_budget" && typeof required === "number" && Number.isSafeInteger(required) && required > 0 ? ` required=${required}` : "";
+    process.stderr.write(reason + detail + "\n");
     return 2;
   }
 }

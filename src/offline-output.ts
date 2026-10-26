@@ -30,7 +30,7 @@ export async function writeOfflineBundle(output: string, files: ReadonlyArray<re
 
 const reasons = new Set(['invalid_arguments', 'unsafe_path', 'path_not_found', 'input_changed', 'input_limit', 'output_exists', 'output_error',
   'invalid_origin', 'invalid_inventory', 'invalid_preset', 'openapi_digest_mismatch', 'inventory_mismatch', 'origin_required', 'origin_mismatch',
-  'preset_https_unsupported', 'surface_not_in_inventory', 'no_operations', 'operation_limit', 'inventory_partial', 'insufficient_budget', 'invalid_openapi']);
+  'preset_https_unsupported', 'preset_remote_unsupported', 'surface_not_in_inventory', 'no_operations', 'operation_limit', 'inventory_partial', 'insufficient_budget', 'invalid_openapi']);
 
 export function offlineErrorCode(error: unknown, fallback: string): string {
   if (error instanceof OpenApiPolicyError) return error.code === 'openapi_limit' ? 'input_limit'

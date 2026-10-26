@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFile, mkdir, mkdtemp, readdir, rm, stat, symlink, writeFile } from 'node:fs/promises';
+import { readFile, mkdir, mkdtemp, readdir, realpath, rm, stat, symlink, writeFile } from 'node:fs/promises';
 import fsp from 'node:fs/promises';
 import { syncBuiltinESMExports } from 'node:module';
 import { createHash } from 'node:crypto';
@@ -11,6 +11,7 @@ import { join, resolve } from 'node:path';
 import { buildPresetBundle, PROVENANCE_NOTICE } from '../src/preset-plan.js';
 import { buildSurfaceInventory, initDastMain } from '../src/init-dast.js';
 import { parseExecutionInputs, parseExecutionPlan } from '../src/agent-dast/plan.js';
+import { parseRunPlanArgs } from '../src/agent-dast/cli.js';
 import { readJsonInputBytes } from '../src/json-input.js';
 import { offlineErrorCode, writeOfflineBundle } from '../src/offline-output.js';
 
@@ -53,7 +54,9 @@ for (const count of [1, 16, 17, 256]) test(`partitions ${count} GETs without los
 
 test('257 operations and the sum of all task request caps are rejected before publication', () => {
   refuses(() => generate(spec(257), 20000), 'operation_limit');
-  for (const [count, budget] of [[17, 64], [17, 127], [256, 1023]]) refuses(() => generate(spec(count), budget), 'insufficient_budget');
+  for (const [count, budget, required] of [[17, 64, 128], [17, 127, 128], [256, 1023, 1024]]) {
+    assert.throws(() => generate(spec(count), budget), (error: any) => error.message === 'insufficient_budget' && error.requiredBudget === required);
+  }
   const small = encode({ ...JSON.parse(preset.toString()), maxRequests: 15 });
   refuses(() => generate(spec(16), 64, small), 'insufficient_budget');
 });
@@ -105,6 +108,19 @@ test('origin is explicit, string-only and limited to the existing unauthenticate
   }
 });
 
+test('preset permits only the three loopback hostnames, including inventory-provided origins', () => {
+  const bytes = spec(1);
+  for (const url of ['http://127.0.0.1:3000', 'http://[::1]:3000', 'http://localhost:3000']) {
+    assert.equal(buildPresetBundle(preset, inventory(bytes), bytes, url).plan.origin, url);
+    assert.equal(buildPresetBundle(preset, inventory(bytes, url), bytes).plan.origin, url);
+  }
+  for (const url of ['http://remote.invalid', 'https://remote.invalid', 'http://192.168.1.2', 'http://10.0.0.1', 'http://172.16.0.1',
+    'http://127.0.0.2', 'http://localhost.evil.invalid', 'http://localhost.', 'http://[::ffff:127.0.0.1]']) {
+    refuses(() => buildPresetBundle(preset, inventory(bytes), bytes, url), 'preset_remote_unsupported');
+    refuses(() => buildPresetBundle(preset, inventory(bytes, url), bytes), 'preset_remote_unsupported');
+  }
+});
+
 test('existing execution selector remains strict even for an observed inventory', () => {
   for (const get of [{ requestBody: {} }, { callbacks: {} }, { responses: { '200': { $ref: 'https://remote.invalid/CANARY' } } }]) {
     const bytes = encode({ openapi: '3.1.0', paths: { '/p': { get } } });
@@ -133,11 +149,24 @@ test('CLI generates identical bundles three times under guards against network a
   await writeFile(join(top, 'guard.mjs'), `import cp from 'node:child_process';import http from 'node:http';import https from 'node:https';import dns from 'node:dns/promises';import net from 'node:net';import fs from 'node:fs';import {syncBuiltinESMExports} from 'node:module';const deny=()=>{fs.writeFileSync(${JSON.stringify(marker)},'called');throw Error('effect_forbidden')};for(const [obj,names] of [[cp,['spawn','exec','execFile','execFileSync']],[http,['request','get']],[https,['request','get']],[dns,['lookup','resolve']],[net,['connect','createConnection']]])for(const name of names)obj[name]=deny;syncBuiltinESMExports();`);
   let previous: Buffer[] | undefined;
   for (let i = 0; i < 3; i++) {
-    const out = join(top, 'out-' + i);
+    const out = join(top, "out-' $(echo substituted) `echo substituted`-" + i);
     const result = await exec(process.execPath, ['--import', join(top, 'guard.mjs'), 'build/src/cli.js', 'plan', '--preset', resolve('presets/openapi-get-contract.json'),
-      '--inventory', join(top, 'inventory.json'), '--openapi', join(top, 'openapi.json'), '--url', 'http://not-resolved.invalid:3000', '--max-requests', '128', '--out', out]);
+      '--inventory', join(top, 'inventory.json'), '--openapi', join(top, 'openapi.json'), '--url', 'http://LOCALHOST:3000/', '--max-requests', '128', '--out', out]);
     assert.equal(result.stderr, ''); assert.equal(result.stdout.split('\n')[0], 'Plan status=generated preset=openapi-get-contract tasks=2 operations=17 maxRequests=128');
     assert.ok(result.stdout.includes(PROVENANCE_NOTICE));
+    const command = result.stdout.split('\n').find(line => line.includes(' run-plan ')); assert.ok(command);
+    // Parse shell words only: the example must never run an active scan in this test.
+    const words = await exec('/bin/sh', ['-c', `set -- ${command}; printf '%s\\0' "$@"`]);
+    const argv = words.stdout.split('\0').slice(0, -1);
+    assert.deepEqual(argv.slice(0, 2), [process.execPath, resolve('build/src/cli.js')]);
+    const parsed = parseRunPlanArgs(argv.slice(2)); assert.ok(!('help' in parsed));
+    const output = await realpath(out), plan = JSON.parse(await readFile(join(out, 'execution-plan.json'), 'utf8'));
+    const sidecar = JSON.parse(await readFile(join(out, 'plan-provenance.json'), 'utf8'));
+    assert.equal(parsed.maxRequests, sidecar.maxRequests); assert.equal(parsed.maxRequests, 128);
+    assert.equal(parsed.allowedOrigin, plan.origin); assert.equal(parsed.allowedOrigin, 'http://localhost:3000');
+    assert.equal(parsed.planFile, join(output, 'execution-plan.json')); assert.equal(parsed.inputsFile, join(output, 'inputs.json'));
+    assert.equal(parsed.outDir, join(output, 'run')); assert.equal(parsed.allowPrivate, true); assert.equal(parsed.consent, true);
+    await assert.rejects(stat(parsed.outDir), { code: 'ENOENT' });
     const names = (await readdir(out)).sort(); assert.equal(names.length, 6);
     const raw = await Promise.all(names.map(name => readFile(join(out, name))));
     if (previous) assert.deepEqual(raw, previous); previous = raw;
@@ -145,9 +174,10 @@ test('CLI generates identical bundles three times under guards against network a
   }
   await assert.rejects(stat(marker), { code: 'ENOENT' });
   const valid = ['build/src/cli.js', 'plan', '--preset', resolve('presets/openapi-get-contract.json'), '--inventory', join(top, 'inventory.json'), '--openapi', join(top, 'openapi.json'), '--url', 'http://localhost', '--out', join(top, 'refused')];
-  for (const extra of [['--max-requests', '64'], ['--api-policy', 'CANARY'], ['--verify-provenance'], ['--max-requests', '20001'], ['--out', 'CANARY']]) {
+  for (const extra of [[], ['--max-requests', '64'], ['--api-policy', 'CANARY'], ['--verify-provenance'], ['--max-requests', '20001'], ['--out', 'CANARY']]) {
     await assert.rejects(exec(process.execPath, [...valid, ...extra]), (error: any) => {
-      assert.equal(error.code, 2); assert.equal(error.stdout, ''); assert.match(error.stderr, /^(insufficient_budget|invalid_arguments)\n$/); return true;
+      assert.equal(error.code, 2); assert.equal(error.stdout, '');
+      assert.equal(error.stderr, extra.length === 0 || extra[1] === '64' ? 'insufficient_budget required=128\n' : 'invalid_arguments\n'); return true;
     });
   }
   await assert.rejects(stat(join(top, 'refused')), { code: 'ENOENT' });
@@ -199,7 +229,7 @@ test('write failure removes only our empty directory and preserves existing or n
 test('CLI reason codes reject invalid data without emitting input strings or publishing a bundle', async t => {
   const top = await mkdtemp(join(tmpdir(), 'wakeio-preset-reasons-')); t.after(() => rm(top, { recursive: true, force: true }));
   for (const reason of ['invalid_preset', 'invalid_inventory', 'invalid_openapi', 'openapi_digest_mismatch', 'inventory_mismatch', 'origin_required',
-    'origin_mismatch', 'preset_https_unsupported', 'surface_not_in_inventory', 'no_operations', 'operation_limit', 'inventory_partial', 'input_limit', 'path_not_found', 'output_exists']) {
+    'origin_mismatch', 'preset_https_unsupported', 'preset_remote_unsupported', 'surface_not_in_inventory', 'no_operations', 'operation_limit', 'inventory_partial', 'input_limit', 'path_not_found', 'output_exists']) {
     let bytes = reason === 'no_operations' ? spec(0) : reason === 'operation_limit' ? spec(257) : spec(1);
     if (reason === 'inventory_partial') bytes = await readFile('benchmarks/fixtures/inventory/unresolved-path-item.json');
     const inv: any = buildSurfaceInventory(bytes), custom: any = JSON.parse(preset.toString());
@@ -207,6 +237,7 @@ test('CLI reason codes reject invalid data without emitting input strings or pub
     if (reason === 'origin_required') url = undefined;
     if (reason === 'origin_mismatch') inv.origin = 'http://localhost:3001';
     if (reason === 'preset_https_unsupported') url = 'https://localhost';
+    if (reason === 'preset_remote_unsupported') url = 'http://192.168.1.2';
     if (reason === 'surface_not_in_inventory') custom.operations = [{ method: 'GET', pathTemplate: '/CANARY' }];
     if (reason === 'inventory_mismatch') inv.counts.enumeratedGetOperations = 42;
     const data = reason === 'invalid_openapi' ? Buffer.from('{CANARY') : reason === 'openapi_digest_mismatch' ? Buffer.concat([bytes, Buffer.from(' ')])
