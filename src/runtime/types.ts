@@ -1,10 +1,7 @@
-import type { CheckResult, CodeLanguage, CodeProvider, SourceOptions } from '../contracts.js';
-import type { DastPolicy } from '../dast.js';
-import type { SchemathesisAuthPolicy } from '../schemathesis-auth.js';
-import type { ZapCompiledRequest } from '../zap-openapi.js';
-import type { ZapPolicyInput } from '../zap-policy.js';
+import type { CheckResult, CodeLanguage, CodeProvider, Finding, SourceOptions } from '../contracts.js';
 import type { AdmissionSnapshot, TaskAdmission } from '../agent-dast/admission.js';
 import type { ExecutionPlan, ExecutionTask } from '../agent-dast/plan.js';
+import type { NewSurface } from '../agent-dast/store.js';
 import type { CollectedFile, SourceSnapshot } from '../source/types.js';
 
 // M0 vocabulary only. Target execution and marker-aware ports arrive in later milestones.
@@ -77,14 +74,12 @@ export interface AnalyzerProvider<Context> {
   };
 }
 
+/** Trusted callbacks capture private adapter state; none of it is serialized or caller-supplied. */
 export interface PreparedAttackTask<T extends ExecutionTask = ExecutionTask> {
   task: T;
-  policy?: DastPolicy;
-  zapPolicy?: ZapPolicyInput;
-  zapRequests?: ZapCompiledRequest[];
-  document?: unknown;
-  authPolicy?: SchemathesisAuthPolicy;
-  env?: NodeJS.ProcessEnv;
+  execute(options: AttackContext, runtime: TaskAdmission, remaining: number): Promise<CheckResult[]>;
+  complete(check: CheckResult, observed: AdmissionSnapshot): boolean;
+  findingSurface(finding: Finding): NewSurface;
 }
 
 export interface AttackContext {
@@ -107,8 +102,4 @@ export interface RegisteredAttackEngine<T extends ExecutionTask = ExecutionTask>
   parseTask(raw: Record<string, unknown>): T;
   requiredInputs(task: T): readonly string[];
   prepare(task: T, data: ReadonlyMap<string, unknown>, options: AttackContext): PreparedAttackTask<T>;
-  execute(prepared: PreparedAttackTask<T>, options: AttackContext,
-    runtime: TaskAdmission, remaining: number): Promise<CheckResult[]>;
-  complete(prepared: PreparedAttackTask<T>, check: CheckResult, observed: AdmissionSnapshot): boolean;
-  findingPath(prepared: PreparedAttackTask<T>, url: URL): string;
 }
