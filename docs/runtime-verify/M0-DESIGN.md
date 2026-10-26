@@ -24,6 +24,9 @@ interface AnalyzerProvider {
   selection: 'always' | 'native-preview' | 'tool';
   selected(options: SourceOptions): boolean;
   applicable(snapshot: SourceSnapshot): boolean;
+  executable?(options: SourceOptions): string;
+  stage?: 'shared' | 'python' | 'safe-config';
+  notApplicable?(snapshot: SourceSnapshot): CheckResult;
   // 선택형 도구는 기존 사전 검사·스테이징·프로세스 감독을 재사용한다.
   run(context: AnalyzerRunContext): Promise<CheckResult> | CheckResult;
   codeCoverage?: {
@@ -44,7 +47,9 @@ interface RegisteredAttackEngine<T extends ExecutionTask = ExecutionTask> {
 }
 ```
 
-`src/runtime/registry.ts`에 두 정적 배열과 ID 조회를 둔다. 서로 다른 준비/실행 타입 때문에 순환 import가 생기면 기존 함수의 어댑터를 `src/source/analyzer-providers.ts`와 `src/agent-dast/engine-adapters.ts`로 옮기되, 등록 배열은 한 곳에서 유지한다. 기존 실행 단계의 순서·별도 스테이징·오류 문구·예산·정리 순서는 변경하지 않는다. 커버리지 계산은 각 코드 provider의 `languages`·입력 파일·완료 판정 메타데이터를 사용하며, 수집된 파일만 계수한다. 기존 `CodeCoverage` parser가 허용하는 v1 형식과 검증 강도는 유지한다.
+`src/runtime/registry.ts`에 두 정적 배열과 ID 조회를 둔다. 서로 다른 준비/실행 타입 때문에 순환 import가 생기면 기존 함수의 어댑터를 `src/source/analyzer-providers.ts`와 `src/agent-dast/engine-adapters.ts`로 옮기되, 등록 배열은 한 곳에서 유지한다. 기존 실행 단계의 순서·별도 스테이징·오류 문구·예산·정리 순서는 변경하지 않는다. `executable`, `stage`, `notApplicable`은 도구별 실행 파일 선택, Bandit/Trivy의 별도 입력 스테이징, 빈 입력의 기존 문구·메트릭을 등록 항목에서 지정한다. Bandit의 Python 입력 0개 판단도 실행 파일 탐색 전에 그 항목에서 처리한다. 디스패처에는 도구 ID 비교 분기를 남기지 않는다.
+
+커버리지 생성·parser·consistency 검사는 코드 provider 네 개의 `languages`·check ID·입력 파일·완료 판정을 같은 레지스트리 메타데이터에서 읽는다. 다만 직렬화 계약을 보호하기 위해 v1의 허용 provider 행 집합과 순서는 별도 상수로 고정하고, 그 상수와 등록 메타데이터가 정확히 일치하는지 테스트에서 단언한다. 수집된 파일만 계수하며 기존 `CodeCoverage` parser의 검증 강도는 유지한다.
 
 기존 분석 순서는 inventory → AST → Framework Rules → 선택한 native preview → 선택형 외부 도구 → coverage다. 외부 도구는 요청된 `tools` 순서의 `Promise.all` 동시 실행과 결과 순서를 그대로 유지한다. 레지스트리 순서는 이 공개 결과 순서를 덮어쓰지 않는다. 새 provider ID를 등록하더라도 v1 커버리지 parser의 허용 행과 순서를 자동 확장하지 않는다. 새 공개 provider를 노출하려면 별도 v2 계약이 필요하다.
 
@@ -65,15 +70,22 @@ M0의 `RegisteredAttackEngine`은 현행 실행 계획 v1을 감싸는 내부 �
 | `src/source/analyzer-providers.ts`, `src/agent-dast/engine-adapters.ts` | 순환 참조가 있을 때만 기존 내부 함수 이동 |
 | `tests/runtime-registry.test.ts` | 목록·ID·조회·디스패치의 회귀 확인 |
 | `tests/runtime-m0-compat.test.ts` | 고정 예제의 보고서 의미 해시 비교 |
+| `tests/fixtures/runtime-m0-baseline.json` | `7a4ada1`에서 측정한 행별 해시·종료 코드·입력 해시를 CP2에서 동결해 CI 테스트가 읽음 |
 
 구현 과정에서 격리·egress·비밀값 처리 또는 `src/contracts.ts`·`src/report.ts`를 수정해야 한다면 변경 전에 추가 체크포인트(CPx)를 연다.
 
 ## 테스트와 고정 예제
 
 1. 레지스트리 테스트: ID 중복 없음, 기존 선택·실행 순서 동일, 요청 도구 순서와 동시 실행·취소 경계 유지, 미등록 ID 거절, 네 실행 엔진의 v1 필드 및 상한 거절 사례. 가짜 외부 플러그인은 사용하지 않는다.
-2. 코드 커버리지: 기존 `code-coverage-independent`·`semgrep` 테스트의 언어별 eligible/completed, 3/4 provider 행 순서, 부분·미선택·미수집 상태를 유지한다. 등록 메타데이터와 실제 수집 파일의 불일치를 잡는 사례를 추가한다.
-3. 보고서 의미 해시: 변경 전 M0 기준 커밋과 변경 후 커밋을 별도 checkout에서 빌드하고, `compat-0.5`의 `pass`·`findings`·`partial` 소스에 같은 `--tools none`·`--project-id`·`--fail-on` 옵션을 써서 각각 스캔한다. 두 새 보고서는 `scripts/kpi.mjs`의 `semanticHash()`로 비교한다. 이 해시는 최상위 `startedAt`·`finishedAt`만 제외하고 배열 순서·check 상태·finding·gap·scope를 포함한다. 기존 0.5 artifact 네 묶음은 독립된 frozen parser/gate 테스트로 유지하고 기대값을 새 구현으로 재생성하지 않는다. `states`는 합성 check 상태 보고서이므로 실행 스캔 비교 대상에서 제외한다.
+2. 코드 커버리지: 기존 `code-coverage-independent`·`semgrep` 테스트의 언어별 eligible/completed, 3/4 provider 행 순서, 부분·미선택·미수집 상태를 유지한다. 등록 메타데이터와 실제 수집 파일의 불일치를 잡고, 등록된 네 provider의 ID·언어·순서가 고정 v1 행 집합과 일치하는지 단언하는 사례를 추가한다.
+3. 보고서 의미 해시: 리팩터링 전 기준 커밋 `7a4ada1`을 별도 checkout에서 빌드해 23개 사례의 기준값을 먼저 기록했다. 기존 `compat-0.5`의 `pass`·`findings`·`partial` 소스(`--tools none`, 세 `--fail-on` 값)뿐 아니라 다음 디스패치 행렬을 고정 소스에서 실행한다: 선택형 도구 7개 각각 단독, `bandit,semgrep,gitleaks`와 역순 조합, native preview 선택/미선택, 빈 소스의 도구별 `not_applicable`, Semgrep 선택 여부의 coverage 3/4행. Python·Go·JS와 설정/의존성 입력을 포함한 고정 fixture로 Bandit의 Python 입력 0개/있음, Semgrep의 Go eligible, 실행 파일 미발견 partial을 구분한다. 이 기준 행렬은 `toolPaths`와 `--opengrep-core`에 의도적으로 없는 절대경로를 전달해 호스트 도구가 우연히 실행되지 않게 한다. 실제 엔진 완료 경로는 기존 스텁·진짜 엔진 테스트에서 별도로 확인한다. 변경 후 별도 checkout에서 동일한 입력·도구 순서·옵션을 실행해 `scripts/kpi.mjs`의 `semanticHash()`와 종료 코드를 각 행별로 비교한다. 기준 증거는 `.handoff/evidence/M0/compat-before.json`에 두고 CP2의 CI 테스트가 쓸 동일 내용을 `tests/fixtures/runtime-m0-baseline.json`으로 동결한다. 이 해시는 최상위 `startedAt`·`finishedAt`만 제외하고 배열 순서·check 상태·finding·gap·scope를 포함한다. 기존 0.5 artifact 네 묶음은 독립된 frozen parser/gate 테스트로 유지하고 기대값을 새 구현으로 재생성하지 않는다. `states`는 합성 check 상태 보고서이므로 실행 스캔 비교 대상에서 제외한다.
 4. 실행 엔진: 기존 `agent-dast-runner*`, `zap-integration`, `compat-0.5`를 돌려 준비·요청 예산·승인·origin·실패/정리 동작을 확인한다. 실제 소유 대상 외부 스캔은 추가하지 않는다.
 5. 통합: `npm run build`, 전체 기존 테스트, `tests/inventory.test.ts`·`tests/init-action-handoff.test.ts`, 그리고 동일 런타임/코퍼스의 `scripts/kpi.mjs compare`를 실행한다. 비교의 exit 0과 각 결과 SHA를 `.handoff/evidence/M0/`에 기록한다. 기준을 수정해 회귀를 숨기지 않는다.
 
-M0은 새 언어 또는 공격 엔진을 실제 추가하지 않으므로, ‘어댑터 추가 시 변경 파일 수’는 레지스트리에 테스트용 가짜 엔진을 공개 등록해 측정하지 않는다. 대신 실제 등록 경로에 필요한 제품 파일과 테스트 파일 수를 기록하고, 최초 실제 어댑터 추가(M1) 때 실측값을 별도로 남긴다. 이 KPI 측정 방식은 CP1에서 검토받는다.
+‘어댑터 추가 시 변경 파일 수’의 리팩터링 전 참고 기준은 실제 ZAP 통합 커밋
+`f2bcf2663217d3923f97fd3e1c09c1963f61fae1`의 `src/` 9개·`tests/` 4개, 합계 13개다.
+재현 명령은 `git diff-tree --no-commit-id --name-only -r f2bcf266 -- src tests`다. 이 숫자는
+정책·CLI·egress를 포함한 **전체 통합 비용**이다. M0 이후 등록 배선만 바꾸는 버리는 worktree의
+파일 수와 같은 범위인 것처럼 비교하거나 개선율을 주장하지 않는다. GATE에는 역사적 전체 비용과
+새 레지스트리의 배선 변경 파일 수를 별도 항목으로 기록하고, 동일 범위의 최초 실제 어댑터 추가
+비용은 M1에서 측정한다. 공개 레지스트리에 테스트용 가짜 엔진을 남기지 않는다.
