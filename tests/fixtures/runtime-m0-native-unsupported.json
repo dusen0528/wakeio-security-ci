@@ -1,0 +1,32 @@
+{
+  "id": "native-on",
+  "sourceId": "matrix",
+  "tools": [],
+  "nativePreview": true,
+  "failOn": "none",
+  "exitCode": 2,
+  "semanticHash": "2d4be8d3bf764dc0129cc7b8607fd0d9e82fdfcf59bd302cf1fea073263f350f",
+  "checks": [
+    {
+      "id": "source.inventory",
+      "status": "completed"
+    },
+    {
+      "id": "source.builtin-ast",
+      "status": "completed"
+    },
+    {
+      "id": "source.framework",
+      "status": "not_applicable"
+    },
+    {
+      "id": "source.opengrep.preview",
+      "status": "error"
+    },
+    {
+      "id": "source.code-coverage",
+      "status": "completed"
+    }
+  ],
+  "goProviderRows": 3
+}

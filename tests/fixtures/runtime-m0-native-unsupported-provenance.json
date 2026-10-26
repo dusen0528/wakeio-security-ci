@@ -1,0 +1,115 @@
+{
+  "schema": "wakeio.m0-linux-native-on-reference-with-provenance/v1",
+  "baselineRevision": "7a4ada160963fd6e9e0b700bf4ed638a0043a1ac",
+  "linuxBaselineJsonSha256": "6b89d0dc2949101d894e57ffa67730e18beb206480261e927ba062c0a3f3f099",
+  "macReferenceSha256": "33bfbce6379c1d09a9094599d9a67276e2f77c25303ab9430bbcff61a8d09faa",
+  "inputScriptSha256": "a563436e5fddf036251e253271cc7a0aac9bc056d2a1b2d5cda33d1119cbf0af",
+  "hashFunction": {
+    "source": "7a4ada160963fd6e9e0b700bf4ed638a0043a1ac:scripts/kpi.mjs#semanticHash",
+    "fileSha256": "3bd5279ac418a73c5ea6859cc32d5185186af8ea15e5a655c1bfccbc8335d514"
+  },
+  "helperSha256": "cc8119a574a041649fd419ba3ff1f286d6ca63e17e1b6bb012a719980efdd552",
+  "environment": {
+    "platform": "linux",
+    "arch": "arm64",
+    "node": "v22.23.4",
+    "dockerImageDigest": "sha256:366d5f241bc87812d491855876eee54804eaacebdd4f60568f68cce70c20bd06",
+    "network": "none"
+  },
+  "sourceFiles": {
+    "compat-pass": [
+      {
+        "name": "app.ts",
+        "sha256": "712686bb1da640d1d84a54dd6c00e0e5fdfbc60ba7487d09c4580653abd87db7"
+      }
+    ],
+    "compat-findings": [
+      {
+        "name": "app.ts",
+        "sha256": "70990f8e7fa2a4934a2fea3ce16c510941d7e1b645fa8981b945857777447118"
+      }
+    ],
+    "compat-partial": [
+      {
+        "name": "app.ts",
+        "sha256": "712686bb1da640d1d84a54dd6c00e0e5fdfbc60ba7487d09c4580653abd87db7"
+      },
+      {
+        "name": "extra.ts",
+        "sha256": "712686bb1da640d1d84a54dd6c00e0e5fdfbc60ba7487d09c4580653abd87db7"
+      }
+    ],
+    "matrix": [
+      {
+        "name": "Dockerfile",
+        "sha256": "bb57c7da220a8753d7bdabac0d3afdb6efa742e4c736c5bc93ab40dfd5e23b9b"
+      },
+      {
+        "name": "app.go",
+        "sha256": "15dfc4f51b4ed90211b566886f456d23d6984e1bb298460786c9740b01ac183e"
+      },
+      {
+        "name": "app.py",
+        "sha256": "0a775022744f64c352863f165f2e125898419999bc57c83204772036d0ef6b2e"
+      },
+      {
+        "name": "app.ts",
+        "sha256": "a2098bd92b10bf8b816d24b7556b1ce8c49a879d130489065ef1051c17e042f6"
+      },
+      {
+        "name": "go.mod",
+        "sha256": "5fe80b4cadebf4cd7a7d1550531e86c6899bc78d26a8c0a1a9a318de53f13a4e"
+      },
+      {
+        "name": "main.tf",
+        "sha256": "42d676c16e66c94d734bbdcc1226f9295937eb45e6db6c583ef9a9a78e06e5bd"
+      },
+      {
+        "name": "package.json",
+        "sha256": "35d2970a8ffbb6622bc65aec5be00ddc46426ea8ff7272ec4b150607bf09cbbe"
+      }
+    ],
+    "empty": []
+  },
+  "case": {
+    "id": "native-on",
+    "sourceId": "matrix",
+    "tools": [],
+    "nativePreview": true,
+    "failOn": "none",
+    "exitCode": 2,
+    "semanticHash": "2d4be8d3bf764dc0129cc7b8607fd0d9e82fdfcf59bd302cf1fea073263f350f",
+    "checks": [
+      {
+        "id": "source.inventory",
+        "status": "completed"
+      },
+      {
+        "id": "source.builtin-ast",
+        "status": "completed"
+      },
+      {
+        "id": "source.framework",
+        "status": "not_applicable"
+      },
+      {
+        "id": "source.opengrep.preview",
+        "status": "error"
+      },
+      {
+        "id": "source.code-coverage",
+        "status": "completed"
+      }
+    ],
+    "goProviderRows": 3
+  },
+  "nativeReason": {
+    "status": "error",
+    "incompleteReasons": "unsupported_platform"
+  },
+  "macObservedCaseHash": "c74d9c898d2ba522d9394fe84359cabe772f155aea4dd3274819d67affd2dffc",
+  "macObservedReason": {
+    "status": "error",
+    "incompleteReasons": "native_execution_error"
+  }
+}
