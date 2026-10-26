@@ -1,8 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { CODE_ANALYZERS, codeAnalyzer } from '../src/runtime/registry.js';
+import { ANALYZERS, SYNC_ANALYZERS, CODE_ANALYZERS, codeAnalyzer, isSourceTool,
+  sourceAnalyzer, toolAnalyzer } from '../src/runtime/registry.js';
 import { CODE_PROVIDERS_V1, LEGACY_CODE_PROVIDERS_V1 } from '../src/source/code-coverage.js';
 import type { SourceSnapshot } from '../src/source/types.js';
+import { runSource } from '../src/source.js';
+import { resolve } from 'node:path';
 
 test('code analyzer metadata matches the fixed v1 provider order, IDs and language support', () => {
   assert.deepEqual(LEGACY_CODE_PROVIDERS_V1, ['builtin_ast', 'bandit', 'opengrep_native']);
@@ -20,6 +23,40 @@ test('code analyzer metadata matches the fixed v1 provider order, IDs and langua
     assert.ok(Object.isFrozen(provider.codeCoverage.languages));
   }
   assert.throws(() => codeAnalyzer('unregistered' as never), /invalid_code_provider/);
+});
+
+test('source analyzer registration fixes the trusted ten adapters and rejects unknown selections', () => {
+  assert.deepEqual(ANALYZERS.map(p => p.id), ['builtin_ast', 'framework', 'opengrep_native',
+    'gitleaks', 'osv', 'trivy', 'bandit', 'semgrep', 'govulncheck', 'trivy-vuln']);
+  assert.deepEqual(SYNC_ANALYZERS.map(p => p.id), ['builtin_ast', 'framework']);
+  assert.equal(new Set(ANALYZERS.map(p => p.id)).size, 10);
+  assert.equal(isSourceTool('framework'), false);
+  assert.equal(isSourceTool('unregistered'), false);
+  assert.throws(() => sourceAnalyzer('unregistered'), /invalid_source_analyzer/);
+  assert.throws(() => toolAnalyzer('framework' as never), /invalid_source_tool/);
+  const snapshot: SourceSnapshot = { root: '/source', files: [], issues: [], ignoredFiles: 0,
+    totalBytes: 0, complete: true };
+  for (const analyzer of ANALYZERS.filter(p => isSourceTool(p.id))) {
+    assert.ok(Object.isFrozen(analyzer));
+    const result = toolAnalyzer(analyzer.id as never).notApplicable(snapshot);
+    assert.equal(result.id, analyzer.checkId);
+    assert.equal(result.status, 'not_applicable');
+  }
+});
+
+test('source dispatch preserves synchronous phases, explicit native selection and requested tool order', async () => {
+  const root = resolve('tests/fixtures/compat-0.5/pass/source');
+  const missing = resolve('tests/fixtures/runtime-analyzers-intentionally-missing');
+  const tools = ['semgrep', 'bandit', 'gitleaks'] as const;
+  const checks = await runSource({ root, tools: [...tools], toolPaths: Object.fromEntries(
+    tools.map(tool => [tool, `${missing}/${tool}`])), nativePreview: { executable: `${missing}/opengrep-core` } });
+  assert.deepEqual(checks.map(check => check.id), ['source.inventory', 'source.builtin-ast', 'source.framework',
+    'source.opengrep.preview', 'source.semgrep', 'source.bandit', 'source.gitleaks', 'source.code-coverage']);
+  assert.equal(checks[0].metrics?.requestedTools, tools.join(','));
+  const nativeOnly = await runSource({ root, tools: [], nativePreview: { executable: `${missing}/opengrep-core` } });
+  assert.equal(nativeOnly[0].metrics?.requestedTools, 'none');
+  assert.deepEqual(nativeOnly.map(check => check.id), ['source.inventory', 'source.builtin-ast', 'source.framework',
+    'source.opengrep.preview', 'source.code-coverage']);
 });
 
 test('code analyzer selection and admitted inputs retain provider-specific boundaries', () => {

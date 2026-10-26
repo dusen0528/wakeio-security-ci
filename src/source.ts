@@ -10,48 +10,18 @@ import * as ts from "typescript";
 import type { CheckResult, SourceOptions, ToolName } from "./contracts.js";
 import { runBuiltinAst } from "./source/ast.js";
 import { collectSource, stageSnapshot } from "./source/collector.js";
-import { frameworkHasApplicableInput, maskSql, runFrameworkRules } from "./source/framework.js";
+import { maskSql } from "./source/framework.js";
 import { parseGitleaksOutput, parseOsvOutput, parseTrivyOutput } from "./source/parsers.js";
 import { DEFAULT_TOOL_TIMEOUT_MS, MAX_TOOL_TIMEOUT_MS, findExecutable, runProcess } from "./source/process.js";
-import { pythonFiles, runBandit } from "./source/python.js";
-import { nativeFiles, runNativePreview } from './source/opengrep.js';
-import { semgrepFiles, runSemgrep } from './source/semgrep.js';
-import { govulncheckHasApplicableInput, runGovulncheck } from './source/govulncheck.js';
-import { runTrivyVulnerabilities } from './trivy-vuln.js';
-import { inspectRequirementsFile } from './source/requirements.js';
+import { pythonFiles } from "./source/python.js";
 import type { ParsedToolResult, ProcessResult, SourceSnapshot } from "./source/types.js";
 
+import { ANALYZERS, SYNC_ANALYZERS, isSourceTool, sourceAnalyzer, toolAnalyzer } from './runtime/registry.js';
+import type { AnalyzerRunContext } from './source/analyzer-providers.js';
+import { requirementsInspection, osvLockfiles, osvManifestDeclaresDependencies,
+  trivyInputCandidate } from './source/analyzer-inputs.js';
+
 export const DEFAULT_SOURCE_TOOLS: ToolName[] = ["gitleaks", "osv", "trivy"];
-
-const OSV_LOCKFILE_NAMES = new Set([
-  "package-lock.json",
-  "npm-shrinkwrap.json",
-  "yarn.lock",
-  "pnpm-lock.yaml",
-  "bun.lock",
-  "bun.lockb",
-  "cargo.lock",
-  "go.sum",
-  "gemfile.lock",
-  "composer.lock",
-  "pipfile.lock",
-  "poetry.lock",
-  "uv.lock",
-  "deno.lock",
-]);
-
-const OSV_MANIFEST_NAMES = new Set([
-  "package.json",
-  "composer.json",
-  "cargo.toml",
-  "go.mod",
-  "gemfile",
-  "pipfile",
-  "pyproject.toml",
-  "requirements.txt",
-  "requirements-dev.txt",
-  "requirements-prod.txt",
-]);
 
 interface ToolContext {
   snapshot: SourceSnapshot;
@@ -377,15 +347,11 @@ function normalizeTimeout(value: number | undefined): number {
   return Math.min(value!, MAX_TOOL_TIMEOUT_MS);
 }
 
-function isToolName(value: unknown): value is ToolName {
-  return value === "gitleaks" || value === "osv" || value === "trivy" || value === "bandit" || value === 'semgrep' || value === 'govulncheck' || value === 'trivy-vuln';
-}
-
 function requestedTools(options: SourceOptions): ToolName[] {
   // An omitted tools value means the secure default. An explicit empty array
   // is the CLI's `--tools none` scope reduction; built-in AST checks still run.
   if (!Array.isArray(options.tools)) return [...DEFAULT_SOURCE_TOOLS];
-  return [...new Set(options.tools.filter(isToolName))];
+  return [...new Set(options.tools.filter(isSourceTool))];
 }
 
 function checkStatusForSnapshot(snapshot: SourceSnapshot): CheckResult["status"] {
@@ -461,107 +427,15 @@ function ensureParsedResult(id: string, parsed: ParsedToolResult): CheckResult {
   };
 }
 
-function trivyInputCandidate(path: string, text: string): boolean {
-  const lower = path.toLowerCase();
-  const name = lower.slice(lower.lastIndexOf("/") + 1);
-  if (name === "dockerfile" || name.endsWith(".dockerfile")) return true;
-  if (/\.(?:yaml|yml)$/.test(lower)) return true;
-  if (/\.(?:tf|tfvars|hcl)(?:\.json)?$/.test(lower)) return true;
-  // Kubernetes manifests are also commonly stored as JSON. Generic JSON
-  // (package metadata, tsconfig, editor settings) is excluded so it cannot
-  // make Trivy appear applicable to an ordinary source project.
-  if (!lower.endsWith(".json")) return false;
-  try {
-    const parsed = JSON.parse(text) as unknown;
-    if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) return false;
-    const object = parsed as Record<string, unknown>;
-    return typeof object.apiVersion === "string" && typeof object.kind === "string";
-  } catch {
-    return false;
-  }
-}
-
-function fileBasename(path: string): string {
-  return path.slice(path.lastIndexOf("/") + 1).toLowerCase();
-}
-
-function packageManifestHasExplicitlyEmptyDependencies(text: string): boolean {
-  try {
-    const parsed = JSON.parse(text) as unknown;
-    if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) return false;
-    const object = parsed as Record<string, unknown>;
-    const fields = ["dependencies", "devDependencies", "peerDependencies", "optionalDependencies", "bundledDependencies", "bundleDependencies"];
-    if (!fields.some((key) => Object.prototype.hasOwnProperty.call(object, key))) return false;
-    for (const key of ["dependencies", "devDependencies", "peerDependencies", "optionalDependencies", "bundledDependencies", "bundleDependencies", "require", "require-dev"]) {
-      const value = object[key];
-      if (Array.isArray(value) && value.length > 0) return false;
-      if (value !== undefined && (value === null || typeof value !== "object" || Object.keys(value as object).length > 0)) return false;
-    }
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-function dependencyManifestNeedsLockfile(file: SourceSnapshot["files"][number]): boolean {
-  const name = fileBasename(file.path);
-  // A known dependency manifest is an expected-input signal even when its
-  // syntax is too rich for this bounded adapter to interpret. An explicit
-  // empty package dependency map is the one safe exception.
-  return name !== "package.json" || !packageManifestHasExplicitlyEmptyDependencies(file.text);
-}
-
-function requirementsInspection(snapshot: SourceSnapshot): { pinned: string[]; unresolved: string[] } {
-  const pinned: string[] = [];
-  const unresolved: string[] = [];
-  for (const file of snapshot.files) {
-    if (file.category !== "dependency" || !/^requirements(?:-[^/]+)?\.txt$/i.test(fileBasename(file.path))) continue;
-    if (inspectRequirementsFile(file.text).pinned) pinned.push(file.path);
-    else unresolved.push(file.path);
-  }
-  return { pinned, unresolved };
-}
-
-function osvLockfiles(snapshot: SourceSnapshot): string[] {
-  const requirements = new Set(requirementsInspection(snapshot).pinned);
-  return snapshot.files
-    .filter((file) => file.category === "dependency"
-      && (OSV_LOCKFILE_NAMES.has(fileBasename(file.path)) || requirements.has(file.path)))
-    .map((file) => file.path);
-}
-
-function osvManifestDeclaresDependencies(snapshot: SourceSnapshot): boolean {
-  return snapshot.files.some((file) => file.category === "dependency"
-    && OSV_MANIFEST_NAMES.has(fileBasename(file.path))
-    && dependencyManifestNeedsLockfile(file));
-}
-
-function osvHasApplicableInput(snapshot: SourceSnapshot): boolean {
-  return osvLockfiles(snapshot).length > 0 || osvManifestDeclaresDependencies(snapshot);
-}
-
-function trivyHasApplicableInput(snapshot: SourceSnapshot): boolean {
-  return snapshot.files.some((file) => file.category === "config" && trivyInputCandidate(file.path, file.text));
-}
-
 function hasOtherSecurityCheck(snapshot: SourceSnapshot, tools: ToolName[], nativeSelected = false): boolean {
-  return (nativeSelected && nativeFiles(snapshot).length > 0) || tools.some((tool) => {
-    if (tool === "gitleaks") return snapshot.files.length > 0;
-    if (tool === "osv") return osvHasApplicableInput(snapshot);
-    if (tool === "trivy") return trivyHasApplicableInput(snapshot);
-    if (tool === 'semgrep') return semgrepFiles(snapshot).length > 0;
-    if (tool === 'govulncheck') return govulncheckHasApplicableInput(snapshot);
-    if (tool === 'trivy-vuln') return snapshot.files.some(file => file.category === 'dependency');
-    return pythonFiles(snapshot).length > 0;
-  }) || frameworkHasApplicableInput(snapshot);
+  return (nativeSelected && sourceAnalyzer('opengrep_native').applicable(snapshot))
+    || tools.some(tool => toolAnalyzer(tool).applicable(snapshot))
+    || sourceAnalyzer('framework').applicable(snapshot);
 }
 
-function pathForTool(snapshot: SourceSnapshot, tool: ToolName): string[] {
-  if (tool === "osv") {
-    return osvLockfiles(snapshot);
-  }
-  if (tool === "trivy") return snapshot.files.filter((file) => file.category === "config" && trivyInputCandidate(file.path, file.text) && isTrivyConfigSafe(file.path, file.text)).map((file) => file.path);
-  return snapshot.files.map((file) => file.path);
+function trivyPaths(snapshot: SourceSnapshot): string[] {
+  return snapshot.files.filter(file => file.category === 'config' && trivyInputCandidate(file.path, file.text)
+    && isTrivyConfigSafe(file.path, file.text)).map(file => file.path);
 }
 
 function isTrivyConfigSafe(path: string, text: string): boolean {
@@ -626,7 +500,7 @@ async function runGitleaks(context: ToolContext): Promise<CheckResult> {
 }
 
 async function runOsv(context: ToolContext): Promise<CheckResult> {
-  const lockfiles = pathForTool(context.snapshot, "osv");
+  const lockfiles = osvLockfiles(context.snapshot);
   const requirements = requirementsInspection(context.snapshot);
   if (lockfiles.length === 0) {
     return osvManifestDeclaresDependencies(context.snapshot)
@@ -687,7 +561,7 @@ async function runOsv(context: ToolContext): Promise<CheckResult> {
 }
 
 async function runTrivy(context: ToolContext): Promise<CheckResult> {
-  const configs = pathForTool(context.snapshot, "trivy");
+  const configs = trivyPaths(context.snapshot);
   if (configs.length === 0) {
     return context.blockedConfigCount
       ? partialCheck("source.trivy", "Terraform configuration requiring module or external file resolution was excluded from Trivy to prevent network or filesystem egress.", { configFiles: 0, blockedConfigFiles: context.blockedConfigCount })
@@ -743,41 +617,22 @@ async function runTrivy(context: ToolContext): Promise<CheckResult> {
   }
 }
 
-async function runTool(tool: ToolName, snapshot: SourceSnapshot, stageDir: string, options: SourceOptions, timeoutMs: number, blockedConfigCount = 0): Promise<CheckResult> {
-  if (tool === 'semgrep' || tool === 'govulncheck' || tool === 'trivy-vuln') {
-    const command = options.toolPaths?.[tool] ?? (tool === 'trivy-vuln' ? options.toolPaths?.trivy ?? 'trivy' : tool);
-    const toolPath = await findExecutable(command) ?? '';
-    const context = { snapshot, stageDir, toolPath, timeoutMs, signal: options.signal };
-    if (tool === 'semgrep') return runSemgrep(context);
-    if (tool === 'govulncheck') return runGovulncheck({ ...context, goPath: options.goPath, moduleCache: options.goModuleCache, database: options.govulnDatabase, buildTags: options.goBuildTags });
-    return runTrivyVulnerabilities({ ...context, cacheDir: options.trivyCache, offline: options.trivyOffline });
+async function runTool(tool: ToolName, snapshot: SourceSnapshot, stageDir: string, options: SourceOptions,
+  timeoutMs: number, blockedConfigCount = 0): Promise<CheckResult> {
+  const analyzer = toolAnalyzer(tool);
+  const context: AnalyzerRunContext = { snapshot, stageDir, options, timeoutMs, blockedConfigCount,
+    toolPath: '', legacy: { gitleaks: runGitleaks, osv: runOsv, trivy: runTrivy } };
+  // Legacy no-input checks precede executable resolution and cancellation.
+  if (!analyzer.resolveBeforeInput && !(analyzer.stage === 'safe-config'
+    ? trivyPaths(snapshot).length > 0 : analyzer.applicable(snapshot))) return analyzer.run(context);
+  if (!analyzer.resolveBeforeInput && options.signal?.aborted) {
+    return partialCheck(analyzer.checkId, 'Source scanner was cancelled before execution.');
   }
-  // Do this applicability check before resolving the executable. A project
-  // without IaC should not fail merely because Trivy is not installed.
-  if (tool === "trivy" && pathForTool(snapshot, "trivy").length === 0) {
-    return runTrivy({ snapshot, stageDir, timeoutMs, toolPath: "", blockedConfigCount });
+  const executable = await findExecutable(analyzer.executable(options));
+  if (!executable && !analyzer.resolveBeforeInput) {
+    return partialCheck(analyzer.checkId, `${tool} executable was not found; this scanner's coverage is unavailable.`);
   }
-  // Dependency scanning has the same distinction: an unrelated source tree
-  // should not fail merely because OSV-Scanner is not installed. A manifest
-  // with declared packages still proceeds to the executable check so that
-  // its missing lockfile remains an incomplete security check.
-  if (tool === "osv" && !osvHasApplicableInput(snapshot)) {
-    return runOsv({ snapshot, stageDir, timeoutMs, toolPath: "" });
-  }
-  // Bandit is optional and only applies to collected Python files. Resolve
-  // its executable after this check so a non-Python project stays explicitly
-  // not_applicable even when no Bandit installation is present.
-  if (tool === "bandit" && pythonFiles(snapshot).length === 0) {
-    return runBandit({ snapshot, stageDir, timeoutMs, toolPath: "" });
-  }
-  if (options.signal?.aborted) return partialCheck(`source.${tool}`, 'Source scanner was cancelled before execution.');
-  const configuredPath = options.toolPaths?.[tool];
-  const executable = await findExecutable(configuredPath ?? (tool === "osv" ? "osv-scanner" : tool));
-  if (!executable) return partialCheck(`source.${tool}`, `${tool} executable was not found; this scanner's coverage is unavailable.`);
-  if (tool === "gitleaks") return runGitleaks({ snapshot, stageDir, timeoutMs, toolPath: executable, signal: options.signal });
-  if (tool === "osv") return runOsv({ snapshot, stageDir, timeoutMs, toolPath: executable, signal: options.signal, ...(options.osvOffline ? { osvOffline: true } : {}) });
-  if (tool === "bandit") return runBandit({ snapshot, stageDir, timeoutMs, toolPath: executable, signal: options.signal });
-  return runTrivy({ snapshot, stageDir, timeoutMs, toolPath: executable, blockedConfigCount, signal: options.signal });
+  return analyzer.run({ ...context, toolPath: executable ?? '' });
 }
 
 /** Runs bounded built-in and selected native source scanners. */
@@ -811,23 +666,21 @@ export async function runSource(options: SourceOptions): Promise<CheckResult[]> 
     return finish([errorCheck("source.inventory", "The source snapshot could not be collected.")]);
   }
   if (options.signal?.aborted) return finish([inventoryCheck(snapshot, tools, !!options.nativePreview, options.outDir), partialCheck('source.cancelled', 'Source scan was cancelled after collection.')], snapshot);
+  const analyzerContext: AnalyzerRunContext = { snapshot, options, stageDir: '', toolPath: '', timeoutMs,
+    builtinAst: () => runBuiltinAst(snapshot, hasOtherSecurityCheck(snapshot, tools, !!options.nativePreview),
+      analysisBudget.limits, analysisBudget), legacy: { gitleaks: runGitleaks, osv: runOsv, trivy: runTrivy } };
   const checks: CheckResult[] = [
     inventoryCheck(snapshot, tools, !!options.nativePreview, options.outDir),
-    runBuiltinAst(snapshot, hasOtherSecurityCheck(snapshot, tools, !!options.nativePreview), analysisBudget.limits, analysisBudget),
-    runFrameworkRules(snapshot),
+    ...SYNC_ANALYZERS.map(analyzer => analyzer.run(analyzerContext)),
   ];
   // Native owns a separate code-only stage and cleanup, including --tools none.
-  if (options.nativePreview) checks.push(await runNativePreview(snapshot, options));
+  for (const analyzer of ANALYZERS.filter(provider => provider.selection === 'native-preview')) {
+    if (analyzer.selected(options)) checks.push(await analyzer.run(analyzerContext));
+  }
   if (options.signal?.aborted) { checks.push(partialCheck('source.cancelled', 'Source scan was cancelled; later stages were not started.')); return finish(checks, snapshot); }
   if (tools.length === 0 || snapshot.files.length === 0 || snapshot.rootError) {
     if (snapshot.files.length === 0 && !snapshot.rootError) {
-      checks.push(...tools.map((tool) => {
-        if (tool === "trivy") return notApplicableCheck("source.trivy", "No supported Dockerfile, Kubernetes manifest, or Terraform configuration was available for Trivy config scanning.", { configFiles: 0, blockedConfigFiles: 0 });
-        if (tool === "osv") return notApplicableCheck("source.osv", "No allowlisted dependency manifest or supported lockfile was available for OSV-Scanner.", { lockfiles: 0, dependencyManifest: false });
-        if (tool === "bandit") return notApplicableCheck("source.bandit", "No allowlisted Python file was available for Bandit.", { files: 0 });
-        if (tool === 'semgrep' || tool === 'govulncheck' || tool === 'trivy-vuln') return notApplicableCheck(`source.${tool}`, 'No applicable source input was collected.', { files: 0 });
-        return notApplicableCheck("source.gitleaks", "No allowlisted source file was available for Gitleaks.", { files: 0 });
-      }));
+      checks.push(...tools.map(tool => toolAnalyzer(tool).notApplicable(snapshot)));
       if (tools.length > 0 && checks.filter((check) => check.id !== "source.inventory").every((check) => check.status === "not_applicable")) {
         checks.push(partialCheck("source.coverage", "No applicable security check could run for this source snapshot; coverage is incomplete."));
       }
@@ -846,7 +699,7 @@ export async function runSource(options: SourceOptions): Promise<CheckResult[]> 
   let trivyStaged: Awaited<ReturnType<typeof stageSnapshot>> | undefined;
   let trivySnapshot: SourceSnapshot | undefined;
   let blockedConfigCount = 0;
-  if (tools.includes("trivy") && !options.signal?.aborted) {
+  if (tools.some(tool => toolAnalyzer(tool).stage === 'safe-config') && !options.signal?.aborted) {
     const trivyCandidates = snapshot.files.filter((file) => file.category === "config" && trivyInputCandidate(file.path, file.text));
     const trivyFiles = trivyCandidates.filter((file) => isTrivyConfigSafe(file.path, file.text));
     blockedConfigCount = trivyCandidates.filter((file) => !isTrivyConfigSafe(file.path, file.text)).length;
@@ -862,7 +715,7 @@ export async function runSource(options: SourceOptions): Promise<CheckResult[]> 
   }
   let banditStaged: Awaited<ReturnType<typeof stageSnapshot>> | undefined;
   let banditSnapshot: SourceSnapshot | undefined;
-  if (tools.includes("bandit") && !options.signal?.aborted) {
+  if (tools.some(tool => toolAnalyzer(tool).stage === 'python') && !options.signal?.aborted) {
     const banditFiles = pythonFiles(snapshot);
     banditSnapshot = { ...snapshot, files: banditFiles };
     if (banditFiles.length > 0) {
@@ -876,24 +729,25 @@ export async function runSource(options: SourceOptions): Promise<CheckResult[]> 
   }
   try {
     const external = await Promise.all(tools.map(async (tool) => {
-      if (tool === "trivy" && trivySnapshot) {
+      const analyzer = toolAnalyzer(tool);
+      if (analyzer.stage === 'safe-config' && trivySnapshot) {
         if (trivySnapshot.files.length > 0 && !trivyStaged) {
-          return errorCheck("source.trivy", "The bounded Trivy snapshot could not be staged for Trivy.");
+          return errorCheck(analyzer.checkId, analyzer.stageFailure!);
         }
         try {
           return await runTool(tool, trivySnapshot, trivyStaged?.dir ?? staged.dir, options, timeoutMs, blockedConfigCount);
         } catch {
-          return errorCheck("source.trivy", "Trivy scanning could not be completed.");
+          return errorCheck(analyzer.checkId, analyzer.failureMessage!);
         }
       }
-      if (tool === "bandit" && banditSnapshot) {
+      if (analyzer.stage === 'python' && banditSnapshot) {
         if (banditSnapshot.files.length > 0 && !banditStaged) {
-          return errorCheck("source.bandit", "The bounded Python snapshot could not be staged for Bandit.");
+          return errorCheck(analyzer.checkId, analyzer.stageFailure!);
         }
         try {
           return await runTool(tool, banditSnapshot, banditStaged?.dir ?? staged.dir, options, timeoutMs);
         } catch {
-          return errorCheck("source.bandit", "Bandit scanning could not be completed.");
+          return errorCheck(analyzer.checkId, analyzer.failureMessage!);
         }
       }
       try {
