@@ -2,6 +2,10 @@
 
 이 문서는 `PLAN.md` 4·11·12장의 M0 구현 전 체크포인트(CP1) 설계다. M0은 레지스트리와 타입의 내부 구조만 바꾼다. 대상 애플리케이션 빌드·실행, `verify` 명령, 새 판정, 새 보고서 필드는 M1 이후 작업이다.
 
+`PLAN.md` 14.4에 따라 M0·M1 범위는 유지한다. 권한 Oracle·계정/역할/접근 모델은 M2,
+결정적 워크플로 발견은 M3, 에이전트 시퀀스 보완은 M4에서 설계·구현한다. M0 타입 스켈레톤에
+이 기능의 실행 경로나 기본 판정을 미리 넣지 않는다. 각 후속 CP1은 14장 반영 계획을 별도로 검토받는다.
+
 ## 현재 계약과 결정
 
 - 기준은 `origin/dev`의 `scan`·`init`·`init-dast` 및 실행 계획 v1이다. `origin/main`의 KPI·compat-0.5·GET 인벤토리 기준을 브랜치에 병합했다. M0에서 공개 옵션·종료 코드·결과 순서·보고서 의미를 바꾸지 않는다.
@@ -78,9 +82,24 @@ M0의 `RegisteredAttackEngine`은 현행 실행 계획 v1을 감싸는 내부 �
 
 1. 레지스트리 테스트: ID 중복 없음, 기존 선택·실행 순서 동일, 요청 도구 순서와 동시 실행·취소 경계 유지, 미등록 ID 거절, 네 실행 엔진의 v1 필드 및 상한 거절 사례. 가짜 외부 플러그인은 사용하지 않는다.
 2. 코드 커버리지: 기존 `code-coverage-independent`·`semgrep` 테스트의 언어별 eligible/completed, 3/4 provider 행 순서, 부분·미선택·미수집 상태를 유지한다. 등록 메타데이터와 실제 수집 파일의 불일치를 잡고, 등록된 네 provider의 ID·언어·순서가 고정 v1 행 집합과 일치하는지 단언하는 사례를 추가한다.
-3. 보고서 의미 해시: 리팩터링 전 기준 커밋 `7a4ada1`을 별도 checkout에서 빌드해 23개 사례의 기준값을 먼저 기록했다. 기존 `compat-0.5`의 `pass`·`findings`·`partial` 소스(`--tools none`, 세 `--fail-on` 값)뿐 아니라 다음 디스패치 행렬을 고정 소스에서 실행한다: 선택형 도구 7개 각각 단독, `bandit,semgrep,gitleaks`와 역순 조합, native preview 선택/미선택, 빈 소스의 도구별 `not_applicable`, Semgrep 선택 여부의 coverage 3/4행. Python·Go·JS와 설정/의존성 입력을 포함한 고정 fixture로 Bandit의 Python 입력 0개/있음, Semgrep의 Go eligible, 실행 파일 미발견 partial을 구분한다. 이 기준 행렬은 `toolPaths`와 `--opengrep-core`에 의도적으로 없는 절대경로를 전달해 호스트 도구가 우연히 실행되지 않게 한다. 실제 엔진 완료 경로는 기존 스텁·진짜 엔진 테스트에서 별도로 확인한다. 변경 후 별도 checkout에서 동일한 입력·도구 순서·옵션을 실행해 `scripts/kpi.mjs`의 `semanticHash()`와 종료 코드를 각 행별로 비교한다. 기준 증거는 `.handoff/evidence/M0/compat-before.json`에 두고 CP2의 CI 테스트가 쓸 동일 내용을 `tests/fixtures/runtime-m0-baseline.json`으로 동결한다. 이 해시는 최상위 `startedAt`·`finishedAt`만 제외하고 배열 순서·check 상태·finding·gap·scope를 포함한다. 기존 0.5 artifact 네 묶음은 독립된 frozen parser/gate 테스트로 유지하고 기대값을 새 구현으로 재생성하지 않는다. `states`는 합성 check 상태 보고서이므로 실행 스캔 비교 대상에서 제외한다.
+3. 보고서 의미 해시: 리팩터링 전 기준 커밋 `7a4ada1`을 별도 checkout에서 빌드해 23개 사례의 기준값을 먼저 기록했다. 기존 `compat-0.5`의 `pass`·`findings`·`partial` 소스(`--tools none`, 세 `--fail-on` 값)뿐 아니라 다음 디스패치 행렬을 고정 소스에서 실행한다: 선택형 도구 7개 각각 단독, `bandit,semgrep,gitleaks`와 역순 조합, native preview 선택/미선택, 빈 소스의 도구별 `not_applicable`, Semgrep 선택 여부의 coverage 3/4행. Python·Go·JS와 설정/의존성 입력을 포함한 고정 fixture로 Bandit의 Python 입력 0개/있음, Semgrep의 Go eligible, 실행 파일 미발견 partial을 구분한다. 이 기준 행렬은 `toolPaths`와 `--opengrep-core`에 의도적으로 없는 절대경로를 전달해 호스트 도구가 우연히 실행되지 않게 한다. 실제 엔진 완료 경로는 기존 스텁·진짜 엔진 테스트에서 별도로 확인한다. 변경 후 별도 checkout에서 동일한 입력·도구 순서·옵션을 실행해 의미 해시와 종료 코드를 각 행별로 비교한다. CP2 테스트의 해시 함수는 기준 커밋 `7a4ada1`의 `scripts/kpi.mjs` 구현(객체 키 정렬, 배열 순서 보존, 최상위 시간 두 필드만 제외)을 테스트 내부에 동결한 helper에서 가져온다. 후보 checkout의 함수를 import하지 않으며, 동결 구현의 기준 SHA와 원문 digest를 기록해 서로 다른 해시 규칙이 적용되지 않도록 한다. 기준 증거는 `.handoff/evidence/M0/compat-before.json`에 두고 CP2의 CI 테스트가 쓸 동일 내용을 `tests/fixtures/runtime-m0-baseline.json`으로 동결한다. 기준 증거 SHA256 `33bfbce6379c1d09a9094599d9a67276e2f77c25303ab9430bbcff61a8d09faa`와의 내용 일치 및 matrix 소스 fixture의 입력 해시를 요청서에 기록하고, 소스 fixture도 테스트 경로에 커밋한다. 이 해시는 최상위 `startedAt`·`finishedAt`만 제외하고 배열 순서·check 상태·finding·gap·scope를 포함한다. 기존 0.5 artifact 네 묶음은 독립된 frozen parser/gate 테스트로 유지하고 기대값을 새 구현으로 재생성하지 않는다. `states`는 합성 check 상태 보고서이므로 실행 스캔 비교 대상에서 제외한다.
 4. 실행 엔진: 기존 `agent-dast-runner*`, `zap-integration`, `compat-0.5`를 돌려 준비·요청 예산·승인·origin·실패/정리 동작을 확인한다. 실제 소유 대상 외부 스캔은 추가하지 않는다.
 5. 통합: `npm run build`, 전체 기존 테스트, `tests/inventory.test.ts`·`tests/init-action-handoff.test.ts`, 그리고 동일 런타임/코퍼스의 `scripts/kpi.mjs compare`를 실행한다. 비교의 exit 0과 각 결과 SHA를 `.handoff/evidence/M0/`에 기록한다. 기준을 수정해 회귀를 숨기지 않는다.
+
+성공 경로는 아래 기존 결정적 스텁 테스트를 CP2의 필수 검증으로 실행한다. 23개 해시 행렬은
+미존재 실행 파일·해당없음 분기를 고정하며, 이 표는 실제 도구 호출·파싱·스테이징을 검증하는 근거다.
+기존 fixture와 기대값은 유지하고, R9가 실행 결과·건너뜀·적용 범위를 증거로 기록한다.
+
+| 도구 | 기존 성공 경로 테스트 | 확인 범위 |
+| --- | --- | --- |
+| Gitleaks·OSV·Trivy config | `tests/osv-output.test.ts`의 `default-tools CLI with synthetic scanners...` | 실제 CLI 기본 선택, 세 도구 completed, OSV 0/1/2 게이트 |
+| Bandit | `tests/python.test.ts`의 `Bandit receives only the staged Python allowlist...` | `runSource` 디스패치, Python 전용 스테이징, completed finding |
+| Semgrep | `tests/security-toolchain.test.ts`의 `Semgrep completion reaches all report formats...`; `tests/semgrep.test.ts`의 `Semgrep subprocess receives only Go inputs...` | CLI 선택·4종 보고서·Go 입력 및 telemetry 설정 |
+| govulncheck | `tests/security-toolchain.test.ts`의 `Go advisory output with engine exit zero...`; `tests/govulncheck.test.ts`의 `govulncheck accepts findings despite JSON exit zero...` | CLI finding 전달, 어댑터 completed·Go 환경 격리 |
+| Trivy CVE | `tests/trivy-vuln.test.ts`의 `Trivy CVE adapter uses neutral config...` | 어댑터 completed·설정·입력 archive 배선; CLI 디스패치는 23개 행렬의 선택 경로로 별도 확인 |
+
+이 대응표는 실제 엔진을 실행한 증거가 아니다. 진짜 엔진 게이트는 기존 필수 엔진 테스트로 확인하고,
+미설치로 건너뛴 사례는 완료로 세지 않는다. 복수 도구의 요청 순서는 해시 행렬 두 조합으로 검증한다.
 
 ‘어댑터 추가 시 변경 파일 수’의 리팩터링 전 참고 기준은 실제 ZAP 통합 커밋
 `f2bcf2663217d3923f97fd3e1c09c1963f61fae1`의 `src/` 9개·`tests/` 4개, 합계 13개다.
