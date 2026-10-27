@@ -138,5 +138,6 @@ reproductionKey와 비밀이 아닌 seed는 논리 실행 입력이다. 같은 �
 보고/단계 파일에는 ledger만 전달하고 원문은 trusted executor의 transient lookup으로만 읽는다. seed의 비밀 여부는 호출자가 보장한다.
 HTTP 직렬화·snapshot·수집은 후속 native-sql 책임이며 발급기는 DTO·요청 계획을 추측하지 않는다.
 SurfaceRef에는 scalar/mediaType 필드가 없으므로 RuntimeSurface의 JSON scalar 검증은 호출 전 조건이다.
+M1-73: root와 단일 trailing slash는 허용하되 exact surface ID/path를 그대로 사용하며 `/x`와 `/x/`를 합치지 않는다.
 CPx6 N3: control AST에 기존 BoolExpr가 있으면 현재 promotion 판정은 보수적으로 unknown이다. Oracle는 변경하지 않았다.
 R8 두 예제 쌍의 취약/수정 GET·POST 원본을 읽어 공격 전 질의에 AND/OR가 없음을 대조했다. 실제 parser/DB 실행 증거는 아니다.

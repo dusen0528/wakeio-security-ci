@@ -57,6 +57,25 @@ test('GET path and POST nested JSON scalar locations remain explicit, without bu
   assert.equal(issued.ledger.rows[1].param.jsonPointer, '/profile/display~1name');
   assert.equal(Object.hasOwn(issued, 'request'), false);
 });
+test('root and terminal slash routes retain exact identities and distinct reservation mappings', () => {
+  const value = input(); value.remainingBudget = 4;
+  value.surfaces = [{ id: 'GET /items', method: 'GET', pathTemplate: '/items' },
+    { id: 'GET /items/', method: 'GET', pathTemplate: '/items/' }];
+  value.reservations = [false, true].flatMap((trailing, pair) => input().reservations.map(r => ({
+    ...clone(r), surfaceId: 'GET /items' + (trailing ? '/' : ''),
+    controlPairId: 'pair-' + pair, requestOrdinal: r.requestOrdinal + pair * 2,
+  })));
+  const before = JSON.stringify(value), issued = issueMarkers(value);
+  assert.deepEqual(issued.ledger.rows.map(r => r.surfaceId),
+    ['GET /items', 'GET /items', 'GET /items/', 'GET /items/']);
+  assert.equal(new Set(issued.ledger.rows.map(r => issued.markerForExecutor(r.requestOrdinal))).size, 4);
+  assert.equal(JSON.stringify(value), before);
+  const root = input(); root.surfaces[0].pathTemplate = '/';
+  assert.equal(issueMarkers(root).ledger.rows.length, 2);
+  for (const path of ['/a//', '/a//b', '//host', '/a/.', '/a/..', '/a/%2f', '/a?q=x', '/a#x', '/a\\b']) {
+    const invalid = input(); invalid.surfaces[0].pathTemplate = path; rejects(invalid);
+  }
+});
 test('ordinal collisions and incomplete, duplicate or mismatched control/probe pairs reject atomically', () => {
   const mutations: Array<(value: MarkerIssueInput) => void> = [
     i => { i.reservations[1].requestOrdinal = 1; },

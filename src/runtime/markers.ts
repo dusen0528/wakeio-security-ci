@@ -67,9 +67,10 @@ function capture(raw: MarkerIssueInput): MarkerIssueInput {
 }
 function path(raw: unknown): asserts raw is string {
   label(raw, 512); requireData(raw.startsWith('/') && !raw.startsWith('//') && !/[\\%?#:]/.test(raw));
-  for (const segment of raw.slice(1).split('/')) {
+  const segments = raw.slice(1).split('/');
+  for (const [index, segment] of segments.entries()) {
     requireData(segment !== '.' && segment !== '..');
-    requireData(segment === '' ? raw === '/' : /^[A-Za-z0-9._~-]+$/.test(segment)
+    requireData(segment === '' ? index === segments.length - 1 : /^[A-Za-z0-9._~-]+$/.test(segment)
       || /^\{[A-Za-z_][A-Za-z0-9_-]{0,79}\}$/.test(segment));
   }
 }
