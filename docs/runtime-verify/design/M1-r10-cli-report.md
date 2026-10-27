@@ -71,6 +71,9 @@ unknown은 빈 finding이 아닌 case/gap 상태다. coverage unknown의 분모�
 공통 runtime 확장은 M1 draft이며 최종 1.0 스키마 고정은 M5다. 기존 0.5 입력·출력의 raw/의미 해시를 바꾸지 않는다.
 M1-72는 `parseReport`/`readReport`의 공통 읽기와 `parseRuntimeReport`/`sanitiseRuntimeReport`를 제공한다.
 M1-84는 trusted static schema의 Ajv 생성·compile을 runtime 첫 사용까지 미루고 내부에서 한 번만 캐시한다.
+M1-90은 Ajv 모듈 해석도 첫 runtime 사용으로 늦춘다. Node ESM은 createRequire fallback, esbuild는 정적 require를 쓴다.
+schema도 이 시점에 배포 루트 schemas에서 읽는다. 필터된 release archive에 없는 build/schemas에 의존하지 않는다.
+기존 packed legacy consumer는 Ajv 없이 import하고, 번들 runtime reader는 포함된 Ajv로 검증하며 외부 패키지를 읽지 않는다.
 legacy 진입의 불필요 초기화 제거는 격리된 compile 계수로 확인하며, 실제 성능/KPI 측정은 R9 후속이다.
 기존 `sanitiseReport`는 scan 전용으로 유지해 미연결 legacy writer/gate가 runtime 분기를 소비하는 확장을 피한다.
 새 경계의 1 MiB/20,000노드/깊이40과 기존 legacy entry의 범위는 별개다. 원문 가능성이 있는 자유 prose는 생략한다.

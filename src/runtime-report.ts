@@ -1,5 +1,5 @@
-import { Ajv2020, type ValidateFunction } from 'ajv/dist/2020.js';
-import schema from '../schemas/verify-artifact.v1.json' with { type: 'json' };
+import { createRequire } from 'node:module';
+import type { ValidateFunction } from 'ajv/dist/2020.js';
 import { snapshotJsonData } from './json-snapshot.js';
 import { redactSecrets, safeHttpUrl, safeRelativePath } from './report-path.js';
 import { sanitiseStaticContext } from './static-context.js';
@@ -14,6 +14,13 @@ function requireData(ok: unknown): asserts ok { if (!ok) invalid(); }
 let validate: ValidateFunction<RuntimeReport> | undefined;
 function validator(): ValidateFunction<RuntimeReport> {
   if (!validate) {
+    // Static require is bundled by esbuild; unbundled Node ESM resolves only on runtime use.
+    const load = createRequire(import.meta.url);
+    const { Ajv2020 } = (typeof require === 'function' ? require('ajv/dist/2020.js')
+      : load('ajv/dist/2020.js')) as typeof import('ajv/dist/2020.js');
+    // Emitted build/src reads the shipped root schema, also present in filtered release archives.
+    const schema = typeof require === 'function' ? require('../../schemas/verify-artifact.v1.json')
+      : load('../../schemas/verify-artifact.v1.json');
     const ajv = new Ajv2020({ strict: true, allErrors: false, $data: false, coerceTypes: false,
       useDefaults: false, removeAdditional: false, ownProperties: true, validateSchema: true, logger: false });
     validate = ajv.compile<RuntimeReport>(schema);
