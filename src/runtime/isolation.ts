@@ -50,7 +50,7 @@ export function checkIsolationProbe(requested: IsolationRequirement, limits: Iso
     || !Array.isArray(c.controllers) || !['cpu', 'memory', 'pids'].every(name => c.controllers.includes(name))) {
     reasons.push('cgroup_delegation_missing');
   }
-  if (!positive(p.cpuQuota) || !positive(p.cpuPeriod) || p.cpuQuota !== limits.cpu * p.cpuPeriod
+  if (!positive(p.cpuQuota) || !positive(p.cpuPeriod) || p.cpuQuota !== Math.round(limits.cpu * p.cpuPeriod)
     || !positive(p.memoryMax) || p.memoryMax !== limits.memoryBytes
     || !positive(p.pidsMax) || p.pidsMax !== limits.pids) reasons.push('resource_probe_mismatch');
   if (!positive(p.targetUid) || p.seccompMode !== 2 || p.seccompProfile !== 'default'
