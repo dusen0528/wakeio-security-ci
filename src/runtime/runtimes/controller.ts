@@ -751,3 +751,120 @@ async function prepareOs(raw: LimaOsOptions, execute: typeof runRuntimeProcess):
         ...(profile.machineIdentitySha256 ? { lease: profile.osLease() } : {}) } : {}) };
   }
 }
+
+// Host approval pins are independent of worker-directory/request data. Updates require the R1 review bundle.
+const PG_HOST_PROTOCOL = 'wakeio.pg-parser/v1';
+const PG_HOST_LOCK = 'adc4e4026559ed0e5229acb4cb5354a82437420efdb58056d4a9d73969e37493';
+const PG_HOST_FILES = [
+  ['manifest.json', 5984, '80a61d6f7161911df1bc8d7e4d26ff6827426aa736d2319f7d3b275c85548afb'],
+  ['pg-parser-worker.cjs', 143151, '824507106ba66437c0200ef4db9f86cd3b4a3c4e2c159896fa6199fb590bc6f6'],
+  ['libpg-query.wasm', 1717872, '355c489d8b0bf2bac28b48408f656e818852d7000e1e66a67503ad2bc7cc6062'],
+  ['THIRD_PARTY_LICENSES.txt', 2632, 'f892a1d91c887c3a8cff7457834c88a2b025b03985179b9129ce629c5026df76'],
+  ['LICENSE.libpg_query', 1561, 'f9352c20940619a380a5e9f23cebe34d8f797cfbd747fc236a7a3e5fc8ef9b41'],
+  ['COPYRIGHT.PostgreSQL', 1198, '5ed3ce5c9373dff7f98b1fae7a6c7ccd98df7d734d46d24c1bcebf1240be8307'],
+] as const;
+export interface PgParserAssetHandle {
+  readonly kind: 'pg-parser-assets'; readonly protocolRevision: 'wakeio.pg-parser/v1';
+  readonly lockSha256: string; readonly executionAuthorized: false;
+}
+export interface PgParserAssetPreparation {
+  status: 'unavailable'; verified: false; reason: 'consent_required' | 'asset_mismatch' | 'assets_bound';
+  handle?: Readonly<PgParserAssetHandle>;
+}
+type PgAssetFile = { path: string; bytes: Buffer };
+const PG_ASSET_BYTES = new WeakMap<Readonly<PgParserAssetHandle>, readonly PgAssetFile[]>();
+function assetMismatch(): never { throw new TypeError('asset_mismatch'); }
+
+/** Data copies only. Neither this process-local brand nor JSON metadata authorizes worker execution. */
+export function copyPgParserAssetFiles(raw: unknown): readonly PgAssetFile[] {
+  if (!raw || typeof raw !== 'object' || types.isProxy(raw)) assetMismatch();
+  const files = PG_ASSET_BYTES.get(raw as PgParserAssetHandle);
+  if (!files) assetMismatch();
+  return files.map(file => ({ path: file.path, bytes: Buffer.from(file.bytes) }));
+}
+function parserManifest(bytes: Buffer): void {
+  const m = JSON.parse(bytes.toString('utf8'));
+  if (m.schemaVersion !== '1.0.0' || m.kind !== 'wakeio-pg-parser-assets' || m.protocolRevision !== PG_HOST_PROTOCOL
+    || m.pin?.version !== '18.2.1' || m.pin.pgMajor !== 18 || m.pin.lockSha256 !== PG_HOST_LOCK
+    || m.pin.wasmSha256 !== PG_HOST_FILES[2][2] || m.localWasm !== 'libpg-query.wasm'
+    || m.build?.lock?.path !== 'package-lock.json' || m.build.lock.bytes !== 20400
+    || m.build.lock.sha256 !== PG_HOST_LOCK || m.packages?.length !== 2
+    || m.packages[0].name !== 'libpg-query' || m.packages[0].version !== '18.2.1'
+    || m.packages[1].name !== '@pgsql/types' || m.packages[1].version !== '18.0.0'
+    || !Array.isArray(m.assets) || m.assets.length !== PG_HOST_FILES.length - 1) assetMismatch();
+  for (const [name, size, sha256] of PG_HOST_FILES.slice(1)) {
+    const expected = { path: 'workers/pg-parser/' + name, bytes: size, sha256 };
+    const matching = m.assets.filter((row: Record<string, unknown>) => row.path === expected.path);
+    if (matching.length !== 1 || Object.keys(matching[0]).length !== 3
+      || Object.entries(expected).some(([key, value]) => matching[0][key] !== value)) assetMismatch();
+  }
+}
+type PgAssetDirectory = { path: string; id: Identity; mtimeMs: number; ctimeMs: number };
+async function parserDirectory(path: string): Promise<PgAssetDirectory> {
+  const info = await lstat(path), id = await identity(path);
+  if ((info.mode & 0o022) !== 0) assetMismatch();
+  return { path, id, mtimeMs: info.mtimeMs, ctimeMs: info.ctimeMs };
+}
+async function checkParserDirectories(bound: readonly PgAssetDirectory[]): Promise<void> {
+  for (const before of bound) {
+    const after = await parserDirectory(before.path);
+    if (after.id.dev !== before.id.dev || after.id.ino !== before.id.ino
+      || after.mtimeMs !== before.mtimeMs || after.ctimeMs !== before.ctimeMs) assetMismatch();
+  }
+  const actual = (await readdir(bound[2].path)).sort();
+  if (JSON.stringify(actual) !== JSON.stringify(PG_HOST_FILES.map(row => row[0]).sort())) assetMismatch();
+}
+async function readParserFile(path: string, handle: FileHandle, expected: typeof PG_HOST_FILES[number]) {
+  const before = fileIdentity(await handle.stat(), 2 * 1024 * 1024);
+  if (before.size !== expected[1]) assetMismatch();
+  await namedFile(path, handle, before);
+  const bytes = Buffer.alloc(before.size + 1); let offset = 0;
+  while (offset < bytes.length) {
+    const { bytesRead } = await handle.read(bytes, offset, bytes.length - offset, offset);
+    if (!bytesRead) break; offset += bytesRead;
+  }
+  await namedFile(path, handle, before);
+  if (offset !== before.size
+    || createHash('sha256').update(bytes.subarray(0, offset)).digest('hex') !== expected[2]) assetMismatch();
+  return { path, handle, identity: before, bytes: bytes.subarray(0, offset) };
+}
+async function bindParserAssets(root: string, openTrustedFile: typeof open): Promise<PgAssetFile[]> {
+  // This locator belongs to trusted host composition only, never Target/cwd/PATH/env or load options.
+  if (typeof root !== 'string' || !isAbsolute(root) || resolve(root) !== root
+    || Buffer.byteLength(root) > 4096 || /[\x00-\x1f\x7f]/.test(root)) assetMismatch();
+  await inputPath(join(root, 'workers/pg-parser/manifest.json'));
+  const directories: PgAssetDirectory[] = [];
+  for (const path of [root, join(root, 'workers'), join(root, 'workers/pg-parser')]) {
+    directories.push(await parserDirectory(path));
+  }
+  await checkParserDirectories(directories);
+  const opened: Awaited<ReturnType<typeof readParserFile>>[] = [], handles: FileHandle[] = [];
+  try {
+    for (const expected of PG_HOST_FILES) {
+      const path = join(root, 'workers/pg-parser', expected[0]), handle = await openTrustedFile(path, FILE_FLAGS);
+      handles.push(handle); opened.push(await readParserFile(path, handle, expected));
+    }
+    parserManifest(opened[0].bytes);
+    for (const file of opened) await namedFile(file.path, file.handle, file.identity);
+    await checkParserDirectories(directories);
+    return opened.map((file, index) => ({ path: 'workers/pg-parser/' + PG_HOST_FILES[index][0], bytes: file.bytes }));
+  } finally {
+    const closed = await Promise.allSettled(handles.map(handle => handle.close()));
+    if (closed.some(result => result.status === 'rejected')) assetMismatch();
+  }
+}
+
+/** @internal Trusted installation locator and real-FD test seam, never an option/Target execution capability. */
+export function createPgParserAssetLoader(trustedInstallationRoot: string, openTrustedFile: typeof open = open) {
+  return async (raw: unknown): Promise<PgParserAssetPreparation> => {
+    if (!consent(raw)) return { status: 'unavailable', verified: false, reason: 'consent_required' };
+    try {
+      object(snapshotJsonData(raw, assetMismatch), ['executeTargetConsent']);
+      const files = await bindParserAssets(trustedInstallationRoot, openTrustedFile);
+      const handle = Object.freeze({ kind: 'pg-parser-assets', protocolRevision: PG_HOST_PROTOCOL,
+        lockSha256: PG_HOST_LOCK, executionAuthorized: false } as const);
+      PG_ASSET_BYTES.set(handle, files);
+      return { status: 'unavailable', verified: false, reason: 'assets_bound', handle };
+    } catch { return { status: 'unavailable', verified: false, reason: 'asset_mismatch' }; }
+  };
+}
