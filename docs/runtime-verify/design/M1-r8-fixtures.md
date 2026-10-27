@@ -12,16 +12,21 @@ PLAN 5·6·7·11·12장의 Spring/SQL 최소 경로를 검증한다. 14장의 �
 
 | 요소 | CP1 후보 pin | 선택 이유·확인할 것 |
 | --- | --- | --- |
-| Java | source/bytecode 17 | R3가 실제 JDK 패치·이미지 digest·플랫폼 manifest를 확정한다. 부동 tag로 실행하지 않는다. |
-| Maven | 3.9.16 | [공식 릴리스](https://maven.apache.org/docs/3.9.16/release-notes.html). 플러그인·의존성도 고정하며 Maven 버전만으로 재현성을 주장하지 않는다. |
-| Spring Boot | 3.5.16 회귀 기준 후보 | [3.5 최종 OSS 릴리스](https://spring.io/blog/2026/06/25/spring-boot-3-5-16-available-now/). PLAN의 3.5 actuator 형식을 고정하는 용도다. 지원 종료 상태이므로 제품 권장 버전으로 소개하지 않는다. |
-| PostgreSQL | 17.11 | [17.11 릴리스](https://www.postgresql.org/docs/17/release-17-11.html). 같은 major의 파서 문법과 로그 형식을 고정한다. 이미지 digest는 아직 측정하지 않았다. |
+| Java | source/bytecode 21 | [Boot 4.1.2 요구 범위](https://docs.spring.io/spring-boot/system-requirements.html)에 포함된다. 실제 JDK 패치·OCI 플랫폼 digest는 R3/R9 확인 전 미확정이다. |
+| Maven | 3.10.0 | [공식 릴리스](https://maven.apache.org/docs/3.10.0/release-notes.html). R3 후보에 맞추고 플러그인·의존성도 고정한다. |
+| Spring Boot | 4.1.2 기본 후보 | [공식 stable 문서](https://docs.spring.io/spring-boot/system-requirements.html). 지원 중인 계열로 새 예제를 만들고 실제 mappings 원본은 후속 검증한다. |
+| springdoc | 3.2.0 | [공식 matrix](https://springdoc.org/#what-is-the-compatibility-matrix-of-springdoc-openapi-with-spring-boot)의 Boot 4.1.x/3.1.x~3.2.x 범위이며 R4 추천과 같다. |
+| PostgreSQL | 18 major, 정확한 patch 미확정 | [PG18 문서](https://www.postgresql.org/docs/18/index.html). DB/parser major를 맞추되 이미지 존재·플랫폼 digest를 실측했다고 쓰지 않는다. |
+| SQL parser/helper | `libpg-query@18.2.1` | [공식 package](https://github.com/constructive-io/libpg-query-node/blob/main/versions/18/package.json)와 [scan API](https://github.com/constructive-io/libpg-query-node/blob/main/versions/18/SCAN.md). R5의 PG18 parse/scan 추천이며 wrapper는 MIT 선언이다. |
 | pgJDBC | 42.7.14 | [공식 다운로드](https://jdbc.postgresql.org/download/). PreparedStatement와 파라미터 로깅 구분을 검증한다. |
 | JaCoCo agent·CLI | 0.8.16 둘 다 | [공식 변경 이력](https://www.jacoco.org/jacoco/trunk/doc/changes.html). 서로 다른 버전이나 SNAPSHOT을 섞지 않는다. |
 
-위 값은 최종 채택이 아니다. CP1에서 지원 중인 Spring 4.1 계열을 기본 예제로 선택하는 대안과 비교한다.
-3.5를 택하면 회귀 코퍼스 버전임을 명시하고, 4.1을 택하면 mappings/OpenAPI 원본을 다시 독립 검토한다.
-springdoc, Maven plugin, JDK 이미지의 정확한 버전·digest는 R3/R4와 CP1에서 정한 뒤 manifest에 기록한다.
+M1 기본 추천은 Spring4.1.2/springdoc3.2.0, JDK21/Maven3.10.0/JaCoCo0.8.16, PG18/parser18.2.1 조합이다.
+공식 버전·호환 범위 검토에 따른 CP1 제안이며 빌드·실행·digest 실측 완료를 뜻하지 않는다.
+기존 Spring3.5.16/PG17.11 후보는 PLAN의 3.5 mappings 재현·기존 문법 회귀에 유리하지만 [3.5 OSS 지원은 종료됐다](https://spring.io/blog/2026/06/25/spring-boot-3-5-16-available-now/).
+또 R5가 필요한 token scan까지 갖춘 PG18 wrapper와 major가 달라 기본 조합으로 추천하지 않는다.
+정확한 PG18 patch·JDK 패치·OCI 플랫폼 digest·npm integrity/transitive lock·WASM SHA·라이선스 파일은 R3/R9 후속 실측 전 미확정이다.
+Maven plugin pin과 실제 mappings/OpenAPI 원본도 R3/R4와 CP1에서 정한 뒤 manifest에 기록한다.
 취약/수정본에 같은 의존성 pin을 적용해 프레임워크 버전 차이가 판정을 대신하지 않게 한다.
 
 선언 라이선스의 출처는 [Spring Boot Apache-2.0](https://github.com/spring-projects/spring-boot/blob/v3.5.7/LICENSE.txt),
@@ -140,7 +145,8 @@ KPI는 예제별 confirmed 정확도/음성 오판 수, 업무 라우트 recall/
 
 ## 7. CP1에서 확정할 사항
 
-Spring 3.5 회귀 기준과 지원 중인 4.1 기준 중 선택, springdoc/JDK/컨테이너 digest 최종 pin은 R3/R4와 정한다.
-SQL parser·dialect 버전·구문 위치 필드 계약은 R1/R5가 제안하되 위 반증 매트릭스는 약화하지 않는다.
+위 기본 조합을 CP1에 추천하고, 실행 전 정확한 PG18 patch·artifact/platform digest와 라이선스 파일을 확인한다.
+R1/R5의 격리 parser helper는 AST/token projection으로 입력 shape를 바꿀 수 있으나 R8의 독립 기대값 소유권은 유지한다.
+버전·projection 선택으로 V1~V3/F/N 판정 수·승격 강도·GET/POST ground truth를 약화하지 않는다.
 Snapshot 단위·coverage dump 경계·마커 재현성의 정확한 필드 계약은 R1과 맞춘다.
 새 공개 스키마에 맞춰 기대값의 모양을 바꿀 때도 의미·case ID·판정 수와 변경 이유를 별도 보존한다.
