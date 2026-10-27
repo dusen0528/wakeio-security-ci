@@ -1,12 +1,15 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { chmod, link, lstat, mkdtemp, mkdir, readFile, readdir, realpath, rename, rm, symlink, truncate, writeFile }
+import { chmod, copyFile, link, lstat, mkdtemp, mkdir, open, readFile, readdir, realpath, rename, rm, symlink,
+  truncate, writeFile }
   from 'node:fs/promises';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 import { setTimeout as delay } from 'node:timers/promises';
 import { runRuntimeProcess } from '../src/runtime/process.js';
-import { compileLimaProfileConfig, createLimaProfilePreparer, prepareLimaProfile,
+import { copyPgParserAssetFiles, createPgParserAssetLoader,
+  compileLimaProfileConfig, createLimaProfilePreparer, prepareLimaProfile,
   createLimaOsPreparer, createLimaOsSessionRunner, MAX_LIMA_ROOTFS_BYTES, prepareLimaOsProfile, withLimaOsSession,
   type LimaOsOptions, type LimaPins, type LimaProfileOptions, type LimaOsProbeCapability }
   from '../src/runtime/runtimes/controller.js';
@@ -930,6 +933,147 @@ test('asset, machine and binary drift or uncertain final state preserve sticky c
       assert.equal(result.phase, 'failed'); assert.equal(result.cleanup?.confirmed, false);
       assert.ok(result.pendingHome); assert.ok((await lstat(result.pendingHome)).isDirectory());
       assert.equal(recorder.events.some(event => event.args[1] === 'delete'), false);
+    });
+  }
+});
+
+// Public deployment bytes only: these tests never import or execute the worker/WASM/SQL.
+const parserNames = ['manifest.json', 'pg-parser-worker.cjs', 'libpg-query.wasm',
+  'THIRD_PARTY_LICENSES.txt', 'LICENSE.libpg_query', 'COPYRIGHT.PostgreSQL'];
+const parserSource = fileURLToPath(new URL('../../workers/pg-parser/', import.meta.url));
+async function parserFixture(root: string): Promise<string> {
+  const directory = join(root, 'workers/pg-parser'); await mkdir(directory, { recursive: true });
+  for (const name of parserNames) await copyFile(join(parserSource, name), join(directory, name));
+  return directory;
+}
+test('parser loader binds host pins and returns branded data copies without installed TS', async () => {
+  await scope(async base => {
+    await parserFixture(base);
+    const paths: string[] = [];
+    const load = createPgParserAssetLoader(base, async (path, flags, mode) => {
+      paths.push(String(path)); return open(path, flags, mode);
+    });
+    const result = await load({ executeTargetConsent: true });
+    assert.equal(result.reason, 'assets_bound'); assert.equal(result.status, 'unavailable');
+    assert.equal(result.verified, false); assert.equal(result.handle?.executionAuthorized, false);
+    assert.equal(result.handle?.protocolRevision, 'wakeio.pg-parser/v1');
+    assert.equal(result.handle?.lockSha256, 'adc4e4026559ed0e5229acb4cb5354a82437420efdb58056d4a9d73969e37493');
+    assert.ok(Object.isFrozen(result.handle));
+    assert.deepEqual(paths.map(path => path.slice(path.lastIndexOf('/') + 1)), parserNames);
+    const files = copyPgParserAssetFiles(result.handle);
+    assert.deepEqual(files.map(file => file.path), parserNames.map(name => 'workers/pg-parser/' + name));
+    for (const file of files) assert.deepEqual(file.bytes, await readFile(join(base, file.path)));
+    files[1].bytes.fill(0); files[0].path = 'attacker-path';
+    const next = copyPgParserAssetFiles(result.handle);
+    assert.deepEqual(next[1].bytes, await readFile(join(base, next[1].path)));
+    assert.equal(next[0].path, 'workers/pg-parser/manifest.json');
+    for (const fake of [{}, { ...result.handle }, JSON.parse(JSON.stringify(result.handle)),
+      new Proxy(result.handle!, { get() { throw Error('must not invoke'); } })]) {
+      assert.throws(() => copyPgParserAssetFiles(fake), /asset_mismatch/);
+    }
+    assert.equal('execute' in result.handle!, false); assert.equal('probe' in result.handle!, false);
+  });
+});
+test('parser consent rejects missing, inherited, getter and Proxy consent without I/O/hooks', async () => {
+  let operations = 0, hooks = 0;
+  const load = createPgParserAssetLoader('/nonexistent-unread-installation', async (...args) => {
+    operations++; return open(...args);
+  });
+  const getter = Object.defineProperty({}, 'executeTargetConsent', { get() { hooks++; return true; } });
+  const proxy = new Proxy({}, { ownKeys() { hooks++; throw Error('hook'); },
+    getOwnPropertyDescriptor() { hooks++; throw Error('hook'); }, get() { hooks++; throw Error('hook'); } });
+  for (const raw of [null, {}, { executeTargetConsent: false }, Object.create({ executeTargetConsent: true }),
+    getter, proxy]) assert.equal((await load(raw)).reason, 'consent_required');
+  const extraGetter = Object.defineProperty({ executeTargetConsent: true }, 'expectedHash', {
+    enumerable: true, get() { hooks++; throw Error('hook'); } });
+  assert.equal((await load(extraGetter)).reason, 'asset_mismatch');
+  assert.equal(operations, 0); assert.equal(hooks, 0);
+});
+test('parser loader rejects manifest-only header/provenance tampering by raw host manifest pin', async () => {
+  for (const field of ['protocolRevision', 'lock', 'provenance']) {
+    await scope(async base => {
+      const directory = await parserFixture(base), path = join(directory, 'manifest.json');
+      const manifest = JSON.parse(await readFile(path, 'utf8'));
+      if (field === 'protocolRevision') manifest.protocolRevision = 'wakeio.pg-parser/v2';
+      else if (field === 'lock') manifest.pin.lockSha256 = '0'.repeat(64);
+      else manifest.build.provenance.sources[0].sha256 = '0'.repeat(64);
+      await writeFile(path, JSON.stringify(manifest, null, 2) + '\n');
+      assert.equal((await createPgParserAssetLoader(base)({ executeTargetConsent: true })).reason, 'asset_mismatch');
+    });
+  }
+});
+test('worker plus manifest tampering and attacker expected hashes never replace host pins', async () => {
+  await scope(async base => {
+    const directory = await parserFixture(base), path = join(directory, 'pg-parser-worker.cjs');
+    const bytes = Buffer.from('untrusted replacement, never executed\n'); await writeFile(path, bytes);
+    const manifestPath = join(directory, 'manifest.json'), manifest = JSON.parse(await readFile(manifestPath, 'utf8'));
+    const sha256 = createHash('sha256').update(bytes).digest('hex');
+    manifest.assets[0] = { path: 'workers/pg-parser/pg-parser-worker.cjs', bytes: bytes.length, sha256 };
+    await writeFile(manifestPath, JSON.stringify(manifest, null, 2) + '\n');
+    const load = createPgParserAssetLoader(base);
+    assert.equal((await load({ executeTargetConsent: true })).reason, 'asset_mismatch');
+    for (const override of [{ workerSha256: sha256 }, { expected: manifest.assets }, { assets: {
+      workerSha256: sha256, manifestSha256: createHash('sha256').update(await readFile(manifestPath)).digest('hex'),
+    } }]) assert.equal((await load({ executeTargetConsent: true, ...override })).reason, 'asset_mismatch');
+  });
+});
+test('parser locator cannot be changed by load options and an incomplete trusted root fails closed', async () => {
+  await scope(async base => {
+    const valid = join(base, 'valid'), other = join(base, 'other');
+    await parserFixture(valid); await mkdir(other);
+    for (const key of ['installationRoot', 'root', 'cwd', 'PATH', 'env', 'openTrustedFile']) {
+      assert.equal((await createPgParserAssetLoader(other)({ executeTargetConsent: true, [key]: valid })).reason,
+        'asset_mismatch');
+    }
+    assert.equal((await createPgParserAssetLoader(other)({ executeTargetConsent: true })).reason, 'asset_mismatch');
+    const alias = join(base, 'alias'); await symlink(valid, alias);
+    assert.equal((await createPgParserAssetLoader(alias)({ executeTargetConsent: true })).reason, 'asset_mismatch');
+    assert.equal((await createPgParserAssetLoader(valid)({ executeTargetConsent: true })).reason, 'assets_bound');
+  });
+});
+test('parser assets reject links, writable permissions, missing/extra files, wrong types and size caps', async () => {
+  for (const fault of ['symlink', 'hardlink', 'writable', 'missing', 'extra', 'directory', 'oversize', 'notice']) {
+    await scope(async base => {
+      const directory = await parserFixture(base), path = join(directory, 'libpg-query.wasm');
+      if (fault === 'symlink' || fault === 'hardlink') {
+        const original = join(base, 'public-wasm'); await rename(path, original);
+        if (fault === 'symlink') await symlink(original, path);
+        else { await link(original, path); }
+      } else if (fault === 'writable') await chmod(path, 0o666);
+      else if (fault === 'missing') await rm(path);
+      else if (fault === 'extra') await writeFile(join(directory, 'unapproved.cjs'), 'not executable');
+      else if (fault === 'directory') { await rm(path); await mkdir(path); }
+      else if (fault === 'oversize') await truncate(path, 2 * 1024 * 1024 + 1);
+      else await writeFile(join(directory, 'COPYRIGHT.PostgreSQL'), 'changed notice');
+      const result = await createPgParserAssetLoader(base)({ executeTargetConsent: true });
+      assert.equal(result.reason, 'asset_mismatch', fault); assert.equal(result.handle, undefined);
+    });
+  }
+});
+test('parser loader detects opened-FD/name replacement and later changes to an already-read asset', async () => {
+  for (const fault of ['fd-swap', 'name-swap', 'later-swap', 'root-swap']) {
+    await scope(async base => {
+      const root = join(base, 'installation'), directory = await parserFixture(root);
+      let opens = 0;
+      const opened: Awaited<ReturnType<typeof open>>[] = [];
+      const load = createPgParserAssetLoader(root, async (path, flags, mode) => {
+        opens++; const target = String(path), old = join(base, 'original-manifest');
+        if (fault === 'fd-swap' && opens === 1) {
+          await copyFile(target, old); const handle = await open(old, flags, mode); opened.push(handle); return handle;
+        }
+        const handle = await open(path, flags, mode); opened.push(handle);
+        if (fault === 'name-swap' && opens === 1 || fault === 'later-swap' && opens === 2) {
+          const manifest = join(directory, 'manifest.json'); await rename(manifest, old); await copyFile(old, manifest);
+        }
+        if (fault === 'root-swap' && opens === 1) {
+          await rename(root, join(base, 'retired')); await parserFixture(root);
+        }
+        return handle;
+      });
+      const result = await load({ executeTargetConsent: true });
+      assert.equal(result.reason, 'asset_mismatch', fault); assert.equal(result.handle, undefined);
+      assert.ok(opened.length > 0);
+      for (const handle of opened) assert.equal(handle.fd, -1, 'all owned read FDs closed on failure');
     });
   }
 });

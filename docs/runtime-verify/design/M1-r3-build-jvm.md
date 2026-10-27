@@ -320,3 +320,15 @@ probe 통과는 daemon·quota/seccomp·egress/PG/target 검증이 아니다. sou
 M1-99는 120자 검사 2회 실패로 미커밋 중단했고 build/테스트도 미실행이었다. M1-103에서 해당 124자 표현식만 줄바꿈했으며 WIP controller AST 동일성을 확인했다.
 기존 테스트 diff의 삭제 6행은 import2·mock 명령 이름 선택1·기존 stuck-cleanup 분기1·종료 timer 추출2행이다. 새 shell/session mock 지원이며 기존 assertion/기대값 삭제는 없다.
 기준의 기존 test AST 38개가 모두 같고 strict Stopped/version/identity 거부도 보존됐다. 요청된 serial cleanup/compat 1회는 51 pass·0 fail/skip였으며 실제 OS/격리 증거가 아니다.
+
+### M1-110 / CPx8 N3 독립 host parser 자산 로더
+
+`createPgParserAssetLoader(trustedInstallationRoot)`는 내부 host composition용이며 Target/options/cwd/PATH/env locator가 아니다. raw 입력은 own data consent 한 필드만 받으며 그 검사 전 파일/프로세스/네트워크 I/O는 0이다.
+승인9b70e09의 worker/manifest/WASM/고지 raw SHA·정확한 길이·파일 allowlist와 protocol/전체 lock pin을 controller 상수로 둔다. manifest/요청의 기대 hash는 채택하지 않는다. 갱신은 R1 M1-107 전체 review bundle 순서를 따른다.
+허용된 여섯 배포 파일만 O_NOFOLLOW/O_NONBLOCK로 연다. owner/regular/nlink1/비그룹쓰기·정확한 크기/2MiB 상한·안정 FD와 이름 dev/ino/size/mtime/ctime을 전후 대조하고 root/디렉터리 교체와 추가 파일도 거부한다.
+manifest의 raw pin 검증 뒤 explicit protocol/package version/전체 lock SHA/배포 path·고지 pin을 대조한다. 설치 TS나 lock 원문을 읽지 않으며 source provenance는 실행 identity나 권한이 아니다.
+신뢰 설치 root는 외부 쓰기가 불가능한 readonly 제공을 전제로 한다. 로더는 OS readonly mount를 만들거나 악의적인 같은 UID host를 격리하지 않으며 실측 claim도 하지 않는다.
+모든 read FD를 닫은 뒤 private WeakMap에 검증된 byte 사본만 보관한다. `copyPgParserAssetFiles(handle)`은 다시 defensive copy만 주며 원본 변경·공개 copy 수정과 분리한다. JSON 복제/위조/Proxy handle은 거부한다.
+이 handle의 권한은 공개 자산 bytes 조회뿐이다. executionAuthorized=false, status=unavailable/verified=false이며 worker spawn/WASM/SQL 실행 capability·CLI/preflight 배선은 없다. 미래 invoker는 verified backend 뒤 별도 승인 범위다.
+자산 결속은 1초/256MiB/network-none·daemon/resource/egress·Oracle 완료를 증명하지 않는다. 계약 테스트는 공개 자산 copy·실제 owned FD 교체만 사용하며 기존 OS session/boot/Stopped 조건과 assertion은 그대로다.
+자체 build와 serial cleanup/pg-log/compat 1회는 66 pass·0 fail/skip다. 고정 배포 자산/bundle은 불변이고 실제 worker/WASM/SQL/VM/target 실행은 0이며 R9의 독립 증거를 대신하지 않는다.
