@@ -1,9 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { copyFile, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
+import { copyFile, lstat, mkdir, mkdtemp, readFile, readdir, realpath, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { parseInitTargetArgs } from '../src/runtime/cli.js';
 import { parseTargetYaml } from '../src/runtime/target.js';
 
@@ -122,5 +123,72 @@ test('actual source/isolated Action CLI locate tool-local Pack and schema withou
       await assert.rejects(readFile(output), { code: 'ENOENT' });
     }
     await assert.rejects(readFile(marker), { code: 'ENOENT' });
+  } finally { await rm(top, { recursive: true, force: true }); }
+});
+
+async function publishFault(top: string, preload: string, parent: string, moved: string, mode: string) {
+  const file = join(top, 'publish-fault.mjs');
+  await writeFile(file, `import fs from 'node:fs'; import p from 'node:fs/promises';
+import {basename,join} from 'node:path'; import {syncBuiltinESMExports} from 'node:module';
+await import(${JSON.stringify(pathToFileURL(preload).href)});
+const parent=${JSON.stringify(parent)}, moved=${JSON.stringify(moved)}, mode=${JSON.stringify(mode)};
+const originalLink=p.link, originalUnlink=p.unlink, originalOpen=p.open;
+let linked=false, pending, attempts=0;
+p.link=async (temporary,output)=>{
+ await originalLink(temporary,output); linked=true; pending=temporary;
+ if(mode==='move') {
+  fs.renameSync(parent,moved); fs.mkdirSync(parent);
+  fs.writeFileSync(output,'replacement-owner-output');
+ }
+};
+p.unlink=async path=>{
+ if(linked && path===pending) {
+  if(mode==='unlink') throw Object.assign(Error('forced unlink'),{code:'EACCES'});
+  if(mode==='move') {
+   if(++attempts===1) return originalUnlink(join(moved,basename(path)));
+   throw Object.assign(Error('forced cleanup'),{code:'EIO'});
+  }
+ }
+ return originalUnlink(path);
+};
+p.open=async (...args)=>{
+ const handle=await originalOpen(...args);
+ if(mode==='close' && String(args[0]).startsWith(parent+'/.wakeio-target-')) {
+  const close=handle.close.bind(handle);
+  handle.close=async ()=>{await close(); if(linked) throw Error('forced close');};
+ }
+ return handle;
+};
+syncBuiltinESMExports();
+`);
+  return file;
+}
+
+test('post-link parent, unlink and close failures report unconfirmed output without rollback', async () => {
+  const top = await realpath(await mkdtemp(join(tmpdir(), 'wakeio-init-publish-fault-')));
+  try {
+    for (const [index, entry] of entries.entries()) {
+      for (const mode of ['move', 'unlink', 'close']) {
+        const root = join(top, `${index}-${mode}`); await mkdir(root);
+        const parent = join(root, 'publish'), moved = join(root, 'moved'); await mkdir(parent);
+        const source = join(parent, 'service'), output = join(parent, 'draft.yml'); await mkdir(source);
+        const before = 'org.springframework.boot\nprivate-source-canary';
+        await writeFile(join(source, 'pom.xml'), before); await writeFile(join(parent, 'existing'), 'preserve');
+        const { preload, marker } = await guard(root, source, output, false);
+        const fault = await publishFault(root, preload, parent, moved, mode);
+        const run = launch(entry, ['init-target', '--source', source, '--out', output], root, fault);
+        assert.equal(run.status, 2); assert.equal(run.stderr.trim(), 'init_target_output_unconfirmed');
+        assert.equal(run.stdout, ''); await assert.rejects(readFile(marker), { code: 'ENOENT' });
+        const savedParent = mode === 'move' ? moved : parent;
+        const saved = await readFile(join(savedParent, 'draft.yml'), 'utf8');
+        assert.equal(parseTargetYaml(saved).source, 'service'); assert.ok(!saved.includes('private-source-canary'));
+        assert.equal(await readFile(join(savedParent, 'existing'), 'utf8'), 'preserve');
+        assert.equal(await readFile(join(savedParent, 'service', 'pom.xml'), 'utf8'), before);
+        if (mode === 'move') {
+          assert.equal(await readFile(output, 'utf8'), 'replacement-owner-output');
+          assert.notEqual((await lstat(output)).ino, (await lstat(join(moved, 'draft.yml'))).ino);
+        } else assert.equal(await readFile(output, 'utf8'), saved);
+      }
+    }
   } finally { await rm(top, { recursive: true, force: true }); }
 });

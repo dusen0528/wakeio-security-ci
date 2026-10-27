@@ -4,8 +4,11 @@ const HELP = `Usage: wakeio-security-ci init-target --source DIR --out NEW_FILE
        wakeio-security-ci init-target --help
 Read-only Pack detection; writes a schema-valid draft, never builds or runs the source.
 Output must be new, outside source, in an existing parent containing the source.
+Path components cannot be symlinks (macOS /tmp and /var system aliases excepted).
 Compose, service, seed and scope require review. No Docker, network or project scripts.
-0: draft written; 2: refused. verify execution is not available yet.
+0: draft stored and checked; 2: refused or storage unconfirmed.
+init_target_output_unconfirmed: output may exist; inspect it before retrying.
+verify execution is not available yet.
 `;
 export type InitTargetArgs = { help: true } | { source: string; out: string };
 function invalid(): never { throw new TypeError('invalid_init_target_arguments'); }
@@ -40,7 +43,8 @@ export async function initTargetMain(raw: unknown): Promise<number> {
     return 0;
   } catch (error) {
     const reasons = ['unsafe_init_target_path', 'init_target_source_reference', 'unsupported_runtime_source',
-      'invalid_init_target_source', 'invalid_builtin_pack', 'init_target_output_exists'];
+      'invalid_init_target_source', 'invalid_builtin_pack', 'init_target_output_exists',
+      'init_target_output_unconfirmed'];
     const reason = error instanceof Error && reasons.includes(error.message) ? error.message : 'init_target_failed';
     process.stderr.write(reason + '\n'); return 2;
   }

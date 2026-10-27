@@ -105,20 +105,27 @@ async function publish(parent: Directory, output: string, yaml: string): Promise
   const temporary = join(parent.path, `.wakeio-target-${randomUUID()}.tmp`);
   const handle = await open(temporary,
     constants.O_CREAT | constants.O_EXCL | constants.O_WRONLY | constants.O_NOFOLLOW, 0o600);
+  let published = false, failure: { cause: unknown } | undefined;
   try {
     await handle.writeFile(yaml); await handle.sync(); await unchanged(parent);
     const written = await handle.stat(), named = await lstat(temporary);
     if (!same(written, named) || named.nlink !== 1 || (named.mode & 0o777) !== 0o600) fail();
     // Atomic no-replace: a competing writer cannot overwrite an existing destination.
-    try { await link(temporary, output); }
+    try { await link(temporary, output); published = true; }
     catch (error) {
       if ((error as NodeJS.ErrnoException).code === 'EEXIST') fail('init_target_output_exists');
       throw error;
     }
     await unlink(temporary); await unchanged(parent);
-  } finally {
-    await handle.close();
-    await unlink(temporary).catch(error => { if (error.code !== 'ENOENT') throw error; });
+  } catch (cause) { failure = { cause }; }
+  try { await handle.close(); } catch (cause) { failure ??= { cause }; }
+  try { await unlink(temporary); } catch (cause) {
+    if ((cause as NodeJS.ErrnoException).code !== 'ENOENT') failure ??= { cause };
+  }
+  if (failure) {
+    // Never roll back output: its path/inode may already have been replaced.
+    if (published) fail('init_target_output_unconfirmed');
+    throw failure.cause;
   }
 }
 
