@@ -1,0 +1,35 @@
+# Data only. source-routes and binding hints are reserved and currently rejected by the compiler.
+id: spring-boot
+version: 1
+languages: [java, kotlin]
+detect:
+  anyFile: [pom.xml, build.gradle, build.gradle.kts]
+  contains: [org.springframework.boot]
+runtime:
+  profile: jvm
+  env:
+    MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,mappings
+    SPRINGDOC_API_DOCS_ENABLED: "true"
+  defaultPort: 8080
+  health: /actuator/health
+surfaces:
+  - provider: spring-actuator
+    paths: [/actuator/mappings]
+  - provider: openapi
+    paths: [/v3/api-docs]
+  - provider: source-routes
+    annotations: [GetMapping, PostMapping, PutMapping, DeleteMapping, PatchMapping, RequestMapping]
+sources:
+  - annotation: [RequestParam, PathVariable, RequestBody, RequestHeader, CookieValue]
+  - call: [HttpServletRequest.getParameter, HttpServletRequest.getHeader]
+sinks:
+  sql:
+    - call: [JdbcTemplate.query, JdbcTemplate.update, JdbcTemplate.execute]
+      arg: 0
+    - call: [EntityManager.createNativeQuery, EntityManager.createQuery, Statement.execute*]
+      arg: 0
+sanitizers:
+  sql:
+    # Binding hint only: never sanitize a tainted SQL arg0 based on argument count.
+    - call: [JdbcTemplate.*]
+      when: {argCount: ">=2", placeholders: true}
