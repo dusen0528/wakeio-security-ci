@@ -91,7 +91,7 @@ build stdout/stderr는 private bounded buffer에서 마스킹 후 고정 reason�
 target/PG/controller를 run별 고유 network에 연결하고 runtime network는 `internal: true`다.
 source의 외부 URL·host port·aliases는 신뢰하지 않는다. origin은 생성한 소유 container identity에 결속한다.
 transport는 trusted controller의 bounded stdio relay 단일안으로 확정한다. host port는 publish하지 않는다.
-R1 §5 `RunContext.handles.transport` capability를 R4/R5/R10에 주입하고 host HTTP listener는 만들지 않는다.
+R1 §5 `RunContext.request: RuntimeRequestPort` capability를 R4/R5/R10에 주입하고 host HTTP listener는 만들지 않는다.
 소유 container identity·port·method·path allowlist, 요청/응답 크기·deadline과 공통 admission budget을 강제한다.
 PG·JaCoCo 관리 포트는 publish하지 않으며 controller/observer 전용 접근만 허용한다.
 
