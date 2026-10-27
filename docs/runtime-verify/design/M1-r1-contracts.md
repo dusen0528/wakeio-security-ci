@@ -310,6 +310,16 @@ writeBytes/readBytes는 파일64MiB, `.json` Stage/JSON 체인 입력은 newline
 readJsonInputBytes는 FD의 nlink/mode·이름/inode까지 확인하지 않아 vault에 그대로 쓰지 않는다. bounded JSON/own-data snapshot은 기존 snapshotJsonData를 재사용한다. 해시는 원본 생산자 인증이나 collector lease 검증의 대용이 아니다.
 scope placement guard는 전체 RuntimeReport 파서가 아니다. 전체 report parser/sanitizer와 나머지 artifact schemas는 후속 패킷으로 남긴다. 이 구현으로 전체 verify 파이프라인 완료를 주장하지 않는다.
 
+### M1-57 공통 runtime branch의 정적 schema
+
+`schemas/verify-artifact.v1.json`의 root/$defs.RuntimeReport는 `mode=runtime`+`runtime.revision=verify-m1-v1`만 받는다. legacy 전체 파서가 아니며 기존 ScanReport 분기/Mode/0.5 출력·reader는 바꾸지 않는다. 최상위 scope/scanGate와 legacy mode 혼합·revision 누락·임의 필드는 거부한다.
+canonical `$defs`는 RuntimeReport/RuntimeReportData/RuntimeCheck/RuntimeFinding/RuntimeFindingEvidence/RuntimeScope/VerifyGate/CleanupReport/IsolationReport/SurfaceProvenance/CoverageFiles/ArtifactRef/Stage다. 5개 check는 순서와 무관하게 각각 정확히 한 번이고 id별 payload만 받는다. 추가 Oracle check는 M1 지원이 아니다.
+모든 concrete object는 닫힌 키·필수 키/상태 enum을 검증한다. null은 결측과 다르며 null/unknown 및 비completed에는 명시 reasons를 요구한다. accounting=unknown은 ratio=null이다. grade/reach는 기존 enum이며 Finding.kind와 API evidence를 재해석하지 않는다. 기존 Omit<Finding,'evidence'>의 optional static/control/replay 필드는 타입대로만 보존하며 runtime 판정/실행 권한을 주지 않는다.
+ArtifactRef/Stage의 filename120·raw SHA256·64MiB·Stage inputs/gaps256 한도는 vault와 같다. Label의 schema maxLength=120은 Unicode code point 수이므로 Stage/Gap의 정확한 JS UTF-16 length≤120은 vault/R10이 추가 확인한다. Stage.output만 의도적으로 generic own JSON이다. Stage.inputs의 path별 중복, .json 체인 해석/깊이16·root 포함256·총64MiB·runId/epoch/runNonce/입력 순서·실제 bytes/inode/모드 검증은 기존 vault가 계속 맡는다.
+호출자는 먼저 기존 snapshotJsonData(1MiB/20,000노드/깊이40)로 Proxy/getter/toJSON/상속/변이·비JSON을 거부한다. Ajv uniqueItems 전에는 검증된 snapshot만 ordinary JSON으로 복사한다. schema 자체에 accessor/Proxy 검사 권한은 없다. trusted 2020-12 schema만 strict/ownProperties/validateSchema로 컴파일하며 allErrors/$data/coerceTypes/useDefaults/removeAdditional/외부 ref/async loader/custom keyword·format은 사용하지 않는다.
+R10 reader의 추가 의미 검증: (1) 날짜/버전·source 경로·image/cache digest의 생산자 형식·redaction, ref raw SHA/길이와 실제 vault 입력/lease·run 체인 결속, (2) route/provenance/공격 ordinal·snapshot·PG 관측·Verdict/marker/grade/reach의 근거 및 finding ID/참조 일치, (3) surface ID의 중복/동일 method+path·enumerated/declared의 집계, coverage 고유 파일·source SHA·covered⊆executable·각 count/분모/ratio의 일치, (4) null/unknown/미구현/빈 계획을 completed/not_applicable/0건 성공으로 처리하지 않기, isolation.verified/cleanup.confirmed의 실제 자원 부재 근거, (5) 실제 grade threshold의 blocking ID 집합과 finding 우선1→미완료2→완료0 재계산·출판 실패/4종 raw SHA 결속이다.
+schema는 gate outcome↔exitCode·blocking ID의 공집합/비공집합, cleanup confirmed의 boolean/remaining ID 정합성만 추가 검사한다. 실제 실행·관측·프로세스 종료·지원 범위나 SQL 판정의 증명이 아니며 위 의미 검증을 생략해도 된다는 뜻이 아니다. 합성 계약 테스트는 R8 Oracle 기대값을 생성하지 않는다. root/emitted build schema의 JSON 동등성과 npm pack 배포 포함을 확인하며 Action bundle 연결은 R10 후속이다.
+
 ## M1-28 strict Target 입력과 CPx2 N2/N3
 
 `target.ts`의 `parseRuntimeYaml(text):unknown`, `parseTargetSpec(input):TargetSpec`, `parseTargetYaml(text):TargetSpec`은 파일·build·network·환경 조회 권한 없는 동기 데이터 API다. 원본 YAML UTF-8 raw SHA와 안정 읽기·실제 파일/조상 링크 검증은 후속 I/O 호출자가 맡는다.

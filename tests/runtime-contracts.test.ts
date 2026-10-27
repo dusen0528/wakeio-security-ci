@@ -6,9 +6,12 @@ import { chmod, link, lstat, mkdir, mkdtemp, readFile, readdir, rename, rm, syml
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
+import { Ajv2020 } from 'ajv/dist/2020.js';
+import { snapshotJsonData } from '../src/json-snapshot.js';
 import { assertRuntimeScopeLocation, createArtifactVault } from '../src/runtime/artifacts.js';
 import { parseRuntimeYaml, parseTargetSpec, parseTargetYaml } from '../src/runtime/target.js';
 import targetSchema from '../schemas/target.v1.json' with { type: 'json' };
+import verifySchema from '../schemas/verify-artifact.v1.json' with { type: 'json' };
 import type { Report, RuntimeReport } from '../src/contracts.js';
 import type { ArtifactRef, ArtifactVault, RequestCoverage, Stage, StageBinding } from '../src/runtime/types.js';
 
@@ -371,4 +374,209 @@ test('failed vault creation does not remove a racing replacement directory', asy
     assert.deepEqual(await readdir(destination), []);
     assert.ok((await lstat(destination + '-owned')).isDirectory());
   });
+});
+
+// Synthetic shape data only: no SQL judgement, execution, cleanup or finding proof is asserted.
+const contractRef = (): ArtifactRef => ({ path: 'contract.json', bytes: 0, sha256: digest('') });
+function runtimeReportShape(): RuntimeReport {
+  const reasons = ['contract_only'], surface = { id: 'contract-route', method: 'POST', pathTemplate: '/contract' };
+  const common = { status: 'partial' as const, findings: [], notes: [] };
+  return {
+    schemaVersion: '1.0.0', toolVersion: '0.5.0', mode: 'runtime',
+    startedAt: '2026-10-28T00:00:00Z', finishedAt: '2026-10-28T00:00:01Z',
+    runtime: {
+      revision: 'verify-m1-v1', inputArtifacts: [contractRef()], stages: [contractRef()],
+      scope: { requestedVulnClasses: ['sql'],
+        unsupportedVulnClasses: ['command', 'ssrf', 'path', 'xss', 'redirect', 'authz'], gaps: [] },
+      verifyGate: { outcome: 'incomplete', exitCode: 2, failOnGrade: 'strong', blockingFindingIds: [],
+        reasons: [{ area: 'contract', code: 'not_executed' }] },
+      cleanup: { status: 'error', lease: contractRef(), processGroupExitConfirmed: false,
+        resources: [{ kind: 'contract', id: 'contract-resource', absenceConfirmed: false }],
+        remainingOwnedIds: ['contract-resource'], reasons },
+    },
+    checks: [
+      { ...common, id: 'runtime.build', runtime: {
+        builder: 'compose', imageDigest: 'sha256:' + digest('contract'), cacheKey: digest('contract'),
+        durationMs: 1.25, reasons, isolation: {
+          requested: 'rootless-docker', applied: 'unavailable', daemonRootless: false, backend: '',
+          daemonVersion: '', runtimeVersion: '', targetUid: null, capDropAll: false, readOnlyRootfs: false,
+          seccomp: '', cgroup: { version: null, driver: '', systemd: false, delegatedUnit: null, controllers: [] },
+          resources: { requested: { cpu: 1, memoryBytes: 1024, pids: 10 },
+            measured: { cpuQuota: null, memoryMax: null, pidsMax: null }, probe: contractRef(), enforced: false },
+          buildNetwork: 'registry-allowlist', runNetwork: 'internal', verified: false,
+          gaps: [{ area: 'contract', code: 'not_executed' }],
+        },
+      } },
+      { ...common, id: 'runtime.start', runtime: {
+        lease: contractRef(), health: 'unknown', durationMs: 1.25, instrumentation: contractRef(), reasons,
+      } },
+      { ...common, id: 'runtime.surface', runtime: { declared: 1, enumerated: 1, reasons, routes: [{
+        surface, attacked: null, reasons, provenance: [{ provider: 'openapi', rawInputSha256: digest('raw'),
+          sanitizedArtifact: contractRef(), locator: '#/paths/~1contract/post',
+          handler: { path: 'src/Contract.java', className: 'Contract', methodName: 'contract', line: 1 } }],
+      }] } },
+      { ...common, id: 'runtime.coverage', runtime: { method: 'jacoco', dumpRefs: [contractRef()], reasons,
+        routes: [{ surface, files: [{ path: 'src/Contract.java', sha256: digest('source'),
+          coveredLines: [1], executableLines: [1, 2] }], coveredFiles: 1, coveredLines: 1, executableLines: 2,
+          ratio: 0.5, accounting: 'exact', reasons }],
+      } },
+      { ...common, id: 'runtime.oracle.sql', runtime: { method: 'pg-ast-token-differential',
+        cases: [{ surfaceId: surface.id, state: 'unknown', reasons }], verdictRefs: [contractRef()],
+        markerLedger: contractRef(), parserRevision: 'contract-only', reasons }, findings: [{
+          ruleId: 'contract-only', title: '', description: '', severity: 'info', confidence: 'low',
+          kind: 'candidate', location: {}, remediation: '', evidence: {
+            basis: 'runtime-observation-ledger', grade: 'candidate', reach: 'unknown', markers: [digest('marker')],
+            controlPairId: 'contract-pair', refs: [contractRef()], oracleRevision: 'contract-only',
+          },
+        }],
+      },
+    ],
+  };
+}
+const reportAjv = new Ajv2020({ strict: true, allErrors: false, $data: false, coerceTypes: false,
+  useDefaults: false, removeAdditional: false, ownProperties: true, validateSchema: true, logger: false });
+const verifyShape = reportAjv.compile<RuntimeReport>(verifySchema);
+function validReportShape(input: unknown): boolean {
+  try { return verifyShape(JSON.parse(JSON.stringify(snapshotJsonData(input)))); }
+  catch { return false; }
+}
+function patchReportShape(path: string[], value: unknown, remove = false): unknown {
+  const report = runtimeReportShape(); let row: unknown = report;
+  for (const key of path.slice(0, -1)) {
+    assert.ok(row && typeof row === 'object'); row = Reflect.get(row, key);
+  }
+  assert.ok(row && typeof row === 'object');
+  if (remove) assert.ok(Reflect.deleteProperty(row, path.at(-1)!));
+  else assert.ok(Reflect.set(row, path.at(-1)!, value));
+  return report;
+}
+
+test('trusted runtime schema has equivalent deployed definitions without asserting execution', async () => {
+  assert.equal(validReportShape(runtimeReportShape()), true);
+  assert.deepEqual(JSON.parse(await readFile(new URL('../schemas/verify-artifact.v1.json', import.meta.url), 'utf8')),
+    verifySchema);
+  assert.deepEqual(JSON.parse(await readFile('schemas/verify-artifact.v1.json', 'utf8')), verifySchema);
+  const pending: unknown[] = [verifySchema];
+  while (pending.length) {
+    const value = pending.pop(); if (!value || typeof value !== 'object') continue;
+    for (const [key, child] of Object.entries(value)) {
+      assert.equal(['$async', '$data', 'default'].includes(key), false);
+      if (key === '$ref') assert.match(String(child), /^#\//);
+      pending.push(child);
+    }
+  }
+  for (const name of ['RuntimeReport', 'RuntimeReportData', 'RuntimeCheck', 'RuntimeFinding',
+    'RuntimeFindingEvidence', 'ArtifactRef', 'Stage']) {
+    assert.ok(reportAjv.getSchema(verifySchema.$id + '#/$defs/' + name));
+  }
+});
+
+test('runtime envelope rejects legacy mixtures, missing revisions and check duplication or payload swaps', () => {
+  for (const mode of ['source', 'url', 'both', 'api', 'combined', 'unknown']) {
+    assert.equal(validReportShape(patchReportShape(['mode'], mode)), false);
+  }
+  for (const [path, value] of [
+    [['scope'], {}], [['scope'], null], [['scanGate'], {}], [['runtime', 'scanGate'], {}],
+    [['runtime', 'revision'], 'verify-m2-v1'], [['schemaVersion'], '2.0.0'],
+    [['checks', '0', 'runtime'], runtimeReportShape().checks[1].runtime],
+    [['checks', '0', 'id'], 'runtime.start'], [['checks', '0', 'id'], 'runtime.oracle.command'],
+  ] satisfies [string[], unknown][]) assert.equal(validReportShape(patchReportShape(path, value)), false);
+  assert.equal(validReportShape(patchReportShape(['runtime', 'revision'], null, true)), false);
+  const reversed = runtimeReportShape(); reversed.checks.reverse(); assert.equal(validReportShape(reversed), true);
+  for (const count of [0, 4, 6]) {
+    const input = runtimeReportShape(); input.checks = Array.from({ length: count }, (_, i) => input.checks[i % 5]);
+    assert.equal(validReportShape(input), false);
+  }
+});
+
+test('required report keys and closed nested objects are checked without dropping invalid members', () => {
+  const paths = [[], ['runtime'], ['runtime', 'scope'], ['runtime', 'cleanup'], ['runtime', 'verifyGate']];
+  for (let index = 0; index < 5; index++) paths.push(['checks', String(index)], ['checks', String(index), 'runtime']);
+  for (const path of paths) {
+    let row: unknown = runtimeReportShape();
+    for (const key of path) { assert.ok(row && typeof row === 'object'); row = Reflect.get(row, key); }
+    assert.ok(row && typeof row === 'object');
+    for (const key of Object.keys(row)) {
+      assert.equal(validReportShape(patchReportShape([...path, key], null, true)), false);
+    }
+    assert.equal(validReportShape(patchReportShape([...path, 'unknown'], true)), false);
+  }
+  for (const path of [
+    ['checks', '0', 'runtime', 'isolation', 'cgroup'], ['checks', '0', 'runtime', 'isolation', 'resources', 'measured'],
+    ['checks', '2', 'runtime', 'routes', '0', 'provenance', '0'],
+    ['checks', '3', 'runtime', 'routes', '0', 'files', '0'],
+    ['checks', '4', 'findings', '0'], ['checks', '4', 'findings', '0', 'evidence'],
+    ['runtime', 'inputArtifacts', '0'], ['runtime', 'cleanup', 'resources', '0'],
+  ]) assert.equal(validReportShape(patchReportShape([...path, 'unknown'], true)), false);
+});
+
+test('runtime nullable data stays explicit, noncompleted statuses and unknowns require reasons', () => {
+  for (const status of ['completed', 'partial', 'error', 'not_applicable', 'skipped']) {
+    assert.equal(validReportShape(patchReportShape(['checks', '0', 'status'], status)), true);
+  }
+  for (const status of ['unknown', 'not_run', 'complete']) {
+    assert.equal(validReportShape(patchReportShape(['checks', '0', 'status'], status)), false);
+  }
+  const paths = [
+    ['checks', '0', 'runtime', 'builder'], ['checks', '0', 'runtime', 'imageDigest'],
+    ['checks', '0', 'runtime', 'cacheKey'], ['checks', '0', 'runtime', 'isolation'],
+    ['checks', '0', 'runtime', 'durationMs'], ['checks', '1', 'runtime', 'lease'],
+    ['checks', '1', 'runtime', 'instrumentation'], ['checks', '2', 'runtime', 'declared'],
+    ['checks', '3', 'runtime', 'routes', '0', 'files'], ['checks', '3', 'runtime', 'routes', '0', 'ratio'],
+    ['checks', '4', 'runtime', 'markerLedger'], ['checks', '4', 'runtime', 'parserRevision'],
+  ];
+  for (const path of paths) {
+    assert.equal(validReportShape(patchReportShape(path, null)), true);
+    assert.equal(validReportShape(patchReportShape(path, null, true)), false);
+  }
+  for (const path of [['checks', '0', 'runtime'], ['checks', '1', 'runtime'],
+    ['checks', '2', 'runtime', 'routes', '0'], ['checks', '4', 'runtime', 'cases', '0']]) {
+    assert.equal(validReportShape(patchReportShape([...path, 'reasons'], [])), false);
+  }
+  assert.equal(validReportShape(patchReportShape(['checks', '3', 'runtime', 'routes', '0', 'accounting'], 'unknown')),
+    false); // unknown accounting cannot retain a numeric ratio.
+});
+
+test('runtime grades, reach, hashes, scope, counts, cleanup and gate fields reject structural corruption', () => {
+  const evidence = ['checks', '4', 'findings', '0', 'evidence'];
+  for (const [path, value] of [
+    [[...evidence, 'basis'], 'api-execution-ledger'], [[...evidence, 'grade'], 'unknown'],
+    [[...evidence, 'reach'], 'confirmed'], [[...evidence, 'markers', '0'], 'raw-marker'],
+    [[...evidence, 'refs', '0', 'sha256'], digest('') + '\n'],
+    [['runtime', 'inputArtifacts', '0', 'path'], '../outside'],
+    [['runtime', 'inputArtifacts', '0', 'path'], 'contract.json\n'],
+    [['runtime', 'inputArtifacts', '0', 'bytes'], 67108865], [['runtime', 'inputArtifacts', '0', 'bytes'], -1],
+    [['runtime', 'inputArtifacts', '0', 'bytes'], '0'], [['runtime', 'verifyGate', 'reasons', '0', 'code'], 'bad\n'],
+    [['runtime', 'scope', 'requestedVulnClasses'], ['sql', 'authz']],
+    [['runtime', 'scope', 'unsupportedVulnClasses'], ['command', 'ssrf', 'path', 'xss', 'redirect', 'redirect']],
+    [['checks', '0', 'runtime', 'durationMs'], -1], [['checks', '2', 'runtime', 'enumerated'], 0.5],
+    [['checks', '3', 'runtime', 'routes', '0', 'ratio'], 1.1],
+    [['checks', '3', 'runtime', 'routes', '0', 'files', '0', 'coveredLines'], [1, 1]],
+    [['runtime', 'cleanup', 'status'], 'confirmed'], [['runtime', 'verifyGate', 'exitCode'], 0],
+    [['runtime', 'verifyGate', 'failOnGrade'], 'candidate'],
+  ] satisfies [string[], unknown][]) assert.equal(validReportShape(patchReportShape(path, value)), false);
+  for (const grade of ['confirmed', 'strong', 'observed', 'candidate']) {
+    assert.equal(validReportShape(patchReportShape([...evidence, 'grade'], grade)), true);
+  }
+  for (const reach of ['triggered', 'reached_not_triggered', 'not_reached', 'unknown']) {
+    assert.equal(validReportShape(patchReportShape([...evidence, 'reach'], reach)), true);
+  }
+});
+
+test('schema reference and Stage definitions agree with vault bounds; callers reject hooks before Ajv', () => {
+  const validateStage = reportAjv.getSchema(verifySchema.$id + '#/$defs/Stage'); assert.ok(validateStage);
+  assert.equal(validateStage(stage([contractRef()])), true);
+  for (const bad of [Object.assign(stage(), { extra: true }), { ...stage(), runNonce: '' },
+    { ...stage(), inputs: [{ ...contractRef(), bytes: 67108865 }] },
+    { ...stage(), inputs: Array(257).fill(contractRef()) },
+    { ...stage(), gaps: [{ area: 'contract', code: 'not_executed', extra: true }] }]) {
+    assert.equal(validateStage(bad), false);
+  }
+  let calls = 0;
+  const getter = Object.defineProperty(runtimeReportShape(), 'runtime', { get() { calls++; return {}; } });
+  const proxy = new Proxy(runtimeReportShape(), { ownKeys() { calls++; return []; } });
+  assert.equal(validReportShape(getter), false); assert.equal(validReportShape(proxy), false);
+  assert.equal(calls, 0);
+  const input = runtimeReportShape(), before = JSON.stringify(input);
+  assert.equal(validReportShape(input), true); assert.equal(JSON.stringify(input), before);
 });
