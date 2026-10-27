@@ -107,3 +107,15 @@ PLAN 4·5·10·11·12·13·14.4, HANDOFF, SUBAGENTS와 R1의 구체 계약 제�
   여전히 후속 범위이며 source-routes·sanitizer hint를 삭제해 compiler 거부를 숨기지 않는다.
 - R8 primary와 JDBC 두 ground truth를 읽고 합성 OpenAPI 계약 입력으로만 대조했다. 실제 Spring 응답·recall·
   Opengrep taint trace·coverage는 미검증이다. actuator/병합/live cap·deadline·origin 연결은 후속 패킷 범위다.
+
+## M1-51: CPx4 N1/N3 한도 범위
+
+- operation의 parameter 배열/병합 집합 또는 body scalar leaf가 32개를 넘으면 해당 surface를 지우지 않는다.
+  `unresolved`와 `openapi_limit`를 기록하고 다른 정상 라우트를 보존한다. metadata는 일부 또는 전부 비어 있을 수
+  있으며 완전한 입력 목록으로 쓰지 않는다. 결과는 `partial`, declared는 null이고 enumerated는 보존한 라우트 수다.
+- 문서 bytes/nodes/depth/routes, ref 노드 256개, resolve 호출 20,000회 및 출력 artifact 한도는 전역 거부를 유지한다.
+  ref 256은 unique target 수가 아니라 같은 ref가 반복돼도 각 `$ref` 노드 수다. 수백 ref를 생성하는 실제 Spring
+  문서는 전체 error/unknown이 될 수 있어 recall을 낮춘다. 상한을 늘려 지원 완료로 주장하지 않는다.
+- locator 결과는 immutable snapshot에서 memoize하고 parameter의 중복 resolve를 제거했다. cache hit도 resolve
+  호출 예산에 산입해 leaf 없는 DAG의 전개를 제한한다. 이는 네트워크 호출 수나 고유 ref 수와 다른 계산이다.
+- 실제 Spring live 응답과 recall은 이번 패킷에서도 측정하지 않았다.

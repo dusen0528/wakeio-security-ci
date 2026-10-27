@@ -46,9 +46,13 @@ export interface LocalReferences {
 export function localReferences(input: unknown): LocalReferences {
   const document = snapshotOpenApi(input);
   const issues = new Set<string>(), active = new Set<object>(), done = new Set<object>();
+  const cache = new Map<string, { value: DataObject; locator: string }>();
   let refs = 0, resolutions = 0;
   const resolve = (locator: string) => {
+    // Work budget includes cache hits: an empty-leaf ref DAG must not expand without a bound.
     if (++resolutions > JSON_MAX_INPUT_NODES) reject('openapi_limit');
+    const original = locator, cached = cache.get(original);
+    if (cached) return cached;
     let value: DataObject;
     ({ value, locator } = target(document, locator));
     const seen = new Set<object>();
@@ -59,7 +63,9 @@ export function localReferences(input: unknown): LocalReferences {
       if (Object.keys(value).length !== 1) reject('ambiguous_ref');
       ({ value, locator } = target(document, value.$ref));
     }
-    return { value, locator };
+    const result = Object.freeze({ value, locator });
+    cache.set(original, result);
+    return result;
   };
   const visit = (value: unknown, depth: number): void => {
     if (!value || typeof value !== 'object' || done.has(value)) return;

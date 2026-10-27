@@ -90,6 +90,7 @@ test('remote references, malformed escapes, cycles and ambiguous siblings never 
     '#/paths/~2bad', '#/paths/%61', '#/paths/constructor']) {
     const result = run({ ...doc(), components: { schemas: { Remote: { $ref: ref } } } });
     assert.equal(result.counts.declared, null); assert.equal(result.status, 'partial');
+    assert.equal(result.surfaces.length, 1); assert.equal(result.surfaces[0]!.readiness, 'ready');
   }
   const cyclic = { ...doc(), components: { schemas: { A: { type: 'object', properties: {
     child: { $ref: '#/components/schemas/A' } } } } } };
@@ -99,18 +100,69 @@ test('remote references, malformed escapes, cycles and ambiguous siblings never 
   assert.equal(run({ ...doc(), servers: [{ url: 'https://never-fetch.invalid/' }] }).status, 'completed');
 });
 
-test('byte, node, depth, reference, route and body leaf bounds cannot produce complete counts', () => {
+test('global byte, node, depth, reference and route bounds reject the whole document', () => {
   const inputs: unknown[] = [
     { ...doc(), huge: 'x'.repeat(1024 * 1024) }, { ...doc(), huge: Array(20_001).fill(null) },
     { ...doc(), refs: Array.from({ length: 257 }, () => ({ $ref: '#/paths/~1items' })) },
     doc(Object.fromEntries(Array.from({ length: 1001 }, (_, i) => ['/' + i, { get: {} }]))),
-    doc({ '/a': { post: { requestBody: { content: { 'application/json': { schema: { type: 'object',
-      properties: Object.fromEntries(Array.from({ length: 33 }, (_, i) => ['p' + i, { type: 'string' }])) } } } } } } }),
   ];
   const deep = doc() as Record<string, unknown>; let cursor = deep;
   for (let i = 0; i < 41; i++) { cursor.next = {}; cursor = cursor.next as Record<string, unknown>; } inputs.push(deep);
   for (const input of inputs) { const result = run(input); assert.equal(result.status, 'error');
     assert.equal(result.counts.declared, null); assert.equal(result.gaps[0]!.code, 'openapi_limit'); }
+});
+
+test('32 metadata entries are ready; the 33rd preserves the unresolved surface and a normal GET', () => {
+  for (const size of [32, 33]) for (const kind of ['body', 'parameters']) {
+    const entries = Array.from({ length: size }, (_, i) => 'p' + i);
+    const large = kind === 'body' ? { post: { requestBody: { required: true, content: { 'application/json': {
+      schema: { type: 'object', properties: Object.fromEntries(entries.map(p => [p, { type: 'string' }])) },
+    } } } } } : { get: { parameters: entries.map(p => scalar(p)) } };
+    const result = run(doc({ '/normal': { get: { parameters: [scalar()] } }, '/large': large }));
+    const normal = result.surfaces.find(s => s.pathTemplate === '/normal')!;
+    const affected = result.surfaces.find(s => s.pathTemplate === '/large')!;
+    assert.equal(result.counts.enumerated, 2); assert.equal(normal.readiness, 'ready');
+    assert.equal(affected.method, kind === 'body' ? 'POST' : 'GET');
+    assert.equal(affected.id, runtimeSurfaceId(affected.method, '/large'));
+    if (size === 32) {
+      assert.equal(result.status, 'completed'); assert.equal(result.counts.declared, 2);
+      assert.equal(affected.readiness, 'ready'); assert.equal(affected.params.length, 32);
+    } else {
+      assert.equal(result.status, 'partial'); assert.equal(result.counts.declared, null);
+      assert.equal(affected.readiness, 'unresolved'); assert.ok(affected.reasons.includes('openapi_limit'));
+      assert.ok(result.gaps.some(g => g.code === 'openapi_limit' && g.surfaceId === affected.id));
+      assert.ok(affected.params.length <= 32);
+    }
+  }
+});
+
+test('merged path-item and operation parameter overflow stays local', () => {
+  const result = run(doc({ '/large': { parameters: Array.from({ length: 16 }, (_, i) => scalar('base' + i)),
+    get: { parameters: Array.from({ length: 17 }, (_, i) => scalar('extra' + i)) } },
+  '/normal': { get: { parameters: [scalar()] } } }));
+  assert.equal(result.status, 'partial'); assert.equal(result.surfaces.length, 2);
+  assert.equal(result.surfaces.find(s => s.pathTemplate === '/normal')!.readiness, 'ready');
+  assert.deepEqual(result.surfaces.find(s => s.pathTemplate === '/large')!.reasons, ['openapi_limit']);
+});
+
+test('memoized aliases preserve locator identity and do not remove the global resolution work budget', () => {
+  const refs = localReferences({ ...doc(), components: { schemas: { Alias: { $ref: '#/components/schemas/Value' },
+    Value: { type: 'string' } } } });
+  const first = refs.resolve('#/components/schemas/Alias');
+  assert.equal(first.locator, '#/components/schemas/Value');
+  assert.equal(first, refs.resolve('#/components/schemas/Alias'));
+  assert.throws(() => Object.defineProperty(first, 'locator', { value: '#/bad' }));
+  for (let i = 2; i < 20_000; i++) refs.resolve('#/components/schemas/Alias');
+  assert.throws(() => refs.resolve('#/components/schemas/Alias'), /openapi_limit/);
+});
+
+test('global ref-node bound stays 256 even when all nodes alias the same target', () => {
+  for (const size of [256, 257]) {
+    const result = run({ ...doc(), refs: Array.from({ length: size }, () => ({ $ref: '#/paths/~1items' })) });
+    assert.equal(result.status, size === 256 ? 'completed' : 'error');
+    assert.equal(result.counts.declared, size === 256 ? 1 : null);
+    assert.equal(result.counts.enumerated, size === 256 ? 1 : 0);
+  }
 });
 
 test('proxies, getters, inherited and cyclic data fail without running caller code', () => {
