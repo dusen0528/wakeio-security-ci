@@ -15,6 +15,9 @@ const scalars = new Set(['string', 'integer', 'number', 'boolean', 'null']);
 const code = (error: unknown) => error instanceof SurfaceInputError ? error.code : 'invalid_openapi';
 const gap = (value: string): RuntimeGap => ({ area: 'openapi', code: value });
 const sorted = (values: Set<string>) => [...values].sort();
+class OperationMetadataLimit extends SurfaceInputError {
+  constructor() { super('openapi_limit'); }
+}
 
 /** Stable discovery identity, not a request or an authorization to execute it. */
 export function runtimeSurfaceId(method: string, pathTemplate: string): string {
@@ -42,13 +45,12 @@ function schema(state: State, locator: string): { value: DataObject; locator: st
   return { ...resolved, type: type as RuntimeParameter['type'] };
 }
 function parameter(state: State, locator: string): RuntimeParameter {
-  const { value } = state.refs.resolve(locator);
+  const resolved = state.refs.resolve(locator), { value } = resolved;
   if (typeof value.name !== 'string' || !value.name || value.name.length > 256
     || !['path', 'query', 'header', 'cookie'].includes(String(value.in))) reject('invalid_parameter');
   const location = value.in as RuntimeParameter['in'];
   if (value.required !== undefined && typeof value.required !== 'boolean') reject('invalid_parameter');
   if (location === 'path' && value.required !== true) state.reasons.add('path_required_missing');
-  const resolved = state.refs.resolve(locator);
   const info = 'schema' in value ? schema(state, resolved.locator + '/schema') : null;
   const style = value.style === undefined ? (location === 'path' || location === 'header' ? 'simple' : 'form')
     : typeof value.style === 'string' ? value.style : null;
@@ -70,7 +72,7 @@ function parameters(state: State, item: string, operation: string): void {
     const value = state.refs.resolve(locator).value;
     if (value.parameters === undefined) continue;
     if (!Array.isArray(value.parameters)) reject('invalid_parameters');
-    if (value.parameters.length > SURFACE_MAX_PARAMETERS) reject('openapi_limit');
+    if (value.parameters.length > SURFACE_MAX_PARAMETERS) throw new OperationMetadataLimit();
     const unique = new Set<string>();
     for (let i = 0; i < value.parameters.length; i++) {
       const reasons = new Set<string>();
@@ -80,7 +82,7 @@ function parameters(state: State, item: string, operation: string): void {
       unique.add(key); merged.set(key, { row, reasons });
     }
   }
-  if (merged.size > SURFACE_MAX_PARAMETERS) reject('openapi_limit');
+  if (merged.size > SURFACE_MAX_PARAMETERS) throw new OperationMetadataLimit();
   for (const { row, reasons } of merged.values()) {
     state.params.push(row); for (const reason of reasons) state.reasons.add(reason);
   }
@@ -91,7 +93,6 @@ function bodyLeaf(state: State, locator: string, pointer: string, required: bool
   if (active.has(info.locator)) reject('cyclic_ref');
   if (active.size >= 40) reject('openapi_limit');
   const next = new Set(active).add(info.locator);
-  if (state.params.filter(p => p.in === 'body').length >= SURFACE_MAX_BODY_LEAVES) reject('openapi_limit');
   if (info.value.type === 'object' && info.value.properties !== undefined) {
     const properties = object(info.value.properties), needs = info.value.required ?? [];
     if (!Array.isArray(needs) || needs.some(v => typeof v !== 'string') || new Set(needs).size !== needs.length)
@@ -104,6 +105,8 @@ function bodyLeaf(state: State, locator: string, pointer: string, required: bool
       state.reasons.add('dynamic_body_properties');
     return;
   }
+  if (state.params.filter(p => p.in === 'body').length >= SURFACE_MAX_BODY_LEAVES)
+    throw new OperationMetadataLimit();
   if (info.type === 'unknown') state.reasons.add('unsupported_body_schema');
   const name = (pointer.split('/').at(-1) ?? '').replace(/~1/g, '/').replace(/~0/g, '~');
   state.params.push({ name, in: 'body', required, mediaType,
@@ -137,11 +140,15 @@ function operation(refs: LocalReferences, modern: boolean, item: string, locator
     if (method === 'GET' && row.requestBody !== undefined) state.reasons.add('get_body_unsupported');
     const names = [...path.matchAll(/\{([^{}]+)\}/g)].map(match => match[1]);
     if (names.some(name => !state.params.some(p => p.in === 'path' && p.name === name))
-      || state.params.some(p => p.in === 'path' && !names.includes(p.name))) state.reasons.add('path_parameter_mismatch');
+      || state.params.some(p => p.in === 'path' && !names.includes(p.name)))
+      state.reasons.add('path_parameter_mismatch');
     if (!state.params.length) state.reasons.add('no_supported_input');
     if (!/^\/(?!\/)/.test(path) || /[?#%\\\s]|\/\.{1,2}(?:\/|$)|\/\//.test(path)
       || path.replace(/\{[^{}]+\}/g, '').match(/[{}*]/)) state.reasons.add('ambiguous_path');
-  } catch (error) { if (code(error) === 'openapi_limit') throw error; state.reasons.add(code(error)); }
+  } catch (error) {
+    if (code(error) === 'openapi_limit' && !(error instanceof OperationMetadataLimit)) throw error;
+    state.reasons.add(code(error));
+  }
   const reasons = sorted(state.reasons);
   return { id: runtimeSurfaceId(method, path), method, pathTemplate: path,
     params: state.params, readiness: reasons.length ? 'unresolved' : 'ready', reasons,
