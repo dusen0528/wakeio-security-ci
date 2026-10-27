@@ -1,0 +1,28 @@
+{
+  "schema": "wakeio.runtime-fixture-pins/v1",
+  "status": "metadata-checked-not-built",
+  "checkedOn": "2026-10-28",
+  "javaRelease": 21,
+  "maven": "3.10.0",
+  "springBoot": "4.1.2",
+  "springdoc": "3.2.0",
+  "pgjdbc": "42.7.14",
+  "postgresql": "18.6",
+  "jacoco": "0.8.16",
+  "jdkPatch": null,
+  "ociPlatform": null,
+  "buildImageDigest": null,
+  "runtimeImageDigest": null,
+  "postgresImageDigest": null,
+  "bytecodeSha256": null,
+  "licensesAndTransitiveLock": "pending R3/R9 artifact inspection",
+  "sources": {
+    "java": "https://docs.oracle.com/en/java/javase/21/",
+    "springBoot": "https://docs.spring.io/spring-boot/system-requirements.html",
+    "springdoc": "https://springdoc.org/#what-is-the-compatibility-matrix-of-springdoc-openapi-with-spring-boot",
+    "maven": "https://maven.apache.org/docs/3.10.0/release-notes.html",
+    "postgresql": "https://www.postgresql.org/docs/release/18.6/",
+    "pgjdbc": "https://jdbc.postgresql.org/download/",
+    "jacoco": "https://www.jacoco.org/jacoco/trunk/doc/changes.html"
+  }
+}

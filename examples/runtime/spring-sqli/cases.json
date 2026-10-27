@@ -1,0 +1,35 @@
+{
+  "schema": "wakeio.runtime-primary-cases/v1",
+  "owner": "R8",
+  "origin": "independent CP1-r2 matrix; no product verdict regeneration",
+  "failOnGrade": "strong",
+  "required": ["valid same-route control", "same-run issued marker", "per-request snapshot", "complete observation"],
+  "markerPolicy": {"seed": 1, "perRequest": "unique issued control/probe; fixed payload templates"},
+  "markerNote": "Control and probe markers differ; their issued request mapping is compared across fresh runs.",
+  "payloads": {"control": "{control}", "syntax": "{probe}' OR '{probe}'='{probe}", "quote": "{probe}'"},
+  "cases": [
+    {"id": "V1", "variant": "vulnerable", "route": "GET /api/items/search", "location": "query:name",
+     "payload": "syntax", "expected": {"confirmed": 1, "reason": "syntax_promotion", "httpStatus": 200}},
+    {"id": "V2", "variant": "vulnerable", "route": "POST /api/items/search", "location": "json:/name",
+     "payload": "syntax", "expected": {"confirmed": 1, "reason": "syntax_promotion", "httpStatus": 200}},
+    {"id": "V3", "variant": "vulnerable", "route": "GET /api/items/search", "location": "query:name",
+     "payload": "quote", "expected": {
+       "confirmed": 1, "reason": "quote_imbalance", "sqlState": "42601", "httpStatus": 500}},
+    {"id": "F1", "variant": "fixed", "route": "GET /api/items/search", "location": "query:name",
+     "payloads": ["syntax", "quote"], "expectedEach": {"confirmed": 0, "strong": 0, "unknown": false}},
+    {"id": "F2", "variant": "fixed", "route": "POST /api/items/search", "location": "json:/name",
+     "payloads": ["syntax", "quote"], "expectedEach": {"confirmed": 0, "strong": 0, "unknown": false}},
+    {"id": "N4.safe", "designCase": "N4", "variant": "both", "route": "GET /api/items/safe-search",
+     "location": "query:name", "payloads": ["syntax", "quote"], "expectedEach": {"confirmed": 0, "strong": 0}},
+    {"id": "N4.ping", "designCase": "N4", "variant": "both", "route": "GET /api/ping",
+     "location": "query:name", "payloads": ["syntax", "quote"], "expectedEach": {"confirmed": 0, "strong": 0}}
+  ],
+  "verifyExit": {"vulnerable": 1, "fixed": 0, "safeOnly": 0, "failureOnly": 2, "findingAndFailure": 1},
+  "proof": {
+    "syntax_promotion": "marker-derived tokens outside literals with corresponding AST syntax absent in control",
+    "quote_imbalance": "same-statement marker-bound quote diagnosis and actual PG 42601; generic parser errors unknown",
+    "binding": "values only in Bind parameters; never parse parameter text as executable SQL",
+    "response": "HTTP status, row count and reflection alone never establish SQL evidence",
+    "failure": "missing control/observer/drain/coverage/cleanup preserves unknown/error; never clean"
+  }
+}

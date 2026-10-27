@@ -1,0 +1,11 @@
+# Non-executable draft: compose requires measured R3/R9 platform/image pins.
+version: 1
+project: primary-sqli
+source: .
+build: {kind: compose, file: compose.draft.json, service: app}
+pack: {id: spring-boot, version: 1}
+entry: {port: 8080, health: /actuator/health, startupTimeoutSec: 180}
+dependencies: [{service: db, observer: pg-log}]
+seed: {sql: [seed.sql], snapshot: per-request}
+scope: {include: ["/api/**"], exclude: ["/api/untouched"]}
+budget: {maxRequests: 40, maxMinutes: 15, ratePerSecond: 1}
