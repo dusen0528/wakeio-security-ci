@@ -4,6 +4,9 @@ import { readFile } from 'node:fs/promises';
 import { parse } from 'yaml';
 import { enumerateOpenApiSurfaces, runtimeSurfaceId } from '../src/runtime/surfaces/openapi.js';
 import { localReferences } from '../src/runtime/surfaces/refs.js';
+import { enumerateActuatorSurfaces } from '../src/runtime/surfaces/spring-actuator.js';
+import { mergeSurfaceInventory } from '../src/runtime/surfaces/inventory.js';
+import type { DiscoveryInput } from '../src/runtime/surfaces/inventory.js';
 
 const metadata = { rawInputSha256: 'a'.repeat(64),
   sanitizedArtifact: { path: 'surfaces-sanitized.json', bytes: 123, sha256: 'b'.repeat(64) } };
@@ -219,4 +222,199 @@ test('Pack carries reserved binding/source-route hints rather than claiming comp
   assert.deepEqual(pack.surfaces[1], { provider: 'openapi', paths: ['/v3/api-docs'] });
   assert.ok(pack.sources.some((s: any) => s.annotation?.includes('RequestBody')));
   assert.equal(pack.sinks.sql[0].arg, 0); assert.equal(pack.sanitizers.sql[0].when.placeholders, true);
+});
+
+// Inline contract inputs follow the official 4.1 structure; these are not captured Spring responses.
+const actEntry = (methods = ['GET'], patterns = ['/route'], conditions: Record<string, unknown> = {}) => ({
+  details: { handlerMethod: { className: 'fixtures.Controller', name: 'handle', descriptor: '()V' },
+    requestMappingConditions: { methods, patterns, params: [], headers: [], consumes: [], produces: [], ...conditions } },
+  predicate: 'RAW_SECRET https://never-request.invalid/GET', handler: 'RAW_SECRET',
+});
+const actDoc = (entries: unknown[]) => ({ contexts: { app: { mappings: {
+  dispatcherServlets: { dispatcherServlet: entries },
+  servlets: [{ name: 'dispatcherServlet', className: 'org.springframework.web.servlet.DispatcherServlet', mappings: ['/'] }],
+} } } });
+const act = (input: unknown) => enumerateActuatorSurfaces(input, metadata);
+const inventoryBinding = { sourceSha256: 'c'.repeat(64),
+  run: { path: 'run.json', bytes: 20, sha256: 'd'.repeat(64) } };
+const discovery = (id: DiscoveryInput['id'], result: DiscoveryInput['result']): DiscoveryInput => ({ id, result });
+
+test('Actuator structured methods and aliases retain case/slash without predicate or handler-path inference', () => {
+  const methods = ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'HEAD', 'PATCH', 'TRACE'];
+  const source = { ...actDoc([actEntry(methods, ['/Alias', '/Alias/', '/alias'])]),
+    unrelated: { $ref: 'https://never-request.invalid/schema', value: 'RAW_SECRET' } };
+  const result = act(source);
+  assert.equal(result.surfaces.length, 24); assert.equal(new Set(result.surfaces.map(s => s.id)).size, 24);
+  assert.deepEqual([...new Set(result.surfaces.map(s => s.method))].sort(), methods.sort());
+  assert.equal(result.status, 'partial'); assert.equal(result.counts.declared, null);
+  assert.ok(result.surfaces.every(s => s.readiness === 'unresolved' && !s.provenance[0]!.handler));
+  assert.equal(result.surfaces[0]!.provenance[0]!.rawInputSha256, metadata.rawInputSha256);
+  assert.deepEqual(result.surfaces[0]!.provenance[0]!.sanitizedArtifact, metadata.sanitizedArtifact);
+  assert.ok(result.surfaces[0]!.provenance[0]!.locator.startsWith('#/contexts/app/mappings/dispatcherServlets/'));
+  assert.equal(JSON.stringify(result).includes('RAW_SECRET'), false);
+  assert.equal(JSON.stringify(result).includes('never-request.invalid'), false);
+});
+
+test('all-method, opaque, empty and malformed mappings report unknown instead of inventing GET or completeness', () => {
+  for (const methods of [[], ['*']]) {
+    const result = act(actDoc([actEntry(methods), actEntry(['POST'], ['/known'])]));
+    assert.equal(result.surfaces.length, 1); assert.equal(result.surfaces[0]!.method, 'POST');
+    assert.ok(result.gaps.some(g => g.code === 'actuator_all_methods_unknown'));
+  }
+  const opaque = act(actDoc([{ predicate: 'GET /guess', handler: 'ignored' }]));
+  assert.equal(opaque.counts.enumerated, 0); assert.equal(opaque.counts.declared, null);
+  assert.equal(opaque.status, 'partial'); assert.ok(opaque.gaps.some(g => g.code === 'actuator_unstructured_mapping'));
+  assert.equal(act(actDoc([])).status, 'partial');
+});
+
+test('Actuator conditions remain blocking and never preserve raw parameter/header values', () => {
+  for (const condition of [
+    { headers: [{ name: 'Authorization', negated: false, value: 'RAW_SECRET' }] },
+    { params: [{ name: 'q', negated: true, value: 'RAW_SECRET' }] },
+    { consumes: [{ mediaType: 'application/xml', negated: false }] },
+    { consumes: [{ mediaType: 'RAW_SECRET', negated: false }] },
+    { produces: [{ mediaType: 'application/json', negated: true }] },
+    { apiVersion: 'future-condition' },
+  ]) {
+    const result = act(actDoc([actEntry(['GET'], ['/route'], condition)]));
+    assert.equal(result.surfaces.length, 1);
+    assert.ok(result.surfaces[0]!.reasons.some(r => ['actuator_condition_unsupported', 'actuator_media_unsupported']
+      .includes(r))); assert.equal(JSON.stringify(result).toUpperCase().includes('RAW_SECRET'), false);
+  }
+  const overflow = act(actDoc([actEntry(['GET'], ['/route'], { headers: Array(33).fill({ name: 'x' }) })]));
+  assert.equal(overflow.surfaces.length, 1); assert.ok(overflow.surfaces[0]!.reasons.includes('actuator_limit'));
+  const duplicate = act(actDoc([actEntry(['GET', 'GET'], ['/route', '/route'])]));
+  assert.equal(duplicate.surfaces.length, 1);
+  assert.ok(duplicate.surfaces[0]!.reasons.includes('actuator_duplicate_condition'));
+});
+
+test('multiple contexts, non-root servlet mappings, dynamic routes and WebFlux retain explicit uncertainty', () => {
+  const multiple = actDoc([actEntry()]) as any;
+  multiple.contexts.other = actDoc([actEntry(['POST'], ['/other'])]).contexts.app;
+  assert.ok(act(multiple).surfaces.every(s => s.reasons.includes('actuator_context_ambiguous')));
+  const prefix = actDoc([actEntry()]); prefix.contexts.app.mappings.servlets[0]!.mappings = ['/prefix/*'];
+  const result = act(prefix); assert.equal(result.surfaces[0]!.pathTemplate, '/route');
+  assert.ok(result.surfaces[0]!.reasons.includes('actuator_base_path_unsupported'));
+  const reactive = { contexts: { app: { mappings: { dispatcherHandlers: { webHandler: [actEntry()] } } } } };
+  assert.ok(act(reactive).surfaces[0]!.reasons.includes('actuator_base_path_unknown'));
+  assert.ok(act(actDoc([actEntry(['GET'], ['/a/{id:[0-9]+}'])])).surfaces[0]!.reasons
+    .includes('actuator_dynamic_path'));
+});
+
+test('Actuator own-data, document and route expansion limits fail closed without caller code', () => {
+  let calls = 0;
+  const getter = Object.defineProperty(actDoc([]), 'hidden', { get() { calls++; return 1; }, enumerable: true });
+  const proxy = new Proxy({}, { ownKeys() { calls++; throw new Error('must not run'); } });
+  const cyclic: any = actDoc([]); cyclic.self = cyclic;
+  const deep: any = actDoc([]); let cursor = deep;
+  for (let i = 0; i < 41; i++) { cursor.child = {}; cursor = cursor.child; }
+  const aliases = Array.from({ length: 64 }, (_, i) => '/a' + i);
+  const methods = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS', 'TRACE'];
+  const huge = actDoc([actEntry(methods, aliases), actEntry(methods, aliases.map(p => '/b' + p))]);
+  for (const input of [getter, proxy, cyclic, deep, huge, { ...actDoc([]), huge: 'x'.repeat(1024 * 1024) },
+    { ...actDoc([]), nodes: Array(20_001).fill(null) }]) {
+    const result = act(input); assert.equal(result.status, 'error');
+    assert.equal(result.counts.declared, null); assert.equal(result.counts.enumerated, 0);
+  }
+  assert.equal(calls, 0);
+});
+
+test('pure Inventory complements schema-only uncertainty while keeping provider incompleteness and exact identities', () => {
+  const parsed = act(actDoc([actEntry(['GET', 'POST'], ['/search'])]));
+  const openapi = run(doc({ '/search': { get: { parameters: [scalar()] }, post: { requestBody: {
+    required: true, content: { 'application/json': { schema: { type: 'object', properties: { q: { type: 'string' } } } } },
+  } } }, '/search/': { get: { parameters: [scalar()] } } }));
+  const inputs = [discovery('spring-actuator', parsed), discovery('openapi', openapi)];
+  const result = mergeSurfaceInventory(inventoryBinding, inputs);
+  assert.equal(result.surfaces.length, 3); assert.ok(result.surfaces.every(s => s.readiness === 'ready'));
+  assert.equal(result.counts.declared, null); assert.equal(result.counts.enumerated, 3);
+  assert.deepEqual(result.providers, [{ id: 'openapi', status: 'completed' }, { id: 'spring-actuator', status: 'partial' }]);
+  assert.equal(result.surfaces.find(s => s.method === 'POST')!.params[0]!.jsonPointer, '/q');
+  assert.ok(result.surfaces.filter(s => s.pathTemplate === '/search').every(s => s.provenance.length === 2));
+  assert.equal(result.sourceSha256, inventoryBinding.sourceSha256); assert.deepEqual(result.run, inventoryBinding.run);
+  assert.equal('request' in result, false);
+  assert.deepEqual(result, mergeSurfaceInventory(inventoryBinding, [...inputs].reverse()));
+});
+
+test('Inventory keeps conditional/media/serialization contradictions unresolved and deduplicates provenance', () => {
+  const plain = run(doc({ '/route': { get: { parameters: [scalar()] } } }));
+  const alternate = run(doc({ '/route': { get: { parameters: [{ ...scalar(), explode: false }] } } }));
+  const conflict = mergeSurfaceInventory(inventoryBinding, [discovery('openapi', plain), discovery('openapi', alternate)]);
+  assert.ok(conflict.surfaces[0]!.reasons.includes('inventory_parameter_conflict'));
+  assert.equal(conflict.surfaces[0]!.readiness, 'unresolved');
+  for (const [condition, reason] of [
+    [{ headers: [{ name: 'x', negated: false, value: 'RAW_SECRET' }] }, 'actuator_condition_unsupported'],
+    [{ consumes: [{ mediaType: 'application/json', negated: false }] }, 'inventory_media_conflict'],
+  ] as const) {
+    const parsed = act(actDoc([actEntry(['GET'], ['/route'], condition)]));
+    const result = mergeSurfaceInventory(inventoryBinding, [discovery('spring-actuator', parsed),
+      discovery('openapi', plain), discovery('openapi', plain)]);
+    assert.equal(result.surfaces[0]!.readiness, 'unresolved');
+    assert.ok(result.surfaces[0]!.reasons.includes(reason)); assert.equal(result.surfaces[0]!.provenance.length, 2);
+    assert.equal(JSON.stringify(result).includes('RAW_SECRET'), false);
+  }
+  const duplicate = mergeSurfaceInventory(inventoryBinding, [discovery('openapi', plain), discovery('openapi', plain)]);
+  assert.equal(duplicate.surfaces.length, 1); assert.equal(duplicate.surfaces[0]!.provenance.length, 1);
+  assert.equal(duplicate.surfaces[0]!.params.length, 1); assert.equal(duplicate.counts.declared, 1);
+  const left = structuredClone(plain), right = structuredClone(plain);
+  left.surfaces[0]!.provenance[0]!.handler = { path: 'src/A.java', className: 'A', methodName: 'handle' };
+  right.surfaces[0]!.provenance[0]!.handler = { path: 'src/B.java', className: 'B', methodName: 'handle' };
+  const handlers = mergeSurfaceInventory(inventoryBinding, [discovery('openapi', left), discovery('openapi', right)]);
+  assert.ok(handlers.surfaces[0]!.reasons.includes('inventory_handler_conflict'));
+  assert.equal(handlers.surfaces[0]!.readiness, 'unresolved');
+});
+
+test('declared JSON consumes can be complemented by the same POST body schema', () => {
+  const actuator = act(actDoc([actEntry(['POST'], ['/route'], {
+    consumes: [{ mediaType: 'application/json', negated: false }],
+  })]));
+  const openapi = run(doc({ '/route': { post: { requestBody: { required: true, content: { 'application/json': {
+    schema: { type: 'object', required: ['q'], properties: { q: { type: 'string' } } },
+  } } } } } }));
+  const result = mergeSurfaceInventory(inventoryBinding,
+    [discovery('spring-actuator', actuator), discovery('openapi', openapi)]);
+  assert.equal(result.surfaces[0]!.readiness, 'ready'); assert.equal(result.surfaces[0]!.params[0]!.jsonPointer, '/q');
+  assert.equal(result.counts.declared, null);
+});
+
+test('provider errors and null denominators propagate while preserving other known routes', () => {
+  const result = mergeSurfaceInventory(inventoryBinding, [discovery('openapi', run({ openapi: 'invalid' })),
+    discovery('spring-actuator', act(actDoc([actEntry()]))) ]);
+  assert.equal(result.surfaces.length, 1); assert.equal(result.counts.declared, null);
+  assert.equal(result.providers.find(p => p.id === 'openapi')!.status, 'error');
+  assert.ok(result.gaps.some(g => g.area === 'openapi'));
+});
+
+test('Actuator conflicting handler mappings remain unresolved; reordered aliases share a semantic signature', () => {
+  const a = actEntry(['GET'], ['/a', '/b']), b = actEntry(['GET'], ['/b', '/a']);
+  const same = act(actDoc([a, b]));
+  assert.ok(same.surfaces.every(s => !s.reasons.includes('actuator_conflicting_mapping')));
+  b.details.handlerMethod.name = 'other';
+  const different = act(actDoc([a, b]));
+  assert.ok(different.surfaces.every(s => s.reasons.includes('actuator_conflicting_mapping')));
+});
+
+test('Inventory rejects malformed binding, producer masquerading, tampered identities and executable data', () => {
+  const source = discovery('openapi', run(doc()));
+  const forged: any = structuredClone(source); forged.result.surfaces[0].id = '0'.repeat(64);
+  assert.throws(() => mergeSurfaceInventory(inventoryBinding, [forged]), /invalid_surface_inventory/);
+  assert.throws(() => mergeSurfaceInventory({ ...inventoryBinding, sourceSha256: 'not-sha' }, [source]));
+  assert.throws(() => mergeSurfaceInventory(inventoryBinding, [{ ...source, id: 'spring-actuator' }]));
+  const falseComplete = discovery('spring-actuator', { ...act(actDoc([actEntry()])), status: 'completed' });
+  assert.throws(() => mergeSurfaceInventory(inventoryBinding, [falseComplete]));
+  let calls = 0;
+  const accessor = Object.defineProperty({}, 'id', { enumerable: true, get() { calls++; return 'openapi'; } });
+  assert.throws(() => mergeSurfaceInventory(inventoryBinding, [accessor as DiscoveryInput]));
+  assert.equal(calls, 0);
+});
+
+test('both unchanged R8 business route lists match inline Actuator contracts, without live-response/recall claims', async () => {
+  for (const file of ['primary-ground-truth.json', 'jdbc-ground-truth.json']) {
+    const truth = JSON.parse(await readFile('tests/fixtures/runtime-m1/' + file, 'utf8'));
+    const result = act(actDoc(truth.routes.map((r: any) => actEntry([r.method], [r.path]))));
+    assert.equal(result.counts.enumerated, truth.declaredBusinessRoutes);
+    assert.deepEqual(result.surfaces.map(s => `${s.method} ${s.pathTemplate}`).sort(),
+      truth.routes.map((r: any) => `${r.method} ${r.path}`).sort());
+    assert.ok(result.surfaces.every(s => s.params.length === 0 && !s.provenance[0]!.handler));
+  }
 });

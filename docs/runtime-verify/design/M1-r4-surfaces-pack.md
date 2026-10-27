@@ -119,3 +119,28 @@ PLAN 4·5·10·11·12·13·14.4, HANDOFF, SUBAGENTS와 R1의 구체 계약 제�
 - locator 결과는 immutable snapshot에서 memoize하고 parameter의 중복 resolve를 제거했다. cache hit도 resolve
   호출 예산에 산입해 leaf 없는 DAG의 전개를 제한한다. 이는 네트워크 호출 수나 고유 ref 수와 다른 계산이다.
 - 실제 Spring live 응답과 recall은 이번 패킷에서도 측정하지 않았다.
+
+## M1-69: 순수 Actuator 열거와 Inventory 병합
+
+- [공식 Spring Boot 4.1 mappings 구조](https://docs.spring.io/spring-boot/4.1/api/rest/actuator/mappings.html)의
+  contexts → mappings → dispatcherServlets/dispatcherHandlers → details.requestMappingConditions를 읽는다.
+  입력 생산자는 Spring Actuator 구조이며 테스트 입력은 그 구조를 따른 inline JSON이다. 실제 응답 캡처가 아니다.
+- methods×patterns의 모든 명시 메서드/별칭과 대소문자/후행 slash를 보존한다. 빈/전체 methods, 구조 없는
+  functional/static predicate는 추측하지 않고 gap을 남긴다. handler className으로 Java 경로를 만들지 않는다.
+  검증된 source 위치를 주는 입력은 이번 API에 없으므로 handler.path 자체를 출력하지 않는다.
+- params/headers/produces 조건, 미지원/부정 consumes와 미지 조건은 blocking reason이다. 단일 positive
+  application/json consumes만 보완 가능한 제약으로 기록한다. 조건 원문 값/handler/predicate는 보관하지 않고
+  semantic signature SHA와 locator만 남긴다. 중복 handler/조건 모순은 unresolved다.
+- Servlet root mapping `/`만 base-path 근거로 사용한다. 여러 context/parent 관계, 비루트 servlet mapping,
+  WebFlux base-path 불명은 unresolved로 유지하고 prefix나 origin을 만들지 않는다. reactive 구조 열거와
+  실제 origin/base-path 확인을 구분한다. 이 보수적 처리는 실제 앱 recall을 낮출 수 있다.
+- JSON snapshot은 own-data/1MiB/20,000 nodes/depth40을 제한한다. context/dispatcher 그룹32, mapping/확장 route1000,
+  methods16/aliases64/조건별32 및 출력 snapshot 한도를 둔다. 중복 alias도 임의로 GET이 되지 않는다.
+- 순수 merge는 정확한 method+path와 runtimeSurfaceId만 사용한다. provider/provenance/gap/parameter를 결정적으로
+  정렬·중복 제거하고 입력 순서를 선택 우선순위로 쓰지 않는다. 신뢰 OpenAPI의 같은 route schema는 오직
+  actuator_input_schema_unknown을 보완한다. 조건/handler/미디어/입력 직렬화의 충돌은 계속 unresolved다.
+- Actuator 단독은 입력 schema를 확정하지 않아 partial/null 분모다. 보완 후 route가 ready여도 provider의
+  partial/error/null과 원래 gap은 Inventory에 전파된다. ready는 공격 입력 구성 정보이며 접근 성공·권한 증거가 아니다.
+  source SHA/run artifact와 rawInput SHA/sanitized ref의 실제 결속은 신뢰 호출자가 검증하며 원문 저장을 주장하지 않는다.
+- 두 R8 원본 업무 route 목록은 읽기만 해 합성 계약과 대조했다. 실제 Actuator 수집·recall·handler source/coverage,
+  소유 origin·request cap/deadline 연결은 후속 검증이며 이 모듈에는 네트워크/실행 capability가 없다.
