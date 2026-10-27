@@ -89,3 +89,18 @@ PLAN 4·5·10·11·12·13·14.4, HANDOFF, SUBAGENTS와 R1의 구체 계약 제�
 - [springdoc 경로·버전 matrix](https://springdoc.org/)
 - [OpenAPI 3.1 path/operation/parameter/body](https://spec.openapis.org/oas/v3.1.0)
 - [Opengrep taint 규칙](https://github.com/opengrep/opengrep/wiki/Guarded-taint-signatures)
+
+## M1-40 구현 상태와 연결 요청
+
+- 별도 순수 `enumerateOpenApiSurfaces`와 bounded local-ref reader를 구현했다. 모든 선언 메서드와 정확한 경로를
+  보존하며 GET scalar query/path·POST JSON scalar leaf만 준비 가능하다. v1과 요청 실행 포트는 변경하지 않았다.
+- 3.0/3.1 기본 scalar를 읽되 3.0 null/type-array와 3.1 union·동적 ref·모호한 ref siblings는 미지원 gap이다.
+  ref alias는 허용하며 같은 parameters 배열의 중복 `(in,name)` 정의는 거부한다. 원문 JSON의 중복 key 탐지는
+  파싱 전 호출자 책임이다. 이 API는 파싱된 own-data만 받으며 bytes/hash/artifact의 실제 결속도 호출자가 검증한다.
+- 입력과 출력 artifact를 같은 JSON bytes/node 한도로 검증하고, 참조 해석 호출 수도 20,000으로 제한해
+  leaf 없는 ref DAG와 alias 출력 폭증이 complete 결과로 남지 않게 했다.
+- Pack 데이터는 현재 R1 schema를 통과한다. compiler가 source-routes·binding hint를 명시 거부하므로 실행 지원을
+  주장하지 않는다. R1 공유 요청: spring-actuator 항목에도 `paths: [/actuator/mappings]`를 선언할 수 있게 해,
+  현재 주석/고정 provider 경로를 데이터로 옮긴다. R1 소유 파일은 이번 패킷에서 수정하지 않았다.
+- R8 primary와 JDBC 두 ground truth를 읽고 합성 OpenAPI 계약 입력으로만 대조했다. 실제 Spring 응답·recall·
+  Opengrep taint trace·coverage는 미검증이다. actuator/병합/live cap·deadline·origin 연결은 후속 패킷 범위다.
