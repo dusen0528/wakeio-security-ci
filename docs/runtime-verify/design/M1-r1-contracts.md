@@ -337,3 +337,8 @@ surface의 source-routes와 sanitizer의 call/when.argCount/when.placeholders는
 
 Target 입력은 먼저 기존 snapshotJsonData로 Proxy/getter/toJSON/prototype/symbol/크기·깊이 한도를 검증한다. 그 뒤 ordinary JSON 복사본에서 정적 Ajv schema의 uniqueItems를 평가하여 null-prototype 객체의 comparator 오류를 피한다. 반환값은 원래의 private null-prototype snapshot을 유지한다.
 서로 다른 pg-log dependency 서비스 2개는 generic TargetSpec schema에서 통과한다. 완전 동일 중복(키 순서가 달라도 동일)·app 서비스 중복·기존 schema 상한/unknown 키 거부는 그대로다. 이는 멀티 PG 실행 지원이 아니며 실제 M1 compose adapter의 1PG 지원 경계는 별도로 유지한다.
+
+## M1-44 actuator 경로 데이터
+
+PackSurface의 spring-actuator에도 optional paths:string[]을 추가한다. 기존 v1 draft의 미지정 형태는 보존하되 default를 삽입하지 않는다. 미지정은 실행 경로 권한이 아니며 후속 Provider가 unknown으로 처리해야 한다. builtin/사용자 Pack의 실제 경로는 R4가 별도 소유 패킷에서 명시한다. 제품 코드에 Spring endpoint를 기본값으로 넣지 않는다.
+paths는 OpenAPI와 동일한 로컬 HTTP path 정의를 사용한다(1~16개·unique·각512자, URL/authority/query/fragment/dot segment/역슬래시/인코딩 탈출 거부). compiler는 바꾸지 않는다. 기존 Pack의 raw/semantic/rules 해시는 그대로이며 path metadata를 추가하면 전체 Pack 해시와 결속된 rule ID만 달라지고 taint formula는 같다. syntax/trace 측정이나 미지원 hint 처리 범위는 확대하지 않는다.

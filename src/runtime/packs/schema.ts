@@ -5,7 +5,7 @@ import { parseRuntimeYaml } from '../target.js';
 
 export type PackLanguage = 'java' | 'kotlin';
 export type PackSource = { annotation: string[] } | { call: string[] };
-export type PackSurface = { provider: 'spring-actuator' } | { provider: 'openapi'; paths: string[] }
+export type PackSurface = { provider: 'spring-actuator'; paths?: string[] } | { provider: 'openapi'; paths: string[] }
   | { provider: 'source-routes'; annotations: string[] };
 export interface PackSink { call: string[]; arg: number }
 export interface PackSanitizer {
