@@ -298,6 +298,23 @@ R3의 외부 감독은 network none·1초·256MiB와 기존 UID/cap/read-only/CP
 R9 M1-86 `.handoff/evidence/M1/pg-parser-assets-errata/{ERRATA.md,ERRATA.json,manifest.json}`가 원본 cache와 고정 공식 URL 재조회 bytes(1,561B)를 대조했다. BSD notice의 correct SHA256은 `f9352c20940619a380a5e9f23cebe34d8f797cfbd747fc236a7a3e5fc8ef9b41`이고 원본 `sources.json`의 한 nibble 오류를 별도 errata로 정정했다. 기존 M1-81 증거/manifest는 불변이며 원본 manifest SHA256은 `7adfbf2b3c2f10d9baadd3aea6702ec175ae376a64d1c00f2de92bfa5f7b5c39`다. R10은 승인된 고지 경로에 이 correct pin을 적용한다. MIT 두 archive는 같은 LICENSE SHA이며 BSD/PostgreSQL 전문은 npm tarball에 들어 있지 않았다.
 현재 미검증: published WASM에 대응하는 정확한 상류 source commit, publisher 서명, 재현 빌드, CJS bundle/local load·trap 복구·실제 자원 강제. package metadata의 상류 commit 선언만으로 published bytes의 source 대응을 입증하지 않으며 errata는 BSD 고지 hash만 정정한다.
 
+#### M1-107 / CPx8 N1 전체 lock raw SHA 갱신 절차
+
+현재 `PG_PARSER_PIN.lockSha256`/build의 `parserLock`/manifest의 `pin.lockSha256`·`build.lock.sha256`은 **package-lock.json 전체 bytes의 SHA256**을 계속 뜻한다. parser와 무관한 dependency·lock metadata/공백 변경에도 기존 build pin과 달라져 `invalid_pg_parser_build_input`으로 fail-closed하는 결합을 의도적으로 유지한다. 관련 package의 version+integrity만 정규화한 부분 hash로 바꾸는 안은 현재 미선택이며, 추후 계약 변경 검토 없이 같은 필드의 뜻을 축소하지 않는다.
+이번 M1-107은 문서만 바꾼다. 현재 pin/hash·protocol revision·runtime request/reply header의 `pin.lockSha256` 비교 의미·build/lock/생성물은 그대로다. source TS hash는 기존대로 build provenance이며 설치본 runtime이 TS나 lock 원문을 읽어 검증하는 계약으로 바꾸지 않는다.
+갱신이 필요하면 root가 아래 순서의 역할별 패킷을 발행해 **한 review bundle**로 통합하고, 전부 검증·CPx 승인 후 함께 승격한다. 중간 단계의 새 lock/옛 helper/옛 manifest/옛 host pin 조합을 정상 배포로 승인하지 않는다.
+
+| 순서·소유 | 승인된 경로에서 수행할 갱신·검증 |
+| --- | --- |
+| 1 · root → R1 | dependency 변경 이유·정확한 version/integrity/선정 범위를 확인하고 `package.json`/`package-lock.json`을 갱신한다. parser가 그대로인 변경도 전체 lock raw SHA를 새로 계산해 요청서/후속 패킷의 결속값으로 전달한다. package별 핀 검증은 전체 lock pin의 대체가 아니다. |
+| 2 · R5 | `src/runtime/observers/pg-parser-helper.ts`의 `PG_PARSER_PIN.lockSha256`을 선정된 새 전체 lock SHA에 맞춘다. worker가 포함하는 동일 helper pin과 request/reply의 exact 비교를 유지한다. dependency만 바뀌었으면 protocol revision을 임의로 올리거나 기존 pin 불일치 거부를 완화하지 않는다. |
+| 3 · R10 | `scripts/build-action-bundle.mjs`의 `parserLock`을 같은 SHA에 맞추고 승인된 build로 worker CJS·local WASM·manifest/고지·Action 산출물을 재생성한다. manifest의 lock 필드/길이·배포 asset digests·build provenance를 대조한다. 생성물 수동 편집이나 현재 lock을 무조건 신뢰해 pin을 자동 채택하는 변경은 금지한다. |
+| 4 · R3 | regenerated worker/manifest의 정확한 bytes SHA를 **별도 승인된 host 상수/신뢰 경로의 pin**에 반영한다. source/worker directory의 manifest를 읽어 그 안의 값을 기대 pin으로 그대로 넘기는 자기신뢰는 금지한다. 원본 경로/이름/고지 존재만으로 기대값을 만들지 않는다. |
+| 5 · R9 | 선정 lock SHA·helper/build/manifest 일치, worker/WASM/manifest 실제 bytes·npm/Action 배포, old/new 혼합의 pin_mismatch/asset_mismatch 거부·legacy 회귀를 독립 검증한다. host 기대 pin은 worker 묶음과 다른 승인 근거에서 공급됐는지 확인한다. 실제 격리/WASM 동작 증거는 승인된 실행 범위 안에서 별도로 구분한다. |
+| 6 · root → CPx | R1/R5/R10/R3 커밋·결속값과 R9 결과를 같은 요청서에 묶어 검토한다. 불일치/증거 누락이면 기존 승인 pin을 유지하고 승격하지 않는다. CPx 승인만으로 별도 배포/실행 권한이 생기지는 않으며 해당 root 패킷 범위를 따른다. |
+
+N1 자체 확인은 기존 식 `reference('package-lock.json', undefined, parserLock)`과 `digest(raw) === sha256`/`requireBuild`를 읽고 메모리에서만 대조했다. parser 두 package 항목을 그대로 둔 채 `@types/node`의 lock version 한 항목만 바꾸면 raw SHA가 현재 pin과 달라져 위 조건이 실패한다. 제품 파일/lock/빌드 pin을 수정하거나 build를 재실행한 실험이 아니며, 새 의존성 버전의 존재/사용 가능성을 확인한 것도 아니다.
+
 각 신규 테스트의 소유자·PLAN 11 항목·R8 참조를 아래처럼 고정한다. 계약/권한 검증은 Oracle 기대값과 구분하며 R8 case ID를 새로 만들지 않는다.
 
 | 정확한 테스트 파일 | 소유자·PLAN 11 검증 / R8 case 또는 별도 계약 범위 |
