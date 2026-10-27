@@ -90,15 +90,31 @@ build stdout/stderr는 private bounded buffer에서 마스킹 후 고정 reason�
 
 target/PG/controller를 run별 고유 network에 연결하고 runtime network는 `internal: true`다.
 source의 외부 URL·host port·aliases는 신뢰하지 않는다. origin은 생성한 소유 container identity에 결속한다.
-추천 transport는 trusted controller의 bounded stdio relay다. target을 외부/host에 publish하지 않는다.
-R1/R5가 host HTTP engine 재사용을 위해 loopback relay를 둘 경우에도 relay만 host에 존재하며,
-container identity·port·method·path allowlist와 공통 request budget을 거쳐 내부 target으로만 전달한다.
+transport는 trusted controller의 bounded stdio relay 단일안으로 확정한다. host port는 publish하지 않는다.
+R1 §5 `RunContext.handles.transport` capability를 R4/R5/R10에 주입하고 host HTTP listener는 만들지 않는다.
+소유 container identity·port·method·path allowlist, 요청/응답 크기·deadline과 공통 admission budget을 강제한다.
 PG·JaCoCo 관리 포트는 publish하지 않으며 controller/observer 전용 접근만 허용한다.
 
 target은 numeric non-root UID, cap-drop ALL, no-new-privileges, default seccomp, read-only rootfs다.
 전용 tmpfs·managed 결과 volume만 쓰기 가능하며 Docker socket·host 경로·SYS_PTRACE는 없다.
 PG도 non-root로 실행하고 초기 data volume의 소유권은 trusted 준비 단계에서 제한적으로 설정한다.
-PG에는 합성 계정·seed만 주고, 로그/DB data와 source·controller credential을 분리한다.
+PG 서비스는 제품이 고정한 신뢰 image/config digest·DB/container/log-volume lease에 결속한다.
+source가 제공한 PG image·entrypoint·로그 경로/설정을 신뢰하거나 raw init script를 관리자 권한으로 실행하지 않는다.
+앱 접속 role은 `LOGIN NOSUPERUSER NOCREATEROLE NOCREATEDB NOREPLICATION NOBYPASSRLS`로 생성한다.
+`pg_read_server_files`·`pg_write_server_files`·`pg_execute_server_program` 등 `pg_*` role의 직접/간접 멤버십은 0이다.
+일반 verify도 R8과 같은 SELECT-only 기본값이다: DB CONNECT·대상 schema USAGE·허용 테이블 SELECT만 준다.
+앱은 DB/schema 소유자가 아니며 PUBLIC·상속·SET ROLE 경로까지 포함해 불필요 CREATE/TEMP·관리 권한을 제거한다.
+admin seed/snapshot·Observer 로그/설정 확인 자격은 앱 합성 계정과 분리하고 앱에 credential·복원 handle을 주지 않는다.
+이미지의 초기 `POSTGRES_USER` 관리자와 앱 접속 role을 동일하게 쓰지 않는다.
+source seed SQL은 격리된 schema 전용 non-superuser seed role로만 실행한다. 서버 파일/프로그램·관리 role 권한은 없다.
+source의 superuser/extension/프로그램 권한 요구는 거부하며 trusted 관리자 준비와 source seed 실행을 섞지 않는다.
+`log_statement=all`·`log_min_error_statement=ERROR`는 서버 레벨 SUSET으로 고정하고 앱의 SUSET parameter SET/ALTER SYSTEM 권한은 0이다.
+`log_parameter_max_length` 등 parameter 설정·한도는 R5 핀에 결속하며 server/DB/role override와 startup option도 검사한다.
+`log_parameter_max_length_on_error`는 USERSET이므로 SUSET 보호로 주장하지 않는다. 관련 관측이 불명하면 unknown이다.
+Observer는 독립 관리 연결로 실제 `pg_settings`·role 속성/멤버십/유효 ACL을 초기·복원 후·수집 시작/종료 장벽에서 확인한다.
+신뢰 lease/설정/role 불일치·누락·드리프트는 관련 구간 unknown/error다. 앱 응답·stdout·source 로그를 증거로 대체하지 않는다.
+근거: [PG 권한](https://www.postgresql.org/docs/18/ddl-priv.html), [서버 역할](https://www.postgresql.org/docs/18/predefined-roles.html),
+[로그 설정](https://www.postgresql.org/docs/18/runtime-config-logging.html), [GUC 권한 구분](https://github.com/postgres/postgres/blob/REL_18_STABLE/src/backend/utils/misc/guc_tables.c).
 실행 중 인터넷·호스트·임의 다른 container 통신은 실패해야 한다. 실패/미확인 시 Oracle coverage는 unknown이다.
 health는 고정 HTTP path와 deadline으로 controller가 검사한다. health 실패에서 공격을 진행하지 않는다.
 의존 서비스/seed 준비·스냅샷 복원은 R1/R5와 합의한 artifact 계약으로 연결하며 임의 SQL 원문은 보고하지 않는다.
@@ -147,17 +163,16 @@ JaCoCo session/time/소요 시간은 원본에 남기고, 비교용 semantic pro
 
 ## 7. 구현 파일·독립 검증 계획
 
-- R3 신규 후보: `src/runtime/builders/{compose,compose-input,build-policy}.ts`,
-  `src/runtime/runtimes/{jvm,jacoco,container-lifecycle}.ts`; actual shared 계약·registry 변경은 R1 요청만 한다.
-- R3 자체 회귀 후보: `tests/runtime-compose.test.ts`, `runtime-jvm.test.ts`, `runtime-cleanup.test.ts`.
-  R8의 예제·기대 판정은 읽기 전용이며 제품 실패에 맞춰 수정하지 않는다.
-- R9 CI 후보: `.github/workflows/runtime-m1.yml`; `contents: read`, SHA-pinned Actions,
-  same-repository PR·main/dev push 조건만 허용하고 fork·pull_request_target은 실행 전 거부한다.
+- 제품·schema·예제·테스트·CI의 경로·소유자·PLAN11/R8 case 매핑은 [R1 설계](M1-r1-contracts.md) §7의 유일 명부를 따른다.
+- R3는 독자 파일/테스트 목록을 두지 않는다. 명부 밖 추가는 오케스트레이터의 R1 변경 패킷으로 승인받는다.
+- R8의 예제·기대 판정은 읽기 전용이며 제품 실패에 맞춰 수정하지 않는다.
+- R9 CI는 `contents: read`, SHA-pinned Actions, same-repository PR·main/dev push만 허용한다.
+  fork·pull_request_target은 실행 전 거부한다. 실제 파일/테스트 명령은 R1 §7에서만 정한다.
 - rootless backend 준비는 신뢰 도구 setup이다. 실제 source build/run은 반드시 제품 verify consent 경로를 사용한다.
 - 아래 명령은 승인 뒤 구현될 재현 계획이며 이 패킷에서 실행하지 않았다.
 
 ```sh
-node --test build/tests/runtime-compose.test.js build/tests/runtime-jvm.test.js build/tests/runtime-cleanup.test.js
+# 단위/실패 회귀 명령은 R1 §7의 canonical 테스트 목록으로 조립한다.
 node build/src/cli.js verify --target examples/runtime/spring-sqli/vulnerable/wakeio.target.yml --execute-target-consent --out /NEW/vuln
 node build/src/cli.js verify --target examples/runtime/spring-sqli/fixed/wakeio.target.yml --execute-target-consent --out /NEW/fixed
 ```
