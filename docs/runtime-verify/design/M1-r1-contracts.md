@@ -264,9 +264,9 @@ agent 공통 projection에서도 legacy branch의 scanGate는 불변이다. runt
 기존 패키지로 충족되는지 먼저 확인하고, 안 되면 검증된 고정 dependency를 쓴다. 자체 불완전 YAML/JSON Schema 파서로 검증 목표를 축소하지 않는다. 구체 버전·SQL WASM helper 자산/파일 경로는 후속 실측 뒤 정확한 별도 경로 승인으로 남긴다.
 이 명부 제안은 구현 권한을 스스로 부여하지 않는다. 위 공유 경로의 실제 수정에는 root 후속 패킷과 CPx 승인이 필수이며 M1-19에서는 package/lock/bundle builder/고지/dependency를 바꾸지 않는다.
 
-### M1-83 / CPx7 PostgreSQL parser 자산 명부 제안
+### M1-83 / CPx7 승인 PostgreSQL parser 자산 명부
 
-아래는 **CPx7 경로 승인 전의 제안**이다. CPx7 요청서에 명부·단계·미검증 사항을 싣고 승인 후 root가 역할별 구현 패킷을 발행한다. 이번 문서 커밋은 설치/코드/자산 생성·복사·빌드 권한을 주지 않으며 §7 목록 밖 임의 확장 금지는 유지한다.
+아래 명부는 **CPx7의 `5cf00c381a060844fd320dceec974c16037d4737` APPROVE_WITH_NITS(exit0)로 승인**됐다. 실제 변경은 root의 역할별 구현 패킷 경로/상한으로만 수행하며 §7 목록 밖 임의 확장 금지는 유지한다. M1-94는 package/lock/files와 이 설계만 반영하고 worker/자산/build/고지 구현은 후속 패킷이다.
 근거는 R9 M1-81의 `.handoff/evidence/M1/pg-parser-assets/{README.md,packages.json,static.json,sources.json,manifest.json}`(측정 HEAD `6e7afc888f8600ab9b7cebdc6ac0b927df8bfd04`)이다. registry HTTPS metadata와 실제 tarball SHA512가 일치한 핀은 다음과 같다.
 
 | 고정 입력 | R9 확인값 |
@@ -278,24 +278,25 @@ agent 공통 projection에서도 legacy branch의 scanGate는 불변이다. runt
 최소안은 이미 고정된 esbuild로 **별도 Node CJS worker bundle + local WASM copy**를 만드는 것이다. Node CJS entry/생성 loader/`@pgsql/types`의 JS graph를 build 때 포함하고 Node builtin만 external로 남긴다. 런타임 npm 설치·bare package resolution·CDN fetch·native build는 없다. 현재 R9는 import graph만 읽었으며 bundling·local loader·실제 parse 호환은 아직 검증하지 않았다.
 raw vendor 대안은 원래 CJS/ESM 상대 경로·package.json·`@pgsql/types` 해석 구조를 함께 배포해야 한다. 별도 `node_modules` vendor tree·공개 package 강제 설치·새 dependency 해석 계층을 피하려고 위 단일 worker JS 안을 추천한다. build에서도 광범위 package external 처리로 bare import를 남기지 않는다.
 
-| 소유 | 정확한 제안 경로 | 단계·책임 |
+| 소유 | 정확한 승인 경로 | 단계·책임 |
 | --- | --- | --- |
-| R1 | 기존 `package.json`, `package-lock.json` | CPx7 뒤 정확한 두 버전을 build용 devDependencies/lock에 고정한다. upstream의 `@pgsql/types:^18.0.0`도 lock에서는 정확히18.0.0이어야 한다. `files`에 아래 `workers/pg-parser` 자산 묶음만 추가하며 기존 scripts/빌드 순서를 최소 재사용한다. |
-| R5 | 기존 명부 `src/runtime/observers/pg-parser-helper.ts`; 신규 `src/runtime/observers/pg-parser-worker.ts` | helper는 닫힌 stdin/projection protocol·검증/오류 처리를 소유하고, 별도 worker entry만 package import/loadModule/parse/scan/local WASM 초기화를 소유한다. Oracle은 둘의 실행 구현이나 package를 import하지 않는다. |
+| R1 | 기존 `package.json`, `package-lock.json` | M1-94에서 `libpg-query:18.2.1`/`@pgsql/types:18.0.0`을 exact devDependencies로 고정한다. upstream 선언 `@pgsql/types:^18.0.0`은 보존하되 실제 lock 해석은 정확히18.0.0이다. npm `files`에 `workers/pg-parser`만 추가하며 기존 scripts/exports/scan API는 불변이다. |
+| R5 | 기존 명부 `src/runtime/observers/pg-parser-helper.ts`; 신규 `src/runtime/observers/pg-parser-worker.ts` | helper는 닫힌 stdin/projection protocol·검증/오류 처리를 소유하고, 별도 worker entry만 package import/loadModule/parse/scan/local WASM 초기화를 소유한다. CPx7 N2대로 양쪽에 같은 명시적 protocol revision 상수를 두고 request/reply의 revision 불일치를 거부한다. Oracle은 둘의 실행 구현이나 package를 import하지 않는다. |
 | R10 | 기존 `scripts/build-action-bundle.mjs` | tsc 뒤 기존 esbuild로 worker를 별도 `platform:node/format:cjs` entry로 bundle하고, 검증한 WASM·고지 copy 및 manifest 생성을 한다. Action main ESM bundle에 worker entry를 합치지 않는다. |
 | R10 | 신규 `workers/pg-parser/pg-parser-worker.cjs`, `workers/pg-parser/libpg-query.wasm`, `workers/pg-parser/manifest.json` | npm/Action이 함께 사용하는 단일 로컬 자산 묶음이다. source archive의 기존 `workers` allowlist와 npm `files`를 이용하며 `dist-action` 아래 중복 사본은 만들지 않는다. JS/manifest는 승인된 build 결과, WASM은 핀된 원본 bytes이며 수동 생성물 편집은 금지한다. |
 | R10 | 신규 `workers/pg-parser/THIRD_PARTY_LICENSES.txt`, `workers/pg-parser/LICENSE.libpg_query`, `workers/pg-parser/COPYRIGHT.PostgreSQL`; 기존 `THIRD_PARTY_NOTICES.md`, `dist-action/THIRD_PARTY_LICENSES.txt` | 첫 파일에 두 package의 MIT 전문을 package/version별로 싣고, BSD 및 PostgreSQL 전문은 별도 경로에 둔다. 기존 Action 고지 생성/중앙 고지와 연결한다. candidate upstream 고지를 published WASM의 입증된 source revision으로 표기하지 않는다. |
 | R3 | 기존 명부 `src/runtime/{process.ts,runtimes/controller.ts}` 및 승인된 HostAdapter 경계 | trusted installation root의 위 고정 tool asset 위치만 사용한다. source/cwd/PATH/env/target가 worker 경로·manifest·WASM 위치를 선택하지 못하며 digest 검증 후 읽기 전용으로 제공한다. 실제 격리 실행 port는 root 후속 패킷 범위다. |
 | R5 | 기존 명부 `tests/runtime-pg-log.test.ts` | protocol/핀 불일치·누락/손상 자산·trap/재초기화·projection 제한·원문 비노출 검증. 실제 SQL 기대값은 R8 소유 입력만 사용하고 생성/완화하지 않는다. |
-| R10 | 기존 명부 `tests/runtime-delivery.test.ts` | npm packed install/Action 독립 복사에 같은 로컬 자산·고지·raw SHA 포함, `node_modules` 없는 worker graph·local WASM 경로·손상 거부·main/worker 분리 검증. 기존 legacy 배포/0.5 회귀는 불변이다. |
+| R10 | 기존 명부 `tests/runtime-delivery.test.ts` | npm packed install/Action 독립 복사에 같은 로컬 자산·고지·raw SHA 포함, `node_modules`/source TS 없는 worker graph·local WASM 경로·손상 거부·protocol revision/배포 pin 대조·main/worker 분리 검증. 기존 legacy 배포/0.5 회귀는 불변이다. |
 | R3 | 기존 명부 `tests/runtime-cleanup.test.ts` | 감독 port의 1초 deadline·memory/network 강제·종료/후손·cleanup 실패 검증; mock 계약과 실제 강제 증거는 구분한다. |
 | R9 | 기존 명부 `.handoff/evidence/M1/**`의 parser asset/실행 증거(root 패킷이 세부 파일 지정) | R1 lock/R10 산출물의 bytes·pin·pack/Action 포함을 독립 확인하고 실제 초기화/parse·trap/복구·자원/egress·cleanup을 검증한다. 구현/고정 기대값은 수정하지 않는다. |
 
-`manifest.json`은 두 package의 정확한 version/integrity·선정된 원본 JS path/bytes/SHA256(`packages.json`과 대조), 전체 `package-lock.json` raw SHA256, 배포 worker JS/WASM/각 고지의 path/bytes/SHA256, esbuild 버전과 interface revision/hash를 결속한다. interface hash는 새 파일을 늘리지 않고 승인된 `src/runtime/observers/pg-parser-helper.ts`의 정확한 bytes SHA256로 정의한다. manifest 자체의 raw SHA는 trusted controller의 승인 pin/Run artifact에 별도로 결속하고 자기 자신을 hash하지 않는다. 상대 경로는 위 고정 allowlist만 허용하며 hash는 생산자 인증을 대신하지 않는다.
-worker는 CLI main과 다른 entry다. Action 전체 bundle의 `import.meta.url`을 보고 main 여부를 판단하는 방식으로 worker를 포함/실행하지 않는다. HostAdapter는 manifest/asset/interface hash가 맞는 고정 로컬 CJS를 별도 프로세스로 실행하며 loader의 `locateFile`도 고정 로컬 WASM만 반환한다. Oracle은 파일/네트워크/시계/package import/WASM 초기화 능력이 없는 순수 data-only API로 유지한다.
+`manifest.json`은 두 package의 정확한 version/integrity·선정된 원본 JS path/bytes/SHA256(`packages.json`과 대조), 전체 `package-lock.json` raw SHA256, 배포 worker JS/WASM/각 고지의 path/bytes/SHA256, esbuild 버전 및 명시적 `protocolRevision`을 결속한다. helper/worker TS의 raw SHA256은 **build provenance만** 기록하며 runtime protocol/interface identity로 사용하지 않는다. 주석/줄바꿈만 달라져도 source hash는 변할 수 있지만 protocol revision을 바꾸는 근거가 되지 않는다. manifest 자체의 raw SHA는 trusted controller의 승인 pin/Run artifact에 별도로 결속하고 자기 자신을 hash하지 않는다. 상대 경로는 위 고정 allowlist만 허용하며 hash는 생산자 인증을 대신하지 않는다.
+worker는 CLI main과 다른 entry다. Action 전체 bundle의 `import.meta.url`을 보고 main 여부를 판단하는 방식으로 worker를 포함/실행하지 않는다. HostAdapter/helper는 명시적 protocol revision 상수와 배포 JS/WASM/manifest의 승인 pin을 비교한 뒤 고정 로컬 CJS를 별도 프로세스로 실행한다. 설치본에서 source TS 경로를 읽거나 source hash를 runtime 검증 전제로 요구하지 않는다. loader의 `locateFile`도 고정 로컬 WASM만 반환한다. Oracle은 파일/네트워크/시계/package import/WASM 초기화 능력이 없는 순수 data-only API로 유지한다.
 R3의 외부 감독은 network none·1초·256MiB와 기존 UID/cap/read-only/CPU/PID 정책을 실제로 강제해야 한다. `runRuntimeProcess`의 timeout/PGID 정리만으로 sandbox·memory/network 제한을 입증하지 않는다. R9가 읽은 WASM memory declaration은 최소40MiB/최대1GiB이고 실제 RSS·256MiB 준수 측정이 아니다. cold load/trap·재초기화/상한/timeout·cleanup 불명은 unknown/error로 종료하며 원문 SQL/오류 excerpt를 stdout/stderr/증거에 남기지 않는다.
 진행 순서는 CPx7 명부 승인 → R1 exact dependency/lock → R5 별도 worker/protocol → R10 bundle/local assets/manifest/고지 → R3 verified 실행 capability → R9 독립 실측이다. 각 구현은 별도 root 패킷으로 경로/상한을 다시 고정하며 parser 배포만으로 live SQL Oracle 완료를 주장하지 않는다.
-현재 미검증: published WASM에 대응하는 정확한 상류 source commit, publisher 서명, 재현 빌드, CJS bundle/local load·trap 복구·실제 자원 강제. BSD notice 후보 SHA가 R9 `sources.json`과 `static.json`에서 한 nibble 다르므로 R9의 원본 bytes 대조/증거 정합성 정리 전에는 해당 고지의 확정 pin/복사를 진행하지 않는다. MIT 두 archive는 같은 LICENSE SHA이며 BSD/PostgreSQL 전문은 npm tarball에 들어 있지 않았다.
+R9 M1-86 `.handoff/evidence/M1/pg-parser-assets-errata/{ERRATA.md,ERRATA.json,manifest.json}`가 원본 cache와 고정 공식 URL 재조회 bytes(1,561B)를 대조했다. BSD notice의 correct SHA256은 `f9352c20940619a380a5e9f23cebe34d8f797cfbd747fc236a7a3e5fc8ef9b41`이고 원본 `sources.json`의 한 nibble 오류를 별도 errata로 정정했다. 기존 M1-81 증거/manifest는 불변이며 원본 manifest SHA256은 `7adfbf2b3c2f10d9baadd3aea6702ec175ae376a64d1c00f2de92bfa5f7b5c39`다. R10은 승인된 고지 경로에 이 correct pin을 적용한다. MIT 두 archive는 같은 LICENSE SHA이며 BSD/PostgreSQL 전문은 npm tarball에 들어 있지 않았다.
+현재 미검증: published WASM에 대응하는 정확한 상류 source commit, publisher 서명, 재현 빌드, CJS bundle/local load·trap 복구·실제 자원 강제. package metadata의 상류 commit 선언만으로 published bytes의 source 대응을 입증하지 않으며 errata는 BSD 고지 hash만 정정한다.
 
 각 신규 테스트의 소유자·PLAN 11 항목·R8 참조를 아래처럼 고정한다. 계약/권한 검증은 Oracle 기대값과 구분하며 R8 case ID를 새로 만들지 않는다.
 
