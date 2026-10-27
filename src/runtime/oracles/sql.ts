@@ -113,7 +113,7 @@ function request(raw: SqlRequestBinding, binding: SqlOracleBinding): void {
   requireData(raw.attempt.ordinal === raw.marker.requestOrdinal
     && raw.attempt.markerHash === raw.marker.markerHash && raw.attempt.surfaceId === raw.marker.surfaceId);
 }
-function metadata(data: Omit<SqlOracleInput, 'observations'>): void {
+function metadata(data: Omit<SqlOracleInput, 'observations' | 'coverage'>): void {
   const b = data.binding; keys(data.attackLog, 'plan markers attempts'); ref(data.attackLog.plan);
   ref(data.attackLog.markers); array(data.attackLog.attempts); data.attackLog.attempts.forEach(attempt);
   keys(data.ledger, 'reproductionKey seed rows'); hash(data.ledger.reproductionKey); text(data.ledger.seed);
@@ -127,12 +127,7 @@ function metadata(data: Omit<SqlOracleInput, 'observations'>): void {
   array(b.surfaces); for (const s of b.surfaces) {
     keys(s, 'id method pathTemplate'); text(s.id); text(s.method); text(s.pathTemplate);
   }
-  array(b.requests); b.requests.forEach(r => request(r, b)); array(data.coverage);
-  for (const c of data.coverage) {
-    keys(c, 'requestOrdinal surfaceId snapshotHash accounting reached'); integer(c.requestOrdinal, 1);
-    text(c.surfaceId); hash(c.snapshotHash); requireData(['exact', 'unknown'].includes(c.accounting));
-    requireData(c.reached === null || typeof c.reached === 'boolean');
-  }
+  array(b.requests); b.requests.forEach(r => request(r, b));
   for (const values of [data.attackLog.attempts.map(a => a.ordinal), data.ledger.rows.map(r => r.requestOrdinal),
     data.ledger.rows.map(r => r.markerHash), b.requests.map(r => r.attempt.ordinal), b.surfaces.map(s => s.id),
     b.requests.map(r => r.sequence), b.requests.map(r => r.pgSessionId + ':' + r.pgSessionLine)]) {
@@ -141,20 +136,48 @@ function metadata(data: Omit<SqlOracleInput, 'observations'>): void {
   const windows = [...b.requests].sort((a, b) => a.attempt.ordinal - b.attempt.ordinal);
   requireData(windows.every((r, i) => i === 0 || ordered(windows[i - 1].end, r.begin)));
 }
-function properties(raw: unknown): Record<string, PropertyDescriptor> {
+function properties(raw: unknown, accessor?: string): Record<string, PropertyDescriptor> {
   requireData(raw && typeof raw === 'object' && !types.isProxy(raw));
   const proto = Object.getPrototypeOf(raw);
   requireData(proto === Object.prototype || proto === null || proto === Array.prototype);
   requireData(Object.getOwnPropertySymbols(raw).length === 0);
   const result = Object.getOwnPropertyDescriptors(raw);
-  requireData(Object.keys(result).length <= 20000 && Object.values(result).every(d => 'value' in d));
+  requireData(Object.keys(result).length <= 20000
+    && Object.entries(result).every(([name, d]) => name === accessor || 'value' in d));
   return result;
 }
+function coverageSnapshot(descriptor: PropertyDescriptor) {
+  const rows: SqlCoverage[] = [], badOrdinals: number[] = []; let invalid = false, bytes = 0;
+  try {
+    requireData('value' in descriptor); const raw = descriptor.value, descriptors = properties(raw);
+    array(raw); requireData(Object.keys(descriptors).length === raw.length + 1);
+    for (let i = 0; i < raw.length; i++) {
+      const value = descriptors[String(i)]?.value; let ordinal: number | undefined;
+      try {
+        // Read only an own data descriptor to scope damage; never read a proxy or accessor.
+        if (value && typeof value === 'object' && !types.isProxy(value)) {
+          const own = Object.getOwnPropertyDescriptor(value, 'requestOrdinal');
+          if (own && 'value' in own && Number.isSafeInteger(own.value)) ordinal = own.value;
+        }
+        const c = snapshotJsonData(value) as SqlCoverage;
+        bytes += Buffer.byteLength(JSON.stringify(c)); requireData(bytes <= 1024 * 1024);
+        keys(c, 'requestOrdinal surfaceId snapshotHash accounting reached'); integer(c.requestOrdinal, 1);
+        text(c.surfaceId); hash(c.snapshotHash); requireData(['exact', 'unknown'].includes(c.accounting));
+        requireData(c.reached === null || typeof c.reached === 'boolean'); rows.push(c);
+      } catch {
+        if (ordinal === undefined) invalid = true; else badOrdinals.push(ordinal);
+      }
+    }
+    if (bytes > 1024 * 1024) invalid = true;
+  } catch { invalid = true; }
+  return { rows, badOrdinals, invalid };
+}
 function capture(raw: SqlOracleInput) {
-  const p = properties(raw), names = ['attackLog', 'ledger', 'observations', 'binding', 'coverage'];
-  requireData(Object.keys(p).length === names.length && names.every(n => p[n]?.enumerable));
+  const p = properties(raw, 'coverage'), names = ['attackLog', 'ledger', 'observations', 'binding'];
+  requireData(names.every(n => p[n]?.enumerable)
+    && Object.keys(p).every(n => names.includes(n) || n === 'coverage'));
   const data = snapshotJsonData({ attackLog: p.attackLog.value, ledger: p.ledger.value,
-    binding: p.binding.value, coverage: p.coverage.value }) as Omit<SqlOracleInput, 'observations'>;
+    binding: p.binding.value }) as Omit<SqlOracleInput, 'observations' | 'coverage'>;
   metadata(data); const list = p.observations.value, descriptors = properties(list);
   requireData(Array.isArray(list) && list.length <= 4096 && Object.keys(descriptors).length === list.length + 1);
   const observations: unknown[] = []; let bytes = Buffer.byteLength(JSON.stringify(data));
@@ -165,7 +188,10 @@ function capture(raw: SqlOracleInput) {
       requireData(bytes <= 8 * 1024 * 1024); observations.push(value);
     } catch { observations.push(null); }
   }
-  requireData(bytes <= 8 * 1024 * 1024); return { ...data, observations };
+  requireData(bytes <= 8 * 1024 * 1024);
+  const coverage = coverageSnapshot(p.coverage ?? { value: undefined });
+  return { ...data, observations, coverage: coverage.rows,
+    coverageInvalid: coverage.invalid, coverageBadOrdinals: coverage.badOrdinals };
 }
 function span(raw: Span, max: number): void {
   array(raw, 2); requireData(raw.length === 2); integer(raw[0]); integer(raw[1]);
@@ -321,7 +347,8 @@ function pairReason(data: ReturnType<typeof capture>, group: SqlRequestBinding[]
 }
 function reach(data: ReturnType<typeof capture>, r: SqlRequestBinding, confirmed: boolean) {
   const rows = data.coverage.filter(c => c.requestOrdinal === r.attempt.ordinal);
-  if (rows.length !== 1 || rows[0].accounting !== 'exact' || rows[0].reached === null
+  if (data.coverageInvalid || data.coverageBadOrdinals.includes(r.attempt.ordinal)
+    || rows.length !== 1 || rows[0].accounting !== 'exact' || rows[0].reached === null
     || rows[0].surfaceId !== r.marker.surfaceId || rows[0].snapshotHash !== r.attempt.snapshotHash)
     return 'unknown' as const;
   return rows[0].reached ? confirmed ? 'triggered' as const : 'reached_not_triggered' as const : 'not_reached' as const;
@@ -369,15 +396,15 @@ function evaluate(data: ReturnType<typeof capture>): SqlOracleResult {
     result.cases.push({ surfaceId: probe.marker.surfaceId, state, reasons: [judged.reason] });
     if (state === 'unknown') result.gaps.push({ area: 'oracle.sql', code: judged.reason,
       surfaceId: probe.marker.surfaceId });
+    const reached = reach(data, probe, 'grade' in judged && judged.grade === 'confirmed');
+    if (reached === 'unknown') result.gaps.push({ area: 'coverage', code: 'coverage_unknown',
+      surfaceId: probe.marker.surfaceId });
     if ('grade' in judged && judged.grade && surface) {
-      const reached = reach(data, probe, judged.grade === 'confirmed');
       result.verdicts.push({ surface: { id: surface.id, method: surface.method, pathTemplate: surface.pathTemplate },
         vulnClass: 'sql', grade: judged.grade, reach: reached, markers: group.map(r => r.marker.markerHash).sort(),
         evidence: [controlEvent!.evidence, probeEvent!.evidence].map(e =>
           ({ path: e.path, bytes: e.bytes, sha256: e.sha256 })),
         ruleRevision: REVISION, controlPairId: pairId });
-      if (reached === 'unknown')
-        result.gaps.push({ area: 'coverage', code: 'coverage_unknown', surfaceId: surface.id });
     }
   }
   return result;

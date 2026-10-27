@@ -234,6 +234,50 @@ test('empty SQL ledgers and unassigned raw sets are incomplete, while an indepen
   for (const code of ['unassigned_attempt', 'unassigned_request', 'unassigned_observation'])
     assert.ok(kept.gaps.some(g => g.code === code));
 });
+test('V1/N13 SQL findings survive independent damaged, missing or hostile coverage inputs', () => {
+  let called = 0;
+  const mutations: Array<(i: MutableInput) => void> = [
+    i => { Object.assign(i.coverage[1], { reached: 'invalid' }); },
+    i => { Object.assign(i.coverage[1], { accounting: 'invalid' }); },
+    i => { Object.assign(i.coverage[1], { extra: 'not_a_contract_field' }); },
+    i => { i.coverage[1].snapshotHash = 'invalid-hash'; },
+    i => { i.coverage[1].snapshotHash = hash('other-snapshot'); },
+    i => { i.coverage[1].surfaceId = 'other-surface'; },
+    i => { (i.coverage as Array<SqlOracleInput['coverage'][number]>).push(clone(i.coverage[1])); },
+    i => { (i.coverage as Array<SqlOracleInput['coverage'][number]>).splice(1, 1); },
+    i => { delete (i as unknown as Record<string, unknown>).coverage; },
+    i => { (i.coverage as Array<SqlOracleInput['coverage'][number]>)[1] = new Proxy(i.coverage[1], {
+      get() { called++; throw Error('must_not_run'); }, ownKeys() { called++; throw Error('must_not_run'); },
+    }); },
+    i => { Object.defineProperty(i.coverage[1], 'accounting', {
+      enumerable: true, get() { called++; throw Error('must_not_run'); },
+    }); },
+    i => { i.coverage = new Proxy(i.coverage, { ownKeys() { called++; throw Error('must_not_run'); } }); },
+    i => { Object.defineProperty(i, 'coverage', {
+      enumerable: true, get() { called++; throw Error('must_not_run'); },
+    }); },
+    i => { Object.assign(i.coverage[1], { extra: 'x'.repeat(1024 * 1024 + 1) }); },
+    i => { i.coverage = Array(4097).fill(i.coverage[1]); },
+  ];
+  for (const f of fixtures.cases.filter(f => ['V1', 'N13'].includes(f.id))) for (const mutate of mutations) {
+    const input = materialize(f); mutate(input);
+    const before = JSON.stringify([input.attackLog, input.ledger, input.binding, input.observations]);
+    const descriptor = Object.getOwnPropertyDescriptor(input, 'coverage')!, result = compare(input, f.expected);
+    assert.equal(result.verdicts[0].reach, 'unknown');
+    assert.ok(result.gaps.some(g => g.area === 'coverage' && g.surfaceId === f.surface.id));
+    assert.equal(JSON.stringify([input.attackLog, input.ledger, input.binding, input.observations]), before);
+    assert.deepEqual(Object.getOwnPropertyDescriptor(input, 'coverage'), descriptor);
+  }
+  assert.equal(called, 0);
+});
+test('coverage damage with a readable request ordinal stays local and leaves inputs unchanged', () => {
+  const f = fixtures.cases.find(f => f.id === 'N13')!, input = materialize(f);
+  Object.assign(input.coverage[3], { accounting: 'invalid' });
+  const before = JSON.stringify(input), result = compare(input, f.expected);
+  assert.equal(result.verdicts[0].reach, 'triggered');
+  assert.ok(result.gaps.some(g => g.area === 'coverage' && g.surfaceId === f.additionalPair!.surface.id));
+  assert.equal(JSON.stringify(input), before);
+});
 test('bounded data and output copies cannot grant execution or mutable input authority', () => {
   const large = materialize(positive);
   (large.observations as Observation[]).push(...Array(4096).fill(large.observations[0]));

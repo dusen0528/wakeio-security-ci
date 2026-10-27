@@ -123,3 +123,6 @@ R3/R5 collector는 요청별 원본 hash·statement byte 길이·물리 장벽·
 M1-62: SQL ledger의 모든 계획 pair를 평가하며 attempt/물리 binding 누락은 해당 case unknown으로 남긴다.
 빈 SQL ledger와 미할당 attempt/request/observation은 별도 incomplete gap이며 다른 유효 finding은 보존한다.
 binding이 SQL 계획을 정의하지 않는다. SQL 미배정 reflection은 이 Oracle의 SQL 전용 ledger에 넣지 않는다.
+M1-63: coverage는 SQL 신뢰 입력과 별도로 최대 1MiB/4,096행 snapshot·검증한다.
+손상·중복·결측·다른 요청/snapshot의 coverage는 reach unknown+gap이며 SQL confirmed를 취소하지 않는다.
+요청 귀속을 안전하게 읽을 수 없는 Proxy/getter/초과 입력은 coverage 전체를 unknown으로 낮추고 호출하지 않는다.
