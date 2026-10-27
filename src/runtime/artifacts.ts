@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { constants } from 'node:fs';
-import { link, lstat, mkdir, open, realpath, unlink } from 'node:fs/promises';
+import { link, lstat, mkdir, open, realpath, rmdir, unlink } from 'node:fs/promises';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { types } from 'node:util';
 import { JSON_MAX_INPUT_BYTES, snapshotJsonData } from '../json-snapshot.js';
@@ -144,7 +144,7 @@ class Vault {
       let data: unknown;
       if (ref.path.endsWith('.json') && bytes.length > JSON_MAX_INPUT_BYTES) invalid();
       try {
-        data = bytes.length <= JSON_MAX_INPUT_BYTES
+        data = ref.path.endsWith('.json') && bytes.length <= JSON_MAX_INPUT_BYTES
           ? JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes)) : null;
       } catch { data = null; }
       if (data && typeof data === 'object' && Object.hasOwn(data, 'schema')
@@ -185,6 +185,7 @@ function safe<A extends unknown[], R>(fn: (...args: A) => Promise<R>) {
 
 /** New, private, flat vault only: target containers must never receive this directory. */
 export async function createArtifactVault(source: string, destination: string): Promise<ArtifactVault> {
+  let created: { root: string; dev: number; ino: number } | undefined;
   try {
     if (typeof destination !== 'string' || !destination || /[\x00-\x1f\x7f]/.test(destination)) invalid();
     const sourceDir = await directory(source), parent = await directory(dirname(destination));
@@ -192,11 +193,24 @@ export async function createArtifactVault(source: string, destination: string): 
     const root = join(parent.path, name);
     if (within(root, sourceDir.path)) invalid();
     await mkdir(root, { mode: 0o700 });
+    const own = await lstat(root);
+    if (!own.isDirectory() || own.isSymbolicLink()) invalid();
+    created = { root, dev: own.dev, ino: own.ino };
     const identity = await directory(root);
-    if ((identity.mode & 0o777) !== 0o700) invalid();
+    if (identity.dev !== own.dev || identity.ino !== own.ino || (identity.mode & 0o777) !== 0o700) invalid();
     const vault = new Vault(root, identity);
     return Object.freeze({ root, writeBytes: safe(vault.writeBytes.bind(vault)),
       readBytes: safe(vault.readBytes.bind(vault)), writeStage: safe(vault.writeStage.bind(vault)),
       readStage: safe(vault.readStage.bind(vault)) });
-  } catch { return invalid(); }
+  } catch {
+    if (created) {
+      try {
+        const now = await lstat(created.root);
+        if (now.isDirectory() && !now.isSymbolicLink() && now.dev === created.dev && now.ino === created.ino) {
+          await rmdir(created.root); // Empty, still-owned directory only. Never recursively delete a replacement.
+        }
+      } catch { /* A replacement or non-empty directory is never cleanup authority. */ }
+    }
+    return invalid();
+  }
 }

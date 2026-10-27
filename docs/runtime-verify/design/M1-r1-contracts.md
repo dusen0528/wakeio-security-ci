@@ -308,4 +308,16 @@ M3는 14.3 sequences/provenance·recall, M4는 빈 sequence만 agent 제안·판
 `artifacts.ts`는 새 private flat vault다. 고정 이름의 상대 파일만 받고 0700 root·0600 파일·조상/leaf 링크·hardlink·특수 파일·안정 읽기·raw SHA/길이·Stage 입력 체인을 검증한다. target에 vault를 공유하지 않는다.
 writeBytes/readBytes는 파일64MiB, `.json` Stage/JSON 체인 입력은 newline 포함1MiB, 체인은root 포함256개·깊이16·총64MiB로 제한한다. 큰 opaque/NDJSON 입력은 raw SHA로 결속하고 전체 JSON으로 파싱하지 않는다. put은 임시 파일 fsync 후 atomic link→임시 링크 삭제로 덮어쓰기 없이 출판하며 외부 hardlink는 읽기 거부한다.
 readJsonInputBytes는 FD의 nlink/mode·이름/inode까지 확인하지 않아 vault에 그대로 쓰지 않는다. bounded JSON/own-data snapshot은 기존 snapshotJsonData를 재사용한다. 해시는 원본 생산자 인증이나 collector lease 검증의 대용이 아니다.
-scope placement guard는 전체 RuntimeReport 파서가 아니다. 전체 report parser/sanitizer, 전체 JSON schemas, target YAML 파서는 후속 패킷으로 남긴다. 이 구현으로 전체 verify 파이프라인 완료를 주장하지 않는다.
+scope placement guard는 전체 RuntimeReport 파서가 아니다. 전체 report parser/sanitizer와 나머지 artifact schemas는 후속 패킷으로 남긴다. 이 구현으로 전체 verify 파이프라인 완료를 주장하지 않는다.
+
+## M1-28 strict Target 입력과 CPx2 N2/N3
+
+`target.ts`의 `parseRuntimeYaml(text):unknown`, `parseTargetSpec(input):TargetSpec`, `parseTargetYaml(text):TargetSpec`은 파일·build·network·환경 조회 권한 없는 동기 데이터 API다. 원본 YAML UTF-8 raw SHA와 안정 읽기·실제 파일/조상 링크 검증은 후속 I/O 호출자가 맡는다.
+`schemas/target.v1.json`은 trusted 정적 2020-12 schema이며 Ajv가 이것만 컴파일한다. caller schema·외부 ref·async loader·$data·custom keyword/format을 받지 않는다. strict/ownProperties/validateSchema는 켜고 allErrors/coerceTypes/useDefaults/removeAdditional은 끈다. 입력 스키마 적합성과 실행 승인·대상 보안은 별개다.
+YAML 1.2 core의 strict/uniqueKeys/stringKeys, merge:false/resolveKnownTags:false/customTags:[]를 사용한다. AST에서 tag·anchor·alias·merge key·보간·비정상 숫자를 거부하고 변환 전 깊이40/AST 노드20,000(키 포함)을 제한한다. 1MiB UTF-8 제한 뒤 own-data snapshot의 기존 한도를 그대로 적용한다. 복수 문서 오류를 잃지 않도록 parseDocument의 logLevel은 silent가 아닌 error다.
+정규 root `source: .`만 별도 허용한다. compose/seed 파일은 비어 있지 않은 상대 segment로 제한하고 dot/dotdot·절대/drive/UNC·역슬래시·중복 slash·보간/인코딩 탈출을 거부한다. health/scope는 authority·query·fragment 없는 절대 요청 경로다. 이는 lexical 검사이며 존재/링크 검증을 대신하지 않는다.
+M1 schema는 닫힌 키·compose·명시 pack id/version·per-request snapshot만 받는다. budget은 requests1~2,000/minutes1~15/rate(0,1000], startup1~900초다. rate 상한은 기존 TaskAdmission과 같다. seed32/dependencies16/scope 각1,000개·ID64자/경로512자이며 기본값 삽입·문자열 숫자 강제 변환은 없다.
+[공식 yaml2.9.1 metadata](https://registry.npmjs.org/yaml/2.9.1)(ISC·직접 의존0)와 [Ajv8.20.0 metadata](https://registry.npmjs.org/ajv/8.20.0)(MIT)의 정확한 버전·sha512 integrity를 lock과 대조했다. 전이는 fast-uri3.1.9(BSD-3-Clause), fast-deep-equal3.1.3/json-schema-traverse1.0.0/require-from-string2.0.2(MIT)이며 모두 공식 registry integrity가 일치한다.
+[yaml 옵션](https://eemeli.org/yaml/)과 [Ajv 보안 모델](https://ajv.js.org/security.html)을 기준으로 했고 primary npm registry audit의 현 생산 dependency 공지는0건이다. `--ignore-scripts`로만 신뢰 도구 dependency를 준비했다. 이후 공지 부재를 영구 보장하지 않는다.
+배포 목록에는 원본 schemas 외에 TS가 복사한 `build/schemas`와 후속 Pack용 `packs`를 포함한다. dry-run 목록과 임시 소유 packed module import를 확인했다. source/emitted schema는 JSON 의미가 같고 TS 포맷 변경으로 raw SHA는 다르므로 후속 fingerprint는 실제 사용 자산에 결속한다. 아직 target parser의 CLI/Action 배선·Pack compiler·나머지 schema는 구현하지 않는다. R10이 후속 패킷으로 Action 자산·고지를 연결해야 하며 이번 tracked bundle은 그대로다.
+CPx2 N2: `.json` 이름만 Stage 해석 후보이며 raw 이름의 Stage 모양 bytes는 검증된 opaque leaf다. N3: mkdir 뒤 실패하면 pinned dev/ino와 같은 디렉터리인지 확인하고 빈 디렉터리만 rmdir한다. 교체된 이름·링크·비어 있지 않은 경로는 삭제하지 않는다. 독립 child의 과도 umask·교체 경로 테스트로 전역 umask 오염 없이 확인한다.
