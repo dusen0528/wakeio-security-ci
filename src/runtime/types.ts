@@ -276,3 +276,26 @@ export interface RuntimeReportData {
   revision: 'verify-m1-v1'; verifyGate: VerifyGate; scope: RuntimeScope;
   inputArtifacts: ArtifactRef[]; stages: ArtifactRef[]; cleanup: CleanupReport;
 }
+
+/** Navigation from sanitised data; copied gates/counts never establish execution or producer trust. */
+export interface RuntimeReportSummary {
+  version: 1; basis: 'sanitised_runtime_report'; mode: 'runtime'; revision: 'verify-m1-v1';
+  scope?: never; scanGate?: never;
+  findings: { confirmedIds: string[]; strongIds: string[]; observedIds: string[]; candidateIds: string[] };
+  verifyGate: VerifyGate;
+  /** Finding rows by recorded reach, not all route/case outcomes. */
+  reach: { triggered: number; reachedNotTriggered: number; notReached: number; unknown: number };
+  unknownCases: Array<CaseOutcome & { state: 'unknown' }>;
+  coverage: {
+    declaredRoutes: number | null; enumeratedRoutes: number; attackedRoutes: number | null;
+    unattackedRoutes: number | null; unknownRoutes: number; routeRatio: number | null;
+    /** Per-route denominators; never sum overlapping source lines into project coverage. */
+    lines: Array<Pick<RuntimeCheckPayloads['runtime.coverage']['routes'][number],
+      'surface' | 'coveredFiles' | 'coveredLines' | 'executableLines' | 'ratio' | 'accounting' | 'reasons'>>;
+  };
+  limitations: RuntimeGap[];
+}
+export type RuntimeAgentCheck = { [K in RuntimeCheckId]: {
+  checkIndex: number; checkId: K; status: CheckResult['status']; findingIds: string[]; notes: string[];
+  runtime: RuntimeCheckPayloads[K] & { reasons: string[] };
+} }[RuntimeCheckId];
