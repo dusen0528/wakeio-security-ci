@@ -138,14 +138,10 @@ for (const f of fixtures.cases.filter(f => !['N11', 'N12'].includes(f.id))) {
   });
 }
 const positive = fixtures.cases.find(f => f.id === 'V1')!;
-test('N4 reflection is unscheduled, or unknown if a SQL pair is explicitly scheduled', () => {
+test('N4 reflection is outside SQL input; a scheduled ledger pair without PG bindings is unknown', () => {
   const f = fixtures.cases.find(f => f.id === 'N4')!, input = materialize(f), ping = f.reflectionCheck!;
-  append(input, f, ping); compare(input, f.expected);
-  const sqlPair = clone(input.binding.requests).map((r, i) => ({ ...r,
-    attempt: clone(input.attackLog.attempts[i + 2]), marker: clone(input.ledger.rows[i + 2]),
-    begin: { ...r.begin, byteOffset: (i + 3) * 256 }, end: { ...r.end, byteOffset: (i + 3) * 256 + 255 },
-    sequence: i + 3, pgSessionLine: i + 3 }));
-  (input.binding.requests as SqlRequestBinding[]).push(...sqlPair);
+  compare(input, f.expected); // No SQL assignment means no ping rows in this SQL-only input ledger.
+  append(input, f, ping); // Now explicitly assign SQL; no invented statement/event hashes or binding rows.
   assert.ok(judgeSql(input).cases.some(c => c.surfaceId === ping.surface.id && c.state === 'unknown'));
 });
 test('deterministic data snapshots reject getters/proxies without invoking them', () => {
@@ -203,6 +199,40 @@ test('N13 retains its valid finding when another pair has a malformed observatio
   const result = compare(input, f.expected), reordered = clone(input);
   (reordered.observations as Observation[]).reverse(); (reordered.binding.requests as SqlRequestBinding[]).reverse();
   assert.deepEqual(judgeSql(reordered), result);
+});
+test('N13 ledger keeps the second case when all or part of its physical bindings are missing', () => {
+  const f = fixtures.cases.find(f => f.id === 'N13')!;
+  for (const missing of [[3, 4], [3], [4]]) {
+    const input = materialize(f);
+    input.binding.requests = input.binding.requests.filter(r => !missing.includes(r.attempt.ordinal));
+    const result = compare(input, f.expected);
+    assert.equal(result.cases.length, 2);
+    assert.ok(result.gaps.some(g => g.code === 'request_binding_missing'));
+  }
+  const missingAttempts = materialize(f);
+  (missingAttempts.attackLog.attempts as AttackAttempt[]).splice(2);
+  const result = compare(missingAttempts, f.expected);
+  assert.equal(result.cases.length, 2); assert.ok(result.gaps.some(g => g.code === 'attack_attempt_missing'));
+});
+test('empty SQL ledgers and unassigned raw sets are incomplete, while an independent valid pair survives', () => {
+  const input = materialize(positive); (input.ledger.rows as MarkerRow[]).splice(0);
+  const result = judgeSql(input);
+  assert.equal(result.verdicts.length, 0);
+  for (const code of ['empty_sql_plan', 'unassigned_attempt', 'unassigned_request', 'unassigned_observation'])
+    assert.ok(result.gaps.some(g => g.code === code));
+  input.binding.requests = []; (input.attackLog.attempts as AttackAttempt[]).splice(0);
+  (input.observations as Observation[]).splice(0);
+  assert.ok(judgeSql(input).gaps.some(g => g.code === 'empty_sql_plan'));
+  const extra = materialize(positive), request = clone(extra.binding.requests[1]);
+  request.attempt.ordinal = 3; request.marker.requestOrdinal = 3; request.sequence = 3; request.pgSessionLine = 3;
+  request.begin.byteOffset = 768; request.end.byteOffset = 1023;
+  (extra.binding.requests as SqlRequestBinding[]).push(request);
+  (extra.attackLog.attempts as AttackAttempt[]).push(clone(request.attempt));
+  const event = clone(extra.observations[1]); event.id = 'unassigned-event'; event.requestOrdinal = 3;
+  (extra.observations as Observation[]).push(event);
+  const kept = compare(extra, positive.expected);
+  for (const code of ['unassigned_attempt', 'unassigned_request', 'unassigned_observation'])
+    assert.ok(kept.gaps.some(g => g.code === code));
 });
 test('bounded data and output copies cannot grant execution or mutable input authority', () => {
   const large = materialize(positive);

@@ -120,3 +120,6 @@ hash는 인증이 아니며 호출 전 pipeline의 provenance 검증이 필수�
 강한 판정은 control과 다른 literal 밖 OR/AND의 BoolExpr 자식 관계 또는 검증된 위치 대응의 quote 진단으로 한정한다.
 R8 manual projection 테스트의 parser pin은 합성 라벨이며 실제 parser 출력·PG 실행·원문 폐기·cleanup·최종 exit 증거가 아니다.
 R3/R5 collector는 요청별 원본 hash·statement byte 길이·물리 장벽·위치 대응을, R3 coverage는 요청별 reach projection을 제공해야 한다.
+M1-62: SQL ledger의 모든 계획 pair를 평가하며 attempt/물리 binding 누락은 해당 case unknown으로 남긴다.
+빈 SQL ledger와 미할당 attempt/request/observation은 별도 incomplete gap이며 다른 유효 finding은 보존한다.
+binding이 SQL 계획을 정의하지 않는다. SQL 미배정 reflection은 이 Oracle의 SQL 전용 ledger에 넣지 않는다.

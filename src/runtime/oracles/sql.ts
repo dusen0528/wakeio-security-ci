@@ -326,13 +326,35 @@ function reach(data: ReturnType<typeof capture>, r: SqlRequestBinding, confirmed
     return 'unknown' as const;
   return rows[0].reached ? confirmed ? 'triggered' as const : 'reached_not_triggered' as const : 'not_reached' as const;
 }
+function unassigned(data: ReturnType<typeof capture>): RuntimeGap[] {
+  const planned = new Set(data.ledger.rows.map(r => r.requestOrdinal));
+  const bound = new Set(data.binding.requests.map(r => r.attempt.ordinal)), gaps: RuntimeGap[] = [];
+  if (!planned.size) gaps.push({ area: 'oracle.sql', code: 'empty_sql_plan' });
+  if (data.attackLog.attempts.some(a => !planned.has(a.ordinal)))
+    gaps.push({ area: 'oracle.sql', code: 'unassigned_attempt' });
+  if (data.binding.requests.some(r => !planned.has(r.attempt.ordinal)))
+    gaps.push({ area: 'oracle.sql', code: 'unassigned_request' });
+  if (data.observations.some(o => o === null || !planned.has((o as Observation)?.requestOrdinal)
+    || !bound.has((o as Observation)?.requestOrdinal)))
+    gaps.push({ area: 'oracle.sql', code: 'unassigned_observation' });
+  return gaps;
+}
 function evaluate(data: ReturnType<typeof capture>): SqlOracleResult {
-  const result: SqlOracleResult = { verdicts: [], cases: [], gaps: [] };
-  const groups = new Map<string, SqlRequestBinding[]>();
-  for (const r of data.binding.requests) groups.set(r.marker.controlPairId,
-    [...groups.get(r.marker.controlPairId) ?? [], r]);
+  const result: SqlOracleResult = { verdicts: [], cases: [], gaps: unassigned(data) };
+  const groups = new Map<string, MarkerRow[]>();
+  for (const row of data.ledger.rows) groups.set(row.controlPairId, [...groups.get(row.controlPairId) ?? [], row]);
   for (const [pairId, rows] of [...groups].sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0)) {
-    const group = rows.sort((a, b) => a.attempt.ordinal - b.attempt.ordinal), probe = group.at(-1)!;
+    const planned = rows.sort((a, b) => a.requestOrdinal - b.requestOrdinal);
+    const group = planned.map(row => data.binding.requests.find(r => r.attempt.ordinal === row.requestOrdinal))
+      .filter((r): r is SqlRequestBinding => r !== undefined);
+    const missing = planned.some(row => !data.attackLog.attempts.some(a => a.ordinal === row.requestOrdinal))
+      ? 'attack_attempt_missing' : group.length !== planned.length ? 'request_binding_missing' : undefined;
+    if (missing) {
+      const surfaceId = planned.at(-1)!.surfaceId;
+      result.cases.push({ surfaceId, state: 'unknown', reasons: [missing] });
+      result.gaps.push({ area: 'oracle.sql', code: missing, surfaceId }); continue;
+    }
+    const probe = group.at(-1)!;
     const surface = data.binding.surfaces.find(s => s.id === probe.marker.surfaceId
       && s.method === probe.marker.method);
     let reason = pairReason(data, group); if (!surface) reason = 'event_binding_rejected';
@@ -358,9 +380,6 @@ function evaluate(data: ReturnType<typeof capture>): SqlOracleResult {
         result.gaps.push({ area: 'coverage', code: 'coverage_unknown', surfaceId: surface.id });
     }
   }
-  if (data.observations.some(o => o === null || !data.binding.requests.some(r =>
-    r.attempt.ordinal === (o as Observation)?.requestOrdinal)))
-    result.gaps.push({ area: 'oracle.sql', code: 'unassigned_observation' });
   return result;
 }
 /** Pure SQL projection judge. Raw discard, parser execution, cleanup and CLI exit are outside this API. */
