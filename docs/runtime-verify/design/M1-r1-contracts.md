@@ -186,18 +186,28 @@ cleanup 불명·observer 손실·snapshot 오류는 반드시 error/unknown으�
 
 ## 6. 종료 코드와 보고서의 추가 계약
 
+R10 `33067fc`가 확인한 현재 충돌: legacy sanitiseReport는 runtime 필드를 폐기하고 Mode는 닫혀 있다. FindingEvidence/API proof는 API-only이며 agent의 scanner_report·verification.not_run/false와 미완료 우선 scanGate는 runtime 경계 confirmed·verify의 발견 우선 계약을 표현하지 못한다.
+따라서 runtime을 legacy sanitiser에 통과시키거나 agent.not_run/scanGate/API evidence를 runtime 완료/독립 exploit 검증으로 재해석하지 않는다. 현재 구 consumer가 새 runtime을 지원한다는 주장은 하지 않는다.
 `verifyGate`: 유효한 기준 이상 finding이 있으면 1 → 없고 계획된 검사/관측/정리/출판이 불완전하면 2 → 모두 완료면 0.
 따라서 finding+미도달/관측 오류/cleanup 오류는 exit1이면서 status partial/error다. `--fail-on-grade` 제안 기본값은 strong, 선택지는 strong/confirmed다.
 미검사 라우트 비율만으로 실패시키지 않고 별도 `--min-surface-coverage`를 명시할 때 평가한다. 빈 계획/전부 unknown은 완료가 아니다.
 candidate에는 기존 severity 규칙만 적용하며 runtime confirmed로 승격하지 않는다. 게이트 정책/기준은 plan hash에 포함한다.
 출판 실패 시에도 이미 검증된 finding이 있으면 CLI는 1, delivery=failed를 stderr/최종 receipt에 별도로 표시한다(새 verify만의 계약).
-4종 파일은 같은 sanitised RuntimeReport에서 생성하며 agent-report는 정확한 report.json raw SHA를 가진다. agent-report를 마지막에 쓴다.
+두 안 모두 선택된 하나의 strict runtime 모델에서 4종 파일을 만들며 agent-report는 정확한 report.json raw SHA를 가진다. agent-report를 마지막에 쓴다.
 per-file atomicity를 4파일 트랜잭션/실제 최종 프로세스 종료 증명으로 부르지 않는다. receipt는 publication-only이며 최종 exit는 호출자가 확인한다. manifest/receipt 부재·불일치면 소비자는 미완료로 본다.
 runtime 섹션에 입력/이미지/Pack/도구/Oracle hashes, 단계 상태, 격리, 관측 gaps, route/line coverage, cleanup, verifyGate를 둔다.
 기존 Finding.kind는 유지한다. evidence.grade/reach/marker hashes/refs는 새 runtime evidence 분기에만 추가한다.
-현재 FindingEvidence는 api-execution-ledger 전용이다. 그 분기를 재해석하지 않고 별도 RuntimeFindingEvidence와 구분 파서를 R1/R10이 제안한다.
-runtime 보고서 타입/별도 writer 진입점으로 확장하고 기존 ScanReport/writeReports/evaluateGate·agent scanGate의 의미를 바꾸지 않는다.
-verify의 권위 있는 게이트는 runtime.verifyGate로 4종 요약/CLI에 동일하게 표시한다. 기존 scanGate를 verify 성공으로 오독하지 않게 명시한다.
+CP1에서 아래 A/B를 선택한다. 어느 안도 지금 확정/구현하지 않으며 API evidence의 기존 판별 분기와 scanGate 의미를 유지한다.
+
+| 선택지 | 계약·장단점·PLAN 10과의 관계 |
+| --- | --- |
+| A: 공통 보고서 확장 | discriminated/additive runtime union과 reader/writer dispatch 확장. 공통 4종 모델 재사용은 PLAN 10의 runtime 섹션 추가와 가장 가깝지만 Mode·evidence·sanitiser·agent/gate·reader 전체 변경 면적과 구 소비자 오독 위험이 크다. |
+| B: 별도 versioned 모델 **추천** | RuntimeReport/RuntimeAgentReport+strict reader/writer, 새 schema 판별자와 mode:runtime, 파일명은 같은 4종. 기존 0.5 경로를 보존하기 쉽지만 별도 표현/검증 비용과 새 reader 도입이 필요하다. PLAN 10의 공통 계약에 섹션만 추가하는 방식보다 envelope를 분리하므로 CP1의 PLAN 변경 제안으로 검토한다. |
+
+두 안 모두 runtime 섹션·Finding.kind 유지·evidence.grade/reach·marker/control/관측 refs·4종 raw SHA·새 verify 1/2 우선순위·기존 0.5 출력 해시 보존이 필수다. 새 evidence는 API-only 분기를 재해석하지 않는 RuntimeFindingEvidence로 판별한다.
+새 runtime 판별자가 있으면 legacy reader/writer 진입을 거부하고 해당 strict dispatch로 보내야 한다. 모르는 필드를 버려 scan으로 축소 통과시키거나 old/new 혼합을 허용하지 않는다. runtime.verifyGate만 verify의 권위 있는 게이트다.
+호환 검증은 구 frozen 0.5 fixture의 byte/의미 해시 불변과 새 runtime reader/projection·손상/혼합 거부를 분리한다. 구 fixture 통과가 새 runtime 소비 지원이나 실제 경계 검증의 증거는 아니다.
+새 타입·schema·판별자는 R1, pipeline verify.ts·새 보고 writer/reader dispatch·CLI는 R10의 승인 예정 소유다. 독립 exploit/fix verification은 runtime grade와 분리하며 legacy not_run/false를 덮어쓰지 않는다.
 순서는 확정 취약점→verify 게이트→미도달→한계다. JSON/Markdown/SARIF/agent 모두 비밀 canary·원문 마커·DB 내용 누출 0을 검증한다.
 
 ## 7. CP1 이후 패킷·파일·검증 제안
