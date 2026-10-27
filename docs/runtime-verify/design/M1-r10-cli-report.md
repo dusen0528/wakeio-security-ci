@@ -12,7 +12,7 @@
 | `verify --help`, `init-target --help` | 단독 help만 메모리의 고정 텍스트 출력, target 읽기·출력 생성·프로세스·DNS/HTTP 없음 |
 
 `src/cli.ts:699`의 서브커맨드 분기에만 추가한다. 기존 `parseCliArgs`와 scan의 전역 옵션 의미는 바꾸지 않는다.
-새 `runtime/cli.ts`는 argv를 먼저 검증한다. verify 동의가 없으면 고정 reason/exit 2만 출력한다.
+새 CLI의 순수 argv 단계는 먼저 인자를 검증한다. verify 동의가 없으면 고정 reason/exit 2만 출력한다.
 이 경로에서는 target/source lstat·read, 출력 생성, Docker 호출, 대상 요청, 모델 호출을 모두 0회로 한다.
 동의·정적 argv 검증 뒤에만 실행 모듈을 정적 지정 import로 연결한다. JSON이 모듈/함수 경로를 공급하지 않는다.
 알 수 없는/중복 플래그, 값 누락, 제어 문자, 상반된 값, help와 실행 옵션 혼합은 거부한다.
@@ -25,7 +25,8 @@ init-target도 명시된 새 출력만 만들며 기존 소스 파일·설정은
 
 ## 2. 실행·종료·출판
 
-R10 소유 제안 `runtime/verify.ts`는 단계 순서와 결과 전달을 조립한다. Docker 직접 제어는 R3 capability에 둔다.
+R10 pipeline은 단계 순서와 결과 전달만 조립한다. Docker lifecycle·bounded stdio relay는 R3 capability에 둔다.
+target의 host 포트 publish나 loopback HTTP relay를 기본으로 두지 않고, 요청·응답은 제한된 stdio transport를 쓴다.
 R3가 자원 할당·abort·bounded drain/cleanup의 단일 책임을 갖고 R10은 그 확인 결과 없이 완료를 출판하지 않는다.
 SIGINT/SIGTERM은 공통 AbortController로 전달하고 finally에서 후손 프로세스·컨테이너·네트워크·볼륨 부재를 확인한다.
 정리는 별도 유한 유예를 가지며 소유 label/ID만 회수한다. 불명·drain 실패는 해당 범위 unknown/error다.
@@ -49,19 +50,39 @@ SIGINT/SIGTERM은 공통 AbortController로 전달하고 finally에서 후손 �
 | `report.ts:169,236` | scan gate는 미완료 우선; agent.scanGate도 같은 규칙. verify의 finding 우선 규칙과 다름 |
 | `report.ts:314`, `contracts.ts:551` | agent evidence는 scanner_report이며 verification은 not_run/false 고정; runtime confirmed와 재해석하면 오독 발생 |
 
-추천은 별도 `RuntimeReport`/`RuntimeAgentReport`와 strict reader/writer다. 파일 이름은 기존 4종을 그대로 쓴다.
-R1에 새 판별자(schema/`mode:runtime`)를 요청해 기존 reader가 runtime을 scan으로 축소해 통과시키지 못하게 한다.
-기존 Mode/ScanReport/AgentReport·parser·sanitiser·evaluateGate·0.5 직렬화는 그대로 둔다. 새 reader는 새 판별자를 필수로 요구한다.
-대안은 additive runtime union이지만, 구 reader의 모르는 필드 폐기와 gate 오독까지 막는 변경 범위가 더 크다. CP1에서 선택한다.
+PLAN 10·11을 따르는 A안으로 정렬한다. 공통 보고서에 discriminated/additive runtime union을 추가한다.
+공통 schemaVersion=1.0.0에서 `mode:runtime`과 최상위 `runtime.revision:verify-m1-v1`을 함께 검사한다(R1 §6).
+기존 reader/writer/sanitiser/Markdown/SARIF/agent 진입점이 R1 §6의 판별자를 먼저 검사하고 runtime 분기로 dispatch한다.
+runtime 분기는 공통 envelope의 `checks`와 `runtime`을 함께 검증·보존하며, 기존 scan 분기의 직렬화와 API proof 의미는 유지한다.
+runtime 필드/판별자 불일치·필수 check 누락·중복·손상은 legacy fallback 없이 거부한다. scan 모드의 runtime 혼합도 거부한다.
+runtime을 모르는 예전 바이너리의 지원을 주장하지 않는다. 갱신된 공통 reader는 runtime을 누락한 깨끗한 scan으로 축소하지 않는다.
+`parseScanReport`와 compare의 소비 경로도 분기하며 runtime 비교는 R1의 계약·정책·digest가 맞을 때만 수행한다.
+runtime gate는 `runtime.verifyGate`가 권위다. 기존 `evaluateGate`/agent.scanGate의 미완료 우선 의미를 verify에 적용하지 않는다.
+별도 versioned envelope를 주포맷으로 삼는 B안은 미채택이다. N5의 B안 사람 승인이나 PLAN 기준 재정의를 기다리지 않는다.
 `Finding.kind`의 observation/candidate/advisory는 유지한다. 새 runtime finding의 evidence는 구 API evidence와 별도 판별 분기다.
 `evidence.grade/reach`, marker hash, controlPairId, 단계/관측 artifact refs와 Oracle revision을 R1 타입·스키마로 결속한다.
 unknown은 빈 finding이 아닌 case/gap 상태다. coverage unknown의 분모를 0/100%로 채우지 않고 SQL 판정과 분리한다.
-이 신규 envelope는 M1 제안이며 최종 1.0 스키마 고정은 M5다. 새 runtime consumer 지원을 기존 scan consumer 지원으로 과장하지 않는다.
+공통 runtime 확장은 M1 draft이며 최종 1.0 스키마 고정은 M5다. 기존 0.5 입력·출력의 raw/의미 해시를 바꾸지 않는다.
 
 ## 4. 네 보고서와 원문 해시
 
-단일 strict RuntimeReport에서 JSON/Markdown/SARIF/agent를 생성하고 runtime 필드를 legacy sanitiser로 왕복시키지 않는다.
-`runtime`에 build/start/surface/coverage/oracle 상태, 입력·이미지·Pack·도구·정책 hashes, 실제 isolation, gaps, cleanup, verifyGate를 둔다.
+공통 strict runtime union을 한 번 검증·sanitize한 결과에서 기존 4개 파일 JSON/Markdown/SARIF/agent를 만든다.
+check별 상태 enum·정확한 필드명·null/partial/unknown 조건은 R1 §6의 권위표를 그대로 따른다. 독자 schema를 두지 않는다.
+JSON의 공통 `checks[].id/status/findings/notes`와 check별 `checks[].runtime` payload를 R1 §6대로 보존한다.
+
+| check ID | 네 보고서에서 유지할 의미·필드 |
+| --- | --- |
+| `runtime.build` | builder, imageDigest, cacheKey, 실제 isolation, 소요 시간 |
+| `runtime.start` | 기동·health·관측 준비 결과, 실행/이미지 refs와 실패 이유 |
+| `runtime.surface` | 라우트별 actuator/openapi/source/crawler/agent 출처와 실제 공격 여부 |
+| `runtime.coverage` | 라우트별 도달 파일·줄 수, 전체 대비 비율과 수집 방식; 미확인 분모/값은 null |
+| `runtime.oracle.sql` | case별 결과·grade/reach·control 결속·관측 refs·unknown 이유; 실패를 빈 안전 결과로 바꾸지 않음 |
+
+미실행 command/ssrf/path/xss check의 생략/not_applicable 정책도 R1 §6을 따르며 SQL 성공을 해당 Oracle 지원으로 표기하지 않는다.
+JSON의 check payload, Markdown의 check ID별 표, SARIF run properties.runtime, agent의 runtime에 같은 check 필드를 투영한다.
+각 표현에 null·partial·gaps를 보존하고, finding은 JSON evidence/SARIF result properties/agent evidence에 grade·reach·refs를 유지한다.
+최상위 runtime은 verifyGate·scope(미지원 유형 포함)·입력/단계 artifact refs·cleanup이며 check 상세를 중복 저장하지 않는다.
+입력·이미지·Pack·도구·Oracle·정책 hashes와 실제 isolation·gaps의 정확한 위치도 R1 §6을 따른다.
 Markdown/agent/SARIF 요약은 확정 취약점 → verify 게이트 → 미도달 라우트 → 한계 순서다. severity와 grade를 혼동하지 않는다.
 JSON finding.evidence와 SARIF properties/agent runtime evidence는 같은 검증된 refs를 쓴다. 원문 SQL·payload·마커·계정·응답은 저장하지 않는다.
 기존 agent의 독립 exploit/fix verification=false를 runtime confirmed로 덮어쓰지 않는다. 새 runtime 증거 의미를 별도로 설명한다.
@@ -72,14 +93,13 @@ old/new 포맷 혼합·오래된 산출물·중도 출판 실패를 새 verify �
 
 ## 5. 후속 파일·검증·공유 요청
 
-| 소유 역할 | CP1 후 경로 제안 |
-| --- | --- |
-| R10 | cli.ts의 새 명령 배선, report.ts의 별도 runtime 진입/재노출, 신규 init-target.ts·runtime/{cli,verify}.ts·runtime-report.ts |
-| R1 공유 요청 | contracts.ts의 새 RuntimeReport/RuntimeAgentReport/RuntimeFindingEvidence와 schema, 판별자·verifyGate·artifact refs; 기존 타입 재해석 금지 |
-| R3 공유 합의 | verify.ts는 R10 조립 제안, Docker·격리·자원/cleanup capability는 R3. 최종 쓰기 소유자는 오케스트레이터가 패킷으로 승인 |
-| R8 요청 | reports/CLI의 고정 입력·기대 0/1/2·unknown·hash 혼합/손상 사례; R10은 기대값을 직접 만들거나 변경하지 않음 |
-
-R10 자체 검증 후보는 `tests/runtime-{cli,init-target,report,delivery}.test.ts`이며 R8 입력을 읽기만 한다.
+신규/변경 파일·테스트·역할 소유와 PLAN 11/R8 case 매핑은 R1 §7만 유일한 권위 목록으로 삼는다. 독자 파일 명부를 두지 않는다.
+현재 CLI/parser/pipeline·공통 report dispatch·init-target·보고서 전달의 모든 경로 요청을 R1 canonical 목록 작성자에게 송부했다.
+내부 runtime projection 모듈은 A 공통 모델의 구현 분리일 뿐 별도 envelope/주포맷이 아니다. 실제 쓰기 권한은 후속 패킷에서 받는다.
+R1에 공통 runtime union·evidence 분기·판별자·verifyGate·artifact refs를 요청하고, transport/lifecycle는 R3 capability만 소비한다.
+R8만 reports/CLI의 고정 입력·기대 0/1/2·unknown·손상/혼합 사례를 작성한다. R10은 그 입력·기대값을 읽기만 한다.
+갱신된 공통 reader→sanitiser→4종 writer 왕복에서 필수 check/field/null/partial/grade/reach가 보존되는지 확인한다.
+runtime 판별자/필드 혼합·누락·손상은 거부하고, runtime 발견+오류를 구 scanGate에 보내 2로 오독하지 않는 분기를 검증한다.
 동의 없는 target read/output/Docker/request 0, help/init-target에서 lifecycle 0, 중복 인자·경로 탈출·취소·정리 실패를 확인한다.
 finding+실패→1/실패만→2/완료→0, metadata 손상·표현별 불일치·secret canary·stale manifest·출판 중단을 검증한다.
 R9가 실제 Spring 취약/수정/안전 쌍·route/line coverage와 4종 raw hashes를 로컬/CI에서 독립 확인한다.
