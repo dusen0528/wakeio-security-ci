@@ -29,6 +29,46 @@ test('Pack parser accepts bounded data, snapshots callers and preserves the PLAN
   } } }));
 });
 
+test('actuator paths are bounded explicit local metadata with no default insertion', () => {
+  const legacy = parseFrameworkPack({ ...pack(), surfaces: [{ provider: 'spring-actuator' }] });
+  assert.equal(Object.hasOwn(legacy.surfaces[0], 'paths'), false);
+  const paths = ['/internal/route-map', '/manage/routes'];
+  const parsed = parseFrameworkPack({ ...pack(), surfaces: [{ provider: 'spring-actuator', paths }] });
+  const surface = parsed.surfaces[0];
+  assert.equal(surface.provider, 'spring-actuator');
+  if (surface.provider !== 'spring-actuator') assert.fail('actuator variant expected');
+  assert.deepEqual(surface.paths, paths); paths.push('/later'); assert.equal(surface.paths?.length, 2);
+  for (const paths of [[], ['/same', '/same'], Array.from({ length: 17 }, (_, i) => '/map/' + i),
+    ['https://host/maps'], ['//host/maps'], ['/maps?q=1'], ['/maps#fragment'], ['/a/../maps'],
+    ['/a/./maps'], ['/a//maps'], ['/a\\maps'], ['/%2e%2e/maps'], ['/maps\n'], ['/' + 'x'.repeat(512)]]) {
+    for (const provider of ['spring-actuator', 'openapi']) {
+      assert.throws(() => parseFrameworkPack({ ...pack(), surfaces: [{ provider, paths }] }),
+        /invalid_framework_pack/);
+    }
+  }
+  assert.doesNotThrow(() => parseFrameworkPack({ ...pack(), surfaces: [{ provider: 'spring-actuator',
+    paths: Array.from({ length: 16 }, (_, i) => '/map/' + i),
+  }] }));
+});
+
+test('prior compiled hashes remain fixed and actuator metadata changes only bound IDs in taint rules', () => {
+  // Measured before this additive schema edit at 0b28c95; these are compiler regression hashes, not Oracle verdicts.
+  const prior = compileFrameworkPack(encode(pack()));
+  assert.equal(prior.rawPackSha256, 'a83ddd299708855f8a5a31f72ffde9671c3671154970c7f2791fa4553b237abc');
+  assert.equal(prior.semanticPackSha256, 'bba7228cf5fd4067429aec73c0e3bb5de24aeca9eb302b3276fab49ada6f9496');
+  assert.equal(prior.rulesSha256, '110c09cf93c4691580d9747540ca2850e41fc2977b08035dccdb6ca4e85c2ec1');
+  const before = compileFrameworkPack(encode({ ...pack(), surfaces: [{ provider: 'spring-actuator' }] }));
+  const after = compileFrameworkPack(encode({ ...pack(), surfaces: [
+    { provider: 'spring-actuator', paths: ['/internal/route-map'] },
+  ] }));
+  assert.notEqual(after.rawPackSha256, before.rawPackSha256);
+  assert.notEqual(after.semanticPackSha256, before.semanticPackSha256);
+  assert.notEqual(after.rulesSha256, before.rulesSha256);
+  const formulas = (json: string) => JSON.parse(json).rules.map(({ id, ...rule }: Record<string, unknown>) => rule);
+  assert.deepEqual(formulas(after.rulesJson), formulas(before.rulesJson));
+  assert.equal(after.verification, 'not_run');
+});
+
 test('unknown DSL, executable modules, raw patterns, unsupported sink classes and languages are rejected', () => {
   for (const key of ['module', 'script', 'command', 'pattern', 'pattern-sources', 'loadSchema', '$ref', '$async']) {
     assert.throws(() => parseFrameworkPack({ ...pack(), [key]: 'untrusted' }), /invalid_framework_pack/);

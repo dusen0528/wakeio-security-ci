@@ -35,7 +35,9 @@
     "surfaces": { "type": "array", "minItems": 1, "maxItems": 16, "uniqueItems": true, "items": {
       "oneOf": [
         { "type": "object", "additionalProperties": false, "required": ["provider"],
-          "properties": { "provider": { "const": "spring-actuator" } } },
+          "properties": { "provider": { "const": "spring-actuator" },
+            "paths": { "type": "array", "minItems": 1, "maxItems": 16, "uniqueItems": true,
+              "items": { "$ref": "#/$defs/path" } } } },
         { "type": "object", "additionalProperties": false, "required": ["provider", "paths"],
           "properties": { "provider": { "const": "openapi" },
             "paths": { "type": "array", "minItems": 1, "maxItems": 16, "uniqueItems": true,
