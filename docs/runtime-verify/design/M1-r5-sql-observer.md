@@ -150,3 +150,25 @@ SurfaceRef에는 scalar/mediaType 필드가 없으므로 RuntimeSurface의 JSON 
 M1-73: root와 단일 trailing slash는 허용하되 exact surface ID/path를 그대로 사용하며 `/x`와 `/x/`를 합치지 않는다.
 CPx6 N3: control AST에 기존 BoolExpr가 있으면 현재 promotion 판정은 보수적으로 unknown이다. Oracle는 변경하지 않았다.
 R8 두 예제 쌍의 취약/수정 GET·POST 원본을 읽어 공격 전 질의에 AND/OR가 없음을 대조했다. 실제 parser/DB 실행 증거는 아니다.
+
+## M1-98 별도 parser protocol·worker
+
+helper의 `PG_PARSER_PROTOCOL_REVISION`과 worker의 `PG_PARSER_WORKER_PROTOCOL_REVISION`은 `wakeio.pg-parser/v1`이다.
+helper는 package/WASM을 import하지 않는 순수 요청·reply 검증/정규화 모듈이다. worker만 stdin EOF 후 package를 지연 import한다.
+stdin은 단일 JSON 객체이며 revision·requestId SHA·parser pin·worker/manifest SHA·SQL·payload hash/UTF-8 삽입 span을 요구한다.
+SQL 32KiB/전체 stdin 64KiB, JSON 깊이40/노드20,000을 넘거나 UTF-8/NUL/surrogate/span이 잘못되면 거부한다.
+stdout은 1MiB 이하 projection/reason만 담는다. collector 전체 8MiB/4,096건과는 별도 한도다.
+reply는 statement SHA/byte 수·pin·배포 SHA·AST 종류/관계/span·token 종류/역할/span/hash와 삽입 참조만 보존한다.
+token.text·identifier/literal/comment/Bind 값·오류 excerpt/stack은 출력하지 않는다. hash 자체가 기밀성/출처 인증은 아니다.
+위치는 C scanner의 UTF-8 byte slice와 token.text 일치·문자 경계로 검증하고 AST location은 같은 scanner 시작점에 대응시킨다.
+지원은 단일 SELECT·단순 target/from·단일 식별자/문자열/ParamRef·동등 비교·AND/OR BoolExpr에 한정한다.
+다른 AST·불명 위치·parser 예외/trap/재초기화는 unknown이다. quote 진단/PG 문자 위치 변환은 아직 주장하지 않는다.
+outside token hash는 삽입과 겹치는 token을 제외한 kind/role/hash 목록으로 계산하며 두 context 필드에 같은 skeleton을 결속한다.
+protocol ok/worker exit0은 정규화 성공일 뿐 confirmed/관측 완료가 아니다. 실제 parser 출력과 R8 판정 대조는 R9 후속이다.
+R10은 worker TS를 독립 CJS `workers/pg-parser/pg-parser-worker.cjs`로 묶고 WASM·manifest를 인접 배치한다.
+wrapper는 즉시 instantiate하므로 CJS glue의 `__dirname` 기반 로컬 `libpg-query.wasm` 로딩을 보존하고 main에 합치지 않는다.
+worker는 고정 인접 JS/WASM/manifest raw SHA와 명시적 revision·parser18.2.1/PG18/승인 lock pin을 대조한 뒤 import한다.
+TS source SHA는 build provenance일 뿐이며 설치본에서 TS/lock 원문을 읽지 않는다. manifest 신뢰/불변 설치는 R3 선행 조건이다.
+R3가 network none·1초·256MiB·UID/caps/readonly/CPU/PID와 native stderr/core dump 차단을 외부에서 강제해야 한다.
+worker는 한 작업 뒤 종료하며 trap의 비동기 재초기화를 재사용하지 않는다. 이 코드가 실제 격리/자원 준수를 입증하지는 않는다.
+새 DB/container/log·runNonce/lease·seed 뒤 cursor·닫힌 직렬 window의 실행 간 혼합 거부 조건은 collector 후속 완료 조건으로 유지한다.
