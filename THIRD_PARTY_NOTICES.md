@@ -86,6 +86,32 @@ code is not retained in the current bundle.
 The npm package ships `schemas/target.v1.json` and its emitted
 `build/schemas/target.v1.json`; the parser imports the local schema statically.
 
+## Separate PostgreSQL parser assets
+
+`workers/pg-parser/pg-parser-worker.cjs` is a separate Node.js 22 CJS bundle,
+distributed with `libpg-query.wasm` beside it for both npm and vendored Actions.
+It embeds `libpg-query` 18.2.1 and `@pgsql/types` 18.0.0, both MIT licensed.
+The CLI Action entrypoint remains separate; using these assets requires the
+verified runtime execution capability and does not install npm packages.
+
+Complete MIT texts are in [the worker notices](workers/pg-parser/THIRD_PARTY_LICENSES.txt).
+Additional upstream notices are preserved byte for byte in
+[LICENSE.libpg_query](workers/pg-parser/LICENSE.libpg_query) (BSD-3-Clause) and
+[COPYRIGHT.PostgreSQL](workers/pg-parser/COPYRIGHT.PostgreSQL) (PostgreSQL License).
+The generated `dist-action/THIRD_PARTY_LICENSES.txt` also contains these notices.
+The BSD notice uses the corrected SHA256
+`f9352c20940619a380a5e9f23cebe34d8f797cfbd747fc236a7a3e5fc8ef9b41`.
+These candidate upstream notice sources were recorded at fixed upstream commits;
+their exact source correspondence to the published WASM remains unverified.
+Publisher signatures and a reproducible upstream build are also unverified.
+
+`workers/pg-parser/manifest.json` records the exact npm versions/integrities,
+selected upstream JS bytes/hashes, lock hash, local asset/notice hashes, build
+tool version and explicit protocol revision. TS/JS source hashes are build
+provenance; runtime identity uses revision constants and deployed asset pins.
+Raw hashes do not authenticate the producer. Packaging checks do not execute
+the WASM or establish the runtime sandbox, resource bounds or SQL verdicts.
+
 
 ## Optional Bandit 1.9.4
 

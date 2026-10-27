@@ -1,0 +1,183 @@
+{
+  "schemaVersion": "1.0.0",
+  "kind": "wakeio-pg-parser-assets",
+  "protocolRevision": "wakeio.pg-parser/v1",
+  "pin": {
+    "version": "18.2.1",
+    "pgMajor": 18,
+    "lockSha256": "adc4e4026559ed0e5229acb4cb5354a82437420efdb58056d4a9d73969e37493",
+    "wasmSha256": "355c489d8b0bf2bac28b48408f656e818852d7000e1e66a67503ad2bc7cc6062"
+  },
+  "build": {
+    "esbuildVersion": "0.28.2",
+    "platform": "node",
+    "format": "cjs",
+    "target": "node22",
+    "lock": {
+      "path": "package-lock.json",
+      "bytes": 20400,
+      "sha256": "adc4e4026559ed0e5229acb4cb5354a82437420efdb58056d4a9d73969e37493"
+    },
+    "provenance": {
+      "purpose": "build-provenance-only",
+      "sources": [
+        {
+          "path": "src/runtime/observers/pg-parser-helper.ts",
+          "bytes": 20443,
+          "sha256": "7032036635c9c2fd62655ba6604bd6ab201c6072070dfe494375490be34ed128"
+        },
+        {
+          "path": "build/src/runtime/observers/pg-parser-helper.js",
+          "bytes": 19051,
+          "sha256": "80b4523d7f2cf766c86ae9df50f4d209bfecc103273b0441d84953b1d2d69775"
+        },
+        {
+          "path": "src/runtime/observers/pg-parser-worker.ts",
+          "bytes": 4143,
+          "sha256": "ee3c0086057bebc46b3f06283df7c12d5b44c81070cbcd78fb4506fbe3f9ce74"
+        },
+        {
+          "path": "build/src/runtime/observers/pg-parser-worker.js",
+          "bytes": 4043,
+          "sha256": "61bd729f80896864c7407e40cb0f9ef4fe50e6c313262eb22f4bbb9d67419012"
+        }
+      ],
+      "runtimeIdentity": "explicit-protocol-revision-and-deployed-asset-pins"
+    },
+    "graph": {
+      "inputs": [
+        "build/src/json-snapshot.js",
+        "build/src/runtime/observers/pg-parser-helper.js",
+        "build/src/runtime/observers/pg-parser-worker.js",
+        "node_modules/@pgsql/types/enums.js",
+        "node_modules/@pgsql/types/index.js",
+        "node_modules/@pgsql/types/types.js",
+        "node_modules/libpg-query/wasm/index.cjs",
+        "node_modules/libpg-query/wasm/libpg-query.js"
+      ],
+      "nodeBuiltinExternals": [
+        "node:crypto",
+        "node:fs",
+        "node:path",
+        "node:util"
+      ],
+      "dynamicModuleLoads": 0
+    }
+  },
+  "packages": [
+    {
+      "name": "libpg-query",
+      "version": "18.2.1",
+      "integrity": "sha512-0zPlJei06//awjKmslKEwmGMSjF0n4p4OnPa3boRp8Xzl6ZnDIOddyLAsoJcJntrPCBLrWUbEwv5Laxg8BZYlA==",
+      "files": [
+        {
+          "path": "package.json",
+          "bytes": 2044,
+          "sha256": "0c5b52c800362f051bf0b786388b3758627efd17aa6595ac978e180275822e08"
+        },
+        {
+          "path": "wasm/index.cjs",
+          "bytes": 19005,
+          "sha256": "34c24e944916fdf23de94300372a8e98e5b0e6a40bcd6a7e7318d9071faad9a5"
+        },
+        {
+          "path": "wasm/index.js",
+          "bytes": 17686,
+          "sha256": "faa60804c3e6868197ef81044829aa09e6dc9b99fc546adadac68704d2df5344"
+        },
+        {
+          "path": "wasm/libpg-query.js",
+          "bytes": 61661,
+          "sha256": "219217cc9ed5d8522c6ab273e9ed0bfb56c84a7181d9dd01dc32bf77efd15281"
+        },
+        {
+          "path": "LICENSE",
+          "bytes": 1160,
+          "sha256": "6676f35ef9ae1f095f420c56ab2078cf321227a88599ad224218b76d05fec731"
+        }
+      ]
+    },
+    {
+      "name": "@pgsql/types",
+      "version": "18.0.0",
+      "integrity": "sha512-jtAY4JU7jdVYZ/Vv3zlZqVP+FRWZokyCLKPPCnAApiaJAElpyyiMC3HRiquBu29kSrVs+rkqZD50SUIb/zyEGw==",
+      "files": [
+        {
+          "path": "package.json",
+          "bytes": 1207,
+          "sha256": "f9819f6aca085cadfa9bb58c1b8323aef885d520a9c2d69bae401c0ab219b928"
+        },
+        {
+          "path": "index.js",
+          "bytes": 843,
+          "sha256": "a166516984a6d37505a8930c4a57971e95cc1a5a8ab0955779ff1d7fb09d1be9"
+        },
+        {
+          "path": "types.js",
+          "bytes": 77,
+          "sha256": "d43aa81f5bc89faa359e0f97c814ba25155591ff078fbb9bfd40f8c7c9683230"
+        },
+        {
+          "path": "enums.js",
+          "bytes": 77,
+          "sha256": "d43aa81f5bc89faa359e0f97c814ba25155591ff078fbb9bfd40f8c7c9683230"
+        },
+        {
+          "path": "esm/index.js",
+          "bytes": 50,
+          "sha256": "fe83f7a008c2b4d20a8ddf5ff62c136fbea0a796a516eda4bcf1a47252bd4468"
+        },
+        {
+          "path": "esm/types.js",
+          "bytes": 11,
+          "sha256": "8e609bb71c20b858c77f0e9f90bb1319db8477b13f9f965f1a1e18524bf50881"
+        },
+        {
+          "path": "esm/enums.js",
+          "bytes": 11,
+          "sha256": "8e609bb71c20b858c77f0e9f90bb1319db8477b13f9f965f1a1e18524bf50881"
+        },
+        {
+          "path": "LICENSE",
+          "bytes": 1160,
+          "sha256": "6676f35ef9ae1f095f420c56ab2078cf321227a88599ad224218b76d05fec731"
+        }
+      ]
+    }
+  ],
+  "assets": [
+    {
+      "path": "workers/pg-parser/pg-parser-worker.cjs",
+      "bytes": 143151,
+      "sha256": "824507106ba66437c0200ef4db9f86cd3b4a3c4e2c159896fa6199fb590bc6f6"
+    },
+    {
+      "path": "workers/pg-parser/libpg-query.wasm",
+      "bytes": 1717872,
+      "sha256": "355c489d8b0bf2bac28b48408f656e818852d7000e1e66a67503ad2bc7cc6062"
+    },
+    {
+      "path": "workers/pg-parser/THIRD_PARTY_LICENSES.txt",
+      "bytes": 2632,
+      "sha256": "f892a1d91c887c3a8cff7457834c88a2b025b03985179b9129ce629c5026df76"
+    },
+    {
+      "path": "workers/pg-parser/LICENSE.libpg_query",
+      "bytes": 1561,
+      "sha256": "f9352c20940619a380a5e9f23cebe34d8f797cfbd747fc236a7a3e5fc8ef9b41"
+    },
+    {
+      "path": "workers/pg-parser/COPYRIGHT.PostgreSQL",
+      "bytes": 1198,
+      "sha256": "5ed3ce5c9373dff7f98b1fae7a6c7ccd98df7d734d46d24c1bcebf1240be8307"
+    }
+  ],
+  "localWasm": "libpg-query.wasm",
+  "limitations": [
+    "source-wasm-correspondence-unverified",
+    "publisher-signature-unverified",
+    "reproducible-upstream-build-unverified",
+    "raw-hashes-are-not-producer-authentication",
+    "runtime-sandbox-and-wasm-execution-not-verified-by-packaging"
+  ]
+}
