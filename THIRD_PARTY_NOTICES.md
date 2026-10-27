@@ -78,10 +78,11 @@ and the installed packages' license files.
 
 The generated `dist-action/THIRD_PARTY_LICENSES.txt` includes the complete
 license texts for these six packages in addition to the existing notices.
-The runtime target parser is currently an internal module: `verify`,
-`init-target`, and the common runtime report reader are awaiting CLI/report
-wiring. These six packages are not yet imported by the Action entrypoint;
-including their notices does not claim that the current Action executes them.
+The runtime target parser is connected through the read-only `init-target` command;
+`verify` execution and the common runtime report reader still await wiring.
+The Action entrypoint now bundles this YAML/Ajv data-only path, while notices
+retain all six approved package licenses, including `require-from-string`, whose
+code is not retained in the current bundle.
 The npm package ships `schemas/target.v1.json` and its emitted
 `build/schemas/target.v1.json`; the parser imports the local schema statically.
 
