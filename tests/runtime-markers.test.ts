@@ -175,13 +175,13 @@ test('input mutation cannot change an issued ledger or private marker lookup', (
 
 // Trusted capabilities below are contract fakes only. No HTTP/PG/target execution or security verdict is asserted.
 function execution(location: 'query' | 'path' | 'body' = 'query', probe: 'sql-boolean' | 'sql-quote' = 'sql-boolean',
-  pointer = '/name') {
+  pointer = '/name', name = 'name') {
   const value = input(), row = value.reservations[0]; value.reservations[1].payload = probe;
   const method = location === 'body' ? 'POST' : 'GET', path = location === 'path' ? '/owned/{name}' : '/owned/items';
   value.surfaces = [{ id: 'surface-contract', method, pathTemplate: path }];
   for (const r of value.reservations) { r.surfaceId = 'surface-contract'; r.method = method;
-    r.param = { in: location, name: 'name', jsonPointer: location === 'body' ? pointer : null,
-      schemaLocator: location === 'body' ? 'json/name' : location + '/name' }; }
+    r.param = { in: location, name, jsonPointer: location === 'body' ? pointer : null,
+      schemaLocator: location === 'body' ? 'json' + pointer : location + '/' + name }; }
   const param: RuntimeParameter = { ...row.param, in: location, required: true, type: 'string',
     mediaType: location === 'body' ? 'application/json' : null,
     serialization: location === 'body' ? { style: null, explode: null, allowReserved: null }
@@ -339,4 +339,34 @@ test('only genuine issuance is executable; hostile plans/response getters execut
   f.port.request = async () => Object.defineProperty({}, 'bodyBytes', {
     enumerable: true, get: trap }) as RuntimeResponse;
   assert.equal((await f.run()).status, 'unknown'); assert.equal(calls, 0);
+});
+test('root JSON keys decode pointer escapes without enabling nested, numeric or dangerous leaves', async () => {
+  for (const [pointer, name] of [['/display~1name', 'display/name'], ['/display~0name', 'display~name']]) {
+    const f = execution('body', 'sql-quote', pointer, name), result = await f.run();
+    assert.equal(result.status, 'completed');
+    assert.equal(Object.getPrototypeOf(f.requests[0].body!.data), null);
+    assert.deepEqual(Object.keys(f.requests[0].body!.data as object), [name]);
+    assert.equal((f.requests[0].body!.data as Record<string, string>)[name], f.markers.markerForExecutor(1));
+  }
+  for (const [pointer, name] of [['/profile/name', 'name'], ['/0', '0']]) {
+    const f = execution('body', 'sql-quote', pointer, name);
+    assert.equal((await f.run()).status, 'unknown'); assert.equal(f.requests.length, 0);
+  }
+  for (const name of ['__proto__', 'prototype', 'constructor', 'x'.repeat(256)])
+    assert.throws(() => execution('body', 'sql-quote', '/' + name, name), /invalid_marker_reservation/);
+});
+test('fake AbortSignal brands fail as invalid_input without invoking accessors, hooks or transport', async () => {
+  let calls = 0; const trap = () => { calls++; throw Error('forbidden-signal-access'); };
+  const lookalike = Object.defineProperty({}, 'aborted', { get: trap });
+  const forgedBrand = Object.create(AbortSignal.prototype);
+  const proxy = new Proxy(new AbortController().signal, { get: trap, getPrototypeOf: trap });
+  for (const signal of [lookalike, forgedBrand, proxy]) {
+    const f = execution(), result = await runNativeSql(f.plan, f.markers, f.port, f.hooks,
+      { ...f.options, signal: signal as AbortSignal });
+    assert.equal(result.status, 'unknown'); assert.ok(result.gaps.every(g => g.reason === 'invalid_input'));
+    assert.equal(f.requests.length, 0); assert.deepEqual(f.events, []);
+    assert.ok(result.deliveries.every(d => d.sent === 'not_sent'));
+  }
+  const genuine = execution(); Object.defineProperty(genuine.options.signal, 'aborted', { get: trap });
+  assert.equal((await genuine.run()).status, 'completed'); assert.equal(calls, 0);
 });
