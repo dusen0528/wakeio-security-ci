@@ -72,8 +72,7 @@ test('compiled Lima config is isolated, pinned and explicitly fails before incom
   assert.equal(c.ssh.forwardAgent, false); assert.equal(c.ssh.loadDotSSHPubKeys, false);
   assert.equal(c.propagateProxyEnv, false); assert.equal(c.hostResolver.enabled, false);
   assert.equal(c.images.length, 1); assert.equal(c.images[0].digest, 'sha256:' + pins.rootfs.sha256);
-  assert.equal(c.param.dockerExtrasSha256, pins.dockerExtras.sha256);
-  assert.equal(c.param.rootlessSocket, '/run/user/10001/docker.sock');
+  assert.equal(Object.hasOwn(c, 'param'), false);
   assert.equal(c.portForwards[1].ignore, true); assert.equal(c.portForwards[1].proto, 'any');
   assert.match(c.message, /SSH22/);
   const boot: string = c.provision[0].script;
@@ -112,6 +111,23 @@ test('private profile preparation binds identity and exact create/list argv; cle
     assert.deepEqual(await readdir(base), before);
     assert.equal(await readFile(join(existing, 'keep'), 'utf8'), 'owned existing instance marker');
   });
+});
+
+test('unused Docker metadata is absent from Lima YAML while its trusted input pin constraints stay enforced', () => {
+  const config = JSON.parse(compileLimaProfileConfig(pins));
+  assert.equal(Object.hasOwn(config, 'param'), false);
+  assert.equal(JSON.stringify(config).includes(pins.dockerExtras.sha256), false);
+  const rejected: unknown[] = [null, {},
+    { ...pins.dockerExtras, sha256: '' }, { ...pins.dockerExtras, sha256: 'A'.repeat(64) },
+    { ...pins.dockerExtras, sha256: null }, { ...pins.dockerExtras, version: 'latest' },
+    { ...pins.dockerExtras, version: '5:29.9.3-1~ubuntu.24.04~noble' },
+    { ...pins.dockerExtras, url: pins.dockerExtras.url + '?token=unused' },
+    { ...pins.dockerExtras, url: pins.dockerExtras.url.replace('arm64/', 'amd64/') },
+    { ...pins.dockerExtras, url: pins.dockerExtras.url.replace('download.docker.com', 'example.invalid') },
+    { ...pins.dockerExtras, ready: true }];
+  for (const dockerExtras of rejected) {
+    assert.throws(() => compileLimaProfileConfig({ ...pins, dockerExtras } as LimaPins));
+  }
 });
 
 test('replacement profile identity and a running VM are refused without stop/delete authority', async () => {
@@ -323,12 +339,31 @@ test('OS preparation checks consent before reading rootfs path, filesystem or tr
   });
 });
 
+test('both stopped and OS preparers reject invalid package metadata before file reads or tool execution', async () => {
+  await scope(async base => {
+    const stopped = await mockTool(base), os = await osMockTool(base), before = await readdir(base);
+    let invoked = 0;
+    const execute: typeof runRuntimeProcess = async () => { invoked++; throw new Error('must not run'); };
+    for (const dockerExtras of [null, { ...pins.dockerExtras, sha256: '' },
+      { ...pins.dockerExtras, url: pins.dockerExtras.url + '/extra' }]) {
+      const invalidPins = { ...pins, dockerExtras } as LimaPins;
+      for (const result of [await createLimaProfilePreparer(execute)({ ...stopped, pins: invalidPins }),
+        await createLimaOsPreparer(execute)({ ...os, rootfsFile: '/missing-rootfs', pins: invalidPins })]) {
+        assert.equal(result.reason, 'prepare_failed'); assert.equal(result.verified, false);
+        assert.equal(result.lease, undefined); assert.equal(result.cleanup, undefined);
+      }
+    }
+    assert.equal(invoked, 0); assert.deepEqual(await readdir(base), before);
+  });
+});
+
 test('synthetic bytes bind private OS config and VZ identity; foreground boot stops before cleanup', async () => {
   await scope(async base => {
     const options = await osMockTool(base), result = await prepareLimaOsProfile(options); assert.ok(result.lease);
     const lease = result.lease, config = JSON.parse(await readFile(join(lease.home, 'profile.yaml'), 'utf8'));
     assert.equal(result.status, 'unavailable'); assert.equal(result.verified, false);
     assert.ok(result.missingPrerequisites.includes('docker-extras-byte-verification'));
+    assert.equal(Object.hasOwn(config, 'param'), false);
     assert.deepEqual(await readFile(join(lease.home, 'rootfs.img')), osBytes);
     assert.equal(config.images[0].location, join(lease.home, 'rootfs.img'));
     assert.equal(config.images[0].digest, 'sha256:' + options.pins.rootfs.sha256);
