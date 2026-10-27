@@ -81,6 +81,8 @@ test('compiled Lima config is isolated, pinned and explicitly fails before incom
     'CPUQuota=200%', 'MemoryMax=2G', 'TasksMax=256', 'wakeio_missing_prerequisite', 'exit 125']) {
     assert.ok(boot.includes(required), required);
   }
+  assert.ok(boot.endsWith('loginctl enable-linger wakeio-m1\n'
+    + 'echo "wakeio_missing_prerequisite: verified packages, daemon relay, nft/proxy and probes" >&2\nexit 125\n'));
   assert.doesNotMatch(boot, /docker run|docker start|curl.*\|.*sh/);
   assert.throws(() => compileLimaProfileConfig({ ...pins, rootfs: { ...pins.rootfs, sha256: '' } }));
   assert.throws(() => compileLimaProfileConfig({ ...pins, rootfs: { ...pins.rootfs, url: 'https://attacker/image' } }));
@@ -338,6 +340,11 @@ test('synthetic bytes bind private OS config and VZ identity; foreground boot st
     assert.doesNotMatch(config.provision[0].script, /wakeio_missing_prerequisite|^exit 125$|docker run|apt-get|curl/m);
     assert.match(config.provision[0].script, /cgroup2fs \|\| exit 125/);
     assert.match(config.provision[0].script, /host\\.lima/);
+    const osScript: string = config.provision[0].script;
+    assert.ok(osScript.endsWith('loginctl enable-linger wakeio-m1\n'));
+    const stoppedScript: string = JSON.parse(compileLimaProfileConfig(pins)).provision[0].script;
+    assert.equal(stoppedScript, osScript
+      + 'echo "wakeio_missing_prerequisite: verified packages, daemon relay, nft/proxy and probes" >&2\nexit 125\n');
     const boot = await lease.boot();
     assert.deepEqual(boot, { status: 'unavailable', verified: false, phase: 'running_observed_then_stopped' });
     assert.equal((await calls(lease.home)).some(args => args[0] === 'stop'), false);

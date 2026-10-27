@@ -261,10 +261,16 @@ Lima1.0.3의 VZ identity는 `vz-identifier`의 opaque GenericMachineIdentifier b
 공식1.0.3 `start --foreground`는 같은 PID에서 hostagent로 exec한다. 기존 최소 env/argv/bytecap/AbortSignal/PGID 감독을 그대로 사용한다.
 list의 PID를 kill/stop 권한으로 쓰지 않는다. 별도 10초 관측/cleanup에서 Running·재사용 PID·VM identity 불명은 stop/delete를 거부한다.
 VM의 OS 준비 부팅은 rootless daemon/nft를 설치할 신뢰 환경을 얻기 위한 단계다. source/host credential은 복사·mount하지 않으며 Docker 설치도 없다.
+이 OS-only 단계의 guest user-mode egress는 아직 차단되지 않는다. 소스·host 비밀·target·Docker 실행 0이 전제이며 egress 격리 PASS가 아니다(CPx6 N4).
 source-free config만 기존 setup script의 최종 무조건 missing-prerequisite 종료를 제외한다. alias/cgroup/UID/subuid/위임 실패 guard는 유지한다.
+CPx6 N2: script는 공통 BOOT_GUARDS와 명시 MISSING_PREREQUISITE_TRAILER로 조합한다. OS-only script의 끝은 loginctl enable-linger다.
+기존 Stopped-only script는 같은 guard 뒤 trailer를 붙인다. guard 안의 실패 exit125는 두 경로 모두 그대로다. 줄 위치에 따른 split/slice 제거는 없다.
 mount0·agent/pubkey/proxyenv/hostResolver off·alias 제거·서비스 TCP forwarding off(관리 SSH22 예외)·VM2CPU/4GiB/20GiB는 그대로다.
 Docker extras/guest helper의 실제 bytes pin·daemon/relay·nft/proxy·resource/egress/PG/target 검증은 미완료다. backend는 계속 unavailable·verified=false다.
 관측 phase 이름은 guest 준비/격리 PASS를 뜻하지 않는다. 테스트는 고정 가짜 bytes/소유 Node mock만 사용했고 실제 image 다운로드·VM 부팅은 하지 않았다.
 후속 R9가 공식 image bytes·Lima helper 자산·host 지원을 독립 검증해야 한다. 현재 API는 로컬 파일만 받으며 downloader/지속 VM 운영은 후속이다.
 [공식 SHA metadata](https://cloud-images.ubuntu.com/releases/noble/release-20261017/SHA256SUMS)의 arm64 후보는 `50e24e1fb79e89116e939d90aa7738f7af48c442fa1bc2510131e0b39c50348e`다. metadata 조회만 했으며 이 image bytes 실측은 없다.
 1.0.3 근거: [VZ identity](https://github.com/lima-vm/lima/blob/v1.0.3/pkg/vz/vm_darwin.go#L652-L665), [foreground exec](https://github.com/lima-vm/lima/blob/v1.0.3/pkg/instance/start.go#L175-L218), [실제 list 필드](https://github.com/lima-vm/lima/blob/v1.0.3/pkg/store/instance.go#L37-L62).
+CPx6 N1 고정1.0.3 생성 호출 체인: [createAction364~373](https://github.com/lima-vm/lima/blob/v1.0.3/cmd/limactl/start.go#L364-L373)의 instance.Prepare → [Prepare84](https://github.com/lima-vm/lima/blob/v1.0.3/pkg/instance/start.go#L74-L95)의 driver.Initialize → [VZ Initialize145~147](https://github.com/lima-vm/lima/blob/v1.0.3/pkg/vz/vz_driver_darwin.go#L145-L147)의 getMachineIdentifier다.
+root와 R3가 고정 원문을 확인한 정적 근거이며 실제 create 실측은 아니다. 후속 R9가 create 직후 vz-identifier 존재·bytes·소유 identity를 확인한다.
+없는 identity를 임의 UUID로 채우지 않는다. identity 부재/불명에서는 회수를 거부하고 unconfirmed를 보존하는 기존 기준을 유지한다.

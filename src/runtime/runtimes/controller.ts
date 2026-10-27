@@ -71,7 +71,7 @@ function options(raw: LimaProfileOptions): LimaProfileOptions {
 }
 
 // Trusted setup only. No Docker install/start or source is permitted before the remaining barriers exist.
-const BOOT = [
+const BOOT_GUARDS = [
   '#!/bin/sh', 'set -eu',
   "sed -i '/host\\.lima\\.internal/d; /host\\.docker\\.internal/d' /etc/hosts",
   "if grep -Eq 'host\\.(lima|docker)\\.internal' /etc/hosts; then exit 125; fi",
@@ -89,8 +89,11 @@ const BOOT = [
   'cat > /etc/systemd/system/user@10001.service.d/wakeio.conf <<\'EOF\'',
   '[Service]', 'Delegate=cpu cpuset io memory pids', 'CPUQuota=200%', 'MemoryMax=2G', 'TasksMax=256', 'EOF',
   'systemctl daemon-reload', 'loginctl enable-linger wakeio-m1',
+].join('\n') + '\n';
+const MISSING_PREREQUISITE_TRAILER = [
   'echo "wakeio_missing_prerequisite: verified packages, daemon relay, nft/proxy and probes" >&2', 'exit 125',
 ].join('\n') + '\n';
+const BOOT = BOOT_GUARDS + MISSING_PREREQUISITE_TRAILER;
 
 /** Pure config compilation; input is trusted tool metadata, never TargetSpec/source config or shell text. */
 export function compileLimaProfileConfig(raw: LimaPins): string {
@@ -394,7 +397,7 @@ function osConfig(config: LimaOsOptions, home: string): string {
   value.images[0].location = join(home, 'rootfs.img');
   value.upgradePackages = false; value.copyToHost = [];
   // Trusted OS-only provisioning: same boundary setup, with no package install, Docker or source execution.
-  value.provision[0].script = BOOT.split('\n').slice(0, -3).join('\n') + '\n';
+  value.provision[0].script = BOOT_GUARDS;
   value.message = 'unavailable: OS-only boot observation; Docker, source and target execution remain disabled';
   return JSON.stringify(value) + '\n';
 }
