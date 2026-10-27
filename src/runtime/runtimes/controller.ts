@@ -420,7 +420,7 @@ class OsProfile extends Profile {
       invalid) as Record<string, unknown>;
     if (data.name !== this.name || data.dir !== this.directory || data.protected !== false
       || data.vmType !== 'vz' || data.arch !== this.config.pins.rootfs.arch
-      || data.limaVersion !== '1.0.3' || data.errors !== undefined) invalid();
+      || (data.limaVersion !== '1.0.3' && data.limaVersion !== 'v1.0.3') || data.errors !== undefined) invalid();
     if (data.status === 'Running') {
       if (!Number.isSafeInteger(data.hostAgentPID) || Number(data.hostAgentPID) <= 0
         || data.hostAgentPID !== data.driverPID) invalid();
