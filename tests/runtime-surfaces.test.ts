@@ -256,15 +256,50 @@ test('Actuator structured methods and aliases retain case/slash without predicat
 });
 
 test('all-method, opaque, empty and malformed mappings report unknown instead of inventing GET or completeness', () => {
-  for (const methods of [[], ['*']]) {
-    const result = act(actDoc([actEntry(methods), actEntry(['POST'], ['/known'])]));
-    assert.equal(result.surfaces.length, 1); assert.equal(result.surfaces[0]!.method, 'POST');
+  for (const methods of [[], ['*'], ['*', 'GET']]) {
+    const result = act(actDoc([actEntry(methods, ['/alias/', '/alias']), actEntry(['POST'], ['/known'])]));
+    const unknown = result.surfaces.filter(s => s.method === '*');
+    assert.equal(result.surfaces.length, 3); assert.equal(result.counts.enumerated, 3);
+    assert.deepEqual(unknown.map(s => s.pathTemplate), ['/alias', '/alias/']);
+    assert.equal(result.surfaces.find(s => s.pathTemplate === '/known')!.method, 'POST');
+    assert.equal(result.surfaces.some(s => s.method === 'GET'), false);
+    assert.ok(unknown.every(s => s.readiness === 'unresolved'
+      && s.reasons.includes('actuator_all_methods_unknown') && s.reasons.includes('method_not_attack_supported')));
+    assert.ok(unknown.every(s => s.provenance[0]!.locator.endsWith('/dispatcherServlet/0')));
+    assert.ok(unknown.every(s => result.constraints.some(c => c.surfaceId === s.id && c.signature.length === 64)));
+    assert.equal(result.status, 'partial'); assert.equal(result.counts.declared, null);
     assert.ok(result.gaps.some(g => g.code === 'actuator_all_methods_unknown'));
   }
   const opaque = act(actDoc([{ predicate: 'GET /guess', handler: 'ignored' }]));
   assert.equal(opaque.counts.enumerated, 0); assert.equal(opaque.counts.declared, null);
   assert.equal(opaque.status, 'partial'); assert.ok(opaque.gaps.some(g => g.code === 'actuator_unstructured_mapping'));
   assert.equal(act(actDoc([])).status, 'partial');
+});
+
+test('all-method path markers survive alias ordering and merge without absorbing a concrete GET', () => {
+  const before = act(actDoc([actEntry([], ['/alias', '/alias/'])]));
+  const reordered = act(actDoc([actEntry([], ['/alias/', '/alias'])]));
+  assert.deepEqual(before, reordered);
+  const openapi = run(doc({ '/alias': { get: { parameters: [scalar()] } } }));
+  const inputs = [discovery('spring-actuator', before), discovery('openapi', openapi)];
+  const result = mergeSurfaceInventory(inventoryBinding, inputs);
+  assert.equal(result.counts.enumerated, 3); assert.equal(result.counts.declared, null);
+  assert.equal(result.surfaces.find(s => s.method === 'GET')!.readiness, 'ready');
+  for (const marker of result.surfaces.filter(s => s.method === '*')) {
+    assert.equal(marker.id, runtimeSurfaceId('*', marker.pathTemplate));
+    assert.equal(marker.readiness, 'unresolved'); assert.ok(marker.reasons.includes('actuator_all_methods_unknown'));
+    assert.equal(marker.provenance[0]!.provider, 'spring-actuator');
+    assert.equal(marker.provenance[0]!.rawInputSha256, metadata.rawInputSha256);
+  }
+  assert.deepEqual(result, mergeSurfaceInventory(inventoryBinding, [...inputs].reverse()));
+  const claimed = structuredClone(openapi);
+  claimed.surfaces[0]!.method = '*'; claimed.surfaces[0]!.id = runtimeSurfaceId('*', '/alias');
+  const blocked = mergeSurfaceInventory(inventoryBinding, [discovery('openapi', claimed)]);
+  assert.equal(blocked.surfaces[0]!.readiness, 'unresolved');
+  assert.ok(blocked.surfaces[0]!.reasons.includes('method_not_attack_supported'));
+  const missing = act(actDoc([actEntry([], [])]));
+  assert.equal(missing.counts.enumerated, 0); assert.equal(missing.counts.declared, null);
+  assert.ok(missing.gaps.some(g => g.code === 'actuator_patterns_unknown'));
 });
 
 test('Actuator conditions remain blocking and never preserve raw parameter/header values', () => {

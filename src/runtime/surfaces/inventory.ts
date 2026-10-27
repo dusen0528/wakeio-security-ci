@@ -119,6 +119,9 @@ function unique<T>(values: T[]): T[] {
 const parameterMeaning = ({ schemaLocator: _locator, ...semantic }: RuntimeParameter) => canonical(semantic);
 function mergeRoute(rows: RuntimeSurface[], constraints: ActuatorConstraint[]): RuntimeSurface {
   const first = rows[0]!, reasons = new Set(rows.flatMap(s => s.reasons));
+  if (first.method === '*') {
+    reasons.add('actuator_all_methods_unknown'); reasons.add('method_not_attack_supported');
+  }
   const schemas = rows.filter(s => s.provenance[0]!.provider === 'openapi');
   const ready = schemas.some(s => s.readiness === 'ready');
   if (unique(rows.flatMap(s => s.provenance.flatMap(p => p.handler ? [p.handler] : []))).length > 1)

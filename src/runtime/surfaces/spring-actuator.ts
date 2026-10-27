@@ -56,12 +56,13 @@ function conditions(value: Row, reasons: Set<string>): string[] {
 }
 function mapping(state: State, entry: Entry): void {
   const details = row(entry.value.details), conditionsRow = row(details.requestMappingConditions);
-  const methods = array(conditionsRow.methods, 16).map(text), patterns = array(conditionsRow.patterns, 64).map(text);
-  if (!methods.length || methods.includes('*')) { state.gaps.push(gap('actuator_all_methods_unknown')); return; }
+  const declared = array(conditionsRow.methods, 16).map(text), patterns = array(conditionsRow.patterns, 64).map(text);
+  const allMethods = !declared.length || declared.includes('*'), methods = allMethods ? ['*'] : declared;
   if (!patterns.length) { state.gaps.push(gap('actuator_patterns_unknown')); return; }
-  if (methods.some(method => !/^[!#$%&'*+.^_`|~A-Z0-9-]{1,32}$/.test(method))) fail();
+  if (declared.some(method => !/^[!#$%&'*+.^_`|~A-Z0-9-]{1,32}$/.test(method))) fail();
   const reasons = new Set([...entry.reasons, 'actuator_input_schema_unknown']);
-  if (new Set(methods).size !== methods.length || new Set(patterns).size !== patterns.length)
+  if (allMethods) reasons.add('actuator_all_methods_unknown');
+  if (new Set(declared).size !== declared.length || new Set(patterns).size !== patterns.length)
     reasons.add('actuator_duplicate_condition');
   let consumes: string[] = [];
   try { consumes = conditions(conditionsRow, reasons); }

@@ -144,3 +144,16 @@ PLAN 4·5·10·11·12·13·14.4, HANDOFF, SUBAGENTS와 R1의 구체 계약 제�
   source SHA/run artifact와 rawInput SHA/sanitized ref의 실제 결속은 신뢰 호출자가 검증하며 원문 저장을 주장하지 않는다.
 - 두 R8 원본 업무 route 목록은 읽기만 해 합성 계약과 대조했다. 실제 Actuator 수집·recall·handler source/coverage,
   소유 origin·request cap/deadline 연결은 후속 검증이며 이 모듈에는 네트워크/실행 capability가 없다.
+
+## M1-74: 전체 method의 알려진 path 보존
+
+- methods가 비었거나 `*`를 포함해도 구조화 patterns가 있으면 각 alias를 `method: '*'`인 미해결 surface로
+  남긴다. 여기서 `*`는 실제 HTTP method가 아니라 전체 method 범위를 확정하지 못했다는 정보 표시다.
+  GET/POST를 추측하거나 실행 허용하지 않으며 unresolved·actuator_all_methods_unknown·null 분모를 유지한다.
+  enumerated는 marker를 포함한 알려진 표시행 수이며 확정된 HTTP method 수가 아니다.
+  merge도 wildcard를 ready로 승격하지 않는다.
+- marker도 signature/constraints, raw SHA와 sanitized artifact/locator를 보존한다. method+path 정체성이므로 같은
+  path의 실제 GET과 합쳐지지 않는다. 상위 scope 필터는 알려진 path를 판단할 수 있지만 필터/정책은 변경하지 않았다.
+- 기존 계약 테스트의 "불명 mapping은 route 없음" 기대를 "두 alias marker와 명시 POST 보존"으로 바꿨다.
+  이는 정보 손실을 줄이는 강화이며 실제 method 미추측·공격 미허용·unknown/null 기준과 R8 보안 verdict는 그대로다.
+  patterns 자체가 불명이면 기존 gap만 남기고 path를 만들지 않는다. 실제 Actuator 측정은 여전히 후속 범위다.
