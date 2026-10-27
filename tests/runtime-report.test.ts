@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
+import { isBuiltin } from 'node:module';
 import { mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -70,24 +71,29 @@ function incomplete(report: RuntimeReport): void {
     reasons: [{ area: 'oracle.sql', code: 'not_completed' }] };
 }
 
-test('isolated legacy entries never compile the runtime schema; runtime compiles once on first use', async () => {
+test('isolated legacy entries never load Ajv; runtime loads and compiles once on first use', async () => {
   const legacy = JSON.parse(await readFile('tests/fixtures/compat-0.5/findings/reports/report.json', 'utf8'));
   const child = spawnSync(process.execPath, ['--input-type=module', '-e', `
     import assert from 'node:assert/strict';
     import { readFileSync } from 'node:fs';
-    import { Ajv2020 } from 'ajv/dist/2020.js';
-    const compile = Ajv2020.prototype.compile;
-    let count = 0, allowed = false, calls = 0;
-    Ajv2020.prototype.compile = function (...args) {
-      count++; assert.ok(allowed, 'runtime_schema_compiled_for_legacy');
-      return Reflect.apply(compile, this, args);
+    import Module from 'node:module';
+    const load = Module._load;
+    let loads = 0, count = 0, allowed = false, calls = 0;
+    Module._load = function (id, ...args) {
+      if (id !== 'ajv/dist/2020.js') return Reflect.apply(load, this, [id, ...args]);
+      loads++; assert.ok(allowed, 'runtime_ajv_loaded_for_legacy');
+      const loaded = Reflect.apply(load, this, [id, ...args]), compile = loaded.Ajv2020.prototype.compile;
+      loaded.Ajv2020.prototype.compile = function (...args) {
+        count++; return Reflect.apply(compile, this, args);
+      };
+      return loaded;
     };
     const { parseReport, parseScanReport } = await import(
       ${JSON.stringify(new URL('../src/compare.js', import.meta.url).href)});
     const { parseRuntimeReport, sanitiseRuntimeReport, sanitiseReport } = await import(
       ${JSON.stringify(new URL('../src/report.js', import.meta.url).href)});
     const { legacy, runtime } = JSON.parse(readFileSync(0, 'utf8'));
-    assert.equal(count, 0);
+    assert.equal(loads, 0); assert.equal(count, 0);
     assert.deepEqual(parseReport(legacy), parseScanReport(legacy));
     assert.deepEqual(sanitiseReport(legacy), parseScanReport(legacy));
     const getter = Object.defineProperty({}, 'mode', { get() { calls++; throw Error('must_not_run'); } });
@@ -96,7 +102,7 @@ test('isolated legacy entries never compile the runtime schema; runtime compiles
     for (const raw of [getter, proxy, custom]) {
       assert.throws(() => parseReport(raw)); assert.throws(() => parseRuntimeReport(raw));
     }
-    assert.equal(calls, 0); assert.equal(count, 0);
+    assert.equal(calls, 0); assert.equal(loads, 0); assert.equal(count, 0);
     allowed = true;
     assert.equal(parseReport(runtime).mode, 'runtime'); assert.equal(count, 1);
     assert.deepEqual(sanitiseRuntimeReport(runtime), parseRuntimeReport(runtime));
@@ -104,10 +110,45 @@ test('isolated legacy entries never compile the runtime schema; runtime compiles
     assert.throws(() => parseRuntimeReport(wrongSchema), { message: 'invalid_runtime_report' });
     const wrongCount = structuredClone(runtime); wrongCount.checks[3].runtime.routes[0].ratio = 1;
     assert.throws(() => parseRuntimeReport(wrongCount), { message: 'invalid_runtime_report' });
-    assert.equal(count, 1);
+    assert.equal(loads, 1); assert.equal(count, 1);
   `], { input: JSON.stringify({ legacy, runtime: withFinding() }), encoding: 'utf8', timeout: 30000 });
   assert.equal(child.error, undefined); assert.equal(child.signal, null);
   assert.equal(child.status, 0, child.stderr); assert.equal(child.stdout, '');
+});
+
+test('static bundled runtime reader validates without any Ajv resolution outside its module', async () => {
+  const { build } = await import('esbuild');
+  const top = await mkdtemp(join(tmpdir(), 'wakeio-runtime-reader-bundle-'));
+  try {
+    const bundled = await build({
+      entryPoints: ['build/src/runtime-report.js'], bundle: true, platform: 'node', format: 'esm', target: 'node22',
+      write: false, metafile: true, logLevel: 'silent',
+    });
+    assert.ok(Object.keys(bundled.metafile.inputs).some(path => path.includes('ajv/dist/2020')));
+    for (const output of Object.values(bundled.metafile.outputs)) {
+      assert.ok(output.imports.every(item => item.external && isBuiltin(item.path)));
+    }
+    const path = join(top, 'reader.mjs'); await writeFile(path, bundled.outputFiles[0].contents);
+    const child = spawnSync(process.execPath, ['--input-type=module', '-e', `
+      import assert from 'node:assert/strict';
+      import Module, { createRequire } from 'node:module';
+      import { readFileSync } from 'node:fs';
+      import { pathToFileURL } from 'node:url';
+      const path = process.argv[1], require = createRequire(path), load = Module._load;
+      assert.throws(() => require.resolve('ajv/dist/2020.js'), { code: 'MODULE_NOT_FOUND' });
+      Module._load = function (id, ...args) {
+        assert.ok(!['ajv', 'fast-uri', 'fast-deep-equal', 'json-schema-traverse'].includes(id.split('/')[0]));
+        return Reflect.apply(load, this, [id, ...args]);
+      };
+      const { parseRuntimeReport } = await import(pathToFileURL(path).href);
+      const runtime = JSON.parse(readFileSync(0, 'utf8'));
+      assert.equal(parseRuntimeReport(runtime).runtime.verifyGate.exitCode, 1);
+      runtime.runtime.revision = 'unknown';
+      assert.throws(() => parseRuntimeReport(runtime), { message: 'invalid_runtime_report' });
+    `, path], { input: JSON.stringify(withFinding()), encoding: 'utf8', timeout: 30000 });
+    assert.equal(child.error, undefined); assert.equal(child.signal, null);
+    assert.equal(child.status, 0, child.stderr); assert.equal(child.stdout, '');
+  } finally { await rm(top, { recursive: true, force: true }); }
 });
 
 test('common/runtime readers retain evidence without legacy proof or independent verification claims', () => {
