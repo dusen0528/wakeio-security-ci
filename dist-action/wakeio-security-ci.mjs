@@ -262646,13 +262646,30 @@ async function absent(output) {
   }
   fail9("init_target_output_exists");
 }
+async function unlinkPinnedTemporary(parent, path3, handle, pinned) {
+  await unchanged(parent);
+  let named;
+  try {
+    named = await lstat23(path3);
+  } catch (error2) {
+    if (error2.code === "ENOENT")
+      return;
+    throw error2;
+  }
+  const current = await handle.stat();
+  if (!current.isFile() || current.dev !== pinned.dev || current.ino !== pinned.ino || !named.isFile() || named.isSymbolicLink() || named.mode !== current.mode || !same2(named, current))
+    fail9();
+  await unchanged(parent);
+  await unlink5(path3);
+}
 async function publish(parent, output, yaml) {
   await unchanged(parent);
   await absent(output);
   const temporary = join21(parent.path, `.wakeio-target-${randomUUID6()}.tmp`);
   const handle = await open12(temporary, constants15.O_CREAT | constants15.O_EXCL | constants15.O_WRONLY | constants15.O_NOFOLLOW, 384);
-  let published = false, failure3;
+  let published = false, failure3, pinned;
   try {
+    pinned = await handle.stat();
     await handle.writeFile(yaml);
     await handle.sync();
     await unchanged(parent);
@@ -262667,21 +262684,21 @@ async function publish(parent, output, yaml) {
         fail9("init_target_output_exists");
       throw error2;
     }
-    await unlink5(temporary);
+    await unlinkPinnedTemporary(parent, temporary, handle, pinned);
     await unchanged(parent);
   } catch (cause) {
     failure3 = { cause };
   }
   try {
-    await handle.close();
+    if (pinned)
+      await unlinkPinnedTemporary(parent, temporary, handle, pinned);
   } catch (cause) {
     failure3 ??= { cause };
   }
   try {
-    await unlink5(temporary);
+    await handle.close();
   } catch (cause) {
-    if (cause.code !== "ENOENT")
-      failure3 ??= { cause };
+    failure3 ??= { cause };
   }
   if (failure3) {
     if (published)

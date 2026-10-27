@@ -136,9 +136,14 @@ const originalLink=p.link, originalUnlink=p.unlink, originalOpen=p.open;
 let linked=false, pending, attempts=0;
 p.link=async (temporary,output)=>{
  await originalLink(temporary,output); linked=true; pending=temporary;
- if(mode==='move') {
+ if(mode==='move' || mode==='parent-sentinel') {
   fs.renameSync(parent,moved); fs.mkdirSync(parent);
   fs.writeFileSync(output,'replacement-owner-output');
+ }
+ if(mode==='parent-sentinel' || mode==='replace-temp') {
+  if(mode==='replace-temp') fs.unlinkSync(temporary);
+  fs.writeFileSync(temporary,'temporary-owner-sentinel',{mode:0o600});
+  fs.writeFileSync(${JSON.stringify(join(top, 'pending-name'))},basename(temporary));
  }
 };
 p.unlink=async path=>{
@@ -188,6 +193,36 @@ test('post-link parent, unlink and close failures report unconfirmed output with
           assert.equal(await readFile(output, 'utf8'), 'replacement-owner-output');
           assert.notEqual((await lstat(output)).ino, (await lstat(join(moved, 'draft.yml'))).ino);
         } else assert.equal(await readFile(output, 'utf8'), saved);
+      }
+    }
+  } finally { await rm(top, { recursive: true, force: true }); }
+});
+
+test('post-link parent and temporary inode replacements preserve same-name owner sentinels', async () => {
+  const top = await realpath(await mkdtemp(join(tmpdir(), 'wakeio-init-cleanup-owner-')));
+  try {
+    for (const [index, entry] of entries.entries()) {
+      for (const mode of ['parent-sentinel', 'replace-temp']) {
+        const root = join(top, `${index}-${mode}`); await mkdir(root);
+        const parent = join(root, 'publish'), moved = join(root, 'moved'); await mkdir(parent);
+        const source = join(parent, 'service'), output = join(parent, 'draft.yml'); await mkdir(source);
+        const before = 'org.springframework.boot\nprivate-source-canary';
+        await writeFile(join(source, 'pom.xml'), before); await writeFile(join(parent, 'existing'), 'preserve');
+        const { preload, marker } = await guard(root, source, output, false);
+        const fault = await publishFault(root, preload, parent, moved, mode);
+        const run = launch(entry, ['init-target', '--source', source, '--out', output], root, fault);
+        assert.equal(run.status, 2); assert.equal(run.stderr.trim(), 'init_target_output_unconfirmed');
+        const name = await readFile(join(root, 'pending-name'), 'utf8'), sentinel = join(parent, name);
+        assert.equal(await readFile(sentinel, 'utf8'), 'temporary-owner-sentinel');
+        assert.equal((await lstat(sentinel)).mode & 0o777, 0o600);
+        const savedParent = mode === 'parent-sentinel' ? moved : parent;
+        const published = join(savedParent, 'draft.yml');
+        assert.equal(parseTargetYaml(await readFile(published, 'utf8')).source, 'service');
+        assert.notEqual((await lstat(sentinel)).ino, (await lstat(published)).ino);
+        assert.equal(await readFile(join(savedParent, 'existing'), 'utf8'), 'preserve');
+        assert.equal(await readFile(join(savedParent, 'service', 'pom.xml'), 'utf8'), before);
+        if (mode === 'parent-sentinel') assert.equal(await readFile(output, 'utf8'), 'replacement-owner-output');
+        await assert.rejects(readFile(marker), { code: 'ENOENT' });
       }
     }
   } finally { await rm(top, { recursive: true, force: true }); }
