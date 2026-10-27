@@ -188,3 +188,29 @@ salt 없는 hash는 기밀성 수단이 아니며 낮은 엔트로피 literal은
 완료 조건은 개별 tokenHashes가 저장·보고 출력에 없음을 확인하는 negative contract test와 R9의 전체 출력 경로 audit다.
 이 문서는 writer 구현·폐기 검증 완료를 뜻하지 않는다. HMAC 대안은 미선택이며 새 키·비밀 salt를 도입하지 않는다.
 현재 parser/Oracle/protocol·pin·manifest·배포 asset bytes와 SHA는 이 수명 정책 반영으로 변경하지 않는다.
+
+## M1-118 managed PG jsonlog 형식 정규화
+
+`parsePgJsonLogRecord`는 own byte snapshot 한 줄을 parsed/ignored/unknown으로 해석하는 data-only 함수다.
+parsed는 형식 해석 성공이며 실제 수집·출처 인증·Observation·SQL 보안 판정·gate 성공을 뜻하지 않는다.
+[PG18 JSON 표](https://www.postgresql.org/docs/18/runtime-config-logging.html#RUNTIME-CONFIG-LOGGING-JSONLOG)와
+고정 [REL_18_0 jsonlog.c](https://github.com/postgres/postgres/blob/REL_18_0/src/backend/utils/error/jsonlog.c)를 대조했다.
+필드는 `file_name`·`func_name`·`file_line_num`이며 sourcefile/funcname을 별칭으로 추측하지 않는다.
+trusted collector가 `log_error_verbosity=verbose`·`lc_messages=C`·server encoding UTF8와 기존 all/ERROR 설정을 확인해야 한다.
+[lc_messages](https://www.postgresql.org/docs/18/runtime-config-client.html#GUC-LC-MESSAGES)는 서버 환경 상속값에 의존하지 않는다.
+메시지 prefix만 믿지 않고 `postgres.c`의 exec_simple_query/exec_execute_message와 client backend origin을 요구한다.
+[postgres.c](https://github.com/postgres/postgres/blob/REL_18_0/src/backend/tcop/postgres.c)의 statement/execute 기본 LOG만 지원한다.
+RAISE LOG의 pl_exec.c/exec_stmt_raise·누락된 source 정보·duration/parse/bind/fetch 메시지는 parsed로 승격하지 않는다.
+extended Execute의 `Parameters: ` detail은 순차 `$n = NULL` 또는 PG 로그용 따옴표 값으로만 해석하며 SQL로 재파싱하지 않는다.
+[params.c](https://github.com/postgres/postgres/blob/REL_18_0/src/backend/nodes/params.c)와
+[quote emitter](https://github.com/postgres/postgres/blob/REL_18_0/src/backend/utils/mb/stringinfo_mb.c)의 doubled quote를 대조했다.
+`log_parameter_max_length=-1`을 전제로 하며 생략부호로 끝난 값·잘린 따옴표·128개 초과·locale 변형은 unknown이다.
+현재 모든 ERROR/42601·internal query·PG 문자 위치 변환은 미지원이다. 오류 excerpt/위치를 추측해 parser 증거로 만들지 않는다.
+record 64KiB(LF 포함)·SQL 32KiB, UTF8/NUL/surrogate·잘림/여러 줄·JSON 깊이40/노드20,000·shape 손상은 unknown이다.
+유효한 비마커 사건은 원문과 hash 모두 남기지 않고 ignored다. 알 수 없는 JSON 필드는 bounded snapshot 뒤 버린다.
+발급 lookup의 14byte 마커/hash를 확인해 statement/Bind 채널·session/line·사건/문장 digest만 공개 metadata로 반환한다.
+SQL은 빈 frozen opaque handle의 private WeakMap에만 두고 trusted synchronous parser sink에서 한 번 소비하거나 명시적으로 폐기한다.
+JSON/object spread에는 SQL·Bind/literal/query 원문·개별 tokenHashes가 없다. callback 실패도 닫힌 소비 상태만 반환한다.
+collector는 모든 종료 경로에서 handle을 소비/폐기해야 하며 이 API는 즉시 물리 메모리 소거를 보장하지 않는다.
+R3의 새 DB/container/log·runNonce/lease/cursor·설정/연속성·닫힌 물리 창·private 수집 capability 연결은 후속 완료 조건이다.
+inline envelope 계약 테스트는 R8 기존 SQL 템플릿을 읽지만 PG 캡처·실행 증거나 새로운 보안 기대 판정이 아니다.
