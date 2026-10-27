@@ -232,4 +232,14 @@ Maven 정책은 canonical 좌표의 jar/pom/module/xml/zip/tar.gz·metadata·서
 좌표 경로 근거: [Maven 공식 repository layout](https://maven.apache.org/repositories/layout.html). 알 수 없는 확장자를 임의 URL 통로로 허용하지 않는다.
 CPU quota 비교는 `Math.round(cpu * period)`로 정수화한다(CPx2 N1). 0.3 CPU/100000 period의 실제 요구 quota는 30000이다.
 후속 bootstrap/proxy는 우선 canonical `runtimes/controller.ts`·`builders/build-policy.ts` 안에서 최소 조립하며 명부 밖 bootstrap/proxy 파일은 추가하지 않는다.
+M1-37: context/Dockerfile의 각 선두 `-` segment를 거부하고 service는 Target과 같은 점 허용·64자 상한으로 정렬한다.
+후속 실행 argv는 snapshot의 절대 경로와 명시 flag로만 만든다. 상대 소스 경로를 그대로 tool option 위치에 넣지 않는다.
+controller의 consent guard 뒤에서만 새 private HOME·고유 profile을 만들며 기존 Lima/Desktop 설정을 읽거나 변경하지 않는다.
+프로필 준비는 create/list와 실제 profile directory dev/ino 결속까지다. backend는 계속 unavailable이며 VM 시작·Docker/대상 실행은 연결하지 않는다.
+고정 rootfs URL/SHA와 Docker extras 버전/URL/SHA는 trusted 입력이다. 모양 검증은 다운로드/서명/실제 byte 검증의 증거가 아니다.
+제품 소유 boot script는 alias 제거·UID10001/non-sudo·비중첩 subuid/gid·cgroup 위임의 첫 설정 뒤 missing-prerequisite로 종료한다.
+daemon/관리 Unix relay·nft/proxy·VM 실제 ID·resource/egress probe가 없어 VM 시작 승인을 내지 않는다. 관리 SSH22만 TCP 예외로 명시한다.
+cleanup은 private HOME/store/profile의 결속·Stopped/PID0를 재확인한 profile만 delete하고 부재를 확인한다. Running VM은 실제 VM ID 미결속으로 stop/delete를 거부한다.
+abort/deadline 뒤 process group 확인과 별도 10초 cleanup budget을 사용한다. 실패/교체/부재 불명은 cleanup unconfirmed로 보존한다.
+Lima Unix socket 경로는 100바이트 이내다. trusted caller는 canonical /tmp 아래 짧고 소유권이 확인된 base를 주며 긴 경로를 제한 완화로 우회하지 않는다.
 근거: [Lima Docker](https://lima-vm.io/docs/examples/containers/docker/), [rootless cgroup](https://docs.docker.com/engine/security/rootless/tips/#limiting-resources), [nft socket UID](https://wiki.nftables.org/wiki-nftables/index.php/Matching_packet_metainformation#Matching_by_socket_UID_.2F_GID).
