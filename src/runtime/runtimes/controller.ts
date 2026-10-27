@@ -402,6 +402,22 @@ function osConfig(config: LimaOsOptions, home: string): string {
   return JSON.stringify(value) + '\n';
 }
 
+function startingStatus(data: Record<string, unknown>): 'Running' | 'pending' {
+  const host = data.hostAgentPID === undefined ? 0 : data.hostAgentPID;
+  const driver = data.driverPID === undefined ? 0 : data.driverPID;
+  if (![host, driver].every(pid => typeof pid === 'number' && Number.isSafeInteger(pid) && pid >= 0)
+    || Number(driver) > 0 && (host !== driver || Number(host) <= 0)
+    || data.errors !== undefined && !Array.isArray(data.errors)) invalid();
+  if (data.status === 'Running') {
+    if (Number(host) <= 0 || host !== driver || data.errors !== undefined) invalid();
+    return 'Running';
+  }
+  if (data.status === 'Stopped') {
+    if (host !== 0 || driver !== 0 || data.errors !== undefined) invalid();
+  } else if (data.status !== 'Installing' && data.status !== 'Broken') invalid();
+  return 'pending'; // Even an identity-bound Broken frame is never readiness or cleanup evidence.
+}
+
 class OsProfile extends Profile {
   readonly files = new OsFiles(this); machineIdentitySha256?: string;
   async verifyAssets(includeVm = true): Promise<void> {
@@ -414,19 +430,23 @@ class OsProfile extends Profile {
     await this.files.capture('lima.yaml', 1024 * 1024);
     this.machineIdentitySha256 = createHash('sha256').update(machine).digest('hex');
   }
-  async observe(deadline: number, signal?: AbortSignal): Promise<'Running' | 'Stopped'> {
+  private async frame(deadline: number, signal?: AbortSignal): Promise<Record<string, unknown>> {
     await this.checkIdentity();
     const data = snapshotJsonData(JSON.parse(await this.tool(['list', '--format=json', this.name], deadline, signal)),
       invalid) as Record<string, unknown>;
     if (data.name !== this.name || data.dir !== this.directory || data.protected !== false
       || data.vmType !== 'vz' || data.arch !== this.config.pins.rootfs.arch
-      || (data.limaVersion !== '1.0.3' && data.limaVersion !== 'v1.0.3') || data.errors !== undefined) invalid();
+      || (data.limaVersion !== '1.0.3' && data.limaVersion !== 'v1.0.3')) invalid();
+    await this.checkIdentity(); await this.verifyAssets(); return data;
+  }
+  async observe(deadline: number, signal?: AbortSignal): Promise<'Running' | 'Stopped'> {
+    const data = await this.frame(deadline, signal);
+    if (data.errors !== undefined) invalid();
     if (data.status === 'Running') {
       if (!Number.isSafeInteger(data.hostAgentPID) || Number(data.hostAgentPID) <= 0
         || data.hostAgentPID !== data.driverPID) invalid();
     } else if (data.status !== 'Stopped' || Number(data.hostAgentPID ?? 0) !== 0
       || Number(data.driverPID ?? 0) !== 0) invalid();
-    await this.checkIdentity(); await this.verifyAssets();
     return data.status as 'Running' | 'Stopped';
   }
   async listed(deadline: number, signal?: AbortSignal): Promise<Record<string, unknown>> {
@@ -436,24 +456,28 @@ class OsProfile extends Profile {
   async boot(): Promise<LimaOsBoot> {
     if (this.busy || this.done || this.cleaning) return { status: 'unavailable', verified: false, phase: 'failed' };
     this.busy = true;
-    let observed = false, stopped = false, settled = false;
+    let observed = false, stopped = false, settled = false, deadline = 0;
     let supervised: RuntimeProcessResult | undefined;
     let pending: Promise<RuntimeProcessResult | undefined> | undefined;
     const controller = new AbortController(), onAbort = () => controller.abort();
     try {
       remaining(this.config); await verifyRootfs(this); await this.files.verify();
       if (await this.observe(this.config.deadlineAt, this.config.signal) !== 'Stopped') invalid();
+      deadline = Math.min(this.config.deadlineAt, Date.now() + 30_000);
       this.config.signal?.addEventListener('abort', onAbort, { once: true });
       pending = this.execute(this.config.limactlExecutable,
         ['--tty=false', 'start', '--foreground', '--timeout=30s', this.name], {
-          cwd: this.home, home: this.home, timeoutMs: 30_000, deadlineAt: this.config.deadlineAt,
+          cwd: this.home, home: this.home, timeoutMs: 30_000, deadlineAt: deadline,
           maxOutputBytes: 16 * 1024, signal: controller.signal }).then(result => {
         this.groupConfirmed &&= result.cleanupConfirmed === true && result.closeConfirmed === true;
         settled = true; return result;
       }, () => { this.groupConfirmed = false; settled = true; return undefined; });
       while (!settled) {
         remaining(this.config);
-        if (await this.observe(this.config.deadlineAt, this.config.signal) === 'Running') {
+        if (Date.now() >= deadline) invalid();
+        const state = startingStatus(await this.frame(deadline, this.config.signal));
+        if (settled) break;
+        if (state === 'Running') {
           observed = true; break;
         }
         await delay(20);
@@ -469,7 +493,7 @@ class OsProfile extends Profile {
       this.busy = false;
     }
     if (observed && stopped && supervised?.cancelled === true && supervised.cleanupConfirmed === true
-      && this.groupConfirmed && !this.config.signal?.aborted && Date.now() < this.config.deadlineAt) {
+      && this.groupConfirmed && !this.config.signal?.aborted && Date.now() < deadline) {
       return { status: 'unavailable', verified: false, phase: 'running_observed_then_stopped' };
     }
     return { status: 'unavailable', verified: false, phase: 'failed', cleanup: await this.cleanup() };

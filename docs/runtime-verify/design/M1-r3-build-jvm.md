@@ -292,3 +292,14 @@ M1-76: R9 M1-75에서 actual create exit0·70-byte vz-identifier와 lease SHA �
 Stopped+생략/0은 해당 Lima instance의 관측이며 OS 전역 프로세스 부재 실측이 아니다. 소유 tool의 PGID 종료 확인도 별도 조건이고 임의 PID kill 권한은 없다.
 버전 외 name/dir/protected/status/arch/VZ/asset·identity·PID·sticky 정리 기준은 그대로다. mock 태그형 lease의 준비/boot/정리와 다른 버전·접미사·개행 거부를 검증한다.
 실제 잔존 profile/캐시는 접근·수정·실행하지 않는다. R9가 별도 원본 proof 확인 뒤 정상 SDK로 정리하며 범용 adopt/force 복구 API는 추가하지 않는다.
+
+M1-80: R9 M1-79는 create/prepare·N1 identity 결속을 통과했으나 시작 직후 host-agent PID만 있는 Broken/errors frame에서 즉시 취소했고 cleanup은 성공했다.
+driver PID가 없던 실제 원인은 미확정이다. 아래 작성 순서는 과도 관찰이 가능한 정적 근거이며 이번 실제 실패가 과도 상태 때문이었다고 확정하지 않는다.
+공식1.0.3 [hostagentAction](https://github.com/lima-vm/lima/blob/v1.0.3/cmd/limactl/hostagent.go#L33-L46)은 먼저 ha.pid를 쓰고 Run으로 진입한다. [VZ state callback](https://github.com/lima-vm/lima/blob/v1.0.3/pkg/vz/vm_darwin.go#L87-L98)은 VM Running 뒤 같은 process PID를 vz.pid에 쓴다.
+[Inspect](https://github.com/lima-vm/lima/blob/v1.0.3/pkg/store/instance.go#L174-L193)는 host-agent만 있으면 Broken으로 분류하며 API 연결 실패도 errors/Broken을 만들 수 있다.
+boot 중 소유 foreground가 살아 있을 때만 identity/asset/name/dir/pinned version/arch/VZ/protected를 먼저 검증한 frame을 분리한다.
+Stopped/Installing/Broken은 미준비로만 재관찰한다. 유효하지 않은 PID·driver-only/서로 다른 PID·알 수 없는 status·transport/identity 손실은 즉시 실패다.
+Running은 같은 양수 PID 쌍·errors 없음이 모두 맞아야 한다. frame 오류 배열은 readiness로 바꾸거나 원문 로그로 저장하지 않는다.
+시작/관찰은 기존 30초와 caller deadline 중 짧은 한도·abort·16KiB cap을 공유한다. foreground가 먼저 끝나면 Running 관측을 성공으로 채택하지 않는다.
+일반 prepare/cleanup의 strict 관찰은 그대로다. finally 소유 PGID 종료와 strict Stopped/PID0 없이 관측 성공을 보고하지 않는다. 소유 삭제 뒤 부재 확인 전에는 cleanup confirmed가 아니다.
+고정 Node mock 상태열과 지속 Broken·조기 종료·취소·PID 모순·asset/identity 변경·cleanup 불명을 검사한다. 실제 SDK 재측정은 후속 R9 담당이며 VM/캐시에는 접근하지 않는다.
