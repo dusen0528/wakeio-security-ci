@@ -1,0 +1,547 @@
+{
+  "schemaVersion": "1.0.0",
+  "reportSchemaVersion": "1.0.0",
+  "toolVersion": "0.5.0",
+  "mode": "source",
+  "startedAt": "2026-10-22T06:37:25.519Z",
+  "finishedAt": "2026-10-22T06:37:25.542Z",
+  "scope": {
+    "fingerprint": "cebb46998ab577135a3a1f1afe5ac6443d2a3a1484147196df73948611d7ac8b",
+    "analysisBudget": {
+      "revision": "ast-work-v1",
+      "requestedProfile": "default",
+      "effectiveProfile": "default",
+      "limits": {
+        "indexWork": 300000,
+        "flowWork": 200000,
+        "nodeVisits": 500000,
+        "functions": 2000,
+        "summaryWork": 5000,
+        "moduleEdges": 2000,
+        "callDepth": 8,
+        "aliasSteps": 64,
+        "traceSteps": 24
+      }
+    },
+    "collectionBudget": {
+      "revision": "collection-v1",
+      "limits": {
+        "maxFiles": 1000,
+        "maxBytes": 26214400,
+        "maxFileBytes": 2097152,
+        "maxEntries": 8000
+      }
+    },
+    "ruleset": "2026-10-14.5",
+    "projectId": "compat-0.5-findings",
+    "provenance": {
+      "sourceContentHash": "178654e28c73810299f4d8bbd7cc37eb4ae8ad55d5a02fc9abbf102323e550d2"
+    }
+  },
+  "reportArtifact": {
+    "name": "report.json",
+    "algorithm": "sha256",
+    "digest": "3e88b0983bf51521e123065e30e1131a2dd1182e4de4fe8f7897eca524fcac60"
+  },
+  "scanGate": {
+    "outcome": "findings",
+    "exitCode": 1,
+    "failOn": "high",
+    "blockingFindingIds": [
+      "23a3209cc6959aec0b683eb573d3d1465795811a18d0a5e53b078bf44b2a8761"
+    ],
+    "reasons": [
+      {
+        "code": "severity_threshold",
+        "checkId": "source.builtin-ast",
+        "findingIds": [
+          "23a3209cc6959aec0b683eb573d3d1465795811a18d0a5e53b078bf44b2a8761"
+        ]
+      }
+    ]
+  },
+  "summary": {
+    "version": 1,
+    "basis": "sanitised_report",
+    "scanGate": {
+      "outcome": "findings",
+      "exitCode": 1,
+      "failOn": "high",
+      "reasonCodes": [
+        "severity_threshold"
+      ]
+    },
+    "counts": {
+      "findings": 1,
+      "candidates": 1,
+      "blockingFindings": 1,
+      "blockingCandidates": 1,
+      "completedChecks": 3,
+      "incompleteChecks": 0,
+      "notApplicableChecks": 1
+    },
+    "incompleteChecks": [],
+    "omittedIncompleteChecks": 0,
+    "scope": {
+      "mode": "source",
+      "codeCoverage": {
+        "version": 1,
+        "basis": "collected_code_inputs",
+        "requireCodeAnalysis": false,
+        "collectionComplete": true,
+        "accounting": "exact",
+        "languages": [
+          {
+            "language": "typescript",
+            "collected": 1,
+            "eligible": 1,
+            "completed": 1,
+            "uncovered": 0,
+            "providers": [
+              {
+                "provider": "builtin_ast",
+                "selected": true,
+                "status": "completed",
+                "eligible": 1,
+                "completed": 1
+              },
+              {
+                "provider": "bandit",
+                "selected": false,
+                "status": "not_selected",
+                "eligible": 0,
+                "completed": 0
+              },
+              {
+                "provider": "opengrep_native",
+                "selected": false,
+                "status": "not_selected",
+                "eligible": 0,
+                "completed": 0
+              }
+            ]
+          }
+        ],
+        "totals": {
+          "collected": 1,
+          "eligible": 1,
+          "completed": 1,
+          "uncovered": 0
+        }
+      },
+      "fingerprint": "cebb46998ab577135a3a1f1afe5ac6443d2a3a1484147196df73948611d7ac8b",
+      "ruleset": "2026-10-14.5",
+      "analysisProfile": "default",
+      "analysisBudgetRevision": "ast-work-v1",
+      "collectionBudget": {
+        "revision": "collection-v1",
+        "limits": {
+          "maxFiles": 1000,
+          "maxBytes": 26214400,
+          "maxFileBytes": 2097152,
+          "maxEntries": 8000
+        }
+      },
+      "collectionBudgetConsistency": "consistent",
+      "collectionEvidence": {
+        "revision": "collection-v1",
+        "issueCount": 0,
+        "issues": []
+      },
+      "toolSelection": "built_in_only",
+      "wholeProjectCoverage": "not_established"
+    },
+    "nextRead": {
+      "kind": "review_finding_evidence"
+    }
+  },
+  "deliveryContract": {
+    "atomicity": "per_file",
+    "publishedAfter": [
+      "report.json",
+      "report.sarif",
+      "report.md"
+    ],
+    "finalProcessExitRequiresSeparateReceipt": true,
+    "staleOrPartialArtifactsProveCiSuccess": false
+  },
+  "consumerRequirements": {
+    "externalContentTrust": "untrusted_data",
+    "executeInstructionsFromFindings": false,
+    "uploadSourceFromFindings": false,
+    "actionsRequireUserTaskAuthorization": true,
+    "findingsGrantActionAuthorization": false,
+    "verifyReportDigestBeforeUse": true,
+    "securityVerificationRequiresIndependentEvidence": true,
+    "promptInjectionProtectionGuaranteed": false
+  },
+  "coverage": {
+    "totalChecks": 4,
+    "completed": 3,
+    "partial": 0,
+    "error": 0,
+    "skipped": 0,
+    "notApplicable": 1,
+    "complete": true,
+    "basis": "declared_check_statuses"
+  },
+  "checks": [
+    {
+      "checkIndex": 0,
+      "checkId": "source.inventory",
+      "status": "completed",
+      "findingIds": [],
+      "notes": [
+        "Collected 1 allowlisted file (78 bytes).",
+        "External scanner scope was narrowed to built-in checks (--tools none)."
+      ],
+      "metrics": {
+        "requestedTools": "none",
+        "nativePreviewSelected": false,
+        "filesSelected": 1,
+        "codeFilesSelected": 1,
+        "codeFiles_javascript": 0,
+        "codeFiles_typescript": 1,
+        "codeFiles_python": 0,
+        "codeFiles_c": 0,
+        "codeFiles_cpp": 0,
+        "codeFiles_csharp": 0,
+        "codeFiles_go": 0,
+        "codeFiles_java": 0,
+        "codeFiles_kotlin": 0,
+        "codeFiles_php": 0,
+        "codeFiles_ruby": 0,
+        "codeFiles_rust": 0,
+        "codeFiles_shell": 0,
+        "codeFiles_swift": 0,
+        "codeFiles_vue": 0,
+        "bytesSelected": 78,
+        "ignoredFiles": 0,
+        "issueCount": 0,
+        "complete": true
+      },
+      "collectionBudget": {
+        "revision": "collection-v1",
+        "limits": {
+          "maxFiles": 1000,
+          "maxBytes": 26214400,
+          "maxFileBytes": 2097152,
+          "maxEntries": 8000
+        }
+      },
+      "collectionEvidence": {
+        "revision": "collection-v1",
+        "issueCount": 0,
+        "issues": []
+      },
+      "sourceSnapshot": {
+        "revision": "source-snapshot-v1",
+        "basis": "collected_utf8_strings",
+        "algorithm": "sha256",
+        "digest": "3731a42c1af857fdf3c3019d31a6a1527d6ec537b3e79d31221fbfc1374ebcb4",
+        "filesSelected": 1,
+        "bytesSelected": 78,
+        "complete": true,
+        "outputDirectoryExcluded": false
+      }
+    },
+    {
+      "checkIndex": 1,
+      "checkId": "source.builtin-ast",
+      "status": "completed",
+      "findingIds": [
+        "23a3209cc6959aec0b683eb573d3d1465795811a18d0a5e53b078bf44b2a8761"
+      ],
+      "notes": [
+        "Built-in AST checks parsed 1 JavaScript or TypeScript file.",
+        "Declared flow model: request-shaped entry parameters, same-function assignments, statically bound local functions/immutable const arrows, named relative ESM imports and constant static CommonJS destructuring exports within the collected snapshot. Unique ESM named/star function re-exports retain lexical authority for relative-only paths; any snapshot-configured alias edge carries conditional body authority, not runtime module identity or negative safety proof. Source/sink API shapes are candidates, not runtime framework or database identity proof.",
+        "Express entry positions are additionally recognized for a bounded same-file lexical import/require, immutable app/Router and route-registration subset. Request/response parameter spelling is irrelevant inside that subset; dynamic dispatch, upstream middleware state and runtime package identity remain unverified.",
+        "Koa middleware's first context parameter is recognized only through a same-file immutable default/default-as ESM import, no-argument Application construction and app.use(callback) binding; approved context/request query, URL/path and incoming header reads supply request-source traces regardless of parameter spelling. This is a declared API candidate, not runtime package or middleware identity proof: next()/middleware-chain effects remain unknown, and CommonJS, routers, body parsers, response body/headers and application state are outside this request-source subset.",
+        "Dynamic/package imports without a supported collected path mapping, namespace/default exports, mutable exports and arbitrary class dispatch remain model limitations beyond the separately declared narrow constructor/capture and legacy-driver lanes. A canonical relative CommonJS local class singleton supports receiver-bound actual/body dispatch; opaque native dynamic loading retains only a declared possible body with low-confidence input and partial coverage, without return safety or runtime identity proof. Unknown external calls are not trusted sanitizers and do not alone make declared coverage incomplete. Resolved callees are not freshly seeded unless explicitly exported or passed as a callback to an unresolved/external call; callback execution and runtime entry reachability are not proven.",
+        "Observed collected configuration overrides or unsupported nearest configuration for recognized native package loads conservatively veto snapshot-wide negative native certificates, while retaining input seeds and conditional candidates. This does not resolve or execute replacement packages. Configured graph counts describe adopted paths configurations, file/specifier/target tuples, call sites and analysis contexts; they are not runtime coverage or detection rates.",
+        "Outbound destination qualifier covers only canonical literal HTTP(S) origin/path plus native encoded query, direct const params record/toString/append/set and scalar local transfer. Object containers, alias/escape, modified or shadowed native intrinsics and opaque options retain candidates. Options support absent or plain literal method/fixed non-Host headers only. This is initial destination control, not redirect, DNS, proxy, remote query processing or runtime SSRF safety proof.",
+        "Axios request config role model separates a closed fixed INITIAL url field from payload-only input under the declared v1.13.2 API contract. Lexical imports/static require bindings and indexed snapshot validation do not authenticate runtime packages or external side effects. Defaults/interceptors/custom transport, alias/mutation, incomplete scope and opaque target roles retain low-confidence candidates; unknown is not safe. No body source is asserted to control URL authority.",
+        "Closed local/relative CommonJS function constructors support actual allocation, own arrow methods, immutable binding-identity capture frames and bounded scalar return/callback transfer. Unmaterialized owned roots, mutation/escape, unsupported captures, cycles and identity failures retain partial coverage. These frames do not establish runtime entry reachability or general callable safety.",
+        "Legacy MongoDB roles use only bounded collected nearest package/lock metadata and anchored 2.x contract evidence. A statically bound MongoClient.connect final callback supplies its second parameter as a declared Db; fixed-name Db.collection creates a collection capability. Missing/contradictory/3+ version evidence, opaque options and escaped/mutated capabilities remain unresolved/partial. Metadata JSON parsing is capped at 1 MiB per file and 256 files, charged to shared indexing work; no installed package, DB connection or target program is executed.",
+        "Direct window.location assignments exclude browser navigation only for a fresh function/module-private const object with an own data location slot and complete bounded proof within the collected static subset. Script-global, opaque, escaped and mutated bindings remain low-confidence candidates. Exact evaluator names in identifiers/static literals and computed destructuring keys veto exclusion; ambient callable identity and runtime realm closure are not certified. Unbound browser-shaped names do not prove runtime browser identity. Bracket spellings, nested href and standalone location retain their existing interpretation.",
+        "MarsDB NoSQL role model recognizes declared Collection selector arguments of find/findOne/update/remove/count/ids. Update data and options are separate from the selector. Primitive-string exclusion covers only local const snapshots with a dominating terminating typeof guard and no alias/mutation/opaque intervening effects; repeated member reads remain candidates. Input in $where remains executable-selector input even when it is a string. Package identity, dispatch at runtime and exploitability remain unverified.",
+        "pg SQL role model separates supported statement text from bound values under the declared pg JS API. Default dispatch and closed statement shape are required before a text-input claim. A fixed text/values exclusion is not runtime package identity, SQL syntax validity, database-side dynamic SQL safety or confirmed remediation. Unsupported identity, mutation, prototype, native, callback and opaque value/array roles remain unknown; generic SQL/input seed behavior is retained.",
+        "Bare fork spelling is not classified as a shell API when every observed invocation resolves to an immutable local/relative function and its actual analysis completes. This is not function safety: nested native/SQL/HTTP/HTML sinks remain findings. Unresolved, mutable and incomplete analysis retain the legacy heuristic and partial gate.",
+        "Node fork role model recognizes declared lexical child_process bindings and only the modulePath argument. Fixed modulePath does not establish whole-call safety: argv, execPath, execArgv, cwd and env are unmodeled. Mutable/escaped/incomplete identity retains low candidates; socket dispatch and guards are not newly modeled.",
+        "Node process role model separates command, executable, argv and shell-option input for six exact-load child_process APIs. exec/execSync normalize non-string shell options to enabled; an empty shell string disables shell interpretation. The four direct APIs default to no shell. Fixed executable plus input argv under proven direct execution excludes only shell interpretation: program-option injection, explicit interpreter operands, argv0, cwd, env, PATH and whole-process safety remain unmodeled. Mutable/escaped bindings or options, opaque overloads, spreads/getters and incomplete proof retain unresolved input candidates. Dynamic shell-field input may select a shell executable if it is a string; runtime type/execution are unverified. Completed local process-shaped bodies suppress only the name heuristic, preserving nested findings.",
+        "Budget model: one charged common indexing walk with index 300000 and flow 200000 work, plus 500000 aggregate cap. nodeVisits is total index+flow; legacy overrides remain aggregate caps. Parsed files are not fully analyzed files. Partial indexing disables immutable callee/native destination proof; known root counts do not imply complete global inventory. AST observation/render and TS parse/bind work are outside these counters.",
+        "Parser/binder and collector limits remain separate from deterministic flow-work budgets; this is not hostile-code CPU/memory isolation."
+      ],
+      "metrics": {
+        "filesAnalyzed": 1,
+        "filesParsed": 1,
+        "filesParseValid": 1,
+        "parseErrorCount": 0,
+        "findingCount": 1,
+        "flowModel": "bounded-static-local-relative-v1",
+        "budgetModel": "shared-index-separate-flow-v1",
+        "entrySeedModel": "request_shaped_uncalled_exported_or_callback_escaped_function",
+        "expressEntryModel": "lexical-express-registration-v1",
+        "koaEntryModel": "lexical-koa-use-v1",
+        "honoEntryModel": "lexical-hono-literal-route-v1",
+        "nodeVisits": 80,
+        "indexWork": 47,
+        "flowWork": 33,
+        "maxIndexWork": 300000,
+        "maxFlowWork": 200000,
+        "indexComplete": true,
+        "rootInventoryComplete": true,
+        "filesIndexInput": 1,
+        "filesIndexed": 1,
+        "filesIndexWalkCompleted": 1,
+        "indexedAstNodes": 22,
+        "symbolLookups": 8,
+        "identifierReferences": 5,
+        "cjsReferences": 0,
+        "nativeBoundaryNodes": 0,
+        "newExpressionsIndexed": 0,
+        "topLevelDeclared": 1,
+        "topLevelStarted": 1,
+        "topLevelCompleted": 1,
+        "topLevelPartial": 0,
+        "topLevelSkipped": 0,
+        "entryRootsDeclared": 1,
+        "entryRootsStarted": 1,
+        "entryRootsCompleted": 1,
+        "entryRootsPartial": 0,
+        "entryRootsSkipped": 0,
+        "functionContextsStarted": 1,
+        "functionContextsCompleted": 1,
+        "functionContextsPartial": 0,
+        "tasksDeclared": 2,
+        "functionsIndexed": 1,
+        "externalEntryFunctions": 1,
+        "summaryWork": 0,
+        "summariesCached": 0,
+        "resolvedCalls": 0,
+        "unsupportedCalls": 2,
+        "moduleEdges": 0,
+        "moduleGraphModel": "snapshot-configured-esm-functions-v1",
+        "moduleConfigurationsObserved": 0,
+        "moduleConfigurationsSupported": 0,
+        "moduleConfigurationsUnsupported": 0,
+        "moduleConfigurationBytes": 0,
+        "configuredModuleTargets": 0,
+        "configuredModuleCallSites": 0,
+        "configuredModuleCallContexts": 0,
+        "configuredBodyInspectionsQueued": 0,
+        "configuredBodyInspectionsStarted": 0,
+        "configuredBodyInspectionsDropped": 0,
+        "configuredBodyInspectionFlowWork": 0,
+        "htmlCallbackInspectionsQueued": 0,
+        "htmlCallbackInspectionsStarted": 0,
+        "htmlCallbackInspectionsDropped": 0,
+        "nodeResponseSemanticGapsObserved": 0,
+        "nodeResponseSemanticGapLocationsOmitted": 0,
+        "restBindingsRecognized": 0,
+        "restBindingsUnsupported": 0,
+        "restSlotsMaterialized": 0,
+        "barrelFunctionTargets": 0,
+        "configuredNativeIdentityComplete": true,
+        "configuredNativeIdentityVetoes": 0,
+        "maxNodeVisits": 500000,
+        "maxFunctions": 2000,
+        "maxSummaryWork": 5000,
+        "maxCallDepth": 8,
+        "maxModuleEdges": 2000,
+        "maxAliasSteps": 64,
+        "maxTraceSteps": 24,
+        "analysisIncomplete": false,
+        "incompleteReasons": "",
+        "filesystemStreamModel": "glob-stream-filename-v1",
+        "filesystemStreamsRecognized": 0,
+        "filesystemFilenameCallbacks": 0,
+        "filesystemAccumulatorWrites": 0,
+        "filesystemUnsupportedUses": 0,
+        "archiveDirectoriesRecognized": 0,
+        "archiveEntryPaths": 0,
+        "archiveWriteCandidates": 0,
+        "archiveLexicalExclusions": 0,
+        "archiveUnsupportedUses": 0,
+        "outboundDestinationModel": "literal-http-query-native-params-v1",
+        "outboundFixedDestinationSuppressed": 0,
+        "outboundQueryQualifiedUses": 0,
+        "forkRoleModel": "node-child-process-fork-v1",
+        "forkRoleRecognizedUses": 0,
+        "forkModulePathInputUses": 0,
+        "forkUnresolvedInputUses": 0,
+        "processRoleModel": "node-child-process-operands-v1",
+        "processRoleRecognizedUses": 0,
+        "processCommandInputUses": 0,
+        "processExecutableInputUses": 0,
+        "processArgvOnlyExcluded": 0,
+        "processUnresolvedInputUses": 0,
+        "filesystemWrapperArgvUses": 0,
+        "filesystemShellEnabledUses": 0,
+        "filesystemShellUnknownUses": 0,
+        "filesystemInterpreterUnknownUses": 0,
+        "filesystemShellDisabledExclusions": 0,
+        "nosqlRoleModel": "marsdb-mongodb2-selector-v1",
+        "nosqlRoleBoundUses": 0,
+        "nosqlSelectorInputUses": 0,
+        "nosqlWhereInputUses": 0,
+        "nosqlStringSelectorExcluded": 0,
+        "nosqlRoleUnknownUses": 0,
+        "sqlRoleModel": "pg-query-config-v1",
+        "sqlRoleBoundUses": 0,
+        "sqlStatementInputUses": 0,
+        "sqlValuesOnlyExcluded": 0,
+        "sqlRoleUnknownUses": 0,
+        "outboundRoleModel": "axios-request-config-query-v2",
+        "roleProofScopeComplete": true,
+        "outboundRoleBoundUses": 0,
+        "outboundEncodedQueryExcluded": 0,
+        "outboundPayloadOnlyExcluded": 0,
+        "outboundTargetInputUses": 0,
+        "outboundRoleUnknownUses": 0
+      },
+      "analysisBudget": {
+        "revision": "ast-work-v1",
+        "requestedProfile": "default",
+        "effectiveProfile": "default",
+        "limits": {
+          "indexWork": 300000,
+          "flowWork": 200000,
+          "nodeVisits": 500000,
+          "functions": 2000,
+          "summaryWork": 5000,
+          "moduleEdges": 2000,
+          "callDepth": 8,
+          "aliasSteps": 64,
+          "traceSteps": 24
+        }
+      }
+    },
+    {
+      "checkIndex": 2,
+      "checkId": "source.framework",
+      "status": "not_applicable",
+      "findingIds": [],
+      "notes": [
+        "No recognized Supabase migration or Next/React source file was available for the bounded framework rules."
+      ],
+      "metrics": {
+        "filesAnalyzed": 0,
+        "migrationFiles": 0,
+        "frontendFiles": 0,
+        "findingCount": 0
+      }
+    },
+    {
+      "checkIndex": 3,
+      "checkId": "source.code-coverage",
+      "status": "completed",
+      "findingIds": [],
+      "notes": [
+        "Code coverage counts describe collected code inputs only, not vulnerability completeness or whole-project safety.",
+        "Eligible means selected provider input support, not submitted or executed. Completed requires a validated complete code-analysis result; partial providers contribute zero completed files.",
+        "Secrets, advisory, configuration and framework checks do not establish code-analysis completion."
+      ],
+      "codeCoverage": {
+        "version": 1,
+        "basis": "collected_code_inputs",
+        "requireCodeAnalysis": false,
+        "collectionComplete": true,
+        "accounting": "exact",
+        "languages": [
+          {
+            "language": "typescript",
+            "collected": 1,
+            "eligible": 1,
+            "completed": 1,
+            "uncovered": 0,
+            "providers": [
+              {
+                "provider": "builtin_ast",
+                "selected": true,
+                "status": "completed",
+                "eligible": 1,
+                "completed": 1
+              },
+              {
+                "provider": "bandit",
+                "selected": false,
+                "status": "not_selected",
+                "eligible": 0,
+                "completed": 0
+              },
+              {
+                "provider": "opengrep_native",
+                "selected": false,
+                "status": "not_selected",
+                "eligible": 0,
+                "completed": 0
+              }
+            ]
+          }
+        ],
+        "totals": {
+          "collected": 1,
+          "eligible": 1,
+          "completed": 1,
+          "uncovered": 0
+        }
+      }
+    }
+  ],
+  "findings": [
+    {
+      "findingId": "23a3209cc6959aec0b683eb573d3d1465795811a18d0a5e53b078bf44b2a8761",
+      "checkIndex": 1,
+      "checkId": "source.builtin-ast",
+      "ruleId": "ast:sql-input-sink",
+      "comparisonKey": "abccfa2393e99b2a1dbdc2c3174b7323c15c82f053b5e15d83c449b6e8d868ec",
+      "title": "Request input reaches a dynamic SQL call",
+      "description": "Request input appears in a dynamically constructed SQL argument.",
+      "severity": "high",
+      "confidence": "medium",
+      "evidence": {
+        "kind": "candidate",
+        "basis": "scanner_report",
+        "traceStatus": "static_provided",
+        "staticFlow": {
+          "kind": "static_flow",
+          "steps": [
+            {
+              "role": "source",
+              "location": {
+                "path": "app.ts",
+                "line": 2,
+                "column": 19
+              }
+            },
+            {
+              "role": "sink",
+              "location": {
+                "path": "app.ts",
+                "line": 2,
+                "column": 10
+              }
+            }
+          ],
+          "truncated": false
+        }
+      },
+      "location": {
+        "path": "app.ts",
+        "line": 2,
+        "column": 10
+      },
+      "reachesFailOn": true,
+      "remediation": {
+        "guidance": "Use a parameterized query API and keep SQL structure separate from user input.",
+        "state": "not_verified"
+      },
+      "verification": {
+        "state": "not_run",
+        "vulnerabilityConfirmed": false,
+        "remediationVerified": false
+      }
+    }
+  ]
+}

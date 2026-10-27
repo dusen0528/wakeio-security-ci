@@ -91,27 +91,29 @@ function identifier(value: unknown): string {
   return value;
 }
 
+/** Shared local-pointer grammar; neither caller can load a URL or another file. */
+function localPointer(document: RecordValue, ref: unknown): RecordValue {
+  if (typeof ref !== "string" || ref.length > 512 || !ref.startsWith("#/") || ref.includes("%")) unsupported();
+  let current: unknown = document;
+  for (const encoded of ref.slice(2).split("/")) {
+    if (/~(?![01])/.test(encoded)) invalid();
+    const part = encoded.replace(/~1/g, "/").replace(/~0/g, "~");
+    if (Array.isArray(current)) {
+      if (!/^(0|[1-9][0-9]*)$/.test(part) || !Number.isSafeInteger(Number(part)) || Number(part) >= current.length) invalid();
+      current = current[Number(part)];
+    } else {
+      if (!record(current) || !own(current, part)) invalid();
+      current = current[part];
+    }
+  }
+  if (!record(current)) invalid();
+  return current;
+}
+
 /** Resolve JSON pointers in the supplied document only. Never access a network or file. */
 function references(document: RecordValue): (value: unknown) => RecordValue {
   let referenceCount = 0;
   const targets = new WeakMap<object, RecordValue>();
-  const pointer = (ref: unknown): RecordValue => {
-    if (typeof ref !== "string" || ref.length > 512 || !ref.startsWith("#/") || ref.includes("%")) unsupported();
-    let current: unknown = document;
-    for (const encoded of ref.slice(2).split("/")) {
-      if (/~(?![01])/.test(encoded)) invalid();
-      const part = encoded.replace(/~1/g, "/").replace(/~0/g, "~");
-      if (Array.isArray(current)) {
-        if (!/^(0|[1-9][0-9]*)$/.test(part) || !Number.isSafeInteger(Number(part)) || Number(part) >= current.length) invalid();
-        current = current[Number(part)];
-      } else {
-        if (!record(current) || !own(current, part)) invalid();
-        current = current[part];
-      }
-    }
-    if (!record(current)) invalid();
-    return current;
-  };
   const active = new Set<object>(), done = new Set<object>();
   const visit = (value: unknown, depth: number): void => {
     if (value === null || typeof value !== "object") return;
@@ -122,7 +124,7 @@ function references(document: RecordValue): (value: unknown) => RecordValue {
     if (record(value) && own(value, "$ref")) {
       if (++referenceCount > OPENAPI_MAX_REFERENCES) limit();
       if (Object.keys(value).length !== 1) unsupported("OpenAPI reference siblings are unsupported.");
-      const target = pointer(value.$ref);
+      const target = localPointer(document, value.$ref);
       targets.set(value, target);
       visit(target, depth + 1);
     } else {
@@ -144,6 +146,44 @@ function references(document: RecordValue): (value: unknown) => RecordValue {
 }
 
 export { references as openApiReferences };
+export type OpenApiInventoryGapReason = 'external_ref_blocked' | 'unresolved_path_item' | 'cyclic_path_item_ref' | 'unsupported_path_item';
+export interface OpenApiGetEnumeration {
+  operations: Array<{ method: 'GET'; path: string }>;
+  unresolved: Array<{ path: string; reason: OpenApiInventoryGapReason }>;
+}
+
+/** Declaration inventory only. Execution validators retain their stricter whole-document rules. */
+export function enumerateOpenApiGetOperations(input: unknown): OpenApiGetEnumeration {
+  const document = snapshotJsonData(input, () => invalid(), limit);
+  if (!record(document) || typeof document.openapi !== 'string' || !/^3\.(0|1)\.[0-9]+$/.test(document.openapi) || !record(document.paths)) unsupported();
+  const paths = Object.keys(document.paths).filter(path => !path.startsWith('x-')).sort();
+  if (paths.length > OPENAPI_MAX_PATHS) limit();
+  const result: OpenApiGetEnumeration = { operations: [], unresolved: [] };
+  let referenceCount = 0;
+  for (const path of paths) {
+    pathParts(path);
+    let item = document.paths[path], reason: OpenApiInventoryGapReason | undefined;
+    const seen = new Set<unknown>();
+    let depth = 0;
+    while (record(item) && own(item, '$ref')) {
+      if (seen.has(item)) { reason = 'cyclic_path_item_ref'; break; }
+      seen.add(item);
+      if (++referenceCount > OPENAPI_MAX_REFERENCES || ++depth > OPENAPI_MAX_DEPTH) limit();
+      if (Object.keys(item).length !== 1) { reason = 'unsupported_path_item'; break; }
+      if (typeof item.$ref !== 'string') invalid();
+      if (!item.$ref.startsWith('#/')) { reason = 'external_ref_blocked'; break; }
+      try { item = localPointer(document, item.$ref); }
+      catch { reason = 'unresolved_path_item'; break; }
+    }
+    if (reason) { result.unresolved.push({ path, reason }); continue; }
+    if (!record(item)) invalid();
+    if (own(item, 'get')) {
+      if (!record(item.get) || own(item.get, '$ref')) invalid();
+      result.operations.push({ method: 'GET', path });
+    }
+  }
+  return result;
+}
 
 function pathParts(value: unknown): string[] {
   if (typeof value !== "string" || value.length > 2048 || !value.startsWith("/") || value.startsWith("//")) invalid();

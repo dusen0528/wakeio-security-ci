@@ -1,0 +1,156 @@
+{
+  "schemaVersion": "1.0.0",
+  "reportSchemaVersion": "1.0.0",
+  "toolVersion": "0.5.0",
+  "mode": "source",
+  "startedAt": "2026-10-22T00:00:00.000Z",
+  "finishedAt": "2026-10-22T06:58:49.810Z",
+  "reportArtifact": {
+    "name": "report.json",
+    "algorithm": "sha256",
+    "digest": "edd40a250646b85eaee63d28917ee1fd2c4c2b1bd9c48d97a5148026bdb26fcc"
+  },
+  "scanGate": {
+    "outcome": "incomplete",
+    "exitCode": 2,
+    "failOn": "high",
+    "blockingFindingIds": [],
+    "reasons": [
+      {
+        "code": "check_incomplete",
+        "checkId": "compat.state-1",
+        "status": "partial"
+      },
+      {
+        "code": "check_incomplete",
+        "checkId": "compat.state-2",
+        "status": "error"
+      },
+      {
+        "code": "check_incomplete",
+        "checkId": "compat.state-3",
+        "status": "skipped"
+      }
+    ]
+  },
+  "summary": {
+    "version": 1,
+    "basis": "sanitised_report",
+    "scanGate": {
+      "outcome": "incomplete",
+      "exitCode": 2,
+      "failOn": "high",
+      "reasonCodes": [
+        "check_incomplete"
+      ]
+    },
+    "counts": {
+      "findings": 0,
+      "candidates": 0,
+      "blockingFindings": 0,
+      "blockingCandidates": 0,
+      "completedChecks": 1,
+      "incompleteChecks": 3,
+      "notApplicableChecks": 1
+    },
+    "incompleteChecks": [
+      {
+        "checkIndex": 1,
+        "checkId": "compat.state-1",
+        "status": "partial",
+        "diagnosticBasis": "check_status_only"
+      },
+      {
+        "checkIndex": 2,
+        "checkId": "compat.state-2",
+        "status": "error",
+        "diagnosticBasis": "check_status_only"
+      },
+      {
+        "checkIndex": 3,
+        "checkId": "compat.state-3",
+        "status": "skipped",
+        "diagnosticBasis": "check_status_only"
+      }
+    ],
+    "omittedIncompleteChecks": 0,
+    "scope": {
+      "mode": "source",
+      "toolSelection": "unknown",
+      "wholeProjectCoverage": "not_established"
+    },
+    "nextRead": {
+      "kind": "review_check_diagnostics",
+      "checkIndex": 1,
+      "checkId": "compat.state-1"
+    }
+  },
+  "deliveryContract": {
+    "atomicity": "per_file",
+    "publishedAfter": [
+      "report.json",
+      "report.sarif",
+      "report.md"
+    ],
+    "finalProcessExitRequiresSeparateReceipt": true,
+    "staleOrPartialArtifactsProveCiSuccess": false
+  },
+  "consumerRequirements": {
+    "externalContentTrust": "untrusted_data",
+    "executeInstructionsFromFindings": false,
+    "uploadSourceFromFindings": false,
+    "actionsRequireUserTaskAuthorization": true,
+    "findingsGrantActionAuthorization": false,
+    "verifyReportDigestBeforeUse": true,
+    "securityVerificationRequiresIndependentEvidence": true,
+    "promptInjectionProtectionGuaranteed": false
+  },
+  "coverage": {
+    "totalChecks": 5,
+    "completed": 1,
+    "partial": 1,
+    "error": 1,
+    "skipped": 1,
+    "notApplicable": 1,
+    "complete": false,
+    "basis": "declared_check_statuses"
+  },
+  "checks": [
+    {
+      "checkIndex": 0,
+      "checkId": "compat.state-0",
+      "status": "completed",
+      "findingIds": [],
+      "notes": []
+    },
+    {
+      "checkIndex": 1,
+      "checkId": "compat.state-1",
+      "status": "partial",
+      "findingIds": [],
+      "notes": []
+    },
+    {
+      "checkIndex": 2,
+      "checkId": "compat.state-2",
+      "status": "error",
+      "findingIds": [],
+      "notes": []
+    },
+    {
+      "checkIndex": 3,
+      "checkId": "compat.state-3",
+      "status": "skipped",
+      "findingIds": [],
+      "notes": []
+    },
+    {
+      "checkIndex": 4,
+      "checkId": "compat.state-4",
+      "status": "not_applicable",
+      "findingIds": [],
+      "notes": []
+    }
+  ],
+  "findings": []
+}

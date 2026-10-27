@@ -1,0 +1,21 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Owned offline inventory fixture",
+    "version": "1"
+  },
+  "paths": {
+    "/local": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Synthetic response"
+          }
+        }
+      }
+    },
+    "/remote": {
+      "$ref": "https://never-fetch.invalid/path-item.json"
+    }
+  }
+}

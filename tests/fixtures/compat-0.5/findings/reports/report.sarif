@@ -1,0 +1,290 @@
+{
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [
+    {
+      "automationDetails": {
+        "id": "wakeio-security-ci/source"
+      },
+      "tool": {
+        "driver": {
+          "name": "wakeio-security-ci",
+          "version": "0.5.0",
+          "rules": [
+            {
+              "id": "ast:sql-input-sink",
+              "name": "Request input reaches a dynamic SQL call",
+              "shortDescription": {
+                "text": "Request input reaches a dynamic SQL call"
+              },
+              "fullDescription": {
+                "text": "Request input appears in a dynamically constructed SQL argument."
+              },
+              "properties": {
+                "kind": "candidate",
+                "confidence": "medium",
+                "severity": "high"
+              }
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "ast:sql-input-sink",
+          "level": "error",
+          "message": {
+            "text": "Request input reaches a dynamic SQL call: Request input appears in a dynamically constructed SQL argument."
+          },
+          "fingerprints": {
+            "wakeio-security-ci/v1": "fef3047c908af45a6658d3145c9a0316cc23bfa2c2f516280385932436a71b8e",
+            "wakeio-security-ci/v2": "23a3209cc6959aec0b683eb573d3d1465795811a18d0a5e53b078bf44b2a8761"
+          },
+          "partialFingerprints": {
+            "wakeio-security-ci/v1": "abccfa2393e99b2a1dbdc2c3174b7323c15c82f053b5e15d83c449b6e8d868ec",
+            "wakeio-security-ci/comparison-key": "abccfa2393e99b2a1dbdc2c3174b7323c15c82f053b5e15d83c449b6e8d868ec"
+          },
+          "properties": {
+            "checkId": "source.builtin-ast",
+            "kind": "candidate",
+            "confidence": "medium",
+            "severity": "high",
+            "remediation": "Use a parameterized query API and keep SQL structure separate from user input.",
+            "staticFlow": {
+              "kind": "static_flow",
+              "steps": [
+                {
+                  "role": "source",
+                  "location": {
+                    "path": "app.ts",
+                    "line": 2,
+                    "column": 19
+                  }
+                },
+                {
+                  "role": "sink",
+                  "location": {
+                    "path": "app.ts",
+                    "line": 2,
+                    "column": 10
+                  }
+                }
+              ],
+              "truncated": false
+            }
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app.ts"
+                },
+                "region": {
+                  "startLine": 2,
+                  "startColumn": 10
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "app.ts"
+                          },
+                          "region": {
+                            "startLine": 2,
+                            "startColumn": 19
+                          }
+                        }
+                      },
+                      "kinds": [
+                        "source"
+                      ]
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "app.ts"
+                          },
+                          "region": {
+                            "startLine": 2,
+                            "startColumn": 10
+                          }
+                        }
+                      },
+                      "kinds": [
+                        "sink"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "invocations": [
+        {
+          "executionSuccessful": true,
+          "startTimeUtc": "2026-10-22T06:37:25.519Z",
+          "endTimeUtc": "2026-10-22T06:37:25.542Z",
+          "properties": {
+            "mode": "source",
+            "category": "wakeio-security-ci/source",
+            "codeCoverages": [
+              {
+                "checkId": "source.code-coverage",
+                "codeCoverage": {
+                  "version": 1,
+                  "basis": "collected_code_inputs",
+                  "requireCodeAnalysis": false,
+                  "collectionComplete": true,
+                  "accounting": "exact",
+                  "languages": [
+                    {
+                      "language": "typescript",
+                      "collected": 1,
+                      "eligible": 1,
+                      "completed": 1,
+                      "uncovered": 0,
+                      "providers": [
+                        {
+                          "provider": "builtin_ast",
+                          "selected": true,
+                          "status": "completed",
+                          "eligible": 1,
+                          "completed": 1
+                        },
+                        {
+                          "provider": "bandit",
+                          "selected": false,
+                          "status": "not_selected",
+                          "eligible": 0,
+                          "completed": 0
+                        },
+                        {
+                          "provider": "opengrep_native",
+                          "selected": false,
+                          "status": "not_selected",
+                          "eligible": 0,
+                          "completed": 0
+                        }
+                      ]
+                    }
+                  ],
+                  "totals": {
+                    "collected": 1,
+                    "eligible": 1,
+                    "completed": 1,
+                    "uncovered": 0
+                  }
+                }
+              }
+            ],
+            "statuses": {
+              "source.inventory": "completed",
+              "source.builtin-ast": "completed",
+              "source.framework": "not_applicable",
+              "source.code-coverage": "completed"
+            }
+          }
+        }
+      ],
+      "properties": {
+        "mode": "source",
+        "category": "wakeio-security-ci/source",
+        "schemaVersion": "1.0.0",
+        "analysisBudget": {
+          "revision": "ast-work-v1",
+          "requestedProfile": "default",
+          "effectiveProfile": "default",
+          "limits": {
+            "indexWork": 300000,
+            "flowWork": 200000,
+            "nodeVisits": 500000,
+            "functions": 2000,
+            "summaryWork": 5000,
+            "moduleEdges": 2000,
+            "callDepth": 8,
+            "aliasSteps": 64,
+            "traceSteps": 24
+          }
+        },
+        "collectionBudget": {
+          "revision": "collection-v1",
+          "limits": {
+            "maxFiles": 1000,
+            "maxBytes": 26214400,
+            "maxFileBytes": 2097152,
+            "maxEntries": 8000
+          }
+        },
+        "collectionInventories": [
+          {
+            "checkIndex": 0,
+            "checkId": "source.inventory",
+            "collectionBudget": {
+              "revision": "collection-v1",
+              "limits": {
+                "maxFiles": 1000,
+                "maxBytes": 26214400,
+                "maxFileBytes": 2097152,
+                "maxEntries": 8000
+              }
+            },
+            "collectionEvidence": {
+              "revision": "collection-v1",
+              "issueCount": 0,
+              "issues": []
+            }
+          }
+        ],
+        "sourceSnapshots": [
+          {
+            "checkIndex": 0,
+            "checkId": "source.inventory",
+            "sourceSnapshot": {
+              "revision": "source-snapshot-v1",
+              "basis": "collected_utf8_strings",
+              "algorithm": "sha256",
+              "digest": "3731a42c1af857fdf3c3019d31a6a1527d6ec537b3e79d31221fbfc1374ebcb4",
+              "filesSelected": 1,
+              "bytesSelected": 78,
+              "complete": true,
+              "outputDirectoryExcluded": false
+            }
+          }
+        ],
+        "analysisBudgets": [
+          {
+            "checkIndex": 1,
+            "checkId": "source.builtin-ast",
+            "analysisBudget": {
+              "revision": "ast-work-v1",
+              "requestedProfile": "default",
+              "effectiveProfile": "default",
+              "limits": {
+                "indexWork": 300000,
+                "flowWork": 200000,
+                "nodeVisits": 500000,
+                "functions": 2000,
+                "summaryWork": 5000,
+                "moduleEdges": 2000,
+                "callDepth": 8,
+                "aliasSteps": 64,
+                "traceSteps": 24
+              }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

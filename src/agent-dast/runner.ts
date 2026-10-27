@@ -3,22 +3,15 @@ import { constants } from 'node:fs';
 import { lstat, mkdir, open, readdir, realpath, unlink } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { types } from 'node:util';
-import type { CheckResult, FailOn, Finding, ScanReport } from '../contracts.js';
+import type { CheckResult, FailOn, ScanReport } from '../contracts.js';
 import { createApiRunControl } from '../api.js';
-import { dastDefaultMaxRequests, hasDastAuthentication, parseDastPolicy, prepareDastPolicy, runDast, snapshotDastEnvironment, type DastPolicy } from '../dast.js';
-import { runSchemathesisLive } from '../schemathesis-live.js';
-import { parseSchemathesisAuthPolicy, snapshotSchemathesisCredential, type SchemathesisAuthPolicy } from '../schemathesis-auth.js';
-import { validateSchemathesisAuthSchema } from '../schemathesis-auth-run.js';
-import { selectOpenApiLiveOperations } from '../openapi.js';
-import { runNuclei } from '../nuclei.js';
-import type { ZapCompiledRequest } from '../zap-openapi.js';
-import { runZap } from '../zap.js';
-import { prepareZapPolicy, zapSurfaceKey, type ZapPolicyInput } from '../zap-policy.js';
+import { attackEngine } from '../runtime/registry.js';
+import type { PreparedAttackTask as PreparedTask } from '../runtime/types.js';
 import { normalizeUrl, validateStaticTarget } from '../url-network.js';
 import { createReport, evaluateGate, RULESET_VERSION, writeArtifacts, writeReports } from '../report.js';
 import { RunAdmission, type AdmissionSnapshot, type TaskAdmission } from './admission.js';
 import { executionOrigin, EXECUTION_INPUT_MAX_BYTES, parseExecutionInputs, parseExecutionPlan, type ExecutionEngine, type ExecutionInputs, type ExecutionPlan, type ExecutionTask } from './plan.js';
-import { openRunStore, type NewSurface, type RunStore } from './store.js';
+import { openRunStore, type RunStore } from './store.js';
 import { failedWorkerResult, MAX_FINDING_IDS, SEVERITIES, WORKER_RESULT_SCHEMA, validateWorkerResult, type WorkerResultV1 } from './result.js';
 
 export const EXECUTION_RUN_REVISION = 'built-in-plan-run-v1' as const;
@@ -86,49 +79,18 @@ async function readStable(path: string, cap: number): Promise<Buffer> {
     return bytes.subarray(0, used);
   } finally { await handle.close(); }
 }
-type PreparedTask = { task: ExecutionTask; policy?: DastPolicy; zapPolicy?: ZapPolicyInput; zapRequests?: ZapCompiledRequest[]; document?: unknown; authPolicy?: SchemathesisAuthPolicy; env?: NodeJS.ProcessEnv };
 async function prepareTasks(options: ReturnType<typeof optionsSnapshot>): Promise<PreparedTask[]> {
   const data = new Map<string, unknown>();
-  const required = new Set(options.plan.tasks.flatMap(task => task.engine === 'native-dast' || task.engine === 'zap' ? [task.policy] : task.engine === 'schemathesis' ? [task.schema, ...(task.authPolicy ? [task.authPolicy] : [])] : []));
+  const required = new Set(options.plan.tasks.flatMap(task => attackEngine(task.engine).requiredInputs(task)));
   for (const id of required) {
     const input = options.inputs.inputs.find(item => item.id === id); if (!input) invalid();
     const bytes = await readStable(resolve(options.inputBaseDir ?? process.cwd(), input.path), EXECUTION_INPUT_MAX_BYTES);
     if (sha(bytes) !== input.sha256) invalid();
     data.set(id, JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes)));
   }
-  return options.plan.tasks.map(task => {
-    if (task.engine === 'zap') {
-      const prepared = prepareZapPolicy(data.get(task.policy), options.allowPrivate, options.env);
-      if (prepared.policy.origin !== options.plan.origin || options.ratePerSecond > 50
-        || task.maxRequests < prepared.requests.length * (prepared.policy.version === 2 ? 2 : 1) + (prepared.policy.authentication ? 3 : 0) + (prepared.loginEnv ? 1 : 0) + 1) invalid();
-      return { task, zapPolicy: prepared.policy, zapRequests: prepared.requests, env: prepared.loginEnv ?? (prepared.policy.authentication && 'authorizationEnv' in prepared.policy.authentication ? { [prepared.policy.authentication.authorizationEnv]: prepared.authorization } : {}) };
-    }
-    if (task.engine === 'native-dast') {
-      const parsed = parseDastPolicy(data.get(task.policy));
-      const env = snapshotDastEnvironment(parsed.policy, options.env);
-      const { policy } = prepareDastPolicy(parsed.policy, { allowPrivate: options.allowPrivate, env });
-      if (new URL(policy.baseUrl).origin !== options.plan.origin || task.maxRequests < dastDefaultMaxRequests(policy)) invalid();
-      return { task, policy, env };
-    }
-    if (task.engine === 'schemathesis') {
-      const selection = selectOpenApiLiveOperations(data.get(task.schema), task.operations.map(path => ({ method: 'GET' as const, path })));
-      if (!task.authPolicy) {
-        // The legacy CONNECT lane cannot attest a shared HTTPS HTTP request denominator.
-        if (new URL(options.plan.origin).protocol === 'https:') invalid();
-        return { task, document: selection.document };
-      }
-      const { policy } = parseSchemathesisAuthPolicy(data.get(task.authPolicy));
-      if (new URL(policy.baseUrl).origin !== options.plan.origin || policy.operations.length !== task.operations.length
-        || task.operations.some(path => !policy.operations.some(operation => operation.path === path)) || task.maxRequests < 2 + 4 * task.operations.length) invalid();
-      validateSchemathesisAuthSchema(selection);
-      if (new URL(policy.baseUrl).protocol === 'http:' && (!options.allowPrivate || !['127.0.0.1', '[::1]'].includes(new URL(policy.baseUrl).hostname))) invalid();
-      const credential = snapshotSchemathesisCredential(policy, options.env);
-      return { task, document: selection.document, authPolicy: policy, env: { [policy.authorizationEnv]: credential } };
-    }
-    if (!options.nucleiTemplates || new URL(options.plan.origin).protocol === 'https:') invalid();
-    return { task };
-  });
+  return options.plan.tasks.map(task => attackEngine(task.engine).prepare(task, data, options));
 }
+
 async function safeParent(path: string, depth = 0): Promise<void> {
   if (depth > 128) invalid();
   const parent = dirname(path); if (parent !== path) await safeParent(parent, depth + 1);
@@ -143,57 +105,22 @@ function gapCheck(reason: 'not_started' | 'execution_incomplete' | 'store_error'
   return { id: 'agent-dast.execution', status: 'partial', findings: [], notes: ['The assigned built-in engine group was not fully observed.'], metrics: { reason } };
 }
 async function execute(prepared: PreparedTask, options: ReturnType<typeof optionsSnapshot>, runtime: TaskAdmission): Promise<CheckResult[]> {
-  const task = prepared.task, remaining = Math.max(1, runtime.deadlineAt - Date.now());
+  const remaining = Math.max(1, runtime.deadlineAt - Date.now());
   if (runtime.signal.aborted || Date.now() >= runtime.deadlineAt) return [gapCheck('not_started')];
-  if (task.engine === 'zap') return runZap({ url: options.plan.origin, policy: prepared.zapPolicy!, env: prepared.env, executable: options.zapPath,
-    consent: true, allowPrivate: options.allowPrivate, maxRequests: task.maxRequests, rateLimit: options.ratePerSecond,
-    timeoutMs: Math.min(remaining, 600_000), signal: options.signal }, runtime);
-  if (task.engine === 'native-dast') return runDast({ policy: prepared.policy!, env: prepared.env, consent: true, allowPrivate: options.allowPrivate,
-    maxRequests: task.maxRequests, timeoutMs: Math.min(remaining, 120_000), signal: options.signal }, runtime);
-  if (task.engine === 'schemathesis') return runSchemathesisLive({ document: prepared.document, baseUrl: `${options.plan.origin}/`, operations: task.operations.map(path => ({ method: 'GET' as const, path })),
-    ...(prepared.authPolicy ? { authPolicy: prepared.authPolicy, env: prepared.env } : {}), consent: true, allowPrivate: options.allowPrivate, python: options.schemathesisPython,
-    maxRequests: task.maxRequests, timeoutMs: Math.min(remaining, 120_000), seed: task.seed, signal: options.signal }, runtime);
-  return runNuclei({ url: `${options.plan.origin}/`, executable: options.nucleiPath, templatesDir: options.nucleiTemplates!, scopes: task.scopes, consent: true,
-    allowPrivate: options.allowPrivate, maxRequests: task.maxRequests, rateLimit: options.ratePerSecond, timeoutMs: Math.min(remaining, 600_000), signal: options.signal }, runtime);
+  return prepared.execute(options, runtime, remaining);
 }
 function observedGroup(prepared: PreparedTask, checks: CheckResult[], observed: AdmissionSnapshot): boolean {
   if (!observed.requestCount || observed.pending || observed.transportErrors || observed.refused || checks.length !== 1 || checks[0].status !== 'completed'
     || checks[0].metrics?.requestCount !== observed.requestCount) return false;
-  const check = checks[0];
-  if (prepared.task.engine === 'native-dast') return check.dastExecution?.status === 'complete';
-  if (prepared.authPolicy) return check.schemathesisAuth?.status === 'completed' && check.schemathesisAuth.requests.attempted === observed.requestCount;
-  // These are trusted adapter results, not arbitrary caller-supplied metrics. No per-endpoint coverage is inferred.
-  return prepared.task.engine === 'nuclei' || prepared.task.engine === 'zap' || prepared.task.engine === 'schemathesis' && check.metrics?.operationsExercised === prepared.task.operations.length;
-}
-function findingSurface(prepared: PreparedTask, finding: Finding): NewSurface {
-  if (prepared.policy) return { surfaceId: '', method: prepared.policy.version === 4 ? 'POST' : 'GET', path: new URL(prepared.policy.url).pathname,
-    param: prepared.policy.parameter, location: prepared.policy.version === 4 ? 'body' : 'query', authState: hasDastAuthentication(prepared.policy) ? 'user' : 'anonymous' };
-  if (!finding.location.url) invalid();
-  const url = new URL(finding.location.url);
-  if (prepared.zapPolicy) {
-    for (const request of prepared.zapRequests!) {
-      const selected = new URL(request.path, prepared.zapPolicy.origin);
-      if (url.origin !== selected.origin || url.pathname !== selected.pathname) continue;
-      const params = request.method === 'POST' ? Object.keys(request.body!) : [...selected.searchParams.keys()];
-      const parameter = params.find(param => zapSurfaceKey(finding.ruleId.replace(/^zap\./, ''), request, request.fields?.find(field => field.alias === param)?.pointer ?? param) === finding.comparisonKey);
-      if (parameter !== undefined) return { surfaceId: '', method: request.method, path: selected.pathname, param: request.fields?.find(field => field.alias === parameter)?.pointer ?? parameter,
-        location: request.method === 'POST' ? 'body' : 'query', authState: prepared.zapPolicy.authentication ? 'user' : 'anonymous' };
-    }
-    invalid();
-  }
-  let path = url.pathname;
-  if (prepared.task.engine === 'schemathesis') {
-    const template = prepared.task.operations.find(candidate => candidate === path || new URL(candidate, url.origin).pathname === path);
-    if (!template) invalid(); path = template;
-  }
-  return { surfaceId: '', method: 'GET', path, authState: prepared.authPolicy ? 'user' : 'anonymous' };
+  // Trusted adapter completion is separate from the common observed-request checks above.
+  return prepared.complete(checks[0], observed);
 }
 /** Post-execution audit: group completion and registered observations are separate from endpoint coverage. */
 async function storeTask(store: RunStore, runId: string, prepared: PreparedTask, report: ScanReport, complete: boolean, observed: AdmissionSnapshot, duration: number, out: string): Promise<void> {
   const task = prepared.task, groupSurfaceId = `s-${task.id.slice(2)}`, groupCheck = `group.${task.engine}`;
-  const category = task.engine === 'native-dast' || task.engine === 'zap' ? 'injection' : 'config';
+  const category = attackEngine(task.engine).category;
   const rows = report.checks.flatMap(item => item.findings).map((finding, index) => {
-    const surface = findingSurface(prepared, finding);
+    const surface = prepared.findingSurface(finding);
     surface.surfaceId = `s-${sha(JSON.stringify(surface)).slice(0, 40)}`;
     return { finding, id: `f-${sha(`${task.id}:${index}`).slice(0, 32)}`, surface, check: `observation.${sha(finding.ruleId).slice(0, 24)}` };
   });
@@ -227,7 +154,8 @@ async function artifact(path: string, base: string): Promise<RunArtifact> {
 }
 /** Preserve already registered observations; placeholder counts are error-only, never a completion claim. */
 function closeFailedTask(store: RunStore, runId: string, task: ExecutionTask, observed: AdmissionSnapshot, duration: number): boolean {
-  const category = task.engine === 'native-dast' || task.engine === 'zap' ? 'injection' : 'config', surfaceId = `s-${task.id.slice(2)}`, check = `group.${task.engine}`;
+  const category = attackEngine(task.engine).category;
+  const surfaceId = `s-${task.id.slice(2)}`, check = `group.${task.engine}`;
   try {
     store.addSurfaces(runId, [{ surfaceId, method: 'GET', path: '/', authState: 'anonymous' }]);
     try { store.createTask({ taskId: task.id, runId, category, surfaceIds: [surfaceId], coveragePlan: [{ surfaceId, check }], provider: 'fixed', scriptRef: `builtin:${task.engine}` }); } catch { /* May already be registered. */ }
@@ -274,7 +202,8 @@ export async function runExecutionPlan(raw: ExecutionRunOptions): Promise<Execut
         let checks: CheckResult[];
         try { checks = await execute(item, options, runtime); } catch { checks = [gapCheck('execution_incomplete')]; }
         const observed = runtime.snapshot();
-        let report = createReport(checks, task.engine === 'native-dast' ? 'url' : task.engine === 'schemathesis' ? 'api' : 'url', new Date(start).toISOString(), { fingerprint: sha(`${scopeHash}:${task.id}`), ruleset: RULESET_VERSION });
+        let report = createReport(checks, attackEngine(task.engine).reportMode, new Date(start).toISOString(),
+          { fingerprint: sha(`${scopeHash}:${task.id}`), ruleset: RULESET_VERSION });
         const complete = observedGroup(item, report.checks, observed) && !runtime.signal.aborted;
         if (!complete && !report.checks.some(check => check.status === 'partial' || check.status === 'error' || check.status === 'skipped')) {
           report = createReport([...report.checks, gapCheck('execution_incomplete')], report.mode, report.startedAt, report.scope);

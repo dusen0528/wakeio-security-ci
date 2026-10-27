@@ -1,0 +1,55 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["verdict", "summary", "findings", "gate", "checks_run"],
+  "properties": {
+    "verdict": { "type": "string", "enum": ["APPROVE", "APPROVE_WITH_NITS", "CHANGES_REQUESTED", "BLOCKED"] },
+    "summary": { "type": "string", "maxLength": 2000 },
+    "findings": {
+      "type": "array",
+      "maxItems": 40,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "severity", "file", "line", "problem", "required_fix", "how_to_verify"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[BN][0-9]{1,2}$" },
+          "severity": { "type": "string", "enum": ["blocking", "nit"] },
+          "file": { "type": "string" },
+          "line": { "type": "integer", "minimum": 0 },
+          "problem": { "type": "string", "maxLength": 1500 },
+          "required_fix": { "type": "string", "maxLength": 1500 },
+          "how_to_verify": { "type": "string", "maxLength": 800 }
+        }
+      }
+    },
+    "gate": {
+      "type": "array",
+      "maxItems": 20,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["criterion", "status", "evidence"],
+        "properties": {
+          "criterion": { "type": "string", "maxLength": 300 },
+          "status": { "type": "string", "enum": ["PASS", "FAIL", "UNVERIFIED"] },
+          "evidence": { "type": "string", "maxLength": 1500 }
+        }
+      }
+    },
+    "checks_run": {
+      "type": "array",
+      "maxItems": 30,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["command", "exit_code", "result"],
+        "properties": {
+          "command": { "type": "string", "maxLength": 300 },
+          "exit_code": { "type": "integer" },
+          "result": { "type": "string", "maxLength": 600 }
+        }
+      }
+    }
+  }
+}

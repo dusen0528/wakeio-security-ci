@@ -1,21 +1,19 @@
-import type { CheckResult, CodeCoverage, CodeLanguage, CodeProvider, SourceOptions } from '../contracts.js';
+import type { CheckResult, CodeCoverage, CodeLanguage, CodeProvider, SourceOptions, ToolName } from '../contracts.js';
 import { snapshotJsonData } from '../json-snapshot.js';
-import { builtinAstFiles } from './ast.js';
-import { pythonFiles } from './python.js';
-import { nativeFiles } from './opengrep.js';
-import { semgrepFiles } from './semgrep.js';
+import { codeAnalyzer } from '../runtime/analyzer-registry.js';
 import type { SourceSnapshot } from './types.js';
 
 export const CODE_COVERAGE_ID = 'source.code-coverage';
 export const CODE_LANGUAGES: readonly CodeLanguage[] = ['javascript', 'typescript', 'python', 'c', 'cpp', 'csharp', 'go', 'java', 'kotlin', 'php', 'ruby', 'rust', 'shell', 'swift', 'vue'];
-const LEGACY_PROVIDERS: readonly CodeProvider[] = ['builtin_ast', 'bandit', 'opengrep_native'];
-const PROVIDERS: readonly CodeProvider[] = [...LEGACY_PROVIDERS, 'semgrep'];
-const IDS = { builtin_ast: 'source.builtin-ast', bandit: 'source.bandit', opengrep_native: 'source.opengrep.preview', semgrep: 'source.semgrep' } as const;
+export const LEGACY_CODE_PROVIDERS_V1: readonly CodeProvider[] = Object.freeze([
+  'builtin_ast', 'bandit', 'opengrep_native',
+]);
+export const CODE_PROVIDERS_V1: readonly CodeProvider[] = Object.freeze([...LEGACY_CODE_PROVIDERS_V1, 'semgrep']);
 const EXTENSIONS: Record<string, CodeLanguage> = { '.js': 'javascript', '.jsx': 'javascript', '.mjs': 'javascript', '.cjs': 'javascript', '.ts': 'typescript', '.tsx': 'typescript', '.mts': 'typescript', '.cts': 'typescript', '.py': 'python', '.c': 'c', '.h': 'c', '.cc': 'cpp', '.cpp': 'cpp', '.hh': 'cpp', '.hpp': 'cpp', '.cs': 'csharp', '.go': 'go', '.java': 'java', '.kt': 'kotlin', '.php': 'php', '.rb': 'ruby', '.rs': 'rust', '.sh': 'shell', '.swift': 'swift', '.vue': 'vue' };
 const count = (v: unknown): v is number => Number.isSafeInteger(v) && Number(v) >= 0 && Number(v) <= 10_000;
 const exact = (v: unknown, keys: readonly string[]): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v) && Object.keys(v).length === keys.length && keys.every(k => Object.hasOwn(v, k));
 const emptyCounts = () => ({ collected: null, eligible: null, completed: null, uncovered: null });
-const supports = (p: CodeProvider, l: CodeLanguage) => p === 'semgrep' ? l === 'go' : p === 'bandit' ? l === 'python' : l === 'javascript' || l === 'typescript' || p === 'opengrep_native' && l === 'python';
+const supports = (p: CodeProvider, l: CodeLanguage) => codeAnalyzer(p).codeCoverage.languages.includes(l);
 
 export function collectedCodeMetrics(snapshot: SourceSnapshot): Record<string, number> {
   const result: Record<string, number> = Object.fromEntries(CODE_LANGUAGES.map(language => [`codeFiles_${language}`, 0]));
@@ -36,17 +34,19 @@ export function codeCoverageCheck(snapshot: SourceSnapshot | undefined, checks: 
   if (!snapshot) return coverageCheck(unknownCodeCoverage(required));
   const files = snapshot.files.filter(f => f.category === 'code');
   if (files.some(f => !EXTENSIONS[f.path.toLowerCase().slice(f.path.lastIndexOf('.'))])) return coverageCheck(unknownCodeCoverage(required));
-  const selected = { builtin_ast: true, bandit: options.tools.includes('bandit'), opengrep_native: !!options.nativePreview, semgrep: options.tools.includes('semgrep') };
-  const providers = selected.semgrep ? PROVIDERS : LEGACY_PROVIDERS;
-  const inputSets = { builtin_ast: builtinAstFiles(snapshot), bandit: pythonFiles(snapshot), opengrep_native: nativeFiles(snapshot), semgrep: semgrepFiles(snapshot) };
+  const selectionOptions = { tools: options.tools, nativePreview: !!options.nativePreview };
+  const selected = Object.fromEntries(
+    CODE_PROVIDERS_V1.map(p => [p, codeAnalyzer(p).selected(selectionOptions)]),
+  ) as Record<CodeProvider, boolean>;
+  const providers = selected.semgrep ? CODE_PROVIDERS_V1 : LEGACY_CODE_PROVIDERS_V1;
+  const inputSets = Object.fromEntries(CODE_PROVIDERS_V1.map(p => [p, codeAnalyzer(p).codeCoverage.inputs(snapshot)]));
   const inputs = (p: CodeProvider) => inputSets[p];
-  const statuses = Object.fromEntries(PROVIDERS.map(p => [p, checks.find(c => c.id === IDS[p])?.status ?? 'unknown'])) as Record<CodeProvider, CheckResult['status'] | 'unknown'>;
+  const statuses = Object.fromEntries(CODE_PROVIDERS_V1.map(p => [p,
+    checks.find(c => c.id === codeAnalyzer(p).checkId)?.status ?? 'unknown',
+  ])) as Record<CodeProvider, CheckResult['status'] | 'unknown'>;
   const completed = (p: CodeProvider): boolean => {
-    const check = checks.find(c => c.id === IDS[p]), n = inputs(p).length;
-    if (!selected[p] || check?.status !== 'completed' || n === 0) return false;
-    if (p === 'builtin_ast') return check.metrics?.filesAnalyzed === n && check.metrics?.filesParseValid === n;
-    if (p === 'bandit' || p === 'semgrep') return check.metrics?.filesRequested === n && check.metrics?.filesAnalyzed === n && check.metrics?.errorCount === 0;
-    return check.metrics?.filesDeclared === n && check.metrics?.filesScanned === n && check.metrics?.identityUnchanged === true && check.metrics?.closeConfirmed === true && check.metrics?.stageCleanupConfirmed === true;
+    const analyzer = codeAnalyzer(p), check = checks.find(c => c.id === analyzer.checkId), n = inputs(p).length;
+    return selected[p] && check?.status === 'completed' && n > 0 && analyzer.codeCoverage.complete(check, n);
   };
   const languages: CodeCoverage['languages'] = CODE_LANGUAGES.flatMap(language => {
     const collected = files.filter(f => EXTENSIONS[f.path.toLowerCase().slice(f.path.lastIndexOf('.'))] === language).length;
@@ -54,8 +54,8 @@ export function codeCoverageCheck(snapshot: SourceSnapshot | undefined, checks: 
     const perProvider = (provider: CodeProvider) => inputs(provider).filter(f => EXTENSIONS[f.path.toLowerCase().slice(f.path.lastIndexOf('.'))] === language);
     const providerRows = providers.map(provider => ({ provider, selected: selected[provider], status: selected[provider] ? statuses[provider] : 'not_selected' as const,
       eligible: selected[provider] ? perProvider(provider).length : 0, completed: selected[provider] && completed(provider) ? perProvider(provider).length : 0 }));
-    const eligible = new Set(PROVIDERS.flatMap(p => selected[p] ? perProvider(p).map(f => f.path) : [])).size;
-    const done = new Set(PROVIDERS.flatMap(p => selected[p] && completed(p) ? perProvider(p).map(f => f.path) : [])).size;
+    const eligible = new Set(CODE_PROVIDERS_V1.flatMap(p => selected[p] ? perProvider(p).map(f => f.path) : [])).size;
+    const done = new Set(CODE_PROVIDERS_V1.flatMap(p => selected[p] && completed(p) ? perProvider(p).map(f => f.path) : [])).size;
     return [{ language, collected, eligible, completed: done, uncovered: collected - done, providers: providerRows }];
   });
   const totals = { collected: files.length, eligible: 0, completed: 0, uncovered: 0 };
@@ -84,7 +84,7 @@ export function parseCodeCoverage(input: unknown): CodeCoverage | undefined {
   const sums = { collected: 0, eligible: 0, completed: 0, uncovered: 0 };
   const providerIdentity = new Map<string, string>();
   for (const raw of v.languages) {
-    if (!exact(raw, ['language', 'collected', 'eligible', 'completed', 'uncovered', 'providers']) || !CODE_LANGUAGES.includes(raw.language as CodeLanguage) || !Array.isArray(raw.providers) || ![LEGACY_PROVIDERS.length, PROVIDERS.length].includes(raw.providers.length)) return undefined;
+    if (!exact(raw, ['language', 'collected', 'eligible', 'completed', 'uncovered', 'providers']) || !CODE_LANGUAGES.includes(raw.language as CodeLanguage) || !Array.isArray(raw.providers) || ![LEGACY_CODE_PROVIDERS_V1.length, CODE_PROVIDERS_V1.length].includes(raw.providers.length)) return undefined;
     if (providerCount !== undefined && providerCount !== raw.providers.length) return undefined;
     providerCount = raw.providers.length;
     const order = CODE_LANGUAGES.indexOf(raw.language as CodeLanguage); if (order <= previous) return undefined; previous = order;
@@ -92,9 +92,9 @@ export function parseCodeCoverage(input: unknown): CodeCoverage | undefined {
     let eligible = 0, done = 0;
     for (let i = 0; i < raw.providers.length; i++) {
       const p = raw.providers[i];
-      if (!exact(p, ['provider', 'selected', 'status', 'eligible', 'completed']) || p.provider !== PROVIDERS[i] || typeof p.selected !== 'boolean' || !count(p.eligible) || !count(p.completed) || p.completed > p.eligible || p.eligible > raw.collected) return undefined;
+      if (!exact(p, ['provider', 'selected', 'status', 'eligible', 'completed']) || p.provider !== CODE_PROVIDERS_V1[i] || typeof p.selected !== 'boolean' || !count(p.eligible) || !count(p.completed) || p.completed > p.eligible || p.eligible > raw.collected) return undefined;
       if (!p.selected ? p.status !== 'not_selected' || p.eligible !== 0 || p.completed !== 0 : typeof p.status !== 'string' || !['completed', 'partial', 'error', 'not_applicable', 'skipped', 'unknown'].includes(p.status)) return undefined;
-      if ((!supports(PROVIDERS[i], raw.language as CodeLanguage) || p.status === 'not_applicable') && (p.eligible !== 0 || p.completed !== 0) || p.status !== 'completed' && p.completed !== 0 || p.completed !== 0 && p.completed !== p.eligible) return undefined;
+      if ((!supports(CODE_PROVIDERS_V1[i], raw.language as CodeLanguage) || p.status === 'not_applicable') && (p.eligible !== 0 || p.completed !== 0) || p.status !== 'completed' && p.completed !== 0 || p.completed !== 0 && p.completed !== p.eligible) return undefined;
       const identity = JSON.stringify([p.selected, p.status]); if (providerIdentity.has(String(p.provider)) && providerIdentity.get(String(p.provider)) !== identity) return undefined; providerIdentity.set(String(p.provider), identity);
       eligible = Math.max(eligible, p.eligible); done = Math.max(done, p.completed);
     }
@@ -122,19 +122,20 @@ export function codeCoverageConsistent(v: CodeCoverage, checks: readonly CheckRe
   const nativeSelected = inventory[0].metrics?.nativePreviewSelected;
   if (typeof requested !== 'string' || typeof nativeSelected !== 'boolean') return false;
   if (requested.split(',').includes('semgrep') && v.languages.some(row => !row.providers.some(p => p.provider === 'semgrep'))) return false;
-  for (const provider of PROVIDERS) {
+  for (const provider of CODE_PROVIDERS_V1) {
     const rows = v.languages.flatMap(row => row.providers.filter(p => p.provider === provider));
     if (!rows.length) continue;
-    const identity = rows[0], expectedSelected = provider === 'builtin_ast' || (provider === 'opengrep_native' ? nativeSelected : requested.split(',').includes(provider));
+    const analyzer = codeAnalyzer(provider);
+    const identity = rows[0], expectedSelected = analyzer.selected({
+      tools: requested.split(',') as ToolName[], nativePreview: nativeSelected });
     if (identity.selected !== expectedSelected) return false;
-    const actual = checks.filter(c => c.id === IDS[provider]);
+    const actual = checks.filter(c => c.id === analyzer.checkId);
     if (identity.selected && (actual.length !== 1 || actual[0].status !== identity.status) || !identity.selected && actual.length !== 0) return false;
     const eligible = rows.reduce((sum, row) => sum + row.eligible!, 0), done = rows.reduce((sum, row) => sum + row.completed!, 0);
-    const m = actual[0]?.metrics;
-    const inputCount = provider === 'builtin_ast' ? m?.filesAnalyzed : provider === 'bandit' || provider === 'semgrep' ? m?.filesRequested ?? m?.files : m?.filesDeclared;
+    const inputCount = actual[0] && analyzer.codeCoverage.inputCount(actual[0]);
     if (identity.selected && inputCount !== undefined && (!count(inputCount) || inputCount !== eligible)) return false;
     if (done > 0) {
-      if (provider === 'builtin_ast' ? m?.filesAnalyzed !== eligible || m?.filesParseValid !== eligible : provider === 'bandit' || provider === 'semgrep' ? m?.filesRequested !== eligible || m?.filesAnalyzed !== eligible || m?.errorCount !== 0 : m?.filesDeclared !== eligible || m?.filesScanned !== eligible || m?.identityUnchanged !== true || m?.closeConfirmed !== true || m?.stageCleanupConfirmed !== true) return false;
+      if (!actual[0] || !analyzer.codeCoverage.complete(actual[0], eligible)) return false;
       if (done !== eligible) return false;
     }
   }
