@@ -263,7 +263,8 @@ list의 PID를 kill/stop 권한으로 쓰지 않는다. 별도 10초 관측/clea
 VM의 OS 준비 부팅은 rootless daemon/nft를 설치할 신뢰 환경을 얻기 위한 단계다. source/host credential은 복사·mount하지 않으며 Docker 설치도 없다.
 이 OS-only 단계의 guest user-mode egress는 아직 차단되지 않는다. 소스·host 비밀·target·Docker 실행 0이 전제이며 egress 격리 PASS가 아니다(CPx6 N4).
 source-free config만 기존 setup script의 최종 무조건 missing-prerequisite 종료를 제외한다. alias/cgroup/UID/subuid/위임 실패 guard는 유지한다.
-CPx6 N2: script는 공통 BOOT_GUARDS와 명시 MISSING_PREREQUISITE_TRAILER로 조합한다. OS-only script의 끝은 loginctl enable-linger다.
+CPx6 N2: script는 공통 BOOT_GUARDS와 명시 MISSING_PREREQUISITE_TRAILER로 조합한다. M1-117 이후 OS-only 끝은 guard complete 기록과 trap 해제다.
+Stopped-only는 그 뒤 미구현 backend 거부125를 추가한다. OS guard 완료와 backend 준비를 같은 상태로 해석하지 않는다.
 기존 Stopped-only script는 같은 guard 뒤 trailer를 붙인다. guard 안의 실패 exit125는 두 경로 모두 그대로다. 줄 위치에 따른 split/slice 제거는 없다.
 mount0·agent/pubkey/proxyenv/hostResolver off·alias 제거·서비스 TCP forwarding off(관리 SSH22 예외)·VM2CPU/4GiB/20GiB는 그대로다.
 Docker extras/guest helper의 실제 bytes pin·daemon/relay·nft/proxy·resource/egress/PG/target 검증은 미완료다. backend는 계속 unavailable·verified=false다.
@@ -338,7 +339,7 @@ manifest의 raw pin 검증 뒤 explicit protocol/package version/전체 lock SHA
 parser manifest의 독립 raw SHA는 본문 전체를 이미 고정한다. 중복 package/version/길이 literal 비교를 없애고 host protocol/전체 lock header 일관성만 남긴다. 승인 pin/자산 원문은 그대로다.
 root 및 workers/pg-parser의0777 거부를 추가하며 sudo/chown 없이 소유 사본만 쓴다. 디렉터리 쓰기 검사 제거 mutation은 일회 검증 뒤 폐기하고 제품에는 남기지 않는다.
 Lima의 지원 proxy 소문자/대문자8키를 empty로 명시한다. SDK setupEnv가 system proxy를 먼저 읽은 뒤 이 값으로 덮고 제거한다. SDK 조회 자체 차단이나 실제 host 값/유출 확인을 주장하지 않는다.
-공통 BOOT_GUARDS는 root0700 /run/wakeio-m1 안에0600·nlink1 boot-status를 mktemp+rename으로 교체한다. kernel boot_id와 pending/failed/complete·닫힌 step만 저장하며 실패 trap은 실패 사유를 보존한다.
+공통 BOOT_GUARDS는 root0700 /run/wakeio-m1-boot 안에0600·nlink1 boot-status를 mktemp+rename으로 교체한다. kernel boot_id와 pending/failed/complete·닫힌 step만 저장하며 실패 trap은 실패 사유를 보존한다.
 고정 probe는 root 소유/권한/링크/크기192B·FD/이름 dev/ino/시간·현재 boot identity·정확한 단일 행을 검증한다. 낡은 boot/잘린 상태/metadata 이상은 boot_metadata_invalid·unknown이며 성공으로 바꾸지 않는다.
 BOOT complete 이후에도 UID10001·non-sudo·cgroupv2·위임·worker 쓰기 권한·정확 subid·비중첩·host alias 제거를 다시 확인한다. 고정 성공 token과 observed boolean은 유지한다.
 OsPrerequisites에 bootPhase/reason을 추가해 안전한 닫힌 진단만 제공한다. SSH255는 ssh_unavailable, 이전125/빈 stdout은 guard_unknown이다. 알려지지 않은 token/phase/사유 조합은 session 실패다. 원문 로그/계정/설정은 반환하지 않는다.
@@ -349,3 +350,23 @@ M1-116의 manpage 재조회2회 timeout으로 남은 대조는 기존 public cac
 자체 테스트는 소유 Node mock의 닫힌 protocol과 script 계약·구문만 확인한다. guest root metadata/guard 실제 동작과 SDK proxy 제거 실측은 CPx10 승인 뒤 R9가 담당하며 VM/daemon/parser/target 실행은 없다. backend는 unavailable/verified=false다.
 추가 assertion은 host.docker.internal 제거 패턴을 Docker 명령으로 오인하던 단어 검사 대신 명령 경계를 검사한다. Docker 실행·설치·eval 금지는 유지하며 alias 제거 자체도 확인한다. 최초 검증의 이 오탐2건과 진단 사유 cgroup_v2_missing의 숫자2 누락1건은 각각 수정 후 재검증한다.
 수정 후 build·serial cleanup/pg-log/compat는70 pass·0 fail/skip다. root/worker-directory0777은 원본이 거부하고 격리된 검사 제거 mutation은 허용하는 차이를 확인했다. mutation은 폐기했고 host pin/배포 자산/Action과 승인된3함수 밖 기존 함수 본문은 불변이다. BOOT/probe는 sh -n만 수행했으며 실제 guest 실행 증거가 아니다.
+
+### M1-124 / CPx10 N1~N3 및 후속 신뢰 setup 절차
+
+boot 상태는 `/run/wakeio-m1-boot` root0700에만 둔다. relay `/run/wakeio-m1/relay.sock`과 분리하므로 relay 접근을 위해 boot 경로 권한을 바꾸지 않는다.
+`complete:none`은 현재 source-free OS guard 완료만 뜻한다. Stopped profile의 마지막125는 미구현 backend 거부이며 실행 권한은 없다. 앞의 출력 폐기로 쓰이지 않던 trailer echo는 제거한다.
+complete phase 실패 사유는 실제 probe의10개로 제한한다. bootstrap_failed/user_create_failed는 failed phase에서만 허용하고 complete 조합은 거부한다. 상태/행동을 넓히는 API는 추가하지 않는다.
+
+아래는 후속 root 패킷과 보안 체크포인트에서 구현·실측할 순서다. 이번 패킷은 설치/다운로드/VM 실행을 하지 않는다. 각 단계 완료 전 source 빌드/target 실행은 금지다.
+1. R9 Docker 자산 증거의 arm64/Noble Engine·CLI·rootless-extras29.9.2와 containerd2.1.5 네 deb를 후보로 검토한다. 크기/raw SHA는 측정됐지만 제품 pin 승격·Release/InRelease 서명 체인은 아직 승인/검증되지 않았다.
+2. 별도 승인한 vendor key fingerprint로 signed Release→Packages→네 deb bytes를 검증한다. Ubuntu 의존 deb도 서명된 archive metadata와 고정 version/arch/size/SHA에 결속하고 서명 불명/혼합/교체는 거부한다. HTTPS나 기존 Packages SHA만으로 서명 검증을 대신하지 않는다.
+3. UID 전용 VM의 실제 설치 package 버전/상태를 안전한 metadata로 먼저 확인한다. uidmap/newuidmap/newgidmap·dbus-user-session·iptables/nftables·libseccomp2·AppArmor/rootlesskit 조건 등 미측정 의존성 pin과 bytes를 R9가 채우기 전 설치를 시작하지 않는다.
+4. 소유 VM 안에서만 패키지 lifecycle 전에 rootful docker.service/docker.socket/containerd.service의 자동 시작을 막고 사후 비활성/비실행을 확인한다. VM 전용 policy-rc.d·unit mask의 소유/복원 범위를 lease에 묶고 host/Desktop의 전역 설정은 건드리지 않는다.
+5. 검증된 패키지 bytes만 전달해 고정 trusted 설치 절차를 실행한다. source/host credential/env/agent/mount는 전달하지 않는다. maintainer script·설치 부작용의 허용 범위와 실패 rollback은 별도 보안 검토 대상이다.
+6. UID10001·정확 subid·non-sudo·systemd user/cgroupv2 위임을 다시 검사한 뒤 전용 user unit으로 rootless daemon만 시작한다. 고정 executable/config·private 데이터/runtime/socket과 실제 rootless SecurityOptions를 lease에 결속한다. rootful이나 단순 non-root를 rootless로 표시하지 않는다.
+7. private relay를 별도 경로에 구성한다. 관리 SSH 사용자 traversal과 socket 소유/권한·peer identity를 확인하되 root0700 boot 경로는 유지한다. controller의 고정 argv/대상 allowlist·bounded stdio만 공개하며 Target에 임의 Docker API나 socket 권한을 주지 않는다.
+8. 실제 cpu/memory/pids 제한·seccomp·rootless 정보를 daemon/container/cgroup probe로 대조하고 IPv4/IPv6 direct IP·DNS·metadata·host gateway·CONNECT/redirect 우회를 거부하는 egress datapath를 실측한다. canonical Maven 정책 함수나 proxy env 설정은 강제 증거가 아니다.
+9. 자산·daemon·자원·egress·relay 장벽이 모두 맞고 R9가 독립 검증하기 전 backend는 unavailable/verified=false다. 온라인 Maven allowlist의 정상 fetch와 금지 경로 차단을 함께 증명하며 offline cache만으로 지원 범위를 축소하지 않는다.
+10. 기존30초 session·5초 probe·16KiB·전체 deadline/abort·별도 bounded cleanup을 늘리지 않는다. 이 한도에 준비 단계를 담지 못하면 unavailable로 중단하고 후속 설계 검토를 요청한다. 종료/실패는 소유 process group·Stopped/부재·임시 자산 정리를 확인하며 불명은 sticky다.
+
+남은 미정은 Ubuntu 의존성/선택 network driver·AppArmor bytes와 pin, 실제 guest package 상태, vendor signature key/chain과 설치 lifecycle 범위다. 기존 Docker bytes 측정을 설치 성공·rootless/egress 실측으로 바꾸지 않는다.

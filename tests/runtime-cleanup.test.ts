@@ -80,11 +80,12 @@ test('compiled Lima config is isolated, pinned and explicitly fails before incom
   assert.match(c.message, /SSH22/);
   const boot: string = c.provision[0].script;
   for (const required of ['host\\.lima', '10001', 'Delegate=cpu cpuset io memory pids', '65536',
-    'CPUQuota=200%', 'MemoryMax=2G', 'TasksMax=256', 'wakeio_missing_prerequisite', 'exit 125']) {
+    'CPUQuota=200%', 'MemoryMax=2G', 'TasksMax=256', 'exit 125']) {
     assert.ok(boot.includes(required), required);
   }
   assert.ok(boot.endsWith('loginctl enable-linger wakeio-m1\nwrite_state complete none\ntrap - EXIT\n'
-    + 'echo "wakeio_missing_prerequisite: verified packages, daemon relay, nft/proxy and probes" >&2\nexit 125\n'));
+    + 'exit 125\n'));
+  assert.doesNotMatch(boot, /wakeio_missing_prerequisite/);
   assert.doesNotMatch(boot, /docker run|docker start|curl.*\|.*sh/);
   assert.throws(() => compileLimaProfileConfig({ ...pins, rootfs: { ...pins.rootfs, sha256: '' } }));
   assert.throws(() => compileLimaProfileConfig({ ...pins, rootfs: { ...pins.rootfs, url: 'https://attacker/image' } }));
@@ -451,8 +452,7 @@ test('synthetic bytes bind private OS config and VZ identity; foreground boot st
     const osScript: string = config.provision[0].script;
     assert.ok(osScript.endsWith('loginctl enable-linger wakeio-m1\nwrite_state complete none\ntrap - EXIT\n'));
     const stoppedScript: string = JSON.parse(compileLimaProfileConfig(pins)).provision[0].script;
-    assert.equal(stoppedScript, osScript
-      + 'echo "wakeio_missing_prerequisite: verified packages, daemon relay, nft/proxy and probes" >&2\nexit 125\n');
+    assert.equal(stoppedScript, osScript + 'exit 125\n');
     const boot = await lease.boot();
     assert.deepEqual(boot, { status: 'unavailable', verified: false, phase: 'running_observed_then_stopped' });
     assert.equal((await calls(lease.home)).some(args => args[0] === 'stop'), false);
@@ -1091,7 +1091,10 @@ test('OS bootstrap clears SDK proxy keys and atomically records bounded root-own
     'FTP_PROXY', 'HTTP_PROXY', 'HTTPS_PROXY', 'NO_PROXY'];
   assert.deepEqual(config.env, Object.fromEntries(names.map(name => [name, ''])));
   assert.equal(config.propagateProxyEnv, false);
-  for (const guard of ['state_dir=/run/wakeio-m1', '/proc/sys/kernel/random/boot_id',
+  assert.equal(config.portForwards[0].guestSocket, '/run/wakeio-m1/relay.sock');
+  assert.match(script, /^state_dir=\/run\/wakeio-m1-boot$/m);
+  assert.doesNotMatch(script, /^state_dir=\/run\/wakeio-m1$/m);
+  for (const guard of ['state_dir=/run/wakeio-m1-boot', '/proc/sys/kernel/random/boot_id',
     'test ! -L "$state_dir"', "'%u:%g:%a'", '0:0:700', 'mkdir -m 700', "'%u:%g:%a:%h'", '0:0:600:1',
     'test "$size" -le 192', 'mktemp "$state_dir/.boot.XXXXXX"', 'mv -T -- "$temporary" "$state_file"',
     'write_state failed "$step"', 'write_state pending bootstrap_pending', 'write_state complete none']) {
@@ -1111,7 +1114,8 @@ test('fixed OS probe binds current boot and safe FD metadata before any success 
       const answer = await cap.probe(); assert.equal(answer.observed, true); assert.equal(answer.reason, 'none');
     });
     const script = recorder.events.find(event => event.args[1] === 'shell')!.args.at(-1)!;
-    for (const guard of ['state_directory || metadata_failure', 'state_metadata || metadata_failure',
+    for (const guard of ['state_dir=/run/wakeio-m1-boot',
+      'state_directory || metadata_failure', 'state_metadata || metadata_failure',
       'exec 3< "$state_file"', '/proc/self/fd/3', 'test "$metadata" = "$fd_metadata"',
       'read -r tag saved_boot phase step extra', 'test "$saved_boot" = "$boot" || metadata_failure',
       'test "$size" -eq "$expected_size" || metadata_failure', 'test -z "$trailing" && test -z "$extra"',
@@ -1142,7 +1146,8 @@ test('closed boot/guard reasons remain unobserved and cannot authorize backend o
       'uid_mismatch', 'sudo_allowed', 'subid_overlap', 'subuid_mismatch', 'subgid_mismatch', 'delegation_missing'];
     const cases = [['pending', 'bootstrap_pending'], ['unknown', 'boot_metadata_invalid'],
       ...reasons.map(reason => ['failed', reason]),
-      ...['uid_mismatch', 'cgroup_procs_unwritable', 'cgroup_subtree_unwritable'].map(reason => ['complete', reason])];
+      ...reasons.filter(reason => !['bootstrap_failed', 'user_create_failed'].includes(reason))
+        .concat(['cgroup_procs_unwritable', 'cgroup_subtree_unwritable']).map(reason => ['complete', reason])];
     let current = cases[0], calls = 0, retained!: LimaOsProbeCapability;
     const run = diagnosticSession(() => { calls++; return { exitCode: 125, completed: false,
       stdout: `wakeio-os-prerequisites/v1:${current[0]}:${current[1]}\n` }; });
@@ -1161,6 +1166,8 @@ test('closed boot/guard reasons remain unobserved and cannot authorize backend o
 });
 test('unknown, truncated and inconsistent diagnostic tokens fail the session without weakening cleanup', async () => {
   const bad = ['wakeio-os-prerequisites/v1:complete:none\n', 'wakeio-os-prerequisites/v1:pending:uid_mismatch\n',
+    'wakeio-os-prerequisites/v1:complete:user_create_failed\n',
+    'wakeio-os-prerequisites/v1:complete:bootstrap_failed\n',
     'wakeio-os-prerequisites/v1:failed:new_reason\n', 'wakeio-os-prerequisites/v1:failed:uid_mismatch',
     'wakeio-os-prerequisites/v1:failed:uid_mismatch\nextra\n'];
   for (const stdout of bad) {

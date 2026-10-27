@@ -74,7 +74,7 @@ function options(raw: LimaProfileOptions): LimaProfileOptions {
 const BOOT_FAILURES = ['bootstrap_failed', 'host_alias_present', 'cgroup_v2_missing', 'user_create_failed',
   'uid_mismatch', 'sudo_allowed', 'subid_overlap', 'subuid_mismatch', 'subgid_mismatch', 'delegation_missing'] as const;
 const OS_STATE_COMMON = String.raw`
-state_dir=/run/wakeio-m1
+state_dir=/run/wakeio-m1-boot
 state_file=$state_dir/boot-status
 boot_identity() {
   boot=$(/usr/bin/cat /proc/sys/kernel/random/boot_id) || return 1
@@ -147,9 +147,8 @@ loginctl enable-linger wakeio-m1
 write_state complete none
 trap - EXIT
 `;
-const MISSING_PREREQUISITE_TRAILER = [
-  'echo "wakeio_missing_prerequisite: verified packages, daemon relay, nft/proxy and probes" >&2', 'exit 125',
-].join('\n') + '\n';
+// Guard complete records only source-free OS preparation. Stopped profiles still reject the absent backend.
+const MISSING_PREREQUISITE_TRAILER = 'exit 125\n';
 const BOOT = BOOT_GUARDS + MISSING_PREREQUISITE_TRAILER;
 
 /** Pure config compilation; input is trusted tool metadata, never TargetSpec/source config or shell text. */
@@ -412,7 +411,9 @@ function probeMetadata(result: RuntimeProcessResult): Readonly<OsPrerequisites> 
   const phase = match[1] as OsPrerequisites['bootPhase'], reason = match[2] as OsGuardReason;
   const allowed: readonly string[] = phase === 'pending' ? ['bootstrap_pending']
     : phase === 'unknown' ? ['boot_metadata_invalid']
-    : phase === 'failed' ? BOOT_FAILURES : [...BOOT_FAILURES, 'cgroup_procs_unwritable', 'cgroup_subtree_unwritable'];
+    : phase === 'failed' ? BOOT_FAILURES : [...BOOT_FAILURES.filter(value =>
+      value !== 'bootstrap_failed' && value !== 'user_create_failed'),
+    'cgroup_procs_unwritable', 'cgroup_subtree_unwritable'];
   if (!allowed.includes(reason)) invalid();
   return Object.freeze({ ...base, bootPhase: phase, reason });
 }
