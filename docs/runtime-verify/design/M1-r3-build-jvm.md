@@ -370,3 +370,14 @@ complete phase 실패 사유는 실제 probe의10개로 제한한다. bootstrap_
 10. 기존30초 session·5초 probe·16KiB·전체 deadline/abort·별도 bounded cleanup을 늘리지 않는다. 이 한도에 준비 단계를 담지 못하면 unavailable로 중단하고 후속 설계 검토를 요청한다. 종료/실패는 소유 process group·Stopped/부재·임시 자산 정리를 확인하며 불명은 sticky다.
 
 남은 미정은 Ubuntu 의존성/선택 network driver·AppArmor bytes와 pin, 실제 guest package 상태, vendor signature key/chain과 설치 lifecycle 범위다. 기존 Docker bytes 측정을 설치 성공·rootless/egress 실측으로 바꾸지 않는다.
+
+### M1-126 / sudo 전체 목록의 의미와 non-sudo guard
+
+f18의 failed:sudo_allowed는 실제 닫힌 관측이다. 그 시점의 guard는 exit0만 보았으므로 실제 sudo 권한 존재를 확정하는 근거가 아니다.
+공식 [display.c526–542](https://github.com/sudo-project/sudo/blob/SUDO_1_9_15p5/plugins/sudoers/display.c#L526-L542)는 grant count0에도 정확한 no-grants 행을 출력하고 true를 반환한다. [sudoers.c963–971](https://github.com/sudo-project/sudo/blob/SUDO_1_9_15p5/plugins/sudoers/sudoers.c#L963-L971)와 [policy.c1296–1302](https://github.com/sudo-project/sudo/blob/SUDO_1_9_15p5/plugins/sudoers/policy.c#L1296-L1302)은 명령 없는 목록을 그 경로로 보낸다.
+BOOT/probe 공통 non_sudo는 root·LC_ALL=C에서 전체 `sudo -n -l -U wakeio-m1`을 한 번만 조회한다. 특정 명령의 거부를 전체 무권한으로 해석하지 않는다.
+확인된 short hostname은 단일 ASCII label·1~63자로 제한한다. hostname/list stream은80/513B로 먼저 잘라 메모리에만 담고 제어/NUL/non-ASCII를 불일치 문자로 바꾼다. 정확한 한 행·원래 개행·exit0 marker까지 같을 때만 허용한다.
+전체 조회는 고정1초 timeout 안에서 수행한다. grant 목록·Defaults/추가 행·stderr 오류·nonzero·언어/plugin 표현 차이·잘림은 모두 non-sudo 입증 실패다. 원문 출력·hostname·자격정보를 파일/보고서/로그에 저장하지 않는다.
+임의 plugin을 인증하는 범용 sudo 분석기가 아니며 승인된 source-free OS/sudoers 문법만 지원한다. backend·daemon·target 권한은 계속 unavailable이고 UID/subid·boot metadata·신원·cleanup·30초/5초·16KiB 조건은 그대로다.
+자체 테스트는 공통 함수의 소유 shell fixture와 고정 Node 정책 mock만 실행한다. 실제 host root/sudo/hostname/계정 명령·guest/VM/target 실행은 없으며 실제 재측정은 후속 R9 담당이다.
+M1-124는 자체 npm ci/build와 serial cleanup/compat62 pass, M1-126은 build와 같은 검증64 pass이며 fail/skip0이다. 소유 mock 검증이며 실제 sudo policy·guest/daemon/egress 성공을 뜻하지 않는다.
