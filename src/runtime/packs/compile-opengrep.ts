@@ -1,13 +1,22 @@
 import { createHash } from 'node:crypto';
 import { JSON_MAX_INPUT_BYTES } from '../../json-snapshot.js';
 import { parseFrameworkPackYaml } from './schema.js';
-import type { PackLanguage, PackSource } from './schema.js';
+import type { FrameworkPack, PackLanguage, PackSanitizer, PackSource } from './schema.js';
 
 export const PACK_COMPILER_REVISION = 'wakeio.framework-pack-opengrep/v1';
+export type PackCompileDiagnostic = Readonly<{
+  kind: 'surface'; index: number; provider: 'source-routes'; disposition: 'unsupported';
+  reason: 'discovery-not-implemented'; annotations: readonly string[];
+}> | Readonly<{
+  kind: 'sanitizer'; index: number; vulnClass: 'sql'; disposition: 'not-applied';
+  reason: 'binding-literal-overload-argument-unproven'; call: readonly string[];
+  when: Readonly<PackSanitizer['when']>;
+}>;
 export interface CompiledFrameworkPack {
   packId: string; packVersion: number; generationRevision: typeof PACK_COMPILER_REVISION;
   rawPackSha256: string; semanticPackSha256: string; rulesSha256: string; rulesJson: string;
   engine: 'opengrep-core'; engineVersion: '1.30.0'; executionProtocol: 'core-rules-targets-intrafile';
+  diagnostics: readonly PackCompileDiagnostic[]; diagnosticsSha256: string;
   verification: 'not_run';
 }
 type Formula = { pattern: string } | { 'pattern-inside': string } | { patterns: Formula[] }
@@ -58,12 +67,28 @@ function sources(entries: PackSource[], language: PackLanguage): TaintPattern[] 
     : entry.call.map(call => ({ patterns: callFormula(call, '...'), exact: true })));
 }
 
+/** Closed metadata only, bounded by the validated Pack (surfaces16 + hints32; symbols16 per entry). */
+function dispositions(pack: FrameworkPack): readonly PackCompileDiagnostic[] {
+  const result: PackCompileDiagnostic[] = [];
+  pack.surfaces.forEach((surface, index) => {
+    if (surface.provider === 'source-routes') result.push(Object.freeze({
+      kind: 'surface', index, provider: surface.provider, disposition: 'unsupported',
+      reason: 'discovery-not-implemented', annotations: Object.freeze([...surface.annotations]),
+    }));
+  });
+  pack.sanitizers.sql.forEach((hint, index) => result.push(Object.freeze({
+    kind: 'sanitizer', index, vulnClass: 'sql', disposition: 'not-applied',
+    reason: 'binding-literal-overload-argument-unproven', call: Object.freeze([...hint.call]),
+    when: Object.freeze({ argCount: hint.when.argCount, placeholders: hint.when.placeholders }),
+  })));
+  return Object.freeze(result);
+}
+
 /** Compile data only. R3 must provide core -rules/-targets/-taint_intrafile, not preview's CLI flags. */
 export function compileFrameworkPack(text: string): Readonly<CompiledFrameworkPack> {
   const pack = parseFrameworkPackYaml(text);
-  if (pack.surfaces.some(surface => surface.provider === 'source-routes')) unsupported('source-routes');
-  // argCount+placeholders are hints, not proof of an actual binding overload or safe SQL argument.
-  if (pack.sanitizers.sql.length) unsupported('sanitizer-binding-unproven');
+  // Preserve discovery configuration and unproven hints as diagnostics, never as applied sanitizers.
+  const diagnostics = dispositions(pack);
   const semanticPackSha256 = sha(canonical(pack));
   const rules = pack.languages.map(language => ({
     id: `wakeio.pack.${pack.id}.v${pack.version}.${language}.sql.${semanticPackSha256}`,
@@ -76,9 +101,11 @@ export function compileFrameworkPack(text: string): Readonly<CompiledFrameworkPa
     }))),
   }));
   const rulesJson = canonical({ rules }) + '\n';
-  if (Buffer.byteLength(rulesJson, 'utf8') > JSON_MAX_INPUT_BYTES) unsupported('output-limit');
+  const diagnosticJson = canonical(diagnostics);
+  if (Buffer.byteLength(rulesJson + diagnosticJson, 'utf8') > JSON_MAX_INPUT_BYTES) unsupported('output-limit');
   return Object.freeze({ packId: pack.id, packVersion: pack.version, generationRevision: PACK_COMPILER_REVISION,
     rawPackSha256: sha(text), semanticPackSha256, rulesSha256: sha(rulesJson), rulesJson,
     engine: 'opengrep-core', engineVersion: '1.30.0', executionProtocol: 'core-rules-targets-intrafile',
+    diagnostics, diagnosticsSha256: sha(diagnosticJson),
     verification: 'not_run' });
 }
