@@ -346,9 +346,80 @@ export type OsGuardReason = typeof BOOT_FAILURES[number] | 'none' | 'bootstrap_p
   | 'guard_unknown' | 'boot_metadata_invalid' | 'cgroup_procs_unwritable' | 'cgroup_subtree_unwritable';
 export interface OsPrerequisites {
   kind: 'os-prerequisites'; observed: boolean; backendVerified: false;
-  bootPhase: 'unknown' | 'pending' | 'failed' | 'complete'; reason: OsGuardReason;
+  bootPhase: 'unknown' | 'pending' | 'failed' | 'complete';
+  /** sudo_allowed means non-sudo was not proven; it does not establish that sudo privileges exist. */
+  reason: OsGuardReason;
 }
-export interface LimaOsProbeCapability { probe(): Promise<Readonly<OsPrerequisites>> }
+export interface LimaOsProbeCapability {
+  probe(): Promise<Readonly<OsPrerequisites>>;
+  inventory(): Promise<Readonly<OsInventory>>;
+}
+export interface OsInventory {
+  kind: 'os-inventory'; status: 'observed' | 'unknown'; backendVerified: false;
+  reason: 'none' | 'inventory_unavailable' | 'invalid_inventory' | 'identity_unknown';
+  os: Readonly<{ id: 'ubuntu'; version: '24.04'; arch: 'aarch64' | 'x86_64' }> | null;
+  packages: readonly Readonly<{ name: string; state: string; version: string | null }>[];
+}
+const INVENTORY_PACKAGES = ['uidmap', 'dbus-user-session', 'iptables', 'nftables', 'libc6', 'libsystemd0',
+  'libseccomp2', 'init-system-helpers', 'slirp4netns', 'apparmor', 'ca-certificates', 'curl', 'gpgv', 'python3',
+  'systemd', 'sudo', 'login', 'passwd', 'docker-ce', 'docker-ce-cli', 'docker-ce-rootless-extras', 'containerd.io'];
+const PACKAGE_STATES = ['not-installed', 'config-files', 'half-installed', 'unpacked', 'half-configured',
+  'triggers-awaited', 'triggers-pending', 'installed'];
+const GUEST_INVENTORY = String.raw`set -eu
+exec 2>/dev/null
+test -x /usr/bin/dpkg-query || exit 125
+/usr/bin/awk '
+ /^ID=/ { ids++; if ($0 != "ID=ubuntu") exit 1 }
+ /^VERSION_ID=/ { versions++; if ($0 != "VERSION_ID=24.04" && $0 != "VERSION_ID=\"24.04\"") exit 1 }
+ END { if (ids != 1 || versions != 1) exit 1 }
+' /etc/os-release || exit 125
+arch=$(/usr/bin/uname -m) || exit 125
+case "$arch" in aarch64|x86_64) ;; *) exit 125;; esac
+printf 'wakeio-os-inventory/v1\tubuntu\t24.04\t%s\n' "$arch"
+for package in __PACKAGES__; do
+  record=$({
+    if /usr/bin/dpkg-query -W -f='__FORMAT__' -- "$package" 2>&1; then
+      printf 'wakeio-exit:0'
+    else query_status=$?; printf 'wakeio-exit:%s' "$query_status"; fi
+  } | /usr/bin/head -c 513 | /usr/bin/tr -c '\012\011\040-\176' '?') || exit 125
+  missing=$(printf 'dpkg-query: no packages found matching %s\nwakeio-exit:1' "$package")
+  if test "$record" = "$missing"; then printf '%s\tmissing\t-\n' "$package"; continue; fi
+  case "$record" in *'wakeio-exit:0') ;; *) exit 125;; esac
+  row=$(printf '%s' "$record" | /usr/bin/head -n 1)
+  test "$record" = "$(printf '%s\nwakeio-exit:0' "$row")" || exit 125
+  if test "$row" = "$(printf 'not-installed\t')"; then row=$(printf 'not-installed\t-'); fi
+  printf '%s\t%s\n' "$package" "$row"
+done
+printf 'end\t22\n'
+`.replace('__PACKAGES__', INVENTORY_PACKAGES.join(' '))
+  .replace('__FORMAT__', '${db:Status-Status}\\t${Version}\\n');
+function inventoryUnknown(reason: OsInventory['reason']): Readonly<OsInventory> {
+  return Object.freeze({ kind: 'os-inventory', status: 'unknown', backendVerified: false, reason,
+    os: null, packages: Object.freeze([]) });
+}
+function inventoryData(raw: string, arch: LimaPins['rootfs']['arch']): Readonly<OsInventory> {
+  if (Buffer.byteLength(raw) > 16 * 1024 || /[^\x09\x0a\x20-\x7e]/.test(raw)) {
+    return inventoryUnknown('invalid_inventory');
+  }
+  const rows = raw.split('\n');
+  if (rows.length !== INVENTORY_PACKAGES.length + 3 || rows.pop() !== '' || rows.pop() !== 'end\t22'
+    || rows.shift() !== `wakeio-os-inventory/v1\tubuntu\t24.04\t${arch}`) {
+    return inventoryUnknown('invalid_inventory');
+  }
+  const packages: OsInventory['packages'][number][] = [];
+  for (const [index, row] of rows.entries()) {
+    const fields = row.split('\t'), [name, state, version] = fields;
+    const empty = state === 'missing' || state === 'not-installed' && version === '-';
+    if (fields.length !== 3 || name !== INVENTORY_PACKAGES[index]
+      || state !== 'missing' && !PACKAGE_STATES.includes(state)
+      || !(empty ? version === '-' : /^[0-9][A-Za-z0-9.+:~_-]{0,127}$/.test(version))) {
+      return inventoryUnknown('invalid_inventory');
+    }
+    packages.push(Object.freeze({ name, state, version: version === '-' ? null : version }));
+  }
+  return Object.freeze({ kind: 'os-inventory', status: 'observed', backendVerified: false, reason: 'none',
+    os: Object.freeze({ id: 'ubuntu', version: '24.04', arch }), packages: Object.freeze(packages) });
+}
 export type LimaOsSessionUse = (capability: Readonly<LimaOsProbeCapability>) => Promise<void>;
 export interface LimaOsSessionResult {
   status: 'unavailable'; verified: false; phase: 'consent_required' | 'failed' | 'callback_completed';
@@ -635,16 +706,26 @@ class OsProfile extends Profile {
       this.groupConfirmed &&= result.cleanupConfirmed === true && result.closeConfirmed === true; return result;
     }, () => { this.groupConfirmed = false; return undefined; });
   }
-  async guestProbe(deadline: number, signal: AbortSignal): Promise<Readonly<OsPrerequisites>> {
+  private async guestRead(script: string, deadline: number, signal: AbortSignal): Promise<RuntimeProcessResult> {
     const args = ['--tty=false', 'shell', '--workdir=/', '--shell=/bin/bash', this.name, '--',
       '/usr/bin/sudo', '-n', '/usr/bin/env', '-i', 'PATH=/usr/sbin:/usr/bin:/sbin:/bin', 'LC_ALL=C',
-      '/bin/sh', '-c', GUEST_PROBE];
+      '/bin/sh', '-c', script];
     let result: RuntimeProcessResult;
     try {
       result = await this.execute(this.config.limactlExecutable, args, { cwd: this.home, home: this.home,
         timeoutMs: 5_000, deadlineAt: deadline, maxOutputBytes: 16 * 1024, signal });
     } catch { this.groupConfirmed = false; return invalid(); }
     this.groupConfirmed &&= result.cleanupConfirmed === true && result.closeConfirmed === true;
+    return result;
+  }
+  async guestInventory(deadline: number, signal: AbortSignal): Promise<Readonly<OsInventory>> {
+    const result = await this.guestRead(GUEST_INVENTORY, deadline, signal);
+    if (!this.groupConfirmed) invalid();
+    return result.completed ? inventoryData(result.stdout, this.config.pins.rootfs.arch)
+      : inventoryUnknown('inventory_unavailable');
+  }
+  async guestProbe(deadline: number, signal: AbortSignal): Promise<Readonly<OsPrerequisites>> {
+    const result = await this.guestRead(GUEST_PROBE, deadline, signal);
     const absent = [125, 255].includes(result.exitCode ?? -1) && !result.signal && !result.stopReason
       && !result.spawnError && !result.timedOut && !result.cancelled && !result.outputLimitExceeded;
     if (!this.groupConfirmed || !result.completed && !absent) invalid();
@@ -749,7 +830,7 @@ class OsSession {
   readonly controller = new AbortController(); readonly deadline: number;
   failed = false; observed = false; private open = false; private stopping = false; private pid?: number;
   private foreground?: Promise<RuntimeProcessResult | undefined>; private monitor?: Promise<void>;
-  private active?: Promise<Readonly<OsPrerequisites>>; private binary?: SessionBinary; private timer?: NodeJS.Timeout;
+  private active?: Promise<unknown>; private binary?: SessionBinary; private timer?: NodeJS.Timeout;
   private wake!: () => void; private readonly lost = new Promise<void>(resolve => { this.wake = resolve; });
   private readonly onAbort = () => this.fail();
   constructor(readonly owner: OsProfile) {
@@ -786,6 +867,23 @@ class OsSession {
       () => { if (this.active === job) this.active = undefined; });
     return job;
   }
+  private inventory(args: unknown[]): Promise<Readonly<OsInventory>> {
+    if (!this.open || this.failed || !this.observed || this.controller.signal.aborted
+      || Date.now() >= this.deadline || args.length || this.active) {
+      return Promise.reject(new TypeError('closed_os_inventory_capability'));
+    }
+    const job = (async () => {
+      try {
+        await this.checkpoint();
+        const answer = await this.owner.guestInventory(this.deadline, this.controller.signal);
+        await this.checkpoint(); return answer;
+      } catch { this.fail(); return inventoryUnknown('identity_unknown'); }
+    })();
+    this.active = job;
+    void job.then(() => { if (this.active === job) this.active = undefined; },
+      () => { if (this.active === job) this.active = undefined; });
+    return job;
+  }
   private async watch(): Promise<void> {
     try {
       while (!this.stopping) {
@@ -809,7 +907,8 @@ class OsSession {
       await delay(20, undefined, { signal: this.controller.signal });
     }
     await this.checkpoint(); if (this.failed) invalid(); this.open = true; this.monitor = this.watch();
-    const capability = Object.freeze({ probe: (...args: unknown[]) => this.probe(args) });
+    const capability = Object.freeze({ probe: (...args: unknown[]) => this.probe(args),
+      inventory: (...args: unknown[]) => this.inventory(args) });
     const callback = Promise.resolve().then(() => {
       if (!this.open || this.failed || Date.now() >= this.deadline) invalid(); return use(capability);
     }).then(() => undefined, () => { this.fail(); });
