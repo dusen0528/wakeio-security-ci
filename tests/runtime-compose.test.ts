@@ -10,6 +10,7 @@ import { checkIsolationProbe, preflightIsolation, type IsolationProbe } from '..
 import { normaliseCompose } from '../src/runtime/builders/compose-input.js';
 import { normaliseMavenRequest } from '../src/runtime/builders/build-policy.js';
 import type { TargetSpec } from '../src/runtime/types.js';
+import { parseTargetSpec } from '../src/runtime/target.js';
 
 async function withProfile(run: (options: RuntimeProcessOptions) => Promise<void>): Promise<void> {
   const home = await mkdtemp(join(tmpdir(), 'wakeio-runtime-owned-'));
@@ -228,6 +229,22 @@ test('compose preserves approved relations without producing an executable manif
   assert.ok(result.requires.includes('verified-isolation'));
   raw.services.app.command[0] = 'mutated';
   assert.equal(result.app.command![0], 'java');
+});
+
+test('compose agrees with Target service dots and 64-character limit and rejects option-like path segments', () => {
+  for (const name of ['api.v1', 'a'.repeat(64)]) {
+    const spec = parseTargetSpec({ ...composeSpec, build: { ...composeSpec.build, service: name } });
+    const raw = composeData();
+    const input = { services: { [name]: raw.services.app, db: raw.services.db } };
+    assert.equal(normaliseCompose(input, spec).app.service, name);
+  }
+  assert.throws(() => parseTargetSpec({ ...composeSpec, build: { ...composeSpec.build, service: 'a'.repeat(65) } }));
+  for (const field of ['context', 'dockerfile'] as const) {
+    for (const path of ['-x', '--file=/etc/passwd', 'safe/-x', 'safe/--file=/etc/passwd']) {
+      const raw = composeData(); raw.services.app.build[field] = path;
+      assert.throws(() => normaliseCompose(raw, composeSpec), /invalid_runtime_compose/);
+    }
+  }
 });
 
 test('compose rejects every unsupported authority key, including dangerous false or empty options', () => {

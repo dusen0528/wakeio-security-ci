@@ -30,12 +30,12 @@ function path(value: unknown, directory = false): string {
   if (name.startsWith('./')) name = name.slice(2);
   if (directory && name === '.') return name;
   if (!/^[A-Za-z0-9_.-]+(?:\/[A-Za-z0-9_.-]+)*$/.test(name)
-    || name.split('/').some(part => part === '.' || part === '..')) invalid();
+    || name.split('/').some(part => part === '.' || part === '..' || part.startsWith('-'))) invalid();
   return name;
 }
 function service(value: unknown): string {
-  const name = text(value, 63);
-  if (!/^[A-Za-z0-9][A-Za-z0-9_-]*$/.test(name)) invalid();
+  const name = text(value, 64);
+  if (!/^[A-Za-z0-9][A-Za-z0-9_.-]*$/.test(name)) invalid();
   return name;
 }
 function argv(value: unknown): string[] | null {
