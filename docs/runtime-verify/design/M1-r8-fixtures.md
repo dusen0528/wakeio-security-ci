@@ -155,3 +155,56 @@ R1/R5의 격리 parser helper는 AST/token projection으로 입력 shape를 바�
 버전·projection 선택으로 V1~V3/F/N 판정 수·승격 강도·GET/POST ground truth를 약화하지 않는다.
 `per-request` snapshot·coverage dump 경계·마커 재현성의 정확한 필드 계약은 R1과 맞춘다.
 새 공개 스키마에 맞춰 기대값의 모양을 바꿀 때도 의미·case ID·판정 수와 변경 이유를 별도 보존한다.
+
+## 8. M1-109: 정확한 JVM 이미지 후보 제안
+
+2026-10-28 메타데이터 조회로 §1의 Maven3.10.0/JDK21 후보를 아래처럼 좁힌다.
+[Maven 공식 다운로드](https://maven.apache.org/download.cgi)와
+[3.10.0 릴리스](https://maven.apache.org/docs/3.10.0/release-notes.html)에 정식 배포가 있다.
+공식 이미지도 존재하므로 Maven 버전을 낮추거나 별도 binary 설치 경로를 추가할 이유가 없다.
+
+- 빌드 후보: `docker.io/library/maven:3.10.0-eclipse-temurin-21-noble`.
+  [Docker 공식 Maven 명부](https://raw.githubusercontent.com/docker-library/official-images/master/library/maven)에
+  정확히 이 tag와 amd64/arm64v8가 있다. source commit은 `4bcc1dea6507fba8ec40c602bf1bfdb963e21288`이다.
+- 실행 JDK 후보: `docker.io/library/eclipse-temurin:21.0.12.1_1-jdk-noble`.
+  [공식 Temurin 명부](https://raw.githubusercontent.com/docker-library/official-images/master/library/eclipse-temurin)에
+  정확한 patch/build tag와 amd64/arm64v8가 있다. source commit은 `511f9356dc4d50932a0a5f8cfb0f87ed1aef4f07`이다.
+- Noble은 R9가 별도로 조사한 Ubuntu24.04 Docker 자산과 OS 계열을 맞추는 최소 변경 후보다.
+  `latest`, `3`, `21-jdk-noble` 같은 tag를 최종 pin으로 삼지 않는다. 위 tag도 재게시될 수 있다.
+
+공식 명부가 가리키는 Maven `eclipse-temurin-21-noble/Dockerfile`은 3.10.0 Maven stage와
+`eclipse-temurin:21-jdk-noble` base를 사용한다. 그 source의 major tag만으로 JDK patch를 단정하지 않았다.
+익명 Registry API로 읽은 OCI index→linux child manifest→config의 원시 SHA256을 대조했다.
+네 config 모두 `JAVA_VERSION=jdk-21.0.12.1+1`, `JAVA_HOME=/opt/java/openjdk`이고 OS/architecture가 일치했다.
+Maven config에는 `MAVEN_HOME=/usr/share/maven`이 있지만 `MAVEN_VERSION`은 없었다.
+따라서 Maven3.10.0은 tag/공식 build 정의의 제안이며 실제 binary 버전 실행 확인은 아니다.
+
+후속 R9 독립 대조용 index 후보:
+
+- Maven: `sha256:2060a0028047a1974e7e0e343f93b7d2742db8cce69cb5662cf2a9a09b17dbca`
+- Temurin: `sha256:57424b1d8eca9c4cf8a4fe226207027911f08d6758628891bf59fcfb53777029`
+
+| 후보 | platform | metadata | 관측 SHA256 digest |
+| --- | --- | --- | --- |
+| Maven | linux/amd64 | manifest | `sha256:3e598b8b4680fa5ec51f9661fe278901cde75af841116f9f03956601c92a778f` |
+| Maven | linux/amd64 | config | `sha256:6dae7ba6ab719b3627206c755e24c411d1c281a12b1acb3d53515051cd7dbf98` |
+| Maven | linux/arm64 | manifest | `sha256:65cedfb84cfbb1dc9974c14662d6bf9b20aa6aea274c877fe08952bdfae7992f` |
+| Maven | linux/arm64 | config | `sha256:fe1f0cef06dadb4b4e7b613be22c806414f48f3357c9728e659f7bc0baab7326` |
+| Temurin | linux/amd64 | manifest | `sha256:8b3b108b98b06013f1fb7105745b4ab128f6bdce7759206d3fa8ef9fc58e4d90` |
+| Temurin | linux/amd64 | config | `sha256:850a79a648b155cc2802ac214a109f2707418645a2f1eb16b227a3f22687b672` |
+| Temurin | linux/arm64 | manifest | `sha256:47d408e3a08b4e0cf7e966e891491a8a886a49ca8c0d2f79f1d3a22995ba1ecf` |
+| Temurin | linux/arm64 | config | `sha256:65c7de6113db9872bf81fd68e5328bfc73d71f61d610b1e277d4b89bb90f5aa4` |
+
+index/child는 header·descriptor·원시 SHA가 일치했다. config는 descriptor·원시 SHA가 일치했지만
+응답에 digest header는 없었다. layer digest는 선언만 읽었고 layer 다운로드·pull·실행은 0이다.
+R8은 raw JSON·익명 bearer를 저장하지 않았다. bearer는 프로세스 메모리 밖으로 전달하지 않았다.
+이 표는 R8의 조회 시점 제안이며 R9의 독립 byte 대조·최종 pin 승인·서명 검증을 대신하지 않는다.
+
+[R9 JVM 자산 감사](../../../.handoff/evidence/M1/jvm-assets/README.md)의 PG18.6 OCI metadata와
+JaCoCo0.8.16 runtime agent SHA256 `37ae2f374ad77e85c59c6e5b46565226c3ac3cb460ac19de0bcb844ac2f43e33`은
+각각 별도 근거다. agent는 공개 SHA1과 대조됐지만 공개 SHA256 sidecar/서명·CLI JAR은 미확인이다.
+[Docker 자산 감사](../../../.handoff/evidence/M1/docker-assets/README.md)도 정적 자산 검사이며 guest 설치 증명이 아니다.
+guest JDK/Maven 실행, 실제 이미지 layer/rootfs, 소유 예제 빌드·JAR 재현·SQL/격리 게이트는 아직 미검증이다.
+
+root 승인과 R9의 두 플랫폼 metadata·asset bytes 독립 확인 뒤에만 최종 platform digest를 선택한다.
+그 뒤 별도 R8 Dockerfile/compose·pin 반영 패킷이 필요하다. 현재 예제·Java/Oracle·기대값·pin lock은 바꾸지 않는다.
