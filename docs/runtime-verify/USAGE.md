@@ -1,7 +1,7 @@
 # Runtime verify 개발 상태
 
 Runtime verify는 M1 개발 중이다. `init-target`은 소스를 데이터로 읽어 Target YAML 초안을 만든다.
-CLI의 `verify` 실행·공통 runtime 보고서 reader 연결은 후속 작업이며 `doctor --runtime`은 M3 범위다.
+CLI의 `verify` 실행·runtime 4종 writer 연결은 후속 작업이며 `doctor --runtime`은 M3 범위다.
 
 Spring Pack의 감지 조건을 만족하는 `services/orders`가 있을 때, 저장소 루트에서 다음처럼 초안을 만든다.
 출력의 부모는 이미 존재해야 하고, 소스가 그 부모 아래의 안전한 상대 경로로 표현되어야 한다.
@@ -26,9 +26,16 @@ Pack의 source-routes와 binding hint는 감지 성공만으로 컴파일·실�
 
 runtime 보고서는 갱신된 공통 reader가 필요하며 0.5 소비자는 미지원으로 거부한다.
 현재 0.5 reader는 `mode: runtime`을 지원하지 않는다. 기존 0.5 scan 보고서의 입력·출력 호환 보존은
-새 runtime 보고서 지원을 뜻하지 않는다. 후속 공통 reader는 `mode: runtime`과
+새 runtime 보고서 지원을 뜻하지 않는다. 새 SDK 공통 reader `parseReport`/`readReport`는 `mode: runtime`과
 `runtime.revision: verify-m1-v1`을 함께 확인하며, 모르는 runtime 필드를 버려 정상 scan으로 읽지 않는다.
-새 reader가 연결되기 전에는 runtime 보고서 생성·소비나 4종 보고서 검증이 완료됐다고 간주하지 않는다.
+`parseRuntimeReport`/`sanitiseRuntimeReport`는 닫힌 runtime branch의 구조·집계·기록된 gate 정합성을 검사한다.
+새 API는 own JSON 1 MiB·20,000 노드·깊이 40 한도를 적용한다. 기존 `parseScanReport`·`sanitiseReport`의
+scan 전용 타입/행동과 `readScanReport`의 기존 16 MiB 읽기 한도는 유지한다. 새 `readReport`는 1 MiB다.
+runtime의 title/description/remediation/notes는 원문 SQL·응답을 추측 분류하지 않고 고정 생략문으로 바꾼다.
+기계 식별자는 120 UTF-16 문자 이내 안전 토큰으로 제한한다(표면 ID의 method+path 형식도 허용).
+경로·URL에는 기존 안전화/비밀값 처리를 적용한다.
+판정 grade/reach·hash refs·null/unknown·사유 코드는 유지한다. 이 reader는 실제 artifact bytes·private vault/lease/run 체인,
+보고서 진위·Oracle 재실행·대상 동작을 검증하지 않는다. 실제 파일 결속·4종 writer/receipt·gate 생산자는 후속 범위다.
 
 Target YAML 파싱에는 yaml 2.9.1, 신뢰한 로컬 JSON Schema 검증에는 Ajv 8.20.0을 사용한다.
 관련 직접 의존성 2개와 Ajv 전이 의존성 4개의 버전·라이선스는

@@ -12,6 +12,7 @@ import { sanitiseApiStateEvidence } from './api-state-observer.js';
 import { sanitiseApiWriteStateEvidence } from './api-write-observer.js';
 import { API_PROPERTY_CHECK, apiPropertyCheckConsistent, sanitiseApiPropertyWriteEvidence } from './api-property-evidence.js';
 import { projectReportSummary } from './report-summary.js';
+export { parseRuntimeReport, sanitiseRuntimeReport } from './runtime-report.js';
 import { createHash } from 'node:crypto';
 import { constants as fsConstants } from 'node:fs';
 import { lstat, mkdir, open, realpath, rename, unlink } from 'node:fs/promises';

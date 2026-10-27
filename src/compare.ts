@@ -8,9 +8,11 @@ import { types as utilTypes } from 'node:util';
 import { sanitiseStaticContext } from './static-context.js';
 import { sanitizeDastExecution, isDastObservedEvidence, isLegacyDastExecution } from './dast-execution.js';
 import { SCHEMATHESIS_AUTH_REVISION, sanitiseSchemathesisAuth } from './schemathesis-auth.js';
-import type { Finding, ScanProvenance, ScanReport, Severity } from './contracts.js';
+import type { Finding, Report, ScanProvenance, ScanReport, Severity } from './contracts.js';
 import { exitCode, sanitiseReport, writeArtifacts } from './report.js';
 import { readJsonInput } from './json-input.js';
+import { JSON_MAX_INPUT_BYTES, snapshotJsonData } from './json-snapshot.js';
+import { parseRuntimeReport } from './runtime-report.js';
 
 export type ComparisonState = 'new' | 'changed' | 'unchanged' | 'not_observed' | 'unverified';
 export interface ComparisonEntry {
@@ -143,6 +145,24 @@ export function parseScanReport(input: unknown): ScanReport {
 
 export async function readScanReport(path: string): Promise<ScanReport> {
   return parseScanReport(await readJsonInput(path));
+}
+
+/** New common reader: bounded own JSON; legacy entrypoints retain their historical limits/signatures. */
+export function parseReport(input: unknown): Report {
+  const invalid = () => { throw new TypeError('invalid_report'); };
+  const data = snapshotJsonData(input, invalid, invalid);
+  if (!record(data)) return invalid();
+  if (data.mode === 'runtime' || Object.hasOwn(data, 'runtime')) return parseRuntimeReport(data);
+  if (Array.isArray(data.checks) && data.checks.some(check => record(check)
+    && (Object.hasOwn(check, 'runtime') || typeof check.id === 'string' && check.id.startsWith('runtime.')
+      || Array.isArray(check.findings) && check.findings.some((finding: unknown) => record(finding)
+        && record(finding.evidence) && finding.evidence.basis === 'runtime-observation-ledger')))) return invalid();
+  return parseScanReport(data);
+}
+export async function readReport(path: string): Promise<Report> {
+  if (typeof path !== 'string' || !path || /[\x00-\x1f\x7f]/.test(path)) throw new TypeError('invalid_report');
+  try { return parseReport(await readJsonInput(path, JSON_MAX_INPUT_BYTES)); }
+  catch { throw new TypeError('invalid_report'); }
 }
 
 interface IndexedFinding {
