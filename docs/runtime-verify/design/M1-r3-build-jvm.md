@@ -141,9 +141,9 @@ agent는 제품 소유 read-only volume, exec/XML 출력은 run 전용 managed v
 검증된 image entrypoint argv에 `-javaagent:`를 삽입하며 source JAVA_TOOL_OPTIONS를 상속하지 않는다.
 `sessionid`는 run/coverage artifact에 결속하고 append=false, target application class include 범위를 정한다.
 JaCoCo tcpserver는 internal network에서만 사용한다. 인증이 없는 포트를 host/외부에 노출하지 않는다.
-trusted CLI helper가 startup/health 후 baseline dump+reset, 각 route control/attack 후 dump+reset을 한다.
+trusted CLI helper가 startup/health baseline을 분리하고 각 control/probe 요청별 before/after exec·XML·reset ack를 묶는다.
 동시 요청이 섞이지 않도록 coverage 수집 구간은 직렬화하며 startup/health probe coverage는 분리한다.
-각 exec에 built image·class tree·source snapshot·route/task·request 구간·agent 버전을 해시로 묶는다.
+각 exec에 built image·class tree·source snapshot·route/task·단일 request ordinal·구간·agent 버전을 해시로 묶는다.
 같은 build의 classfiles/source로 CLI report XML을 만들고 class ID·라인 디버그 정보·경로 경계를 대조한다.
 Jacoco dump/report 실패, class 불일치, debug line 없음, source 탈출은 줄 수 0 대신 unknown이다.
 covered는 요청 후 handler의 라인 instruction count가 증가한 경우이며 미요청 대조 handler는 증가하지 않아야 한다.
@@ -207,6 +207,8 @@ VM 전체도 default-deny이며 고정 관리 SSH reply와 proxy UID의 허용 u
 핵심 규칙은 `meta skuid W`에서 `ip/ip6 daddr P tcp dport PORT accept`, 나머지 counter/drop이다. 일반 established 허용보다 먼저 적용한다.
 rootlesskit/slirp의 실제 socket UID와 flow counter를 probe로 대조하고, 준비 때 열린 연결을 닫은 뒤 정책을 atomic 설치한다.
 P는 별도 UID의 canonical Maven reverse proxy다. trusted mirror 설정을 만들고 GET/HEAD artifact 경로만 허용하며 CONNECT·upload·임의 Host를 거부한다.
+GET/HEAD도 Maven 좌표의 정규 repository 경로·허용 확장자만 받으며 query·비정규 인코딩/경로를 거부한다.
+허용 좌표/GET 경로에는 잔여 정보 채널이 있다. CPx1 N2에 따라 소스 등 build 입력·env에 비밀이 없다는 전제로 수용하며 완전한 정보 유출 차단으로 주장하지 않는다.
 proxy만 제한된 DNS를 사용하고 upstream host/TLS 검증·public IP pin·모든 redirect 재검증을 한다. 사설/link-local/metadata·주소 변경은 거부한다.
 proxy UID도 허용 registry DNS/IP/443만 접근한다. target의 직접 IP·DNS/DoH·host gateway·CONNECT/SNI 우회는 W drop 또는 proxy 거부로 끝나야 한다.
 단일 run VM lease에서 phase 전환을 직렬화한다. setup은 핀된 tool 준비, build는 proxy tuple만, runtime은 W 외부 output 전부 drop·내부 app/PG만 허용한다.
@@ -221,4 +223,6 @@ PG lease는 DB/container/log volume ID·runNonce·seed 뒤 시작 cursor·sessio
 요청 종료 뒤 writer 정지→최종 cursor까지 drain→parser 종료→raw PG volume 삭제·부재 확인 순서다. gap/미완료 drain/삭제 실패는 unknown/error다.
 후속 R3 패킷은 핀된 VM/CI setup과 nft/proxy, helper/lifecycle을 구현하고 보안 CPx를 받는다. R9가 같은 consent CLI 경로로 독립 probe한다.
 현재는 준비·정책·helper 모두 미실행이다. 실제 가용성·성능과 우회 차단이 입증되기 전 M1 격리/빌드 게이트를 PASS로 세지 않는다.
+M1-21은 기존 최소 env/argv/group 감독을 재사용한 trusted tool 실행기와 probe 데이터 정합성 검사만 구현한다.
+실제 `preflightIsolation`은 backend/collector 미구현으로 항상 unavailable·verified=false다. 합성 테스트의 matches=true는 실측/실행 권한이 아니다.
 근거: [Lima Docker](https://lima-vm.io/docs/examples/containers/docker/), [rootless cgroup](https://docs.docker.com/engine/security/rootless/tips/#limiting-resources), [nft socket UID](https://wiki.nftables.org/wiki-nftables/index.php/Matching_packet_metainformation#Matching_by_socket_UID_.2F_GID).
