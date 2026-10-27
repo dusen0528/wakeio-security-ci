@@ -8,6 +8,16 @@ R5는 관측·판정만 소유한다. R8의 취약/수정/음성 예제와 기�
 추천은 소유 PG의 `logging_collector=on`, `jsonlog`, `log_statement=all`, `log_min_error_statement=ERROR`다.
 마지막 설정이 없으면 parse 단계의 오류 문장이 빠질 수 있다. CSV 대안은 RFC CSV 파서로 같은 사건을 만든다.
 설정·PG 이미지/major·collector 버전·소유 DB/container ID를 R3 lease와 R1 artifact에 결속한다.
+앱 DB role은 `NOSUPERUSER NOCREATEROLE NOCREATEDB NOREPLICATION NOBYPASSRLS`이며 관리·collector 계정과 분리한다.
+`pg_read_server_files`·`pg_write_server_files`·`pg_execute_server_program`의 직접/간접 멤버십과 관리 role로의 SET 경로는 0이다.
+일반 verify 기본값도 R8처럼 DB CONNECT·대상 schema USAGE·허용 테이블 SELECT만 준다.
+PUBLIC/상속을 포함한 유효 권한에서 앱 소유권·CREATE·TEMP를 배제한다.
+seed/snapshot은 별도 관리 경로에서 수행하고 원문 복원 SQL·관리 credential·복원 capability를 앱에 전달하지 않는다.
+`log_statement`·`log_min_error_statement`는 SUSET이므로 서버 레벨에 고정하고 앱에 parameter SET 권한을 주지 않는다.
+Observer는 trusted pinned PG lease의 독립 관리 연결로 실제 `pg_settings`·role 속성/멤버십/parameter 권한을 초기 검증한다.
+DB/role override·startup option을 포함한 앱 인증 세션의 유효값도 앱 응답을 통하지 않고 확인한다.
+수집 시작/종료 barrier에서 같은 DB identity·유효 설정·role 경계와 collector cursor/연속성을 확인한다.
+설정 드리프트·barrier 누락·앱 주장뿐인 값·비신뢰 DB 로그는 관련 구간 unknown/error이며 clean 근거로 쓰지 않는다.
 target stdout나 HTTP 오류 본문을 PG 사건으로 받지 않고 관리 포트를 호스트에 공개하지 않는다.
 JSON `message`의 statement/execute와 `statement`, `detail`의 Bind 값, `state_code`·`cursor_position`을 구분한다.
 extended protocol의 `$1` 문장과 detail의 마커는 **binding**이다. 겹따옴표로 표시된 값은 SQL 문장으로 재파싱하지 않는다.
@@ -59,11 +69,13 @@ judge는 I/O 없는 함수다. parser 준비·실행·WASM 파일 로딩은 cons
 | 발급 payload의 token이 literal 밖에 있고 대응 AST 구문이 생기며 control에는 없음 | confirmed, `syntax_promotion` |
 | quote probe의 동일 문맥에서 PG42601 + parser의 마커 연관 따옴표 불균형/위치가 일치 | confirmed, `quote_imbalance` |
 | probe와 무관한 syntax error, control 오류, 위치·token provenance 불명 | unknown, confirmed 아님 |
-| collector/관측 구간/ledger/coverage 수집 실패 | 해당 범위 unknown; 성공·안전으로 바꾸지 않음 |
+| SQL collector/관측 구간/ledger 결속 실패 | 해당 case unknown; 다른 유효 case의 confirmed는 유지 |
+| SQL 증거는 유효하고 coverage만 누락/실패 | reach unknown; SQL confirmed를 취소하거나 안전으로 바꾸지 않음 |
 
 승격은 발급 recipe의 정확한 삽입 구간과 parser token/AST를 함께 대조한다. 정규식 SQL parser는 만들지 않는다.
 구문 오류 경로도 42601만으로 통과하지 않고 정상 control, quote payload 위치, 같은 parser의 불균형 진단을 요구한다.
 syntax/control 판정과 reach는 별도다. JaCoCo handler·line 증거가 없으면 reach는 unknown이고 0줄로 대체하지 않는다.
+R8 N13대로 유효 confirmed + 다른 case/coverage gap은 finding과 gap을 함께 남기고 verify exit1을 유지한다.
 관측과 판정 결과는 안정적인 reason/marker hash/evidence hash·범위로 정렬해 같은 입력에 같은 결과를 낸다.
 
 ## 5. parser 선택지와 배포 (PLAN13 CP1 검토 대상)
@@ -83,7 +95,7 @@ DB/parser major 불일치·미지원 문법·asset 누락은 unknown이다. 스�
 
 ## 6. 파일·독립 검증·보고 연결
 
-R5 후보: `src/runtime/markers.ts`, `observers/pg-log.ts`, `oracles/sql.ts`와 필요한 내부 parser adapter.
+제품·helper·테스트 파일과 PLAN11/R8 case 매핑은 [R1 §7](M1-r1-contracts.md#7-cp1-이후-패킷파일검증-제안)이 유일한 canonical 명부다.
 R1 공유 요청: 위 ledger·normalized observation·artifact provenance·control validity·unknown reason 필드.
 R3 공유 요청: collector 로그 cursor/rotation·소유 PG lease·secret 분리·정리 확인; raw server volume은 종료 시 삭제한다.
 R8은 parser와 무관하게 V/F/음성·binding·quote·comment·일반 오류·비마커·누락/중단 기대 매트릭스를 소유한다.
@@ -95,6 +107,7 @@ R10의 4종 보고에는 grade/reach·reason·artifact hash/위치만 전달하�
 
 - [PG 로그·extended Bind·오류 문장](https://www.postgresql.org/docs/18/runtime-config-logging.html)
 - [PG 오류 위치 단위](https://www.postgresql.org/docs/18/protocol-error-fields.html)
+- [PG role 속성](https://www.postgresql.org/docs/18/sql-createrole.html) · [서버 파일·프로그램 role](https://www.postgresql.org/docs/18/predefined-roles.html)
 - [wrapper API](https://github.com/constructive-io/libpg-query-node/tree/main/versions/18) · [scan 위치](https://github.com/constructive-io/libpg-query-node/blob/main/versions/18/SCAN.md)
 - [wrapper 코드·초기화](https://github.com/constructive-io/libpg-query-node/blob/main/versions/18/src/index.ts) · [wrapper MIT](https://github.com/constructive-io/libpg-query-node/blob/main/LICENSE)
 - [상류 parser·BSD](https://github.com/pganalyze/libpg_query) · [버전 후보](https://github.com/constructive-io/libpg-query-node/blob/main/versions/18/package.json)
