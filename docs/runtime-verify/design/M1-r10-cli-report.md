@@ -61,7 +61,7 @@ runtime 분기는 공통 envelope의 `checks`와 `runtime`을 함께 검증·보
 runtime 필드/판별자 불일치·필수 check 누락·중복·손상은 legacy fallback 없이 거부한다. scan 모드의 runtime 혼합도 거부한다.
 runtime을 모르는 예전 바이너리의 지원을 주장하지 않는다. 갱신된 공통 reader는 runtime을 누락한 깨끗한 scan으로 축소하지 않는다.
 runtime 보고서는 갱신된 공통 reader가 필요하며 0.5 소비자는 미지원으로 거부한다. 기존 0.5 scan 입력·출력 호환과 구별한다.
-init-target은 실행 권한 없는 draft 생성으로 연결했다. verify 실행·공통 runtime reader는 후속이며 [USAGE.md](../USAGE.md)를 따른다.
+init-target은 실행 권한 없는 draft 생성으로 연결했다. verify 실행·runtime writer는 후속이며 [USAGE.md](../USAGE.md)를 따른다.
 `parseScanReport`와 compare의 소비 경로도 분기하며 runtime 비교는 R1의 계약·정책·digest가 맞을 때만 수행한다.
 runtime gate는 `runtime.verifyGate`가 권위다. 기존 `evaluateGate`/agent.scanGate의 미완료 우선 의미를 verify에 적용하지 않는다.
 별도 versioned envelope를 주포맷으로 삼는 B안은 미채택이다. N5의 B안 사람 승인이나 PLAN 기준 재정의를 기다리지 않는다.
@@ -69,6 +69,11 @@ runtime gate는 `runtime.verifyGate`가 권위다. 기존 `evaluateGate`/agent.s
 `evidence.grade/reach`, marker hash, controlPairId, 단계/관측 artifact refs와 Oracle revision을 R1 타입·스키마로 결속한다.
 unknown은 빈 finding이 아닌 case/gap 상태다. coverage unknown의 분모를 0/100%로 채우지 않고 SQL 판정과 분리한다.
 공통 runtime 확장은 M1 draft이며 최종 1.0 스키마 고정은 M5다. 기존 0.5 입력·출력의 raw/의미 해시를 바꾸지 않는다.
+M1-72는 `parseReport`/`readReport`의 공통 읽기와 `parseRuntimeReport`/`sanitiseRuntimeReport`를 제공한다.
+기존 `sanitiseReport`는 scan 전용으로 유지해 미연결 legacy writer/gate가 runtime 분기를 소비하는 확장을 피한다.
+새 경계의 1 MiB/20,000노드/깊이40과 기존 legacy entry의 범위는 별개다. 원문 가능성이 있는 자유 prose는 생략한다.
+상태/null·표면/커버리지 집계·기록된 grade/게이트/cleanup의 내부 정합성을 검사하며 assertion의 진위를 인증하지 않는다.
+finding별 surface/control 연결과 실제 ref bytes·lease/run 체인은 후속 vault/Verdict 읽기가 필요하다. 4종 writer/receipt는 미연결이다.
 
 ## 4. 네 보고서와 원문 해시
 
