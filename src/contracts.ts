@@ -1,5 +1,6 @@
 import type { DastExecution } from './dast-execution.js';
 import type { SchemathesisAuthEvidence } from './schemathesis-auth.js';
+import type { RuntimeCheck, RuntimeReportData } from './runtime/types.js';
 export type { DastExecution, DastExecutionV4, DastJsonExecutionStep, DastJsonStepReason } from './dast-execution.js';
 export type Severity = 'info' | 'low' | 'medium' | 'high' | 'critical';
 export type Mode = 'source' | 'url' | 'both' | 'api' | 'combined';
@@ -392,6 +393,15 @@ export interface ScanReport {
   checks: CheckResult[];
   scope?: ScanScope;
 }
+
+/** Additive common-report branch; the legacy ScanReport and its reader remain unchanged. */
+export interface RuntimeReport extends Omit<ScanReport, 'mode' | 'checks' | 'scope'> {
+  mode: 'runtime';
+  scope?: never;
+  checks: RuntimeCheck[];
+  runtime: RuntimeReportData;
+}
+export type Report = ScanReport | RuntimeReport;
 
 export type FailOn = Severity | 'none';
 

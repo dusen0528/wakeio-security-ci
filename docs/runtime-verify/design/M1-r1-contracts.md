@@ -122,7 +122,7 @@ type Observation = {
 };
 type CoverageMap = {
   basis: 'jacoco'; imageDigest: string; sourceSha256: Sha256; dump: ArtifactRef; agentVersion: string; agentSha256: Sha256;
-  surfaces: { surfaceId: string; taskId: string; requestOrdinals: number[]; jacocoSessionId: string; classTree: ArtifactRef;
+  requests: { surfaceId: string; taskId: string; requestOrdinal: number; jacocoSessionId: string; classTree: ArtifactRef;
     before: { exec: ArtifactRef; xml: ArtifactRef; resetAck: ArtifactRef }; after: { exec: ArtifactRef; xml: ArtifactRef; resetAck: ArtifactRef };
     files: { path: PathRef; sha256: Sha256; coveredLines: number[]; executableLines: number[] }[];
     accounting: 'exact' | 'unknown'; reasons: string[] }[];
@@ -147,7 +147,7 @@ PG lease/container/session/line과 seed 뒤 시작 cursor→요청 창→최종 
 R5 세부 제안 한도는 SQL32KiB·PG record64KiB·normalized8MiB/4,096사건·AST20,000노드/깊이40·helper1초/256MiB다. CP1에서 확정하며 어느 한도든 도달하면 unknown/미완료이지 잘라낸 성공이 아니다.
 동일 라우트의 benign/probe를 동일 seed snapshot에서 직렬 실행한다. health/discovery/control/재시도도 전역 cap·deadline에 산입한다.
 새 runtime admission이 기존 GET/HEAD/POST `RunAdmission`을 감싸며 v1의 허용 메서드·동작을 넓히지 않는다.
-JaCoCo는 전체 run 합계만으로 라우트 귀속을 주장하지 않는다. 라우트별 reset/before/after 장벽과 단일 요청 창을 사용한다.
+JaCoCo는 전체 run 합계만으로 라우트 귀속을 주장하지 않는다. 각 요청마다 before dump/reset ack→단일 requestOrdinal→after dump/reset ack의 장벽을 사용하며 한 CoverageMap.requests 행에 여러 요청을 묶지 않는다. 라우트 요약은 이 요청 행에서만 집계한다(CPx1 N1).
 분모는 실행 가능한 줄과 발견된 라우트를 구분한다. 소스/클래스 매핑 실패·백그라운드 오염이면 accounting unknown, 0%/100%로 대체하지 않는다.
 Observer 부착/연결/종료 drain 실패는 해당 case unknown이다. 음성 대조군의 무사건도 수집 완료 장벽 없이는 안전 증거가 아니다.
 Oracle은 검증된 readonly `AttackLog+MarkerLedger`, Observation[], CoverageMap만 받는 data-only 함수다. 파일·네트워크·프로세스·시계·랜덤·env·동적 import·RunContext 권한이 없다. parser I/O/WASM 로딩·trap 후 재초기화는 R3가 감독하는 Observer 전용 helper에 격리하고 parser package를 Oracle에 import하지 않는다.
@@ -209,7 +209,7 @@ cleanup 불명·observer 손실·snapshot 오류는 반드시 error/unknown으�
 
 ```ts
 type Report = ScanReport | RuntimeReport; // 기존 ScanReport/Mode/FindingEvidence legacy branch는 불변
-type RuntimeReport = Omit<ScanReport, 'mode' | 'checks'> & { mode: 'runtime'; checks: RuntimeCheck[];
+type RuntimeReport = Omit<ScanReport, 'mode' | 'checks' | 'scope'> & { mode: 'runtime'; scope?: never; checks: RuntimeCheck[];
   runtime: { revision: 'verify-m1-v1'; verifyGate: VerifyGate; scope: RuntimeScope;
     inputArtifacts: ArtifactRef[]; stages: ArtifactRef[]; cleanup: CleanupReport } };
 type CheckStatus = 'completed' | 'partial' | 'error' | 'not_applicable' | 'skipped'; // 현재 CheckResult.status와 동일
@@ -225,7 +225,7 @@ RuntimeCheckId는 아래 5개다. consent/입력 거부로 아예 보고서를 �
 | `runtime.build` | `builder:string|null`, `imageDigest:string|null`, `cacheKey:string|null`, `isolation:IsolationReport|null`, `durationMs:number|null` | 이미지·입력 SHA·실제 격리 검증 완료만 completed; 일부 기록은 partial, 빌드/격리 실패는 error. 미측정 필드는 null+reason이며 성공 digest를 만들지 않음 |
 | `runtime.start` | `lease:ArtifactRef|null`, `health:'passed'|'failed'|'unknown'`, `durationMs:number|null`, `instrumentation:ArtifactRef|null` | 소유 컨테이너·health·계측 확인 completed; 부분/손실 partial, health/start 실패 error, 미기동 skipped. unknown health를 passed로 대체하지 않음 |
 | `runtime.surface` | `routes:{surface:SurfaceRef,provenance:Provenance[],attacked:boolean|null,reasons:string[]}[]`, `declared:number|null`, `enumerated:number` | 완전 열거 completed; 제공자/입력 해석 미해결 partial; 유효한 발견 파일 없음 error. attacked=true는 실제 송신 ledger 결속, false는 미배정/미송신 확인, 관측 불명 null |
-| `runtime.coverage` | `method:'jacoco'`, `routes:{surface:SurfaceRef,files:CoverageMap['surfaces'][number]['files']|null,coveredFiles:number|null,coveredLines:number|null,executableLines:number|null,ratio:number|null,accounting:'exact'|'unknown',reasons:string[]}[]`, `dumpRefs:ArtifactRef[]` | route별 before/after/reset·class/source 매핑 완료만 completed; 일부 실패 partial, 전체 수집 실패 error. 미측정 files/count/ratio는 null, 분모0도 ratio=null+not_applicable 사유. HTTP method는 surface.method로 별도 보존 |
+| `runtime.coverage` | `method:'jacoco'`, `routes:{surface:SurfaceRef,files:CoverageMap['requests'][number]['files']|null,coveredFiles:number|null,coveredLines:number|null,executableLines:number|null,ratio:number|null,accounting:'exact'|'unknown',reasons:string[]}[]`, `dumpRefs:ArtifactRef[]` | 요청별 before/after/reset·class/source 매핑을 route로 집계한 경우만 completed; 일부 실패 partial, 전체 수집 실패 error. 미측정 files/count/ratio는 null, 분모0도 ratio=null+not_applicable 사유. HTTP method는 surface.method로 별도 보존 |
 | `runtime.oracle.sql` | `method:'pg-ast-token-differential'`, `cases:CaseOutcome[]`, `verdictRefs:ArtifactRef[]`, `markerLedger:ArtifactRef|null`, `parserRevision:string|null` | control·관측 장벽과 모든 계획 case 평가 완료면 completed; unknown case 존재 partial, 판정 입력 손상/전체 관측 실패 error. findings의 evidence.grade/reach는 실제 Verdict만, unknown을 가짜 grade/0건 성공으로 만들지 않음 |
 
 공유 상태 규칙: completed=요청한 범위의 신뢰 가능한 산출물 완료, partial=유효한 일부+명시된 미완료, error=해당 단계 수행/검증 실패, skipped=upstream 실패/취소로 미시작. `unknown`은 CheckStatus가 아니라 payload/CaseOutcome/reason이다.
@@ -259,6 +259,10 @@ agent 공통 projection에서도 legacy branch의 scanGate는 불변이다. runt
 | R8 | `examples/runtime/{spring-sqli,spring-sqli-jdbc}/**`, `benchmarks/runtime-corpus.json`, `tests/fixtures/runtime-m1/**` 기대 데이터 | R1 CP1; R3/R5와 독립 | JdbcTemplate/Statement 취약·수정 쌍, V2 POST confirmed·F2 정상 바인딩·N1~N13·음성/미요청 라우트·재현 기대값; 구현 수정 금지 |
 | R9 | `.handoff/evidence/M1/**`, `.github/workflows/runtime-m1.yml` | 전 패킷 병합 후 | 실제 compose 두 번·vulnerable confirmed/fixed·negative 0·route/line·시간·secret/egress·실패 cleanup; 기존 전체·compat·KPI compare, 로컬/CI 구분 |
 | R10 | 기존 `src/{cli,report,compare}.ts`; 신규 `src/{init-target,runtime-report}.ts`, `src/runtime/{cli,verify}.ts`, `docs/runtime-verify/USAGE.md` | R1+R3 내부 port+R4/R5 | pipeline·공통 reader/sanitizer/writer dispatch·4종 projection·CLI/사용자 문서; runtime-report.ts는 A안의 내부 모듈 |
+
+공유 배포 경로의 **후속 승인 제안**: R1은 `package.json`/`package-lock.json`의 strict YAML·JSON Schema 검증용 고정 dependency와 packs/schema 배포 파일 목록, R10은 `scripts/build-action-bundle.mjs`/`THIRD_PARTY_NOTICES.md`의 필요한 새 배포 자산·고지를 맡는다. legacy bundle/기존 출력 회귀를 검증한다.
+기존 패키지로 충족되는지 먼저 확인하고, 안 되면 검증된 고정 dependency를 쓴다. 자체 불완전 YAML/JSON Schema 파서로 검증 목표를 축소하지 않는다. 구체 버전·SQL WASM helper 자산/파일 경로는 후속 실측 뒤 정확한 별도 경로 승인으로 남긴다.
+이 명부 제안은 구현 권한을 스스로 부여하지 않는다. 위 공유 경로의 실제 수정에는 root 후속 패킷과 CPx 승인이 필수이며 M1-19에서는 package/lock/bundle builder/고지/dependency를 바꾸지 않는다.
 
 각 신규 테스트의 소유자·PLAN 11 항목·R8 참조를 아래처럼 고정한다. 계약/권한 검증은 Oracle 기대값과 구분하며 R8 case ID를 새로 만들지 않는다.
 
@@ -297,3 +301,11 @@ R1 계약→R3/R4/R5→R10 순서로 통합한다. R8 독립 ground truth를 먼
 CP1 추가 확인: 결정적 마커의 논리/물리 실행 구분, A 공통 dispatch의 세부 계약, projection의 역할/위치 보존, parser/PG major·Spring pin, 실제 rootless CI 환경. 분야별 unknown을 좁은 성공으로 대체하지 않으며 이 공개 schema는 아직 M1 draft다.
 M2 CP1은 14.1/14.2의 owner 요청 성공·identity 대조 실패→unknown, 접근 규칙 없는 라우트→unknown을 반드시 설계한다.
 M3는 14.3 sequences/provenance·recall, M4는 빈 sequence만 agent 제안·판정 불변을 각 CP1에 넣는다. M1 범위를 넓히지 않는다.
+
+## M1-19 첫 구현 범위
+
+`types.ts`의 구체 데이터 포트와 `contracts.ts`의 type-only Report union을 추가한다. RuntimeReport 최상위 scope는 never이고 입력에 존재하기만 해도 거부한다. runtime.scope만 권위다(CP1-r2 N1/CPx1 N3).
+`artifacts.ts`는 새 private flat vault다. 고정 이름의 상대 파일만 받고 0700 root·0600 파일·조상/leaf 링크·hardlink·특수 파일·안정 읽기·raw SHA/길이·Stage 입력 체인을 검증한다. target에 vault를 공유하지 않는다.
+writeBytes/readBytes는 파일64MiB, `.json` Stage/JSON 체인 입력은 newline 포함1MiB, 체인은root 포함256개·깊이16·총64MiB로 제한한다. 큰 opaque/NDJSON 입력은 raw SHA로 결속하고 전체 JSON으로 파싱하지 않는다. put은 임시 파일 fsync 후 atomic link→임시 링크 삭제로 덮어쓰기 없이 출판하며 외부 hardlink는 읽기 거부한다.
+readJsonInputBytes는 FD의 nlink/mode·이름/inode까지 확인하지 않아 vault에 그대로 쓰지 않는다. bounded JSON/own-data snapshot은 기존 snapshotJsonData를 재사용한다. 해시는 원본 생산자 인증이나 collector lease 검증의 대용이 아니다.
+scope placement guard는 전체 RuntimeReport 파서가 아니다. 전체 report parser/sanitizer, 전체 JSON schemas, target YAML 파서는 후속 패킷으로 남긴다. 이 구현으로 전체 verify 파이프라인 완료를 주장하지 않는다.
