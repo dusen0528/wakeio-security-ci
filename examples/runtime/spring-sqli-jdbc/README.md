@@ -10,8 +10,8 @@ Safe-search always uses PreparedStatement; ping only reflects JSON; untouched re
 ResultSets, Statements and Connections close through try-with-resources. SQL errors return a fixed
 HTTP 500 error code without SQL, bound values, credentials or driver diagnostics.
 
-`pins.json` and `cases.json` are byte copies of the independently frozen primary metadata/expectations.
-Version candidates are identical; real JDK patch, platform and OCI digests remain null/unmeasured.
+`pins.json` matches the primary base metadata; `cases.json` remains its frozen expectation byte copy.
+Version candidates and confirmed base metadata are identical; application outputs/platform choice remain unmeasured.
 Maven's fixed output timestamp and debug/parameter information are preserved in both POMs.
 `compose.draft.json` has a null DB image and missing Dockerfile.pending, so it cannot launch.
 No host bind/socket/ports, privileged capability or administrator credential is requested.
@@ -24,3 +24,16 @@ Preserve the N4 boundary in `tests/fixtures/runtime-m1/README.md`: ping has no S
 SQL task without corresponding PG control observation must remain unknown/exit 2, never clean.
 These are authored source/count expectations, not measured bytecode, Pack trace or runtime results.
 No target build/run, PostgreSQL, Docker, WASM or Opengrep was executed. R9 owns actual verification.
+
+## M1-119 verify input data
+
+`Dockerfile`, `.dockerignore`, `compose.json` and `wakeio.target.yml` are prepared inputs.
+The pure target/compose parsers retain executable=false. The CLI verify path is not connected yet;
+these files and schema validation do not establish an executable backend or a successful verify run.
+FROM references are immutable OCI indexes; R3 must select and verify the matching platform child/config
+from pins.json. An index digest is not an application image digest or a single-platform manifest.
+Build and runtime stages use UID/GID65532. Only POM/src enter the build context; seed is a separate input.
+Maven runs verify without skip flags. There currently are no src/test files; no Maven/test/build ran here.
+R3 owns javaagent/temporary writable paths, synthetic DB values, limits, rootless/default-deny networking,
+PG administrator setup and logging/seed barriers. Compose contains product references, never credentials.
+Actual layer/rootfs/guest/JDK/Maven, application build/JAR reproducibility, SQL/isolation and M1 gate remain unverified.
