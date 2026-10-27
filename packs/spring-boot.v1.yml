@@ -13,7 +13,8 @@ runtime:
   defaultPort: 8080
   health: /actuator/health
 surfaces:
-  - provider: spring-actuator # GET /actuator/mappings; provider currently has a fixed path contract.
+  - provider: spring-actuator
+    paths: [/actuator/mappings]
   - provider: openapi
     paths: [/v3/api-docs]
   - provider: source-routes

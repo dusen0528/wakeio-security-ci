@@ -163,6 +163,7 @@ test('R8 ground truth is consumed unchanged as a contract input, without claimin
 test('Pack carries reserved binding/source-route hints rather than claiming compiler/Oracle support', async () => {
   const pack = parse(await readFile('packs/spring-boot.v1.yml', 'utf8'));
   assert.equal(pack.runtime.defaultPort, 8080); assert.equal(pack.runtime.health, '/actuator/health');
+  assert.deepEqual(pack.surfaces[0], { provider: 'spring-actuator', paths: ['/actuator/mappings'] });
   assert.deepEqual(pack.surfaces[1], { provider: 'openapi', paths: ['/v3/api-docs'] });
   assert.ok(pack.sources.some((s: any) => s.annotation?.includes('RequestBody')));
   assert.equal(pack.sinks.sql[0].arg, 0); assert.equal(pack.sanitizers.sql[0].when.placeholders, true);

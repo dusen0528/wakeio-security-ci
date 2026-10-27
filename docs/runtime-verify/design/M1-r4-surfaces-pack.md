@@ -100,7 +100,10 @@ PLAN 4·5·10·11·12·13·14.4, HANDOFF, SUBAGENTS와 R1의 구체 계약 제�
 - 입력과 출력 artifact를 같은 JSON bytes/node 한도로 검증하고, 참조 해석 호출 수도 20,000으로 제한해
   leaf 없는 ref DAG와 alias 출력 폭증이 complete 결과로 남지 않게 했다.
 - Pack 데이터는 현재 R1 schema를 통과한다. compiler가 source-routes·binding hint를 명시 거부하므로 실행 지원을
-  주장하지 않는다. R1 공유 요청: spring-actuator 항목에도 `paths: [/actuator/mappings]`를 선언할 수 있게 해,
-  현재 주석/고정 provider 경로를 데이터로 옮긴다. R1 소유 파일은 이번 패킷에서 수정하지 않았다.
+  주장하지 않는다. M1-45에서 R1 M1-44의 paths 계약에 맞춰 spring-actuator 항목에
+  `paths: [/actuator/mappings]`를 실제 데이터로 명시했다. R1 소유 파일은 수정하지 않았다.
+- paths가 없는 사용자 Pack은 후속 Provider에서 `unknown`/gap으로 보고해야 한다. optional schema 필드는
+  코드에 기본 경로를 하드코딩하거나 임의 endpoint를 요청할 권한이 아니다. 실제 Actuator/Inventory/live cap 연결은
+  여전히 후속 범위이며 source-routes·sanitizer hint를 삭제해 compiler 거부를 숨기지 않는다.
 - R8 primary와 JDBC 두 ground truth를 읽고 합성 OpenAPI 계약 입력으로만 대조했다. 실제 Spring 응답·recall·
   Opengrep taint trace·coverage는 미검증이다. actuator/병합/live cap·deadline·origin 연결은 후속 패킷 범위다.
