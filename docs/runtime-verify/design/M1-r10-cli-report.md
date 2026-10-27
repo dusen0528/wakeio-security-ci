@@ -21,6 +21,10 @@ M1에서 검사 결과 캐시·LLM·외부 target URL은 지원하지 않는다.
 init-target의 `--out`은 필수 새 파일이다. source는 출력 부모 아래의 안전한 상대 PathRef로 표현할 수 있어야 한다.
 verify 출력은 source 밖·존재하는 부모 아래의 새 디렉터리(0700), 파일은0600이다. 조상/대상 링크·기존 출력은 거부한다.
 init-target도 명시된 새 출력만 만들며 기존 소스 파일·설정은 수정하지 않는다. YAML 직렬화는 임의 태그/보간을 만들지 않는다.
+init-target의 저장 link 후 확인·정리 실패는 output이 남을 수 있는 `init_target_output_unconfirmed`/exit 2다.
+교체된 경로/inode를 지울 위험 때문에 output rollback은 하지 않는다. 기존 파일 거부와 link 전 실패 의미는 유지한다.
+임시 파일 삭제도 열린 FD의 dev/ino와 부모 chain·현재 이름의 정체성을 재확인한 경우에만 한다. 교체·불명은 보존한다.
+Node의 경로 재확인과 unlink 사이에는 TOCTOU 창이 남는다. dirfd/openat 기반 원자적 경로 고정을 제공한다는 주장은 하지 않는다.
 `doctor --runtime`은 M3다. M1 verify의 동의 후 최소 격리 preflight와 구별하며 doctor에 실행 권한을 추가하지 않는다.
 
 ## 2. 실행·종료·출판

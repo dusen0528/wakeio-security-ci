@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { constants, type Stats } from 'node:fs';
-import { link, lstat, open, realpath, unlink } from 'node:fs/promises';
+import { link, lstat, open, realpath, unlink, type FileHandle } from 'node:fs/promises';
 import { basename, dirname, join, parse, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { stringify } from 'yaml';
@@ -100,25 +100,47 @@ async function absent(output: string): Promise<void> {
   }
   fail('init_target_output_exists');
 }
+async function unlinkPinnedTemporary(
+  parent: Directory, path: string, handle: FileHandle, pinned: Stats,
+): Promise<void> {
+  await unchanged(parent);
+  let named: Stats;
+  try { named = await lstat(path); } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return;
+    throw error;
+  }
+  const current = await handle.stat();
+  if (!current.isFile() || current.dev !== pinned.dev || current.ino !== pinned.ino
+    || !named.isFile() || named.isSymbolicLink() || named.mode !== current.mode || !same(named, current)) fail();
+  await unchanged(parent);
+  await unlink(path);
+}
 async function publish(parent: Directory, output: string, yaml: string): Promise<void> {
   await unchanged(parent); await absent(output);
   const temporary = join(parent.path, `.wakeio-target-${randomUUID()}.tmp`);
   const handle = await open(temporary,
     constants.O_CREAT | constants.O_EXCL | constants.O_WRONLY | constants.O_NOFOLLOW, 0o600);
+  let published = false, failure: { cause: unknown } | undefined, pinned: Stats | undefined;
   try {
+    pinned = await handle.stat();
     await handle.writeFile(yaml); await handle.sync(); await unchanged(parent);
     const written = await handle.stat(), named = await lstat(temporary);
     if (!same(written, named) || named.nlink !== 1 || (named.mode & 0o777) !== 0o600) fail();
     // Atomic no-replace: a competing writer cannot overwrite an existing destination.
-    try { await link(temporary, output); }
+    try { await link(temporary, output); published = true; }
     catch (error) {
       if ((error as NodeJS.ErrnoException).code === 'EEXIST') fail('init_target_output_exists');
       throw error;
     }
-    await unlink(temporary); await unchanged(parent);
-  } finally {
-    await handle.close();
-    await unlink(temporary).catch(error => { if (error.code !== 'ENOENT') throw error; });
+    await unlinkPinnedTemporary(parent, temporary, handle, pinned); await unchanged(parent);
+  } catch (cause) { failure = { cause }; }
+  try { if (pinned) await unlinkPinnedTemporary(parent, temporary, handle, pinned); }
+  catch (cause) { failure ??= { cause }; }
+  try { await handle.close(); } catch (cause) { failure ??= { cause }; }
+  if (failure) {
+    // Never roll back output: its path/inode may already have been replaced.
+    if (published) fail('init_target_output_unconfirmed');
+    throw failure.cause;
   }
 }
 

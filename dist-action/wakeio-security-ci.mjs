@@ -262646,12 +262646,30 @@ async function absent(output) {
   }
   fail9("init_target_output_exists");
 }
+async function unlinkPinnedTemporary(parent, path3, handle, pinned) {
+  await unchanged(parent);
+  let named;
+  try {
+    named = await lstat23(path3);
+  } catch (error2) {
+    if (error2.code === "ENOENT")
+      return;
+    throw error2;
+  }
+  const current = await handle.stat();
+  if (!current.isFile() || current.dev !== pinned.dev || current.ino !== pinned.ino || !named.isFile() || named.isSymbolicLink() || named.mode !== current.mode || !same2(named, current))
+    fail9();
+  await unchanged(parent);
+  await unlink5(path3);
+}
 async function publish(parent, output, yaml) {
   await unchanged(parent);
   await absent(output);
   const temporary = join21(parent.path, `.wakeio-target-${randomUUID6()}.tmp`);
   const handle = await open12(temporary, constants15.O_CREAT | constants15.O_EXCL | constants15.O_WRONLY | constants15.O_NOFOLLOW, 384);
+  let published = false, failure3, pinned;
   try {
+    pinned = await handle.stat();
     await handle.writeFile(yaml);
     await handle.sync();
     await unchanged(parent);
@@ -262660,19 +262678,32 @@ async function publish(parent, output, yaml) {
       fail9();
     try {
       await link3(temporary, output);
+      published = true;
     } catch (error2) {
       if (error2.code === "EEXIST")
         fail9("init_target_output_exists");
       throw error2;
     }
-    await unlink5(temporary);
+    await unlinkPinnedTemporary(parent, temporary, handle, pinned);
     await unchanged(parent);
-  } finally {
+  } catch (cause) {
+    failure3 = { cause };
+  }
+  try {
+    if (pinned)
+      await unlinkPinnedTemporary(parent, temporary, handle, pinned);
+  } catch (cause) {
+    failure3 ??= { cause };
+  }
+  try {
     await handle.close();
-    await unlink5(temporary).catch((error2) => {
-      if (error2.code !== "ENOENT")
-        throw error2;
-    });
+  } catch (cause) {
+    failure3 ??= { cause };
+  }
+  if (failure3) {
+    if (published)
+      fail9("init_target_output_unconfirmed");
+    throw failure3.cause;
   }
 }
 async function writeInitTargetDraft(sourceInput, outputInput) {
@@ -262784,7 +262815,8 @@ async function initTargetMain(raw) {
       "unsupported_runtime_source",
       "invalid_init_target_source",
       "invalid_builtin_pack",
-      "init_target_output_exists"
+      "init_target_output_exists",
+      "init_target_output_unconfirmed"
     ];
     const reason2 = error2 instanceof Error && reasons.includes(error2.message) ? error2.message : "init_target_failed";
     process.stderr.write(reason2 + "\n");
@@ -262800,8 +262832,11 @@ var init_cli2 = __esm({
        wakeio-security-ci init-target --help
 Read-only Pack detection; writes a schema-valid draft, never builds or runs the source.
 Output must be new, outside source, in an existing parent containing the source.
+Path components cannot be symlinks (macOS /tmp and /var system aliases excepted).
 Compose, service, seed and scope require review. No Docker, network or project scripts.
-0: draft written; 2: refused. verify execution is not available yet.
+0: draft stored and checked; 2: refused or storage unconfirmed.
+init_target_output_unconfirmed: output may exist; inspect it before retrying.
+verify execution is not available yet.
 `;
   }
 });
