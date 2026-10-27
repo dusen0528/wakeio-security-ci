@@ -1,0 +1,21 @@
+{
+  "services": {
+    "app": {
+      "build": {
+        "context": ".",
+        "dockerfile": "Dockerfile"
+      },
+      "environment": {
+        "SPRING_DATASOURCE_URL": "wakeio:postgres.url",
+        "SPRING_DATASOURCE_USERNAME": "wakeio:postgres.username",
+        "SPRING_DATASOURCE_PASSWORD": "wakeio:postgres.password"
+      },
+      "depends_on": [
+        "db"
+      ]
+    },
+    "db": {
+      "image": "docker.io/library/postgres@sha256:edb0c08dc33befd0262ab3b5cf1c4f3f8cfd8b09e88c05b45adee29d6761ddb6"
+    }
+  }
+}
