@@ -29,15 +29,24 @@ PG 오류 위치는 1-based 문자 인덱스다. scanner/AST의 위치 단위와
 
 ## 2. 마커와 공격·대조군 결속
 
-`wk` + run prefix 4자 + 요청별 base32 8자. seed·target/Pack digest로 prefix를 만들고 발급 충돌을 거부한다.
-동일 seed의 매핑은 재현하되 별도 고유 run nonce·소유 PG lease·새 cursor로 이전 실행 사건을 격리한다.
+`wk` + 20bit prefix의 base32 4자 + 요청 ordinal의 base32 8자이며 ledger 내부의 발급 충돌을 거부한다.
+prefix는 SHA256(JSON 배열 `['wakeio.markers/v1', reproductionKey, seed]`)의 앞 20bit로 계산한다.
+ledger의 reproductionKey·seed·ordinal만으로 원문 마커를 재구성할 수 있다. markerHash는 기밀성을 보장하지 않는다.
+원문을 보고서에 직접 넣지는 않지만 재구성 가능성은 남는다. 이 마커는 합성 추적값이며 인증 비밀·실행 권한이 아니다.
+동일 reproductionKey·seed의 매핑은 재현하되 별도 고유 run nonce·소유 PG lease·새 cursor로 이전 실행 사건을 격리한다.
 발급 ledger는 marker hash→run/route/method/parameter/location/payloadKind/request ordinal/pairId/control|probe를 묶는다.
 평문 요청 값·credential은 ledger/보고서에 넣지 않는다. 발급된 합성 마커는 메모리에서만 대조한다.
 recipe/seed/counter로 재현하고 report에는 marker hash만 노출한다. seed는 사용자 비밀값으로부터 파생하지 않는다.
+seed에는 비밀값을 넣지 않으며 재현성을 바꾸는 비밀 salt를 임의로 도입하지 않는다.
+20bit prefix는 물리 실행 간 전역 유일성이나 이전 실행 사건의 구별을 보장하지 않는다.
 미발급 마커·다중 요청에 재사용된 마커·다른 run/DB·닫힌 요청 구간의 늦은 사건은 판정 입력으로 거부한다.
 route/parameter 단위로 무해 control과 probe를 직렬 실행하고 공통 admission에서 두 요청 모두 예산을 소비한다.
 control 성공 응답·대응 PG 관측·동일 SQL 문맥을 확인해야 차등 판정이 유효하다. control이 없으면 `unknown`이다.
 시계/로그 도착 시간만으로 request를 연결하지 않는다. 정확한 ledger 마커와 collector cursor·request 구간을 함께 쓴다.
+후속 collector 완료 조건: 매 물리 실행마다 새 DB instance·container·소유 로그를 만들고 이전 실행 로그/volume을 재사용하지 않는다.
+동일 이미지/seed snapshot을 복원해도 runNonce·DB/container identity·lease는 새로 결속하고 seed 뒤 새 cursor에서 시작한다.
+control/probe는 직렬 window를 닫고 drain하며 늦은 사건·다른 run/lease/cursor의 로그 혼합을 거부한다.
+이 격리는 collector/R9 후속 검증 대상이다. 재구성 가능한 마커의 일치나 hash만으로 수집 출처를 인증했다고 주장하지 않는다.
 
 ## 3. 원문을 남기지 않는 단계 파일
 
