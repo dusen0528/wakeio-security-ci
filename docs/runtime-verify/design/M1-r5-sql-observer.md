@@ -225,6 +225,9 @@ optional query string은 생략하며 header/cookie/body·다른 path의 값을 
 benign은 marker, quote는 marker 뒤 작은따옴표, boolean은 기존 OR recipe이며 GET/POST가 같은 정책을 사용한다.
 query는 raw scalar tuple, path는 한 segment의 엄격 percent encoding, JSON은 선언 leaf만 든 object를 request port에 준다.
 requestHash는 이 결정적 DTO의 hash다. relay가 확정하는 실제 HTTP wire bytes의 측정 digest라고 주장하지 않는다.
+CPx11 N4: 현재 DTO requestHash는 내부 실행 상관값으로만 사용하고 보고서의 증거 hash·재현 wire 증거로 출판하지 않는다.
+R1/R3 canonical relay encoding·실제 측정 wire digest 결속과 대조 테스트/증거를 M1 GATE 전에 완료해야 한다.
+그 연결 전에는 이 값을 보고서 증거로 전달하는 producer나 보고서 필드를 추가하지 않는다.
 직접 socket/fetch/FS/process/모델을 열지 않고 trusted stdio RuntimeRequestPort만 호출한다. host origin/redirect/proxy 입력은 없다.
 각 요청마다 trusted restore→begin→request→complete(drain·coverage)의 순서를 지키고 hook 실패 뒤 후속 송신을 중단한다.
 hook은 실제 장벽 완료·logical ordinal/phase/markerHash/snapshotHash를 확인해야 하며 입력을 그대로 echo한 값은 증거가 아니다.

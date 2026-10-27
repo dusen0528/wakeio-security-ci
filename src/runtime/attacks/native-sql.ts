@@ -83,13 +83,12 @@ function parameter(surface: RuntimeSurface, row: MarkerRow): RuntimeParameter {
   return target;
 }
 function jsonBody(pointer: string | null, name: string, value: string): JsonData {
-  check(typeof pointer === 'string' && pointer.startsWith('/') && !/~(?![01])/.test(pointer), 'unsupported_surface');
-  const parts = pointer.slice(1).split('/').map(p => p.replace(/~1/g, '/').replace(/~0/g, '~'));
-  check(parts.length === 1 && parts.at(-1) === name && parts.every(p => p.length > 0
-    && !/^\d+$/.test(p) && !['__proto__', 'prototype', 'constructor'].includes(p)), 'unsupported_surface');
-  let result: JsonData = value;
-  for (const key of parts.reverse()) { const next = Object.create(null); next[key] = result; result = next; }
-  return result;
+  check(typeof pointer === 'string' && pointer.startsWith('/') && pointer.length <= 256
+    && !pointer.slice(1).includes('/') && !/~(?![01])/.test(pointer), 'unsupported_surface');
+  const key = pointer.slice(1).replace(/~1/g, '/').replace(/~0/g, '~');
+  check(key.length > 0 && key === name && !/^\d+$/.test(key)
+    && !['__proto__', 'prototype', 'constructor'].includes(key), 'unsupported_surface');
+  const body = Object.create(null); body[key] = value; return body;
 }
 function payload(kind: MarkerRow['payload'], marker: string): string {
   if (kind === 'benign') return marker;
@@ -229,8 +228,10 @@ export async function runNativeSql(rawPlan: NativeSqlPlan, issued: IssuedMarkers
     result.attempts = prepared.map(p => p.attempt);
     result.deliveries = prepared.map(p => emptyDelivery(p.row.requestOrdinal));
     const caps = capabilities(rawPort, rawHooks), options = own(rawOptions);
-    fields(options, 'signal deadlineAt maxResponseBytes'); check(!types.isProxy(options.signal));
-    aborted(options.signal as AbortSignal);
+    fields(options, 'signal deadlineAt maxResponseBytes');
+    check(!types.isProxy(options.signal) && options.signal instanceof AbortSignal);
+    // The intrinsic getter verifies the native brand without invoking a caller-defined aborted accessor.
+    aborted(options.signal);
     check(Number.isSafeInteger(options.deadlineAt) && (options.deadlineAt as number) > 0
       && Number.isSafeInteger(options.maxResponseBytes) && (options.maxResponseBytes as number) >= 1
       && (options.maxResponseBytes as number) <= 1048576);
