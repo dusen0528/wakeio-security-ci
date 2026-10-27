@@ -332,3 +332,20 @@ manifest의 raw pin 검증 뒤 explicit protocol/package version/전체 lock SHA
 이 handle의 권한은 공개 자산 bytes 조회뿐이다. executionAuthorized=false, status=unavailable/verified=false이며 worker spawn/WASM/SQL 실행 capability·CLI/preflight 배선은 없다. 미래 invoker는 verified backend 뒤 별도 승인 범위다.
 자산 결속은 1초/256MiB/network-none·daemon/resource/egress·Oracle 완료를 증명하지 않는다. 계약 테스트는 공개 자산 copy·실제 owned FD 교체만 사용하며 기존 OS session/boot/Stopped 조건과 assertion은 그대로다.
 자체 build와 serial cleanup/pg-log/compat 1회는 66 pass·0 fail/skip다. 고정 배포 자산/bundle은 불변이고 실제 worker/WASM/SQL/VM/target 실행은 0이며 R9의 독립 증거를 대신하지 않는다.
+
+### M1-117 / CPx9 N1·N2 및 OS 진단
+
+parser manifest의 독립 raw SHA는 본문 전체를 이미 고정한다. 중복 package/version/길이 literal 비교를 없애고 host protocol/전체 lock header 일관성만 남긴다. 승인 pin/자산 원문은 그대로다.
+root 및 workers/pg-parser의0777 거부를 추가하며 sudo/chown 없이 소유 사본만 쓴다. 디렉터리 쓰기 검사 제거 mutation은 일회 검증 뒤 폐기하고 제품에는 남기지 않는다.
+Lima의 지원 proxy 소문자/대문자8키를 empty로 명시한다. SDK setupEnv가 system proxy를 먼저 읽은 뒤 이 값으로 덮고 제거한다. SDK 조회 자체 차단이나 실제 host 값/유출 확인을 주장하지 않는다.
+공통 BOOT_GUARDS는 root0700 /run/wakeio-m1 안에0600·nlink1 boot-status를 mktemp+rename으로 교체한다. kernel boot_id와 pending/failed/complete·닫힌 step만 저장하며 실패 trap은 실패 사유를 보존한다.
+고정 probe는 root 소유/권한/링크/크기192B·FD/이름 dev/ino/시간·현재 boot identity·정확한 단일 행을 검증한다. 낡은 boot/잘린 상태/metadata 이상은 boot_metadata_invalid·unknown이며 성공으로 바꾸지 않는다.
+BOOT complete 이후에도 UID10001·non-sudo·cgroupv2·위임·worker 쓰기 권한·정확 subid·비중첩·host alias 제거를 다시 확인한다. 고정 성공 token과 observed boolean은 유지한다.
+OsPrerequisites에 bootPhase/reason을 추가해 안전한 닫힌 진단만 제공한다. SSH255는 ssh_unavailable, 이전125/빈 stdout은 guard_unknown이다. 알려지지 않은 token/phase/사유 조합은 session 실패다. 원문 로그/계정/설정은 반환하지 않는다.
+신규 useradd에만 -K SUB_UID_COUNT=0 -K SUB_GID_COUNT=0을 넣는다. 정확231072:65536 검사·비중첩 검사·없을 때 append는 유지하며 기존 매핑이나 전역 login.defs는 덮어쓰지 않는다.
+M1-116의 manpage 재조회2회 timeout으로 남은 대조는 기존 public cache만 사용했다. Ubuntu noble branch useradd와 upstream4.13 cache bytes가 같으며 -K 처리1374–1387→COUNT2504–2511→할당2666–2685 순서를 확인했다.
+이는 자동 allocator에 의존하던 잠재 setup 문제를 제거하는 정적 근거다. 고정 image의 실제 계정/subid 상태나 마지막125의 원인은 확인하지 않았다. cloud-init/Lima 준비 순서는 M1-114 source 감사 범위다.
+기존 assertion 변경은 BOOT 끝의 atomic complete/trap 해제와 추가 probe metadata에 맞춘 것이다. UID/guard·Stopped/신원/cleanup 거부·원 성공 token·30초/5초·16KiB 상한은 유지한다.
+자체 테스트는 소유 Node mock의 닫힌 protocol과 script 계약·구문만 확인한다. guest root metadata/guard 실제 동작과 SDK proxy 제거 실측은 CPx10 승인 뒤 R9가 담당하며 VM/daemon/parser/target 실행은 없다. backend는 unavailable/verified=false다.
+추가 assertion은 host.docker.internal 제거 패턴을 Docker 명령으로 오인하던 단어 검사 대신 명령 경계를 검사한다. Docker 실행·설치·eval 금지는 유지하며 alias 제거 자체도 확인한다. 최초 검증의 이 오탐2건과 진단 사유 cgroup_v2_missing의 숫자2 누락1건은 각각 수정 후 재검증한다.
+수정 후 build·serial cleanup/pg-log/compat는70 pass·0 fail/skip다. root/worker-directory0777은 원본이 거부하고 격리된 검사 제거 mutation은 허용하는 차이를 확인했다. mutation은 폐기했고 host pin/배포 자산/Action과 승인된3함수 밖 기존 함수 본문은 불변이다. BOOT/probe는 sh -n만 수행했으며 실제 guest 실행 증거가 아니다.

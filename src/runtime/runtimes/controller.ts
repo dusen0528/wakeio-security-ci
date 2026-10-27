@@ -71,25 +71,82 @@ function options(raw: LimaProfileOptions): LimaProfileOptions {
 }
 
 // Trusted setup only. No Docker install/start or source is permitted before the remaining barriers exist.
-const BOOT_GUARDS = [
-  '#!/bin/sh', 'set -eu',
-  "sed -i '/host\\.lima\\.internal/d; /host\\.docker\\.internal/d' /etc/hosts",
-  "if grep -Eq 'host\\.(lima|docker)\\.internal' /etc/hosts; then exit 125; fi",
-  'test "$(stat -fc %T /sys/fs/cgroup)" = cgroup2fs || exit 125',
-  'id wakeio-m1 >/dev/null 2>&1 || useradd --uid 10001 --create-home --shell /bin/bash wakeio-m1',
-  'test "$(id -u wakeio-m1)" = 10001 || exit 125',
-  'if sudo -n -l -U wakeio-m1 >/dev/null 2>&1; then exit 125; fi',
-  'for file in /etc/subuid /etc/subgid; do',
-  '  touch "$file"',
-  '  awk -F: \'$1 != "wakeio-m1" && $2 <= 296607 && $2 + $3 > 231072 {exit 1}\' "$file" || exit 125',
-  '  if grep -q "^wakeio-m1:" "$file"; then',
-  '    test "$(grep "^wakeio-m1:" "$file")" = "wakeio-m1:231072:65536" || exit 125',
-  '  else echo "wakeio-m1:231072:65536" >> "$file"; fi', 'done',
-  'mkdir -p /etc/systemd/system/user@10001.service.d',
-  'cat > /etc/systemd/system/user@10001.service.d/wakeio.conf <<\'EOF\'',
-  '[Service]', 'Delegate=cpu cpuset io memory pids', 'CPUQuota=200%', 'MemoryMax=2G', 'TasksMax=256', 'EOF',
-  'systemctl daemon-reload', 'loginctl enable-linger wakeio-m1',
-].join('\n') + '\n';
+const BOOT_FAILURES = ['bootstrap_failed', 'host_alias_present', 'cgroup_v2_missing', 'user_create_failed',
+  'uid_mismatch', 'sudo_allowed', 'subid_overlap', 'subuid_mismatch', 'subgid_mismatch', 'delegation_missing'] as const;
+const OS_STATE_COMMON = String.raw`
+state_dir=/run/wakeio-m1
+state_file=$state_dir/boot-status
+boot_identity() {
+  boot=$(/usr/bin/cat /proc/sys/kernel/random/boot_id) || return 1
+  printf '%s\n' "$boot" | /usr/bin/grep -Eq '^[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}$'
+}
+state_directory() {
+  test -d "$state_dir" && test ! -L "$state_dir" &&
+    test "$(/usr/bin/stat -c '%u:%g:%a' "$state_dir")" = 0:0:700
+}
+state_metadata() {
+  test -f "$state_file" && test ! -L "$state_file" &&
+    test "$(/usr/bin/stat -c '%u:%g:%a:%h' "$state_file")" = 0:0:600:1 || return 1
+  size=$(/usr/bin/stat -c %s "$state_file") || return 1
+  test "$size" -gt 0 && test "$size" -le 192
+}
+`;
+const BOOT_GUARDS = '#!/bin/sh\nset -eu\nexport LC_ALL=C\numask 077\nexec >/dev/null 2>&1\n'
+  + OS_STATE_COMMON + String.raw`
+test "$(id -u)" = 0 && boot_identity || exit 125
+if test -L "$state_dir"; then exit 125; fi
+if test ! -e "$state_dir"; then (umask 077; mkdir -m 700 "$state_dir") || exit 125; fi
+state_directory || exit 125
+write_state() {
+  state_directory || return 1
+  if test -e "$state_file" || test -L "$state_file"; then state_metadata || return 1; fi
+  temporary=$(mktemp "$state_dir/.boot.XXXXXX") || return 1
+  if ! printf 'wakeio-os-boot/v1 %s %s %s\n' "$boot" "$1" "$2" >"$temporary"; then
+    rm -f -- "$temporary"; return 1
+  fi
+  if ! mv -T -- "$temporary" "$state_file"; then rm -f -- "$temporary"; return 1; fi
+  state_metadata
+}
+step=bootstrap_failed
+trap 'trap - EXIT; write_state failed "$step" || :; exit 125' EXIT
+write_state pending bootstrap_pending
+step=host_alias_present
+sed -i '/host\.lima\.internal/d; /host\.docker\.internal/d' /etc/hosts
+if grep -Eq 'host\.(lima|docker)\.internal' /etc/hosts; then exit 125
+else test "$?" -eq 1 || exit 125; fi
+step=cgroup_v2_missing
+test "$(stat -fc %T /sys/fs/cgroup)" = cgroup2fs || exit 125
+step=user_create_failed
+id wakeio-m1 >/dev/null 2>&1 || useradd --uid 10001 --create-home --shell /bin/bash \
+  -K SUB_UID_COUNT=0 -K SUB_GID_COUNT=0 wakeio-m1
+step=uid_mismatch
+test "$(id -u wakeio-m1)" = 10001 || exit 125
+step=sudo_allowed
+if sudo -n -l -U wakeio-m1 >/dev/null 2>&1; then exit 125; fi
+for file in /etc/subuid /etc/subgid; do
+  step=bootstrap_failed
+  touch "$file"
+  step=subid_overlap
+  awk -F: '$1 != "wakeio-m1" && $2 <= 296607 && $2 + $3 > 231072 {exit 1}' "$file" || exit 125
+  case "$file" in /etc/subuid) step=subuid_mismatch;; /etc/subgid) step=subgid_mismatch;; esac
+  if grep -q '^wakeio-m1:' "$file"; then
+    test "$(grep '^wakeio-m1:' "$file")" = 'wakeio-m1:231072:65536' || exit 125
+  else echo 'wakeio-m1:231072:65536' >> "$file"; fi
+done
+step=delegation_missing
+mkdir -p /etc/systemd/system/user@10001.service.d
+cat > /etc/systemd/system/user@10001.service.d/wakeio.conf <<'EOF'
+[Service]
+Delegate=cpu cpuset io memory pids
+CPUQuota=200%
+MemoryMax=2G
+TasksMax=256
+EOF
+systemctl daemon-reload
+loginctl enable-linger wakeio-m1
+write_state complete none
+trap - EXIT
+`;
 const MISSING_PREREQUISITE_TRAILER = [
   'echo "wakeio_missing_prerequisite: verified packages, daemon relay, nft/proxy and probes" >&2', 'exit 125',
 ].join('\n') + '\n';
@@ -104,7 +161,9 @@ export function compileLimaProfileConfig(raw: LimaPins): string {
     images: [{ location: p.rootfs.url, digest: 'sha256:' + p.rootfs.sha256, arch: p.rootfs.arch }],
     cpus: 2, memory: '4GiB', disk: '20GiB', mounts: [], additionalDisks: [], networks: [],
     ssh: { forwardAgent: false, loadDotSSHPubKeys: false, forwardX11: false, forwardX11Trusted: false },
-    propagateProxyEnv: false, hostResolver: { enabled: false, hosts: {} }, env: {},
+    propagateProxyEnv: false, hostResolver: { enabled: false, hosts: {} }, env: {
+      ftp_proxy: '', http_proxy: '', https_proxy: '', no_proxy: '',
+      FTP_PROXY: '', HTTP_PROXY: '', HTTPS_PROXY: '', NO_PROXY: '' },
     containerd: { system: false, user: false }, rosetta: { enabled: false, binfmt: false },
     user: { name: 'wakeio-admin', uid: 10000, home: '/home/wakeio-admin' },
     portForwards: [{ guestSocket: '/run/wakeio-m1/relay.sock', hostSocket: '{{.Dir}}/sock/docker.sock' },
@@ -266,8 +325,11 @@ export interface OwnedLimaOsProfile extends OwnedLimaProfile {
   boot(): Promise<LimaOsBoot>;
 }
 export interface LimaOsPreparation extends Omit<LimaPreparation, 'lease'> { lease?: OwnedLimaOsProfile }
+export type OsGuardReason = typeof BOOT_FAILURES[number] | 'none' | 'bootstrap_pending' | 'ssh_unavailable'
+  | 'guard_unknown' | 'boot_metadata_invalid' | 'cgroup_procs_unwritable' | 'cgroup_subtree_unwritable';
 export interface OsPrerequisites {
   kind: 'os-prerequisites'; observed: boolean; backendVerified: false;
+  bootPhase: 'unknown' | 'pending' | 'failed' | 'complete'; reason: OsGuardReason;
 }
 export interface LimaOsProbeCapability { probe(): Promise<Readonly<OsPrerequisites>> }
 export type LimaOsSessionUse = (capability: Readonly<LimaOsProbeCapability>) => Promise<void>;
@@ -277,17 +339,83 @@ export interface LimaOsSessionResult {
 }
 const OS_OWNERS = new WeakMap<OwnedLimaOsProfile, OsProfile>();
 const OS_SESSION_MS = 30_000;
-const GUEST_PROBE = [
-  'set -eu', 'test "$(/usr/bin/id -u wakeio-m1)" = 10001 || exit 125',
-  'if /usr/bin/sudo -n -l -U wakeio-m1 >/dev/null 2>&1; then exit 125; fi',
-  'test "$(/usr/bin/stat -fc %T /sys/fs/cgroup)" = cgroup2fs || exit 125',
-  'cg=/sys/fs/cgroup/user.slice/user-10001.slice/user@10001.service',
-  'for controller in cpu memory pids; do /usr/bin/grep -qw "$controller" "$cg/cgroup.controllers" || exit 125; done',
-  'test "$(/usr/bin/sudo -n -u wakeio-m1 /usr/bin/id -u)" = 10001 || exit 125',
-  '/usr/bin/sudo -n -u wakeio-m1 /usr/bin/test -w "$cg/cgroup.procs" || exit 125',
-  '/usr/bin/sudo -n -u wakeio-m1 /usr/bin/test -w "$cg/cgroup.subtree_control" || exit 125',
-  "printf 'wakeio-os-prerequisites/v1\\n'",
-].join('\n');
+const GUEST_PROBE = 'set -eu\nexec 2>/dev/null\n' + OS_STATE_COMMON + String.raw`
+phase=unknown
+probe_failure() { printf 'wakeio-os-prerequisites/v1:%s:%s\n' "$phase" "$1"; exit 125; }
+metadata_failure() { phase=unknown; probe_failure boot_metadata_invalid; }
+boot_identity || metadata_failure
+if test ! -e "$state_dir"; then
+  test ! -L "$state_dir" || metadata_failure
+  phase=pending; probe_failure bootstrap_pending
+fi
+state_directory || metadata_failure
+if test ! -e "$state_file"; then
+  test ! -L "$state_file" || metadata_failure
+  phase=pending; probe_failure bootstrap_pending
+fi
+state_metadata || metadata_failure
+metadata=$(/usr/bin/stat -c '%d:%i:%u:%g:%a:%h:%s:%y:%z' "$state_file") || metadata_failure
+exec 3< "$state_file" || metadata_failure
+fd_metadata=$(/usr/bin/stat -Lc '%d:%i:%u:%g:%a:%h:%s:%y:%z' /proc/self/fd/3) || metadata_failure
+test "$metadata" = "$fd_metadata" || metadata_failure
+IFS=' ' read -r tag saved_boot phase step extra <&3 || metadata_failure
+trailing=''
+if IFS= read -r trailing <&3; then metadata_failure; fi
+exec 3<&-
+test -z "$trailing" && test -z "$extra" && test "$tag" = wakeio-os-boot/v1 || metadata_failure
+test "$saved_boot" = "$boot" || metadata_failure
+expected_size=$(printf '%s %s %s %s\n' "$tag" "$saved_boot" "$phase" "$step" | /usr/bin/wc -c)
+test "$size" -eq "$expected_size" || metadata_failure
+state_directory && state_metadata || metadata_failure
+test "$metadata" = "$(/usr/bin/stat -c '%d:%i:%u:%g:%a:%h:%s:%y:%z' "$state_file")" || metadata_failure
+case "$phase:$step" in
+  complete:none|pending:bootstrap_pending) ;;
+  __BOOT_FAILURES__) ;;
+  *) metadata_failure;;
+esac
+if test "$phase" != complete; then probe_failure "$step"; fi
+if /usr/bin/grep -Eq 'host\.(lima|docker)\.internal' /etc/hosts; then probe_failure host_alias_present
+else test "$?" -eq 1 || probe_failure host_alias_present; fi
+test "$(/usr/bin/id -u wakeio-m1)" = 10001 || probe_failure uid_mismatch
+if /usr/bin/sudo -n -l -U wakeio-m1 >/dev/null 2>&1; then probe_failure sudo_allowed; fi
+test "$(/usr/bin/stat -fc %T /sys/fs/cgroup)" = cgroup2fs || probe_failure cgroup_v2_missing
+for file in /etc/subuid /etc/subgid; do
+  /usr/bin/awk -F: '$1 != "wakeio-m1" && $2 <= 296607 && $2 + $3 > 231072 {exit 1}' "$file" ||
+    probe_failure subid_overlap
+  case "$file" in /etc/subuid) reason=subuid_mismatch;; /etc/subgid) reason=subgid_mismatch;; esac
+  test "$(/usr/bin/grep '^wakeio-m1:' "$file")" = 'wakeio-m1:231072:65536' || probe_failure "$reason"
+done
+cg=/sys/fs/cgroup/user.slice/user-10001.slice/user@10001.service
+for controller in cpu memory pids; do
+  /usr/bin/grep -qw "$controller" "$cg/cgroup.controllers" || probe_failure delegation_missing
+done
+test "$(/usr/bin/sudo -n -u wakeio-m1 /usr/bin/id -u)" = 10001 || probe_failure uid_mismatch
+/usr/bin/sudo -n -u wakeio-m1 /usr/bin/test -w "$cg/cgroup.procs" || probe_failure cgroup_procs_unwritable
+/usr/bin/sudo -n -u wakeio-m1 /usr/bin/test -w "$cg/cgroup.subtree_control" || probe_failure cgroup_subtree_unwritable
+printf 'wakeio-os-prerequisites/v1\n'
+`.replace('__BOOT_FAILURES__', BOOT_FAILURES.map(reason => 'failed:' + reason).join('|'));
+
+function probeMetadata(result: RuntimeProcessResult): Readonly<OsPrerequisites> {
+  const base = { kind: 'os-prerequisites', observed: false, backendVerified: false } as const;
+  if (result.completed) {
+    if (result.exitCode !== 0 || result.stdout !== 'wakeio-os-prerequisites/v1\n') invalid();
+    return Object.freeze({ ...base, observed: true, bootPhase: 'complete', reason: 'none' });
+  }
+  if (result.exitCode === 255 && result.stdout === '') {
+    return Object.freeze({ ...base, bootPhase: 'unknown', reason: 'ssh_unavailable' });
+  }
+  if (result.exitCode === 125 && result.stdout === '') {
+    return Object.freeze({ ...base, bootPhase: 'unknown', reason: 'guard_unknown' });
+  }
+  const match = /^wakeio-os-prerequisites\/v1:(pending|failed|complete|unknown):([a-z0-9_]+)\n$/.exec(result.stdout);
+  if (result.exitCode !== 125 || !match) invalid();
+  const phase = match[1] as OsPrerequisites['bootPhase'], reason = match[2] as OsGuardReason;
+  const allowed: readonly string[] = phase === 'pending' ? ['bootstrap_pending']
+    : phase === 'unknown' ? ['boot_metadata_invalid']
+    : phase === 'failed' ? BOOT_FAILURES : [...BOOT_FAILURES, 'cgroup_procs_unwritable', 'cgroup_subtree_unwritable'];
+  if (!allowed.includes(reason)) invalid();
+  return Object.freeze({ ...base, bootPhase: phase, reason });
+}
 type FileIdentity = Identity & { size: number; mtimeMs: number; ctimeMs: number };
 type BoundFile = { path: string; identity: FileIdentity };
 const FILE_FLAGS = constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK;
@@ -499,11 +627,9 @@ class OsProfile extends Profile {
     } catch { this.groupConfirmed = false; return invalid(); }
     this.groupConfirmed &&= result.cleanupConfirmed === true && result.closeConfirmed === true;
     const absent = [125, 255].includes(result.exitCode ?? -1) && !result.signal && !result.stopReason
-      && !result.spawnError && !result.timedOut && !result.cancelled
-      && !result.outputLimitExceeded && result.stdout === '';
+      && !result.spawnError && !result.timedOut && !result.cancelled && !result.outputLimitExceeded;
     if (!this.groupConfirmed || !result.completed && !absent) invalid();
-    if (result.completed && result.stdout !== 'wakeio-os-prerequisites/v1\n') invalid();
-    return Object.freeze({ kind: 'os-prerequisites', observed: result.completed, backendVerified: false });
+    return probeMetadata(result);
   }
   markSessionUnknown(): void { this.sessionUnknown = true; }
   cleanup(): Promise<ProfileCleanup> {
@@ -783,21 +909,9 @@ export function copyPgParserAssetFiles(raw: unknown): readonly PgAssetFile[] {
   return files.map(file => ({ path: file.path, bytes: Buffer.from(file.bytes) }));
 }
 function parserManifest(bytes: Buffer): void {
+  // The independent raw manifest pin already binds every body field; retain only host protocol/header consistency.
   const m = JSON.parse(bytes.toString('utf8'));
-  if (m.schemaVersion !== '1.0.0' || m.kind !== 'wakeio-pg-parser-assets' || m.protocolRevision !== PG_HOST_PROTOCOL
-    || m.pin?.version !== '18.2.1' || m.pin.pgMajor !== 18 || m.pin.lockSha256 !== PG_HOST_LOCK
-    || m.pin.wasmSha256 !== PG_HOST_FILES[2][2] || m.localWasm !== 'libpg-query.wasm'
-    || m.build?.lock?.path !== 'package-lock.json' || m.build.lock.bytes !== 20400
-    || m.build.lock.sha256 !== PG_HOST_LOCK || m.packages?.length !== 2
-    || m.packages[0].name !== 'libpg-query' || m.packages[0].version !== '18.2.1'
-    || m.packages[1].name !== '@pgsql/types' || m.packages[1].version !== '18.0.0'
-    || !Array.isArray(m.assets) || m.assets.length !== PG_HOST_FILES.length - 1) assetMismatch();
-  for (const [name, size, sha256] of PG_HOST_FILES.slice(1)) {
-    const expected = { path: 'workers/pg-parser/' + name, bytes: size, sha256 };
-    const matching = m.assets.filter((row: Record<string, unknown>) => row.path === expected.path);
-    if (matching.length !== 1 || Object.keys(matching[0]).length !== 3
-      || Object.entries(expected).some(([key, value]) => matching[0][key] !== value)) assetMismatch();
-  }
+  if (m.protocolRevision !== PG_HOST_PROTOCOL || m.pin?.lockSha256 !== PG_HOST_LOCK) assetMismatch();
 }
 type PgAssetDirectory = { path: string; id: Identity; mtimeMs: number; ctimeMs: number };
 async function parserDirectory(path: string): Promise<PgAssetDirectory> {
