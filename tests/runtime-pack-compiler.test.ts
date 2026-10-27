@@ -57,6 +57,7 @@ test('prior compiled hashes remain fixed and actuator metadata changes only boun
   assert.equal(prior.rawPackSha256, 'a83ddd299708855f8a5a31f72ffde9671c3671154970c7f2791fa4553b237abc');
   assert.equal(prior.semanticPackSha256, 'bba7228cf5fd4067429aec73c0e3bb5de24aeca9eb302b3276fab49ada6f9496');
   assert.equal(prior.rulesSha256, '110c09cf93c4691580d9747540ca2850e41fc2977b08035dccdb6ca4e85c2ec1');
+  assert.deepEqual(prior.diagnostics, []); assert.equal(prior.diagnosticsSha256, digest('[]'));
   const before = compileFrameworkPack(encode({ ...pack(), surfaces: [{ provider: 'spring-actuator' }] }));
   const after = compileFrameworkPack(encode({ ...pack(), surfaces: [
     { provider: 'spring-actuator', paths: ['/internal/route-map'] },
@@ -149,17 +150,92 @@ test('Pack YAML reuses strict duplicate/tag/anchor/alias/merge/multi-document an
 });
 
 test('argCount and placeholder hints never suppress SQL taint without actual overload evidence', () => {
+  const baseline = compileFrameworkPack(encode(pack()));
+  const formulas = (json: string) => JSON.parse(json).rules.map(({ id, ...rule }: Record<string, unknown>) => rule);
   for (const argCount of ['>=2', '>=3']) {
     const input = { ...pack(), sanitizers: { sql: [{ call: ['SqlClient.*'],
       when: { argCount, placeholders: true } }] } };
     assert.doesNotThrow(() => parseFrameworkPack(input));
-    assert.throws(() => compileFrameworkPack(encode(input)), /sanitizer-binding-unproven/);
+    const compiled = compileFrameworkPack(encode(input));
+    assert.deepEqual(formulas(compiled.rulesJson), formulas(baseline.rulesJson));
+    assert.notEqual(compiled.semanticPackSha256, baseline.semanticPackSha256);
+    assert.deepEqual(compiled.diagnostics, [{ kind: 'sanitizer', index: 0, vulnClass: 'sql',
+      disposition: 'not-applied', reason: 'binding-literal-overload-argument-unproven',
+      call: ['SqlClient.*'], when: { argCount, placeholders: true } }]);
+    assert.notEqual(compiled.diagnosticsSha256, baseline.diagnosticsSha256);
+    for (const rule of JSON.parse(compiled.rulesJson).rules) {
+      assert.equal(Object.hasOwn(rule, 'pattern-sanitizers'), false);
+      assert.ok(encode(rule['pattern-sinks']).includes('$SQL'));
+    }
   }
   assert.throws(() => parseFrameworkPack({ ...pack(), sanitizers: { sql: [{ call: ['Db.query'],
     when: { argCount: '>=2', placeholders: true, promoted: true } }] } }));
-  assert.throws(() => compileFrameworkPack(encode({ ...pack(), surfaces: [
+  const reserved = compileFrameworkPack(encode({ ...pack(), surfaces: [
     { provider: 'source-routes', annotations: ['Route'] },
-  ] })), /unsupported_framework_pack:source-routes/);
+  ] }));
+  assert.deepEqual(reserved.diagnostics, [{ kind: 'surface', index: 0, provider: 'source-routes',
+    disposition: 'unsupported', reason: 'discovery-not-implemented', annotations: ['Route'] }]);
+  assert.deepEqual(formulas(reserved.rulesJson), formulas(baseline.rulesJson));
+});
+
+test('original builtin Pack compiles SQL rules and preserves unsupported discovery and unproven hints', async () => {
+  const raw = await readFile('packs/spring-boot.v1.yml', 'utf8');
+  const original = parseFrameworkPackYaml(raw), compiled = compileFrameworkPack(raw);
+  assert.equal(compiled.rawPackSha256, digest(raw)); assert.equal(compiled.verification, 'not_run');
+  assert.deepEqual(compiled, compileFrameworkPack(raw));
+  assert.equal(compiled.rulesSha256, digest(compiled.rulesJson));
+  const rules = JSON.parse(compiled.rulesJson).rules;
+  assert.deepEqual(rules.map((rule: { languages: string[] }) => rule.languages[0]), ['java', 'kotlin']);
+  for (const rule of rules) {
+    assert.equal(rule.mode, 'taint'); assert.equal(Object.hasOwn(rule, 'pattern-sanitizers'), false);
+    assert.equal(rule['pattern-sources'].length, 7); assert.equal(rule['pattern-sinks'].length, 6);
+    assert.ok(encode(rule['pattern-sinks']).includes('"focus-metavariable":"$SQL"'));
+  }
+  assert.equal(compiled.diagnostics.length, 2);
+  const surface = original.surfaces[2];
+  if (surface.provider !== 'source-routes') assert.fail('builtin source-routes entry expected');
+  assert.deepEqual(compiled.diagnostics[0], { kind: 'surface', index: 2, provider: 'source-routes',
+    disposition: 'unsupported', reason: 'discovery-not-implemented', annotations: surface.annotations });
+  assert.deepEqual(compiled.diagnostics[1], { kind: 'sanitizer', index: 0, vulnClass: 'sql',
+    disposition: 'not-applied', reason: 'binding-literal-overload-argument-unproven',
+    call: original.sanitizers.sql[0].call, when: original.sanitizers.sql[0].when });
+  assert.equal(await readFile('packs/spring-boot.v1.yml', 'utf8'), raw);
+});
+
+test('diagnostics are immutable bounded closed metadata and hashes bind their exact configuration', () => {
+  const input = { ...pack(), sanitizers: { sql: [{ call: ['SqlClient.*'],
+    when: { argCount: '>=2', placeholders: true } }] } };
+  const first = compileFrameworkPack(encode(input));
+  assert.ok(Object.isFrozen(first.diagnostics));
+  assert.ok(Object.isFrozen(first.diagnostics[0]));
+  const row = first.diagnostics[0];
+  if (row.kind !== 'sanitizer') assert.fail('sanitizer diagnostic expected');
+  assert.ok(Object.isFrozen(row.call)); assert.ok(Object.isFrozen(row.when));
+  assert.deepEqual(Object.keys(row).sort(), ['call', 'disposition', 'index', 'kind', 'reason', 'vulnClass', 'when']);
+  assert.throws(() => Object.assign(row.when, { placeholders: false }), TypeError);
+  input.sanitizers.sql[0].when.argCount = '>=3';
+  const next = compileFrameworkPack(encode(input));
+  assert.notEqual(next.rawPackSha256, first.rawPackSha256);
+  assert.notEqual(next.semanticPackSha256, first.semanticPackSha256);
+  assert.notEqual(next.diagnosticsSha256, first.diagnosticsSha256);
+  assert.equal(row.when.argCount, '>=2');
+  assert.throws(() => compileFrameworkPack(encode({ ...input, sanitizers: { sql: [{
+    ...input.sanitizers.sql[0], reason: 'trust-me', pattern: 'sanitize(...)',
+  }] } })), /invalid_framework_pack/);
+});
+
+test('diagnostic counts and indices obey the original Pack limits without truncation', () => {
+  const input = { ...pack(),
+    surfaces: Array.from({ length: 16 }, (_, i) => ({ provider: 'source-routes', annotations: ['Route' + i] })),
+    sanitizers: { sql: Array.from({ length: 32 }, (_, i) => ({ call: ['SqlClient' + i + '.*'],
+      when: { argCount: '>=2', placeholders: true } })) },
+  };
+  const compiled = compileFrameworkPack(encode(input));
+  assert.equal(compiled.diagnostics.length, 48);
+  assert.deepEqual(compiled.diagnostics.slice(0, 16).map(row => row.index), Array.from({ length: 16 }, (_, i) => i));
+  assert.deepEqual(compiled.diagnostics.slice(16).map(row => row.index), Array.from({ length: 32 }, (_, i) => i));
+  input.sanitizers.sql.push({ call: ['ExtraClient.*'], when: { argCount: '>=2', placeholders: true } });
+  assert.throws(() => compileFrameworkPack(encode(input)), /invalid_framework_pack/);
 });
 
 test('deterministic data-only generation binds raw YAML, canonical Pack, revision and exact JSON bytes', () => {
