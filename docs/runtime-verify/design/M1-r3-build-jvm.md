@@ -245,3 +245,26 @@ M1-52: 한 tool의 process group 확인이 false면 이후 성공으로 복구�
 executor 주입은 trusted internal 조립/고장 재현 경계뿐이며 raw options/TargetSpec에는 함수 권한이 없다. 기본 감독은 기존 실행기를 그대로 사용한다.
 Lima Unix socket 경로는 100바이트 이내다. trusted caller는 canonical /tmp 아래 짧고 소유권이 확인된 base를 주며 긴 경로를 제한 완화로 우회하지 않는다.
 근거: [Lima Docker](https://lima-vm.io/docs/examples/containers/docker/), [rootless cgroup](https://docs.docker.com/engine/security/rootless/tips/#limiting-resources), [nft socket UID](https://wiki.nftables.org/wiki-nftables/index.php/Matching_packet_metainformation#Matching_by_socket_UID_.2F_GID).
+
+### M1-60 / CPx6 제안: 신뢰 OS 준비와 source 실행의 단계 분리
+
+기존 Stopped-only `prepareLimaProfile`과 target/source 실행 전 모든 barrier는 유지한다.
+신규 내부 `prepareLimaOsProfile`은 소유 로컬 image bytes를 검증하고 source-free OS profile만 만든다. CLI/Provider/preflight에는 연결하지 않는다.
+이 단계 분리는 CPx6 검토 제안이며 실제 VM 준비/boot 실행은 해당 승인과 후속 R9 패킷 전까지 금지한다.
+consent own-descriptor 검사 전 파일/경로/프로세스/네트워크 I/O는 0이다. raw options/TargetSpec에는 executor/스크립트 권한이 없다.
+rootfs pin은 Noble24.04/date/arch에 결속된 공식 URL과 trusted SHA다. URL/hash 모양만으로 bytes 검증을 대신하지 않는다.
+입력 FD는 nofollow/nonblock·regular·소유 UID·hardlink0·조상 링크 거부이며 2GiB/64KiB chunk·10분 이하/외부 deadline/abort로 private copy한다.
+원본의 dev/ino/size/mtime/ctime·이름을 전후 대조하고 private 0600 copy를 fsync·재독 SHA 검증한다. boot 전에도 재독 SHA를 대조한다.
+private HOME/config/rootfs와 Lima가 만든 lima.yaml/vz-identifier의 dev/ino/size/mtime/ctime을 결속한다. 링크/교체/불명은 HOME을 남기고 unconfirmed다.
+Lima1.0.3의 VZ identity는 `vz-identifier`의 opaque GenericMachineIdentifier bytes다. list JSON에 없는 UUID를 만들지 않고 실제 bytes SHA만 기록한다.
+`lease.boot()`는 source 없는 OS의 Running 관측→소유 foreground 그룹 종료→Stopped/PID0 확인만 하는 유한 cycle이다. 상주 backend/target 실행 API가 아니다.
+공식1.0.3 `start --foreground`는 같은 PID에서 hostagent로 exec한다. 기존 최소 env/argv/bytecap/AbortSignal/PGID 감독을 그대로 사용한다.
+list의 PID를 kill/stop 권한으로 쓰지 않는다. 별도 10초 관측/cleanup에서 Running·재사용 PID·VM identity 불명은 stop/delete를 거부한다.
+VM의 OS 준비 부팅은 rootless daemon/nft를 설치할 신뢰 환경을 얻기 위한 단계다. source/host credential은 복사·mount하지 않으며 Docker 설치도 없다.
+source-free config만 기존 setup script의 최종 무조건 missing-prerequisite 종료를 제외한다. alias/cgroup/UID/subuid/위임 실패 guard는 유지한다.
+mount0·agent/pubkey/proxyenv/hostResolver off·alias 제거·서비스 TCP forwarding off(관리 SSH22 예외)·VM2CPU/4GiB/20GiB는 그대로다.
+Docker extras/guest helper의 실제 bytes pin·daemon/relay·nft/proxy·resource/egress/PG/target 검증은 미완료다. backend는 계속 unavailable·verified=false다.
+관측 phase 이름은 guest 준비/격리 PASS를 뜻하지 않는다. 테스트는 고정 가짜 bytes/소유 Node mock만 사용했고 실제 image 다운로드·VM 부팅은 하지 않았다.
+후속 R9가 공식 image bytes·Lima helper 자산·host 지원을 독립 검증해야 한다. 현재 API는 로컬 파일만 받으며 downloader/지속 VM 운영은 후속이다.
+[공식 SHA metadata](https://cloud-images.ubuntu.com/releases/noble/release-20261017/SHA256SUMS)의 arm64 후보는 `50e24e1fb79e89116e939d90aa7738f7af48c442fa1bc2510131e0b39c50348e`다. metadata 조회만 했으며 이 image bytes 실측은 없다.
+1.0.3 근거: [VZ identity](https://github.com/lima-vm/lima/blob/v1.0.3/pkg/vz/vm_darwin.go#L652-L665), [foreground exec](https://github.com/lima-vm/lima/blob/v1.0.3/pkg/instance/start.go#L175-L218), [실제 list 필드](https://github.com/lima-vm/lima/blob/v1.0.3/pkg/store/instance.go#L37-L62).
