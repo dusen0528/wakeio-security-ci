@@ -274,7 +274,7 @@ test('overlong Unix sockets are rejected before tool invocation and the private 
 
 const osBytes = Buffer.from('fixed synthetic OS bytes; not a bootable image');
 const machineBytes = 'synthetic VZ GenericMachineIdentifier data';
-async function osMockTool(base: string, mode = ''): Promise<LimaOsOptions> {
+async function osMockTool(base: string, mode = '', listVersion: string | null = '1.0.3'): Promise<LimaOsOptions> {
   const executable = join(base, 'mock-os-limactl'), rootfsFile = join(base, 'input.img');
   await writeFile(rootfsFile, osBytes, { mode: 0o600 });
   await writeFile(executable, `#!/usr/bin/env node
@@ -285,8 +285,10 @@ fs.appendFileSync(p.join(home,'calls.ndjson'),JSON.stringify(a)+String.fromCharC
 if(a[0]==='--version'){console.log('limactl version 1.0.3');process.exit(0);}
 const name=a[0]==='create'?a.find(x=>x.startsWith('--name=')).slice(7):a.at(-1),dir=p.join(home,'.lima',name);
 const stateFile=p.join(dir,'state.json');
-function state(status,pid=0){fs.writeFileSync(stateFile,JSON.stringify({name,dir,status,protected:false,
- vmType:'vz',arch:'aarch64',limaVersion:'1.0.3',hostAgentPID:pid,driverPID:pid}));}
+function state(status,pid=0){const value={name,dir,status,protected:false,
+ vmType:'vz',arch:'aarch64',limaVersion:${JSON.stringify(listVersion)},hostAgentPID:pid,driverPID:pid};
+ if(mode==='omit-zero-pids'&&pid===0){delete value.hostAgentPID;delete value.driverPID;}
+ fs.writeFileSync(stateFile,JSON.stringify(value));}
 if(a[0]==='create'){
  fs.mkdirSync(dir,{mode:0o700});fs.copyFileSync(a.at(-1),p.join(dir,'lima.yaml'));
  if(mode!=='missing-machine')fs.writeFileSync(p.join(dir,'vz-identifier'),${JSON.stringify(machineBytes)},{mode:0o600});
@@ -385,6 +387,49 @@ test('synthetic bytes bind private OS config and VZ identity; foreground boot st
     assert.equal((await calls(lease.home)).some(args => args[0] === 'stop'), false);
     assert.equal((await lease.cleanup()).confirmed, true);
     assert.deepEqual(await readFile(options.rootfsFile), osBytes);
+  });
+});
+
+test('pinned list spellings preserve owned mock boot and cleanup with omitted PID0', async () => {
+  for (const version of ['1.0.3', 'v1.0.3']) {
+    await scope(async base => {
+      const result = await prepareLimaOsProfile(await osMockTool(base, 'omit-zero-pids', version));
+      assert.equal(result.reason, 'missing_prerequisite'); assert.ok(result.lease);
+      assert.equal(result.verified, false); const lease = result.lease;
+      const state = JSON.parse(await readFile(join(lease.directory, 'state.json'), 'utf8'));
+      assert.equal(state.limaVersion, version);
+      assert.equal(Object.hasOwn(state, 'hostAgentPID'), false);
+      assert.equal(Object.hasOwn(state, 'driverPID'), false);
+      assert.equal((await lstat(lease.directory)).ino, lease.profileIdentity.ino);
+      assert.equal(lease.machineIdentitySha256, createHash('sha256').update(machineBytes).digest('hex'));
+      assert.deepEqual(await lease.boot(), {
+        status: 'unavailable', verified: false, phase: 'running_observed_then_stopped' });
+      assert.equal((await lease.cleanup()).confirmed, true);
+      await assert.rejects(lstat(lease.home), { code: 'ENOENT' });
+    });
+  }
+});
+
+test('other list versions, suffixes and whitespace cannot authorize deletion', async () => {
+  for (const version of ['1.0.4', 'v1.0.4', '1.0.3-rc1', 'v1.0.3+build', 'latest', '^1.0.3',
+    ' 1.0.3', '1.0.3\n', 'v1.0.3\n', '', null]) {
+    await scope(async base => {
+      const result = await prepareLimaOsProfile(await osMockTool(base, '', version));
+      assert.equal(result.reason, 'prepare_failed'); assert.equal(result.verified, false);
+      assert.equal(result.cleanup?.confirmed, false); assert.ok(result.pendingHome);
+      assert.equal((await calls(result.pendingHome))
+        .some(args => ['start', 'delete', 'stop'].includes(args[0])), false);
+    });
+  }
+});
+
+test('a tagged version cannot authorize deletion after its owned profile identity changes', async () => {
+  await scope(async base => {
+    const result = await prepareLimaOsProfile(await osMockTool(base, '', 'v1.0.3')); assert.ok(result.lease);
+    const lease = result.lease;
+    await rename(lease.directory, lease.directory + '-original'); await mkdir(lease.directory, { mode: 0o700 });
+    assert.equal((await lease.cleanup()).confirmed, false);
+    assert.equal((await calls(lease.home)).some(args => args[0] === 'delete'), false);
   });
 });
 

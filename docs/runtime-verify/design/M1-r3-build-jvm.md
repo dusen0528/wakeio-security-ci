@@ -284,3 +284,11 @@ config의 metadata 저장 기대 2개를 pin 음성 검사와 두 preparer의 �
 자체 확인은 R9가 검증한 private1.0.3 binary/원래 rootfs로 새 private HOME의 두 실제 generated config에 validate만 실행해 각각 exit0/OK였다.
 OS 경로의 create는 trusted seam에서 validate로 대체한 뒤 종료했다. 실제 create/start/stop/delete는 0이며 config/HOME·원본 자산/캐시는 그대로였다.
 이는 config validation 자체 점검이며 실제 VM 준비/격리 증거나 R9 증거가 아니다. digest·guard·소유 정리·unavailable/verified=false는 유지한다.
+
+M1-76: R9 M1-75에서 actual create exit0·70-byte vz-identifier와 lease SHA 일치를 기록했지만 list의 `limaVersion: v1.0.3`가 기존 literal 검사에서 거부됐다.
+고정1.0.3 list protocol에서 정확한 `1.0.3`/`v1.0.3` 두 표현만 허용한다. controller는 trim·semver range·latest·suffix를 받아들이지 않는다.
+[공식1.0.3 CLI](https://github.com/lima-vm/lima/blob/v1.0.3/cmd/limactl/main.go)는 Version의 선두 v를 표시에서 제외하고, [store](https://github.com/lima-vm/lima/blob/v1.0.3/pkg/store/instance.go#L162-L170)는 instance version file 값을 읽는다. CLI version 검사는 기존 정확한 1.0.3 그대로다.
+[Instance struct](https://github.com/lima-vm/lima/blob/v1.0.3/pkg/store/instance.go#L54-L60)의 hostAgentPID/driverPID는 omitempty여서 0이면 JSON에서 생략될 수 있다.
+Stopped+생략/0은 해당 Lima instance의 관측이며 OS 전역 프로세스 부재 실측이 아니다. 소유 tool의 PGID 종료 확인도 별도 조건이고 임의 PID kill 권한은 없다.
+버전 외 name/dir/protected/status/arch/VZ/asset·identity·PID·sticky 정리 기준은 그대로다. mock 태그형 lease의 준비/boot/정리와 다른 버전·접미사·개행 거부를 검증한다.
+실제 잔존 profile/캐시는 접근·수정·실행하지 않는다. R9가 별도 원본 proof 확인 뒤 정상 SDK로 정리하며 범용 adopt/force 복구 API는 추가하지 않는다.
