@@ -381,3 +381,15 @@ BOOT/probe 공통 non_sudo는 root·LC_ALL=C에서 전체 `sudo -n -l -U wakeio-
 임의 plugin을 인증하는 범용 sudo 분석기가 아니며 승인된 source-free OS/sudoers 문법만 지원한다. backend·daemon·target 권한은 계속 unavailable이고 UID/subid·boot metadata·신원·cleanup·30초/5초·16KiB 조건은 그대로다.
 자체 테스트는 공통 함수의 소유 shell fixture와 고정 Node 정책 mock만 실행한다. 실제 host root/sudo/hostname/계정 명령·guest/VM/target 실행은 없으며 실제 재측정은 후속 R9 담당이다.
 M1-124는 자체 npm ci/build와 serial cleanup/compat62 pass, M1-126은 build와 같은 검증64 pass이며 fail/skip0이다. 소유 mock 검증이며 실제 sudo policy·guest/daemon/egress 성공을 뜻하지 않는다.
+
+### M1-134 / CPx11 N3 및 source-free OS inventory
+
+`OsPrerequisites.reason=sudo_allowed`는 **non-sudo 입증 실패이며 권한 존재 확정이 아니다**. non-root/hostname/명령 부재·timeout·정책/문법 불명도 같은 실패 사유에 포함된다. R9는 이 enum만으로 권한을 확정하지 않는다.
+현재672 source-free 실측은 고정 probe observed=true와 정상 소유 cleanup을 얻었다. 이 사실은 daemon/resource/egress/backend 검증이나 새 inventory의 실제 성공을 뜻하지 않는다.
+frozen capability는 고정 `inventory()`만 추가한다. 같은 현재 session의 성공한 probe 뒤, 활성 job이 없고 deadline/신원이 유효할 때만 허용한다. 사전·동시·종료/지연 호출과 인수는 guest I/O 전에 거부하며 guard 성공을 inventory로 대체하지 않는다.
+고정 sudo/env-i argv는 release의 ID/VERSION_ID·uname arch와 allowlist22개의 dpkg-query 상태/version만 읽는다. OS 파일은 data로만 검사하고 source/eval하지 않는다. 계정/hostname/env/credential·apt/설치/네트워크 조회는 없다.
+wire는 ubuntu24.04·VM pin과 같은 arch header, 고정 순서22행과 end22만 허용한다. row 상태는 dpkg의8개 상태 또는 missing이며 버전은 안전 ASCII128B 이하다. 제어문자·중복/추가/누락/잘림·다른 release/arch는 unknown이다.
+누락은 C locale의 정확한 dpkg-query no-packages 오류 한 행·exit1 marker일 때만 missing으로 만든다. 다른 오류를 누락으로 추측하지 않는다. 개별 query는513B로 먼저 제한하고 전체 결과는16KiB 내에서 검증한다. 원문 오류/설정/부분 결과는 반환하지 않는다.
+각 호출5초·기존 session30초·16KiB·최소 env·신원 전후 대조와 소유 cleanup을 유지한다. identity/transport 손실은 capability를 닫고 unknown으로 처리하며 정리 불명은 sticky다. 모든 inventory는 backendVerified=false다.
+설치 상태/version은 의존 pin 선정용 metadata다. 독립 서명/bytes 검증과 후속 실행 승인을 대신하지 않으며 source/daemon/target 실행 권한은 없다. 이번 자체 검증은 owned Node mock뿐이며 새 capability의 실제 source-free 성공은 별도 승인 뒤 R9가 측정한다.
+자체 npm ci/build와 serial cleanup/compat68 pass·fail/skip0을 확인했다. dpkg exit2를 missing으로 합치지 않도록 마지막 script 상태 보존을 보완하고 그 고정 script의 owned query fixture1 pass를 추가 확인했다. 실제 OS/package 조회나 VM 실행 증거가 아니며 배포 자산/Action과 parser host pin은 불변이다.

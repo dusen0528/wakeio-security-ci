@@ -278,6 +278,14 @@ test('overlong Unix sockets are rejected before tool invocation and the private 
 
 const osBytes = Buffer.from('fixed synthetic OS bytes; not a bootable image');
 const machineBytes = 'synthetic VZ GenericMachineIdentifier data';
+const inventoryNames = ['uidmap', 'dbus-user-session', 'iptables', 'nftables', 'libc6', 'libsystemd0',
+  'libseccomp2', 'init-system-helpers', 'slirp4netns', 'apparmor', 'ca-certificates', 'curl', 'gpgv', 'python3',
+  'systemd', 'sudo', 'login', 'passwd', 'docker-ce', 'docker-ce-cli', 'docker-ce-rootless-extras', 'containerd.io'];
+function inventoryWire(): string {
+  return 'wakeio-os-inventory/v1\tubuntu\t24.04\taarch64\n'
+    + inventoryNames.map(name => name + (name.startsWith('docker') || name === 'containerd.io'
+      ? '\tmissing\t-\n' : '\tinstalled\t1.0+synthetic\n')).join('') + 'end\t22\n';
+}
 const SESSION_MOCK = `
 function exitOwnedMock(){
  if((mode==='startup-exit'&&fs.existsSync(p.join(home,'startup.exit')))||fs.existsSync(p.join(home,'session.exit'))){
@@ -286,6 +294,12 @@ function exitOwnedMock(){
 function fixedGuestProbe(){
  if(a[1]!=='--workdir=/'||a[2]!=='--shell=/bin/bash'||a[4]!=='--')process.exit(91);
  const code=a.at(-1),status=JSON.parse(fs.readFileSync(stateFile,'utf8')).status;
+ if(code.includes('wakeio-os-inventory/v1')){
+  if(status!=='Running')process.exit(255);
+  fs.writeFileSync(p.join(home,'inventory.started'),'owned inventory');
+  if(mode==='session-inventory-hang'){process.on('SIGTERM',()=>process.exit(0));setInterval(()=>{},1000);return;}
+  process.stdout.write(${JSON.stringify(inventoryWire())});return;
+ }
  if(!code.includes('id -u wakeio-m1')||!code.includes('cgroup.subtree_control'))process.exit(92);
  if(status!=='Running'||mode==='session-probe-unavailable')process.exit(255);
  if(mode==='session-probe-fail')process.exit(125);
@@ -820,11 +834,12 @@ test('OS sessions require consent before input getters, tools or the trusted cal
     assert.equal(invoked, 0); assert.deepEqual(await readdir(base), before);
   });
 });
-test('a bounded OS session exposes only a fixed probe and revokes it after cleanup', async () => {
+test('a bounded OS session exposes fixed readers and revokes them after cleanup', async () => {
   await scope(async base => {
     const recorder = sessionRecorder(), options = await osMockTool(base); let retained!: LimaOsProbeCapability;
     const result = await recorder.run(options, async cap => {
-      retained = cap; assert.deepEqual(Object.keys(cap), ['probe']); assert.equal(Object.isFrozen(cap), true);
+      retained = cap; assert.deepEqual(Object.keys(cap), ['probe', 'inventory']);
+      assert.equal(Object.isFrozen(cap), true);
       assert.deepEqual(await cap.probe(), { kind: 'os-prerequisites', observed: true,
         backendVerified: false, bootPhase: 'complete', reason: 'none' });
       assert.deepEqual(await cap.probe(), { kind: 'os-prerequisites', observed: true,
@@ -1239,5 +1254,139 @@ test('non-sudo verification requires root context and one bounded valid hostname
   await scope(async base => {
     const { result, calls } = await nonSudoFixture(base, Buffer.from('unused'), 0, undefined, false);
     assert.equal(result.completed, false); assert.equal(calls, '');
+  });
+});
+
+test('OS inventory requires a successful guard and accepts only fixed live-session calls', async () => {
+  await scope(async base => {
+    const recorder = sessionRecorder(); let retained!: LimaOsProbeCapability;
+    const result = await recorder.run(await osMockTool(base), async cap => {
+      retained = cap; const before = recorder.events.length;
+      await assert.rejects(cap.inventory());
+      await assert.rejects((cap.inventory as (...args: unknown[]) => Promise<unknown>)('extra-command'));
+      assert.equal(recorder.events.length, before);
+      await cap.probe(); const ready = recorder.events.length;
+      await assert.rejects((cap.inventory as (...args: unknown[]) => Promise<unknown>)('/etc/passwd'));
+      assert.equal(recorder.events.length, ready); const answer = await cap.inventory();
+      assert.equal(answer.status, 'observed'); assert.equal(answer.backendVerified, false);
+      assert.deepEqual(answer.os, { id: 'ubuntu', version: '24.04', arch: 'aarch64' });
+      assert.deepEqual(answer.packages.map(row => row.name), inventoryNames);
+      assert.deepEqual(answer.packages[18], { name: 'docker-ce', state: 'missing', version: null });
+      assert.ok(Object.isFrozen(answer)); assert.ok(Object.isFrozen(answer.packages));
+    });
+    const job = recorder.events.find(row => row.args.at(-1)!.includes('wakeio-os-inventory/v1'))!;
+    assert.ok(job); assert.deepEqual(job.args.slice(2, 4), ['--workdir=/', '--shell=/bin/bash']);
+    assert.deepEqual(job.args.slice(7, -1), ['-n', '/usr/bin/env', '-i', 'PATH=/usr/sbin:/usr/bin:/sbin:/bin',
+      'LC_ALL=C', '/bin/sh', '-c']);
+    assert.doesNotMatch(job.args.at(-1)!, /source |eval|apt-get|apt update|hostname|credential|\/usr\/bin\/id/);
+    assert.equal(result.guestPrerequisitesObserved, true); assert.equal(result.verified, false);
+    assert.equal(result.cleanup?.confirmed, true);
+    const before = recorder.events.length; await assert.rejects(retained.inventory());
+    assert.equal(recorder.events.length, before);
+  });
+});
+test('inventory validates order, count, versions, release and architecture without raw data', async () => {
+  const valid = inventoryWire(), rows = valid.split('\n');
+  const invalid = [valid.replace('dbus-user-session', 'uidmap'), valid + 'extra\n', valid.slice(0, -1),
+    valid.replace('1.0+synthetic', '1.0\r'), valid.replace('aarch64', 'x86_64'),
+    valid.replace('ubuntu', 'debian'), valid.replace('installed', 'unknown-state'),
+    valid.replace('1.0+synthetic', '1'.repeat(129)), valid.replace('end\t22', 'end\t21'),
+    rows.slice(0, -3).join('\n') + '\n', 'x'.repeat(16385)];
+  await scope(async base => {
+    let stdout = valid, timedOut = false;
+    const run = createLimaOsSessionRunner(async (executable, args, config) => {
+      const result = await runRuntimeProcess(executable, args, config);
+      if (!args.at(-1)!.includes('wakeio-os-inventory/v1')) return result;
+      assert.equal(config.timeoutMs, 5000); assert.equal(config.maxOutputBytes, 16384);
+      return { ...result, stdout, completed: !timedOut, timedOut };
+    });
+    const result = await run(await osMockTool(base), async cap => {
+      await cap.probe();
+      for (const raw of invalid) {
+        stdout = raw; const answer = await cap.inventory();
+        assert.equal(answer.status, 'unknown'); assert.equal(answer.reason, 'invalid_inventory');
+        assert.equal(answer.os, null); assert.deepEqual(answer.packages, []);
+      }
+      stdout = ''; timedOut = true;
+      assert.equal((await cap.inventory()).reason, 'inventory_unavailable');
+    });
+    assert.equal(result.phase, 'callback_completed');
+    assert.equal(result.cleanup?.confirmed, true); assert.equal(result.verified, false);
+  });
+});
+test('concurrent inventory starts no new I/O; abort drains the active read and closes authority', async () => {
+  await scope(async base => {
+    const recorder = sessionRecorder(), controller = new AbortController();
+    const options = { ...await osMockTool(base, 'session-inventory-hang'), signal: controller.signal };
+    let retained!: LimaOsProbeCapability, answer: Awaited<ReturnType<LimaOsProbeCapability['inventory']>> | undefined;
+    const result = await recorder.run(options, async cap => {
+      retained = cap; await cap.probe(); const pending = cap.inventory();
+      await waitForOwnedFile(base, 'inventory.started'); const before = recorder.events.length;
+      await assert.rejects(cap.inventory()); assert.equal(recorder.events.length, before);
+      controller.abort(); answer = await pending;
+    });
+    assert.equal(result.phase, 'failed'); assert.equal(result.cleanup?.confirmed, true);
+    assert.equal(answer?.status, 'unknown'); assert.equal(answer?.backendVerified, false);
+    await assert.rejects(retained.inventory());
+    const read = recorder.events.find(row => row.args.at(-1)!.includes('wakeio-os-inventory/v1'))!;
+    assert.equal(read.result.cancelled, true); assert.equal(read.result.closeConfirmed, true);
+  });
+});
+test('a failed fixed guard never grants inventory authority and inventory identity drift stays unknown', async () => {
+  await scope(async base => {
+    const recorder = sessionRecorder();
+    const result = await recorder.run(await osMockTool(base, 'session-probe-fail'), async cap => {
+      assert.equal((await cap.probe()).observed, false); const before = recorder.events.length;
+      await assert.rejects(cap.inventory()); assert.equal(recorder.events.length, before);
+    });
+    assert.equal(result.phase, 'callback_completed');
+    assert.equal(result.guestPrerequisitesObserved, false); assert.equal(result.cleanup?.confirmed, true);
+  });
+  await scope(async base => {
+    let inventory: Awaited<ReturnType<LimaOsProbeCapability['inventory']>> | undefined;
+    const run = createLimaOsSessionRunner(async (executable, args, config) => {
+      const result = await runRuntimeProcess(executable, args, config);
+      if (args.at(-1)!.includes('wakeio-os-inventory/v1')) {
+        await writeFile(join(config.home, 'rootfs.img'), 'changed synthetic identity');
+      }
+      return result;
+    });
+    const result = await run(await osMockTool(base), async cap => {
+      await cap.probe(); inventory = await cap.inventory();
+    });
+    assert.equal(result.phase, 'failed'); assert.equal(result.cleanup?.confirmed, false);
+    assert.equal(inventory?.status, 'unknown'); assert.equal(inventory?.reason, 'identity_unknown');
+    assert.ok(result.pendingHome);
+  });
+});
+test('fixed inventory queries only its allowlist and distinguishes missing packages from errors', async () => {
+  await scope(async base => {
+    let captured = '';
+    const run = createLimaOsSessionRunner(async (executable, args, config) => {
+      if (args.at(-1)!.includes('wakeio-os-inventory/v1')) captured = args.at(-1)!;
+      return runRuntimeProcess(executable, args, config);
+    });
+    await run(await osMockTool(base), async cap => { await cap.probe(); await cap.inventory(); });
+    assert.ok(captured);
+    const mock = join(base, 'owned-dpkg-query');
+    await writeFile(mock, `#!${process.execPath}
+const a=process.argv.slice(2),allowed=${JSON.stringify(inventoryNames)};
+if(a.length!==4||a[0]!=='-W'||a[2]!=='--'||!allowed.includes(a[3]))process.exit(9);
+const absent=a[3].startsWith('docker')||a[3]==='containerd.io';
+if(absent){process.stderr.write('dpkg-query: no packages found matching '+a[3]+'\\n');process.exitCode=1;}
+else process.stdout.write('installed\\t1.0+synthetic\\n');
+`, { mode: 0o700 });
+    const script = captured.replaceAll('/usr/bin/dpkg-query', mock).replaceAll('/usr/bin/awk', 'owned_release')
+      .replaceAll('/usr/bin/uname', 'owned_arch');
+    assert.doesNotMatch(script, /\/usr\/bin\/(?:dpkg-query|awk|uname)/);
+    const prefix = 'owned_release() { return 0; }\nowned_arch() { printf "aarch64\\n"; }\n';
+    const options = { cwd: base, home: base, timeoutMs: 5000, deadlineAt: Date.now() + 10000, maxOutputBytes: 16384 };
+    const good = await runRuntimeProcess('/bin/sh', ['-c', prefix + script], options);
+    assert.equal(good.completed, true); assert.equal(good.stdout, inventoryWire());
+    await writeFile(mock, `#!${process.execPath}
+process.stderr.write('dpkg-query: no packages found matching uidmap\\n');process.exitCode=2;
+`, { mode: 0o700 });
+    const bad = await runRuntimeProcess('/bin/sh', ['-c', prefix + script], options);
+    assert.equal(bad.completed, false); assert.equal(bad.exitCode, 125);
   });
 });
