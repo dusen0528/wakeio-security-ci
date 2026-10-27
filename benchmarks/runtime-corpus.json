@@ -1,7 +1,7 @@
 {
   "schema": "wakeio.runtime-corpus/v1",
   "owner": "R8",
-  "scope": "M1-20 primary pair only; second microservice and full N matrix pending",
+  "scope": "M1 primary pair plus independent SQL matrix; second microservice pending",
   "cases": [{
     "id": "spring-sqli-primary", "fixture": "examples/runtime/spring-sqli",
     "variants": ["vulnerable", "fixed"], "pins": "examples/runtime/spring-sqli/pins.json",
@@ -12,5 +12,15 @@
     "fixtureTreeSha256": "f0726ca73585f1fce326e09ecf963a3d3e92236228d42c3054f654984037067d",
     "fixtureTreeHashRule": "sorted relative UTF-8 path + NUL + file SHA256 + LF",
     "groundTruthSha256": "29a1da8fdd03d5a6ecf1bf2463e551a7dcde445c9c58d9c49f06d4c0bfb9b152"
-  }]
+  },{
+    "id":"sql-independent-matrix",
+    "cases":"tests/fixtures/runtime-m1/sql-cases.json",
+    "projections":"tests/fixtures/runtime-m1/sql-projections.json",
+    "caseCount":18,
+    "casesSha256":"5b959a98c486f47e8536fac1af50657415f7886d6833c0b9643370aafbbb297a",
+    "projectionsSha256":"45b19bf3a6f1c963c3bf3c086dceb9adb659af355bacd9e5e60441ee962b5b4f",
+    "authorship":"R8 manual ground truth",
+    "parserExecuted":false
+  }
+  ]
 }
