@@ -274,6 +274,31 @@ test('overlong Unix sockets are rejected before tool invocation and the private 
 
 const osBytes = Buffer.from('fixed synthetic OS bytes; not a bootable image');
 const machineBytes = 'synthetic VZ GenericMachineIdentifier data';
+const STARTUP_MOCK = `
+function advanceStartup(){
+ const owned=p.join(home,'startup.pid');if(!fs.existsSync(owned))return;
+ const pid=Number(fs.readFileSync(owned,'utf8')),stepFile=p.join(home,'startup.step');
+ const step=fs.existsSync(stepFile)?Number(fs.readFileSync(stepFile,'utf8')):0;
+ fs.writeFileSync(stepFile,String(step+1));
+ if(step===0){state('Stopped');return;}
+ let patch={driverPID:0,errors:[{}]};
+ const bad={
+  'startup-negative':{driverPID:-1},'startup-string':{hostAgentPID:String(pid)},
+  'startup-driver-only':{hostAgentPID:0,driverPID:pid},'startup-mismatch':{driverPID:pid+1},
+  'startup-name':{name:'unowned'},'startup-version':{limaVersion:'v1.0.4'},
+  'startup-protected':{protected:true},'startup-arch':{arch:'x86_64'},'startup-vmtype':{vmType:'qemu'}
+ };
+ if(step===1&&bad[mode])patch={...patch,...bad[mode]};
+ if(step===1&&mode==='startup-transport')process.exit(3);
+ if(step===1&&mode==='startup-unknown'){state('UnknownStatus',pid,patch);return;}
+ if(step===1&&mode==='startup-identity')fs.writeFileSync(p.join(dir,'vz-identifier'),'changed identity');
+ if(step===1&&mode==='startup-asset')fs.writeFileSync(p.join(home,'rootfs.img'),'changed asset');
+ if(step===1&&mode==='startup-exit')fs.writeFileSync(p.join(home,'startup.exit'),'exit owned child');
+ if(step===1||mode==='startup-persistent'){state('Broken',pid,patch);return;}
+ if(step===2){state('Installing',pid,patch);return;}
+ state('Running',pid,mode==='startup-running-errors'?{errors:[{}]}:{});
+}
+`;
 async function osMockTool(base: string, mode = '', listVersion: string | null = '1.0.3'): Promise<LimaOsOptions> {
   const executable = join(base, 'mock-os-limactl'), rootfsFile = join(base, 'input.img');
   await writeFile(rootfsFile, osBytes, { mode: 0o600 });
@@ -285,23 +310,30 @@ fs.appendFileSync(p.join(home,'calls.ndjson'),JSON.stringify(a)+String.fromCharC
 if(a[0]==='--version'){console.log('limactl version 1.0.3');process.exit(0);}
 const name=a[0]==='create'?a.find(x=>x.startsWith('--name=')).slice(7):a.at(-1),dir=p.join(home,'.lima',name);
 const stateFile=p.join(dir,'state.json');
-function state(status,pid=0){const value={name,dir,status,protected:false,
- vmType:'vz',arch:'aarch64',limaVersion:${JSON.stringify(listVersion)},hostAgentPID:pid,driverPID:pid};
+function state(status,pid=0,patch={}){const value={name,dir,status,protected:false,
+ vmType:'vz',arch:'aarch64',limaVersion:${JSON.stringify(listVersion)},hostAgentPID:pid,driverPID:pid,...patch};
  if(mode==='omit-zero-pids'&&pid===0){delete value.hostAgentPID;delete value.driverPID;}
- fs.writeFileSync(stateFile,JSON.stringify(value));}
+ const pending=stateFile+'.tmp-'+process.pid;fs.writeFileSync(pending,JSON.stringify(value));
+ fs.renameSync(pending,stateFile);}
+${STARTUP_MOCK}
 if(a[0]==='create'){
  fs.mkdirSync(dir,{mode:0o700});fs.copyFileSync(a.at(-1),p.join(dir,'lima.yaml'));
  if(mode!=='missing-machine')fs.writeFileSync(p.join(dir,'vz-identifier'),${JSON.stringify(machineBytes)},{mode:0o600});
  state('Stopped');
 }else if(a[0]==='list'){
+ if(mode.startsWith('startup-'))advanceStartup();
  console.log(fs.readFileSync(stateFile,'utf8'));
 }else if(a[0]==='start'){
  if(!a.includes('--foreground')||!a.includes('--timeout=30s'))process.exit(92);
  fs.writeFileSync(p.join(home,'boot.started'),'owned mock foreground child');
  if(mode==='exit-start'){state('Stopped');process.exit(2);}
- if(mode!=='hang-start')state('Running',process.pid);
- process.on('SIGTERM',()=>{state(mode==='reused-pid'?'Running':'Stopped',mode==='reused-pid'?process.ppid:0);
-  process.exit(0);});setInterval(()=>{},1000);
+ if(mode.startsWith('startup-')){fs.writeFileSync(p.join(home,'startup.pid'),String(process.pid));state('Stopped');}
+ else if(mode!=='hang-start')state('Running',process.pid);
+ process.on('SIGTERM',()=>{fs.rmSync(p.join(home,'startup.pid'),{force:true});
+  if(mode==='startup-stuck-cleanup')state('Broken',process.pid,{driverPID:0,errors:[{}]});
+  else state(mode==='reused-pid'?'Running':'Stopped',mode==='reused-pid'?process.ppid:0);process.exit(0);});
+ setInterval(()=>{if(mode==='startup-exit'&&fs.existsSync(p.join(home,'startup.exit'))){
+  fs.rmSync(p.join(home,'startup.pid'),{force:true});state('Stopped');process.exit(2);}},5);
 }else if(a[0]==='delete'){
  if(fs.existsSync(p.join(home,'fail-delete')))process.exit(2);
  fs.rmSync(dir,{recursive:true});
@@ -310,6 +342,22 @@ if(a[0]==='create'){
   return { executeTargetConsent: true, baseDirectory: base, limactlExecutable: executable, rootfsFile,
     pins: { ...pins, rootfs: { ...pins.rootfs, sha256: createHash('sha256').update(osBytes).digest('hex') } },
     deadlineAt: Date.now() + 15_000 };
+}
+function startupRecorder(onFrame?: (frame: Record<string, unknown>) => void) {
+  const frames: Record<string, unknown>[] = [], exits: (number | null)[] = [];
+  const starts: Awaited<ReturnType<typeof runRuntimeProcess>>[] = [];
+  const prepare = createLimaOsPreparer(async (executable, args, config) => {
+    const result = await runRuntimeProcess(executable, args, config);
+    if (args[1] === 'start') starts.push(result);
+    if (args[1] === 'list') {
+      exits.push(result.exitCode);
+      if (result.completed) {
+        const frame = JSON.parse(result.stdout); frames.push(frame); onFrame?.(frame);
+      }
+    }
+    return result;
+  });
+  return { prepare, frames, exits, starts };
 }
 async function waitForOwnedFile(base: string, filename: string, nonempty = false): Promise<string> {
   const deadline = Date.now() + 3_000;
@@ -430,6 +478,103 @@ test('a tagged version cannot authorize deletion after its owned profile identit
     await rename(lease.directory, lease.directory + '-original'); await mkdir(lease.directory, { mode: 0o700 });
     assert.equal((await lease.cleanup()).confirmed, false);
     assert.equal((await calls(lease.home)).some(args => args[0] === 'delete'), false);
+  });
+});
+
+test('owned startup polls Stopped, host-only Broken and Installing before strict Running and Stopped', async () => {
+  await scope(async base => {
+    const recorder = startupRecorder(), result = await recorder.prepare(await osMockTool(base, 'startup-sequence'));
+    assert.ok(result.lease);
+    assert.deepEqual(await result.lease.boot(), {
+      status: 'unavailable', verified: false, phase: 'running_observed_then_stopped' });
+    const states = recorder.frames.map(frame => frame.status); let position = -1;
+    for (const state of ['Stopped', 'Broken', 'Installing', 'Running', 'Stopped']) {
+      position = states.indexOf(state, position + 1); assert.ok(position >= 0, 'missing startup state ' + state);
+    }
+    const broken = recorder.frames.find(frame => frame.status === 'Broken')!;
+    assert.ok(Number(broken.hostAgentPID) > 0); assert.equal(broken.driverPID, 0);
+    assert.ok(Array.isArray(broken.errors));
+    assert.equal((await result.lease.cleanup()).confirmed, true);
+  });
+});
+
+test('persistent Broken consumes the caller deadline; early foreground exit remains a failure', async () => {
+  for (const mode of ['startup-persistent', 'startup-exit']) {
+    await scope(async base => {
+      const options = await osMockTool(base, mode), recorder = startupRecorder();
+      if (mode === 'startup-persistent') options.deadlineAt = Date.now() + 3_000;
+      const result = await recorder.prepare(options); assert.ok(result.lease);
+      const boot = await result.lease.boot();
+      assert.equal(boot.phase, 'failed'); assert.equal(boot.cleanup?.confirmed, true);
+      assert.ok(recorder.frames.some(frame => frame.status === 'Broken'));
+      assert.equal(recorder.starts[0].cleanupConfirmed, true);
+      if (mode === 'startup-persistent') assert.ok(Date.now() >= options.deadlineAt);
+      else assert.equal(recorder.starts[0].exitCode, 2);
+    });
+  }
+});
+
+test('startup rejects invalid PID, authority, unknown status, transport loss and Running errors', async () => {
+  for (const mode of ['startup-negative', 'startup-string', 'startup-driver-only', 'startup-mismatch',
+    'startup-name', 'startup-version', 'startup-protected', 'startup-arch', 'startup-vmtype',
+    'startup-unknown', 'startup-transport', 'startup-running-errors']) {
+    await scope(async base => {
+      const recorder = startupRecorder(), result = await recorder.prepare(await osMockTool(base, mode));
+      assert.ok(result.lease);
+      const boot = await result.lease.boot();
+      assert.equal(boot.phase, 'failed', mode); assert.equal(boot.cleanup?.confirmed, true, mode);
+      if (mode === 'startup-transport') assert.ok(recorder.exits.includes(3));
+      assert.equal(recorder.starts[0].cleanupConfirmed, true);
+    });
+  }
+});
+
+test('startup identity or asset drift and unknown final cleanup preserve the owned profile', async () => {
+  for (const mode of ['startup-identity', 'startup-asset', 'startup-stuck-cleanup']) {
+    await scope(async base => {
+      const recorder = startupRecorder(), result = await recorder.prepare(await osMockTool(base, mode));
+      assert.ok(result.lease);
+      const boot = await result.lease.boot();
+      assert.equal(boot.phase, 'failed'); assert.equal(boot.cleanup?.confirmed, false);
+      assert.ok((await lstat(result.lease.directory)).isDirectory());
+      assert.equal((await calls(result.lease.home)).some(args => args[0] === 'delete'), false);
+    });
+  }
+});
+
+test('external abort during a verified Broken startup frame stops the owned group before cleanup', async () => {
+  await scope(async base => {
+    const controller = new AbortController(), recorder = startupRecorder(frame => {
+      if (frame.status === 'Broken') controller.abort();
+    });
+    const options = await osMockTool(base, 'startup-sequence');
+    const result = await recorder.prepare({ ...options, signal: controller.signal }); assert.ok(result.lease);
+    const boot = await result.lease.boot();
+    assert.equal(boot.phase, 'failed'); assert.equal(boot.cleanup?.confirmed, true);
+    assert.equal(recorder.starts[0].cleanupConfirmed, true);
+    assert.equal(recorder.frames.some(frame => frame.status === 'Running'), false);
+  });
+});
+
+test('ordinary prepare and cleanup never accept a Broken startup frame as Stopped', async () => {
+  await scope(async base => {
+    const options = await osMockTool(base);
+    const prepare = createLimaOsPreparer(async (executable, args, config) => {
+      const result = await runRuntimeProcess(executable, args, config);
+      if (args[1] === 'create' && result.completed) {
+        const name = args.find(arg => arg.startsWith('--name='))!.slice(7);
+        const path = join(config.home, '.lima', name, 'state.json'), state = JSON.parse(await readFile(path, 'utf8'));
+        await writeFile(path, JSON.stringify({ ...state, status: 'Broken', hostAgentPID: 123, errors: [{}] }));
+      }
+      return result;
+    });
+    const rejected = await prepare(options);
+    assert.equal(rejected.reason, 'prepare_failed'); assert.equal(rejected.cleanup?.confirmed, false);
+    const result = await prepareLimaOsProfile(await osMockTool(base)); assert.ok(result.lease);
+    const path = join(result.lease.directory, 'state.json'), state = JSON.parse(await readFile(path, 'utf8'));
+    await writeFile(path, JSON.stringify({ ...state, status: 'Installing', hostAgentPID: 123 }));
+    assert.equal((await result.lease.cleanup()).confirmed, false);
+    assert.equal((await calls(result.lease.home)).some(args => args[0] === 'delete'), false);
   });
 });
 
