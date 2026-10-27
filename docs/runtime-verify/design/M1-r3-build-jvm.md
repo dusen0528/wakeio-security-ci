@@ -241,5 +241,7 @@ controller의 consent guard 뒤에서만 새 private HOME·고유 profile을 만
 daemon/관리 Unix relay·nft/proxy·VM 실제 ID·resource/egress probe가 없어 VM 시작 승인을 내지 않는다. 관리 SSH22만 TCP 예외로 명시한다.
 cleanup은 private HOME/store/profile의 결속·Stopped/PID0를 재확인한 profile만 delete하고 부재를 확인한다. Running VM은 실제 VM ID 미결속으로 stop/delete를 거부한다.
 abort/deadline 뒤 process group 확인과 별도 10초 cleanup budget을 사용한다. 실패/교체/부재 불명은 cleanup unconfirmed로 보존한다.
+M1-52: 한 tool의 process group 확인이 false면 이후 성공으로 복구하지 않는다. 삭제 감독 불명도 HOME/완료 확인 전에 거부한다.
+executor 주입은 trusted internal 조립/고장 재현 경계뿐이며 raw options/TargetSpec에는 함수 권한이 없다. 기본 감독은 기존 실행기를 그대로 사용한다.
 Lima Unix socket 경로는 100바이트 이내다. trusted caller는 canonical /tmp 아래 짧고 소유권이 확인된 base를 주며 긴 경로를 제한 완화로 우회하지 않는다.
 근거: [Lima Docker](https://lima-vm.io/docs/examples/containers/docker/), [rootless cgroup](https://docs.docker.com/engine/security/rootless/tips/#limiting-resources), [nft socket UID](https://wiki.nftables.org/wiki-nftables/index.php/Matching_packet_metainformation#Matching_by_socket_UID_.2F_GID).

@@ -128,15 +128,16 @@ class Profile {
   readonly store: string; readonly directory: string;
   profileId?: Identity; storeId?: Identity; groupConfirmed = true; done = false;
   private cleaning?: Promise<ProfileCleanup>;
-  constructor(readonly config: LimaProfileOptions, readonly home: string, readonly homeId: Identity) {
+  constructor(readonly config: LimaProfileOptions, readonly home: string, readonly homeId: Identity,
+    private readonly execute: typeof runRuntimeProcess) {
     this.store = join(home, '.lima'); this.directory = join(this.store, this.name);
   }
   async tool(args: string[], deadlineAt: number, signal?: AbortSignal) {
     await same(this.home, this.homeId);
     if (((await lstat(this.home)).mode & 0o777) !== 0o700) invalid();
-    const result = await runRuntimeProcess(this.config.limactlExecutable, ['--tty=false', ...args], {
+    const result = await this.execute(this.config.limactlExecutable, ['--tty=false', ...args], {
       cwd: this.home, home: this.home, timeoutMs: 30_000, deadlineAt, maxOutputBytes: 16 * 1024, signal });
-    this.groupConfirmed = result.cleanupConfirmed === true;
+    this.groupConfirmed &&= result.cleanupConfirmed === true;
     if (!result.completed) invalid();
     return result.stdout.trim();
   }
@@ -169,7 +170,7 @@ class Profile {
         await this.listed(deadline);
         await this.tool(['delete', this.name], deadline); // No force, running VM stop or global prune authority.
       }
-      if (!await absent(this.directory)) invalid();
+      if (!this.groupConfirmed || !await absent(this.directory)) invalid();
       if (this.storeId) {
         await same(this.store, this.storeId);
         const metadata = ['_config', '_networks', '_disks', '_cache'];
@@ -190,6 +191,15 @@ class Profile {
 
 /** Only creates an owned, stopped profile. No start/shell/Docker/target authority; backend stays unavailable. */
 export async function prepareLimaProfile(raw: LimaProfileOptions): Promise<LimaPreparation> {
+  return prepare(raw, runRuntimeProcess);
+}
+
+/** @internal Trusted composition/fault-injection seam; never supplied through source or profile options. */
+export function createLimaProfilePreparer(execute: typeof runRuntimeProcess) {
+  return (raw: LimaProfileOptions): Promise<LimaPreparation> => prepare(raw, execute);
+}
+
+async function prepare(raw: LimaProfileOptions, execute: typeof runRuntimeProcess): Promise<LimaPreparation> {
   if (!consent(raw)) return { status: 'unavailable', verified: false, reason: 'consent_required',
     missingPrerequisites: ['execute-target-consent'] };
   let profile: Profile | undefined;
@@ -200,7 +210,7 @@ export async function prepareLimaProfile(raw: LimaProfileOptions): Promise<LimaP
     if (!base.startsWith(await realpath('/tmp') + '/')) invalid();
     await identity(base);
     const home = await mkdtemp(join(base, 'wk-lima-'));
-    profile = new Profile(selected, home, await identity(home));
+    profile = new Profile(selected, home, await identity(home), execute);
     if (Buffer.byteLength(join(profile.directory, 'sock/docker.sock')) > 100) invalid();
     await mkdir(profile.store, { mode: 0o700 }); profile.storeId = await identity(profile.store);
     const filename = join(home, 'profile.yaml');
