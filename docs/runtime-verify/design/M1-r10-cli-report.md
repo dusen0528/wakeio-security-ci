@@ -119,6 +119,11 @@ runtime 판별자/필드 혼합·누락·손상은 거부하고, runtime 발견+
 동의 없는 target read/output/Docker/request 0, help/init-target에서 lifecycle 0, 중복 인자·경로 탈출·취소·정리 실패를 확인한다.
 finding+실패→1/실패만→2/완료→0, metadata 손상·표현별 불일치·secret canary·stale manifest·출판 중단을 검증한다.
 R9가 실제 Spring 취약/수정/안전 쌍·route/line coverage와 4종 raw hashes를 로컬/CI에서 독립 확인한다.
+M1-101은 R1 승인 명부의 별도 CJS parser worker·인접 WASM·고지를 npm/Action 공용 workers/pg-parser에 배포한다.
+manifest는 protocol revision·정확한 package/lock·선정 upstream JS·배포 자산/고지 hashes를 결속하며 자기 hash는 넣지 않는다.
+TS/배포 전 JS hash는 build provenance다. 런타임은 명시 revision 상수와 배포 자산/manifest의 외부 승인 pin을 대조한다.
+BSD/PostgreSQL 고지는 추적된 원본 bytes를 고정 SHA로 검증하며 개인 cache·네트워크·상류 native build가 필요하지 않다.
+source/WASM 대응·생산자 인증·실제 WASM 실행/격리·자원 강제는 배포 정적 계약만으로 검증했다고 주장하지 않는다.
 기존 cli/report/agent-report/compare/compat-0.5/runtime-m0 hash 테스트와 KPI compare를 기준 변경 없이 유지한다.
 contracts/report/보안·비밀값 경계의 실제 구현은 필수 CPx에서 검토받는다. 이 문서 작성으로 검증이 끝났다고 주장하지 않는다.
 PLAN13의 target 위치는 독립 wakeio.target.yml 추천, compose x-wakeio 대안은 미확정이다. 기존 scan exit 변경도 M1에서는 하지 않는다.
