@@ -20,6 +20,11 @@ export interface IssuedMarkers {
   /** Private transient lookup for the trusted executor only; never send to reports/agents/loggers. */
   readonly markerForExecutor: (requestOrdinal: number) => string;
 }
+const issuanceSurfaces = new WeakMap<object, readonly Readonly<SurfaceRef>[]>();
+/** Internal identity check: only this module's immutable issuance has a captured surface binding. */
+export function issuedMarkerSurfaces(value: unknown): readonly Readonly<SurfaceRef>[] | undefined {
+  return value && typeof value === 'object' && !types.isProxy(value) ? issuanceSurfaces.get(value) : undefined;
+}
 const MAX_RESERVATIONS = 2000, MAX_ORDINAL = 32768, MAX_BYTES = 1024 * 1024;
 const ALPHABET = 'abcdefghijklmnopqrstuvwxyz234567';
 const hash = (value: string) => createHash('sha256').update(value, 'utf8').digest('hex');
@@ -147,7 +152,8 @@ export function issueMarkers(raw: MarkerIssueInput): IssuedMarkers {
       markerHash });
   });
   const ledger = Object.freeze({ reproductionKey: data.reproductionKey, seed: data.seed, rows: Object.freeze(rows) });
-  return Object.freeze({ ledger, markerForExecutor: (ordinal: number) => {
+  const result = Object.freeze({ ledger, markerForExecutor: (ordinal: number) => {
     integer(ordinal, 1, MAX_ORDINAL); const value = values.get(ordinal); requireData(value !== undefined); return value;
   } });
+  issuanceSurfaces.set(result, Object.freeze(data.surfaces.map(s => Object.freeze({ ...s })))); return result;
 }

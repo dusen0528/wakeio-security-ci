@@ -3,6 +3,10 @@ import { createHash } from 'node:crypto';
 import test from 'node:test';
 import { issueMarkers } from '../src/runtime/markers.js';
 import type { MarkerIssueInput, MarkerReservation } from '../src/runtime/markers.js';
+import { runNativeSql } from '../src/runtime/attacks/native-sql.js';
+import type { NativeSqlHooks, NativeSqlPlan }
+  from '../src/runtime/attacks/native-sql.js';
+import type { RuntimeParameter, RuntimeRequestPort, RuntimeResponse, RuntimeSurface } from '../src/runtime/types.js';
 
 const hash = (text: string) => createHash('sha256').update(text).digest('hex');
 const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
@@ -167,4 +171,172 @@ test('input mutation cannot change an issued ledger or private marker lookup', (
   assert.throws(() => issued.markerForExecutor(0), /invalid_marker_reservation/);
   const high = input(); high.reservations[0].requestOrdinal = 32767; high.reservations[1].requestOrdinal = 32768;
   assert.equal(issueMarkers(high).ledger.rows.length, 2);
+});
+
+// Trusted capabilities below are contract fakes only. No HTTP/PG/target execution or security verdict is asserted.
+function execution(location: 'query' | 'path' | 'body' = 'query', probe: 'sql-boolean' | 'sql-quote' = 'sql-boolean',
+  pointer = '/name') {
+  const value = input(), row = value.reservations[0]; value.reservations[1].payload = probe;
+  const method = location === 'body' ? 'POST' : 'GET', path = location === 'path' ? '/owned/{name}' : '/owned/items';
+  value.surfaces = [{ id: 'surface-contract', method, pathTemplate: path }];
+  for (const r of value.reservations) { r.surfaceId = 'surface-contract'; r.method = method;
+    r.param = { in: location, name: 'name', jsonPointer: location === 'body' ? pointer : null,
+      schemaLocator: location === 'body' ? 'json/name' : location + '/name' }; }
+  const param: RuntimeParameter = { ...row.param, in: location, required: true, type: 'string',
+    mediaType: location === 'body' ? 'application/json' : null,
+    serialization: location === 'body' ? { style: null, explode: null, allowReserved: null }
+      : { style: location === 'path' ? 'simple' : 'form', explode: location !== 'path', allowReserved: false } };
+  const surface: RuntimeSurface = { ...value.surfaces[0], params: [param], provenance: [],
+    readiness: 'ready', reasons: [] };
+  const plan: NativeSqlPlan = { taskId: 't-native-contract', snapshotHash: hash('snapshot-contract'),
+    surfaces: [surface] };
+  const markers = issueMarkers(value), controller = new AbortController(), events: string[] = [];
+  const requests: Parameters<RuntimeRequestPort['request']>[0][] = [], responses: RuntimeResponse[] = [];
+  let next = 40;
+  const hooks: NativeSqlHooks = {
+    async restore(binding) { assert.equal(this, hooks);
+      events.push('restore-' + binding.logicalOrdinal); return { ...binding }; },
+    async begin(binding) { assert.equal(this, hooks); events.push('begin-' + binding.logicalOrdinal);
+      return { ...binding, admissionOrdinal: ++next, opened: true }; },
+    async complete(binding) { assert.equal(this, hooks); events.push('complete-' + binding.logicalOrdinal);
+      return { ...binding, closed: true, drained: true, coverageComplete: true }; },
+  };
+  const port: RuntimeRequestPort = { transport: 'stdio-relay', leaseId: 'trusted-lease',
+    origin: 'http://owned.internal:8080',
+    maxRequests: 100, deadlineAt: 1000, async request(request) { assert.equal(this, port);
+      events.push('send-' + next); requests.push(request);
+      const bodyBytes = Buffer.from('private-response-canary'), response: RuntimeResponse = { ordinal: next,
+        outcome: 'response', sent: 'confirmed', status: 200, bodyBytes, rawBodySha256: hash(bodyBytes.toString()),
+        truncated: false }; responses.push(response); return response; } };
+  const options = { signal: controller.signal, deadlineAt: 2000, maxResponseBytes: 1024 };
+  const run = () => runNativeSql(plan, markers, port, hooks, options);
+  return { value, plan, markers, port, hooks, options, controller, events, requests, responses, run };
+}
+test('native GET and POST use issued pairs, per-request restore/drain and separate admission ordinals', async () => {
+  for (const location of ['query', 'body'] as const) {
+    const f = execution(location), original = JSON.stringify(f.plan), result = await f.run();
+    assert.equal(result.status, 'completed'); assert.deepEqual(result.gaps, []);
+    assert.deepEqual(f.events, ['restore-1', 'begin-1', 'send-41', 'complete-1',
+      'restore-2', 'begin-2', 'send-42', 'complete-2']);
+    assert.deepEqual(result.attempts.map(a => [a.ordinal, a.phase, a.snapshotHash, a.outcome]),
+      [[1, 'control', f.plan.snapshotHash, 'response'], [2, 'probe', f.plan.snapshotHash, 'response']]);
+    assert.deepEqual(result.deliveries.map(d => [d.logicalOrdinal, d.admissionOrdinal, d.sent]),
+      [[1, 41, 'confirmed'], [2, 42, 'confirmed']]);
+    for (const [index, request] of f.requests.entries()) {
+      assert.equal(request.deadlineAt, 1000); assert.equal(request.signal, f.controller.signal);
+      const value = location === 'body' ? (request.body!.data as Record<string, string>).name : request.query[0][1];
+      assert.equal(hash(value), result.attempts[index].payloadHash);
+      assert.equal(request.body === null, location === 'query');
+      if (location === 'body') assert.deepEqual(Object.keys(request.body!.data as object), ['name']);
+      assert.equal(result.attempts[index].markerHash, f.markers.ledger.rows[index].markerHash);
+      assert.equal(JSON.stringify(result).includes(f.markers.markerForExecutor(index + 1)), false);
+    }
+    assert.equal(JSON.stringify(result).includes('private-response-canary'), false);
+    assert.equal(JSON.stringify(f.plan), original);
+    assert.equal(Buffer.from(f.responses[0].bodyBytes).toString(), 'private-response-canary');
+  }
+});
+test('path payload is one strict percent-encoded segment; quote policy also applies to JSON leaves', async () => {
+  const path = execution('path', 'sql-quote'), result = await path.run(); assert.equal(result.status, 'completed');
+  assert.equal(path.requests[1].path, '/owned/' + path.markers.markerForExecutor(2) + '%27');
+  assert.deepEqual(path.requests[1].query, []); assert.equal(path.requests[1].body, null);
+  const post = execution('body', 'sql-quote', '/profile/name');
+  assert.equal((await post.run()).status, 'unknown'); assert.equal(post.requests.length, 0);
+  const quote = execution('body', 'sql-quote'); assert.equal((await quote.run()).status, 'completed');
+  assert.equal((quote.requests[1].body!.data as Record<string, string>).name,
+    quote.markers.markerForExecutor(2) + "'");
+});
+test('pre-abort sends nothing and snapshot/window binding failures stop before the next request', async () => {
+  const aborted = execution(); aborted.controller.abort(); const stopped = await aborted.run();
+  assert.equal(stopped.status, 'unknown'); assert.equal(aborted.requests.length, 0);
+  assert.deepEqual(aborted.events, []);
+  assert.ok(stopped.attempts.every(a => a.outcome === 'not_started'));
+  for (const failure of ['restore', 'begin', 'complete'] as const) {
+    const f = execution();
+    if (failure === 'restore') f.hooks.restore = async b => ({ ...b, snapshotHash: hash('different') });
+    if (failure === 'begin') f.hooks.begin = async b => ({ ...b, phase: 'probe', admissionOrdinal: 41, opened: true });
+    if (failure === 'complete') f.hooks.complete = async b => ({ ...b, closed: true, drained: false,
+      coverageComplete: true }) as never;
+    const result = await f.run(); assert.equal(result.status, 'unknown');
+    assert.equal(f.requests.length, failure === 'complete' ? 1 : 0);
+    assert.equal(result.attempts[1].outcome, 'not_started'); assert.equal(result.gaps[1].reason, 'stopped');
+  }
+});
+test('required siblings, arrays, unsupported serialization/methods and changed identities remain unknown', async () => {
+  const mutations: Array<(s: RuntimeSurface) => void> = [
+    s => { s.params.push({ ...clone(s.params[0]), name: 'required-sibling' }); },
+    s => { s.params[0].type = 'unknown'; }, s => { s.params[0].type = 'integer'; },
+    s => { s.params[0].serialization.style = 'deepObject'; }, s => { s.params[0].serialization.allowReserved = true; },
+    s => { s.readiness = 'unresolved'; }, s => { s.method = 'DELETE'; },
+    s => { s.pathTemplate = '/other'; }, s => { s.pathTemplate = '//external/owned'; },
+  ];
+  for (const mutate of mutations) { const f = execution(); mutate(f.plan.surfaces[0]);
+    const result = await f.run(); assert.equal(result.status, 'unknown'); assert.equal(f.requests.length, 0);
+    assert.equal(result.gaps.length, 2); }
+  const body = execution('body'); body.plan.surfaces[0].params.push({ ...clone(body.plan.surfaces[0].params[0]),
+    name: 'optional-sibling', jsonPointer: '/optional-sibling', required: false });
+  assert.equal((await body.run()).status, 'unknown'); assert.equal(body.requests.length, 0);
+});
+test('shared cap, ordinal reuse/mismatch and not-sent outcomes never become reservation-based sends', async () => {
+  const cap = execution(); Object.assign(cap.port, { maxRequests: 40 });
+  const limited = await cap.run(); assert.equal(cap.requests.length, 0);
+  assert.ok(limited.deliveries.every(d => d.sent === 'not_sent')); assert.equal(limited.status, 'unknown');
+  for (const fault of ['ordinal', 'sent', 'cancelled', 'limit', 'truncated', 'reuse'] as const) {
+    const f = execution(), request = f.port.request;
+    f.port.request = async input => {
+      const r = await request.call(f.port, input);
+      if (fault === 'ordinal') r.ordinal++;
+      if (fault === 'reuse') r.ordinal = 41;
+      if (fault === 'sent') r.sent = 'not_sent';
+      if (fault === 'cancelled' || fault === 'limit') Object.assign(r, { outcome: fault, sent: 'not_sent',
+        status: null, bodyBytes: Buffer.alloc(0), rawBodySha256: null });
+      if (fault === 'truncated') r.truncated = true;
+      return r;
+    };
+    if (fault === 'reuse') f.hooks.begin = async b => ({ ...b, admissionOrdinal: 41, opened: true });
+    const result = await f.run(); assert.equal(result.status, 'unknown');
+    assert.equal(f.requests.length, 1); assert.equal(result.attempts[1].outcome, 'not_started');
+    if (fault === 'cancelled' || fault === 'limit') assert.equal(result.deliveries[0].outcome, fault);
+  }
+});
+test('port exceptions and response byte/hash damage preserve uncertainty and still require completion', async () => {
+  for (const fault of ['throw', 'hash', 'shared'] as const) {
+    const f = execution(), request = f.port.request;
+    f.port.request = async input => {
+      if (fault === 'throw') throw Error('private-exception');
+      const r = await request.call(f.port, input);
+      if (fault === 'hash') r.rawBodySha256 = hash('wrong');
+      if (fault === 'shared') r.bodyBytes = new Uint8Array(new SharedArrayBuffer(23));
+      return r;
+    };
+    const result = await f.run(); assert.equal(result.status, 'unknown');
+    assert.ok(f.events.includes('complete-1')); assert.equal(result.attempts[1].outcome, 'not_started');
+    assert.equal(JSON.stringify(result).includes('private'), false);
+    if (fault === 'throw') assert.equal(result.deliveries[0].sent, 'unknown');
+  }
+});
+test('abort closes an opened window without sending; failed control suppresses its probe', async () => {
+  const cancelled = execution(), begin = cancelled.hooks.begin;
+  cancelled.hooks.begin = async function (binding) {
+    const ack = await begin.call(this, binding); cancelled.controller.abort(); return ack;
+  };
+  const result = await cancelled.run(); assert.equal(result.status, 'unknown');
+  assert.equal(cancelled.requests.length, 0); assert.ok(cancelled.events.includes('complete-1'));
+  assert.equal(result.deliveries[0].outcome, 'cancelled'); assert.equal(result.deliveries[0].sent, 'not_sent');
+  const failed = execution(), request = failed.port.request;
+  failed.port.request = async function (input) { const r = await request.call(this, input); r.status = 500; return r; };
+  const output = await failed.run(); assert.equal(output.status, 'unknown'); assert.equal(failed.requests.length, 1);
+  assert.equal(output.attempts[0].httpStatus, 500); assert.equal(output.attempts[1].outcome, 'not_started');
+});
+test('only genuine issuance is executable; hostile plans/response getters execute no supplied code', async () => {
+  let calls = 0; const trap = () => { calls++; throw Error('private-getter'); };
+  const f = execution(), forged = { ledger: f.markers.ledger, markerForExecutor: trap };
+  assert.equal((await runNativeSql(f.plan, forged, f.port, f.hooks, f.options)).status, 'unknown');
+  const plan = Object.defineProperty(clone(f.plan), 'snapshotHash', { enumerable: true, get: trap });
+  assert.equal((await runNativeSql(plan, f.markers, f.port, f.hooks, f.options)).status, 'unknown');
+  const proxied = new Proxy(f.plan, { ownKeys: trap });
+  assert.equal((await runNativeSql(proxied, f.markers, f.port, f.hooks, f.options)).status, 'unknown');
+  f.port.request = async () => Object.defineProperty({}, 'bodyBytes', {
+    enumerable: true, get: trap }) as RuntimeResponse;
+  assert.equal((await f.run()).status, 'unknown'); assert.equal(calls, 0);
 });

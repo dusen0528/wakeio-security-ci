@@ -214,3 +214,25 @@ JSON/object spread에는 SQL·Bind/literal/query 원문·개별 tokenHashes가 �
 collector는 모든 종료 경로에서 handle을 소비/폐기해야 하며 이 API는 즉시 물리 메모리 소거를 보장하지 않는다.
 R3의 새 DB/container/log·runNonce/lease/cursor·설정/연속성·닫힌 물리 창·private 수집 capability 연결은 후속 완료 조건이다.
 inline envelope 계약 테스트는 R8 기존 SQL 템플릿을 읽지만 PG 캡처·실행 증거나 새로운 보안 기대 판정이 아니다.
+
+## M1-125 내부 native-sql 실행자
+
+`runNativeSql`은 issuer가 만든 immutable ledger/lookup의 메모리 identity와 원래 exact method/path에 결속한다.
+계획은 ready Surface의 같은 parameter/schema locator를 요구한다. GET query/form·단일 path/simple string을 지원한다.
+POST는 application/json의 단일 root string leaf만 보낸다. 다른 body leaf·required sibling·배열/미지원 타입은 unknown이다.
+중첩 JSON pointer는 현재 DTO가 부모 object의 required/조합 제약을 보존하지 않으므로 값을 추측하지 않고 unknown이다.
+optional query string은 생략하며 header/cookie/body·다른 path의 값을 지어내지 않는다. 임의 JSON 속성도 추가하지 않는다.
+benign은 marker, quote는 marker 뒤 작은따옴표, boolean은 기존 OR recipe이며 GET/POST가 같은 정책을 사용한다.
+query는 raw scalar tuple, path는 한 segment의 엄격 percent encoding, JSON은 선언 leaf만 든 object를 request port에 준다.
+requestHash는 이 결정적 DTO의 hash다. relay가 확정하는 실제 HTTP wire bytes의 측정 digest라고 주장하지 않는다.
+직접 socket/fetch/FS/process/모델을 열지 않고 trusted stdio RuntimeRequestPort만 호출한다. host origin/redirect/proxy 입력은 없다.
+각 요청마다 trusted restore→begin→request→complete(drain·coverage)의 순서를 지키고 hook 실패 뒤 후속 송신을 중단한다.
+hook은 실제 장벽 완료·logical ordinal/phase/markerHash/snapshotHash를 확인해야 하며 입력을 그대로 echo한 값은 증거가 아니다.
+마커 logical ordinal과 공유 admission ordinal은 별개다. begin의 실제 allocation과 response ordinal을 대조하고 재사용을 거부한다.
+모든 health/discover/control/probe를 포함한 cap/rate/deadline/abort의 실제 강제 권한은 공유 port에만 있다.
+executor는 deadline을 min으로 줄이며 자체 시계·재시도·별도 예산을 만들지 않는다. 예약/장벽만으로 sent를 confirmed라 쓰지 않는다.
+응답 body는 own bounded bytes의 hash/허용 metadata만 확인하고 복사본을 폐기한다. payload/body/응답/marker 원문을 반환하지 않는다.
+AttackAttempt와 별도 delivery에 실제 sent·취소/손실·공유 ordinal·잘림을 보존하며 hook/response 손상은 unknown과 닫힌 gap이다.
+현재 실제 R3 request/restore/관측/coverage hook 연결은 없다. hook은 RunContext의 lease/runNonce/cursor·abort/deadline을 강제해야 한다.
+후속 R1/R3 계약에는 실제 wire digest와 logical/shared ordinal 배정·barrier 결속을 확정해야 한다. 기존 공유 type은 바꾸지 않았다.
+소유 계약 테스트의 fake port 응답은 실행 증거·Oracle 판정·R8 보안 기대값이 아니다.
