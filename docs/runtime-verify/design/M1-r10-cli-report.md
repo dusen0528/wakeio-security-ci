@@ -18,7 +18,7 @@
 알 수 없는/중복 플래그, 값 누락, 제어 문자, 상반된 값, help와 실행 옵션 혼합은 거부한다.
 `--profile pr|full`, `--max-minutes`, seed·예산·`--fail-on-grade`는 R1의 닫힌 범위/상한으로 검증한다.
 M1에서 검사 결과 캐시·LLM·외부 target URL은 지원하지 않는다. profile 이름만으로 미검사 범위를 검사했다고 쓰지 않는다.
-init-target의 `--out` 필수 여부와 기본 위치는 CP1 선택지다. 추천은 명시적 새 파일로 원본 덮어쓰기를 막는 방식이다.
+init-target의 `--out`은 필수 새 파일이다. source는 출력 부모 아래의 안전한 상대 PathRef로 표현할 수 있어야 한다.
 verify 출력은 source 밖·존재하는 부모 아래의 새 디렉터리(0700), 파일은0600이다. 조상/대상 링크·기존 출력은 거부한다.
 init-target도 명시된 새 출력만 만들며 기존 소스 파일·설정은 수정하지 않는다. YAML 직렬화는 임의 태그/보간을 만들지 않는다.
 `doctor --runtime`은 M3다. M1 verify의 동의 후 최소 격리 preflight와 구별하며 doctor에 실행 권한을 추가하지 않는다.
@@ -57,7 +57,7 @@ runtime 분기는 공통 envelope의 `checks`와 `runtime`을 함께 검증·보
 runtime 필드/판별자 불일치·필수 check 누락·중복·손상은 legacy fallback 없이 거부한다. scan 모드의 runtime 혼합도 거부한다.
 runtime을 모르는 예전 바이너리의 지원을 주장하지 않는다. 갱신된 공통 reader는 runtime을 누락한 깨끗한 scan으로 축소하지 않는다.
 runtime 보고서는 갱신된 공통 reader가 필요하며 0.5 소비자는 미지원으로 거부한다. 기존 0.5 scan 입력·출력 호환과 구별한다.
-현재 CLI verify/init-target·공통 runtime reader 연결은 후속 작업이다. 개발 상태 안내는 [USAGE.md](../USAGE.md)를 따른다.
+init-target은 실행 권한 없는 draft 생성으로 연결했다. verify 실행·공통 runtime reader는 후속이며 [USAGE.md](../USAGE.md)를 따른다.
 `parseScanReport`와 compare의 소비 경로도 분기하며 runtime 비교는 R1의 계약·정책·digest가 맞을 때만 수행한다.
 runtime gate는 `runtime.verifyGate`가 권위다. 기존 `evaluateGate`/agent.scanGate의 미완료 우선 의미를 verify에 적용하지 않는다.
 별도 versioned envelope를 주포맷으로 삼는 B안은 미채택이다. N5의 B안 사람 승인이나 PLAN 기준 재정의를 기다리지 않는다.
