@@ -1,11 +1,14 @@
 import assert from 'node:assert/strict';
-import { chmod, lstat, mkdtemp, mkdir, readFile, readdir, realpath, rename, rm, writeFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
+import { chmod, link, lstat, mkdtemp, mkdir, readFile, readdir, realpath, rename, rm, symlink, truncate, writeFile }
+  from 'node:fs/promises';
 import { join } from 'node:path';
 import test from 'node:test';
 import { setTimeout as delay } from 'node:timers/promises';
 import { runRuntimeProcess } from '../src/runtime/process.js';
 import { compileLimaProfileConfig, createLimaProfilePreparer, prepareLimaProfile,
-  type LimaPins, type LimaProfileOptions }
+  createLimaOsPreparer, MAX_LIMA_ROOTFS_BYTES, prepareLimaOsProfile,
+  type LimaOsOptions, type LimaPins, type LimaProfileOptions }
   from '../src/runtime/runtimes/controller.js';
 
 // Deliberately synthetic metadata. A mock tool never downloads, starts or validates these assets.
@@ -248,5 +251,294 @@ test('overlong Unix sockets are rejected before tool invocation and the private 
     assert.equal(result.status, 'unavailable'); assert.equal(result.lease, undefined);
     assert.equal(result.cleanup?.confirmed, true);
     assert.deepEqual(await readdir(longBase), []);
+  });
+});
+
+const osBytes = Buffer.from('fixed synthetic OS bytes; not a bootable image');
+const machineBytes = 'synthetic VZ GenericMachineIdentifier data';
+async function osMockTool(base: string, mode = ''): Promise<LimaOsOptions> {
+  const executable = join(base, 'mock-os-limactl'), rootfsFile = join(base, 'input.img');
+  await writeFile(rootfsFile, osBytes, { mode: 0o600 });
+  await writeFile(executable, `#!/usr/bin/env node
+const fs=require('node:fs'),p=require('node:path');
+const home=process.env.HOME,a=process.argv.slice(2).filter(x=>x!=='--tty=false'),mode=${JSON.stringify(mode)};
+if(process.env.LIMA_HOME||process.env.SSH_AUTH_SOCK||process.env.DOCKER_HOST||process.cwd()!==home)process.exit(91);
+fs.appendFileSync(p.join(home,'calls.ndjson'),JSON.stringify(a)+String.fromCharCode(10));
+if(a[0]==='--version'){console.log('limactl version 1.0.3');process.exit(0);}
+const name=a[0]==='create'?a.find(x=>x.startsWith('--name=')).slice(7):a.at(-1),dir=p.join(home,'.lima',name);
+const stateFile=p.join(dir,'state.json');
+function state(status,pid=0){fs.writeFileSync(stateFile,JSON.stringify({name,dir,status,protected:false,
+ vmType:'vz',arch:'aarch64',limaVersion:'1.0.3',hostAgentPID:pid,driverPID:pid}));}
+if(a[0]==='create'){
+ fs.mkdirSync(dir,{mode:0o700});fs.copyFileSync(a.at(-1),p.join(dir,'lima.yaml'));
+ if(mode!=='missing-machine')fs.writeFileSync(p.join(dir,'vz-identifier'),${JSON.stringify(machineBytes)},{mode:0o600});
+ state('Stopped');
+}else if(a[0]==='list'){
+ console.log(fs.readFileSync(stateFile,'utf8'));
+}else if(a[0]==='start'){
+ if(!a.includes('--foreground')||!a.includes('--timeout=30s'))process.exit(92);
+ fs.writeFileSync(p.join(home,'boot.started'),'owned mock foreground child');
+ if(mode==='exit-start'){state('Stopped');process.exit(2);}
+ if(mode!=='hang-start')state('Running',process.pid);
+ process.on('SIGTERM',()=>{state(mode==='reused-pid'?'Running':'Stopped',mode==='reused-pid'?process.ppid:0);
+  process.exit(0);});setInterval(()=>{},1000);
+}else if(a[0]==='delete'){
+ if(fs.existsSync(p.join(home,'fail-delete')))process.exit(2);
+ fs.rmSync(dir,{recursive:true});
+}else process.exit(3);
+`, { mode: 0o700 });
+  return { executeTargetConsent: true, baseDirectory: base, limactlExecutable: executable, rootfsFile,
+    pins: { ...pins, rootfs: { ...pins.rootfs, sha256: createHash('sha256').update(osBytes).digest('hex') } },
+    deadlineAt: Date.now() + 15_000 };
+}
+async function waitForOwnedFile(base: string, filename: string, nonempty = false): Promise<string> {
+  const deadline = Date.now() + 3_000;
+  while (Date.now() < deadline) {
+    for (const name of await readdir(base)) {
+      if (!name.startsWith('wk-lima-')) continue;
+      const file = join(base, name, filename);
+      try { if (!nonempty || (await lstat(file)).size > 0) { await lstat(file); return file; } }
+      catch { /* Owned asynchronous mock/copy has not yet reached the requested barrier. */ }
+    }
+    await delay(1);
+  }
+  throw new Error('owned OS operation did not reach file barrier');
+}
+
+test('OS preparation checks consent before reading rootfs path, filesystem or trusted executor', async () => {
+  await scope(async base => {
+    let accessed = 0;
+    const prepare = createLimaOsPreparer(async () => { accessed++; throw new Error('must not run'); });
+    const raw = Object.defineProperty({ executeTargetConsent: false }, 'rootfsFile', {
+      get() { accessed++; throw new Error('must not read'); },
+    });
+    const proxy = new Proxy({}, { ownKeys() { accessed++; throw new Error('must not enumerate'); } });
+    for (const value of [raw, proxy, {}, null]) {
+      const result = await prepare(value as LimaOsOptions);
+      assert.equal(result.reason, 'consent_required'); assert.equal(result.verified, false);
+    }
+    assert.equal(accessed, 0); assert.deepEqual(await readdir(base), []);
+  });
+});
+
+test('synthetic bytes bind private OS config and VZ identity; foreground boot stops before cleanup', async () => {
+  await scope(async base => {
+    const options = await osMockTool(base), result = await prepareLimaOsProfile(options); assert.ok(result.lease);
+    const lease = result.lease, config = JSON.parse(await readFile(join(lease.home, 'profile.yaml'), 'utf8'));
+    assert.equal(result.status, 'unavailable'); assert.equal(result.verified, false);
+    assert.ok(result.missingPrerequisites.includes('docker-extras-byte-verification'));
+    assert.deepEqual(await readFile(join(lease.home, 'rootfs.img')), osBytes);
+    assert.equal(config.images[0].location, join(lease.home, 'rootfs.img'));
+    assert.equal(config.images[0].digest, 'sha256:' + options.pins.rootfs.sha256);
+    assert.equal(lease.machineIdentitySha256, createHash('sha256').update(machineBytes).digest('hex'));
+    assert.deepEqual(config.mounts, []); assert.deepEqual(config.copyToHost, []);
+    assert.equal(config.upgradePackages, false); assert.equal(config.hostResolver.enabled, false);
+    assert.equal(config.ssh.forwardAgent, false); assert.equal(config.propagateProxyEnv, false);
+    assert.equal(config.portForwards[1].ignore, true);
+    assert.doesNotMatch(config.provision[0].script, /wakeio_missing_prerequisite|^exit 125$|docker run|apt-get|curl/m);
+    assert.match(config.provision[0].script, /cgroup2fs \|\| exit 125/);
+    assert.match(config.provision[0].script, /host\\.lima/);
+    const boot = await lease.boot();
+    assert.deepEqual(boot, { status: 'unavailable', verified: false, phase: 'running_observed_then_stopped' });
+    assert.equal((await calls(lease.home)).some(args => args[0] === 'stop'), false);
+    assert.equal((await lease.cleanup()).confirmed, true);
+    assert.deepEqual(await readFile(options.rootfsFile), osBytes);
+  });
+});
+
+test('wrong rootfs hash, oversize, symlink, hardlink and linked ancestor invoke zero OS tools', async () => {
+  await scope(async base => {
+    const options = await osMockTool(base); let invoked = 0;
+    const prepare = createLimaOsPreparer(async (...args) => { invoked++; return runRuntimeProcess(...args); });
+    const hash = await prepare({ ...options, pins });
+    assert.equal(hash.reason, 'prepare_failed'); assert.equal(hash.cleanup?.confirmed, true);
+    const large = join(base, 'oversize.img'); await writeFile(large, '', { mode: 0o600 });
+    await truncate(large, MAX_LIMA_ROOTFS_BYTES + 1);
+    const hard = join(base, 'hard.img'), soft = join(base, 'soft.img'), parent = join(base, 'linked-parent');
+    await link(options.rootfsFile, hard); await symlink(options.rootfsFile, soft); await symlink(base, parent);
+    for (const rootfsFile of [large, hard, soft, join(parent, 'input.img')]) {
+      const result = await prepare({ ...options, rootfsFile });
+      assert.equal(result.reason, 'prepare_failed'); assert.equal(result.lease, undefined);
+      assert.equal(result.cleanup?.confirmed, true);
+    }
+    assert.equal(invoked, 0);
+    assert.equal((await readdir(base)).some(name => name.startsWith('wk-lima-')), false);
+    assert.deepEqual(await readFile(options.rootfsFile), osBytes);
+  });
+});
+
+test('mid-stream abort closes owned files, removes the partial private copy and invokes no tool', async () => {
+  await scope(async base => {
+    const options = await osMockTool(base), bytes = Buffer.alloc(16 * 1024 * 1024, 0x41);
+    await writeFile(options.rootfsFile, bytes);
+    options.pins.rootfs.sha256 = createHash('sha256').update(bytes).digest('hex');
+    const controller = new AbortController(); let invoked = 0;
+    const prepare = createLimaOsPreparer(async (...args) => { invoked++; return runRuntimeProcess(...args); });
+    const pending = prepare({ ...options, signal: controller.signal });
+    await waitForOwnedFile(base, 'rootfs.img', true).catch(async error => {
+      controller.abort(); await pending; throw error;
+    });
+    controller.abort(); const result = await pending;
+    assert.equal(result.reason, 'prepare_failed'); assert.equal(result.cleanup?.confirmed, true);
+    assert.equal(invoked, 0); assert.equal((await lstat(options.rootfsFile)).size, bytes.length);
+    assert.equal((await readdir(base)).some(name => name.startsWith('wk-lima-')), false);
+  });
+});
+
+test('a rootfs replacement after hashing is retained and cannot authorize create or cleanup', async () => {
+  await scope(async base => {
+    const options = await osMockTool(base); let invoked = 0;
+    const prepare = createLimaOsPreparer(async (executable, args, config) => {
+      invoked++;
+      const image = join(config.home, 'rootfs.img');
+      await rename(image, image + '-original'); await writeFile(image, 'foreign replacement', { mode: 0o600 });
+      return runRuntimeProcess(executable, args, config);
+    });
+    const result = await prepare(options);
+    assert.equal(invoked, 1); assert.equal(result.reason, 'prepare_failed');
+    assert.equal(result.cleanup?.confirmed, false); assert.ok(result.pendingHome);
+    assert.equal(await readFile(join(result.pendingHome, 'rootfs.img'), 'utf8'), 'foreign replacement');
+    assert.deepEqual((await calls(result.pendingHome)).map(args => args[0]), ['--version']);
+  });
+});
+
+test('config, machine ID and rootfs hardlink drift refuse boot and preserve the unknown HOME', async () => {
+  for (const name of ['profile.yaml', 'vz-identifier', 'rootfs-hardlink']) {
+    await scope(async base => {
+      const options = await osMockTool(base), result = await prepareLimaOsProfile(options); assert.ok(result.lease);
+      const lease = result.lease;
+      if (name === 'rootfs-hardlink') await link(join(lease.home, 'rootfs.img'), join(base, 'outside.img'));
+      else {
+        const file = join(name === 'vz-identifier' ? lease.directory : lease.home, name);
+        await rename(file, file + '-original'); await writeFile(file, 'foreign replacement', { mode: 0o600 });
+      }
+      const boot = await lease.boot();
+      assert.equal(boot.phase, 'failed'); assert.equal(boot.verified, false);
+      assert.equal(boot.cleanup?.confirmed, false);
+      assert.equal((await calls(lease.home)).some(args => ['start', 'delete', 'stop'].includes(args[0])), false);
+      assert.ok((await lstat(lease.home)).isDirectory());
+    });
+  }
+});
+
+test('partial foreground start failure and external abort stop the owned group before bounded cleanup', async () => {
+  for (const mode of ['exit-start', 'hang-start']) {
+    await scope(async base => {
+      const options = await osMockTool(base, mode), controller = new AbortController();
+      const result = await prepareLimaOsProfile({ ...options, signal: controller.signal }); assert.ok(result.lease);
+      const pending = result.lease.boot();
+      if (mode === 'hang-start') {
+        await waitForOwnedFile(base, 'boot.started').catch(async error => {
+          controller.abort(); await pending; throw error;
+        });
+        controller.abort();
+      }
+      const boot = await pending;
+      assert.equal(boot.phase, 'failed'); assert.equal(boot.cleanup?.confirmed, true);
+      await assert.rejects(lstat(result.lease.home), { code: 'ENOENT' });
+    });
+  }
+});
+
+test('Running with a reused foreign PID is never stopped or deleted; outside VM stays intact', async () => {
+  await scope(async base => {
+    const options = await osMockTool(base, 'reused-pid'), outside = join(base, 'existing-vm');
+    await mkdir(outside); await writeFile(join(outside, 'keep'), 'outside VM');
+    const result = await prepareLimaOsProfile(options); assert.ok(result.lease);
+    const boot = await result.lease.boot();
+    assert.equal(boot.phase, 'failed'); assert.equal(boot.cleanup?.confirmed, false);
+    const history = await calls(result.lease.home);
+    assert.equal(history.some(args => ['stop', 'delete', 'prune'].includes(args[0])), false);
+    assert.ok((await lstat(result.lease.directory)).isDirectory());
+    assert.equal(await readFile(join(outside, 'keep'), 'utf8'), 'outside VM');
+    assert.equal(process.kill(process.pid, 0), true);
+  });
+});
+
+test('OS cleanup failure retains a stopped, identified lease for safe retry', async () => {
+  await scope(async base => {
+    const options = await osMockTool(base), result = await prepareLimaOsProfile(options); assert.ok(result.lease);
+    await writeFile(join(result.lease.home, 'fail-delete'), 'owned failure');
+    assert.equal((await result.lease.cleanup()).confirmed, false);
+    await rm(join(result.lease.home, 'fail-delete'));
+    assert.equal((await result.lease.cleanup()).confirmed, true);
+    assert.deepEqual(await readFile(options.rootfsFile), osBytes);
+  });
+});
+
+test('an expired OS boot deadline never starts a VM and still has a separate cleanup budget', async () => {
+  await scope(async base => {
+    const options = await osMockTool(base); options.deadlineAt = Date.now() + 2_000;
+    const result = await prepareLimaOsProfile(options); assert.ok(result.lease);
+    await delay(Math.max(0, options.deadlineAt - Date.now()) + 10);
+    const boot = await result.lease.boot();
+    assert.equal(boot.phase, 'failed'); assert.equal(boot.cleanup?.confirmed, true);
+    await assert.rejects(lstat(result.lease.home), { code: 'ENOENT' });
+  });
+});
+
+test('a newly created profile without actual VZ identity remains unconfirmed and is never deleted', async () => {
+  await scope(async base => {
+    const options = await osMockTool(base, 'missing-machine'), result = await prepareLimaOsProfile(options);
+    assert.equal(result.reason, 'prepare_failed'); assert.equal(result.lease, undefined);
+    assert.equal(result.cleanup?.confirmed, false); assert.ok(result.pendingHome);
+    assert.equal((await calls(result.pendingHome)).some(args => ['start', 'stop', 'delete'].includes(args[0])), false);
+    assert.ok((await lstat(result.pendingHome)).isDirectory());
+  });
+});
+
+test('OS foreground group uncertainty stays unconfirmed even when the mock VM actually stopped', async () => {
+  await scope(async base => {
+    const prepare = createLimaOsPreparer(async (executable, args, config) => {
+      const result = await runRuntimeProcess(executable, args, config);
+      if (!args.includes('start')) return result;
+      assert.equal(result.cleanupConfirmed, true); assert.equal(result.cancelled, true);
+      return { ...result, cleanupConfirmed: false }; // Synthetic fault after the real owned Node group terminated.
+    });
+    const result = await prepare(await osMockTool(base)); assert.ok(result.lease);
+    const boot = await result.lease.boot();
+    assert.equal(boot.phase, 'failed'); assert.equal(boot.cleanup?.confirmed, false);
+    assert.equal((await result.lease.cleanup()).confirmed, false);
+    assert.equal((await calls(result.lease.home)).some(args => args[0] === 'delete'), false);
+    assert.equal(JSON.parse(await readFile(join(result.lease.directory, 'state.json'), 'utf8')).status, 'Stopped');
+  });
+});
+
+test('replacing a rootfs input during streaming fails its bound FD/name check before any tool', async () => {
+  await scope(async base => {
+    const options = await osMockTool(base), bytes = Buffer.alloc(16 * 1024 * 1024, 0x42);
+    await writeFile(options.rootfsFile, bytes);
+    options.pins.rootfs.sha256 = createHash('sha256').update(bytes).digest('hex');
+    let invoked = 0;
+    const prepare = createLimaOsPreparer(async (...args) => { invoked++; return runRuntimeProcess(...args); });
+    const pending = prepare(options);
+    await waitForOwnedFile(base, 'rootfs.img', true);
+    await rename(options.rootfsFile, options.rootfsFile + '-original');
+    await writeFile(options.rootfsFile, 'foreign input replacement', { mode: 0o600 });
+    const result = await pending;
+    assert.equal(result.reason, 'prepare_failed'); assert.equal(result.cleanup?.confirmed, true);
+    assert.equal(invoked, 0);
+    assert.equal(await readFile(options.rootfsFile, 'utf8'), 'foreign input replacement');
+  });
+});
+
+test('a cleanup already in progress excludes an overlapping OS boot', async () => {
+  await scope(async base => {
+    const result = await prepareLimaOsProfile(await osMockTool(base)); assert.ok(result.lease);
+    const cleanup = result.lease.cleanup();
+    assert.deepEqual(await result.lease.boot(), { status: 'unavailable', verified: false, phase: 'failed' });
+    assert.equal((await cleanup).confirmed, true);
+    await assert.rejects(lstat(result.lease.home), { code: 'ENOENT' });
+  });
+});
+
+test('an executor exception preserves unknown group state and cannot authorize OS profile deletion', async () => {
+  await scope(async base => {
+    let executed = 0;
+    const prepare = createLimaOsPreparer(async () => { executed++; throw new Error('no supervision result'); });
+    const result = await prepare(await osMockTool(base));
+    assert.equal(executed, 1); assert.equal(result.reason, 'prepare_failed');
+    assert.equal(result.cleanup?.confirmed, false); assert.ok(result.pendingHome);
+    assert.ok((await lstat(result.pendingHome)).isDirectory());
   });
 });
