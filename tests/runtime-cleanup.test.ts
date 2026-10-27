@@ -3,7 +3,9 @@ import { chmod, lstat, mkdtemp, mkdir, readFile, readdir, realpath, rename, rm, 
 import { join } from 'node:path';
 import test from 'node:test';
 import { setTimeout as delay } from 'node:timers/promises';
-import { compileLimaProfileConfig, prepareLimaProfile, type LimaPins, type LimaProfileOptions }
+import { runRuntimeProcess } from '../src/runtime/process.js';
+import { compileLimaProfileConfig, createLimaProfilePreparer, prepareLimaProfile,
+  type LimaPins, type LimaProfileOptions }
   from '../src/runtime/runtimes/controller.js';
 
 // Deliberately synthetic metadata. A mock tool never downloads, starts or validates these assets.
@@ -131,6 +133,59 @@ test('failed deletion retains the owned lease for retry and cannot report confir
     assert.ok((await lstat(lease.directory)).isDirectory());
     await rm(join(lease.home, 'fail-delete'));
     assert.equal((await lease.cleanup()).confirmed, true);
+  });
+});
+
+test('an unconfirmed tool group stays unconfirmed after a later successful owned mock command', async () => {
+  await scope(async base => {
+    const observed: { command: string; completed: boolean; cleanupConfirmed: boolean | undefined }[] = [];
+    const prepare = createLimaProfilePreparer(async (executable, args, options) => {
+      const result = await runRuntimeProcess(executable, args, options);
+      assert.equal(result.completed, true); assert.equal(result.cleanupConfirmed, true);
+      const reported = { ...result, cleanupConfirmed: args.includes('--version') ? false : true };
+      observed.push({ command: args[1], completed: reported.completed, cleanupConfirmed: reported.cleanupConfirmed });
+      return reported; // Only synthetic supervision metadata changes; the owned Node tool really terminated.
+    });
+    const result = await prepare(await mockTool(base));
+    assert.deepEqual(observed, [
+      { command: '--version', completed: true, cleanupConfirmed: false },
+      { command: 'create', completed: true, cleanupConfirmed: true },
+    ]);
+    assert.equal(result.status, 'unavailable'); assert.equal(result.verified, false);
+    assert.equal(result.reason, 'prepare_failed'); assert.equal(result.cleanup?.confirmed, false);
+    assert.equal(result.lease, undefined); assert.ok(result.pendingHome);
+    assert.ok((await lstat(result.pendingHome)).isDirectory());
+    assert.deepEqual((await calls(result.pendingHome)).map(args => args[0]), ['--version', 'create']);
+  });
+});
+
+test('unconfirmed deletion supervision cannot remove HOME or become confirmed on cleanup retry', async () => {
+  await scope(async base => {
+    const prepare = createLimaProfilePreparer(async (executable, args, options) => {
+      const result = await runRuntimeProcess(executable, args, options);
+      return args.includes('delete') ? { ...result, cleanupConfirmed: false } : result;
+    });
+    const result = await prepare(await mockTool(base)); assert.ok(result.lease);
+    assert.equal(result.verified, false);
+    assert.equal((await result.lease.cleanup()).confirmed, false);
+    assert.ok((await lstat(result.lease.home)).isDirectory());
+    const before = await calls(result.lease.home);
+    assert.equal((await result.lease.cleanup()).confirmed, false);
+    assert.deepEqual(await calls(result.lease.home), before);
+  });
+});
+
+test('the internal executor seam preserves consent zero-I/O and cannot enter through raw options', async () => {
+  await scope(async base => {
+    let invoked = 0;
+    const execute: typeof runRuntimeProcess = async () => { invoked++; throw new Error('must not execute'); };
+    const prepare = createLimaProfilePreparer(execute);
+    const denied = await prepare({ executeTargetConsent: false } as unknown as LimaProfileOptions);
+    assert.equal(denied.reason, 'consent_required'); assert.equal(denied.verified, false);
+    const options = await mockTool(base), before = await readdir(base);
+    const malformed = await prepareLimaProfile({ ...options, execute } as LimaProfileOptions);
+    assert.equal(malformed.reason, 'prepare_failed'); assert.equal(malformed.lease, undefined);
+    assert.equal(invoked, 0); assert.deepEqual(await readdir(base), before);
   });
 });
 
