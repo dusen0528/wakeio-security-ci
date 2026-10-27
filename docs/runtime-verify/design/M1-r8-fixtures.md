@@ -91,7 +91,7 @@ confirmed 수와 이유를 먼저 동결한다. 런타임 계약의 필드명은
 | N1 | 무해 `m`이 취약본 SQL의 하나의 문자열 리터럴에만 있음 | confirmed 0. PLAN의 strong 관측과 문법 승격은 구분한다. |
 | N2 | quote를 올바르게 escape한 `m' OR ...` 전체가 하나의 리터럴 AST 노드 | confirmed 0. text에 OR/quote가 있다는 이유로 확정하면 실패. |
 | N3 | marker와 OR 형태가 SQL comment 안에만 있음 | confirmed 0. comment를 실행 구문으로 취급하면 실패. |
-| N4 | 안전 `/api/items/safe-search`의 바인딩과 `/api/ping`의 반사 응답 | confirmed 0. HTTP 200/500·반사만으로 확정 불가. |
+| N4 | 안전 `/api/items/safe-search`의 바인딩과 `/api/ping`의 반사 응답 | 두 경로 모두 SQL confirmed 0, strong 0. HTTP 200/500·반사만으로 SQL 증거 등급을 승격하지 않는다. |
 | N5 | 공격 응답에만 가짜 SQL 오류 문자열이 있고 DB 관측은 없음 | unknown, confirmed 0. 응답 문자열을 DB 증거로 승격하지 않는다. |
 | N6 | 42601이지만 control도 같은 오류이거나 다른 statement/marker의 오류 | unknown, confirmed 0. SQLSTATE 하나만으로 확정하면 실패. |
 | N7 | Observer 미부착·로그 중단·marker event 누락·관측 timeout | unknown, confirmed 0; clean/안전으로 출력하면 실패. |
@@ -102,6 +102,15 @@ confirmed 수와 이유를 먼저 동결한다. 런타임 계약의 필드명은
 | N12 | 관측 전 취소·DB 정지·health 실패 | unknown/미완료, exit 2; 기존 데이터로 clean을 만들면 실패. |
 | N13 | 한 라우트 confirmed 후 다른 관측·커버리지 실패 | confirmed 유지, 나머지 unknown, exit 1; 누락을 숨기거나 발견을 덮지 않는다. |
 
+전체 `verify`는 기본 `--fail-on-grade strong`에서 다음을 기대한다(필수 관측·정리·출판 완료 시).
+
+| 독립 쌍 | 취약 variant 전체 | 수정 variant 전체 | 안전 대조만 계획한 실행 |
+| --- | --- | --- | --- |
+| 주 JdbcTemplate 쌍 | V1~V3 confirmed, exit 1 | F1/F2 confirmed 0·strong 0, exit 0 | N4 SQL confirmed 0·strong 0, exit 0 |
+| 두 번째 Statement/PreparedStatement 쌍 | V1~V3 confirmed, exit 1 | F1/F2 confirmed 0·strong 0, exit 0 | N4 SQL confirmed 0·strong 0, exit 0 |
+
+기준 이상 finding 없이 관측·커버리지·cleanup 등 실패만 있으면 exit 2, finding+실패면 exit 1로 N12/N13을 유지한다.
+
 N1/N2의 unbound statement marker는 PLAN의 strong 기준에 해당할 수 있다.
 따라서 이 두 사례는 confirmed 음성 대조이며 모든 등급이 0이라는 요구로 바꾸지 않는다.
 수정본 F1/F2는 실제 바인딩 경로이므로 strong도 0으로 고정한다.
@@ -109,7 +118,7 @@ V3는 실제 DB 구문 오류를 사용한다. 일반 parser 예외나 임의 qu
 
 ## 5. 커버리지·재현성·시드
 
-- 시드는 고정된 세 item 행과 무해한 이름만 둔다. 매 공격 전에 동일 schema/data snapshot으로 복원한다.
+- 시드는 고정된 세 item 행과 무해한 이름만 둔다. R1 §1·4의 `snapshot: per-request`로 control/probe 각각 직전에 동일 schema/data snapshot을 복원한다.
 - 요청 전에 JaCoCo dump/reset, 요청 후 dump/reset을 수행해 이전 요청의 누적 covered를 전용하지 않는다.
 - 요청한 handler 본문의 instruction/line은 증가하고, `/api/untouched` 본문은 두 번 모두 uncovered여야 한다.
 - DB 경계 증거와 코드 coverage를 각각 기록한다. coverage 누락이 SQL confirmed를 지우거나 안전을 증명하지 않는다.
@@ -122,13 +131,9 @@ V3는 실제 DB 구문 오류를 사용한다. 일반 parser 예외나 임의 qu
 
 ## 6. CP1 후 R8 파일·R9 검증 계획
 
-| R8 작성 예정 경로 | 내용 |
-| --- | --- |
-| `examples/runtime/spring-sqli/{vulnerable,fixed}/` | JdbcTemplate 쌍의 Maven·Java·설정·Dockerfile·제한 compose·target 초안 |
-| `examples/runtime/spring-sqli-jdbc/{vulnerable,fixed}/` | 같은 Pack을 쓰는 작은 Statement/PreparedStatement 쌍 |
-| `examples/runtime/spring-sqli/shared/` | 고정 schema/seed, ground-truth, pin manifest, payload/case manifest |
-| `examples/runtime/spring-sqli/oracle-cases/` | 위 표의 합성 입력·독립 기대 Verdict/unknown/confirmed 수 |
-| `benchmarks/runtime-corpus.json` | case ID·fixture tree/seed/expectation/Pack/image digest, 재현 인자 |
+신규 파일·테스트의 유일한 권위 목록은 `M1-r1-contracts.md` §7이다. 이 절은 별도의 파일 목록을 정의하지 않는다.
+R8 쓰기 범위는 그 목록의 `examples/runtime/{spring-sqli,spring-sqli-jdbc}/**`, `benchmarks/runtime-corpus.json`, `tests/fixtures/runtime-m1/**`다.
+두 취약/수정 쌍의 schema/seed·pin manifest·ground truth·payload/case와 위 독립 기대값의 작성·변경 소유권은 R8에 유지한다.
 
 초기 구현 패킷은 주 쌍→순수 관측 매트릭스→두 번째 쌍으로 나눠 각 500줄 이내를 제안한다.
 필드나 pin 변경이 필요하면 이유와 영향 case를 적어 오케스트레이터 승인을 받은 뒤 다음 리뷰에 남긴다.
@@ -148,5 +153,5 @@ KPI는 예제별 confirmed 정확도/음성 오판 수, 업무 라우트 recall/
 위 기본 조합을 CP1에 추천하고, 실행 전 정확한 PG18 patch·artifact/platform digest와 라이선스 파일을 확인한다.
 R1/R5의 격리 parser helper는 AST/token projection으로 입력 shape를 바꿀 수 있으나 R8의 독립 기대값 소유권은 유지한다.
 버전·projection 선택으로 V1~V3/F/N 판정 수·승격 강도·GET/POST ground truth를 약화하지 않는다.
-Snapshot 단위·coverage dump 경계·마커 재현성의 정확한 필드 계약은 R1과 맞춘다.
+`per-request` snapshot·coverage dump 경계·마커 재현성의 정확한 필드 계약은 R1과 맞춘다.
 새 공개 스키마에 맞춰 기대값의 모양을 바꿀 때도 의미·case ID·판정 수와 변경 이유를 별도 보존한다.

@@ -2,6 +2,7 @@
 
 기준: `a49da4ceebc2c7dd24020ecbce420f46d0ca7625`(M0 PR82 병합). 이 문서는 설계이며 구현·검증 완료 주장이 아니다. PLAN 3·4·6·7·10·11·12·13·14.4와 HANDOFF/SUBAGENTS를 따른다. CP1 승인 전 제품 코드를 쓰지 않는다.
 계약 조정 입력: root의 M1-DESIGN/R3/R8 설계, R4 `cd3e2d0`·R5 `0e32823` 설계. R8의 V1~V3/F1~F2/N1~N13 기대값은 바꾸지 않는다.
+M1-CP1(exit10) B1/B2·N3/N4/N5 수정: 공통 보고서 A, 명시적 check 계약·권위 파일/테스트 목록·per-request 복원·stdio relay로 정렬한다. 이 문서가 수정된 설계 제안이며 제품 구현은 아직 없다.
 M1은 소유 Spring+Postgres compose 예제, JVM/JaCoCo, actuator/OpenAPI, pg-log, SQL Oracle의 세로 경로다.
 기존 `scan/init/init-dast`, Inventory v1, 실행 계획 v1, `runExecutionPlan`·`RunStore` 공개 계약은 그대로 둔다.
 M0의 제네릭 포트는 아래 구체 데이터 타입에 바인딩한다. 실행 어댑터와 순수 데이터/Oracle의 import 방향을 분리한다.
@@ -27,7 +28,7 @@ type TargetSpec = {
   pack: { id: string; version: number }; // bounded data ID/version, 실행 모듈 경로가 아님
   entry: { port: number; health: string; startupTimeoutSec: number };
   dependencies: { service: string; observer: 'pg-log' }[];
-  seed: { sql: PathRef[]; snapshot: 'per-surface' };
+  seed: { sql: PathRef[]; snapshot: 'per-request' }; // 각 control/probe 요청 전 같은 기준 상태 복원
   scope: { include: string[]; exclude: string[] };
   budget: { maxRequests: number; maxMinutes: number; ratePerSecond: number };
 };
@@ -168,9 +169,26 @@ type RunContext = {
   signal: AbortSignal; deadlineAt: number; // 실행기만 사용, Oracle/agent/파일로 넘기지 않음
   handles: { target: TargetHandle; observer: ObserverHandle; admission: AdmissionHandle;
     snapshots: SnapshotHandle; artifacts: ArtifactHandle }; // 내부 opaque capability, 직렬화 불가
+  request: RuntimeRequestPort; // R3가 만든 stdio relay capability, R4/R5/R10에만 제공
 };
+type RuntimeRequestPort = {
+  readonly transport: 'stdio-relay'; readonly leaseId: string; readonly origin: string;
+  readonly deadlineAt: number; readonly maxRequests: number;
+  request(input: { taskId: string; phase: 'health' | 'discover' | 'control' | 'probe';
+    method: 'GET' | 'HEAD' | 'POST'; path: string; query: readonly [string, string][];
+    body: null | { mediaType: 'application/json'; data: JsonData };
+    deadlineAt: number; maxResponseBytes: number; signal: AbortSignal }): Promise<RuntimeResponse>;
+};
+type JsonScalar = null | boolean | number | string;
+type JsonData = JsonScalar | { readonly [key: string]: JsonData }; // 선언된 scalar leaf의 중첩 object, 배열은 미지원
+type RuntimeResponse = { ordinal: number; outcome: 'response' | 'transport_error' | 'cancelled' | 'limit';
+  sent: 'confirmed' | 'not_sent' | 'unknown'; status: number | null; bodyBytes: Uint8Array; rawBodySha256: Sha256 | null; truncated: boolean };
 ```
 
+transport는 stdio relay 하나로 정한다. host HTTP/loopback relay 대안은 제거한다. 고정 lease/container/port/origin 외의 authority·redirect·외부 URL·프록시·DNS 재결정은 입력에 허용하지 않는다.
+path는 authority/query/fragment 없는 절대 요청 경로, query는 검증된 scalar 직렬화만 받는다. relay가 query/body bytes를 확정하며 body는 최대64KiB·원문은 메모리에서만 쓴다. JSON body의 대상 leaf는 plan의 JSON pointer/schema locator에 결속한다. sent는 실제 내부 송신 기록이며 admission 예약만으로 confirmed라 쓰지 않는다.
+모든 요청은 공유 admission의 남은 cap와 min(전역 deadline, 입력 deadline)을 통과해야 한다. health/discover도 소비하며 상한을 호출자가 늘릴 수 없다. 응답 상한은 최대1MiB, 잘림/프로토콜 오류/취소는 unknown/미완료다.
+R3는 signal을 후손 relay/내부 요청까지 전달하고 drain·프로세스 종료를 확인한다. bodyBytes는 private transient buffer이며 원문 저장 권한이 아니다. 허용 header/status만 따로 projection하며 새 host socket을 열지 않는다.
 compose 원본 명령/볼륨/host network/privileged/devices/Docker socket/외부 endpoint를 그대로 실행하지 않는다.
 검증된 effective compose를 소스 복사본에서 생성하고 승인된 app/DB·고정 이미지·tmpfs/소유 볼륨만 허용한다.
 빌드 레지스트리 allowlist는 실제 egress에서 강제한다. 단순 env 설정을 차단 증거로 취급하지 않는다. 불가하면 사전 거부한다.
@@ -178,7 +196,7 @@ compose 원본 명령/볼륨/host network/privileged/devices/Docker socket/외�
 non-root UID와 rootless daemon은 따로 검증한다. gVisor 요구 미충족/실제 rootful-only 환경은 묵시적으로 통과시키지 않는다.
 preflight는 cgroup v2+systemd+cpu/memory/pids controller 위임과 실제 제한 probe를 모두 요구한다. measured=null/enforced=false·미확인 backend면 target 생성 전 거부한다.
 기존 `source/process.ts`의 argv-array/최소 env/abort/출력 cap 원칙을 재사용하되 Docker용 authority는 새 제한 어댑터에 둔다.
-DB seed/schema hash에 묶인 초기 snapshot을 만들고 control/probe 전 복원 확인한다. 복원 실패 뒤에는 다음 요청을 보내지 않는다.
+DB seed/schema hash의 초기 snapshot을 **각 control/probe 요청 전** 복원한다(`per-request`). PLAN 10 예시의 per-surface라는 이름과 다르지만 그보다 강한 요청별 대조 동일성의 명시이며 per-surface alias는 M1 schema에서 받지 않는다. 복원 실패 뒤에는 다음 요청을 보내지 않는다.
 기존 api-write-state는 합성 상태 비교의 개념만 참고한다. 임의 Postgres snapshot/복원을 이미 제공한다고 가정하지 않는다.
 abort/deadline/출력 상한/부분 health 실패에서도 finally로 관측 중단→최종 drain→target/DB 종료→network/volume 제거를 확인한다.
 정리는 유한 별도 유예를 두고 `CleanupReport={status:'confirmed'|'error', lease:ArtifactRef, processGroupExitConfirmed:boolean, resources:{kind:string,id:string,absenceConfirmed:boolean}[], remainingOwnedIds:string[], reasons:string[]}`를 기록한다. 소유 label+실제 ID의 부재를 확인하며 daemon 전체 정리는 금지한다.
@@ -186,46 +204,82 @@ cleanup 불명·observer 손실·snapshot 오류는 반드시 error/unknown으�
 
 ## 6. 종료 코드와 보고서의 추가 계약
 
-R10 `33067fc`가 확인한 현재 충돌: legacy sanitiseReport는 runtime 필드를 폐기하고 Mode는 닫혀 있다. FindingEvidence/API proof는 API-only이며 agent의 scanner_report·verification.not_run/false와 미완료 우선 scanGate는 runtime 경계 confirmed·verify의 발견 우선 계약을 표현하지 못한다.
-따라서 runtime을 legacy sanitiser에 통과시키거나 agent.not_run/scanGate/API evidence를 runtime 완료/독립 exploit 검증으로 재해석하지 않는다. 현재 구 consumer가 새 runtime을 지원한다는 주장은 하지 않는다.
+**A 공통 보고서 확장을 선택한다.** PLAN 10의 같은 4파일·runtime 섹션 추가를 따르며 독립 B envelope/별도 안정 계약은 목표에서 제외한다. B안에 대한 새 사람 승인을 기다리는 절차를 만들지 않는다. 실제 구현은 CP1 재검토 뒤 한다.
+현재 legacy sanitiseReport는 runtime 필드를 폐기하고 Mode는 닫혀 있으며 evidence는 API-only다. 따라서 공통 Report/AgentReport의 discriminated additive union, reader/writer/sanitizer dispatch를 함께 확장한다. runtime-report.ts는 내부 projection이며 독립 주포맷이 아니다.
+
+```ts
+type Report = ScanReport | RuntimeReport; // 기존 ScanReport/Mode/FindingEvidence legacy branch는 불변
+type RuntimeReport = Omit<ScanReport, 'mode' | 'checks'> & { mode: 'runtime'; checks: RuntimeCheck[];
+  runtime: { revision: 'verify-m1-v1'; verifyGate: VerifyGate; scope: RuntimeScope;
+    inputArtifacts: ArtifactRef[]; stages: ArtifactRef[]; cleanup: CleanupReport } };
+type CheckStatus = 'completed' | 'partial' | 'error' | 'not_applicable' | 'skipped'; // 현재 CheckResult.status와 동일
+type RuntimeCheck = { id: RuntimeCheckId; status: CheckStatus; findings: RuntimeFinding[];
+  notes: string[]; runtime: RuntimeCheckData & { reasons: string[] } }; // 아래 id별 payload union, status 중복 없음
+```
+
+공통 schemaVersion은 기존 `1.0.0`이다. `mode=runtime`과 `runtime.revision=verify-m1-v1`를 **함께** 판별하고 runtime schema는 M1 draft로 둔다. legacy mode+runtime 혼합·revision 누락/오류는 축소/정규화하지 않고 거부한다.
+RuntimeCheckId는 아래 5개다. consent/입력 거부로 아예 보고서를 만들지 않는 경로를 제외하면 각 check를 정확히 한 번 낸다. 상세의 유일한 JSON 위치는 `checks[].runtime`, run 전체의 scope/refs/cleanup/게이트는 최상위 `runtime`이다.
+
+| checks[].id | checks[].runtime의 PLAN 10 필드·타입 | 완료/부분/오류·unknown 의미 |
+| --- | --- | --- |
+| `runtime.build` | `builder:string|null`, `imageDigest:string|null`, `cacheKey:string|null`, `isolation:IsolationReport|null`, `durationMs:number|null` | 이미지·입력 SHA·실제 격리 검증 완료만 completed; 일부 기록은 partial, 빌드/격리 실패는 error. 미측정 필드는 null+reason이며 성공 digest를 만들지 않음 |
+| `runtime.start` | `lease:ArtifactRef|null`, `health:'passed'|'failed'|'unknown'`, `durationMs:number|null`, `instrumentation:ArtifactRef|null` | 소유 컨테이너·health·계측 확인 completed; 부분/손실 partial, health/start 실패 error, 미기동 skipped. unknown health를 passed로 대체하지 않음 |
+| `runtime.surface` | `routes:{surface:SurfaceRef,provenance:Provenance[],attacked:boolean|null,reasons:string[]}[]`, `declared:number|null`, `enumerated:number` | 완전 열거 completed; 제공자/입력 해석 미해결 partial; 유효한 발견 파일 없음 error. attacked=true는 실제 송신 ledger 결속, false는 미배정/미송신 확인, 관측 불명 null |
+| `runtime.coverage` | `method:'jacoco'`, `routes:{surface:SurfaceRef,files:CoverageMap['surfaces'][number]['files']|null,coveredFiles:number|null,coveredLines:number|null,executableLines:number|null,ratio:number|null,accounting:'exact'|'unknown',reasons:string[]}[]`, `dumpRefs:ArtifactRef[]` | route별 before/after/reset·class/source 매핑 완료만 completed; 일부 실패 partial, 전체 수집 실패 error. 미측정 files/count/ratio는 null, 분모0도 ratio=null+not_applicable 사유. HTTP method는 surface.method로 별도 보존 |
+| `runtime.oracle.sql` | `method:'pg-ast-token-differential'`, `cases:CaseOutcome[]`, `verdictRefs:ArtifactRef[]`, `markerLedger:ArtifactRef|null`, `parserRevision:string|null` | control·관측 장벽과 모든 계획 case 평가 완료면 completed; unknown case 존재 partial, 판정 입력 손상/전체 관측 실패 error. findings의 evidence.grade/reach는 실제 Verdict만, unknown을 가짜 grade/0건 성공으로 만들지 않음 |
+
+공유 상태 규칙: completed=요청한 범위의 신뢰 가능한 산출물 완료, partial=유효한 일부+명시된 미완료, error=해당 단계 수행/검증 실패, skipped=upstream 실패/취소로 미시작. `unknown`은 CheckStatus가 아니라 payload/CaseOutcome/reason이다.
+ratio는 같은 route의 coveredLines/executableLines이며 분모>0·accounting=exact일 때만 계산한다. coveredFiles는 그 요청 창에서 도달한 고유 소스 파일 수다. 필수 reasons는 null/unknown/skip의 닫힌 사유 코드를 보존한다.
+not_applicable은 명시적 비대상 범위에만 쓰며 위 5개 필수 M1 단계를 미구현/관측 실패 때문에 not_applicable로 숨기지 않는다. 수치 null은 0이 아니다. partial/error에서도 이미 검증된 finding과 provenance를 유지한다.
+M1 미구현 `runtime.oracle.command/ssrf/path/xss/redirect/authz` check는 생략한다. `runtime.scope={requestedVulnClasses:['sql'],unsupportedVulnClasses:['command','ssrf','path','xss','redirect','authz'],gaps:Gap[]}`에 미지원 범위를 명시한다. 생략을 검사 완료로 세지 않는다.
 `verifyGate`: 유효한 기준 이상 finding이 있으면 1 → 없고 계획된 검사/관측/정리/출판이 불완전하면 2 → 모두 완료면 0.
 따라서 finding+미도달/관측 오류/cleanup 오류는 exit1이면서 status partial/error다. `--fail-on-grade` 제안 기본값은 strong, 선택지는 strong/confirmed다.
 미검사 라우트 비율만으로 실패시키지 않고 별도 `--min-surface-coverage`를 명시할 때 평가한다. 빈 계획/전부 unknown은 완료가 아니다.
 candidate에는 기존 severity 규칙만 적용하며 runtime confirmed로 승격하지 않는다. 게이트 정책/기준은 plan hash에 포함한다.
 출판 실패 시에도 이미 검증된 finding이 있으면 CLI는 1, delivery=failed를 stderr/최종 receipt에 별도로 표시한다(새 verify만의 계약).
-두 안 모두 선택된 하나의 strict runtime 모델에서 4종 파일을 만들며 agent-report는 정확한 report.json raw SHA를 가진다. agent-report를 마지막에 쓴다.
+공통 writer는 branch를 한 번 검증해 같은 모델에서 `report.json/report.md/report.sarif/agent-report.json`을 만든다. agent-report.reportArtifact는 report.json의 정확한 raw SHA이고 agent-report는 마지막에 쓴다. manifest가 4종 raw SHA를 결속한다.
 per-file atomicity를 4파일 트랜잭션/실제 최종 프로세스 종료 증명으로 부르지 않는다. receipt는 publication-only이며 최종 exit는 호출자가 확인한다. manifest/receipt 부재·불일치면 소비자는 미완료로 본다.
-runtime 섹션에 입력/이미지/Pack/도구/Oracle hashes, 단계 상태, 격리, 관측 gaps, route/line coverage, cleanup, verifyGate를 둔다.
-기존 Finding.kind는 유지한다. evidence.grade/reach/marker hashes/refs는 새 runtime evidence 분기에만 추가한다.
-CP1에서 아래 A/B를 선택한다. 어느 안도 지금 확정/구현하지 않으며 API evidence의 기존 판별 분기와 scanGate 의미를 유지한다.
-
-| 선택지 | 계약·장단점·PLAN 10과의 관계 |
-| --- | --- |
-| A: 공통 보고서 확장 | discriminated/additive runtime union과 reader/writer dispatch 확장. 공통 4종 모델 재사용은 PLAN 10의 runtime 섹션 추가와 가장 가깝지만 Mode·evidence·sanitiser·agent/gate·reader 전체 변경 면적과 구 소비자 오독 위험이 크다. |
-| B: 별도 versioned 모델 **추천** | RuntimeReport/RuntimeAgentReport+strict reader/writer, 새 schema 판별자와 mode:runtime, 파일명은 같은 4종. 기존 0.5 경로를 보존하기 쉽지만 별도 표현/검증 비용과 새 reader 도입이 필요하다. PLAN 10의 공통 계약에 섹션만 추가하는 방식보다 envelope를 분리하므로 CP1의 PLAN 변경 제안으로 검토한다. |
-
-두 안 모두 runtime 섹션·Finding.kind 유지·evidence.grade/reach·marker/control/관측 refs·4종 raw SHA·새 verify 1/2 우선순위·기존 0.5 출력 해시 보존이 필수다. 새 evidence는 API-only 분기를 재해석하지 않는 RuntimeFindingEvidence로 판별한다.
-새 runtime 판별자가 있으면 legacy reader/writer 진입을 거부하고 해당 strict dispatch로 보내야 한다. 모르는 필드를 버려 scan으로 축소 통과시키거나 old/new 혼합을 허용하지 않는다. runtime.verifyGate만 verify의 권위 있는 게이트다.
-호환 검증은 구 frozen 0.5 fixture의 byte/의미 해시 불변과 새 runtime reader/projection·손상/혼합 거부를 분리한다. 구 fixture 통과가 새 runtime 소비 지원이나 실제 경계 검증의 증거는 아니다.
-새 타입·schema·판별자는 R1, pipeline verify.ts·새 보고 writer/reader dispatch·CLI는 R10의 승인 예정 소유다. 독립 exploit/fix verification은 runtime grade와 분리하며 legacy not_run/false를 덮어쓰지 않는다.
+Finding.kind는 기존 observation/candidate/advisory다. runtime evidence는 `basis:'runtime-observation-ledger'`와 grade/reach/marker hashes/controlPairId/refs/Oracle revision을 갖는 additive 판별 분기이며 구 API evidence를 재해석하지 않는다. agent의 독립 exploit/fix verification.not_run/false도 덮어쓰지 않는다.
+공통 reader/sanitizer/writer는 runtime branch를 별도 strict 분기로 처리한다. 기존 valid legacy 입력은 같은 reader·sanitizer·writer·evaluateGate/scanGate 경로로 흘러 byte/의미 해시가 그대로여야 한다. runtime을 legacy scan으로 축소 통과시키지 않는다.
+agent 공통 projection에서도 legacy branch의 scanGate는 불변이다. runtime branch는 runtime.verifyGate가 유일한 권위이며 scanGate와 우선순위를 혼용하지 않는다. 구현 전 0.5 binary/구 consumer가 새 runtime까지 지원한다고 주장하지 않는다.
+호환 검증은 기존 0.5 fixture/reader 불변과 **확장된 공통 reader**의 runtime 보존·검증·손상/혼합 거부를 함께 요구한다. 전자를 후자로 대체하거나 별도 B envelope 안정성으로 목표를 바꾸지 않는다. 새 타입/schema는 R1, 공통 dispatch·pipeline·4종 projection은 R10 소유다.
 순서는 확정 취약점→verify 게이트→미도달→한계다. JSON/Markdown/SARIF/agent 모두 비밀 canary·원문 마커·DB 내용 누출 0을 검증한다.
 
 ## 7. CP1 이후 패킷·파일·검증 제안
 
-아래 경로는 후속 작업 패킷에서 오케스트레이터의 쓰기 승인을 받아야 한다. 현재 패킷의 구현 권한이 아니다.
+이 절을 **유일한 권위 파일·테스트 목록**으로 한다. `{a,b}`는 각 파일의 정확한 열거이며 제품/테스트 경로의 임의 확장을 허용하지 않는다. 아래 신규/기존 변경은 CP1 승인 후 오케스트레이터가 경로별 패킷으로 승인한다.
+역할 문서의 파일 목록은 이 절을 참조하거나 동일 경로만 재표기한다. 목록 밖 경로·이름 변경은 R1 소유 문서 수정 패킷과 CPx/승인부터 받고 구현한다. 기존 lifecycle 후보명은 쓰지 않고 아래 cleanup 테스트명으로 통일한다.
 
-| 역할 | 쓰기 경로/신규 파일 | 의존 | 완료/검증 |
+| 역할 | 정확한 제품/데이터/공유 경로(테스트는 아래 별도 목록) | 의존 | 완료/검증 |
 | --- | --- | --- | --- |
-| R1 | `src/runtime/{types,registry,target,artifacts,plan}.ts`, 추가 승인 요청 `runtime/packs/{schema,compile-opengrep}.ts`, `runtime/analyzers/framework-pack.ts`, `schemas/{target.v1,surface-inventory.v2,framework-pack.v1,verify-artifact.v1}.json`, `tests/runtime-{contracts,pack-compiler}.test.ts` | CP1 | generic Pack schema/compiler·runtime Analyzer 등록, 불명 DSL 거부·두 SQL source→sink 검증; 기존 scan Analyzer/v1 불변 |
-| R3 | `src/runtime/builders/compose.ts`, `runtimes/jvm.ts`, 추가 승인 요청 `runtime/{isolation,snapshots,process}.ts`, `runtimes/controller.ts`, `tests/runtime-{compose,jvm,lifecycle}.test.ts` | R1; 내부 실행 port를 R4/R5/R10에 제공 | trusted tool exec·Docker capability·rootless/cgroup/systemd/controller 위임·실측 자원·PG lease/cursor·route dump·cleanup 검증 |
-| R4 | `src/runtime/surfaces/{spring-actuator,openapi,inventory,refs}.ts`, `packs/spring-boot.v1.yml`, `tests/runtime-surfaces.test.ts` | R1+R8; live R3 | Spring Pack 데이터·발견만 소유; 모든 메서드·입력 schema/serialization·raw/sanitized 출처·alias·unknown 분모 검증 |
-| R5 | `src/runtime/markers.ts`, `observers/{pg-log,sql-projection,pg-parser-helper}.ts`, `oracles/sql.ts`, 추가 승인 요청 `runtime/attacks/native-sql.ts`, `tests/runtime-{markers,pg-log,sql}.test.ts` | R1+R8; helper 실행 R3 | GET/POST 같은 Oracle·삽입 token/AST·PG 오류 위치·control·runNonce/lease/cursor 결속; R8 V/F/N 불변 |
+| R1 | 기존 `src/contracts.ts`, `src/runtime/{types,registry}.ts`; 신규 `src/runtime/{target,artifacts,plan}.ts`, `src/runtime/packs/{schema,compile-opengrep}.ts`, `src/runtime/analyzers/framework-pack.ts`, `schemas/{target.v1,surface-inventory.v2,framework-pack.v1,verify-artifact.v1}.json` | CP1 | 구체 계약·generic Pack schema/compiler·runtime Analyzer 등록; verify-artifact schema의 additive 공통 report/check $defs, 기존 scan Analyzer/v1 불변 |
+| R3 | 신규 `src/runtime/builders/{compose,compose-input,build-policy}.ts`, `src/runtime/runtimes/{jvm,jacoco,container-lifecycle,controller}.ts`, `src/runtime/{isolation,snapshots,process}.ts` | R1; 내부 실행 port를 R4/R5/R10에 제공 | trusted exec·stdio relay·Docker capability·rootless/cgroup/systemd 위임·실측 자원·PG lease/cursor·route dump·cleanup |
+| R4 | 신규 `src/runtime/surfaces/{spring-actuator,openapi,inventory,refs}.ts`, `packs/spring-boot.v1.yml` | R1+R8; live R3 | Spring Pack 데이터·발견만 소유; 모든 메서드·입력 schema/serialization·raw/sanitized 출처·alias·unknown 분모 |
+| R5 | 신규 `src/runtime/markers.ts`, `src/runtime/observers/{pg-log,sql-projection,pg-parser-helper}.ts`, `src/runtime/oracles/sql.ts`, `src/runtime/attacks/native-sql.ts` | R1+R8; helper 실행 R3 | GET/POST 같은 Oracle·삽입 token/AST·PG 오류 위치·control·runNonce/lease/cursor 결속; R8 기대값 불변 |
 | R8 | `examples/runtime/{spring-sqli,spring-sqli-jdbc}/**`, `benchmarks/runtime-corpus.json`, `tests/fixtures/runtime-m1/**` 기대 데이터 | R1 CP1; R3/R5와 독립 | JdbcTemplate/Statement 취약·수정 쌍, V2 POST confirmed·F2 정상 바인딩·N1~N13·음성/미요청 라우트·재현 기대값; 구현 수정 금지 |
 | R9 | `.handoff/evidence/M1/**`, `.github/workflows/runtime-m1.yml` | 전 패킷 병합 후 | 실제 compose 두 번·vulnerable confirmed/fixed·negative 0·route/line·시간·secret/egress·실패 cleanup; 기존 전체·compat·KPI compare, 로컬/CI 구분 |
-| R10 | `src/cli.ts`, `src/report.ts`, 신규 `src/{init-target,runtime-report}.ts`, 추가 승인 예정 `src/runtime/verify.ts`, `tests/runtime-{cli,report}.test.ts`, 사용자 문서 | R1+R3 내부 port+R4/R5 | pipeline 조립·consent zero-I/O·v1 frozen hash·4종 raw SHA·verify 0/1/2/발견+오류·출판 실패, 구 scanGate 불변 |
+| R10 | 기존 `src/{cli,report,compare}.ts`; 신규 `src/{init-target,runtime-report}.ts`, `src/runtime/{cli,verify}.ts`, `docs/runtime-verify/USAGE.md` | R1+R3 내부 port+R4/R5 | pipeline·공통 reader/sanitizer/writer dispatch·4종 projection·CLI/사용자 문서; runtime-report.ts는 A안의 내부 모듈 |
 
-공유 변경은 R1 `src/contracts.ts`의 runtime 확장 타입과 R10 `report.ts/cli.ts`에 한정 승인 요청하고, 변경 전후 CPx를 받는다.
-신규 제품·schema·Pack·예제·테스트·CI 파일 목록은 위 표가 전부다. 기존 types/registry/contracts/report/cli 수정은 신규 파일 수와 구분한다.
+각 신규 테스트의 소유자·PLAN 11 항목·R8 참조를 아래처럼 고정한다. 계약/권한 검증은 Oracle 기대값과 구분하며 R8 case ID를 새로 만들지 않는다.
+
+| 정확한 테스트 파일 | 소유자·PLAN 11 검증 / R8 case 또는 별도 계약 범위 |
+| --- | --- |
+| `tests/runtime-contracts.test.ts` | R1 · 고정 입력/보고서 계약: exact keys·raw SHA·schema/링크/변조·unknown/null·공통 union dispatch; 별도 계약 범위, Oracle 기대값 없음 |
+| `tests/runtime-pack-compiler.test.ts` | R1 · FrameworkPack/AnalyzerProvider: 두 마이크로 source→sink·bound sanitizer 차이; R8 V1/V2/F1/F2의 독립 정적 위치 ground truth, 판정 자체를 대체하지 않음 |
+| `tests/runtime-compose.test.ts` | R3 · Builder/격리: 정규화·rootless/cgroup·allowlist·image/JAR 재현·source/secret 불변; 별도 권한 검증과 R8 N11/N12 |
+| `tests/runtime-jvm.test.ts` | R3 · RuntimeProfile: route dump/reset/class/source 매핑·미요청 handler uncovered; R8 V1/V2/N4 및 coverage 손실 N13 |
+| `tests/runtime-cleanup.test.ts` | R3 · 격리/중단/정리: signal/deadline·후손/lease 자원 부재·relay cap/취소/손실; R8 N7/N12/N13와 별도 권한 검증 |
+| `tests/runtime-surfaces.test.ts` | R4 · SurfaceProvider: 모든 메서드/parameter/provenance·ref/한도·선언 분모; R8 업무 라우트 ground truth와 별도 입력 계약 범위 |
+| `tests/runtime-markers.test.ts` | R5 · AttackEngine: GET/POST route/JSON pointer·충돌0·seed/예산 재현·요청 결속; R8 V1/V2/V3/N9/N10 |
+| `tests/runtime-pg-log.test.ts` | R5 · Observer: Bind·PG 위치/오류·cursor/drain·raw/secret 무보관·helper 실패; R8 F1/F2/N5~N12 |
+| `tests/runtime-sql.test.ts` | R5 · Oracle: 순수 data-only·문법 승격/quote/control/unknown; R8 V1~V3/F1/F2/N1~N10, 기대값 독립 유지 |
+| `tests/runtime-cli.test.ts` | R10 · 보안/종료 코드: consent zero-I/O·strict argv·help·finding+실패 우선순위; 별도 권한 계약과 R8 N12/N13 |
+| `tests/runtime-init-target.test.ts` | R10 · Builder detect/FrameworkPack: 읽기 전용 감지·source 밖 신규 출력·경로/덮어쓰기 거부; 별도 계약 범위 |
+| `tests/runtime-report.test.ts` | R10 · 보고서 계약: 5개 check payload/status/null·grade/reach·공통 reader/sanitizer dispatch·구 API evidence/scanGate/0.5 불변; R8 V/F/N projection |
+| `tests/runtime-delivery.test.ts` | R10 · 보고서/종료 코드: 4종 raw SHA·손상/old-new 혼합·stale·출판 중단·취소/cleanup/출판 실패; 별도 delivery 계약과 R8 N13 |
+
+기존 `tests/compat-0.5.test.ts`, `tests/runtime-{analyzers,m0-compat,registry}.test.ts` 및 기존 cli/report/agent-report/compare/KPI 검증은 읽기 전용 회귀군으로 유지한다. 새 테스트 목록으로 기존 기대값을 교체하지 않는다.
+공유 contracts/report/compare/cli·보안 경계 구현은 필수 CPx에서 검토한다. R8 데이터 하위 파일은 독립 R8 패킷에 명세하되 이 절의 제품/테스트 목록을 확대하는 권한이 아니다. 생성 build/bundle은 소스 파일 수에서 분리한다.
 R1 계약→R3/R4/R5→R10 순서로 통합한다. R8 독립 ground truth를 먼저 고정하고 R9가 증거를 만든다. 동시 실행은 최대4다.
 고정 기대값을 제품 결과에서 재생성하거나 판정 구현자가 수정하지 않는다. R9의 증거와 구현 역할 자체 테스트를 구분한다.
 
@@ -240,6 +294,6 @@ R1 계약→R3/R4/R5→R10 순서로 통합한다. R8 독립 ground truth를 먼
 | 대시보드 | 1.0 동시 / CLI 뒤; M1 제외 추천 |
 | 기존 scan 종료 코드 | 유지 / 별도 호환 변경; M1 유지 추천, verify 1 우선 규칙을 scan에 전파하지 않음 |
 
-CP1 추가 확인: 결정적 마커의 논리/물리 실행 구분, runtime evidence/writer, projection의 역할/위치 보존, parser/PG major·Spring pin, 실제 rootless CI 환경. 분야별 unknown을 좁은 성공으로 대체하지 않으며 이 공개 schema는 아직 M1 draft다.
+CP1 추가 확인: 결정적 마커의 논리/물리 실행 구분, A 공통 dispatch의 세부 계약, projection의 역할/위치 보존, parser/PG major·Spring pin, 실제 rootless CI 환경. 분야별 unknown을 좁은 성공으로 대체하지 않으며 이 공개 schema는 아직 M1 draft다.
 M2 CP1은 14.1/14.2의 owner 요청 성공·identity 대조 실패→unknown, 접근 규칙 없는 라우트→unknown을 반드시 설계한다.
 M3는 14.3 sequences/provenance·recall, M4는 빈 sequence만 agent 제안·판정 불변을 각 CP1에 넣는다. M1 범위를 넓히지 않는다.
