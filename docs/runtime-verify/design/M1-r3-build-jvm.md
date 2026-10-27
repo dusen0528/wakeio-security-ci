@@ -225,4 +225,11 @@ PG lease는 DB/container/log volume ID·runNonce·seed 뒤 시작 cursor·sessio
 현재는 준비·정책·helper 모두 미실행이다. 실제 가용성·성능과 우회 차단이 입증되기 전 M1 격리/빌드 게이트를 PASS로 세지 않는다.
 M1-21은 기존 최소 env/argv/group 감독을 재사용한 trusted tool 실행기와 probe 데이터 정합성 검사만 구현한다.
 실제 `preflightIsolation`은 backend/collector 미구현으로 항상 unavailable·verified=false다. 합성 테스트의 matches=true는 실측/실행 권한이 아니다.
+M1-29의 `normaliseCompose`는 snapshot own-data만 검사한다. YAML 문법의 중복 키·tag·anchor/alias/merge 거부는 호출자 strict parser 책임이다.
+M1 입력은 app build/literal argv와 PG image 선언·관계만 받는다. 환경 값은 `wakeio:postgres.{url,username,password}` 참조만 허용하고 실제 합성 값은 trusted builder가 만든다.
+정규화 결과는 항상 executable=false이며 source snapshot·독립 PG pin/config·실측 isolation이 필요하다. source의 image digest 선언도 신뢰 pin의 대용이 아니다.
+Maven 정책은 canonical 좌표의 jar/pom/module/xml/zip/tar.gz·metadata·서명/체크섬 경로만 다룬다. HTTP 서버·DNS/redirect 검증·nft 강제는 아직 없다.
+좌표 경로 근거: [Maven 공식 repository layout](https://maven.apache.org/repositories/layout.html). 알 수 없는 확장자를 임의 URL 통로로 허용하지 않는다.
+CPU quota 비교는 `Math.round(cpu * period)`로 정수화한다(CPx2 N1). 0.3 CPU/100000 period의 실제 요구 quota는 30000이다.
+후속 bootstrap/proxy는 우선 canonical `runtimes/controller.ts`·`builders/build-policy.ts` 안에서 최소 조립하며 명부 밖 bootstrap/proxy 파일은 추가하지 않는다.
 근거: [Lima Docker](https://lima-vm.io/docs/examples/containers/docker/), [rootless cgroup](https://docs.docker.com/engine/security/rootless/tips/#limiting-resources), [nft socket UID](https://wiki.nftables.org/wiki-nftables/index.php/Matching_packet_metainformation#Matching_by_socket_UID_.2F_GID).
