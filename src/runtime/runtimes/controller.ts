@@ -266,6 +266,28 @@ export interface OwnedLimaOsProfile extends OwnedLimaProfile {
   boot(): Promise<LimaOsBoot>;
 }
 export interface LimaOsPreparation extends Omit<LimaPreparation, 'lease'> { lease?: OwnedLimaOsProfile }
+export interface OsPrerequisites {
+  kind: 'os-prerequisites'; observed: boolean; backendVerified: false;
+}
+export interface LimaOsProbeCapability { probe(): Promise<Readonly<OsPrerequisites>> }
+export type LimaOsSessionUse = (capability: Readonly<LimaOsProbeCapability>) => Promise<void>;
+export interface LimaOsSessionResult {
+  status: 'unavailable'; verified: false; phase: 'consent_required' | 'failed' | 'callback_completed';
+  guestPrerequisitesObserved: boolean; cleanup?: ProfileCleanup; pendingHome?: string;
+}
+const OS_OWNERS = new WeakMap<OwnedLimaOsProfile, OsProfile>();
+const OS_SESSION_MS = 30_000;
+const GUEST_PROBE = [
+  'set -eu', 'test "$(/usr/bin/id -u wakeio-m1)" = 10001 || exit 125',
+  'if /usr/bin/sudo -n -l -U wakeio-m1 >/dev/null 2>&1; then exit 125; fi',
+  'test "$(/usr/bin/stat -fc %T /sys/fs/cgroup)" = cgroup2fs || exit 125',
+  'cg=/sys/fs/cgroup/user.slice/user-10001.slice/user@10001.service',
+  'for controller in cpu memory pids; do /usr/bin/grep -qw "$controller" "$cg/cgroup.controllers" || exit 125; done',
+  'test "$(/usr/bin/sudo -n -u wakeio-m1 /usr/bin/id -u)" = 10001 || exit 125',
+  '/usr/bin/sudo -n -u wakeio-m1 /usr/bin/test -w "$cg/cgroup.procs" || exit 125',
+  '/usr/bin/sudo -n -u wakeio-m1 /usr/bin/test -w "$cg/cgroup.subtree_control" || exit 125',
+  "printf 'wakeio-os-prerequisites/v1\\n'",
+].join('\n');
 type FileIdentity = Identity & { size: number; mtimeMs: number; ctimeMs: number };
 type BoundFile = { path: string; identity: FileIdentity };
 const FILE_FLAGS = constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK;
@@ -420,6 +442,7 @@ function startingStatus(data: Record<string, unknown>): 'Running' | 'pending' {
 
 class OsProfile extends Profile {
   readonly files = new OsFiles(this); machineIdentitySha256?: string;
+  private sessionUnknown = false;
   async verifyAssets(includeVm = true): Promise<void> {
     await this.files.verify(includeVm);
     if (includeVm && this.profileId && !this.machineIdentitySha256) invalid();
@@ -452,6 +475,56 @@ class OsProfile extends Profile {
   async listed(deadline: number, signal?: AbortSignal): Promise<Record<string, unknown>> {
     if (await this.observe(deadline, signal) !== 'Stopped') invalid();
     return { status: 'Stopped' };
+  }
+  async sessionPid(deadline: number, signal: AbortSignal): Promise<number | undefined> {
+    const data = await this.frame(deadline, signal);
+    return startingStatus(data) === 'Running' ? Number(data.hostAgentPID) : undefined;
+  }
+  foreground(deadline: number, signal: AbortSignal): Promise<RuntimeProcessResult | undefined> {
+    return this.execute(this.config.limactlExecutable,
+      ['--tty=false', 'start', '--foreground', '--timeout=30s', this.name], {
+        cwd: this.home, home: this.home, timeoutMs: OS_SESSION_MS, deadlineAt: deadline,
+        maxOutputBytes: 16 * 1024, signal }).then(result => {
+      this.groupConfirmed &&= result.cleanupConfirmed === true && result.closeConfirmed === true; return result;
+    }, () => { this.groupConfirmed = false; return undefined; });
+  }
+  async guestProbe(deadline: number, signal: AbortSignal): Promise<Readonly<OsPrerequisites>> {
+    const args = ['--tty=false', 'shell', '--workdir=/', '--shell=/bin/bash', this.name, '--',
+      '/usr/bin/sudo', '-n', '/usr/bin/env', '-i', 'PATH=/usr/sbin:/usr/bin:/sbin:/bin', 'LC_ALL=C',
+      '/bin/sh', '-c', GUEST_PROBE];
+    let result: RuntimeProcessResult;
+    try {
+      result = await this.execute(this.config.limactlExecutable, args, { cwd: this.home, home: this.home,
+        timeoutMs: 5_000, deadlineAt: deadline, maxOutputBytes: 16 * 1024, signal });
+    } catch { this.groupConfirmed = false; return invalid(); }
+    this.groupConfirmed &&= result.cleanupConfirmed === true && result.closeConfirmed === true;
+    const absent = [125, 255].includes(result.exitCode ?? -1) && !result.signal && !result.stopReason
+      && !result.spawnError && !result.timedOut && !result.cancelled
+      && !result.outputLimitExceeded && result.stdout === '';
+    if (!this.groupConfirmed || !result.completed && !absent) invalid();
+    if (result.completed && result.stdout !== 'wakeio-os-prerequisites/v1\n') invalid();
+    return Object.freeze({ kind: 'os-prerequisites', observed: result.completed, backendVerified: false });
+  }
+  markSessionUnknown(): void { this.sessionUnknown = true; }
+  cleanup(): Promise<ProfileCleanup> {
+    return this.sessionUnknown ? Promise.resolve({ confirmed: false, reasons: ['owned_session_cleanup_unconfirmed'] })
+      : super.cleanup();
+  }
+  async session(use: LimaOsSessionUse): Promise<LimaOsSessionResult> {
+    if (this.busy || this.done || this.cleaning || this.sessionUnknown) return sessionResult('failed');
+    this.busy = true;
+    const scope = new OsSession(this);
+    try {
+      remaining(this.config); await verifyRootfs(this); await this.files.verify();
+      if (await this.observe(this.config.deadlineAt, this.config.signal) !== 'Stopped') invalid();
+      await scope.run(use);
+    } catch { scope.fail(); }
+    finally { await scope.close(); this.busy = false; }
+    const cleanup = await this.cleanup();
+    if (!cleanup.confirmed) this.markSessionUnknown();
+    return { ...sessionResult(!scope.failed && cleanup.confirmed ? 'callback_completed' : 'failed'),
+      guestPrerequisitesObserved: !scope.failed && scope.observed, cleanup,
+      ...(!cleanup.confirmed ? { pendingHome: this.home } : {}) };
   }
   async boot(): Promise<LimaOsBoot> {
     if (this.busy || this.done || this.cleaning) return { status: 'unavailable', verified: false, phase: 'failed' };
@@ -500,9 +573,137 @@ class OsProfile extends Profile {
   }
   osLease(): OwnedLimaOsProfile {
     if (!this.machineIdentitySha256) invalid();
-    return Object.freeze({ ...this.lease(), rootfsSha256: this.config.pins.rootfs.sha256,
+    const lease = Object.freeze({ ...this.lease(), rootfsSha256: this.config.pins.rootfs.sha256,
       machineIdentitySha256: this.machineIdentitySha256, boot: () => this.boot() });
+    OS_OWNERS.set(lease, this); return lease;
   }
+}
+
+function sessionResult(phase: LimaOsSessionResult['phase']): LimaOsSessionResult {
+  return { status: 'unavailable', verified: false, phase, guestPrerequisitesObserved: false };
+}
+type SessionBinary = BoundFile & { sha256: string };
+async function bindSessionBinary(owner: OsProfile, deadline: number, signal?: AbortSignal): Promise<SessionBinary> {
+  const path = await inputPath(owner.config.limactlExecutable), handle = await open(path, FILE_FLAGS);
+  try {
+    const before = fileIdentity(await handle.stat(), 64 * 1024 * 1024), bytes = Buffer.alloc(64 * 1024);
+    const hash = createHash('sha256'); let offset = 0;
+    while (true) {
+      if (signal?.aborted || Date.now() >= deadline) invalid();
+      const { bytesRead } = await handle.read(bytes, 0, bytes.length, offset);
+      if (!bytesRead) break;
+      offset += bytesRead; if (offset > before.size) invalid(); hash.update(bytes.subarray(0, bytesRead));
+    }
+    await namedFile(path, handle, before);
+    if (offset !== before.size) invalid();
+    return { path, identity: before, sha256: hash.digest('hex') };
+  } finally { await handle.close(); }
+}
+
+class OsSession {
+  readonly controller = new AbortController(); readonly deadline: number;
+  failed = false; observed = false; private open = false; private stopping = false; private pid?: number;
+  private foreground?: Promise<RuntimeProcessResult | undefined>; private monitor?: Promise<void>;
+  private active?: Promise<Readonly<OsPrerequisites>>; private binary?: SessionBinary; private timer?: NodeJS.Timeout;
+  private wake!: () => void; private readonly lost = new Promise<void>(resolve => { this.wake = resolve; });
+  private readonly onAbort = () => this.fail();
+  constructor(readonly owner: OsProfile) {
+    this.deadline = Math.min(owner.config.deadlineAt, Date.now() + OS_SESSION_MS);
+  }
+  fail(): void {
+    this.failed = true; this.open = false; this.controller.abort(); this.wake();
+  }
+  private async checkBinary(): Promise<void> {
+    if (!this.binary) invalid();
+    const handle = await open(this.binary.path, FILE_FLAGS);
+    try { await namedFile(this.binary.path, handle, this.binary.identity); }
+    finally { await handle.close(); }
+  }
+  private async checkpoint(): Promise<void> {
+    if (this.controller.signal.aborted || Date.now() >= this.deadline) invalid();
+    await this.checkBinary();
+    const pid = await this.owner.sessionPid(this.deadline, this.controller.signal);
+    await this.checkBinary();
+    if (pid === undefined || pid !== this.pid) invalid();
+  }
+  private probe(args: unknown[]): Promise<Readonly<OsPrerequisites>> {
+    if (!this.open || this.failed || this.controller.signal.aborted || args.length || this.active) {
+      if (this.open) this.fail();
+      return Promise.reject(new TypeError('closed_os_probe_capability'));
+    }
+    const job = (async () => {
+      await this.checkpoint();
+      const answer = await this.owner.guestProbe(this.deadline, this.controller.signal);
+      await this.checkpoint(); this.observed = answer.observed; return answer;
+    })().catch(() => { this.fail(); return invalid(); });
+    this.active = job;
+    void job.then(() => { if (this.active === job) this.active = undefined; },
+      () => { if (this.active === job) this.active = undefined; });
+    return job;
+  }
+  private async watch(): Promise<void> {
+    try {
+      while (!this.stopping) {
+        await this.checkpoint(); await delay(20, undefined, { signal: this.controller.signal });
+      }
+    } catch { if (!this.stopping) this.fail(); }
+  }
+  async run(use: LimaOsSessionUse): Promise<void> {
+    this.binary = await bindSessionBinary(this.owner, this.deadline, this.owner.config.signal);
+    await this.checkBinary();
+    this.owner.config.signal?.addEventListener('abort', this.onAbort, { once: true });
+    this.timer = setTimeout(() => this.fail(), Math.max(0, this.deadline - Date.now()));
+    this.foreground = this.owner.foreground(this.deadline, this.controller.signal).then(result => {
+      if (!this.stopping) this.fail(); return result;
+    });
+    while (!this.controller.signal.aborted) {
+      await this.checkBinary();
+      const pid = await this.owner.sessionPid(this.deadline, this.controller.signal);
+      if (this.failed) invalid();
+      if (pid !== undefined) { this.pid = pid; break; }
+      await delay(20, undefined, { signal: this.controller.signal });
+    }
+    await this.checkpoint(); if (this.failed) invalid(); this.open = true; this.monitor = this.watch();
+    const capability = Object.freeze({ probe: (...args: unknown[]) => this.probe(args) });
+    const callback = Promise.resolve().then(() => {
+      if (!this.open || this.failed || Date.now() >= this.deadline) invalid(); return use(capability);
+    }).then(() => undefined, () => { this.fail(); });
+    await Promise.race([callback, this.lost]);
+    if (this.active) this.fail();
+  }
+  async close(): Promise<void> {
+    this.open = false; this.stopping = true; this.controller.abort(); clearTimeout(this.timer);
+    this.owner.config.signal?.removeEventListener('abort', this.onAbort);
+    await Promise.allSettled([this.foreground, this.monitor, this.active]);
+    try {
+      const deadline = Date.now() + 10_000;
+      if (!this.owner.groupConfirmed) invalid();
+      await this.checkBinary();
+      if ((await bindSessionBinary(this.owner, deadline)).sha256 !== this.binary?.sha256) invalid();
+      if (await this.owner.observe(deadline) !== 'Stopped') invalid();
+      await this.checkBinary();
+    } catch { this.failed = true; this.owner.markSessionUnknown(); }
+  }
+}
+
+/** Trusted asynchronous callback only; options remain data and cannot supply shell/code/installation authority. */
+export async function withLimaOsSession(raw: LimaOsOptions, use: LimaOsSessionUse): Promise<LimaOsSessionResult> {
+  return session(raw, use, runRuntimeProcess);
+}
+/** @internal Uses the same supervised default; fault injection never enters raw TargetSpec/options. */
+export function createLimaOsSessionRunner(execute: typeof runRuntimeProcess) {
+  return (raw: LimaOsOptions, use: LimaOsSessionUse) => session(raw, use, execute);
+}
+async function session(raw: LimaOsOptions, use: LimaOsSessionUse,
+  execute: typeof runRuntimeProcess): Promise<LimaOsSessionResult> {
+  if (!consent(raw)) return sessionResult('consent_required');
+  if (typeof use !== 'function' || types.isProxy(use)) return sessionResult('failed');
+  const prepared = await prepareOs(raw, execute);
+  if (!prepared.lease || prepared.reason !== 'missing_prerequisite') return {
+    ...sessionResult('failed'), ...(prepared.cleanup ? { cleanup: prepared.cleanup } : {}),
+    ...(prepared.pendingHome ? { pendingHome: prepared.pendingHome } : {}) };
+  const owner = OS_OWNERS.get(prepared.lease);
+  return owner ? owner.session(use) : sessionResult('failed');
 }
 
 /** Internal OS-only lane, disconnected from target execution and isolation verification. Local bytes only. */
