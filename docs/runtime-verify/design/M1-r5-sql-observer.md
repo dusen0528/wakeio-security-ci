@@ -126,3 +126,17 @@ binding이 SQL 계획을 정의하지 않는다. SQL 미배정 reflection은 이
 M1-63: coverage는 SQL 신뢰 입력과 별도로 최대 1MiB/4,096행 snapshot·검증한다.
 손상·중복·결측·다른 요청/snapshot의 coverage는 reach unknown+gap이며 SQL confirmed를 취소하지 않는다.
 요청 귀속을 안전하게 읽을 수 없는 Proxy/getter/초과 입력은 coverage 전체를 unknown으로 낮추고 호출하지 않는다.
+
+## M1-68 마커 발급과 Oracle 지원 제약
+
+`issueMarkers`는 이미 검증한 SurfaceRef와 control/probe 예약만 받는다. GET query/path, POST JSON scalar 위치를 명시한다.
+공유 admission 잔여 예산과 최대 2,000행을 모두 지키며 발급은 예산 소비·실제 송신·SQL 판정이 아니다.
+입력은 전체 1MiB 안에서 행별 own snapshot으로 복사한다. native-sql은 실제 송신 직전 공유 admission을 다시 검사한다.
+reproductionKey와 비밀이 아닌 seed는 논리 실행 입력이다. 같은 입력/ordinal은 예약 순서와 무관하게 같은 마커를 만든다.
+8자 suffix는 1~32,768 ordinal의 고정 base32 표현이며 ledger 안의 원문/hash 충돌을 거부한다.
+4자 prefix는 인증·전역 고유 ID가 아니다. 다른 물리 실행의 runNonce/PG lease/cursor 격리는 별도 pipeline 책임이다.
+보고/단계 파일에는 ledger만 전달하고 원문은 trusted executor의 transient lookup으로만 읽는다. seed의 비밀 여부는 호출자가 보장한다.
+HTTP 직렬화·snapshot·수집은 후속 native-sql 책임이며 발급기는 DTO·요청 계획을 추측하지 않는다.
+SurfaceRef에는 scalar/mediaType 필드가 없으므로 RuntimeSurface의 JSON scalar 검증은 호출 전 조건이다.
+CPx6 N3: control AST에 기존 BoolExpr가 있으면 현재 promotion 판정은 보수적으로 unknown이다. Oracle는 변경하지 않았다.
+R8 두 예제 쌍의 취약/수정 GET·POST 원본을 읽어 공격 전 질의에 AND/OR가 없음을 대조했다. 실제 parser/DB 실행 증거는 아니다.
