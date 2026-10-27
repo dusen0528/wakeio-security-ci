@@ -227,12 +227,14 @@ test('Pack carries reserved binding/source-route hints rather than claiming comp
 // Inline contract inputs follow the official 4.1 structure; these are not captured Spring responses.
 const actEntry = (methods = ['GET'], patterns = ['/route'], conditions: Record<string, unknown> = {}) => ({
   details: { handlerMethod: { className: 'fixtures.Controller', name: 'handle', descriptor: '()V' },
-    requestMappingConditions: { methods, patterns, params: [], headers: [], consumes: [], produces: [], ...conditions } },
+    requestMappingConditions: { methods, patterns, params: [], headers: [], consumes: [],
+      produces: [], ...conditions } },
   predicate: 'RAW_SECRET https://never-request.invalid/GET', handler: 'RAW_SECRET',
 });
 const actDoc = (entries: unknown[]) => ({ contexts: { app: { mappings: {
   dispatcherServlets: { dispatcherServlet: entries },
-  servlets: [{ name: 'dispatcherServlet', className: 'org.springframework.web.servlet.DispatcherServlet', mappings: ['/'] }],
+  servlets: [{ name: 'dispatcherServlet',
+    className: 'org.springframework.web.servlet.DispatcherServlet', mappings: ['/'] }],
 } } } });
 const act = (input: unknown) => enumerateActuatorSurfaces(input, metadata);
 const inventoryBinding = { sourceSha256: 'c'.repeat(64),
@@ -354,16 +356,19 @@ test('Actuator own-data, document and route expansion limits fail closed without
   assert.equal(calls, 0);
 });
 
-test('pure Inventory complements schema-only uncertainty while keeping provider incompleteness and exact identities', () => {
+test('pure Inventory complements schema-only uncertainty while keeping provider incompleteness and exact identities',
+  () => {
   const parsed = act(actDoc([actEntry(['GET', 'POST'], ['/search'])]));
   const openapi = run(doc({ '/search': { get: { parameters: [scalar()] }, post: { requestBody: {
-    required: true, content: { 'application/json': { schema: { type: 'object', properties: { q: { type: 'string' } } } } },
+    required: true, content: { 'application/json': {
+      schema: { type: 'object', properties: { q: { type: 'string' } } } } },
   } } }, '/search/': { get: { parameters: [scalar()] } } }));
   const inputs = [discovery('spring-actuator', parsed), discovery('openapi', openapi)];
   const result = mergeSurfaceInventory(inventoryBinding, inputs);
   assert.equal(result.surfaces.length, 3); assert.ok(result.surfaces.every(s => s.readiness === 'ready'));
   assert.equal(result.counts.declared, null); assert.equal(result.counts.enumerated, 3);
-  assert.deepEqual(result.providers, [{ id: 'openapi', status: 'completed' }, { id: 'spring-actuator', status: 'partial' }]);
+  assert.deepEqual(result.providers,
+    [{ id: 'openapi', status: 'completed' }, { id: 'spring-actuator', status: 'partial' }]);
   assert.equal(result.surfaces.find(s => s.method === 'POST')!.params[0]!.jsonPointer, '/q');
   assert.ok(result.surfaces.filter(s => s.pathTemplate === '/search').every(s => s.provenance.length === 2));
   assert.equal(result.sourceSha256, inventoryBinding.sourceSha256); assert.deepEqual(result.run, inventoryBinding.run);
@@ -374,7 +379,8 @@ test('pure Inventory complements schema-only uncertainty while keeping provider 
 test('Inventory keeps conditional/media/serialization contradictions unresolved and deduplicates provenance', () => {
   const plain = run(doc({ '/route': { get: { parameters: [scalar()] } } }));
   const alternate = run(doc({ '/route': { get: { parameters: [{ ...scalar(), explode: false }] } } }));
-  const conflict = mergeSurfaceInventory(inventoryBinding, [discovery('openapi', plain), discovery('openapi', alternate)]);
+  const conflict = mergeSurfaceInventory(inventoryBinding,
+    [discovery('openapi', plain), discovery('openapi', alternate)]);
   assert.ok(conflict.surfaces[0]!.reasons.includes('inventory_parameter_conflict'));
   assert.equal(conflict.surfaces[0]!.readiness, 'unresolved');
   for (const [condition, reason] of [
@@ -443,7 +449,8 @@ test('Inventory rejects malformed binding, producer masquerading, tampered ident
   assert.equal(calls, 0);
 });
 
-test('both unchanged R8 business route lists match inline Actuator contracts, without live-response/recall claims', async () => {
+test('both unchanged R8 business route lists match inline Actuator contracts, without live-response/recall claims',
+  async () => {
   for (const file of ['primary-ground-truth.json', 'jdbc-ground-truth.json']) {
     const truth = JSON.parse(await readFile('tests/fixtures/runtime-m1/' + file, 'utf8'));
     const result = act(actDoc(truth.routes.map((r: any) => actEntry([r.method], [r.path]))));
