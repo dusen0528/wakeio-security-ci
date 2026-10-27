@@ -7,8 +7,8 @@ import test from 'node:test';
 import { setTimeout as delay } from 'node:timers/promises';
 import { runRuntimeProcess } from '../src/runtime/process.js';
 import { compileLimaProfileConfig, createLimaProfilePreparer, prepareLimaProfile,
-  createLimaOsPreparer, MAX_LIMA_ROOTFS_BYTES, prepareLimaOsProfile,
-  type LimaOsOptions, type LimaPins, type LimaProfileOptions }
+  createLimaOsPreparer, createLimaOsSessionRunner, MAX_LIMA_ROOTFS_BYTES, prepareLimaOsProfile, withLimaOsSession,
+  type LimaOsOptions, type LimaPins, type LimaProfileOptions, type LimaOsProbeCapability }
   from '../src/runtime/runtimes/controller.js';
 
 // Deliberately synthetic metadata. A mock tool never downloads, starts or validates these assets.
@@ -274,6 +274,22 @@ test('overlong Unix sockets are rejected before tool invocation and the private 
 
 const osBytes = Buffer.from('fixed synthetic OS bytes; not a bootable image');
 const machineBytes = 'synthetic VZ GenericMachineIdentifier data';
+const SESSION_MOCK = `
+function exitOwnedMock(){
+ if((mode==='startup-exit'&&fs.existsSync(p.join(home,'startup.exit')))||fs.existsSync(p.join(home,'session.exit'))){
+  fs.rmSync(p.join(home,'startup.pid'),{force:true});state('Stopped');process.exit(2);}
+}
+function fixedGuestProbe(){
+ if(a[1]!=='--workdir=/'||a[2]!=='--shell=/bin/bash'||a[4]!=='--')process.exit(91);
+ const code=a.at(-1),status=JSON.parse(fs.readFileSync(stateFile,'utf8')).status;
+ if(!code.includes('id -u wakeio-m1')||!code.includes('cgroup.subtree_control'))process.exit(92);
+ if(status!=='Running'||mode==='session-probe-unavailable')process.exit(255);
+ if(mode==='session-probe-fail')process.exit(125);
+ fs.writeFileSync(p.join(home,'probe.started'),'owned probe');
+ if(mode==='session-probe-hang'){process.on('SIGTERM',()=>process.exit(0));setInterval(()=>{},1000);return;}
+ console.log(mode==='session-probe-malformed'?'untrusted output':'wakeio-os-prerequisites/v1');
+}
+`;
 const STARTUP_MOCK = `
 function advanceStartup(){
  const owned=p.join(home,'startup.pid');if(!fs.existsSync(owned))return;
@@ -308,7 +324,8 @@ const home=process.env.HOME,a=process.argv.slice(2).filter(x=>x!=='--tty=false')
 if(process.env.LIMA_HOME||process.env.SSH_AUTH_SOCK||process.env.DOCKER_HOST||process.cwd()!==home)process.exit(91);
 fs.appendFileSync(p.join(home,'calls.ndjson'),JSON.stringify(a)+String.fromCharCode(10));
 if(a[0]==='--version'){console.log('limactl version 1.0.3');process.exit(0);}
-const name=a[0]==='create'?a.find(x=>x.startsWith('--name=')).slice(7):a.at(-1),dir=p.join(home,'.lima',name);
+const name=a[0]==='create'?a.find(x=>x.startsWith('--name=')).slice(7):a[0]==='shell'?a[3]:a.at(-1);
+const dir=p.join(home,'.lima',name);
 const stateFile=p.join(dir,'state.json');
 function state(status,pid=0,patch={}){const value={name,dir,status,protected:false,
  vmType:'vz',arch:'aarch64',limaVersion:${JSON.stringify(listVersion)},hostAgentPID:pid,driverPID:pid,...patch};
@@ -316,6 +333,7 @@ function state(status,pid=0,patch={}){const value={name,dir,status,protected:fal
  const pending=stateFile+'.tmp-'+process.pid;fs.writeFileSync(pending,JSON.stringify(value));
  fs.renameSync(pending,stateFile);}
 ${STARTUP_MOCK}
+${SESSION_MOCK}
 if(a[0]==='create'){
  fs.mkdirSync(dir,{mode:0o700});fs.copyFileSync(a.at(-1),p.join(dir,'lima.yaml'));
  if(mode!=='missing-machine')fs.writeFileSync(p.join(dir,'vz-identifier'),${JSON.stringify(machineBytes)},{mode:0o600});
@@ -323,6 +341,8 @@ if(a[0]==='create'){
 }else if(a[0]==='list'){
  if(mode.startsWith('startup-'))advanceStartup();
  console.log(fs.readFileSync(stateFile,'utf8'));
+}else if(a[0]==='shell'){
+ fixedGuestProbe();
 }else if(a[0]==='start'){
  if(!a.includes('--foreground')||!a.includes('--timeout=30s'))process.exit(92);
  fs.writeFileSync(p.join(home,'boot.started'),'owned mock foreground child');
@@ -330,10 +350,10 @@ if(a[0]==='create'){
  if(mode.startsWith('startup-')){fs.writeFileSync(p.join(home,'startup.pid'),String(process.pid));state('Stopped');}
  else if(mode!=='hang-start')state('Running',process.pid);
  process.on('SIGTERM',()=>{fs.rmSync(p.join(home,'startup.pid'),{force:true});
-  if(mode==='startup-stuck-cleanup')state('Broken',process.pid,{driverPID:0,errors:[{}]});
+  if(['startup-stuck-cleanup','session-stuck-cleanup'].includes(mode)){
+   state('Broken',process.pid,{driverPID:0,errors:[{}]});}
   else state(mode==='reused-pid'?'Running':'Stopped',mode==='reused-pid'?process.ppid:0);process.exit(0);});
- setInterval(()=>{if(mode==='startup-exit'&&fs.existsSync(p.join(home,'startup.exit'))){
-  fs.rmSync(p.join(home,'startup.pid'),{force:true});state('Stopped');process.exit(2);}},5);
+ setInterval(exitOwnedMock,5);
 }else if(a[0]==='delete'){
  if(fs.existsSync(p.join(home,'fail-delete')))process.exit(2);
  fs.rmSync(dir,{recursive:true});
@@ -773,4 +793,143 @@ test('an executor exception preserves unknown group state and cannot authorize O
     assert.equal(result.cleanup?.confirmed, false); assert.ok(result.pendingHome);
     assert.ok((await lstat(result.pendingHome)).isDirectory());
   });
+});
+
+function sessionRecorder(uncertain = false) {
+  const events: { args: readonly string[]; home: string; result: Awaited<ReturnType<typeof runRuntimeProcess>> }[] = [];
+  const run = createLimaOsSessionRunner(async (executable, args, config) => {
+    const result = await runRuntimeProcess(executable, args, config); events.push({ args, home: config.home, result });
+    return uncertain && args[1] === 'start' ? { ...result, cleanupConfirmed: false } : result;
+  });
+  return { run, events };
+}
+test('OS sessions require consent before input getters, tools or the trusted callback run', async () => {
+  await scope(async base => {
+    let invoked = 0;
+    const raw = Object.defineProperty({ executeTargetConsent: false }, 'rootfsFile', {
+      get() { invoked++; throw new Error('must not read'); },
+    });
+    const use = async () => { invoked++; };
+    assert.equal((await withLimaOsSession(raw as LimaOsOptions, use)).phase, 'consent_required');
+    const options = await osMockTool(base), before = await readdir(base);
+    const bad = { ...options, callback: use };
+    assert.equal((await withLimaOsSession(bad, use)).phase, 'failed');
+    assert.equal(invoked, 0); assert.deepEqual(await readdir(base), before);
+  });
+});
+test('a bounded OS session exposes only a fixed probe and revokes it after cleanup', async () => {
+  await scope(async base => {
+    const recorder = sessionRecorder(), options = await osMockTool(base); let retained!: LimaOsProbeCapability;
+    const result = await recorder.run(options, async cap => {
+      retained = cap; assert.deepEqual(Object.keys(cap), ['probe']); assert.equal(Object.isFrozen(cap), true);
+      assert.deepEqual(await cap.probe(), { kind: 'os-prerequisites', observed: true, backendVerified: false });
+      assert.deepEqual(await cap.probe(), { kind: 'os-prerequisites', observed: true, backendVerified: false });
+    });
+    assert.equal(result.phase, 'callback_completed'); assert.equal(result.verified, false);
+    assert.equal(result.guestPrerequisitesObserved, true); assert.equal(result.cleanup?.confirmed, true);
+    const jobs = recorder.events.filter(event => event.args[1] === 'shell'); assert.equal(jobs.length, 2);
+    assert.deepEqual(jobs[0].args.slice(2, 4), ['--workdir=/', '--shell=/bin/bash']);
+    assert.match(jobs[0].args.at(-1)!, /cpu memory pids/);
+    assert.doesNotMatch(jobs[0].args.at(-1)!, /docker|curl|install|eval/);
+    const count = recorder.events.length; await assert.rejects(retained.probe());
+    assert.equal(recorder.events.length, count);
+  });
+});
+test('guest/SSH unavailability stays unobserved while malformed probe output fails closed', async () => {
+  for (const mode of ['session-probe-fail', 'session-probe-unavailable', 'session-probe-malformed']) {
+    await scope(async base => {
+      const recorder = sessionRecorder(), result = await recorder.run(await osMockTool(base, mode), async cap => {
+        assert.deepEqual(await cap.probe(), { kind: 'os-prerequisites', observed: false, backendVerified: false });
+      });
+      assert.equal(result.phase, mode === 'session-probe-malformed' ? 'failed' : 'callback_completed');
+      assert.equal(result.guestPrerequisitesObserved, false); assert.equal(result.cleanup?.confirmed, true);
+    });
+  }
+});
+test('callback throw, a never-settling async callback and foreground exit all close bounded sessions', async () => {
+  for (const mode of ['throw', 'never', 'foreground']) {
+    await scope(async base => {
+      const recorder = sessionRecorder(), options = await osMockTool(base);
+      if (mode === 'never') options.deadlineAt = Date.now() + 2_500;
+      let retained!: LimaOsProbeCapability;
+      const result = await recorder.run(options, async cap => {
+        retained = cap;
+        if (mode === 'throw') throw new Error('discard callback failure text');
+        if (mode === 'foreground') {
+          const file = await waitForOwnedFile(base, 'boot.started');
+          await writeFile(join(file, '..', 'session.exit'), 'owned child exit');
+        }
+        await new Promise<void>(() => {});
+      });
+      assert.equal(result.phase, 'failed'); assert.equal(result.cleanup?.confirmed, true);
+      assert.equal(recorder.events.find(event => event.args[1] === 'start')?.result.cleanupConfirmed, true);
+      const count = recorder.events.length; await assert.rejects(retained.probe());
+      assert.equal(recorder.events.length, count);
+    });
+  }
+});
+test('a scoped OS probe rejects command/options arguments before any guest probe job', async () => {
+  await scope(async base => {
+    const recorder = sessionRecorder(), result = await recorder.run(await osMockTool(base), async cap => {
+      await assert.rejects((cap.probe as (...args: unknown[]) => Promise<unknown>)('arbitrary-command'));
+    });
+    assert.equal(result.phase, 'failed'); assert.equal(result.cleanup?.confirmed, true);
+    assert.equal(recorder.events.some(event => event.args[1] === 'shell'), false);
+  });
+});
+test('unfinished and concurrent probes are revoked and drained before foreground and profile cleanup', async () => {
+  for (const overlap of [false, true]) {
+    await scope(async base => {
+      const recorder = sessionRecorder();
+      const result = await recorder.run(await osMockTool(base, 'session-probe-hang'), async cap => {
+        const pending = cap.probe(); void pending.catch(() => undefined);
+        await waitForOwnedFile(base, 'probe.started');
+        if (overlap) await assert.rejects(cap.probe());
+      });
+      assert.equal(result.phase, 'failed'); assert.equal(result.cleanup?.confirmed, true);
+      const probe = recorder.events.find(event => event.args[1] === 'shell')!;
+      assert.equal(probe.result.cancelled, true); assert.equal(probe.result.cleanupConfirmed, true);
+      assert.equal(probe.result.closeConfirmed, true);
+    });
+  }
+});
+test('PID drift and caller abort revoke scoped probes without authorizing metadata PID kills', async () => {
+  for (const abort of [false, true]) {
+    await scope(async base => {
+      const recorder = sessionRecorder(), controller = new AbortController(), options = await osMockTool(base);
+      const result = await recorder.run({ ...options, signal: controller.signal }, async () => {
+        if (abort) controller.abort();
+        else {
+          const file = await waitForOwnedFile(base, 'boot.started'), home = join(file, '..');
+          const name = (await readdir(join(home, '.lima'))).find(value => value.startsWith('wk-'))!;
+          const path = join(home, '.lima', name, 'state.json'), frame = JSON.parse(await readFile(path, 'utf8'));
+          await writeFile(path, JSON.stringify({ ...frame, hostAgentPID: frame.hostAgentPID + 1,
+            driverPID: frame.driverPID + 1 }));
+        }
+        await new Promise<void>(() => {});
+      });
+      assert.equal(result.phase, 'failed'); assert.equal(result.cleanup?.confirmed, true);
+      assert.equal(recorder.events.some(event => event.args[1] === 'stop'), false);
+    });
+  }
+});
+test('asset, machine and binary drift or uncertain final state preserve sticky cleanup failure', async () => {
+  for (const fault of ['rootfs.img', 'vz-identifier', 'binary', 'state', 'group']) {
+    await scope(async base => {
+      const recorder = sessionRecorder(fault === 'group');
+      const options = await osMockTool(base, fault === 'state' ? 'session-stuck-cleanup' : '');
+      const result = await recorder.run(options, async cap => {
+        if (['state', 'group'].includes(fault)) { await cap.probe(); return; }
+        const file = await waitForOwnedFile(base, 'boot.started'), home = join(file, '..');
+        const name = (await readdir(join(home, '.lima'))).find(value => value.startsWith('wk-'))!;
+        const path = fault === 'binary' ? options.limactlExecutable
+          : fault === 'rootfs.img' ? join(home, fault) : join(home, '.lima', name, fault);
+        await writeFile(path, 'changed owned test asset');
+        await new Promise<void>(() => {});
+      });
+      assert.equal(result.phase, 'failed'); assert.equal(result.cleanup?.confirmed, false);
+      assert.ok(result.pendingHome); assert.ok((await lstat(result.pendingHome)).isDirectory());
+      assert.equal(recorder.events.some(event => event.args[1] === 'delete'), false);
+    });
+  }
 });

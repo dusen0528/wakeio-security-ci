@@ -303,3 +303,20 @@ Running은 같은 양수 PID 쌍·errors 없음이 모두 맞아야 한다. fram
 시작/관찰은 기존 30초와 caller deadline 중 짧은 한도·abort·16KiB cap을 공유한다. foreground가 먼저 끝나면 Running 관측을 성공으로 채택하지 않는다.
 일반 prepare/cleanup의 strict 관찰은 그대로다. finally 소유 PGID 종료와 strict Stopped/PID0 없이 관측 성공을 보고하지 않는다. 소유 삭제 뒤 부재 확인 전에는 cleanup confirmed가 아니다.
 고정 Node mock 상태열과 지속 Broken·조기 종료·취소·PID 모순·asset/identity 변경·cleanup 불명을 검사한다. 실제 SDK 재측정은 후속 R9 담당이며 VM/캐시에는 접근하지 않는다.
+
+### M1-99 / CPx8 검토용 bounded source-free OS session
+
+`withLimaOsSession(options, trustedAsyncUse)`는 새 소유 profile만 준비한다. callback은 raw JSON/TargetSpec/options의 필드가 아니며 consent own-descriptor 검사 전 I/O/호출은 0이다.
+기존 lease.boot()/Stopped-only 경로는 그대로다. 새 session은 caller deadline과 30초 중 짧은 상한이며 기존 실행기600000ms·16KiB·abort/PGID 감독을 늘리지 않는다.
+private HOME/rootfs/config/VZ identity와 정확한 고정 version/양수 PID 쌍을 묶고, binary는 안정 FD/byte SHA와 파일 identity를 전후 결속한다. PID 변경·asset/transport 손실은 폐쇄한다.
+Running 동안에만 frozen `{probe()}`를 비차단 trusted async callback에 준다. 고정 argv/script만 실행하며 명령/경로/설치/네트워크 옵션·원문 key/config/OS 로그는 제공하지 않는다.
+probe는 UID10001·non-sudo·cgroupv2·cpu/memory/pids delegation의 가용성과 worker 쓰기 권한만 읽는다. guard125/SSH255의 관측 부재와 정확한 성공 token을 구분하고 안전한 boolean metadata만 돌려준다.
+[Lima1.0.3 shell](https://github.com/lima-vm/lima/blob/v1.0.3/cmd/limactl/shell.go#L75-L132)의 workdir/shell 옵션과 argv quoting을 사용한다. env는 고정 guest env -i이며 관리 SSH는 같은 소유 VM만 향한다.
+callback 종료/throw/미완료·deadline/abort·foreground 조기 종료 시 capability를 닫고 동시 probe를 취소/drain한다. 소유 foreground PGID 종료→strict Stopped→기존 delete/부재 확인 순서다.
+cleanup 불명은 sticky로 남기며 Running/PID/asset 불명을 삭제 권한으로 쓰지 않는다. 반환 뒤 보관한 capability의 재사용은 I/O 없이 거부한다.
+신뢰 callback의 미해결 Promise는 fence로 유한하게 반환한다. 같은 Node event loop를 막는 동기 무한 루프는 선점하지 못하므로 hostile/blocking callback 지원은 이 작은 session 범위 밖이다.
+probe 통과는 daemon·quota/seccomp·egress/PG/target 검증이 아니다. source/host 비밀/mount/agent 전달·Docker/설치 권한·CLI/preflight 연결은 없고 항상 unavailable/verified=false다.
+테스트는 소유 Node mock뿐이며 실제 VM 실행은 0이다. CPx8 승인 뒤 R9가 고정 자산으로 guest 준비 probe를 실측해야 하며 현재 OS user-mode egress 차단도 미검증이다.
+M1-99는 120자 검사 2회 실패로 미커밋 중단했고 build/테스트도 미실행이었다. M1-103에서 해당 124자 표현식만 줄바꿈했으며 WIP controller AST 동일성을 확인했다.
+기존 테스트 diff의 삭제 6행은 import2·mock 명령 이름 선택1·기존 stuck-cleanup 분기1·종료 timer 추출2행이다. 새 shell/session mock 지원이며 기존 assertion/기대값 삭제는 없다.
+기준의 기존 test AST 38개가 모두 같고 strict Stopped/version/identity 거부도 보존됐다. 요청된 serial cleanup/compat 1회는 51 pass·0 fail/skip였으며 실제 OS/격리 증거가 아니다.
