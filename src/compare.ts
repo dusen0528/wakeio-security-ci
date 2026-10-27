@@ -147,16 +147,20 @@ export async function readScanReport(path: string): Promise<ScanReport> {
   return parseScanReport(await readJsonInput(path));
 }
 
+function runtimeShapedCheck(check: unknown): boolean {
+  return record(check)
+    && (Object.hasOwn(check, 'runtime') || typeof check.id === 'string' && check.id.startsWith('runtime.')
+      || Array.isArray(check.findings) && check.findings.some((finding: unknown) => record(finding)
+        && record(finding.evidence) && finding.evidence.basis === 'runtime-observation-ledger'));
+}
+
 /** New common reader: bounded own JSON; legacy entrypoints retain their historical limits/signatures. */
 export function parseReport(input: unknown): Report {
   const invalid = () => { throw new TypeError('invalid_report'); };
   const data = snapshotJsonData(input, invalid, invalid);
   if (!record(data)) return invalid();
   if (data.mode === 'runtime' || Object.hasOwn(data, 'runtime')) return parseRuntimeReport(data);
-  if (Array.isArray(data.checks) && data.checks.some(check => record(check)
-    && (Object.hasOwn(check, 'runtime') || typeof check.id === 'string' && check.id.startsWith('runtime.')
-      || Array.isArray(check.findings) && check.findings.some((finding: unknown) => record(finding)
-        && record(finding.evidence) && finding.evidence.basis === 'runtime-observation-ledger')))) return invalid();
+  if (Array.isArray(data.checks) && data.checks.some(runtimeShapedCheck)) return invalid();
   return parseScanReport(data);
 }
 export async function readReport(path: string): Promise<Report> {
