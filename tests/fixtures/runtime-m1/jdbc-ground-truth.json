@@ -1,0 +1,34 @@
+{
+  "schema":"wakeio.runtime-jdbc-ground-truth/v1",
+  "owner":"R8",
+  "fixture":"examples/runtime/spring-sqli-jdbc",
+  "class":"io.wakeio.jdbcfixtures.ItemController",
+  "source":"src/main/java/io/wakeio/jdbcfixtures/Application.java",
+  "sourceSha256":{"vulnerable":"e7558343b0f0b8d1036a7ee7142f8de04237555bc8d320972b21ffa06c56f68b","fixed":
+  "c8cc3c7eff4d48e0853746b2377d49993e5652a18ba240aecbedcf704dc50042"},
+  "bytecodeSha256":null,
+  "declaredBusinessRoutes":5,
+  "implicitHeadOptionsCounted":false,
+  "expectedProvenance":["spring-actuator","openapi"],
+  "preparationOnly":["GET /actuator/health","GET /actuator/mappings","GET /v3/api-docs"],
+  "routes":[
+    {"method":"GET","path":"/api/items/search","handler":"searchGet","input":"query:name","signature":
+    "searchGet(java.lang.String)","locations":{"vulnerable":{"declarationLine":29,"bodyLines":[30,33],"sqlLines":
+    [32]},"fixed":{"declarationLine":29,"bodyLines":[30,34],"sqlLines":[31,32,33]}},"attacked":true,"coverage":
+    "covered"},
+    {"method":"POST","path":"/api/items/search","handler":"searchPost","input":"json:/name","signature":
+    "searchPost(io.wakeio.jdbcfixtures.ItemController$SearchRequest)","locations":{"vulnerable":{"declarationLine":37,
+    "bodyLines":[38,42],"sqlLines":[41]},"fixed":{"declarationLine":38,"bodyLines":[39,44],"sqlLines":[41,42,43]}},
+    "attacked":true,"coverage":"covered"},
+    {"method":"GET","path":"/api/items/safe-search","handler":"safeSearch","input":"query:name","signature":
+    "safeSearch(java.lang.String)","locations":{"vulnerable":{"declarationLine":46,"bodyLines":[47,51],"sqlLines":[48,
+    49,50]},"fixed":{"declarationLine":48,"bodyLines":[49,53],"sqlLines":[50,51,52]}},"attacked":true,"coverage":
+    "covered"},
+    {"method":"GET","path":"/api/ping","handler":"ping","input":"query:name","signature":"ping(java.lang.String)",
+    "locations":{"vulnerable":{"declarationLine":55,"bodyLines":[56,56],"sqlLines":[]},"fixed":{"declarationLine":57,
+    "bodyLines":[58,58],"sqlLines":[]}},"attacked":true,"coverage":"covered"},
+    {"method":"GET","path":"/api/untouched","handler":"untouched","input":null,"signature":"untouched()","locations":
+    {"vulnerable":{"declarationLine":60,"bodyLines":[61,61],"sqlLines":[]},"fixed":{"declarationLine":62,"bodyLines":
+    [63,63],"sqlLines":[]}},"attacked":false,"coverage":"uncovered"}
+  ]
+}

@@ -1,7 +1,7 @@
 {
   "schema": "wakeio.runtime-corpus/v1",
   "owner": "R8",
-  "scope": "M1 primary pair plus independent SQL matrix; second microservice pending",
+  "scope": "M1 two Spring pairs plus independent SQL matrix; execution unverified",
   "cases": [{
     "id": "spring-sqli-primary", "fixture": "examples/runtime/spring-sqli",
     "variants": ["vulnerable", "fixed"], "pins": "examples/runtime/spring-sqli/pins.json",
@@ -21,6 +21,13 @@
     "projectionsSha256":"45b19bf3a6f1c963c3bf3c086dceb9adb659af355bacd9e5e60441ee962b5b4f",
     "authorship":"R8 manual ground truth",
     "parserExecuted":false
-  }
+  },
+    {"id":"spring-sqli-jdbc","fixture":"examples/runtime/spring-sqli-jdbc","variants":["vulnerable","fixed"],"pins":
+    "examples/runtime/spring-sqli-jdbc/pins.json","expectations":"examples/runtime/spring-sqli-jdbc/cases.json",
+    "groundTruth":"tests/fixtures/runtime-m1/jdbc-ground-truth.json","pack":{"id":"spring-boot","version":1},"seed":1,
+    "maxRequests":40,"runsRequired":2,"buildAndExecution":"not-run","launchReady":false,"fixtureTreeSha256":
+    "29c582a983fffa58995248e6f0e073a683bfda18b73a01d498edad259c4581ee","fixtureTreeHashRule":
+    "sorted relative UTF-8 path + NUL + file SHA256 + LF","groundTruthSha256":
+    "3fe46ea2d7142873a995f0da7d1e6bbaeda9f538279f4626fd0c53ea5d5a80bb"}
   ]
 }

@@ -1,0 +1,7 @@
+{
+  "x-wakeio-draft": "blocked: OCI digests and trusted Dockerfile not yet measured",
+  "services": {
+    "app": {"build": {"context": ".", "dockerfile": "Dockerfile.pending"}},
+    "db": {"image": null}
+  }
+}
