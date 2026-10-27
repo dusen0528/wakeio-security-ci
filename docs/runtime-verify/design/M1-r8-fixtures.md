@@ -218,4 +218,7 @@ Dockerfile은 index를 사용하며 최종 platform 선택·해당 child 확인�
 신규 compose/target은 승인 subset의 데이터이고 normaliseCompose의 executable=false를 유지한다.
 기존 draft·Java/POM/seed/cases·독립 판정은 불변이다. Maven verify에 skip 플래그는 없지만 아직 빌드하지 않았다.
 실제 guest/build/JAR 재현·SQL/격리·M1 게이트는 미검증이며 CLI verify 성공 명령으로 안내하지 않는다.
-코퍼스 전체 fixture tree SHA 갱신은 이번 쓰기 범위 밖이므로 별도 R8 패킷이 필요하다.
+
+M1-120: root 승인으로 Dockerfile/ignore/compose/target/pins/README 추가에 따른 두 fixtureTreeSha256만 갱신했다.
+기존 sorted relative UTF-8 path + NUL + file SHA256 + LF 규칙을 그대로 적용했으며 정렬·파일 정책은 바꾸지 않았다.
+보안 기대값·grade·개수·budget·GT·Java/POM/seed와 실행 미검증 상태는 그대로다. 기대값 완화나 실제 빌드 성공이 아니다.
