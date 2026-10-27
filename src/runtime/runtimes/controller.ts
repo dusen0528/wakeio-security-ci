@@ -74,7 +74,7 @@ function options(raw: LimaProfileOptions): LimaProfileOptions {
 const BOOT_FAILURES = ['bootstrap_failed', 'host_alias_present', 'cgroup_v2_missing', 'user_create_failed',
   'uid_mismatch', 'sudo_allowed', 'subid_overlap', 'subuid_mismatch', 'subgid_mismatch', 'delegation_missing'] as const;
 const OS_STATE_COMMON = String.raw`
-state_dir=/run/wakeio-m1
+state_dir=/run/wakeio-m1-boot
 state_file=$state_dir/boot-status
 boot_identity() {
   boot=$(/usr/bin/cat /proc/sys/kernel/random/boot_id) || return 1
@@ -90,6 +90,24 @@ state_metadata() {
   size=$(/usr/bin/stat -c %s "$state_file") || return 1
   test "$size" -gt 0 && test "$size" -le 192
 }
+non_sudo() (
+  trap - EXIT
+  LC_ALL=C; export LC_ALL
+  ns_uid=$(/usr/bin/id -u) || return 1
+  test "$ns_uid" = 0 || return 1
+  ns_host_record=$({
+    if /usr/bin/hostname -s 2>&1; then printf 'wakeio-exit:0'; else printf 'wakeio-exit:1'; fi
+  } | /usr/bin/head -c 80 | /usr/bin/tr -c '\012\040-\176' '?') || return 1
+  ns_host=$(printf '%s' "$ns_host_record" | /usr/bin/head -n 1)
+  printf '%s\n' "$ns_host" | /usr/bin/grep -Eq '^[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?$' || return 1
+  test "$ns_host_record" = "$(printf '%s\nwakeio-exit:0' "$ns_host")" || return 1
+  ns_listing=$({
+    if /usr/bin/timeout --signal=KILL 1s /usr/bin/sudo -n -l -U wakeio-m1 2>&1; then
+      printf 'wakeio-exit:0'
+    else printf 'wakeio-exit:1'; fi
+  } | /usr/bin/head -c 513 | /usr/bin/tr -c '\012\040-\176' '?') || return 1
+  test "$ns_listing" = "$(printf 'User wakeio-m1 is not allowed to run sudo on %s.\nwakeio-exit:0' "$ns_host")"
+)
 `;
 const BOOT_GUARDS = '#!/bin/sh\nset -eu\nexport LC_ALL=C\numask 077\nexec >/dev/null 2>&1\n'
   + OS_STATE_COMMON + String.raw`
@@ -122,7 +140,7 @@ id wakeio-m1 >/dev/null 2>&1 || useradd --uid 10001 --create-home --shell /bin/b
 step=uid_mismatch
 test "$(id -u wakeio-m1)" = 10001 || exit 125
 step=sudo_allowed
-if sudo -n -l -U wakeio-m1 >/dev/null 2>&1; then exit 125; fi
+non_sudo || exit 125
 for file in /etc/subuid /etc/subgid; do
   step=bootstrap_failed
   touch "$file"
@@ -147,9 +165,8 @@ loginctl enable-linger wakeio-m1
 write_state complete none
 trap - EXIT
 `;
-const MISSING_PREREQUISITE_TRAILER = [
-  'echo "wakeio_missing_prerequisite: verified packages, daemon relay, nft/proxy and probes" >&2', 'exit 125',
-].join('\n') + '\n';
+// Guard complete records only source-free OS preparation. Stopped profiles still reject the absent backend.
+const MISSING_PREREQUISITE_TRAILER = 'exit 125\n';
 const BOOT = BOOT_GUARDS + MISSING_PREREQUISITE_TRAILER;
 
 /** Pure config compilation; input is trusted tool metadata, never TargetSpec/source config or shell text. */
@@ -377,7 +394,7 @@ if test "$phase" != complete; then probe_failure "$step"; fi
 if /usr/bin/grep -Eq 'host\.(lima|docker)\.internal' /etc/hosts; then probe_failure host_alias_present
 else test "$?" -eq 1 || probe_failure host_alias_present; fi
 test "$(/usr/bin/id -u wakeio-m1)" = 10001 || probe_failure uid_mismatch
-if /usr/bin/sudo -n -l -U wakeio-m1 >/dev/null 2>&1; then probe_failure sudo_allowed; fi
+non_sudo || probe_failure sudo_allowed
 test "$(/usr/bin/stat -fc %T /sys/fs/cgroup)" = cgroup2fs || probe_failure cgroup_v2_missing
 for file in /etc/subuid /etc/subgid; do
   /usr/bin/awk -F: '$1 != "wakeio-m1" && $2 <= 296607 && $2 + $3 > 231072 {exit 1}' "$file" ||
@@ -412,7 +429,9 @@ function probeMetadata(result: RuntimeProcessResult): Readonly<OsPrerequisites> 
   const phase = match[1] as OsPrerequisites['bootPhase'], reason = match[2] as OsGuardReason;
   const allowed: readonly string[] = phase === 'pending' ? ['bootstrap_pending']
     : phase === 'unknown' ? ['boot_metadata_invalid']
-    : phase === 'failed' ? BOOT_FAILURES : [...BOOT_FAILURES, 'cgroup_procs_unwritable', 'cgroup_subtree_unwritable'];
+    : phase === 'failed' ? BOOT_FAILURES : [...BOOT_FAILURES.filter(value =>
+      value !== 'bootstrap_failed' && value !== 'user_create_failed'),
+    'cgroup_procs_unwritable', 'cgroup_subtree_unwritable'];
   if (!allowed.includes(reason)) invalid();
   return Object.freeze({ ...base, bootPhase: phase, reason });
 }

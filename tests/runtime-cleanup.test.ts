@@ -80,11 +80,12 @@ test('compiled Lima config is isolated, pinned and explicitly fails before incom
   assert.match(c.message, /SSH22/);
   const boot: string = c.provision[0].script;
   for (const required of ['host\\.lima', '10001', 'Delegate=cpu cpuset io memory pids', '65536',
-    'CPUQuota=200%', 'MemoryMax=2G', 'TasksMax=256', 'wakeio_missing_prerequisite', 'exit 125']) {
+    'CPUQuota=200%', 'MemoryMax=2G', 'TasksMax=256', 'exit 125']) {
     assert.ok(boot.includes(required), required);
   }
   assert.ok(boot.endsWith('loginctl enable-linger wakeio-m1\nwrite_state complete none\ntrap - EXIT\n'
-    + 'echo "wakeio_missing_prerequisite: verified packages, daemon relay, nft/proxy and probes" >&2\nexit 125\n'));
+    + 'exit 125\n'));
+  assert.doesNotMatch(boot, /wakeio_missing_prerequisite/);
   assert.doesNotMatch(boot, /docker run|docker start|curl.*\|.*sh/);
   assert.throws(() => compileLimaProfileConfig({ ...pins, rootfs: { ...pins.rootfs, sha256: '' } }));
   assert.throws(() => compileLimaProfileConfig({ ...pins, rootfs: { ...pins.rootfs, url: 'https://attacker/image' } }));
@@ -451,8 +452,7 @@ test('synthetic bytes bind private OS config and VZ identity; foreground boot st
     const osScript: string = config.provision[0].script;
     assert.ok(osScript.endsWith('loginctl enable-linger wakeio-m1\nwrite_state complete none\ntrap - EXIT\n'));
     const stoppedScript: string = JSON.parse(compileLimaProfileConfig(pins)).provision[0].script;
-    assert.equal(stoppedScript, osScript
-      + 'echo "wakeio_missing_prerequisite: verified packages, daemon relay, nft/proxy and probes" >&2\nexit 125\n');
+    assert.equal(stoppedScript, osScript + 'exit 125\n');
     const boot = await lease.boot();
     assert.deepEqual(boot, { status: 'unavailable', verified: false, phase: 'running_observed_then_stopped' });
     assert.equal((await calls(lease.home)).some(args => args[0] === 'stop'), false);
@@ -1091,7 +1091,10 @@ test('OS bootstrap clears SDK proxy keys and atomically records bounded root-own
     'FTP_PROXY', 'HTTP_PROXY', 'HTTPS_PROXY', 'NO_PROXY'];
   assert.deepEqual(config.env, Object.fromEntries(names.map(name => [name, ''])));
   assert.equal(config.propagateProxyEnv, false);
-  for (const guard of ['state_dir=/run/wakeio-m1', '/proc/sys/kernel/random/boot_id',
+  assert.equal(config.portForwards[0].guestSocket, '/run/wakeio-m1/relay.sock');
+  assert.match(script, /^state_dir=\/run\/wakeio-m1-boot$/m);
+  assert.doesNotMatch(script, /^state_dir=\/run\/wakeio-m1$/m);
+  for (const guard of ['state_dir=/run/wakeio-m1-boot', '/proc/sys/kernel/random/boot_id',
     'test ! -L "$state_dir"', "'%u:%g:%a'", '0:0:700', 'mkdir -m 700', "'%u:%g:%a:%h'", '0:0:600:1',
     'test "$size" -le 192', 'mktemp "$state_dir/.boot.XXXXXX"', 'mv -T -- "$temporary" "$state_file"',
     'write_state failed "$step"', 'write_state pending bootstrap_pending', 'write_state complete none']) {
@@ -1099,6 +1102,7 @@ test('OS bootstrap clears SDK proxy keys and atomically records bounded root-own
   }
   assert.match(script, /id wakeio-m1.*\|\| useradd --uid 10001 --create-home --shell \/bin\/bash/);
   assert.equal((script.match(/-K SUB_UID_COUNT=0 -K SUB_GID_COUNT=0/g) ?? []).length, 1);
+  assert.match(script, /non_sudo \|\| exit 125/);
   assert.match(script, /\$1 != "wakeio-m1" && \$2 <= 296607 && \$2 \+ \$3 > 231072 \{exit 1\}/);
   assert.match(script, /test "\$\(grep '\^wakeio-m1:' "\$file"\)" = 'wakeio-m1:231072:65536' \|\| exit 125/);
   assert.match(script, /else echo 'wakeio-m1:231072:65536' >> "\$file"/);
@@ -1111,7 +1115,8 @@ test('fixed OS probe binds current boot and safe FD metadata before any success 
       const answer = await cap.probe(); assert.equal(answer.observed, true); assert.equal(answer.reason, 'none');
     });
     const script = recorder.events.find(event => event.args[1] === 'shell')!.args.at(-1)!;
-    for (const guard of ['state_directory || metadata_failure', 'state_metadata || metadata_failure',
+    for (const guard of ['state_dir=/run/wakeio-m1-boot',
+      'state_directory || metadata_failure', 'state_metadata || metadata_failure',
       'exec 3< "$state_file"', '/proc/self/fd/3', 'test "$metadata" = "$fd_metadata"',
       'read -r tag saved_boot phase step extra', 'test "$saved_boot" = "$boot" || metadata_failure',
       'test "$size" -eq "$expected_size" || metadata_failure', 'test -z "$trailing" && test -z "$extra"',
@@ -1119,6 +1124,8 @@ test('fixed OS probe binds current boot and safe FD metadata before any success 
       'cgroup_procs_unwritable', 'cgroup_subtree_unwritable', 'subid_overlap', 'subuid_mismatch', 'subgid_mismatch']) {
       assert.ok(script.includes(guard), guard);
     }
+    assert.match(script, /non_sudo \|\| probe_failure sudo_allowed/);
+    assert.equal(script.match(/\/usr\/bin\/sudo -n -l -U wakeio-m1/g)?.length, 1);
     assert.ok(script.indexOf('state_metadata || metadata_failure')
       < script.lastIndexOf("printf 'wakeio-os-prerequisites/v1\\n'"));
     assert.doesNotMatch(script, /eval|useradd|usermod|write_state|mktemp|\bdocker(?:[\s;&|]|$)|curl|install/);
@@ -1142,7 +1149,8 @@ test('closed boot/guard reasons remain unobserved and cannot authorize backend o
       'uid_mismatch', 'sudo_allowed', 'subid_overlap', 'subuid_mismatch', 'subgid_mismatch', 'delegation_missing'];
     const cases = [['pending', 'bootstrap_pending'], ['unknown', 'boot_metadata_invalid'],
       ...reasons.map(reason => ['failed', reason]),
-      ...['uid_mismatch', 'cgroup_procs_unwritable', 'cgroup_subtree_unwritable'].map(reason => ['complete', reason])];
+      ...reasons.filter(reason => !['bootstrap_failed', 'user_create_failed'].includes(reason))
+        .concat(['cgroup_procs_unwritable', 'cgroup_subtree_unwritable']).map(reason => ['complete', reason])];
     let current = cases[0], calls = 0, retained!: LimaOsProbeCapability;
     const run = diagnosticSession(() => { calls++; return { exitCode: 125, completed: false,
       stdout: `wakeio-os-prerequisites/v1:${current[0]}:${current[1]}\n` }; });
@@ -1161,6 +1169,8 @@ test('closed boot/guard reasons remain unobserved and cannot authorize backend o
 });
 test('unknown, truncated and inconsistent diagnostic tokens fail the session without weakening cleanup', async () => {
   const bad = ['wakeio-os-prerequisites/v1:complete:none\n', 'wakeio-os-prerequisites/v1:pending:uid_mismatch\n',
+    'wakeio-os-prerequisites/v1:complete:user_create_failed\n',
+    'wakeio-os-prerequisites/v1:complete:bootstrap_failed\n',
     'wakeio-os-prerequisites/v1:failed:new_reason\n', 'wakeio-os-prerequisites/v1:failed:uid_mismatch',
     'wakeio-os-prerequisites/v1:failed:uid_mismatch\nextra\n'];
   for (const stdout of bad) {
@@ -1171,4 +1181,63 @@ test('unknown, truncated and inconsistent diagnostic tokens fail the session wit
       assert.equal(result.verified, false); assert.equal(result.cleanup?.confirmed, true);
     });
   }
+});
+
+async function nonSudoFixture(base: string, output: Buffer, exitCode = 0,
+  hostname = 'lima-wk-0123456789ab\n', root = true, stderr = '') {
+  const script: string = JSON.parse(compileLimaProfileConfig(pins)).provision[0].script;
+  const functionText = script.match(/non_sudo\(\) \([\s\S]*?\n\)\n/)![0];
+  const executable = join(base, 'owned-policy-mock'), callsFile = join(base, 'policy-calls');
+  await writeFile(executable, `#!${process.execPath}
+const fs=require('node:fs'),a=process.argv.slice(2);
+if(process.env.LC_ALL!=='C'||JSON.stringify(a)!=='["-n","-l","-U","wakeio-m1"]')process.exit(92);
+fs.appendFileSync(${JSON.stringify(callsFile)},'list'+String.fromCharCode(10));
+process.stdout.write(Buffer.from(${JSON.stringify(output.toString('base64'))},'base64'));
+process.stderr.write(Buffer.from(${JSON.stringify(Buffer.from(stderr).toString('base64'))},'base64'));
+process.exitCode=${exitCode};
+`, { mode: 0o700 });
+  const mocked = functionText.replaceAll('/usr/bin/sudo', executable).replaceAll('/usr/bin/id', 'owned_id')
+    .replaceAll('/usr/bin/hostname', 'owned_hostname').replaceAll('/usr/bin/timeout', 'owned_timeout');
+  assert.doesNotMatch(mocked, /\/usr\/bin\/(?:sudo|id|hostname|timeout)/);
+  const command = 'set -eu\nowned_id() { test "$*" = -u; printf "' + (root ? '0' : '10001') + '\\n"; }\n'
+    + 'owned_hostname() { test "$*" = -s; printf %s ' + "'" + hostname.replaceAll("'", "'\\''") + "'; }\n"
+    + 'owned_timeout() { test "$1" = --signal=KILL; shift; test "$1" = 1s; shift; "$@"; }\n'
+    + mocked + '\nnon_sudo';
+  const result = await runRuntimeProcess('/bin/sh', ['-c', command], { cwd: base, home: base,
+    timeoutMs: 2_000, deadlineAt: Date.now() + 3_000, maxOutputBytes: 256 });
+  assert.equal(result.stdout, ''); assert.equal(result.stderr, ''); assert.equal(result.cleanupConfirmed, true);
+  const calls = await readFile(callsFile, 'utf8').catch(() => '');
+  return { result, calls };
+}
+test('full sudoers no-grants exit0 is accepted; grants, errors and altered output never prove non-sudo', async () => {
+  const line = 'User wakeio-m1 is not allowed to run sudo on lima-wk-0123456789ab.\n';
+  const replies = [line, 'User wakeio-m1 may run the following commands on lima-wk-0123456789ab:\n (ALL) ALL\n',
+    'Matching Defaults entries for wakeio-m1:\n env_reset\n' + line, line + '\n', line.trimEnd(),
+    line + 'diagnostic\n', line.replace('wakeio-m1', 'someone'), line.replace('lima-wk-', 'other-'),
+    'unsupported plugin or locale\n', line.replace('run sudo', "run '/usr/bin/id'"),
+    line.replace('User', 'U\0ser'), line + 'x'.repeat(600)];
+  for (let i = 0; i < replies.length; i++) {
+    await scope(async base => {
+      const { result, calls } = await nonSudoFixture(base, Buffer.from(replies[i]));
+      assert.equal(result.completed, i === 0); assert.equal(calls, 'list\n');
+    });
+  }
+  for (const [exitCode, stderr] of [[1, ''], [0, 'sudo: policy error\n']] as const) {
+    await scope(async base => {
+      const { result, calls } = await nonSudoFixture(base, Buffer.from(line), exitCode, undefined, true, stderr);
+      assert.equal(result.completed, false); assert.equal(calls, 'list\n');
+    });
+  }
+});
+test('non-sudo verification requires root context and one bounded valid hostname before listing', async () => {
+  for (const hostname of ['bad\nsecond\n', 'bad host\n', 'x'.repeat(64) + '\n', 'bad\x1bhost\n', '\n']) {
+    await scope(async base => {
+      const { result, calls } = await nonSudoFixture(base, Buffer.from('unused'), 0, hostname);
+      assert.equal(result.completed, false); assert.equal(calls, '');
+    });
+  }
+  await scope(async base => {
+    const { result, calls } = await nonSudoFixture(base, Buffer.from('unused'), 0, undefined, false);
+    assert.equal(result.completed, false); assert.equal(calls, '');
+  });
 });
