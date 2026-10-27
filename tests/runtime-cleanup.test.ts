@@ -417,7 +417,8 @@ test('other list versions, suffixes and whitespace cannot authorize deletion', a
       const result = await prepareLimaOsProfile(await osMockTool(base, '', version));
       assert.equal(result.reason, 'prepare_failed'); assert.equal(result.verified, false);
       assert.equal(result.cleanup?.confirmed, false); assert.ok(result.pendingHome);
-      assert.equal((await calls(result.pendingHome)).some(args => ['start', 'delete', 'stop'].includes(args[0])), false);
+      assert.equal((await calls(result.pendingHome))
+        .some(args => ['start', 'delete', 'stop'].includes(args[0])), false);
     });
   }
 });
