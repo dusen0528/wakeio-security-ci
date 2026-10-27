@@ -83,7 +83,7 @@ test('compiled Lima config is isolated, pinned and explicitly fails before incom
     'CPUQuota=200%', 'MemoryMax=2G', 'TasksMax=256', 'wakeio_missing_prerequisite', 'exit 125']) {
     assert.ok(boot.includes(required), required);
   }
-  assert.ok(boot.endsWith('loginctl enable-linger wakeio-m1\n'
+  assert.ok(boot.endsWith('loginctl enable-linger wakeio-m1\nwrite_state complete none\ntrap - EXIT\n'
     + 'echo "wakeio_missing_prerequisite: verified packages, daemon relay, nft/proxy and probes" >&2\nexit 125\n'));
   assert.doesNotMatch(boot, /docker run|docker start|curl.*\|.*sh/);
   assert.throws(() => compileLimaProfileConfig({ ...pins, rootfs: { ...pins.rootfs, sha256: '' } }));
@@ -449,7 +449,7 @@ test('synthetic bytes bind private OS config and VZ identity; foreground boot st
     assert.match(config.provision[0].script, /cgroup2fs \|\| exit 125/);
     assert.match(config.provision[0].script, /host\\.lima/);
     const osScript: string = config.provision[0].script;
-    assert.ok(osScript.endsWith('loginctl enable-linger wakeio-m1\n'));
+    assert.ok(osScript.endsWith('loginctl enable-linger wakeio-m1\nwrite_state complete none\ntrap - EXIT\n'));
     const stoppedScript: string = JSON.parse(compileLimaProfileConfig(pins)).provision[0].script;
     assert.equal(stoppedScript, osScript
       + 'echo "wakeio_missing_prerequisite: verified packages, daemon relay, nft/proxy and probes" >&2\nexit 125\n');
@@ -825,15 +825,17 @@ test('a bounded OS session exposes only a fixed probe and revokes it after clean
     const recorder = sessionRecorder(), options = await osMockTool(base); let retained!: LimaOsProbeCapability;
     const result = await recorder.run(options, async cap => {
       retained = cap; assert.deepEqual(Object.keys(cap), ['probe']); assert.equal(Object.isFrozen(cap), true);
-      assert.deepEqual(await cap.probe(), { kind: 'os-prerequisites', observed: true, backendVerified: false });
-      assert.deepEqual(await cap.probe(), { kind: 'os-prerequisites', observed: true, backendVerified: false });
+      assert.deepEqual(await cap.probe(), { kind: 'os-prerequisites', observed: true,
+        backendVerified: false, bootPhase: 'complete', reason: 'none' });
+      assert.deepEqual(await cap.probe(), { kind: 'os-prerequisites', observed: true,
+        backendVerified: false, bootPhase: 'complete', reason: 'none' });
     });
     assert.equal(result.phase, 'callback_completed'); assert.equal(result.verified, false);
     assert.equal(result.guestPrerequisitesObserved, true); assert.equal(result.cleanup?.confirmed, true);
     const jobs = recorder.events.filter(event => event.args[1] === 'shell'); assert.equal(jobs.length, 2);
     assert.deepEqual(jobs[0].args.slice(2, 4), ['--workdir=/', '--shell=/bin/bash']);
     assert.match(jobs[0].args.at(-1)!, /cpu memory pids/);
-    assert.doesNotMatch(jobs[0].args.at(-1)!, /docker|curl|install|eval/);
+    assert.doesNotMatch(jobs[0].args.at(-1)!, /\bdocker(?:[\s;&|]|$)|curl|install|eval/);
     const count = recorder.events.length; await assert.rejects(retained.probe());
     assert.equal(recorder.events.length, count);
   });
@@ -842,7 +844,9 @@ test('guest/SSH unavailability stays unobserved while malformed probe output fai
   for (const mode of ['session-probe-fail', 'session-probe-unavailable', 'session-probe-malformed']) {
     await scope(async base => {
       const recorder = sessionRecorder(), result = await recorder.run(await osMockTool(base, mode), async cap => {
-        assert.deepEqual(await cap.probe(), { kind: 'os-prerequisites', observed: false, backendVerified: false });
+        assert.deepEqual(await cap.probe(), { kind: 'os-prerequisites', observed: false,
+          backendVerified: false, bootPhase: 'unknown',
+          reason: mode === 'session-probe-fail' ? 'guard_unknown' : 'ssh_unavailable' });
       });
       assert.equal(result.phase, mode === 'session-probe-malformed' ? 'failed' : 'callback_completed');
       assert.equal(result.guestPrerequisitesObserved, false); assert.equal(result.cleanup?.confirmed, true);
@@ -1032,14 +1036,17 @@ test('parser locator cannot be changed by load options and an incomplete trusted
   });
 });
 test('parser assets reject links, writable permissions, missing/extra files, wrong types and size caps', async () => {
-  for (const fault of ['symlink', 'hardlink', 'writable', 'missing', 'extra', 'directory', 'oversize', 'notice']) {
+  for (const fault of ['symlink', 'hardlink', 'writable', 'missing', 'extra', 'directory', 'oversize', 'notice',
+    'root-writable', 'dir-writable']) {
     await scope(async base => {
       const directory = await parserFixture(base), path = join(directory, 'libpg-query.wasm');
       if (fault === 'symlink' || fault === 'hardlink') {
         const original = join(base, 'public-wasm'); await rename(path, original);
         if (fault === 'symlink') await symlink(original, path);
         else { await link(original, path); }
-      } else if (fault === 'writable') await chmod(path, 0o666);
+      } else if (fault === 'root-writable') await chmod(base, 0o777);
+      else if (fault === 'dir-writable') await chmod(directory, 0o777);
+      else if (fault === 'writable') await chmod(path, 0o666);
       else if (fault === 'missing') await rm(path);
       else if (fault === 'extra') await writeFile(join(directory, 'unapproved.cjs'), 'not executable');
       else if (fault === 'directory') { await rm(path); await mkdir(path); }
@@ -1074,6 +1081,94 @@ test('parser loader detects opened-FD/name replacement and later changes to an a
       assert.equal(result.reason, 'asset_mismatch', fault); assert.equal(result.handle, undefined);
       assert.ok(opened.length > 0);
       for (const handle of opened) assert.equal(handle.fd, -1, 'all owned read FDs closed on failure');
+    });
+  }
+});
+
+test('OS bootstrap clears SDK proxy keys and atomically records bounded root-owned boot state', () => {
+  const config = JSON.parse(compileLimaProfileConfig(pins)), script: string = config.provision[0].script;
+  const names = ['ftp_proxy', 'http_proxy', 'https_proxy', 'no_proxy',
+    'FTP_PROXY', 'HTTP_PROXY', 'HTTPS_PROXY', 'NO_PROXY'];
+  assert.deepEqual(config.env, Object.fromEntries(names.map(name => [name, ''])));
+  assert.equal(config.propagateProxyEnv, false);
+  for (const guard of ['state_dir=/run/wakeio-m1', '/proc/sys/kernel/random/boot_id',
+    'test ! -L "$state_dir"', "'%u:%g:%a'", '0:0:700', 'mkdir -m 700', "'%u:%g:%a:%h'", '0:0:600:1',
+    'test "$size" -le 192', 'mktemp "$state_dir/.boot.XXXXXX"', 'mv -T -- "$temporary" "$state_file"',
+    'write_state failed "$step"', 'write_state pending bootstrap_pending', 'write_state complete none']) {
+    assert.ok(script.includes(guard), guard);
+  }
+  assert.match(script, /id wakeio-m1.*\|\| useradd --uid 10001 --create-home --shell \/bin\/bash/);
+  assert.equal((script.match(/-K SUB_UID_COUNT=0 -K SUB_GID_COUNT=0/g) ?? []).length, 1);
+  assert.match(script, /\$1 != "wakeio-m1" && \$2 <= 296607 && \$2 \+ \$3 > 231072 \{exit 1\}/);
+  assert.match(script, /test "\$\(grep '\^wakeio-m1:' "\$file"\)" = 'wakeio-m1:231072:65536' \|\| exit 125/);
+  assert.match(script, /else echo 'wakeio-m1:231072:65536' >> "\$file"/);
+  assert.doesNotMatch(script, /login\.defs|usermod|chown|sed.*subuid|sed.*subgid/);
+});
+
+test('fixed OS probe binds current boot and safe FD metadata before any success token', async () => {
+  await scope(async base => {
+    const recorder = sessionRecorder(), result = await recorder.run(await osMockTool(base), async cap => {
+      const answer = await cap.probe(); assert.equal(answer.observed, true); assert.equal(answer.reason, 'none');
+    });
+    const script = recorder.events.find(event => event.args[1] === 'shell')!.args.at(-1)!;
+    for (const guard of ['state_directory || metadata_failure', 'state_metadata || metadata_failure',
+      'exec 3< "$state_file"', '/proc/self/fd/3', 'test "$metadata" = "$fd_metadata"',
+      'read -r tag saved_boot phase step extra', 'test "$saved_boot" = "$boot" || metadata_failure',
+      'test "$size" -eq "$expected_size" || metadata_failure', 'test -z "$trailing" && test -z "$extra"',
+      'phase=pending; probe_failure bootstrap_pending', 'if test "$phase" != complete; then probe_failure "$step";',
+      'cgroup_procs_unwritable', 'cgroup_subtree_unwritable', 'subid_overlap', 'subuid_mismatch', 'subgid_mismatch']) {
+      assert.ok(script.includes(guard), guard);
+    }
+    assert.ok(script.indexOf('state_metadata || metadata_failure')
+      < script.lastIndexOf("printf 'wakeio-os-prerequisites/v1\\n'"));
+    assert.doesNotMatch(script, /eval|useradd|usermod|write_state|mktemp|\bdocker(?:[\s;&|]|$)|curl|install/);
+    assert.equal(result.cleanup?.confirmed, true); assert.equal(result.verified, false);
+  });
+});
+
+function diagnosticSession(reply: () => { exitCode: number; stdout: string; completed: boolean }) {
+  return createLimaOsSessionRunner(async (executable, args, config) => {
+    if (args[1] === 'shell') {
+      assert.equal(config.timeoutMs, 5_000); assert.equal(config.maxOutputBytes, 16 * 1024);
+    }
+    if (args[1] === 'start') assert.equal(config.timeoutMs, 30_000);
+    const result = await runRuntimeProcess(executable, args, config);
+    return args[1] === 'shell' ? { ...result, ...reply() } : result;
+  });
+}
+test('closed boot/guard reasons remain unobserved and cannot authorize backend or retained reuse', async () => {
+  await scope(async base => {
+    const reasons = ['bootstrap_failed', 'host_alias_present', 'cgroup_v2_missing', 'user_create_failed',
+      'uid_mismatch', 'sudo_allowed', 'subid_overlap', 'subuid_mismatch', 'subgid_mismatch', 'delegation_missing'];
+    const cases = [['pending', 'bootstrap_pending'], ['unknown', 'boot_metadata_invalid'],
+      ...reasons.map(reason => ['failed', reason]),
+      ...['uid_mismatch', 'cgroup_procs_unwritable', 'cgroup_subtree_unwritable'].map(reason => ['complete', reason])];
+    let current = cases[0], calls = 0, retained!: LimaOsProbeCapability;
+    const run = diagnosticSession(() => { calls++; return { exitCode: 125, completed: false,
+      stdout: `wakeio-os-prerequisites/v1:${current[0]}:${current[1]}\n` }; });
+    const result = await run(await osMockTool(base), async cap => {
+      retained = cap;
+      for (const row of cases) {
+        current = row;
+        assert.deepEqual(await cap.probe(), { kind: 'os-prerequisites', observed: false, backendVerified: false,
+          bootPhase: row[0], reason: row[1] });
+      }
+    });
+    assert.equal(result.phase, 'callback_completed'); assert.equal(result.guestPrerequisitesObserved, false);
+    assert.equal(result.verified, false); assert.equal(result.cleanup?.confirmed, true);
+    const before = calls; await assert.rejects(retained.probe()); assert.equal(calls, before);
+  });
+});
+test('unknown, truncated and inconsistent diagnostic tokens fail the session without weakening cleanup', async () => {
+  const bad = ['wakeio-os-prerequisites/v1:complete:none\n', 'wakeio-os-prerequisites/v1:pending:uid_mismatch\n',
+    'wakeio-os-prerequisites/v1:failed:new_reason\n', 'wakeio-os-prerequisites/v1:failed:uid_mismatch',
+    'wakeio-os-prerequisites/v1:failed:uid_mismatch\nextra\n'];
+  for (const stdout of bad) {
+    await scope(async base => {
+      const run = diagnosticSession(() => ({ exitCode: 125, completed: false, stdout }));
+      const result = await run(await osMockTool(base), async cap => { await assert.rejects(cap.probe()); });
+      assert.equal(result.phase, 'failed'); assert.equal(result.guestPrerequisitesObserved, false);
+      assert.equal(result.verified, false); assert.equal(result.cleanup?.confirmed, true);
     });
   }
 });
