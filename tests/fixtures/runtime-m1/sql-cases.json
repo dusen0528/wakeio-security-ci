@@ -1,0 +1,170 @@
+{
+  "schema":"wakeio.runtime-sql-cases/v1",
+  "owner":"R8",
+  "authorship":"manual synthetic expectations; no parser/product run",
+  "failOnGrade":"strong",
+  "caseIds":["V1","V2","V3","F1","F2","N1","N2","N3","N4","N5","N6","N7","N8","N9","N10","N11","N12","N13"],
+  "bindingTemplate":{"runId":"r8-{case.id}","epoch":"fixture-epoch-1","runNonce":"nonce-{case.id}","observerSession":
+  "observer-{case.id}","sourceContainerId":"pg-owned-{case.id}","pgSessionId":"pg-session-{case.id}","dbLeaseId":
+  "lease-{case.id}","logIdentity":"log-{case.id}","rotation":0,"seedCursorByteOffset":0,"pgSessionLine":
+  "{request.ordinal}","sequence":"{request.ordinal}","requestOrdinal":"{request.ordinal}","windowBegin":"ordinal*256",
+  "windowEnd":"ordinal*256+255","eventByteOffset":"ordinal*256+128","closed":true,"snapshotHash":
+  "fd87b5c9c690daf37c718f51fbb96a2f70586b5789aa9610ac38a8ad4a70847d"},
+  "bindingRules":"valid unless listed faults; alternatives are separate runs with the same expected result",
+  "rawTemplates":{
+    "literal":{"statement":"SELECT id,name FROM items WHERE name = '{marker}'","bind":[],"payload":"{marker}",
+    "channel":"statement","error":null,"profile":"literal","httpStatus":200,"payloadKind":"benign"},
+    "promotion":{"statement":"SELECT id,name FROM items WHERE name = '{marker}' OR '{marker}'='{marker}'","bind":[],
+    "payload":"{marker}' OR '{marker}'='{marker}","channel":"statement","error":null,"profile":"promotion",
+    "httpStatus":200,"payloadKind":"sql-boolean"},
+    "quote":{"statement":"SELECT id,name FROM items WHERE name = '{marker}''","bind":[],"payload":"{marker}'",
+    "channel":"statement","error":{"sqlState":"42601","pgCharPosition1Based":40,"parserByteOffset0Based":39,"kind":
+    "quote_imbalance"},"profile":"quote","httpStatus":500,"payloadKind":"sql-quote"},
+    "bound-control":{"statement":"SELECT id,name FROM items WHERE name = $1","bind":["{marker}"],"payload":"{marker}",
+    "channel":"bind","error":null,"profile":"bound","httpStatus":200,"payloadKind":"benign"},
+    "bound-boolean":{"statement":"SELECT id,name FROM items WHERE name = $1","bind":
+    ["{marker}' OR '{marker}'='{marker}"],"payload":"{marker}' OR '{marker}'='{marker}","channel":"bind","error":null,
+    "profile":"bound","httpStatus":200,"payloadKind":"sql-boolean"},
+    "bound-quote":{"statement":"SELECT id,name FROM items WHERE name = $1","bind":["{marker}'"],"payload":"{marker}'",
+    "channel":"bind","error":null,"profile":"bound","httpStatus":200,"payloadKind":"sql-quote"},
+    "escaped":{"statement":"SELECT id,name FROM items WHERE name = '{marker}'' OR ''{marker}''=''{marker}'","bind":[],
+    "payload":"{marker}' OR '{marker}'='{marker}","channel":"statement","error":null,"profile":"escaped","httpStatus":
+    200,"payloadKind":"sql-boolean"},
+    "comment-control":{"statement":"SELECT id,name FROM items WHERE name = 'apple' /* {marker} */","bind":[],
+    "payload":"{marker}","channel":"statement","error":null,"profile":"comment-control","httpStatus":200,
+    "payloadKind":"benign"},
+    "comment-probe":{"statement":
+    "SELECT id,name FROM items WHERE name = 'apple' /* {marker}' OR '{marker}'='{marker} */","bind":[],"payload":
+    "{marker}' OR '{marker}'='{marker}","channel":"statement","error":null,"profile":"comment-probe","httpStatus":200,
+    "payloadKind":"sql-boolean"},
+    "other-error":{"statement":"SELEC id,name FROM items WHERE name = '{marker}'","bind":[],"payload":"{marker}",
+    "channel":"statement","error":{"sqlState":"42601","pgCharPosition1Based":1,"parserByteOffset0Based":0,"kind":
+    "other_syntax"},"profile":"other-error","httpStatus":500,"payloadKind":"benign"},
+    "truncated":{"statement":"SELECT id,name FROM items WHERE name = '{marker}' OR '","bind":[],"payload":
+    "{marker}' OR '{marker}'='{marker}","channel":"statement","error":null,"profile":"invalid","httpStatus":200,
+    "payloadKind":"sql-boolean"},
+    "canary":{"statement":"SELECT 'r8_synthetic_canary_do_not_save'","bind":[],"payload":null,"channel":"statement",
+    "error":null,"profile":null,"httpStatus":null,"payloadKind":null},
+    "ping-control":{"statement":null,"bind":[],"payload":"{marker}","channel":null,"error":null,"profile":null,
+    "httpStatus":200,"payloadKind":"benign"},
+    "ping-probe":{"statement":null,"bind":[],"payload":"{marker}' OR '{marker}'='{marker}","channel":null,"error":
+    null,"profile":null,"httpStatus":200,"payloadKind":"sql-boolean"}
+  },
+  "cases":[
+    {"id":"V1","surface":{"id":"GET /api/items/search","method":"GET","pathTemplate":"/api/items/search"},"param":
+    {"in":"query","name":"name","jsonPointer":null,"schemaLocator":"query/name"},"requests":[{"ordinal":1,"phase":
+    "control","marker":"wk8rfxaaaaaaab","raw":"literal"},{"ordinal":2,"phase":"probe","marker":"wk8rfxaaaaaaac","raw":
+    "promotion"}],"faults":{},"expected":{"confirmed":1,"strong":0,"unknown":false,"reason":"syntax_promotion","exit":
+    1}},
+    {"id":"V2","surface":{"id":"POST /api/items/search","method":"POST","pathTemplate":"/api/items/search"},"param":
+    {"in":"body","name":"name","jsonPointer":"/name","schemaLocator":"json/name"},"requests":[{"ordinal":1,"phase":
+    "control","marker":"wk8rfxaaaaaaad","raw":"literal"},{"ordinal":2,"phase":"probe","marker":"wk8rfxaaaaaaae","raw":
+    "promotion"}],"faults":{},"expected":{"confirmed":1,"strong":0,"unknown":false,"reason":"syntax_promotion","exit":
+    1}},
+    {"id":"V3","surface":{"id":"GET /api/items/search","method":"GET","pathTemplate":"/api/items/search"},"param":
+    {"in":"query","name":"name","jsonPointer":null,"schemaLocator":"query/name"},"requests":[{"ordinal":1,"phase":
+    "control","marker":"wk8rfxaaaaaaaf","raw":"literal"},{"ordinal":2,"phase":"probe","marker":"wk8rfxaaaaaaag","raw":
+    "quote"}],"faults":{},"expected":{"confirmed":1,"strong":0,"unknown":false,"reason":"quote_imbalance","exit":1}},
+    {"id":"F1","surface":{"id":"GET /api/items/search","method":"GET","pathTemplate":"/api/items/search"},"param":
+    {"in":"query","name":"name","jsonPointer":null,"schemaLocator":"query/name"},"requests":[{"ordinal":1,"phase":
+    "control","marker":"wk8rfxaaaaaaah","raw":"bound-control"},{"ordinal":2,"phase":"probe","marker":"wk8rfxaaaaaaai",
+    "raw":"bound-boolean"}],"faults":{},"expected":{"confirmed":0,"strong":0,"unknown":false,"reason":
+    "bound_parameter","exit":0},"probeAlternatives":["bound-quote"]},
+    {"id":"F2","surface":{"id":"POST /api/items/search","method":"POST","pathTemplate":"/api/items/search"},"param":
+    {"in":"body","name":"name","jsonPointer":"/name","schemaLocator":"json/name"},"requests":[{"ordinal":1,"phase":
+    "control","marker":"wk8rfxaaaaaaaj","raw":"bound-control"},{"ordinal":2,"phase":"probe","marker":"wk8rfxaaaaaaak",
+    "raw":"bound-quote"}],"faults":{},"expected":{"confirmed":0,"strong":0,"unknown":false,"reason":"bound_parameter",
+    "exit":0},"probeAlternatives":["bound-boolean"]},
+    {"id":"N1","surface":{"id":"GET /api/items/search","method":"GET","pathTemplate":"/api/items/search"},"param":
+    {"in":"query","name":"name","jsonPointer":null,"schemaLocator":"query/name"},"requests":[{"ordinal":1,"phase":
+    "control","marker":"wk8rfxaaaaaaal","raw":"literal"},{"ordinal":2,"phase":"probe","marker":"wk8rfxaaaaaaam","raw":
+    "literal"}],"faults":{},"expected":{"confirmed":0,"strong":1,"unknown":false,"reason":
+    "unbound_statement_without_promotion","exit":1}},
+    {"id":"N2","surface":{"id":"GET /api/items/search","method":"GET","pathTemplate":"/api/items/search"},"param":
+    {"in":"query","name":"name","jsonPointer":null,"schemaLocator":"query/name"},"requests":[{"ordinal":1,"phase":
+    "control","marker":"wk8rfxaaaaaaan","raw":"literal"},{"ordinal":2,"phase":"probe","marker":"wk8rfxaaaaaaao","raw":
+    "escaped"}],"faults":{},"expected":{"confirmed":0,"strong":1,"unknown":false,"reason":
+    "escaped_literal_without_promotion","exit":1}},
+    {"id":"N3","surface":{"id":"GET /api/items/search","method":"GET","pathTemplate":"/api/items/search"},"param":
+    {"in":"query","name":"name","jsonPointer":null,"schemaLocator":"query/name"},"requests":[{"ordinal":1,"phase":
+    "control","marker":"wk8rfxaaaaaaap","raw":"comment-control"},{"ordinal":2,"phase":"probe","marker":
+    "wk8rfxaaaaaaaq","raw":"comment-probe"}],"faults":{},"expected":{"confirmed":0,"strong":0,"unknown":false,
+    "reason":"comment_not_executable","exit":0}},
+    {"id":"N4","surface":{"id":"GET /api/items/safe-search","method":"GET","pathTemplate":"/api/items/safe-search"},
+    "param":{"in":"query","name":"name","jsonPointer":null,"schemaLocator":"query/name"},"requests":[{"ordinal":1,
+    "phase":"control","marker":"wk8rfxaaaaaaar","raw":"bound-control"},{"ordinal":2,"phase":"probe","marker":
+    "wk8rfxaaaaaaas","raw":"bound-boolean"}],"faults":{},"expected":{"confirmed":0,"strong":0,"unknown":false,
+    "reason":"bound_safe_route_and_no_sql_reflection","exit":0},"probeAlternatives":["bound-quote"],"reflectionCheck":
+    {"surface":{"id":"GET /api/ping","method":"GET","pathTemplate":"/api/ping"},"param":{"in":"query","name":"name",
+    "jsonPointer":null,"schemaLocator":"query/name"},"sqlScheduled":false,"requests":[{"ordinal":3,"phase":"control",
+    "marker":"wk8rfxaaaaaaat","raw":"ping-control"},{"ordinal":4,"phase":"probe","marker":"wk8rfxaaaaaaau","raw":
+    "ping-probe"}],"expected":{"confirmed":0,"strong":0,"unknown":false,"reason":"no_sql_judgement_scheduled"},
+    "ifSqlScheduled":{"confirmed":0,"strong":0,"unknown":true,"exit":2,"reason":"no_pg_control_observation"}}},
+    {"id":"N5","surface":{"id":"GET /api/items/search","method":"GET","pathTemplate":"/api/items/search"},"param":
+    {"in":"query","name":"name","jsonPointer":null,"schemaLocator":"query/name"},"requests":[{"ordinal":1,"phase":
+    "control","marker":"wk8rfxaaaaaaav","raw":"literal"},{"ordinal":2,"phase":"probe","marker":"wk8rfxaaaaaaaw","raw":
+    "promotion"}],"faults":{"probe.observations":[]},"expected":{"confirmed":0,"strong":0,"unknown":true,"reason":
+    "http_error_is_not_db_evidence","exit":2},"syntheticHttpBody":"SQLSTATE 42601: unterminated quoted string"},
+    {"id":"N6","surface":{"id":"GET /api/items/search","method":"GET","pathTemplate":"/api/items/search"},"param":
+    {"in":"query","name":"name","jsonPointer":null,"schemaLocator":"query/name"},"requests":[{"ordinal":1,"phase":
+    "control","marker":"wk8rfxaaaaaaax","raw":"literal"},{"ordinal":2,"phase":"probe","marker":"wk8rfxaaaaaaay","raw":
+    "other-error"}],"faults":{},"expected":{"confirmed":0,"strong":0,"unknown":true,"reason":"unrelated_syntax_error",
+    "exit":2},"faultAlternatives":[{"control.raw":"other-error"},{"probe.markerHash":
+    "b1e7282c85d0c1b486b7ec991c8debcd8dc4896a72acf441cd0a9e8b6a892b11"}]},
+    {"id":"N7","surface":{"id":"GET /api/items/search","method":"GET","pathTemplate":"/api/items/search"},"param":
+    {"in":"query","name":"name","jsonPointer":null,"schemaLocator":"query/name"},"requests":[{"ordinal":1,"phase":
+    "control","marker":"wk8rfxaaaaaaaz","raw":"bound-control"},{"ordinal":2,"phase":"probe","marker":"wk8rfxaaaaaaa2",
+    "raw":"bound-boolean"}],"faults":{"collection.complete":false,"collection.reason":"observer_detached"},"expected":
+    {"confirmed":0,"strong":0,"unknown":true,"reason":"observer_incomplete","exit":2},"faultAlternatives":
+    [{"collection.reason":"stream_gap"},{"collection.reason":"marker_event_missing"},{"collection.reason":"timeout"},
+    {"collection.drainComplete":false}]},
+    {"id":"N8","surface":{"id":"GET /api/items/search","method":"GET","pathTemplate":"/api/items/search"},"param":
+    {"in":"query","name":"name","jsonPointer":null,"schemaLocator":"query/name"},"requests":[{"ordinal":1,"phase":
+    "control","marker":"wk8rfxaaaaaaa3","raw":"literal"},{"ordinal":2,"phase":"probe","marker":"wk8rfxaaaaaaa4","raw":
+    "truncated"}],"faults":{"probe.truncated":true},"expected":{"confirmed":0,"strong":0,"unknown":true,"reason":
+    "truncated_or_unsupported_input","exit":2},"faultAlternatives":[{"parser.pgMajor":17},{"parser.error.kind":
+    "unsupported"},{"probe.error.kind":"other_syntax"},{"probe.utf8Valid":false}]},
+    {"id":"N9","surface":{"id":"GET /api/items/search","method":"GET","pathTemplate":"/api/items/search"},"param":
+    {"in":"query","name":"name","jsonPointer":null,"schemaLocator":"query/name"},"requests":[{"ordinal":1,"phase":
+    "control","marker":"wk8rfxaaaaaaa5","raw":"literal"},{"ordinal":2,"phase":"probe","marker":"wk8rfxaaaaaaa6","raw":
+    "promotion"}],"faults":{"control.outcome":"not_started","control.observations":[]},"expected":{"confirmed":0,
+    "strong":0,"unknown":true,"reason":"control_missing_or_failed","exit":2},"faultAlternatives":[{"control.issued":
+    false},{"control.httpStatus":500},{"control.observations":[]}]},
+    {"id":"N10","surface":{"id":"GET /api/items/search","method":"GET","pathTemplate":"/api/items/search"},"param":
+    {"in":"query","name":"name","jsonPointer":null,"schemaLocator":"query/name"},"requests":[{"ordinal":1,"phase":
+    "control","marker":"wk8rfxaaaaaaa7","raw":"literal"},{"ordinal":2,"phase":"probe","marker":"wk8rfxaaaaaaba","raw":
+    "promotion"}],"faults":{"probe.runId":"stale-run"},"expected":{"confirmed":0,"strong":0,"unknown":true,"reason":
+    "event_binding_rejected","exit":2},"faultAlternatives":[{"probe.epoch":"stale-epoch"},{"probe.runNonce":
+    "stale-nonce"},{"probe.observerSession":"other-observer"},{"probe.sourceContainerId":"other-container"},
+    {"probe.pgSessionId":"other-session"},{"probe.cursor.dbLeaseId":"other-lease"},{"probe.cursor.logIdentity":
+    "other-log"},{"probe.cursor.rotation":1},{"probe.cursor.byteOffset":999999},{"probe.pgSessionLine":1},
+    {"probe.requestOrdinal":1},{"probe.markerIssued":false},{"probe.surfaceId":"POST /api/items/search"},
+    {"probe.param.jsonPointer":"/other"}]},
+    {"id":"N11","surface":{"id":"GET /api/items/search","method":"GET","pathTemplate":"/api/items/search"},"param":
+    {"in":"query","name":"name","jsonPointer":null,"schemaLocator":"query/name"},"requests":[{"ordinal":1,"phase":
+    "control","marker":"wk8rfxaaaaaabb","raw":"bound-control"},{"ordinal":2,"phase":"probe","marker":"wk8rfxaaaaaabc",
+    "raw":"bound-boolean"}],"faults":{},"expected":{"confirmed":0,"strong":0,"unknown":false,"reason":
+    "nonmarker_event_discarded","exit":0},"extraRawEvents":[{"raw":"canary","requestOrdinal":2,"issuedMarker":false}],
+    "storageExpected":{"nonmarkerEvents":0,"rawCanaryOccurrences":0,"rawSqlInProjection":0}},
+    {"id":"N12","surface":{"id":"GET /api/items/search","method":"GET","pathTemplate":"/api/items/search"},"param":
+    {"in":"query","name":"name","jsonPointer":null,"schemaLocator":"query/name"},"requests":[{"ordinal":1,"phase":
+    "control","marker":"wk8rfxaaaaaabd","raw":"bound-control"},{"ordinal":2,"phase":"probe","marker":"wk8rfxaaaaaabe",
+    "raw":"bound-boolean"}],"faults":{"control.outcome":"not_started","probe.outcome":"not_started",
+    "collection.complete":false,"cancelled":true},"expected":{"confirmed":0,"strong":0,"unknown":true,"reason":
+    "cancelled_before_observation","exit":2},"faultAlternatives":[{"dependency.health":"failed"},{"dependency.state":
+    "stopped"},{"cleanup.status":"error"}]},
+    {"id":"N13","surface":{"id":"GET /api/items/search","method":"GET","pathTemplate":"/api/items/search"},"param":
+    {"in":"query","name":"name","jsonPointer":null,"schemaLocator":"query/name"},"requests":[{"ordinal":1,"phase":
+    "control","marker":"wk8rfxaaaaaabf","raw":"literal"},{"ordinal":2,"phase":"probe","marker":"wk8rfxaaaaaabg","raw":
+    "promotion"}],"faults":{},"expected":{"confirmed":1,"strong":0,"unknown":true,"reason":
+    "finding_retained_with_other_gap","exit":1},"additionalPair":{"surface":{"id":"POST /api/items/search","method":
+    "POST","pathTemplate":"/api/items/search"},"param":{"in":"body","name":"name","jsonPointer":"/name",
+    "schemaLocator":"json/name"},"requests":[{"ordinal":3,"phase":"control","marker":"wk8rfxaaaaaabh","raw":
+    "bound-control"},{"ordinal":4,"phase":"probe","marker":"wk8rfxaaaaaabi","raw":"bound-boolean"}],"faults":
+    {"probe.observations":[],"coverage.accounting":"unknown","cleanup.status":"error"},"expected":{"confirmed":0,
+    "strong":0,"unknown":true,"reason":"observation_and_coverage_gap"}}}
+  ],
+  "baseline":{"collection":{"complete":true,"drainComplete":true},"cleanup":{"status":"confirmed"},"coverage":
+  {"accounting":"exact"},"request":{"outcome":"response","issued":true,"httpStatus":"raw.httpStatus"},"controlPairId":
+  "pair-{case.id}-{control.ordinal}-{probe.ordinal}"}
+}

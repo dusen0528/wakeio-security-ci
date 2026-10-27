@@ -1,0 +1,74 @@
+{
+  "schema":"wakeio.runtime-sql-projections/v1",
+  "owner":"R8",
+  "authorship":"hand-authored semantic ground truth; NOT libpg-query output or measured PG errors",
+  "parserMetadata":null,
+  "parserMetadataRule":"external verified identity required; no fabricated lock/WASM digests",
+  "spanUnit":"UTF-8 bytes, 0-based half-open; fixture markers always 14 ASCII bytes",
+  "canonicalRawEvent":"JSON.stringify({statement,bind,error}) in that key order, compact UTF-8",
+  "observationTemplate":{"id":"{case.id}:{request.ordinal}","runId":"{binding.runId}","epoch":"{binding.epoch}",
+  "runNonce":"{binding.runNonce}","observerSession":"{binding.observerSession}","sequence":"{request.ordinal}",
+  "requestOrdinal":"{request.ordinal}","markerHash":"{sha256(request.marker)}","sourceContainerId":
+  "{binding.sourceContainerId}","pgSessionId":"{binding.pgSessionId}","pgSessionLine":"{request.ordinal}","cursor":
+  {"dbLeaseId":"{binding.dbLeaseId}","logIdentity":"{binding.logIdentity}","rotation":0,"byteOffset":
+  "{ordinal*256+128}"},"requestWindow":{"begin":"{cursor at ordinal*256}","end":"{cursor at ordinal*256+255}",
+  "closed":true},"sql":{"channel":"{raw.channel}","dialect":"postgres","rawStatementSha256":"{sha256(statement)}",
+  "rawEventSha256":"{sha256(canonicalRawEvent)}","parser":"{externalVerifiedParserMetadata}","ast":"{profile.ast}",
+  "tokens":"{profile.tokens}","insertions":"{profile.insertions}","error":"{raw.error or noError}",
+  "controlContextHash":"{profile.controlContextHash}","outsidePayloadTokenHash":"{profile.outsidePayloadTokenHash}"},
+  "evidence":{"path":"synthetic/{case.id}/{request.ordinal}.json","bytes":"{redactedProjectionBytes}","sha256":
+  "{sha256(redactedProjectionBytes)}"}},
+  "noError":{"sqlState":null,"pgCharPosition1Based":null,"parserByteOffset0Based":null,"kind":"none"},
+  "profiles":{
+    "literal":{"rawTemplate":"literal","statementBytes":55,"ast":[{"id":0,"kind":"SelectStmt","parent":null,"span":[0,
+    55]},{"id":1,"kind":"A_Expr","parent":0,"span":[32,55]},{"id":2,"kind":"StringConst","parent":1,"span":[39,55]}],
+    "tokens":[{"kind":"SCONST","span":[39,55],"role":"literal"}],"insertions":[{"payloadHash":"{request.payloadHash}",
+    "span":[40,54],"tokenIndexes":[0],"nodeIds":[2]}],"controlContextHash":
+    "80afccfd551c7f3456ee782c9687dca1c6a253c668d57d51d10fb82142e08f91","outsidePayloadTokenHash":
+    "80afccfd551c7f3456ee782c9687dca1c6a253c668d57d51d10fb82142e08f91"},
+    "promotion":{"rawTemplate":"promotion","statementBytes":92,"ast":[{"id":0,"kind":"SelectStmt","parent":null,
+    "span":[0,92]},{"id":1,"kind":"BoolExpr","parent":0,"span":[32,92]},{"id":2,"kind":"A_Expr","parent":1,"span":[32,
+    55]},{"id":3,"kind":"StringConst","parent":2,"span":[39,55]},{"id":4,"kind":"A_Expr","parent":1,"span":[59,92]},
+    {"id":5,"kind":"StringConst","parent":4,"span":[59,75]},{"id":6,"kind":"StringConst","parent":4,"span":[76,92]}],
+    "tokens":[{"kind":"SCONST","span":[39,55],"role":"literal"},{"kind":"OR","span":[56,58],"role":"syntax"},{"kind":
+    "SCONST","span":[59,75],"role":"literal"},{"kind":"EQUALS","span":[75,76],"role":"operator"},{"kind":"SCONST",
+    "span":[76,92],"role":"literal"}],"insertions":[{"payloadHash":"{request.payloadHash}","span":[40,91],
+    "tokenIndexes":[0,1,2,3,4],"nodeIds":[1,2,3,4,5,6]}],"controlContextHash":
+    "80afccfd551c7f3456ee782c9687dca1c6a253c668d57d51d10fb82142e08f91","outsidePayloadTokenHash":
+    "80afccfd551c7f3456ee782c9687dca1c6a253c668d57d51d10fb82142e08f91"},
+    "quote":{"rawTemplate":"quote","statementBytes":56,"ast":[],"tokens":[{"kind":"UNTERMINATED_LITERAL","span":[39,
+    56],"role":"literal"}],"insertions":[{"payloadHash":"{request.payloadHash}","span":[40,55],"tokenIndexes":[0],
+    "nodeIds":[]}],"controlContextHash":"80afccfd551c7f3456ee782c9687dca1c6a253c668d57d51d10fb82142e08f91",
+    "outsidePayloadTokenHash":"80afccfd551c7f3456ee782c9687dca1c6a253c668d57d51d10fb82142e08f91"},
+    "bound":{"rawTemplate":"bound-control","statementBytes":41,"ast":[{"id":0,"kind":"SelectStmt","parent":null,
+    "span":[0,41]},{"id":1,"kind":"A_Expr","parent":0,"span":[32,41]},{"id":2,"kind":"ParamRef","parent":1,"span":[39,
+    41]}],"tokens":[{"kind":"PARAM","span":[39,41],"role":"parameter"}],"insertions":[],"controlContextHash":
+    "575521191c52d1a9253e2ec1147106affdb0459c7f35aacf050e5cb2b1f16af4","outsidePayloadTokenHash":
+    "575521191c52d1a9253e2ec1147106affdb0459c7f35aacf050e5cb2b1f16af4"},
+    "escaped":{"rawTemplate":"escaped","statementBytes":96,"ast":[{"id":0,"kind":"SelectStmt","parent":null,"span":[0,
+    96]},{"id":1,"kind":"A_Expr","parent":0,"span":[32,96]},{"id":2,"kind":"StringConst","parent":1,"span":[39,96]}],
+    "tokens":[{"kind":"SCONST","span":[39,96],"role":"literal"}],"insertions":[{"payloadHash":"{request.payloadHash}",
+    "span":[40,95],"tokenIndexes":[0],"nodeIds":[2]}],"controlContextHash":
+    "80afccfd551c7f3456ee782c9687dca1c6a253c668d57d51d10fb82142e08f91","outsidePayloadTokenHash":
+    "80afccfd551c7f3456ee782c9687dca1c6a253c668d57d51d10fb82142e08f91"},
+    "comment-control":{"rawTemplate":"comment-control","statementBytes":67,"ast":[{"id":0,"kind":"SelectStmt",
+    "parent":null,"span":[0,67]},{"id":1,"kind":"A_Expr","parent":0,"span":[32,46]},{"id":2,"kind":"StringConst",
+    "parent":1,"span":[39,46]}],"tokens":[{"kind":"COMMENT","span":[47,67],"role":"comment"}],"insertions":
+    [{"payloadHash":"{request.payloadHash}","span":[50,64],"tokenIndexes":[0],"nodeIds":[]}],"controlContextHash":
+    "f5a9c0a948f4b993b3bd6274703031e92de4d0aceb4def2c5912adf53d1c308d","outsidePayloadTokenHash":
+    "f5a9c0a948f4b993b3bd6274703031e92de4d0aceb4def2c5912adf53d1c308d"},
+    "comment-probe":{"rawTemplate":"comment-probe","statementBytes":104,"ast":[{"id":0,"kind":"SelectStmt","parent":
+    null,"span":[0,104]},{"id":1,"kind":"A_Expr","parent":0,"span":[32,46]},{"id":2,"kind":"StringConst","parent":1,
+    "span":[39,46]}],"tokens":[{"kind":"COMMENT","span":[47,104],"role":"comment"}],"insertions":[{"payloadHash":
+    "{request.payloadHash}","span":[50,101],"tokenIndexes":[0],"nodeIds":[]}],"controlContextHash":
+    "f5a9c0a948f4b993b3bd6274703031e92de4d0aceb4def2c5912adf53d1c308d","outsidePayloadTokenHash":
+    "f5a9c0a948f4b993b3bd6274703031e92de4d0aceb4def2c5912adf53d1c308d"},
+    "other-error":{"rawTemplate":"other-error","statementBytes":54,"ast":[],"tokens":[{"kind":"SCONST","span":[38,54],
+    "role":"literal"}],"insertions":[{"payloadHash":"{request.payloadHash}","span":[39,53],"tokenIndexes":[0],
+    "nodeIds":[]}],"controlContextHash":"c058c7936b1dd13d98ef5d27694d77c1bcf98be64d88d2de9f9311ed9b0b9242",
+    "outsidePayloadTokenHash":"c058c7936b1dd13d98ef5d27694d77c1bcf98be64d88d2de9f9311ed9b0b9242"},
+    "invalid":{"rawTemplate":"truncated","statementBytes":60,"ast":[],"tokens":[],"insertions":[],
+    "controlContextHash":"6af107dfe9e16eadd7ac6b7e9b0bd7217149a0a1d96b42910aa3aba270f6a606","outsidePayloadTokenHash":
+    "6af107dfe9e16eadd7ac6b7e9b0bd7217149a0a1d96b42910aa3aba270f6a606"}
+  }
+}
