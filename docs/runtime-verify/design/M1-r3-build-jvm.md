@@ -274,3 +274,13 @@ Docker extras/guest helper의 실제 bytes pin·daemon/relay·nft/proxy·resourc
 CPx6 N1 고정1.0.3 생성 호출 체인: [createAction364~373](https://github.com/lima-vm/lima/blob/v1.0.3/cmd/limactl/start.go#L364-L373)의 instance.Prepare → [Prepare84](https://github.com/lima-vm/lima/blob/v1.0.3/pkg/instance/start.go#L74-L95)의 driver.Initialize → [VZ Initialize145~147](https://github.com/lima-vm/lima/blob/v1.0.3/pkg/vz/vz_driver_darwin.go#L145-L147)의 getMachineIdentifier다.
 root와 R3가 고정 원문을 확인한 정적 근거이며 실제 create 실측은 아니다. 후속 R9가 create 직후 vz-identifier 존재·bytes·소유 identity를 확인한다.
 없는 identity를 임의 UUID로 채우지 않는다. identity 부재/불명에서는 회수를 거부하고 unconfirmed를 보존하는 기존 기준을 유지한다.
+
+M1-71: R9의 actual create는 exit1·cleanup confirmed·lease 없음이었고 별도 validate에서 unused param.rootlessSocket 오류를 확인했다.
+원래 create stderr 본문은 보존되지 않아 두 오류 문구의 동일성/실패 원인 확정은 하지 않는다. 실제 create 재측정은 후속 R9 담당이다.
+Stopped-only/OS-only가 공유하는 generated config에서 미사용 param 전체를 제거한다. Docker extras·socket의 가짜 template/echo 참조는 넣지 않는다.
+기존 공통 param을 복원한 Stopped 진단 config도 validate exit1/unused dockerExtrasVersion이었다. 이는 재구성 config의 검증이며 create stderr 동일성 근거는 아니다.
+Docker URL/version/SHA는 기존 trusted LimaPins/controller 입력에만 보존하고 닫힌 키·공식 host/arch/version URL 결속·SHA 모양 검증을 유지한다.
+config의 metadata 저장 기대 2개를 pin 음성 검사와 두 preparer의 사전 I/O/실행 0 검사로 대체했다. Docker 자산은 여전히 미사용·미검증이다.
+자체 확인은 R9가 검증한 private1.0.3 binary/원래 rootfs로 새 private HOME의 두 실제 generated config에 validate만 실행해 각각 exit0/OK였다.
+OS 경로의 create는 trusted seam에서 validate로 대체한 뒤 종료했다. 실제 create/start/stop/delete는 0이며 config/HOME·원본 자산/캐시는 그대로였다.
+이는 config validation 자체 점검이며 실제 VM 준비/격리 증거나 R9 증거가 아니다. digest·guard·소유 정리·unavailable/verified=false는 유지한다.

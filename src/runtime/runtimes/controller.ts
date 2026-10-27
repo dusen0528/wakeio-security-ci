@@ -98,6 +98,8 @@ const BOOT = BOOT_GUARDS + MISSING_PREREQUISITE_TRAILER;
 /** Pure config compilation; input is trusted tool metadata, never TargetSpec/source config or shell text. */
 export function compileLimaProfileConfig(raw: LimaPins): string {
   const p = pins(raw);
+  // Package pins remain in trusted controller input; neither provision script consumes Docker assets yet.
+  // Lima param is reserved for actual template references, not unused metadata or a socket readiness claim.
   return JSON.stringify({ minimumLimaVersion: '1.0.3', vmType: 'vz', arch: p.rootfs.arch,
     images: [{ location: p.rootfs.url, digest: 'sha256:' + p.rootfs.sha256, arch: p.rootfs.arch }],
     cpus: 2, memory: '4GiB', disk: '20GiB', mounts: [], additionalDisks: [], networks: [],
@@ -107,8 +109,6 @@ export function compileLimaProfileConfig(raw: LimaPins): string {
     user: { name: 'wakeio-admin', uid: 10000, home: '/home/wakeio-admin' },
     portForwards: [{ guestSocket: '/run/wakeio-m1/relay.sock', hostSocket: '{{.Dir}}/sock/docker.sock' },
       { guestIP: '0.0.0.0', guestPortRange: [1, 65535], proto: 'any', ignore: true }],
-    param: { dockerExtrasUrl: p.dockerExtras.url, dockerExtrasSha256: p.dockerExtras.sha256,
-      dockerExtrasVersion: p.dockerExtras.version, rootlessSocket: '/run/user/10001/docker.sock' },
     provision: [{ mode: 'system', script: BOOT }],
     message: 'unavailable: bootstrap/probes incomplete; management SSH22 is the sole TCP forwarding exception',
   }) + '\n';
