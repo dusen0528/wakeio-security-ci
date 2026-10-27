@@ -64,11 +64,16 @@ const ajv = new Ajv2020({
 });
 const validate = ajv.compile<TargetSpec>(schema);
 
+/** Own bounded JSON only: Ajv uniqueItems expects ordinary objects; preserve the original snapshot. */
+function validateSnapshot(data: unknown): data is TargetSpec {
+  return validate(JSON.parse(JSON.stringify(data)));
+}
+
 /** Snapshot own JSON data first; validation grants no file, build, network or execution authority. */
 export function parseTargetSpec(input: unknown): TargetSpec {
   try {
     const data = snapshotJsonData(input, invalid, invalid);
-    if (!validate(data) || data.dependencies.some(value => value.service === data.build.service)) invalid();
+    if (!validateSnapshot(data) || data.dependencies.some(value => value.service === data.build.service)) invalid();
     return data;
   } catch { return invalid(); }
 }

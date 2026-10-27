@@ -321,3 +321,8 @@ M1 schema는 닫힌 키·compose·명시 pack id/version·per-request snapshot�
 [yaml 옵션](https://eemeli.org/yaml/)과 [Ajv 보안 모델](https://ajv.js.org/security.html)을 기준으로 했고 primary npm registry audit의 현 생산 dependency 공지는0건이다. `--ignore-scripts`로만 신뢰 도구 dependency를 준비했다. 이후 공지 부재를 영구 보장하지 않는다.
 배포 목록에는 원본 schemas 외에 TS가 복사한 `build/schemas`와 후속 Pack용 `packs`를 포함한다. dry-run 목록과 임시 소유 packed module import를 확인했다. source/emitted schema는 JSON 의미가 같고 TS 포맷 변경으로 raw SHA는 다르므로 후속 fingerprint는 실제 사용 자산에 결속한다. 아직 target parser의 CLI/Action 배선·Pack compiler·나머지 schema는 구현하지 않는다. R10이 후속 패킷으로 Action 자산·고지를 연결해야 하며 이번 tracked bundle은 그대로다.
 CPx2 N2: `.json` 이름만 Stage 해석 후보이며 raw 이름의 Stage 모양 bytes는 검증된 opaque leaf다. N3: mkdir 뒤 실패하면 pinned dev/ino와 같은 디렉터리인지 확인하고 빈 디렉터리만 rmdir한다. 교체된 이름·링크·비어 있지 않은 경로는 삭제하지 않는다. 독립 child의 과도 umask·교체 경로 테스트로 전역 umask 오염 없이 확인한다.
+
+## M1-41 Target uniqueItems bridge
+
+Target 입력은 먼저 기존 snapshotJsonData로 Proxy/getter/toJSON/prototype/symbol/크기·깊이 한도를 검증한다. 그 뒤 ordinary JSON 복사본에서 정적 Ajv schema의 uniqueItems를 평가하여 null-prototype 객체의 comparator 오류를 피한다. 반환값은 원래의 private null-prototype snapshot을 유지한다.
+서로 다른 pg-log dependency 서비스 2개는 generic TargetSpec schema에서 통과한다. 완전 동일 중복(키 순서가 달라도 동일)·app 서비스 중복·기존 schema 상한/unknown 키 거부는 그대로다. 이는 멀티 PG 실행 지원이 아니며 실제 M1 compose adapter의 1PG 지원 경계는 별도로 유지한다.

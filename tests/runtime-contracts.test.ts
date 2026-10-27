@@ -176,6 +176,44 @@ test('target parsers accept own data and YAML, preserving scalar types without g
   assert.equal(JSON.stringify(parseRuntimeYaml('value: No')), '{"value":"No"}');
 });
 
+test('distinct Target dependencies retain uniqueness and snapshot isolation', () => {
+  const original = { ...target(), dependencies: [
+    { service: 'db', observer: 'pg-log' }, { service: 'audit-db', observer: 'pg-log' },
+  ] };
+  const parsed = parseTargetSpec(original);
+  assert.deepEqual(parsed.dependencies.map(value => value.service), ['db', 'audit-db']);
+  assert.equal(Object.getPrototypeOf(parsed), null);
+  assert.equal(Object.getPrototypeOf(parsed.dependencies[0]), null);
+  assert.notEqual(parsed.dependencies, original.dependencies);
+  assert.notEqual(parsed.dependencies[0], original.dependencies[0]);
+  assert.equal(parseTargetYaml(JSON.stringify(original)).dependencies.length, 2);
+  original.dependencies[0].service = 'changed'; original.dependencies.push({ service: 'later', observer: 'pg-log' });
+  assert.deepEqual(parsed.dependencies.map(value => value.service), ['db', 'audit-db']);
+  assert.throws(() => parseTargetSpec({ ...target(), dependencies: [
+    { service: 'db', observer: 'pg-log' }, { observer: 'pg-log', service: 'db' },
+  ] }), /invalid_runtime_target/);
+  assert.throws(() => parseTargetSpec({ ...target(), dependencies: [
+    { service: 'db', observer: 'pg-log' }, { service: 'app', observer: 'pg-log' },
+  ] }), /invalid_runtime_target/);
+});
+
+test('ordinary JSON validation bridge cannot bypass own-data rejection or invoke caller hooks', () => {
+  let calls = 0;
+  const getter = Object.defineProperty(target(), 'toJSON', { get() { calls++; throw Error('must_not_run'); } });
+  const nested = Object.defineProperty({ service: 'db', observer: 'pg-log' }, 'toJSON', {
+    get() { calls++; throw Error('must_not_run'); },
+  });
+  const proxy = new Proxy(target(), { ownKeys() { calls++; throw Error('must_not_run'); } });
+  for (const input of [getter, proxy, { ...target(), dependencies: [nested] },
+    Object.assign(Object.create({ inherited: true }), target()),
+    Object.defineProperty(target(), 'hidden', { value: true, enumerable: false }),
+    { ...target(), [Symbol('hidden')]: true },
+    { ...target(), dependencies: [{ service: 'db', observer: 'pg-log', constructor: 'untrusted' }] },
+    JSON.parse(JSON.stringify(target()).replace('"project":', '"__proto__":{},"project":')),
+  ]) assert.throws(() => parseTargetSpec(input), /invalid_runtime_target/);
+  assert.equal(calls, 0);
+});
+
 test('YAML nodes reject duplicate keys, tags, anchors, aliases, merges and multiple documents', () => {
   for (const text of [
     'x: 1\nx: 2', 'x: 1\n"x": 2', 'x: !!str 1', 'x: ! value', 'x: !custom value',
