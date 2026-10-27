@@ -76,8 +76,8 @@ M1 Maven 기본 allowlist는 `repo.maven.apache.org:443`; 이미지·tool 준비
 dependency 준비 뒤 archive/manifest checksum을 결속하고 최종 compile/package RUN은 network none이다.
 일반 compose `build.network`는 `default|none|host` 모드이며 top-level internal network 이름이 아니다.
 따라서 `build.network: internal-net`이나 proxy env만으로 allowlist를 보장한다고 주장하지 않는다.
-backend가 온라인 allowlist를 증명하지 못하면 offline build만 가능하며 cache miss는 명시적 build error다.
-이는 임의 프로젝트 지원 완료가 아니며, 필요한 dependency 준비 실패를 성공/clean으로 바꾸지 않는다.
+온라인 allowlist를 증명하지 못하면 build error다. 고정 cache만으로 온라인 지원을 대체하지 않는다.
+M1 통과에는 빈 의존 cache의 허용 registry fetch 성공과 금지 목적지 차단을 모두 실측해야 한다.
 근거: [Compose build network](https://docs.docker.com/reference/compose-file/build/#network).
 
 초기 제안 상한은 전체 target 집합 CPU 2, 메모리 2 GiB, PID 256, build 600초, startup 180초다.
@@ -167,3 +167,43 @@ builder forbidden destination/secret canary/소스 불변, runtime 외부 차단
 agent off·dump 실패·PG 실패·health timeout·signal·cleanup 실패·잔여 object 0을 독립 검증한다.
 동의 없는 실행은 파일 생성·Docker 접촉·target request 0이어야 한다. 미충족은 exit 2와 해당 범위 unknown이다.
 이 설계는 로컬 Desktop rootless·allowlist 실측·고정 이미지 digest가 확보됐다는 증거가 아니다.
+
+## 8. M1-08: Mac·CI 준비 절차와 enforced datapath
+
+읽기 전용 확인: `limactl version 1.0.3`, `colima version 0.8.1`. 기존 instance나 daemon은 변경하지 않았다.
+설치된 공식 Lima rootless template 이름은 `docker.yaml`/`template://docker`다(`docker-rootful`과 구별).
+[v1.0.3 원문](https://github.com/lima-vm/lima/blob/v1.0.3/templates/docker.yaml)은 기본 host mount와 unpinned install/fallback이 있어 그대로 기동하지 않는다.
+후속 준비기는 이 template의 해시·VM OS image digest·Docker extras 패키지/서명·RootlessKit·nft 버전을 고정한 파생 YAML을 만든다.
+파생 값은 `mounts: []`, agent forwarding off, host resolver/host alias off, 자동 TCP forwarding off; Docker Unix socket forwarding만 둔다.
+명령 후보(이름 충돌 시 거부): `limactl create --name=wk-m1-cp1 --cpus=2 --memory=4 --disk=20 /ABS/pinned-wakeio-docker.yaml` 후 `limactl start wk-m1-cp1`.
+이는 로컬 `create/start --help`로 문법만 확인한 계획이다. host source는 tar/API로 복사하며 guest mountinfo에서도 host share 0을 확인한다.
+endpoint는 `limactl list wk-m1-cp1 --format 'unix://{{.Dir}}/sock/docker.sock'`의 소유 socket으로 고정하고 매 호출 `docker --host`에 전달한다.
+Mac Desktop context를 바꾸지 않는다. run lease의 VM UUID/이름을 확인한 경우에만 해당 instance의 stop/delete·socket/disk 부재를 검증한다.
+CI 준비는 전용 `wakeio-m1` UID10001과 충돌 없는 subuid/subgid 65,536개를 만들고 핀된 uidmap/dbus/rootless extras/nft를 설치한다.
+`user@10001.service.d`에 `Delegate=cpu cpuset io memory pids`를 두고 `systemctl daemon-reload`, `loginctl enable-linger wakeio-m1`을 수행한다.
+전용 user session에서 `dockerd-rootless-setuptool.sh install`, `systemctl --user start docker`; socket은 `/run/user/10001/docker.sock`이다.
+Mac도 rootless W=10001을 sudo 없는 전용 user로 만들고 template 관리자와 분리한다. 원본 template의 user provision은 이 계정으로 교체한다.
+관리자 전용 Unix relay만 W socket을 Lima host socket으로 연결하며 target에는 relay·관리 key·host share가 없다.
+rootless option·seccomp 실제 적용·cgroup limit/CPU controller probe 실패 시 source 실행을 거부한다.
+위 root 작업은 신뢰 VM/runner 준비뿐이다. target은 non-root·cap0이며 setup tool·sudo·Docker socket·credential을 받지 않는다.
+
+VM root 준비기가 전용 `inet` nft table의 OUTPUT에서 rootless socket UID W를 먼저 분기하고, IPv4/IPv6 모두 proxy tuple만 허용한다.
+VM 전체도 default-deny이며 고정 관리 SSH reply와 proxy UID의 허용 upstream만 예외다. UID0/SUID helper의 포괄 허용은 없다.
+핵심 규칙은 `meta skuid W`에서 `ip/ip6 daddr P tcp dport PORT accept`, 나머지 counter/drop이다. 일반 established 허용보다 먼저 적용한다.
+rootlesskit/slirp의 실제 socket UID와 flow counter를 probe로 대조하고, 준비 때 열린 연결을 닫은 뒤 정책을 atomic 설치한다.
+P는 별도 UID의 canonical Maven reverse proxy다. trusted mirror 설정을 만들고 GET/HEAD artifact 경로만 허용하며 CONNECT·upload·임의 Host를 거부한다.
+proxy만 제한된 DNS를 사용하고 upstream host/TLS 검증·public IP pin·모든 redirect 재검증을 한다. 사설/link-local/metadata·주소 변경은 거부한다.
+proxy UID도 허용 registry DNS/IP/443만 접근한다. target의 직접 IP·DNS/DoH·host gateway·CONNECT/SNI 우회는 W drop 또는 proxy 거부로 끝나야 한다.
+단일 run VM lease에서 phase 전환을 직렬화한다. setup은 핀된 tool 준비, build는 proxy tuple만, runtime은 W 외부 output 전부 drop·내부 app/PG만 허용한다.
+R9는 소유 canary로 위 우회와 IPv6를 시도해 금지 수신 0·허용 fetch 성공·counter 일치를 확인한다. 정책 이름/환경변수만으로 통과하지 않는다.
+빈 cache fetch→checksum 결속→Maven offline compile→동일 image/JAR digest 비교를 검증한다. 임의 project 준비 실패는 error이며 지원 완료로 바꾸지 않는다.
+
+R5 parser helper는 핀된 image/WASM으로 job마다 새로 만들고 network none·UID65534·cap0·read-only·CPU1·PID16·256MiB로 제한한다.
+stdin은 인코딩 후 64KiB 이하(SQL32KiB 포함), projection stdout은 1MiB 이하·전체8MiB/4,096사건 이하; stderr/원문 로그는 저장하지 않는다.
+controller의 helper job deadline은 1초다. trap·재초기화·timeout·출력 초과는 unknown으로 닫고 process group 종료와 container rm을 확인한다.
+R3 capability는 `{leaseId, assetDigests, stdinBytes, deadlineMs, memoryBytes}`→`{projectionBytes, hashes, stopReason, cleanupConfirmed}`만 제공한다.
+PG lease는 DB/container/log volume ID·runNonce·seed 뒤 시작 cursor·session/line·rotation generation을 묶고 marker 없는 줄은 즉시 버린다.
+요청 종료 뒤 writer 정지→최종 cursor까지 drain→parser 종료→raw PG volume 삭제·부재 확인 순서다. gap/미완료 drain/삭제 실패는 unknown/error다.
+후속 R3 패킷은 핀된 VM/CI setup과 nft/proxy, helper/lifecycle을 구현하고 보안 CPx를 받는다. R9가 같은 consent CLI 경로로 독립 probe한다.
+현재는 준비·정책·helper 모두 미실행이다. 실제 가용성·성능과 우회 차단이 입증되기 전 M1 격리/빌드 게이트를 PASS로 세지 않는다.
+근거: [Lima Docker](https://lima-vm.io/docs/examples/containers/docker/), [rootless cgroup](https://docs.docker.com/engine/security/rootless/tips/#limiting-resources), [nft socket UID](https://wiki.nftables.org/wiki-nftables/index.php/Matching_packet_metainformation#Matching_by_socket_UID_.2F_GID).
