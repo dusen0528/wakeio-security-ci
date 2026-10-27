@@ -52,10 +52,11 @@ control/probe는 직렬 window를 닫고 drain하며 늦은 사건·다른 run/l
 
 원문 PG 줄은 bounded private 메모리에서만 해석한다. 마커 없는 사건은 저장·보고하지 않고 즉시 버린다.
 R5의 Observer parser adapter가 원문 SQL을 PG parser/scanner로 분석해 아래 projection을 만든다.
-식별자·literal·comment·Bind 값·localized error text·DB 사용자/호스트는 삭제하고 종류/길이/해시로 대체한다.
+식별자·literal·comment·Bind 값·localized error text·DB 사용자/호스트는 삭제하고 허용된 종류/범위·집계 hash만 남긴다.
 유지할 것은 SQL/원본 사건 hash, AST node 종류·관계, token 종류/범위, marker/payload 대응 위치·역할이다.
 오류 projection에는 SQLSTATE·검증된 위치와 parser의 오류 분류만 남긴다. 원문 excerpt나 `formatSqlError` 출력은 금지한다.
 payload 바깥 token hash와 control의 문맥을 비교한다. 단순한 fingerprint 차이나 문자열 포함은 승격 증거가 아니다.
+개별 token hash는 비교용 transient 값이며 단계 파일에 보관하지 않는다. 아래 CPx8 N2 수명 정책을 적용한다.
 원문 삭제 전에 projection의 범위·인코딩·literal/parameter 역할 보존을 확인하고 실패하면 `unknown`으로 낸다.
 R1 artifact는 version/runNonce/target·Pack·parser digest/ledger hash/앞 단계 hash/body hash를 결속한다.
 private 0700 경로·0600 exclusive write와 target 미공유 volume을 사용한다. 해시는 출처 인증을 대신하지 않는다.
@@ -172,3 +173,18 @@ TS source SHA는 build provenance일 뿐이며 설치본에서 TS/lock 원문을
 R3가 network none·1초·256MiB·UID/caps/readonly/CPU/PID와 native stderr/core dump 차단을 외부에서 강제해야 한다.
 worker는 한 작업 뒤 종료하며 trap의 비동기 재초기화를 재사용하지 않는다. 이 코드가 실제 격리/자원 준수를 입증하지는 않는다.
 새 DB/container/log·runNonce/lease·seed 뒤 cursor·닫힌 직렬 window의 실행 간 혼합 거부 조건은 collector 후속 완료 조건으로 유지한다.
+
+## M1-108 CPx8 N2: 개별 token hash의 수명
+
+`PgParserReply.projection.tokenHashes`는 worker→trusted collector의 private 비교용 transient RAM에서만 허용한다.
+worker stdout은 디스크로 중계하지 않는 private pipe로만 받고 stderr·진단·추적 도구에도 reply를 복사하지 않는다.
+Stage·Observation·ledger·report·log·evidence·agent 입력·transcript·cache에 개별 tokenHashes를 저장하거나 출판하지 않는다.
+control/probe 비교와 context hash 계산이 끝나면 원문 SQL·token.text 및 개별 literal token hash를 포함한 모든 tokenHashes 참조를 폐기한다.
+참조 폐기는 메모리의 즉시 물리 소거를 보장한다는 뜻이 아니다. 프로세스 종료·dump 차단은 별도 격리 조건이다.
+salt 없는 hash는 기밀성 수단이 아니며 낮은 엔트로피 literal은 사전 대입으로 복원될 수 있다.
+허용된 statement/event/context 집계 hash도 비밀성이나 수집 출처 인증을 보장한다고 주장하지 않는다.
+현재 `Observation.sql` 타입의 token projection은 종류/역할/span이며 `tokenHashes` 필드는 없음을 읽기 대조했다.
+후속 collector writer는 Observation에 허용된 projection 필드만 명시적으로 선택하고 전체 PgParserReply의 object spread·저장을 금지한다.
+완료 조건은 개별 tokenHashes가 저장·보고 출력에 없음을 확인하는 negative contract test와 R9의 전체 출력 경로 audit다.
+이 문서는 writer 구현·폐기 검증 완료를 뜻하지 않는다. HMAC 대안은 미선택이며 새 키·비밀 salt를 도입하지 않는다.
+현재 parser/Oracle/protocol·pin·manifest·배포 asset bytes와 SHA는 이 수명 정책 반영으로 변경하지 않는다.
