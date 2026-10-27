@@ -56,6 +56,8 @@ PLAN 10·11을 따르는 A안으로 정렬한다. 공통 보고서에 discrimina
 runtime 분기는 공통 envelope의 `checks`와 `runtime`을 함께 검증·보존하며, 기존 scan 분기의 직렬화와 API proof 의미는 유지한다.
 runtime 필드/판별자 불일치·필수 check 누락·중복·손상은 legacy fallback 없이 거부한다. scan 모드의 runtime 혼합도 거부한다.
 runtime을 모르는 예전 바이너리의 지원을 주장하지 않는다. 갱신된 공통 reader는 runtime을 누락한 깨끗한 scan으로 축소하지 않는다.
+runtime 보고서는 갱신된 공통 reader가 필요하며 0.5 소비자는 미지원으로 거부한다. 기존 0.5 scan 입력·출력 호환과 구별한다.
+현재 CLI verify/init-target·공통 runtime reader 연결은 후속 작업이다. 개발 상태 안내는 [USAGE.md](../USAGE.md)를 따른다.
 `parseScanReport`와 compare의 소비 경로도 분기하며 runtime 비교는 R1의 계약·정책·digest가 맞을 때만 수행한다.
 runtime gate는 `runtime.verifyGate`가 권위다. 기존 `evaluateGate`/agent.scanGate의 미완료 우선 의미를 verify에 적용하지 않는다.
 별도 versioned envelope를 주포맷으로 삼는 B안은 미채택이다. N5의 B안 사람 승인이나 PLAN 기준 재정의를 기다리지 않는다.

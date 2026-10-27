@@ -60,6 +60,31 @@ license text for parse5, entities, TypeScript (including its third-party
 notice text), and the pinned esbuild build tool. The source archive includes
 both generated files so a vendored Action does not need `node_modules`.
 
+## Runtime target data validation dependencies
+
+The development branch includes the following pinned npm dependencies for
+strict target YAML parsing and validation against the repository's bundled
+JSON Schema. Versions and license identifiers below match `package-lock.json`
+and the installed packages' license files.
+
+| Package | Version | License | Use |
+| --- | --- | --- | --- |
+| yaml | 2.9.1 | ISC | Restricted YAML 1.2 target data parsing |
+| ajv | 8.20.0 | MIT | Validation against the trusted target JSON Schema |
+| fast-deep-equal | 3.1.3 | MIT | Ajv dependency |
+| fast-uri | 3.1.9 | BSD-3-Clause | Ajv dependency |
+| json-schema-traverse | 1.0.0 | MIT | Ajv dependency |
+| require-from-string | 2.0.2 | MIT | Ajv dependency |
+
+The generated `dist-action/THIRD_PARTY_LICENSES.txt` includes the complete
+license texts for these six packages in addition to the existing notices.
+The runtime target parser is currently an internal module: `verify`,
+`init-target`, and the common runtime report reader are awaiting CLI/report
+wiring. These six packages are not yet imported by the Action entrypoint;
+including their notices does not claim that the current Action executes them.
+The npm package ships `schemas/target.v1.json` and its emitted
+`build/schemas/target.v1.json`; the parser imports the local schema statically.
+
 
 ## Optional Bandit 1.9.4
 
