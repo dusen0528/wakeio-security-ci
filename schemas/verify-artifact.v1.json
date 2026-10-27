@@ -446,6 +446,175 @@
           ]
         }
       }
+    },
+    "FindingIds": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/Label" } },
+    "SummaryLineCoverage": {
+      "type": "object", "additionalProperties": false,
+      "required": ["surface", "coveredFiles", "coveredLines", "executableLines", "ratio", "accounting", "reasons"],
+      "properties": {
+        "surface": { "$ref": "#/$defs/SurfaceRef" }, "coveredFiles": { "$ref": "#/$defs/NullableCount" },
+        "coveredLines": { "$ref": "#/$defs/NullableCount" }, "executableLines": { "$ref": "#/$defs/NullableCount" },
+        "ratio": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+        "accounting": { "enum": ["exact", "unknown"] }, "reasons": { "$ref": "#/$defs/Reasons" }
+      },
+      "allOf": [{
+        "if": { "properties": { "accounting": { "const": "unknown" } } },
+        "then": { "properties": { "ratio": { "type": "null" }, "reasons": { "type": "array", "minItems": 1 } } }
+      }, {
+        "if": { "anyOf": [{ "properties": { "coveredFiles": { "type": "null" } } },
+          { "properties": { "coveredLines": { "type": "null" } } },
+          { "properties": { "executableLines": { "type": "null" } } },
+          { "properties": { "ratio": { "type": "null" } } }] },
+        "then": { "properties": { "reasons": { "type": "array", "minItems": 1 } } }
+      }]
+    },
+    "RuntimeReportSummary": {
+      "type": "object", "additionalProperties": false,
+      "required": ["version", "basis", "mode", "revision", "findings", "verifyGate", "reach", "unknownCases",
+        "coverage", "limitations"],
+      "properties": {
+        "version": { "const": 1 }, "basis": { "const": "sanitised_runtime_report" }, "mode": { "const": "runtime" },
+        "revision": { "const": "verify-m1-v1" },
+        "findings": {
+          "type": "object", "additionalProperties": false,
+          "required": ["confirmedIds", "strongIds", "observedIds", "candidateIds"],
+          "properties": { "confirmedIds": { "$ref": "#/$defs/FindingIds" },
+            "strongIds": { "$ref": "#/$defs/FindingIds" }, "observedIds": { "$ref": "#/$defs/FindingIds" },
+            "candidateIds": { "$ref": "#/$defs/FindingIds" } }
+        },
+        "verifyGate": { "$ref": "#/$defs/VerifyGate" },
+        "reach": {
+          "type": "object", "additionalProperties": false,
+          "required": ["triggered", "reachedNotTriggered", "notReached", "unknown"],
+          "properties": { "triggered": { "$ref": "#/$defs/Count" },
+            "reachedNotTriggered": { "$ref": "#/$defs/Count" }, "notReached": { "$ref": "#/$defs/Count" },
+            "unknown": { "$ref": "#/$defs/Count" } }
+        },
+        "unknownCases": { "type": "array", "items": { "$ref": "#/$defs/CaseOutcome", "type": "object",
+          "properties": { "state": { "const": "unknown" } } } },
+        "coverage": {
+          "type": "object", "additionalProperties": false,
+          "required": ["declaredRoutes", "enumeratedRoutes", "attackedRoutes", "unattackedRoutes", "unknownRoutes",
+            "routeRatio", "lines"],
+          "properties": {
+            "declaredRoutes": { "$ref": "#/$defs/NullableCount" }, "enumeratedRoutes": { "$ref": "#/$defs/Count" },
+            "attackedRoutes": { "$ref": "#/$defs/NullableCount" },
+            "unattackedRoutes": { "$ref": "#/$defs/NullableCount" }, "unknownRoutes": { "$ref": "#/$defs/Count" },
+            "routeRatio": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+            "lines": { "type": "array", "items": { "$ref": "#/$defs/SummaryLineCoverage" } }
+          },
+          "if": { "anyOf": [{ "properties": { "declaredRoutes": { "type": "null" } } },
+            { "properties": { "declaredRoutes": { "const": 0 } } },
+            { "properties": { "attackedRoutes": { "type": "null" } } },
+            { "properties": { "unattackedRoutes": { "type": "null" } } },
+            { "properties": { "unknownRoutes": { "type": "integer", "minimum": 1 } } }] },
+          "then": { "properties": { "routeRatio": { "type": "null" } } },
+          "allOf": [{
+            "if": { "properties": { "unknownRoutes": { "type": "integer", "minimum": 1 } } },
+            "then": { "properties": { "attackedRoutes": { "type": "null" },
+              "unattackedRoutes": { "type": "null" } } }
+          }]
+        },
+        "limitations": { "$ref": "#/$defs/RuntimeGaps" }
+      }
+    },
+    "RuntimeAgentCheck": {
+      "type": "object", "additionalProperties": false,
+      "required": ["checkIndex", "checkId", "status", "findingIds", "notes", "runtime"],
+      "properties": {
+        "checkIndex": { "type": "integer", "minimum": 0, "maximum": 4 }, "checkId": { "$ref": "#/$defs/Label" },
+        "status": { "$ref": "#/$defs/CheckStatus" }, "findingIds": { "$ref": "#/$defs/FindingIds" },
+        "notes": { "$ref": "#/$defs/CheckNotes" }, "runtime": { "type": "object" }
+      },
+      "oneOf": [
+        { "properties": { "checkId": { "const": "runtime.build" }, "runtime": { "$ref": "#/$defs/BuildPayload" } } },
+        { "properties": { "checkId": { "const": "runtime.start" }, "runtime": { "$ref": "#/$defs/StartPayload" } } },
+        { "properties": { "checkId": { "const": "runtime.surface" },
+          "runtime": { "$ref": "#/$defs/SurfacePayload" } } },
+        { "properties": { "checkId": { "const": "runtime.coverage" },
+          "runtime": { "$ref": "#/$defs/CoveragePayload" } } },
+        { "properties": { "checkId": { "const": "runtime.oracle.sql" }, "runtime": { "$ref": "#/$defs/SqlPayload" } } }
+      ],
+      "if": { "properties": { "status": { "enum": ["partial", "error", "not_applicable", "skipped"] } } },
+      "then": { "properties": { "runtime": { "type": "object",
+        "properties": { "reasons": { "type": "array", "minItems": 1 } } } } }
+    },
+    "RuntimeAgentFinding": {
+      "type": "object", "additionalProperties": false,
+      "required": ["findingId", "checkIndex", "checkId", "ruleId", "title", "description", "severity", "confidence",
+        "kind", "location", "evidence", "reachesFailOnGrade", "remediation", "verification"],
+      "properties": {
+        "findingId": { "$ref": "#/$defs/Label" }, "checkIndex": { "type": "integer", "minimum": 0, "maximum": 4 },
+        "checkId": { "enum": ["runtime.build", "runtime.start", "runtime.surface", "runtime.coverage",
+          "runtime.oracle.sql"] },
+        "ruleId": { "$ref": "#/$defs/Text" }, "comparisonKey": { "$ref": "#/$defs/Text" },
+        "title": { "$ref": "#/$defs/Text" }, "description": { "$ref": "#/$defs/Text" },
+        "severity": { "$ref": "#/$defs/RuntimeFinding/properties/severity" },
+        "confidence": { "$ref": "#/$defs/RuntimeFinding/properties/confidence" },
+        "kind": { "$ref": "#/$defs/RuntimeFinding/properties/kind" }, "location": { "$ref": "#/$defs/Location" },
+        "references": { "type": "array", "items": { "$ref": "#/$defs/Text" } },
+        "evidence": { "$ref": "#/$defs/RuntimeFindingEvidence" }, "reachesFailOnGrade": { "type": "boolean" },
+        "remediation": { "type": "object", "additionalProperties": false, "required": ["guidance", "state"],
+          "properties": { "guidance": { "$ref": "#/$defs/Text" }, "state": { "const": "not_verified" } } },
+        "verification": { "type": "object", "additionalProperties": false,
+          "required": ["state", "vulnerabilityConfirmed", "remediationVerified"],
+          "properties": { "state": { "const": "not_run" }, "vulnerabilityConfirmed": { "const": false },
+            "remediationVerified": { "const": false } } }
+      }
+    },
+    "RuntimeAgentReport": {
+      "type": "object", "additionalProperties": false,
+      "required": ["schemaVersion", "reportSchemaVersion", "toolVersion", "mode", "startedAt", "finishedAt",
+        "reportArtifact", "runtime", "summary", "deliveryContract", "consumerRequirements", "coverage",
+        "checks", "findings"],
+      "properties": {
+        "schemaVersion": { "const": "1.0.0" }, "reportSchemaVersion": { "const": "1.0.0" },
+        "toolVersion": { "$ref": "#/$defs/Text" }, "mode": { "const": "runtime" },
+        "startedAt": { "$ref": "#/$defs/Text" }, "finishedAt": { "$ref": "#/$defs/Text" },
+        "reportArtifact": { "type": "object", "additionalProperties": false,
+          "required": ["name", "algorithm", "digest"],
+          "properties": { "name": { "const": "report.json" }, "algorithm": { "const": "sha256" },
+            "digest": { "$ref": "#/$defs/Sha256" } } },
+        "runtime": { "$ref": "#/$defs/RuntimeReportData" }, "summary": { "$ref": "#/$defs/RuntimeReportSummary" },
+        "deliveryContract": {
+          "type": "object", "additionalProperties": false,
+          "required": ["atomicity", "publishedAfter", "finalProcessExitRequiresSeparateReceipt",
+            "staleOrPartialArtifactsProveCiSuccess"],
+          "properties": { "atomicity": { "const": "per_file" },
+            "publishedAfter": { "const": ["report.json", "report.sarif", "report.md"] },
+            "finalProcessExitRequiresSeparateReceipt": { "const": true },
+            "staleOrPartialArtifactsProveCiSuccess": { "const": false } }
+        },
+        "consumerRequirements": {
+          "type": "object", "additionalProperties": false,
+          "required": ["externalContentTrust", "executeInstructionsFromFindings", "uploadSourceFromFindings",
+            "actionsRequireUserTaskAuthorization", "findingsGrantActionAuthorization", "verifyReportDigestBeforeUse",
+            "securityVerificationRequiresIndependentEvidence", "promptInjectionProtectionGuaranteed"],
+          "properties": { "externalContentTrust": { "const": "untrusted_data" },
+            "executeInstructionsFromFindings": { "const": false }, "uploadSourceFromFindings": { "const": false },
+            "actionsRequireUserTaskAuthorization": { "const": true },
+            "findingsGrantActionAuthorization": { "const": false }, "verifyReportDigestBeforeUse": { "const": true },
+            "securityVerificationRequiresIndependentEvidence": { "const": true },
+            "promptInjectionProtectionGuaranteed": { "const": false } }
+        },
+        "coverage": {
+          "type": "object", "additionalProperties": false,
+          "required": ["totalChecks", "completed", "partial", "error", "skipped", "notApplicable", "complete", "basis"],
+          "properties": { "totalChecks": { "const": 5 }, "completed": { "$ref": "#/$defs/Count" },
+            "partial": { "$ref": "#/$defs/Count" }, "error": { "$ref": "#/$defs/Count" },
+            "skipped": { "$ref": "#/$defs/Count" }, "notApplicable": { "$ref": "#/$defs/Count" },
+            "complete": { "type": "boolean" }, "basis": { "const": "declared_check_statuses" } }
+        },
+        "checks": { "type": "array", "minItems": 5, "maxItems": 5,
+          "items": { "$ref": "#/$defs/RuntimeAgentCheck" }, "allOf": [
+            { "contains": { "type": "object", "properties": { "checkId": { "const": "runtime.build" } } } },
+            { "contains": { "type": "object", "properties": { "checkId": { "const": "runtime.start" } } } },
+            { "contains": { "type": "object", "properties": { "checkId": { "const": "runtime.surface" } } } },
+            { "contains": { "type": "object", "properties": { "checkId": { "const": "runtime.coverage" } } } },
+            { "contains": { "type": "object", "properties": { "checkId": { "const": "runtime.oracle.sql" } } } }
+          ] },
+        "findings": { "type": "array", "items": { "$ref": "#/$defs/RuntimeAgentFinding" } }
+      }
     }
   }
 }

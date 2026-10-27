@@ -1,6 +1,8 @@
 import type { DastExecution } from './dast-execution.js';
 import type { SchemathesisAuthEvidence } from './schemathesis-auth.js';
-import type { RuntimeCheck, RuntimeReportData } from './runtime/types.js';
+import type { RuntimeAgentCheck, RuntimeCheck, RuntimeCheckId, RuntimeFinding,
+  RuntimeReportData, RuntimeReportSummary } from './runtime/types.js';
+export type { RuntimeAgentCheck, RuntimeReportSummary } from './runtime/types.js';
 export type { DastExecution, DastExecutionV4, DastJsonExecutionStep, DastJsonStepReason } from './dast-execution.js';
 export type Severity = 'info' | 'low' | 'medium' | 'high' | 'critical';
 export type Mode = 'source' | 'url' | 'both' | 'api' | 'combined';
@@ -567,3 +569,21 @@ export interface AgentReport {
     verification: { state: 'not_run'; vulnerabilityConfirmed: false; remediationVerified: false };
   }>;
 }
+
+/** Same agent-report.json, additive runtime branch; legacy AgentReport/ReportSummary stay unchanged. */
+export type RuntimeAgentFinding = Omit<RuntimeFinding,
+  'id' | 'remediation' | 'staticFlow' | 'staticContext' | 'controlVerification' | 'replay'> & {
+  findingId: string; checkIndex: number; checkId: RuntimeCheckId; reachesFailOnGrade: boolean;
+  remediation: AgentReport['findings'][number]['remediation'];
+  verification: AgentReport['findings'][number]['verification'];
+};
+export interface RuntimeAgentReport extends Omit<AgentReport,
+  'mode' | 'scope' | 'scanGate' | 'summary' | 'checks' | 'findings'> {
+  mode: 'runtime'; scope?: never; scanGate?: never;
+  runtime: RuntimeReportData;
+  summary: RuntimeReportSummary;
+  checks: RuntimeAgentCheck[];
+  findings: RuntimeAgentFinding[];
+}
+export type CommonAgentReport = AgentReport | RuntimeAgentReport;
+export type CommonReportSummary = ReportSummary | RuntimeReportSummary;

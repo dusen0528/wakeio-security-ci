@@ -12,8 +12,11 @@ import { assertRuntimeScopeLocation, createArtifactVault } from '../src/runtime/
 import { parseRuntimeYaml, parseTargetSpec, parseTargetYaml } from '../src/runtime/target.js';
 import targetSchema from '../schemas/target.v1.json' with { type: 'json' };
 import verifySchema from '../schemas/verify-artifact.v1.json' with { type: 'json' };
-import type { Report, RuntimeReport } from '../src/contracts.js';
-import type { ArtifactRef, ArtifactVault, RequestCoverage, Stage, StageBinding } from '../src/runtime/types.js';
+import { toAgentReport } from '../src/report.js';
+import type { AgentReport, CommonAgentReport, CommonReportSummary, Report, ReportSummary,
+  RuntimeAgentReport, RuntimeReport, RuntimeReportSummary } from '../src/contracts.js';
+import type { ArtifactRef, ArtifactVault, CaseOutcome, RequestCoverage, RuntimeAgentCheck, RuntimeCheck,
+  Stage, StageBinding } from '../src/runtime/types.js';
 
 const digest = (value: string) => createHash('sha256').update(value).digest('hex');
 async function fixture(run: (base: string, source: string, vault: ArtifactVault) => Promise<void>) {
@@ -580,3 +583,136 @@ test('schema reference and Stage definitions agree with vault bounds; callers re
   const input = runtimeReportShape(), before = JSON.stringify(input);
   assert.equal(validReportShape(input), true); assert.equal(JSON.stringify(input), before);
 });
+
+const legacyAgentShape = () => toAgentReport({ schemaVersion: '1.0.0', toolVersion: '0.5.0', mode: 'source',
+  startedAt: '2026-10-28T00:00:00Z', finishedAt: '2026-10-28T00:00:01Z', checks: [] });
+function agentCheckShape(check: RuntimeCheck, checkIndex: number): RuntimeAgentCheck {
+  const header = { checkIndex, status: check.status, notes: check.notes,
+    findingIds: check.findings.map(() => 'contract-finding') };
+  switch (check.id) {
+    case 'runtime.build': return { ...header, checkId: check.id, runtime: check.runtime };
+    case 'runtime.start': return { ...header, checkId: check.id, runtime: check.runtime };
+    case 'runtime.surface': return { ...header, checkId: check.id, runtime: check.runtime };
+    case 'runtime.coverage': return { ...header, checkId: check.id, runtime: check.runtime };
+    case 'runtime.oracle.sql': return { ...header, checkId: check.id, runtime: check.runtime };
+  }
+}
+// Synthetic contract specimen, not an implementation or Oracle/security expectation for R10's writer.
+function runtimeAgentShape(): RuntimeAgentReport {
+  const report = runtimeReportShape(), legacy = legacyAgentShape();
+  const sql = report.checks.find(row => row.id === 'runtime.oracle.sql');
+  const coverage = report.checks.find(row => row.id === 'runtime.coverage');
+  assert.ok(sql && coverage);
+  sql.findings[0].id = 'contract-finding';
+  const { id, remediation, staticFlow, staticContext, controlVerification, replay, ...finding } = sql.findings[0];
+  return {
+    schemaVersion: '1.0.0', reportSchemaVersion: report.schemaVersion, toolVersion: report.toolVersion,
+    mode: 'runtime', startedAt: report.startedAt, finishedAt: report.finishedAt, runtime: report.runtime,
+    reportArtifact: { name: 'report.json', algorithm: 'sha256',
+      digest: digest(JSON.stringify(report, null, 2) + '\n') },
+    deliveryContract: legacy.deliveryContract, consumerRequirements: legacy.consumerRequirements,
+    coverage: { ...legacy.coverage, totalChecks: 5, partial: 5 }, checks: report.checks.map(agentCheckShape),
+    findings: [{ ...finding, findingId: 'contract-finding', checkIndex: 4, checkId: 'runtime.oracle.sql',
+      reachesFailOnGrade: false, remediation: { guidance: '', state: 'not_verified' },
+      verification: { state: 'not_run', vulnerabilityConfirmed: false, remediationVerified: false } }],
+    summary: {
+      version: 1, basis: 'sanitised_runtime_report', mode: 'runtime', revision: 'verify-m1-v1',
+      findings: { confirmedIds: [], strongIds: [], observedIds: [], candidateIds: ['contract-finding'] },
+      verifyGate: report.runtime.verifyGate, reach: { triggered: 0, reachedNotTriggered: 0, notReached: 0, unknown: 1 },
+      unknownCases: sql.runtime.cases.filter(
+        (row): row is CaseOutcome & { state: 'unknown' } => row.state === 'unknown'),
+      coverage: { declaredRoutes: 1, enumeratedRoutes: 1, attackedRoutes: null, unattackedRoutes: null,
+        unknownRoutes: 1, routeRatio: null, lines: coverage.runtime.routes.map(({ files, ...line }) => line) },
+      limitations: [{ area: 'contract', code: 'not_executed' }],
+    },
+  };
+}
+function validProjection(input: unknown, name = 'RuntimeAgentReport'): boolean {
+  const validate = reportAjv.getSchema(verifySchema.$id + '#/$defs/' + name); assert.ok(validate);
+  try { return validate(JSON.parse(JSON.stringify(snapshotJsonData(input)))) === true; } catch { return false; }
+}
+function patchAgentShape(path: string[], value: unknown, remove = false): unknown {
+  const input = runtimeAgentShape(); let row: unknown = input;
+  for (const key of path.slice(0, -1)) {
+    assert.ok(row && typeof row === 'object'); row = Reflect.get(row, key);
+  }
+  assert.ok(row && typeof row === 'object');
+  if (remove) assert.ok(Reflect.deleteProperty(row, path.at(-1)!));
+  else assert.ok(Reflect.set(row, path.at(-1)!, value));
+  return input;
+}
+
+test('runtime projection anchors preserve typed data and keep the original report root narrow', () => {
+  const agent = runtimeAgentShape();
+  assert.equal(validProjection(agent), true);
+  assert.equal(validProjection(agent.summary, 'RuntimeReportSummary'), true);
+  assert.equal(validReportShape(agent), false); assert.equal(validReportShape(agent.summary), false);
+  assert.equal(validProjection(runtimeReportShape()), false); assert.equal(validProjection(legacyAgentShape()), false);
+  const source = runtimeReportShape();
+  source.checks[4].findings[0].id = 'contract-finding';
+  assert.deepEqual(agent.runtime, source.runtime);
+  for (const [i, check] of agent.checks.entries()) assert.deepEqual(check.runtime, source.checks[i].runtime);
+  assert.deepEqual(agent.findings[0].evidence, source.checks[4].findings[0].evidence);
+  assert.equal(agent.reportArtifact.digest, digest(JSON.stringify(source, null, 2) + '\n'));
+  assert.notEqual(agent.reportArtifact.digest, digest(JSON.stringify(source)));
+  const legacy = legacyAgentShape();
+  assert.deepEqual(agent.deliveryContract, legacy.deliveryContract);
+  assert.deepEqual(agent.consumerRequirements, legacy.consumerRequirements);
+  assert.equal(legacy.mode, 'source'); assert.equal('runtime' in legacy, false);
+});
+
+test('runtime agent and summary reject legacy gates, unsupported evidence and independent verification claims', () => {
+  for (const [path, value] of [
+    [['scope'], {}], [['scanGate'], legacyAgentShape().scanGate], [['mode'], 'source'],
+    [['summary', 'scanGate'], {}], [['summary', 'scope'], {}], [['summary', 'revision'], 'unknown'],
+    [['findings', '0', 'evidence', 'basis'], 'scanner_report'], [['findings', '0', 'evidence', 'proof'], 'prose'],
+    [['findings', '0', 'evidence', 'sql'], 'raw'], [['findings', '0', 'evidence', 'marker'], 'raw'],
+    [['findings', '0', 'evidence', 'tokenHashes'], []], [['findings', '0', 'evidence', 'requestHash'], digest('dto')],
+    [['findings', '0', 'verification', 'vulnerabilityConfirmed'], true],
+    [['deliveryContract', 'staleOrPartialArtifactsProveCiSuccess'], true],
+    [['consumerRequirements', 'findingsGrantActionAuthorization'], true],
+    [['reportArtifact', 'digest'], digest('') + '\n'], [['checks', '0', 'checkId'], 'runtime.start'],
+    [['checks', '0', 'runtime'], runtimeAgentShape().checks[1].runtime],
+  ] satisfies [string[], unknown][]) assert.equal(validProjection(patchAgentShape(path, value)), false);
+  assert.equal(validProjection(patchAgentShape(['runtime', 'revision'], null, true)), false);
+  assert.equal(validProjection(patchAgentShape(['summary', 'coverage', 'routeRatio'], 1)), false);
+  assert.equal(validProjection(patchAgentShape(['summary', 'coverage', 'attackedRoutes'], 0)), false);
+  assert.equal(validProjection(patchAgentShape(['summary', 'unknownCases', '0', 'state'], 'triggered')), false);
+  for (const field of ['reportArtifact', 'runtime', 'summary', 'checks', 'findings']) {
+    assert.equal(validProjection(patchAgentShape([field], null, true)), false);
+  }
+  for (const grade of ['confirmed', 'strong', 'observed', 'candidate']) {
+    const input = patchAgentShape(['findings', '0', 'evidence', 'grade'], grade);
+    assert.equal(validProjection(input), true); // Recorded grade never changes verification.not_run/false.
+  }
+});
+
+test('summary line unknown/null data is retained without inventing a project denominator or numeric ratio', () => {
+  const input = runtimeAgentShape(), line = input.summary.coverage.lines[0];
+  line.coveredFiles = null; line.coveredLines = null; line.executableLines = null; line.ratio = null;
+  line.accounting = 'unknown'; line.reasons = ['not_measured'];
+  assert.equal(validProjection(input), true);
+  assert.equal(input.summary.coverage.routeRatio, null);
+  assert.equal(input.summary.unknownCases[0].state, 'unknown');
+  line.ratio = 1; assert.equal(validProjection(input), false);
+  line.ratio = null; line.reasons = []; assert.equal(validProjection(input), false);
+  let calls = 0;
+  const getter = Object.defineProperty(runtimeAgentShape(), 'runtime', { get() { calls++; return {}; } });
+  const proxy = new Proxy(runtimeAgentShape(), { ownKeys() { calls++; return []; } });
+  assert.equal(validProjection(getter), false); assert.equal(validProjection(proxy), false); assert.equal(calls, 0);
+});
+
+// Compile-time branch compatibility only; existing legacy names retain their original scope/gate contracts.
+function projectionTypes(legacy: AgentReport, agent: RuntimeAgentReport,
+  summary: ReportSummary, runtime: RuntimeReportSummary): [CommonAgentReport[], CommonReportSummary[]] {
+  // @ts-expect-error Runtime agent projection is not a legacy AgentReport.
+  const oldAgent: AgentReport = agent; void oldAgent;
+  // @ts-expect-error Runtime summary is not a legacy ReportSummary.
+  const oldSummary: ReportSummary = runtime; void oldSummary;
+  // @ts-expect-error The runtime branch cannot acquire a legacy scan gate.
+  agent.scanGate = legacy.scanGate;
+  // @ts-expect-error The runtime summary cannot acquire legacy scope.
+  runtime.scope = summary.scope;
+  return [[legacy, agent], [summary, runtime]];
+}
+void projectionTypes;
