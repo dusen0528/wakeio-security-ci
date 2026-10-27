@@ -5,12 +5,15 @@
 
 ## 진행 절차에 대한 최신 사용자 지시
 
-- 사용자는 “목표끝까지 멈추지말고 계속해서 개발 진행하도록 해”라고 지시했다.
-- 이어 PR #82에 대해 “너가 직접 병합해도돼 승인함”이라고 승인했다. 오케스트레이터가
-  CI와 승인 HEAD를 확인하고 merge 방식으로 병합해 보호 파일 변경 이력을 보존했다.
-- 마일스톤 PR 병합 지시를 기다리며 개발을 중단하던 절차는 이 최신 지시로 대체한다.
-  CP1·CP2·필수 CPx·GATE, 종료 코드 처리, 보호 파일 불변, 테스트·KPI 기준은 유지한다.
-- HANDOFF·PLAN·보호 프롬프트는 이 운영 지시를 반영한다는 이유로 수정하지 않는다.
+- PR #82 병합은 사용자의 “너가 직접 병합해도돼 승인함”이라는 개별 승인에 따른 1회 조치였다.
+  오케스트레이터는 CI와 승인 HEAD를 확인하고 merge 방식으로 보호 파일 변경 이력을 보존했다.
+- HANDOFF 원문의 GATE 정지·사람 확인/병합 규정과 보호 파일은 그대로 보존한다. 이 설계 문서는
+  그 규정을 상시 개정하거나 이후 PR에 대한 병합 권한을 자체적으로 부여하지 않는다.
+- 사용자는 별도로 “ㄴㄴ목표끝까지 멈추지말고 계속해서 개발 진행하도록 해”라고 지시했다.
+  이 세션의 실제 작업 권한은 해당 최신 사용자 지시에서 판단하며, 이 문서를 승인 근거로 삼지 않는다.
+  사용자 지시를 저장소의 영구 프로토콜 개정으로 일반화하지 않는다.
+- CP1·CP2·필수 CPx·GATE, 종료 코드 처리, 테스트·KPI 기준을 유지한다. HANDOFF·PLAN·보호
+  프롬프트는 변경하지 않으며, 저장소의 상시 규칙 개정은 사람이 제공한 보호 파일 수정본만 반영한다.
 
 ## M1 완료 범위
 
@@ -44,10 +47,22 @@
 | M1-01 | R1 계약·레지스트리 | design/M1-r1-contracts.md | 구체 포트·파일 artifact 해시 결속·Inventory v2·실패/정리/보고 경계 |
 | M1-02 | R3 빌드·런타임 | design/M1-r3-build-jvm.md | compose/rootless/네트워크 정책·JaCoCo 수집·빌드 재현·CI 방법 |
 | M1-03 | R8 독립 예제 | design/M1-r8-fixtures.md | 취약/수정/안전·바인딩/문법·관측 누락·커버리지 기대 매트릭스 |
+| M1-04 | R5 관측·판정 | design/M1-r5-sql-observer.md | PG binding/error·AST/token projection·순수 판정 |
+| M1-05 | R4 표면·Pack | design/M1-r4-surfaces-pack.md | 모든 메서드·입력 직렬화·출처와 readiness·Pack 데이터 |
+| M1-06 | R10 CLI·보고서 | design/M1-r10-cli-report.md | 실제 legacy 충돌·4종 runtime 확장·verify 종료 코드 |
+| M1-07·07A | R1 계약 조정 | design/M1-r1-contracts.md | GET/POST·역할 projection·보고서 선택지·공유 소유권 조정 |
+| M1-08 | R3 backend 조정 | design/M1-r3-build-jvm.md | 전용 rootless UID/VM·enforced egress·helper 자원 제약 |
+| M1-09 | R9 기준 증거 | .handoff/evidence/M1/cp1-baseline/** | 독립 build/39개 호환·기존 KPI 재비교·merge/환경 사실 |
+| M1-10 | R8 pin 후보 조정 | design/M1-r8-fixtures.md | 지원 중인 Spring/PG 후보 정렬, 독립 매트릭스 불변 |
+| M1-11 | R9 HEAD 결속 | .handoff/evidence/M1/cp1-final-bindings/** | e7eb4ee의 코드 동등성·설계/보호 SHA·clean 확인 |
 
 위 신규 내부 설계 문서의 한정 쓰기는 오케스트레이터가 패킷으로 승인했다. 모든 제품 구현은
-CP1 승인 뒤 경로 소유자에게 별도 패킷으로 발행한다. R4·R5·R9·R10 후속 설계와 구현 패킷,
-구체 파일 목록 및 검증 명령은 각 설계 검토 뒤 여기에 추가한다.
+CP1 승인 뒤 경로 소유자에게 별도 패킷으로 발행한다. 신규 파일·테스트 및 PLAN11/R8 case
+대응의 유일한 권위 목록은 design/M1-r1-contracts.md 7절이다. 역할 문서의 경로 표는 이를 참조한다.
+
+CP1 첫 리뷰의 B1/B2는 R1·R10, B3/N6은 오케스트레이터, N1은 R8, N2/N4는 R3·R5가
+보완한다. 보고서 B안의 별도 승인 대기를 만들지 않고 PLAN10의 공통 runtime 확장 A안으로 정렬한다.
+구현·실행 완료를 주장하는 변경은 아니다. 다음 요청서에 finding → 패킷 → 커밋을 기록한다.
 
 ## 검토가 필요한 선택지
 
