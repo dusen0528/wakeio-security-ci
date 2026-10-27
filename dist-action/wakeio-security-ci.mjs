@@ -191150,10 +191150,10 @@ ${options.prefix}` : "\n" : options.prefix
          *    The reason we must validate as part of this method is that `getNonFormattedText` changes the node's positions,
          *    so we can only call this once and can't get the non-formatted text separately.
          */
-        getChanges(validate4) {
+        getChanges(validate3) {
           this.finishDeleteDeclarations();
           this.finishClassesWithNodesInsertedAtStart();
-          const changes = changesToText.getTextChangesFromChanges(this.changes, this.newLineCharacter, this.formatContext, validate4);
+          const changes = changesToText.getTextChangesFromChanges(this.changes, this.newLineCharacter, this.formatContext, validate3);
           if (this.newFileChanges) {
             this.newFileChanges.forEach((insertions, fileName) => {
               changes.push(changesToText.newFileChanges(fileName, insertions, this.newLineCharacter, this.formatContext));
@@ -191258,7 +191258,7 @@ ${options.prefix}` : "\n" : options.prefix
       }
       var changesToText;
       ((changesToText2) => {
-        function getTextChangesFromChanges(changes, newLineCharacter, formatContext, validate4) {
+        function getTextChangesFromChanges(changes, newLineCharacter, formatContext, validate3) {
           return mapDefined(group(changes, (c) => c.sourceFile.path), (changesInFile) => {
             const sourceFile = changesInFile[0].sourceFile;
             const normalized = toSorted(changesInFile, (a, b) => a.range.pos - b.range.pos || a.range.end - b.range.end);
@@ -191268,7 +191268,7 @@ ${options.prefix}` : "\n" : options.prefix
             const textChanges2 = mapDefined(normalized, (c) => {
               const span = createTextSpanFromRange(c.range);
               const targetSourceFile = c.kind === 1 ? getSourceFileOfNode(getOriginalNode(c.node)) ?? c.sourceFile : c.kind === 2 ? getSourceFileOfNode(getOriginalNode(c.nodes[0])) ?? c.sourceFile : c.sourceFile;
-              const newText = computeNewText(c, targetSourceFile, sourceFile, newLineCharacter, formatContext, validate4);
+              const newText = computeNewText(c, targetSourceFile, sourceFile, newLineCharacter, formatContext, validate3);
               if (span.length === newText.length && stringContainsAt(targetSourceFile.text, newText, span.start)) {
                 return void 0;
               }
@@ -191301,7 +191301,7 @@ ${options.prefix}` : "\n" : options.prefix
           return applyChanges(nonFormattedText, changes) + newLineCharacter;
         }
         changesToText2.newFileChangesWorker = newFileChangesWorker;
-        function computeNewText(change, targetSourceFile, sourceFile, newLineCharacter, formatContext, validate4) {
+        function computeNewText(change, targetSourceFile, sourceFile, newLineCharacter, formatContext, validate3) {
           var _a2;
           if (change.kind === 0) {
             return "";
@@ -191310,14 +191310,14 @@ ${options.prefix}` : "\n" : options.prefix
             return change.text;
           }
           const { options = {}, range: { pos } } = change;
-          const format = (n) => getFormattedTextOfNode(n, targetSourceFile, sourceFile, pos, options, newLineCharacter, formatContext, validate4);
+          const format = (n) => getFormattedTextOfNode(n, targetSourceFile, sourceFile, pos, options, newLineCharacter, formatContext, validate3);
           const text5 = change.kind === 2 ? change.nodes.map((n) => removeSuffix(format(n), newLineCharacter)).join(((_a2 = change.options) == null ? void 0 : _a2.joiner) || newLineCharacter) : format(change.node);
           const noIndent = options.indentation !== void 0 || getLineStartPositionForPosition(pos, targetSourceFile) === pos ? text5 : text5.replace(/^\s+/, "");
           return (options.prefix || "") + noIndent + (!options.suffix || endsWith(noIndent, options.suffix) ? "" : options.suffix);
         }
-        function getFormattedTextOfNode(nodeIn, targetSourceFile, sourceFile, pos, { indentation, prefix, delta }, newLineCharacter, formatContext, validate4) {
+        function getFormattedTextOfNode(nodeIn, targetSourceFile, sourceFile, pos, { indentation, prefix, delta }, newLineCharacter, formatContext, validate3) {
           const { node, text: text5 } = getNonformattedText(nodeIn, targetSourceFile, newLineCharacter);
-          if (validate4) validate4(node, text5);
+          if (validate3) validate3(node, text5);
           const formatOptions = getFormatCodeSettingsForWriting(formatContext, targetSourceFile);
           const initialIndentation = indentation !== void 0 ? indentation : ts_formatting_exports.SmartIndenter.getIndentation(pos, sourceFile, formatOptions, prefix === newLineCharacter || getLineStartPositionForPosition(pos, targetSourceFile) === pos);
           if (delta === void 0) {
@@ -240129,8 +240129,8 @@ var require_keyword = __commonJS({
       var _a2;
       const { gen, keyword, schema: schema2, parentSchema, $data, it } = cxt;
       checkAsyncKeyword(it, def);
-      const validate4 = !$data && def.compile ? def.compile.call(it.self, schema2, parentSchema, it) : def.validate;
-      const validateRef = useKeyword(gen, keyword, validate4);
+      const validate3 = !$data && def.compile ? def.compile.call(it.self, schema2, parentSchema, it) : def.validate;
+      const validateRef = useKeyword(gen, keyword, validate3);
       const valid = gen.let("valid");
       cxt.block$data(valid, validateKeyword);
       cxt.ok((_a2 = def.valid) !== null && _a2 !== void 0 ? _a2 : valid);
@@ -241203,28 +241203,28 @@ var require_compile = __commonJS({
         if (this.opts.code.process)
           sourceCode = this.opts.code.process(sourceCode, sch);
         const makeValidate = new Function(`${names_1.default.self}`, `${names_1.default.scope}`, sourceCode);
-        const validate4 = makeValidate(this, this.scope.get());
-        this.scope.value(validateName, { ref: validate4 });
-        validate4.errors = null;
-        validate4.schema = sch.schema;
-        validate4.schemaEnv = sch;
+        const validate3 = makeValidate(this, this.scope.get());
+        this.scope.value(validateName, { ref: validate3 });
+        validate3.errors = null;
+        validate3.schema = sch.schema;
+        validate3.schemaEnv = sch;
         if (sch.$async)
-          validate4.$async = true;
+          validate3.$async = true;
         if (this.opts.code.source === true) {
-          validate4.source = { validateName, validateCode, scopeValues: gen._values };
+          validate3.source = { validateName, validateCode, scopeValues: gen._values };
         }
         if (this.opts.unevaluated) {
           const { props, items } = schemaCxt;
-          validate4.evaluated = {
+          validate3.evaluated = {
             props: props instanceof codegen_1.Name ? void 0 : props,
             items: items instanceof codegen_1.Name ? void 0 : items,
             dynamicProps: props instanceof codegen_1.Name,
             dynamicItems: items instanceof codegen_1.Name
           };
-          if (validate4.source)
-            validate4.source.evaluated = (0, codegen_1.stringify)(validate4.evaluated);
+          if (validate3.source)
+            validate3.source.evaluated = (0, codegen_1.stringify)(validate3.evaluated);
         }
-        sch.validate = validate4;
+        sch.validate = validate3;
         return sch;
       } catch (e) {
         delete sch.validate;
@@ -244724,8 +244724,8 @@ var require_dynamicAnchor = __commonJS({
       const { gen, it } = cxt;
       it.schemaEnv.root.dynamicAnchors[anchor] = true;
       const v = (0, codegen_1._)`${names_1.default.dynamicAnchors}${(0, codegen_1.getProperty)(anchor)}`;
-      const validate4 = it.errSchemaPath === "#" ? it.validateName : _getValidate(cxt);
-      gen.if((0, codegen_1._)`!${v}`, () => gen.assign(v, validate4));
+      const validate3 = it.errSchemaPath === "#" ? it.validateName : _getValidate(cxt);
+      gen.if((0, codegen_1._)`!${v}`, () => gen.assign(v, validate3));
     }
     exports.dynamicAnchor = dynamicAnchor;
     function _getValidate(cxt) {
@@ -244774,11 +244774,11 @@ var require_dynamicRef = __commonJS({
           _callRef(it.validateName, valid)();
         }
       }
-      function _callRef(validate4, valid) {
+      function _callRef(validate3, valid) {
         return valid ? () => gen.block(() => {
-          (0, ref_1.callRef)(cxt, validate4);
+          (0, ref_1.callRef)(cxt, validate3);
           gen.let(valid, true);
-        }) : () => (0, ref_1.callRef)(cxt, validate4);
+        }) : () => (0, ref_1.callRef)(cxt, validate3);
       }
     }
     exports.dynamicRef = dynamicRef;
@@ -245687,8 +245687,8 @@ var require_json_schema_2020_12 = __commonJS({
         with$data(this, validation)
       ].forEach((sch) => this.addMetaSchema(sch, void 0, false));
       return this;
-      function with$data(ajv4, sch) {
-        return $data ? ajv4.$dataMetaSchema(sch, META_SUPPORT_DATA) : sch;
+      function with$data(ajv3, sch) {
+        return $data ? ajv3.$dataMetaSchema(sch, META_SUPPORT_DATA) : sch;
       }
     }
     exports.default = addMetaSchema2020;
@@ -245706,7 +245706,7 @@ var require__ = __commonJS({
     var discriminator_1 = require_discriminator();
     var json_schema_2020_12_1 = require_json_schema_2020_12();
     var META_SCHEMA_ID = "https://json-schema.org/draft/2020-12/schema";
-    var Ajv20204 = class extends core_1.default {
+    var Ajv20203 = class extends core_1.default {
       constructor(opts = {}) {
         super({
           ...opts,
@@ -245733,11 +245733,11 @@ var require__ = __commonJS({
         return this.opts.defaultMeta = super.defaultMeta() || (this.getSchema(META_SCHEMA_ID) ? META_SCHEMA_ID : void 0);
       }
     };
-    exports.Ajv2020 = Ajv20204;
-    module.exports = exports = Ajv20204;
-    module.exports.Ajv2020 = Ajv20204;
+    exports.Ajv2020 = Ajv20203;
+    module.exports = exports = Ajv20203;
+    module.exports.Ajv2020 = Ajv20203;
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.default = Ajv20204;
+    exports.default = Ajv20203;
     var validate_1 = require_validate();
     Object.defineProperty(exports, "KeywordCxt", { enumerable: true, get: function() {
       return validate_1.KeywordCxt;
@@ -245772,722 +245772,13 @@ var require__ = __commonJS({
   }
 });
 
-// build/schemas/verify-artifact.v1.json
-var verify_artifact_v1_default;
-var init_verify_artifact_v1 = __esm({
-  "build/schemas/verify-artifact.v1.json"() {
-    verify_artifact_v1_default = {
-      $schema: "https://json-schema.org/draft/2020-12/schema",
-      $id: "wakeio.verify-artifact/v1",
-      title: "Wakeio M1 common runtime report branch",
-      description: "Data only; snapshot own JSON first. R10 verifies artifact, lease, verdict and gate bindings.",
-      $ref: "#/$defs/RuntimeReport",
-      $defs: {
-        Text: { type: "string", maxLength: 1048576 },
-        Label: {
-          type: "string",
-          minLength: 1,
-          maxLength: 120,
-          pattern: "^[^\\x00-\\x1f\\x7f]+(?![\\s\\S])"
-        },
-        Sha256: { type: "string", pattern: "^[a-f0-9]{64}(?![\\s\\S])" },
-        Count: { type: "integer", minimum: 0, maximum: 9007199254740991 },
-        PositiveCount: { type: "integer", minimum: 1, maximum: 9007199254740991 },
-        NullableCount: { anyOf: [{ $ref: "#/$defs/Count" }, { type: "null" }] },
-        NullableDuration: { type: ["number", "null"], minimum: 0, maximum: 9007199254740991 },
-        NullableText: { anyOf: [{ $ref: "#/$defs/Text" }, { type: "null" }] },
-        Reasons: { type: "array", maxItems: 256, items: { $ref: "#/$defs/Label" } },
-        ArtifactRef: {
-          type: "object",
-          additionalProperties: false,
-          required: ["path", "bytes", "sha256"],
-          properties: {
-            path: { type: "string", pattern: "^[a-z0-9][a-z0-9._-]{0,119}(?![\\s\\S])" },
-            bytes: { type: "integer", minimum: 0, maximum: 67108864 },
-            sha256: { $ref: "#/$defs/Sha256" }
-          }
-        },
-        ArtifactRefs: { type: "array", maxItems: 256, items: { $ref: "#/$defs/ArtifactRef" } },
-        NullableArtifactRef: { anyOf: [{ $ref: "#/$defs/ArtifactRef" }, { type: "null" }] },
-        RuntimeGap: {
-          type: "object",
-          additionalProperties: false,
-          required: ["area", "code"],
-          properties: {
-            area: { $ref: "#/$defs/Label" },
-            code: { $ref: "#/$defs/Label" },
-            surfaceId: { $ref: "#/$defs/Label" }
-          }
-        },
-        RuntimeGaps: { type: "array", maxItems: 256, items: { $ref: "#/$defs/RuntimeGap" } },
-        Stage: {
-          type: "object",
-          additionalProperties: false,
-          required: ["schema", "stage", "runId", "epoch", "runNonce", "inputs", "output", "status", "gaps"],
-          properties: {
-            schema: { const: "wakeio.verify-stage/v1" },
-            stage: { $ref: "#/$defs/Label" },
-            runId: { $ref: "#/$defs/Label" },
-            epoch: { $ref: "#/$defs/Label" },
-            runNonce: { $ref: "#/$defs/Label" },
-            inputs: { $ref: "#/$defs/ArtifactRefs" },
-            output: true,
-            status: { enum: ["completed", "partial", "error"] },
-            gaps: { $ref: "#/$defs/RuntimeGaps" }
-          }
-        },
-        SurfaceRef: {
-          type: "object",
-          additionalProperties: false,
-          required: ["id", "method", "pathTemplate"],
-          properties: {
-            id: { $ref: "#/$defs/Label" },
-            method: {
-              type: "string",
-              minLength: 1,
-              maxLength: 120,
-              pattern: "^[!#$%&'*+.^_`|~0-9A-Za-z-]+(?![\\s\\S])"
-            },
-            pathTemplate: {
-              type: "string",
-              maxLength: 1048576,
-              pattern: "^/(?!/)[^\\x00-\\x1f\\x7f?#\\\\]*(?![\\s\\S])"
-            }
-          }
-        },
-        SurfaceProvenance: {
-          type: "object",
-          additionalProperties: false,
-          required: ["provider", "rawInputSha256", "sanitizedArtifact", "locator"],
-          properties: {
-            provider: { enum: ["spring-actuator", "openapi"] },
-            rawInputSha256: { $ref: "#/$defs/Sha256" },
-            sanitizedArtifact: { $ref: "#/$defs/ArtifactRef" },
-            locator: { $ref: "#/$defs/Text" },
-            handler: {
-              type: "object",
-              additionalProperties: false,
-              required: ["path", "className", "methodName"],
-              properties: {
-                path: { $ref: "#/$defs/Text" },
-                className: { $ref: "#/$defs/Text" },
-                methodName: { $ref: "#/$defs/Text" },
-                line: { $ref: "#/$defs/PositiveCount" }
-              }
-            }
-          }
-        },
-        Provenance: { type: "array", items: { $ref: "#/$defs/SurfaceProvenance" } },
-        CoverageFiles: {
-          type: "object",
-          additionalProperties: false,
-          required: ["path", "sha256", "coveredLines", "executableLines"],
-          properties: {
-            path: { $ref: "#/$defs/Text" },
-            sha256: { $ref: "#/$defs/Sha256" },
-            coveredLines: { type: "array", uniqueItems: true, items: { $ref: "#/$defs/PositiveCount" } },
-            executableLines: { type: "array", uniqueItems: true, items: { $ref: "#/$defs/PositiveCount" } }
-          }
-        },
-        IsolationReport: {
-          type: "object",
-          additionalProperties: false,
-          required: [
-            "requested",
-            "applied",
-            "daemonRootless",
-            "backend",
-            "daemonVersion",
-            "runtimeVersion",
-            "targetUid",
-            "capDropAll",
-            "readOnlyRootfs",
-            "seccomp",
-            "cgroup",
-            "resources",
-            "buildNetwork",
-            "runNetwork",
-            "verified",
-            "gaps"
-          ],
-          properties: {
-            requested: { enum: ["gvisor", "rootless-docker"] },
-            applied: { enum: ["gvisor", "rootless-docker", "unavailable"] },
-            daemonRootless: { type: "boolean" },
-            backend: { $ref: "#/$defs/Text" },
-            daemonVersion: { $ref: "#/$defs/Text" },
-            runtimeVersion: { $ref: "#/$defs/Text" },
-            targetUid: { $ref: "#/$defs/NullableCount" },
-            capDropAll: { type: "boolean" },
-            readOnlyRootfs: { type: "boolean" },
-            seccomp: { $ref: "#/$defs/Text" },
-            cgroup: {
-              type: "object",
-              additionalProperties: false,
-              required: ["version", "driver", "systemd", "delegatedUnit", "controllers"],
-              properties: {
-                version: { $ref: "#/$defs/NullableCount" },
-                driver: { $ref: "#/$defs/Text" },
-                systemd: { type: "boolean" },
-                delegatedUnit: { $ref: "#/$defs/NullableText" },
-                controllers: { type: "array", items: { $ref: "#/$defs/Text" } }
-              }
-            },
-            resources: {
-              type: "object",
-              additionalProperties: false,
-              required: ["requested", "measured", "probe", "enforced"],
-              properties: {
-                requested: {
-                  type: "object",
-                  additionalProperties: false,
-                  required: ["cpu", "memoryBytes", "pids"],
-                  properties: {
-                    cpu: { type: "number", exclusiveMinimum: 0, maximum: 9007199254740991 },
-                    memoryBytes: { $ref: "#/$defs/PositiveCount" },
-                    pids: { $ref: "#/$defs/PositiveCount" }
-                  }
-                },
-                measured: {
-                  type: "object",
-                  additionalProperties: false,
-                  required: ["cpuQuota", "memoryMax", "pidsMax"],
-                  properties: {
-                    cpuQuota: { anyOf: [{
-                      type: "number",
-                      minimum: 0,
-                      maximum: 9007199254740991
-                    }, { type: "null" }] },
-                    memoryMax: { $ref: "#/$defs/NullableCount" },
-                    pidsMax: { $ref: "#/$defs/NullableCount" }
-                  }
-                },
-                probe: { $ref: "#/$defs/ArtifactRef" },
-                enforced: { type: "boolean" }
-              }
-            },
-            buildNetwork: { const: "registry-allowlist" },
-            runNetwork: { const: "internal" },
-            verified: { type: "boolean" },
-            gaps: { $ref: "#/$defs/RuntimeGaps" }
-          }
-        },
-        Location: {
-          type: "object",
-          additionalProperties: false,
-          properties: {
-            path: { $ref: "#/$defs/Text" },
-            url: { $ref: "#/$defs/Text" },
-            line: { $ref: "#/$defs/PositiveCount" },
-            column: { $ref: "#/$defs/PositiveCount" }
-          }
-        },
-        StaticLocation: {
-          type: "object",
-          additionalProperties: false,
-          required: ["path", "line", "column"],
-          properties: {
-            path: { $ref: "#/$defs/Text" },
-            line: { $ref: "#/$defs/PositiveCount" },
-            column: { $ref: "#/$defs/PositiveCount" }
-          }
-        },
-        StaticFlow: {
-          type: "object",
-          additionalProperties: false,
-          required: ["kind", "steps", "truncated"],
-          properties: {
-            kind: { const: "static_flow" },
-            sourceKind: { enum: ["filesystem_filename", "archive_entry_path"] },
-            truncated: { type: "boolean" },
-            steps: { type: "array", items: {
-              type: "object",
-              additionalProperties: false,
-              required: ["role", "location"],
-              properties: {
-                role: { enum: ["source", "call", "parameter", "return", "intermediate", "sink"] },
-                location: { $ref: "#/$defs/StaticLocation" }
-              }
-            } }
-          }
-        },
-        StaticCandidateContext: {
-          type: "object",
-          additionalProperties: false,
-          required: ["revision", "authority", "items", "truncated"],
-          properties: {
-            revision: { const: "static-context-v1" },
-            authority: { const: "conditional" },
-            truncated: { type: "boolean" },
-            items: { type: "array", items: {
-              type: "object",
-              additionalProperties: false,
-              required: ["kind", "location"],
-              properties: {
-                kind: { enum: [
-                  "unresolved_cjs_dispatch",
-                  "constructor_continuation",
-                  "declared_callback_entry",
-                  "unqualified_mongo_origin",
-                  "declared_filesystem_stream_origin",
-                  "declared_stream_callback_schedule",
-                  "conditional_array_accumulator",
-                  "declared_process_wrapper",
-                  "declared_package_api",
-                  "configured_module_resolution"
-                ] },
-                location: { $ref: "#/$defs/StaticLocation" },
-                target: { $ref: "#/$defs/StaticLocation" }
-              }
-            } }
-          }
-        },
-        FindingControlVerification: {
-          type: "object",
-          additionalProperties: false,
-          required: ["state", "method", "controls"],
-          properties: {
-            state: { enum: ["controls_passed", "inconclusive"] },
-            method: { const: "api-differential-canary" },
-            controls: {
-              type: "object",
-              additionalProperties: false,
-              required: ["identityBefore", "ownerBefore", "probe", "probeCompleted", "ownerAfter", "identityAfter"],
-              properties: {
-                identityBefore: { enum: ["passed", "failed", "not_applicable"] },
-                ownerBefore: { enum: ["passed", "failed", "not_applicable"] },
-                probe: { const: "canary_exposed" },
-                probeCompleted: { type: "boolean" },
-                ownerAfter: { enum: ["passed", "failed", "not_applicable"] },
-                identityAfter: { enum: ["passed", "failed", "not_applicable"] }
-              }
-            }
-          }
-        },
-        FindingReplay: {
-          type: "object",
-          additionalProperties: false,
-          required: ["kind", "policySha256", "caseId", "actor"],
-          properties: {
-            kind: { const: "api-policy-case" },
-            policySha256: { $ref: "#/$defs/Sha256" },
-            caseId: { $ref: "#/$defs/Text" },
-            actor: { $ref: "#/$defs/Text" }
-          }
-        },
-        RuntimeFindingEvidence: {
-          type: "object",
-          additionalProperties: false,
-          required: ["basis", "grade", "reach", "markers", "controlPairId", "refs", "oracleRevision"],
-          properties: {
-            basis: { const: "runtime-observation-ledger" },
-            grade: { enum: ["confirmed", "strong", "observed", "candidate"] },
-            reach: { enum: ["triggered", "reached_not_triggered", "not_reached", "unknown"] },
-            markers: { type: "array", items: { $ref: "#/$defs/Sha256" } },
-            controlPairId: { $ref: "#/$defs/Label" },
-            refs: { $ref: "#/$defs/ArtifactRefs" },
-            oracleRevision: { $ref: "#/$defs/Label" }
-          }
-        },
-        RuntimeFinding: {
-          type: "object",
-          additionalProperties: false,
-          required: [
-            "ruleId",
-            "title",
-            "description",
-            "severity",
-            "confidence",
-            "kind",
-            "location",
-            "remediation",
-            "evidence"
-          ],
-          properties: {
-            id: { $ref: "#/$defs/Text" },
-            comparisonKey: { $ref: "#/$defs/Text" },
-            ruleId: { $ref: "#/$defs/Text" },
-            title: { $ref: "#/$defs/Text" },
-            description: { $ref: "#/$defs/Text" },
-            severity: { enum: ["info", "low", "medium", "high", "critical"] },
-            confidence: { enum: ["low", "medium", "high"] },
-            kind: { enum: ["observation", "candidate", "advisory"] },
-            location: { $ref: "#/$defs/Location" },
-            remediation: { $ref: "#/$defs/Text" },
-            references: { type: "array", items: { $ref: "#/$defs/Text" } },
-            staticFlow: { $ref: "#/$defs/StaticFlow" },
-            staticContext: { $ref: "#/$defs/StaticCandidateContext" },
-            controlVerification: { $ref: "#/$defs/FindingControlVerification" },
-            replay: { $ref: "#/$defs/FindingReplay" },
-            evidence: { $ref: "#/$defs/RuntimeFindingEvidence" }
-          }
-        },
-        RuntimeFindings: { type: "array", items: { $ref: "#/$defs/RuntimeFinding" } },
-        CheckStatus: { enum: ["completed", "partial", "error", "not_applicable", "skipped"] },
-        CheckNotes: { type: "array", items: { $ref: "#/$defs/Text" } },
-        BuildPayload: {
-          type: "object",
-          additionalProperties: false,
-          required: ["builder", "imageDigest", "cacheKey", "isolation", "durationMs", "reasons"],
-          properties: {
-            builder: { $ref: "#/$defs/NullableText" },
-            imageDigest: { $ref: "#/$defs/NullableText" },
-            cacheKey: { $ref: "#/$defs/NullableText" },
-            isolation: { anyOf: [{ $ref: "#/$defs/IsolationReport" }, { type: "null" }] },
-            durationMs: { $ref: "#/$defs/NullableDuration" },
-            reasons: { $ref: "#/$defs/Reasons" }
-          },
-          if: { anyOf: [
-            { properties: { builder: { type: "null" } } },
-            { properties: { imageDigest: { type: "null" } } },
-            { properties: { cacheKey: { type: "null" } } },
-            { properties: { isolation: { type: "null" } } },
-            { properties: { durationMs: { type: "null" } } }
-          ] },
-          then: { properties: { reasons: { type: "array", minItems: 1 } } }
-        },
-        StartPayload: {
-          type: "object",
-          additionalProperties: false,
-          required: ["lease", "health", "durationMs", "instrumentation", "reasons"],
-          properties: {
-            lease: { $ref: "#/$defs/NullableArtifactRef" },
-            health: { enum: ["passed", "failed", "unknown"] },
-            durationMs: { $ref: "#/$defs/NullableDuration" },
-            instrumentation: { $ref: "#/$defs/NullableArtifactRef" },
-            reasons: { $ref: "#/$defs/Reasons" }
-          },
-          if: { anyOf: [
-            { properties: { lease: { type: "null" } } },
-            { properties: { health: { const: "unknown" } } },
-            { properties: { durationMs: { type: "null" } } },
-            { properties: { instrumentation: { type: "null" } } }
-          ] },
-          then: { properties: { reasons: { type: "array", minItems: 1 } } }
-        },
-        SurfaceRoute: {
-          type: "object",
-          additionalProperties: false,
-          required: ["surface", "provenance", "attacked", "reasons"],
-          properties: {
-            surface: { $ref: "#/$defs/SurfaceRef" },
-            provenance: { $ref: "#/$defs/Provenance" },
-            attacked: { type: ["boolean", "null"] },
-            reasons: { $ref: "#/$defs/Reasons" }
-          },
-          if: { properties: { attacked: { type: "null" } } },
-          then: { properties: { reasons: { type: "array", minItems: 1 } } }
-        },
-        SurfacePayload: {
-          type: "object",
-          additionalProperties: false,
-          required: ["routes", "declared", "enumerated", "reasons"],
-          properties: {
-            routes: { type: "array", items: { $ref: "#/$defs/SurfaceRoute" } },
-            declared: { $ref: "#/$defs/NullableCount" },
-            enumerated: { $ref: "#/$defs/Count" },
-            reasons: { $ref: "#/$defs/Reasons" }
-          },
-          if: { properties: { declared: { type: "null" } } },
-          then: { properties: { reasons: { type: "array", minItems: 1 } } }
-        },
-        CoverageRoute: {
-          type: "object",
-          additionalProperties: false,
-          required: [
-            "surface",
-            "files",
-            "coveredFiles",
-            "coveredLines",
-            "executableLines",
-            "ratio",
-            "accounting",
-            "reasons"
-          ],
-          properties: {
-            surface: { $ref: "#/$defs/SurfaceRef" },
-            files: { anyOf: [{ type: "array", items: { $ref: "#/$defs/CoverageFiles" } }, { type: "null" }] },
-            coveredFiles: { $ref: "#/$defs/NullableCount" },
-            coveredLines: { $ref: "#/$defs/NullableCount" },
-            executableLines: { $ref: "#/$defs/NullableCount" },
-            ratio: { type: ["number", "null"], minimum: 0, maximum: 1 },
-            accounting: { enum: ["exact", "unknown"] },
-            reasons: { $ref: "#/$defs/Reasons" }
-          },
-          allOf: [{
-            if: { properties: { accounting: { const: "unknown" } } },
-            then: { properties: { ratio: { type: "null" }, reasons: { type: "array", minItems: 1 } } }
-          }, {
-            if: { anyOf: [
-              { properties: { files: { type: "null" } } },
-              { properties: { coveredFiles: { type: "null" } } },
-              { properties: { coveredLines: { type: "null" } } },
-              { properties: { executableLines: { type: "null" } } },
-              { properties: { ratio: { type: "null" } } }
-            ] },
-            then: { properties: { reasons: { type: "array", minItems: 1 } } }
-          }]
-        },
-        CoveragePayload: {
-          type: "object",
-          additionalProperties: false,
-          required: ["method", "routes", "dumpRefs", "reasons"],
-          properties: {
-            method: { const: "jacoco" },
-            routes: { type: "array", items: { $ref: "#/$defs/CoverageRoute" } },
-            dumpRefs: { $ref: "#/$defs/ArtifactRefs" },
-            reasons: { $ref: "#/$defs/Reasons" }
-          }
-        },
-        CaseOutcome: {
-          type: "object",
-          additionalProperties: false,
-          required: ["surfaceId", "state", "reasons"],
-          properties: {
-            surfaceId: { $ref: "#/$defs/Label" },
-            state: { enum: ["triggered", "not_triggered", "unknown"] },
-            reasons: { $ref: "#/$defs/Reasons" }
-          },
-          if: { properties: { state: { const: "unknown" } } },
-          then: { properties: { reasons: { type: "array", minItems: 1 } } }
-        },
-        SqlPayload: {
-          type: "object",
-          additionalProperties: false,
-          required: ["method", "cases", "verdictRefs", "markerLedger", "parserRevision", "reasons"],
-          properties: {
-            method: { const: "pg-ast-token-differential" },
-            cases: { type: "array", items: { $ref: "#/$defs/CaseOutcome" } },
-            verdictRefs: { $ref: "#/$defs/ArtifactRefs" },
-            markerLedger: { $ref: "#/$defs/NullableArtifactRef" },
-            parserRevision: { $ref: "#/$defs/NullableText" },
-            reasons: { $ref: "#/$defs/Reasons" }
-          },
-          if: { anyOf: [
-            { properties: { markerLedger: { type: "null" } } },
-            { properties: { parserRevision: { type: "null" } } }
-          ] },
-          then: { properties: { reasons: { type: "array", minItems: 1 } } }
-        },
-        BuildCheck: {
-          type: "object",
-          additionalProperties: false,
-          required: ["id", "status", "findings", "notes", "runtime"],
-          properties: {
-            id: { const: "runtime.build" },
-            status: { $ref: "#/$defs/CheckStatus" },
-            findings: { $ref: "#/$defs/RuntimeFindings" },
-            notes: { $ref: "#/$defs/CheckNotes" },
-            runtime: { $ref: "#/$defs/BuildPayload" }
-          }
-        },
-        StartCheck: {
-          type: "object",
-          additionalProperties: false,
-          required: ["id", "status", "findings", "notes", "runtime"],
-          properties: {
-            id: { const: "runtime.start" },
-            status: { $ref: "#/$defs/CheckStatus" },
-            findings: { $ref: "#/$defs/RuntimeFindings" },
-            notes: { $ref: "#/$defs/CheckNotes" },
-            runtime: { $ref: "#/$defs/StartPayload" }
-          }
-        },
-        SurfaceCheck: {
-          type: "object",
-          additionalProperties: false,
-          required: ["id", "status", "findings", "notes", "runtime"],
-          properties: {
-            id: { const: "runtime.surface" },
-            status: { $ref: "#/$defs/CheckStatus" },
-            findings: { $ref: "#/$defs/RuntimeFindings" },
-            notes: { $ref: "#/$defs/CheckNotes" },
-            runtime: { $ref: "#/$defs/SurfacePayload" }
-          }
-        },
-        CoverageCheck: {
-          type: "object",
-          additionalProperties: false,
-          required: ["id", "status", "findings", "notes", "runtime"],
-          properties: {
-            id: { const: "runtime.coverage" },
-            status: { $ref: "#/$defs/CheckStatus" },
-            findings: { $ref: "#/$defs/RuntimeFindings" },
-            notes: { $ref: "#/$defs/CheckNotes" },
-            runtime: { $ref: "#/$defs/CoveragePayload" }
-          }
-        },
-        SqlCheck: {
-          type: "object",
-          additionalProperties: false,
-          required: ["id", "status", "findings", "notes", "runtime"],
-          properties: {
-            id: { const: "runtime.oracle.sql" },
-            status: { $ref: "#/$defs/CheckStatus" },
-            findings: { $ref: "#/$defs/RuntimeFindings" },
-            notes: { $ref: "#/$defs/CheckNotes" },
-            runtime: { $ref: "#/$defs/SqlPayload" }
-          }
-        },
-        RuntimeCheck: {
-          type: "object",
-          oneOf: [
-            { $ref: "#/$defs/BuildCheck" },
-            { $ref: "#/$defs/StartCheck" },
-            { $ref: "#/$defs/SurfaceCheck" },
-            { $ref: "#/$defs/CoverageCheck" },
-            { $ref: "#/$defs/SqlCheck" }
-          ],
-          if: { properties: { status: { enum: ["partial", "error", "not_applicable", "skipped"] } } },
-          then: { properties: { runtime: {
-            type: "object",
-            properties: { reasons: { type: "array", minItems: 1 } }
-          } } }
-        },
-        VerifyGate: {
-          type: "object",
-          additionalProperties: false,
-          required: ["outcome", "exitCode", "failOnGrade", "blockingFindingIds", "reasons"],
-          properties: {
-            outcome: { enum: ["pass", "findings", "incomplete"] },
-            exitCode: { enum: [0, 1, 2] },
-            failOnGrade: { enum: ["strong", "confirmed"] },
-            blockingFindingIds: { type: "array", uniqueItems: true, items: { $ref: "#/$defs/Text" } },
-            reasons: { $ref: "#/$defs/RuntimeGaps" }
-          },
-          oneOf: [
-            { properties: {
-              outcome: { const: "pass" },
-              exitCode: { const: 0 },
-              blockingFindingIds: { type: "array", maxItems: 0 }
-            } },
-            { properties: {
-              outcome: { const: "findings" },
-              exitCode: { const: 1 },
-              blockingFindingIds: { type: "array", minItems: 1 }
-            } },
-            { properties: {
-              outcome: { const: "incomplete" },
-              exitCode: { const: 2 },
-              blockingFindingIds: { type: "array", maxItems: 0 },
-              reasons: { type: "array", minItems: 1 }
-            } }
-          ]
-        },
-        CleanupReport: {
-          type: "object",
-          additionalProperties: false,
-          required: ["status", "lease", "processGroupExitConfirmed", "resources", "remainingOwnedIds", "reasons"],
-          properties: {
-            status: { enum: ["confirmed", "error"] },
-            lease: { $ref: "#/$defs/ArtifactRef" },
-            processGroupExitConfirmed: { type: "boolean" },
-            resources: { type: "array", items: {
-              type: "object",
-              additionalProperties: false,
-              required: ["kind", "id", "absenceConfirmed"],
-              properties: {
-                kind: { $ref: "#/$defs/Text" },
-                id: { $ref: "#/$defs/Text" },
-                absenceConfirmed: { type: "boolean" }
-              }
-            } },
-            remainingOwnedIds: { type: "array", items: { $ref: "#/$defs/Text" } },
-            reasons: { $ref: "#/$defs/Reasons" }
-          },
-          if: { properties: { status: { const: "confirmed" } } },
-          then: { properties: {
-            processGroupExitConfirmed: { const: true },
-            remainingOwnedIds: { type: "array", maxItems: 0 },
-            resources: { type: "array", items: {
-              type: "object",
-              properties: { absenceConfirmed: { const: true } }
-            } }
-          } },
-          else: { properties: { reasons: { type: "array", minItems: 1 } } }
-        },
-        RuntimeScope: {
-          type: "object",
-          additionalProperties: false,
-          required: ["requestedVulnClasses", "unsupportedVulnClasses", "gaps"],
-          properties: {
-            requestedVulnClasses: { const: ["sql"] },
-            unsupportedVulnClasses: {
-              type: "array",
-              minItems: 6,
-              maxItems: 6,
-              uniqueItems: true,
-              items: { enum: ["command", "ssrf", "path", "xss", "redirect", "authz"] }
-            },
-            gaps: { $ref: "#/$defs/RuntimeGaps" }
-          }
-        },
-        RuntimeReportData: {
-          type: "object",
-          additionalProperties: false,
-          required: ["revision", "verifyGate", "scope", "inputArtifacts", "stages", "cleanup"],
-          properties: {
-            revision: { const: "verify-m1-v1" },
-            verifyGate: { $ref: "#/$defs/VerifyGate" },
-            scope: { $ref: "#/$defs/RuntimeScope" },
-            inputArtifacts: { $ref: "#/$defs/ArtifactRefs" },
-            stages: { $ref: "#/$defs/ArtifactRefs" },
-            cleanup: { $ref: "#/$defs/CleanupReport" }
-          }
-        },
-        RuntimeReport: {
-          type: "object",
-          additionalProperties: false,
-          required: ["schemaVersion", "toolVersion", "mode", "startedAt", "finishedAt", "checks", "runtime"],
-          properties: {
-            schemaVersion: { const: "1.0.0" },
-            toolVersion: { $ref: "#/$defs/Text" },
-            mode: { const: "runtime" },
-            startedAt: { $ref: "#/$defs/Text" },
-            finishedAt: { $ref: "#/$defs/Text" },
-            runtime: { $ref: "#/$defs/RuntimeReportData" },
-            checks: {
-              type: "array",
-              minItems: 5,
-              maxItems: 5,
-              items: { $ref: "#/$defs/RuntimeCheck" },
-              allOf: [
-                { contains: { $ref: "#/$defs/BuildCheck" }, minContains: 1, maxContains: 1 },
-                { contains: { $ref: "#/$defs/StartCheck" }, minContains: 1, maxContains: 1 },
-                { contains: { $ref: "#/$defs/SurfaceCheck" }, minContains: 1, maxContains: 1 },
-                { contains: { $ref: "#/$defs/CoverageCheck" }, minContains: 1, maxContains: 1 },
-                { contains: { $ref: "#/$defs/SqlCheck" }, minContains: 1, maxContains: 1 }
-              ]
-            }
-          }
-        }
-      }
-    };
-  }
-});
-
 // build/src/runtime-report.js
-var import__, ajv, validate;
 var init_runtime_report = __esm({
   "build/src/runtime-report.js"() {
     "use strict";
-    import__ = __toESM(require__(), 1);
-    init_verify_artifact_v1();
     init_json_snapshot();
     init_report_path();
     init_static_context();
-    ajv = new import__.Ajv2020({
-      strict: true,
-      allErrors: false,
-      $data: false,
-      coerceTypes: false,
-      useDefaults: false,
-      removeAdditional: false,
-      ownProperties: true,
-      validateSchema: true,
-      logger: false
-    });
-    validate = ajv.compile(verify_artifact_v1_default);
   }
 });
 
@@ -263132,7 +262423,7 @@ function parseRuntimeYaml(text5) {
   }
 }
 function validateSnapshot(data) {
-  return validate2(JSON.parse(JSON.stringify(data)));
+  return validate(JSON.parse(JSON.stringify(data)));
 }
 function parseTargetSpec(input) {
   try {
@@ -263147,16 +262438,16 @@ function parseTargetSpec(input) {
 function parseTargetYaml(text5) {
   return parseTargetSpec(parseRuntimeYaml(text5));
 }
-var import__2, import_yaml, interpolation, ajv2, validate2;
+var import__, import_yaml, interpolation, ajv, validate;
 var init_target = __esm({
   "build/src/runtime/target.js"() {
     "use strict";
-    import__2 = __toESM(require__(), 1);
+    import__ = __toESM(require__(), 1);
     import_yaml = __toESM(require_dist(), 1);
     init_target_v1();
     init_json_snapshot();
     interpolation = /\$(?:\$?[{(]|[A-Za-z_])|%[A-Za-z_][A-Za-z0-9_]*%/;
-    ajv2 = new import__2.Ajv2020({
+    ajv = new import__.Ajv2020({
       strict: true,
       allErrors: false,
       $data: false,
@@ -263167,7 +262458,7 @@ var init_target = __esm({
       validateSchema: true,
       logger: false
     });
-    validate2 = ajv2.compile(target_v1_default);
+    validate = ajv.compile(target_v1_default);
   }
 });
 
@@ -263178,7 +262469,7 @@ function invalid10() {
 function parseFrameworkPack(input) {
   try {
     const data = JSON.parse(JSON.stringify(snapshotJsonData(input, invalid10, invalid10)));
-    if (!validate3(data))
+    if (!validate2(data))
       invalid10();
     if (Object.keys(data.runtime.env).some((key2) => processEnv.has(key2) || /^(?:LD_|DYLD_)/.test(key2) || /(?:PROXY|TOKEN|SECRET|PASSWORD|CREDENTIAL)/.test(key2)))
       invalid10();
@@ -263210,15 +262501,15 @@ function parseFrameworkPackYaml(text5) {
     return invalid10();
   }
 }
-var import__3, ajv3, validate3, interpolation2, processEnv, keywords;
+var import__2, ajv2, validate2, interpolation2, processEnv, keywords;
 var init_schema = __esm({
   "build/src/runtime/packs/schema.js"() {
     "use strict";
-    import__3 = __toESM(require__(), 1);
+    import__2 = __toESM(require__(), 1);
     init_framework_pack_v1();
     init_json_snapshot();
     init_target();
-    ajv3 = new import__3.Ajv2020({
+    ajv2 = new import__2.Ajv2020({
       strict: true,
       allErrors: false,
       $data: false,
@@ -263229,7 +262520,7 @@ var init_schema = __esm({
       validateSchema: true,
       logger: false
     });
-    validate3 = ajv3.compile(framework_pack_v1_default);
+    validate2 = ajv2.compile(framework_pack_v1_default);
     interpolation2 = /\$(?:\$?[{(]|[A-Za-z_])|%[A-Za-z_][A-Za-z0-9_]*%/;
     processEnv = /* @__PURE__ */ new Set([
       "PATH",

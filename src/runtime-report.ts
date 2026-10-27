@@ -1,4 +1,4 @@
-import { Ajv2020 } from 'ajv/dist/2020.js';
+import { Ajv2020, type ValidateFunction } from 'ajv/dist/2020.js';
 import schema from '../schemas/verify-artifact.v1.json' with { type: 'json' };
 import { snapshotJsonData } from './json-snapshot.js';
 import { redactSecrets, safeHttpUrl, safeRelativePath } from './report-path.js';
@@ -11,9 +11,15 @@ const SHA = /^[a-f0-9]{64}$/, IMAGE = /^sha256:[a-f0-9]{64}$/;
 const MARKER = /\bwk[a-z0-9]{12}\b/gi; // PLAN 6's wire marker, never an SQL classifier.
 function invalid(): never { throw new TypeError('invalid_runtime_report'); }
 function requireData(ok: unknown): asserts ok { if (!ok) invalid(); }
-const ajv = new Ajv2020({ strict: true, allErrors: false, $data: false, coerceTypes: false,
-  useDefaults: false, removeAdditional: false, ownProperties: true, validateSchema: true, logger: false });
-const validate = ajv.compile<RuntimeReport>(schema);
+let validate: ValidateFunction<RuntimeReport> | undefined;
+function validator(): ValidateFunction<RuntimeReport> {
+  if (!validate) {
+    const ajv = new Ajv2020({ strict: true, allErrors: false, $data: false, coerceTypes: false,
+      useDefaults: false, removeAdditional: false, ownProperties: true, validateSchema: true, logger: false });
+    validate = ajv.compile<RuntimeReport>(schema);
+  }
+  return validate;
+}
 const omitted = '[runtime text omitted]';
 const prose = new Set(['title', 'description', 'remediation', 'notes']);
 function publicIdentity(value: string): boolean {
@@ -213,7 +219,7 @@ function semantics(report: RuntimeReport): void {
 export function parseRuntimeReport(raw: unknown): RuntimeReport {
   const snapshot = snapshotJsonData(raw, invalid, invalid);
   // Ajv uniqueItems needs ordinary JSON objects; snapshot before this copy can invoke no caller code.
-  if (!validate(JSON.parse(JSON.stringify(snapshot)))) invalid();
+  if (!validator()(JSON.parse(JSON.stringify(snapshot)))) invalid();
   const report = publicData(snapshot) as RuntimeReport;
   semantics(report);
   return snapshotJsonData(report, invalid, invalid) as RuntimeReport;

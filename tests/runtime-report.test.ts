@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
+import { spawnSync } from 'node:child_process';
 import { mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -68,6 +69,46 @@ function incomplete(report: RuntimeReport): void {
   report.runtime.verifyGate = { outcome: 'incomplete', exitCode: 2, failOnGrade: 'strong', blockingFindingIds: [],
     reasons: [{ area: 'oracle.sql', code: 'not_completed' }] };
 }
+
+test('isolated legacy entries never compile the runtime schema; runtime compiles once on first use', async () => {
+  const legacy = JSON.parse(await readFile('tests/fixtures/compat-0.5/findings/reports/report.json', 'utf8'));
+  const child = spawnSync(process.execPath, ['--input-type=module', '-e', `
+    import assert from 'node:assert/strict';
+    import { readFileSync } from 'node:fs';
+    import { Ajv2020 } from 'ajv/dist/2020.js';
+    const compile = Ajv2020.prototype.compile;
+    let count = 0, allowed = false, calls = 0;
+    Ajv2020.prototype.compile = function (...args) {
+      count++; assert.ok(allowed, 'runtime_schema_compiled_for_legacy');
+      return Reflect.apply(compile, this, args);
+    };
+    const { parseReport, parseScanReport } = await import(
+      ${JSON.stringify(new URL('../src/compare.js', import.meta.url).href)});
+    const { parseRuntimeReport, sanitiseRuntimeReport, sanitiseReport } = await import(
+      ${JSON.stringify(new URL('../src/report.js', import.meta.url).href)});
+    const { legacy, runtime } = JSON.parse(readFileSync(0, 'utf8'));
+    assert.equal(count, 0);
+    assert.deepEqual(parseReport(legacy), parseScanReport(legacy));
+    assert.deepEqual(sanitiseReport(legacy), parseScanReport(legacy));
+    const getter = Object.defineProperty({}, 'mode', { get() { calls++; throw Error('must_not_run'); } });
+    const proxy = new Proxy({}, { get() { calls++; throw Error('must_not_run'); } });
+    const custom = { toJSON() { calls++; throw Error('must_not_run'); } };
+    for (const raw of [getter, proxy, custom]) {
+      assert.throws(() => parseReport(raw)); assert.throws(() => parseRuntimeReport(raw));
+    }
+    assert.equal(calls, 0); assert.equal(count, 0);
+    allowed = true;
+    assert.equal(parseReport(runtime).mode, 'runtime'); assert.equal(count, 1);
+    assert.deepEqual(sanitiseRuntimeReport(runtime), parseRuntimeReport(runtime));
+    const wrongSchema = structuredClone(runtime); wrongSchema.runtime.revision = 'unknown';
+    assert.throws(() => parseRuntimeReport(wrongSchema), { message: 'invalid_runtime_report' });
+    const wrongCount = structuredClone(runtime); wrongCount.checks[3].runtime.routes[0].ratio = 1;
+    assert.throws(() => parseRuntimeReport(wrongCount), { message: 'invalid_runtime_report' });
+    assert.equal(count, 1);
+  `], { input: JSON.stringify({ legacy, runtime: withFinding() }), encoding: 'utf8', timeout: 30000 });
+  assert.equal(child.error, undefined); assert.equal(child.signal, null);
+  assert.equal(child.status, 0, child.stderr); assert.equal(child.stdout, '');
+});
 
 test('common/runtime readers retain evidence without legacy proof or independent verification claims', () => {
   const report = withFinding(), before = JSON.stringify(report), safe = parseReport(report);
