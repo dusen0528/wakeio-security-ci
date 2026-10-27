@@ -50,6 +50,13 @@ async function bundledDependencyNotices() {
     ['typescript', 'LICENSE.txt'],
     ['typescript', 'ThirdPartyNoticeText.txt'],
     ['esbuild', 'LICENSE.md'],
+    // Approved target-data parsers; include their notices before CLI wiring.
+    ['yaml', 'LICENSE'],
+    ['ajv', 'LICENSE'],
+    ['fast-deep-equal', 'LICENSE'],
+    ['fast-uri', 'LICENSE'],
+    ['json-schema-traverse', 'LICENSE'],
+    ['require-from-string', 'license'],
   ];
   const sections = ['Third-party notices for the generated Wakeio Security CI Action bundle.', ''];
   for (const [name, file] of dependencies) {
