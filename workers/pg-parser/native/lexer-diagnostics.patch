@@ -36,7 +36,7 @@ diff --git a/core/pg_query.h b/core/pg_query.h
 diff --git a/core/src/pg_query_scan.c b/core/src/pg_query_scan.c
 --- a/core/src/pg_query_scan.c
 +++ b/core/src/pg_query_scan.c
-@@ -172,3 +172,121 @@
+@@ -172,3 +172,119 @@
    free(result.pbuf.data);
    free(result.stderr_buffer);
  }
@@ -70,8 +70,6 @@ diff --git a/core/src/pg_query_scan.c b/core/src/pg_query_scan.c
 +  job->extra.standard_conforming_strings = true;
 +  job->extra.backslash_quote = BACKSLASH_QUOTE_SAFE_ENCODING;
 +  job->extra.escape_string_warning = false;
-+  if (!job->extra.standard_conforming_strings ||
-+      job->extra.backslash_quote != BACKSLASH_QUOTE_SAFE_ENCODING) return;
 +  job->result->encoding = 1;
 +  job->result->standardConformingStrings = 1;
 +  job->result->backslashQuote = 1;

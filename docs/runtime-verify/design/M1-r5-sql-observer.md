@@ -271,3 +271,18 @@ PG18에만 custom define과 `wakeio-pg18-diagnostics.js/.wasm`·`WakeioPg18Diagn
 현재 제품 TS·protocol·Oracle·공식 npm CJS/WASM·manifest와 일반 npm build는 변경하지 않는다.
 패치 적용/정적 대조는 compile·실제 EOF 출력·재현 build·성능·1초/256MiB·published WASM 대응의 증거가 아니다.
 R3/R10/R8/R9 후속 승인·독립 검증 전에는 source lock의 ready/executable=false와 unknown 경계를 유지한다.
+
+## M1-182 CPx15 N1/N3: 중복 분기 제거와 후속 생성 검증
+
+상수 대입 직후 같은 상수를 비교하던 두 줄을 제거했다. 입력 tuple 검사·encoding 확인·instance 대입·POD 의미는 유지한다.
+고정 copy-templates.js의 version은 Object.entries(VERSION_CONFIGS) 루프 안에 정의된다.
+원본 package 설정은13~18이며 full API는18만 선택한다. 이 범위 확인은 source를 읽은 결과다.
+PG18 Makefile은 기본 출력 이름 → CXXFLAGS → custom 이름/define → OUT_FILES의 순서다.
+custom 이름 뒤에 이를 덮는 대입은 없음을 읽기 대조했고 template의 정적 확장도 생성본과 byte 일치했다.
+후속 R3의 승인된 제한 build는 patch 적용 직후 PG18 Makefile을 private 기준으로 보존해야 한다.
+그 격리 안에서 copy-templates를 실제 실행하고 생성된 versions/18/Makefile이 보존 기준과 byte 동일한지 검사해야 한다.
+최종 출력 이름 wakeio-pg18-diagnostics.js/.wasm과 두 diagnose_v1/free export도 확인하고 불일치면 build를 중단한다.
+이번에는 source script·compiler·WASM·PG를 실행하지 않았다. 정적 확장을 실제 생성/compile 검증으로 주장하지 않는다.
+patch의 blank context 한 칸은 unified diff 형식이므로 artifact만 저장소 whitespace lint에서 제외한다.
+실제 적용 C/JS/Makefile diff와 patch의 추가/삭제 코드 줄은 별도로 whitespace 검사한다.
+R1의 새 patch SHA/크기 재봉인 전에는 lock과 ready/executable=false를 바꾸거나 실행으로 진행하지 않는다.
