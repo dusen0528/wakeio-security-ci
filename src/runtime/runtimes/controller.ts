@@ -6,6 +6,8 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { types } from 'node:util';
 import { snapshotJsonData } from '../../json-snapshot.js';
 import { runRuntimeProcess, type RuntimeProcessResult } from '../process.js';
+import { ROOTLESS_PACKAGE_PREPARE, packagePreparationUnknown, parseRootlessPackagePreparation,
+  type RootlessPackagePreparation } from './container-lifecycle.js';
 
 export interface LimaPins {
   rootfs: { url: string; sha256: string; arch: 'aarch64' | 'x86_64' };
@@ -420,6 +422,10 @@ function inventoryData(raw: string, arch: LimaPins['rootfs']['arch']): Readonly<
   return Object.freeze({ kind: 'os-inventory', status: 'observed', backendVerified: false, reason: 'none',
     os: Object.freeze({ id: 'ubuntu', version: '24.04', arch }), packages: Object.freeze(packages) });
 }
+export interface LimaRootlessSetupCapability extends LimaOsProbeCapability {
+  preparePackages(): Promise<Readonly<RootlessPackagePreparation>>;
+}
+export type LimaRootlessSetupUse = (capability: Readonly<LimaRootlessSetupCapability>) => Promise<void>;
 export type LimaOsSessionUse = (capability: Readonly<LimaOsProbeCapability>) => Promise<void>;
 export interface LimaOsSessionResult {
   status: 'unavailable'; verified: false; phase: 'consent_required' | 'failed' | 'callback_completed';
@@ -427,6 +433,8 @@ export interface LimaOsSessionResult {
 }
 const OS_OWNERS = new WeakMap<OwnedLimaOsProfile, OsProfile>();
 const OS_SESSION_MS = 30_000;
+// Separate trusted download preparation lane. Never extends the existing OS observation session.
+const ROOTLESS_SETUP_MS = 300_000;
 const GUEST_PROBE = 'set -eu\nexec 2>/dev/null\n' + OS_STATE_COMMON + String.raw`
 phase=unknown
 probe_failure() { printf 'wakeio-os-prerequisites/v1:%s:%s\n' "$phase" "$1"; exit 125; }
@@ -698,25 +706,33 @@ class OsProfile extends Profile {
     const data = await this.frame(deadline, signal);
     return startingStatus(data) === 'Running' ? Number(data.hostAgentPID) : undefined;
   }
-  foreground(deadline: number, signal: AbortSignal): Promise<RuntimeProcessResult | undefined> {
+  foreground(deadline: number, signal: AbortSignal, setup = false): Promise<RuntimeProcessResult | undefined> {
     return this.execute(this.config.limactlExecutable,
       ['--tty=false', 'start', '--foreground', '--timeout=30s', this.name], {
-        cwd: this.home, home: this.home, timeoutMs: OS_SESSION_MS, deadlineAt: deadline,
+        cwd: this.home, home: this.home, timeoutMs: setup ? ROOTLESS_SETUP_MS : OS_SESSION_MS, deadlineAt: deadline,
         maxOutputBytes: 16 * 1024, signal }).then(result => {
       this.groupConfirmed &&= result.cleanupConfirmed === true && result.closeConfirmed === true; return result;
     }, () => { this.groupConfirmed = false; return undefined; });
   }
-  private async guestRead(script: string, deadline: number, signal: AbortSignal): Promise<RuntimeProcessResult> {
+  private async guestRead(script: string, deadline: number, signal: AbortSignal,
+    timeoutMs = 5_000): Promise<RuntimeProcessResult> {
     const args = ['--tty=false', 'shell', '--workdir=/', '--shell=/bin/bash', this.name, '--',
       '/usr/bin/sudo', '-n', '/usr/bin/env', '-i', 'PATH=/usr/sbin:/usr/bin:/sbin:/bin', 'LC_ALL=C',
       '/bin/sh', '-c', script];
     let result: RuntimeProcessResult;
     try {
       result = await this.execute(this.config.limactlExecutable, args, { cwd: this.home, home: this.home,
-        timeoutMs: 5_000, deadlineAt: deadline, maxOutputBytes: 16 * 1024, signal });
+        timeoutMs, deadlineAt: deadline, maxOutputBytes: 16 * 1024, signal });
     } catch { this.groupConfirmed = false; return invalid(); }
     this.groupConfirmed &&= result.cleanupConfirmed === true && result.closeConfirmed === true;
     return result;
+  }
+  async guestPreparePackages(deadline: number, signal: AbortSignal): Promise<Readonly<RootlessPackagePreparation>> {
+    if (this.config.pins.rootfs.arch !== 'aarch64') return packagePreparationUnknown('prepare_unavailable');
+    const result = await this.guestRead(ROOTLESS_PACKAGE_PREPARE, deadline, signal, ROOTLESS_SETUP_MS);
+    if (!this.groupConfirmed) invalid();
+    return result.completed ? parseRootlessPackagePreparation(result.stdout)
+      : packagePreparationUnknown('prepare_unavailable');
   }
   async guestInventory(deadline: number, signal: AbortSignal): Promise<Readonly<OsInventory>> {
     const result = await this.guestRead(GUEST_INVENTORY, deadline, signal);
@@ -736,10 +752,10 @@ class OsProfile extends Profile {
     return this.sessionUnknown ? Promise.resolve({ confirmed: false, reasons: ['owned_session_cleanup_unconfirmed'] })
       : super.cleanup();
   }
-  async session(use: LimaOsSessionUse): Promise<LimaOsSessionResult> {
+  async session(use: LimaOsSessionUse | LimaRootlessSetupUse, setup = false): Promise<LimaOsSessionResult> {
     if (this.busy || this.done || this.cleaning || this.sessionUnknown) return sessionResult('failed');
     this.busy = true;
-    const scope = new OsSession(this);
+    const scope = new OsSession(this, setup);
     try {
       remaining(this.config); await verifyRootfs(this); await this.files.verify();
       if (await this.observe(this.config.deadlineAt, this.config.signal) !== 'Stopped') invalid();
@@ -833,8 +849,8 @@ class OsSession {
   private active?: Promise<unknown>; private binary?: SessionBinary; private timer?: NodeJS.Timeout;
   private wake!: () => void; private readonly lost = new Promise<void>(resolve => { this.wake = resolve; });
   private readonly onAbort = () => this.fail();
-  constructor(readonly owner: OsProfile) {
-    this.deadline = Math.min(owner.config.deadlineAt, Date.now() + OS_SESSION_MS);
+  constructor(readonly owner: OsProfile, readonly setup = false) {
+    this.deadline = Math.min(owner.config.deadlineAt, Date.now() + (setup ? ROOTLESS_SETUP_MS : OS_SESSION_MS));
   }
   fail(): void {
     this.failed = true; this.open = false; this.controller.abort(); this.wake();
@@ -884,6 +900,29 @@ class OsSession {
       () => { if (this.active === job) this.active = undefined; });
     return job;
   }
+  private preparePackages(args: unknown[]): Promise<Readonly<RootlessPackagePreparation>> {
+    if (!this.setup || !this.open || this.failed || !this.observed || this.controller.signal.aborted
+      || Date.now() >= this.deadline || args.length || this.active) {
+      return Promise.reject(new TypeError('closed_rootless_setup_capability'));
+    }
+    const job = (async () => {
+      try {
+        await this.checkpoint();
+        // Recheck the complete fixed guard immediately before package network I/O; inventory is not proof.
+        const guard = await this.owner.guestProbe(this.deadline, this.controller.signal);
+        await this.checkpoint(); this.observed = guard.observed;
+        if (!guard.observed) { this.fail(); return packagePreparationUnknown('prepare_unavailable'); }
+        const answer = await this.owner.guestPreparePackages(this.deadline, this.controller.signal);
+        await this.checkpoint();
+        if (answer.phase !== 'download_prepared') this.fail();
+        return answer;
+      } catch { this.fail(); return packagePreparationUnknown('identity_unknown'); }
+    })();
+    this.active = job;
+    void job.then(() => { if (this.active === job) this.active = undefined; },
+      () => { if (this.active === job) this.active = undefined; });
+    return job;
+  }
   private async watch(): Promise<void> {
     try {
       while (!this.stopping) {
@@ -891,12 +930,12 @@ class OsSession {
       }
     } catch { if (!this.stopping) this.fail(); }
   }
-  async run(use: LimaOsSessionUse): Promise<void> {
+  async run(use: LimaOsSessionUse | LimaRootlessSetupUse): Promise<void> {
     this.binary = await bindSessionBinary(this.owner, this.deadline, this.owner.config.signal);
     await this.checkBinary();
     this.owner.config.signal?.addEventListener('abort', this.onAbort, { once: true });
     this.timer = setTimeout(() => this.fail(), Math.max(0, this.deadline - Date.now()));
-    this.foreground = this.owner.foreground(this.deadline, this.controller.signal).then(result => {
+    this.foreground = this.owner.foreground(this.deadline, this.controller.signal, this.setup).then(result => {
       if (!this.stopping) this.fail(); return result;
     });
     while (!this.controller.signal.aborted) {
@@ -908,9 +947,11 @@ class OsSession {
     }
     await this.checkpoint(); if (this.failed) invalid(); this.open = true; this.monitor = this.watch();
     const capability = Object.freeze({ probe: (...args: unknown[]) => this.probe(args),
-      inventory: (...args: unknown[]) => this.inventory(args) });
+      inventory: (...args: unknown[]) => this.inventory(args),
+      ...(this.setup ? { preparePackages: (...args: unknown[]) => this.preparePackages(args) } : {}) });
     const callback = Promise.resolve().then(() => {
-      if (!this.open || this.failed || Date.now() >= this.deadline) invalid(); return use(capability);
+      if (!this.open || this.failed || Date.now() >= this.deadline) invalid();
+      return (use as LimaRootlessSetupUse)(capability as LimaRootlessSetupCapability);
     }).then(() => undefined, () => { this.fail(); });
     await Promise.race([callback, this.lost]);
     if (this.active) this.fail();
@@ -938,8 +979,8 @@ export async function withLimaOsSession(raw: LimaOsOptions, use: LimaOsSessionUs
 export function createLimaOsSessionRunner(execute: typeof runRuntimeProcess) {
   return (raw: LimaOsOptions, use: LimaOsSessionUse) => session(raw, use, execute);
 }
-async function session(raw: LimaOsOptions, use: LimaOsSessionUse,
-  execute: typeof runRuntimeProcess): Promise<LimaOsSessionResult> {
+async function session(raw: LimaOsOptions, use: LimaOsSessionUse | LimaRootlessSetupUse,
+  execute: typeof runRuntimeProcess, setup = false): Promise<LimaOsSessionResult> {
   if (!consent(raw)) return sessionResult('consent_required');
   if (typeof use !== 'function' || types.isProxy(use)) return sessionResult('failed');
   const prepared = await prepareOs(raw, execute);
@@ -947,7 +988,16 @@ async function session(raw: LimaOsOptions, use: LimaOsSessionUse,
     ...sessionResult('failed'), ...(prepared.cleanup ? { cleanup: prepared.cleanup } : {}),
     ...(prepared.pendingHome ? { pendingHome: prepared.pendingHome } : {}) };
   const owner = OS_OWNERS.get(prepared.lease);
-  return owner ? owner.session(use) : sessionResult('failed');
+  return owner ? owner.session(use, setup) : sessionResult('failed');
+}
+
+/** Trusted setup composition only. No TargetSpec/CLI connection, installation or daemon capability. */
+export async function withLimaRootlessSetup(raw: LimaOsOptions, use: LimaRootlessSetupUse) {
+  return session(raw, use, runRuntimeProcess, true);
+}
+/** @internal Owned mock supervision only; executor functions never enter serialized options. */
+export function createLimaRootlessSetupRunner(execute: typeof runRuntimeProcess) {
+  return (raw: LimaOsOptions, use: LimaRootlessSetupUse) => session(raw, use, execute, true);
 }
 
 /** Internal OS-only lane, disconnected from target execution and isolation verification. Local bytes only. */
