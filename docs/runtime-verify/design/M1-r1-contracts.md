@@ -221,7 +221,7 @@ M1-165의 고정 소스 조사와 CPx14 N2를 반영한 문서 계약이다. 아
 **확인한 source assembly 범위.** wrapper 고정 commit은 `55c0963bf79bfd437c2aa1eb5fba9329a6fcd76f`, libpg_query는 `b0f5f331dc50d69597ec610de7b21afa47a66808`이다. [wrapper Makefile](https://github.com/constructive-io/libpg-query-node/blob/55c0963bf79bfd437c2aa1eb5fba9329a6fcd76f/versions/18/Makefile#L18-L79)은 `versions/18/src/wasm_wrapper.c`와 `.cache/$(PLATFORM_ARCH)/libpg_query/$(LIBPG_QUERY_COMMIT)` 아래 archive/header를 연결한다. 원본 Makefile에는 git clone 경로가 있으므로 승인된 고정 로컬 source 조립 없이 그대로 실행하지 않는다.
 
 - 해당 libpg_query 트리에는 `scan.l`이 없고 [생성 scanner C](https://github.com/constructive-io/libpg_query/blob/b0f5f331dc50d69597ec610de7b21afa47a66808/src/postgres/src_backend_parser_scan.c), `src/postgres/include/parser/scanner.h`, `src/pg_query_scan.c`, `pg_query.h`가 있다. patch는 이 source root와 wrapper root를 구분하여 실제 파일에 적용하고 base bytes/context 불일치 시 거부한다. upstream PG scan.l은 rule 대조 근거이며 이 트리에 존재하는 patch 대상으로 가장하지 않는다.
-- [copy-templates의 full API 선택](https://github.com/constructive-io/libpg-query-node/blob/55c0963bf79bfd437c2aa1eb5fba9329a6fcd76f/scripts/copy-templates.js#L62-L87)에 따라 wrapper 원형은 `templates/full/wasm_wrapper.c`, 생성 위치는 `versions/18/src/wasm_wrapper.c`다. R5는 patch의 실제 적용 대상·생성물 일치 범위를 밝히며 기존 npm CJS/WASM을 수동 수정하지 않는다. 아래 M1-170의 source/OCI metadata는 측정된 후보이며 제품 source lock·toolchain·아키텍처 선정은 아니다. 최종 build 조립 경로도 아직 미선정이다.
+- [copy-templates의 full API 선택](https://github.com/constructive-io/libpg-query-node/blob/55c0963bf79bfd437c2aa1eb5fba9329a6fcd76f/scripts/copy-templates.js#L62-L87)에 따라 wrapper 원형은 `templates/full/wasm_wrapper.c`, 생성 위치는 `versions/18/src/wasm_wrapper.c`다. R5는 patch의 실제 적용 대상·생성물 일치 범위를 밝히며 기존 npm CJS/WASM을 수동 수정하지 않는다. M1-170의 source/OCI metadata 측정을 바탕으로 M1-171에서 source lock·Mac/Lima arm64 toolchain 후보·조립 root를 데이터로 선정한다. 실제 build/실행 준비를 뜻하지 않는다.
 
 **M1-170 / R9가 측정한 입력 후보.** `.handoff/evidence/M1/native-parser-sources/{README.md,sources.json,oci.json}`은 manifest raw SHA256 `125ed713e2d06c8118709c76d76758fd6f8c5c27cdee8ec6e9d20cb506d4e878`에 결속된다. 두 archive의 고정 commit과 실제 byte SHA를 후속 source lock 입력으로 참조하며 이번 문서에서 제품 pin으로 승격하지 않는다.
 
@@ -231,7 +231,7 @@ M1-165의 고정 소스 조사와 CPx14 N2를 반영한 문서 계약이다. 아
 | core `b0f5f331dc50d69597ec610de7b21afa47a66808` | 4,584,500 | `efb6664a0aab73bcc37a613ef9081f75439e3a520c0300fd6ac71eb5ffb8cfc3` |
 
 R9의 archive 검사상 wrapper `versions/18/Makefile`은 template 생성물이고 package의 `wasm:make`는 정확히 `emscripten/emsdk:6.0.3`을 요구한다. core `Makefile`은 `PG_VERSION=18.4`를 선언하며 generated scanner C는 있지만 `scan.l`은 없다. 위 REL_18_0 링크는 설명·상태 대조 근거이며 실제 patch는 **고정 core의 생성 C/header·scan 연결부와 wrapper/template**에 적용한다. source 조립 경로는 확인한 Makefile 경로만 사용한다. PG18.4 core와 실제 PG18 대상 minor의 동작 동일성은 미입증이므로 설정 tuple만 맞았다고 실제 V3 지원 완료로 처리하지 않는다.
-OCI `6.0.3` index 후보는 `sha256:bb0910e6a18bb9bd7cb31ae4ed40f9073148b78cb2cdb8ea8676454e0d85425c`다. child descriptor/raw manifest는 linux/amd64 `sha256:2a7a41cd7e2065b30ba389c8db0fbeaebd7ec06bb4e20f23cab8ba92180f25c7`, linux/arm64 `sha256:ddfb30ef76e97bb9a231af1fb262f0a4f2f6aa726778572a028e215922afac40`가 확인됐다. 이는 descriptor 수준이며 config/layer pull·guest compiler 실행·이미지 서명·재현 빌드는 검증되지 않았다. 실제 toolchain/OCI 아키텍처 선택과 `sources.lock.json` 생성은 후속 R1 패킷으로 남기고 공식 npm WASM과의 동일성을 주장하지 않는다.
+OCI `6.0.3` index 후보는 `sha256:bb0910e6a18bb9bd7cb31ae4ed40f9073148b78cb2cdb8ea8676454e0d85425c`다. child descriptor/raw manifest는 linux/amd64 `sha256:2a7a41cd7e2065b30ba389c8db0fbeaebd7ec06bb4e20f23cab8ba92180f25c7`, linux/arm64 `sha256:ddfb30ef76e97bb9a231af1fb262f0a4f2f6aa726778572a028e215922afac40`가 확인됐다. 이는 descriptor 수준이며 config/layer pull·guest compiler 실행·이미지 서명·재현 빌드는 검증되지 않았다. source lock의 arm64 후보 선정은 §7 M1-171에 기록하며 실제 toolchain 사용은 검증·별도 패킷 뒤다. 공식 npm WASM과의 동일성을 주장하지 않는다.
 
 **후속 R3/R10 패킷의 필수 상한과 선택 조건(CPx14 N2).** native 진단 **job**은 기존 network-none·1초·256MiB를 유지한다. 별도 명시 native **build**의 후보 상한은 CPU2·메모리4GiB·PID256, 개별10분·재현2회 합계20분, 로그 각16KiB·산출물 합계32MiB다. 고정 로컬 source/toolchain만 사용하며 네트워크를 끈다. R3가 CPU/PID/메모리·전체 자식 종료·wall deadline·로그/산출물 상한을 실제 강제할 수 있는 수단을 확인하지 못하면 실행을 거부한다. 이 문서는 해당 격리 보장의 측정 결과가 아니다.
 R10은 명시 custom artifactId·새 protocol revision·독립 source/build/pins가 **모두 일치할 때만** custom CJS/WASM을 선택한다. 누락·불일치·미지원 tuple은 거부/unknown·미완료이며 공식 v1 fallback으로 quote 진단 완료를 가장하지 않는다. 공식 v1의 기존 명시 실행 경로와 지원 범위는 유지한다. 일반 npm build는 고정 로컬 자산의 검증/복사만 하며 compiler·source fetch를 시작하지 않는다.
@@ -368,7 +368,7 @@ reportArtifact는 `{name:report.json,algorithm:sha256,digest:<확정된 report.j
 
 ### M1-160 / CPx14 승인 native 진단 경로 명부
 
-아래 경로/소유는 CPx14의 `e708f603a8f26a5e0fcc58ddc6d33e2e2b1fa5fc` APPROVE_WITH_NITS(exit0)로 승인됐다. 실제 파일 생성·수정은 root의 경로별 패킷으로만 하며 §7 밖 임의 확장은 금지한다. M1-168은 §4의 ABI·지원 tuple·후속 build 상한/자산 선택 조건만 문서로 정한다. 구체 source/toolchain bytes는 R9 측정 뒤 R1 `sources.lock.json` 패킷에서 선정하고 R3 별도 build 패킷으로 이어간다. 현재 v1 protocol/types/context/핀을 교체하거나 이 문서로 실행 권한을 부여하지 않는다.
+아래 경로/소유는 CPx14의 `e708f603a8f26a5e0fcc58ddc6d33e2e2b1fa5fc` APPROVE_WITH_NITS(exit0)로 승인됐다. 실제 파일 생성·수정은 root의 경로별 패킷으로만 하며 §7 밖 임의 확장은 금지한다. M1-168은 §4의 ABI·지원 tuple·후속 build 상한/자산 선택 조건을 정한다. M1-171은 R9 측정 source bytes와 toolchain child 후보를 lock 데이터로 선정하며 patch 봉인·R3 build는 별도 패킷이다. 현재 v1 protocol/types/context/핀을 교체하거나 이 문서로 실행 권한을 부여하지 않는다.
 
 | 역할 | 새 경로 후보 또는 재사용할 정확한 기존 경로 | 책임·검증 |
 | --- | --- | --- |
@@ -381,6 +381,14 @@ reportArtifact는 `{name:report.json,algorithm:sha256,digest:<확정된 report.j
 | R9 | 기존 `.handoff/evidence/M1/**`(root 패킷에서 세부 파일 지정) | native source/patch/compiler/환경과 산출물 raw SHA·재현성, 실제 PG18 설정/오류 위치·control/probe 인과·음성/Bind·유실/timeout/trap/cleanup·원문 비출판을 독립 검증한다. 구현이나 R8 expected는 수정하지 않는다. |
 
 새 테스트 파일은 제안하지 않는다. 기존 `tests/runtime-contracts.test.ts`(R1: 새 union/핀/거부), `tests/runtime-{pg-log,sql}.test.ts`(R5: protocol·관측·순수 판정), `tests/runtime-cleanup.test.ts`(R3: 별도 build/실행 감독·실패), `tests/runtime-delivery.test.ts`(R10: source-free npm/Action 배포·손상/혼합 거부)를 각 소유 패킷에서 재사용한다. 보안 기대값은 R8 소유 파일만 참조하고 복제/완화하지 않는다. 실제 측정 증거는 R9에 남긴다.
+
+### M1-171 / source lock 데이터 선정과 실행 전 장벽
+
+`workers/pg-parser/native/sources.lock.json`의 닫힌 revision `wakeio.pg-parser-native-sources/v1`은 M1-170의 R9 manifest와 wrapper/core 고정 commit archive·선별 source/header/고지 bytes를 결속한다. 이 revision의 명시 키·enum만 의미가 있으며 후속 reader/builder는 unknown 키·값/경로·SHA/크기 불일치를 거부해야 한다. 현재 실행 reader나 build 구현을 추가하지 않는다.
+조립 root는 각각 **`core/`, `wrapper/`**로 선정한다. 새 private 조립 디렉터리에서 각 archive의 정확한 `archiveRoot` prefix와 member 안전성을 검증한 뒤 **strip-one**하여 대응 root 아래 배치한다. 경로 탈출·링크·특수/중복 member·기존 파일 덮어쓰기는 거부한다. R5 patch 경로는 `a/core/...`/`b/core/...`, `a/wrapper/...`/`b/wrapper/...`이며 조립 root에서 patch prefix 하나만 제거한다. upstream clone/fetch나 template 자동 갱신은 사용하지 않는다. 실제 조립·patch 적용은 이번에 하지 않는다.
+이 Mac/Lima profile의 toolchain 고정 후보는 upstream 선언 그대로 `emscripten/emsdk:6.0.3`의 **linux/arm64/v8 child digest**다. index·child manifest bytes와 config/layer descriptor를 보존하되 descriptor를 content 검증이나 guest compiler 실행 증거로 바꾸지 않는다. config/layer content·실행 환경·서명·재현성·published npm WASM 대응은 미검증이다. 다른 아키텍처로 자동 fallback하지 않는다.
+patch는 승인된 `workers/pg-parser/native/lexer-diagnostics.patch`만 가리키며 **`sha256:null/status:pending`**이다. 봉인은 R5 patch 뒤 root의 별도 R1 패킷에서만 한다. lock 자체는 **`ready:false/executable:false/authority:none`**인 데이터이며 설치·pull·compile·실행 권한이나 준비 완료를 부여하지 않는다. 현재 배포 manifest/host pin/protocol/types는 바꾸지 않는다.
+후속 native build는 config/layer content와 실제 실행 환경, CPU2·4GiB·PID256·network-none·개별10분/2회 합계20분·로그 각16KiB·산출물 합계32MiB의 강제 수단을 검증하기 전에는 실행하지 않는다. runtime job의1초/256MiB/network-none와 별개다. 일반 npm build의 고정 로컬 자산 검증/복사 원칙도 유지한다.
 
 ### M1-83 / CPx7 승인 PostgreSQL parser 자산 명부
 
