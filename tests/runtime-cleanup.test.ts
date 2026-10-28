@@ -1546,11 +1546,14 @@ test('package failure stages are closed data; extra, unknown, truncated and succ
   }
 });
 test('package failure stages require supervised exit125 and current identity; cleanup stays sticky', async () => {
-  for (const mode of ['normal', 'normal-detail', 'bad-exit', 'timeout', 'output-limit', 'stderr', 'group-unknown']) {
+  for (const mode of ['normal', 'normal-detail', 'selection',
+    'bad-exit', 'timeout', 'output-limit', 'stderr', 'group-unknown']) {
     await scope(async base => {
-      const detailed = mode === 'normal-detail', stage = detailed ? 'index-snapshot' : 'key';
+      const detail = mode === 'normal-detail' ? 'index-kind-translation'
+        : mode === 'selection' ? 'selection-sha' : undefined;
+      const stage = mode === 'selection' ? 'selection' : detail ? 'index-snapshot' : 'key';
       const reply = { stdout: `wakeio-rootless-packages-failure/v1:${stage}:operation_failed`
-        + (detailed ? ':index-kind-translation' : '') + '\n',
+        + (detail ? ':' + detail : '') + '\n',
         completed: false, exitCode: mode === 'bad-exit' ? 1 : 125,
         timedOut: mode === 'timeout', outputLimitExceeded: mode === 'output-limit',
         stderr: mode === 'stderr' ? 'synthetic withheld diagnostic' : '' };
@@ -1560,8 +1563,8 @@ test('package failure stages require supervised exit125 and current identity; cl
         await cap.probe(); answer = await cap.preparePackages();
       });
       assert.equal(answer?.phase, 'unknown'); assert.equal(answer?.sourceExecutionAuthorized, false);
-      assert.equal(answer?.failureStage, mode === 'normal' || detailed ? stage : undefined);
-      assert.equal(answer?.failureDetail, detailed ? 'index-kind-translation' : undefined);
+      assert.equal(answer?.failureStage, mode === 'normal' || detail ? stage : undefined);
+      assert.equal(answer?.failureDetail, detail);
       assert.equal(result.phase, 'failed'); assert.equal(result.cleanup?.confirmed, mode !== 'group-unknown');
     });
   }
@@ -1572,9 +1575,10 @@ test('owned Python failure fixture emits only fixed stage and reason while disca
     assert.ok(ROOTLESS_PACKAGE_PREPARE.startsWith(prefix));
     const python = ROOTLESS_PACKAGE_PREPARE.slice(prefix.length + 1, -1).replaceAll("'\"'\"'", "'");
     assert.equal(python.split('body = prepare()').length, 2);
-    for (const stage of ['prerequisites', 'key', 'index-update', 'digest', 'manifest', 'index-snapshot']) {
+    for (const stage of ['prerequisites', 'key', 'index-update', 'digest', 'manifest', 'index-snapshot', 'selection']) {
       // No prepare/guest/package/network function is called: only the final error encoder is executed.
-      const detail = stage === 'index-snapshot' ? 'index-kind-translation' : '';
+      const detail = stage === 'index-snapshot' ? 'index-kind-translation'
+        : stage === 'selection' ? 'selection-candidate-lookup' : '';
       const fixture = python.replace('body = prepare()',
         `stage = '${stage}'; failure_detail = '${detail}'; raise RuntimeError('synthetic withheld exception')`);
       const result = await runRuntimeProcess('/usr/bin/python3', ['-I', '-c', fixture], {
@@ -1752,3 +1756,142 @@ test('generated private APT config disables optional translations and preserves 
         'owned generated APT config: languages none; fixed signed HTTPS sources and authentication preserved\n');
     });
   });
+
+const SELECTION_API_FIXTURE = String.raw`
+import ast, sys, re
+from collections.abc import Mapping
+from types import SimpleNamespace
+module = ast.parse(sys.stdin.read())
+names = {'require','selection_step','selected_record','selected'}
+nodes = [n for n in module.body if (isinstance(n, ast.FunctionDef) and n.name in names)
+    or (isinstance(n, ast.Assign) and any(isinstance(t, ast.Name) and t.id == 'PINS' for t in n.targets))]
+namespace = dict(re=re, failure_detail='')
+exec(compile(ast.Module(body=nodes, type_ignores=[]), 'owned selection', 'exec'), namespace)
+PINS = namespace['PINS']
+MODE, READING = 'normal', False
+def api(label, value):
+    if READING and MODE == 'api-' + label: raise RuntimeError('synthetic withheld API error')
+    return value
+class Record(Mapping):
+    # Match Noble's Mapping inheritance; no custom get method exists on this fixture either.
+    def __init__(self, digest): self.data = {} if MODE == 'sha' else {'SHA256':digest}
+    def __getitem__(self, key): return api('sha', self.data[key])
+    def __iter__(self): return iter(self.data)
+    def __len__(self): return len(self.data)
+class Version:
+    def __init__(self, name, version, size, digest):
+        self.name, self.value, self.bytes, self.digest = name, version, size, digest
+    @property
+    def version(self): return api('version', '1\n' if READING and MODE == 'version' else self.value)
+    @property
+    def architecture(self): return api('arch-size', 'other' if READING and MODE == 'arch-size' else 'arm64')
+    @property
+    def size(self): return api('arch-size', self.bytes)
+    @property
+    def origins(self):
+        return api('origin', [] if MODE == 'empty-origin' else [SimpleNamespace(trusted=MODE != 'origin')])
+    @property
+    def uri(self):
+        prefix = 'https://download.docker.com/linux/ubuntu/dists/noble/pool/stable/arm64/'
+        if self.name not in [p[0] for p in PINS]: prefix = 'https://ports.ubuntu.com/ubuntu-ports/pool/'
+        return api('uri', None if MODE == 'uri' else prefix + 'fixed.deb')
+    @property
+    def uris(self):
+        if MODE == 'uri': return []
+        return ['https://unapproved.invalid/'] if MODE == 'uris' else [self.uri]
+    @property
+    def record(self): return Record('0'*64 if MODE == 'pin' else self.digest)
+class Package:
+    def __init__(self, name, version, size, digest):
+        self.key, self.v = name, Version(name, version, size, digest)
+    @property
+    def name(self): return api('name', 'bad@name' if MODE == 'name' else self.key)
+    @property
+    def versions(self): return [] if MODE == 'pinned-version' else [self.v]
+    @property
+    def candidate(self): return api('candidate-lookup', self.v)
+    @candidate.setter
+    def candidate(self, value):
+        if MODE == 'api-pinned-version': raise RuntimeError('synthetic withheld API error')
+        self.v = value
+    def mark_install(self, *, auto_fix, auto_inst, from_user):
+        assert auto_fix is True and auto_inst is True and from_user is True
+        if MODE == 'mark-install': raise RuntimeError('synthetic withheld API error')
+    @property
+    def marked_delete(self): return api('change-set', MODE == 'delete')
+    @property
+    def marked_downgrade(self): return MODE == 'downgrade'
+class Cache:
+    def __init__(self):
+        self.packages = {p[0]:Package(*p) for p in PINS}
+        for name in ['uidmap','slirp4netns','dbus-user-session','iptables','nftables']:
+            self.packages[name] = Package(name, '1.0', 16, 'a'*64)
+    def __getitem__(self, name):
+        if MODE == 'candidate-lookup': raise KeyError('synthetic withheld API error')
+        return self.packages[name]
+    @property
+    def broken_count(self):
+        if MODE == 'api-broken': raise RuntimeError('synthetic withheld API error')
+        return 1 if MODE == 'broken' else 0
+    def get_changes(self):
+        global READING
+        READING = True
+        if MODE == 'change-set': return []
+        changes = [self.packages[p[0]] for p in PINS] + [self.packages['uidmap']]
+        if MODE == 'required-set': changes = changes[1:]
+        if MODE == 'total':
+            changes += [Package('extra'+str(i), '1.0', 128*1024*1024, 'a'*64) for i in range(4)]
+        return changes
+guards = ['candidate-lookup','pinned-version','mark-install','broken','change-set','name','version',
+    'arch-size','origin','uri','sha','pin','required-set','total']
+cases = {m:m for m in guards}
+cases.update({'delete':'change-set','downgrade':'change-set','empty-origin':'origin','uris':'uri'})
+for m in ['candidate-lookup','pinned-version','broken','change-set','name','version','arch-size','origin','uri','sha']:
+    cases['api-'+m] = m
+for MODE, expected in cases.items():
+    READING, namespace['failure_detail'] = False, ''
+    failed = False
+    try: namespace['selected'](Cache())
+    except BaseException: failed = True
+    assert failed and namespace['failure_detail'] == 'selection-' + expected, MODE
+    try: namespace['require'](False)
+    except ValueError: pass
+    assert namespace['failure_detail'] == 'selection-' + expected
+MODE, READING = 'normal', False
+records = namespace['selected'](Cache())
+assert len(records) == 5 and namespace['failure_detail'] == ''
+assert [r['name'] for r,v in records] == sorted(r['name'] for r,v in records)
+assert 'get' not in Record.__dict__ and Record('a'*64).get('SHA256', '') == 'a'*64
+assert Record('a'*64).get('missing', '') == ''
+print('owned Noble API selection guards pass; Mapping.get inherited; no APT/filesystem/network operations')
+`;
+test('selection uses Noble API shapes and preserves each guard/API failure location without raw errors', async () => {
+  await scope(async base => {
+    const prefix = '/usr/bin/python3 -I -c ';
+    const python = ROOTLESS_PACKAGE_PREPARE.slice(prefix.length + 1, -1).replaceAll("'\"'\"'", "'");
+    const result = await runRuntimeProcess('/usr/bin/python3', ['-I', '-c', SELECTION_API_FIXTURE], {
+      input: python, cwd: base, home: base, timeoutMs: 5000, deadlineAt: Date.now() + 10000, maxOutputBytes: 16384 });
+    assert.equal(result.completed, true); assert.equal(result.stderr, '');
+    assert.equal(result.stdout,
+      'owned Noble API selection guards pass; Mapping.get inherited; no APT/filesystem/network operations\n');
+  });
+});
+test('selection details accept only their closed stage pairing and cannot grant prepared bytes or authority', () => {
+  for (const suffix of ['candidate-lookup', 'pinned-version', 'mark-install', 'broken', 'change-set',
+    'name', 'version', 'arch-size', 'origin', 'uri', 'sha', 'pin', 'required-set', 'total']) {
+    const detail = 'selection-' + suffix;
+    const raw = `wakeio-rootless-packages-failure/v1:selection:operation_failed:${detail}\n`;
+    const answer = parseRootlessPackageFailure(raw);
+    assert.equal(answer.failureStage, 'selection'); assert.equal(answer.failureDetail, detail);
+    assert.equal(answer.phase, 'unknown'); assert.equal(answer.reason, 'operation_failed');
+    assert.equal(answer.backendVerified, false); assert.equal(answer.sourceExecutionAuthorized, false);
+    assert.equal(answer.daemonObserved, false); assert.equal(answer.manifestSha256, null);
+    assert.deepEqual(answer.packages, []);
+    for (const bad of [raw.slice(0, -1), raw + '\n', raw + 'extra', raw.replace(detail, 'unsupported'),
+      raw.replace(detail, 'index-name'), raw.replace(detail, detail + ':withheld'),
+      ...['key', 'index-snapshot', 'state-recheck', 'download'].map(s => raw.replace(':selection:', `:${s}:`))]) {
+      const invalid = parseRootlessPackageFailure(bad);
+      assert.equal(invalid.reason, 'invalid_metadata'); assert.equal(invalid.failureDetail, undefined);
+    }
+  }
+});
