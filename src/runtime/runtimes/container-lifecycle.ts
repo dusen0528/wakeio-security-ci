@@ -130,7 +130,7 @@ def encoded(value):
 def identity(s):
     return (s.st_dev, s.st_ino, s.st_size, s.st_mtime_ns, s.st_ctime_ns)
 
-def read_file(path, limit, indexing=False):
+def read_file(path, limit, indexing=False, bindings=None):
     fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
     try:
         before = os.fstat(fd)
@@ -147,7 +147,11 @@ def read_file(path, limit, indexing=False):
             used += len(chunk); check(used <= limit, 'index-size'); chunks.append(chunk)
         check(used == before.st_size and identity(before) == identity(os.fstat(fd)), 'index-consistency')
         check(identity(before) == identity(os.stat(path, follow_symlinks=False)), 'index-consistency')
-        return b''.join(chunks)
+        body = b''.join(chunks)
+        if bindings is not None:
+            bindings.append(dict(file=os.path.basename(path), identity=list(identity(before)),
+                sha256=hashlib.sha256(body).hexdigest()))
+        return body
     finally: os.close(fd)
 
 def write_new(path, data):
@@ -243,7 +247,7 @@ def selection_step(code):
 def record_filename(filename):
     selection_step('selection-uri-record')
     require(isinstance(filename, str) and re.fullmatch(r'[A-Za-z0-9+~_.:/-]+', filename) is not None)
-    require('..' not in filename and all(p not in ['', '.', '..'] for p in filename.split('/')))
+    require('..' not in filename and all(p not in ['', '.'] for p in filename.split('/')))
     basename = filename.rsplit('/', 1)[-1]
     require(re.fullmatch(r'[a-z0-9][a-z0-9+.-]*_[A-Za-z0-9.+:~_-]+_(arm64|all)\.deb', basename) is not None)
     if filename.startswith('dists/noble/pool/stable/arm64/'):
@@ -269,12 +273,13 @@ def package_uri(uri, filename):
     selection_step('selection-uri-path')
     require(parts.path.startswith(root))
     tail = parts.path[len(root):]
-    require('..' not in tail and all(p not in ['', '.', '..'] for p in tail.split('/')))
+    require('..' not in tail and all(p not in ['', '.'] for p in tail.split('/')))
     selection_step('selection-uri-encoding')
     require(re.fullmatch(r'(?:[A-Za-z0-9.+~_:/-]|%2b|%7e)+', tail) is not None)
     # Decode only after the two safe escapes were allowlisted; no general URL normalization is accepted.
     decoded = urllib.parse.unquote_to_bytes(tail)
-    raw = decoded.decode('ascii'); canonical = raw.replace('+', '%2b').replace('~', '%7e')
+    raw = decoded.decode('ascii')
+    canonical = raw.replace('+', '%2b').replace('~', '%7e')
     require(tail == raw or tail == canonical)
     selection_step('selection-uri-binding')
     require(decoded == filename.encode('ascii') and host_origin == origin)
@@ -333,12 +338,61 @@ def selected(cache):
     failure_detail = ''
     return sorted(records, key=lambda pair: pair[0]['name'])
 
+def boot_digest():
+    path = '/proc/sys/kernel/random/boot_id'
+    fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+    try:
+        before = os.fstat(fd)
+        body = os.read(fd, 38)
+        require(stat.S_ISREG(before.st_mode) and before.st_uid == 0 and before.st_nlink == 1)
+        require(not before.st_mode & 0o022)
+        require(re.fullmatch(rb'[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}\n', body) is not None)
+        require(identity(before) == identity(os.fstat(fd)) == identity(os.stat(path, follow_symlinks=False)))
+        return hashlib.sha256(body).hexdigest()
+    finally: os.close(fd)
+
+def owned_directory(path):
+    info = os.stat(path, follow_symlinks=False)
+    require(stat.S_ISDIR(info.st_mode) and info.st_uid == 0 and info.st_mode & 0o777 == 0o700)
+    return list(identity(info))
+
+def prepared_snapshot():
+    global stage
+    stage = 'state-recheck'
+    directories = [owned_directory(BASE + suffix) for suffix in ['', '/archives', '/archives/partial']]
+    captured = []
+    manifest_body = read_file(BASE + '/manifest.json', 16384, bindings=captured)
+    manifest = json.loads(manifest_body)
+    index_body = read_file(BASE + '/indexes.json', 16384, bindings=captured)
+    require(indexes() == json.loads(index_body))
+    index_sha = hashlib.sha256(index_body).hexdigest()
+    status_sha = hashlib.sha256(read_file('/var/lib/dpkg/status', 32 * 1024 * 1024)).hexdigest()
+    require(index_sha == manifest['indexManifestSha256'] and status_sha == manifest['installedStatusSha256'])
+    boot = boot_digest()
+    require(read_file(BASE + '/boot.sha256', 64, bindings=captured) == boot.encode('ascii'))
+    bindings = json.loads(read_file(BASE + '/deb-bindings.json', 65536, bindings=captured))
+    require(isinstance(bindings, list) and 4 <= len(bindings) == len(manifest['packages']) <= 48)
+    names = [entry['file'] for entry in bindings]
+    require(all(isinstance(n, str) and re.fullmatch(r'[A-Za-z0-9+~_.:-]+\.deb', n) and '..' not in n for n in names))
+    require(len(set(names)) == len(names) and set(os.listdir(BASE + '/archives')) == set(names) | {'partial'})
+    require(os.listdir(BASE + '/archives/partial') == [])
+    current = []
+    for record, bound in zip(manifest['packages'], bindings):
+        body = read_file(BASE + '/archives/' + bound['file'], 128 * 1024 * 1024, bindings=current)
+        require(len(body) == record['size'] and hashlib.sha256(body).hexdigest() == record['sha256'])
+    require(current == bindings)
+    require(directories == [owned_directory(BASE + suffix) for suffix in ['', '/archives', '/archives/partial']])
+    state = hashlib.sha256(encoded([directories, captured, current])).hexdigest()
+    fields = [hashlib.sha256(manifest_body).hexdigest(), index_sha, status_sha, boot, state]
+    return ('wakeio-rootless-packages-snapshot/v1:' + ':'.join(fields)).encode('ascii')
+
 def prepare():
     global stage
     stage = 'prerequisites'
     require(os.geteuid() == 0 and os.uname().machine == 'aarch64')
     require(b'ID=ubuntu\n' in read_file('/usr/lib/os-release', 8192))
     require(importlib.util.find_spec('apt') is not None)
+    boot = boot_digest()
     status = read_file('/var/lib/dpkg/status', 32 * 1024 * 1024)
     apt_config()
     import apt, apt.progress.base
@@ -350,6 +404,7 @@ def prepare():
     index_records = indexes()
     stage = 'selection'
     records = selected(cache)
+    bindings = []
     for record, version in records:
         # python-apt uses the selected signed record's archive name; no extraction/lifecycle runs here.
         # Public APT download-only API preserves authentication; no commit/install is called.
@@ -358,11 +413,14 @@ def prepare():
             allow_unauthenticated=False)
         stage = 'digest'
         require(os.path.dirname(path) == BASE + '/archives')
-        body = read_file(path, 128 * 1024 * 1024)
+        body = read_file(path, 128 * 1024 * 1024, bindings=bindings)
         require(len(body) == record['size'] and hashlib.sha256(body).hexdigest() == record['sha256'])
     stage = 'state-recheck'
     require(indexes() == index_records and status == read_file('/var/lib/dpkg/status', 32 * 1024 * 1024))
     stage = 'manifest'
+    require(boot_digest() == boot)
+    write_new(BASE + '/boot.sha256', boot.encode('ascii'))
+    write_new(BASE + '/deb-bindings.json', encoded(bindings))
     index_body = encoded(index_records); write_new(BASE + '/indexes.json', index_body)
     manifest = dict(protocol='wakeio-rootless-packages/v1', signatureVerified=True, keySha256=KEY_SHA,
         keyFingerprint=KEY_FINGERPRINT, indexManifestSha256=hashlib.sha256(index_body).hexdigest(),
@@ -376,7 +434,7 @@ out = os.dup(1)
 with open('/dev/null', 'wb') as sink:
     os.dup2(sink.fileno(), 1); os.dup2(sink.fileno(), 2)
 try:
-    body = prepare()
+    body = __ACTION__()
     os.write(out, body + b'\n')
 except BaseException:
     detail = ':' + failure_detail if failure_detail else ''
@@ -388,5 +446,9 @@ finally:
 `.replace('__PINS__', JSON.stringify(DOCKER_PINS)).replace('__KEY_SHA__', KEY_SHA)
   .replace('__KEY_FINGERPRINT__', KEY_FINGERPRINT);
 // Fixed Python is product code. No raw Target/options/text can select this script or its input.
-export const ROOTLESS_PACKAGE_PREPARE = '/usr/bin/python3 -I -c '
-  + "'" + PACKAGE_PREPARE_PY.replaceAll("'", "'\"'\"'") + "'";
+function fixedPython(action: 'prepare' | 'prepared_snapshot'): string {
+  return '/usr/bin/python3 -I -c '
+    + "'" + PACKAGE_PREPARE_PY.replace('__ACTION__', action).replaceAll("'", "'\"'\"'") + "'";
+}
+export const ROOTLESS_PACKAGE_PREPARE = fixedPython('prepare');
+export const ROOTLESS_PACKAGE_SNAPSHOT = fixedPython('prepared_snapshot');
