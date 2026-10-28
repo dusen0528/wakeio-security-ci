@@ -245,20 +245,14 @@ agent 공통 projection에서도 legacy branch의 scanGate는 불변이다. runt
 호환 검증은 기존 0.5 fixture/reader 불변과 **확장된 공통 reader**의 runtime 보존·검증·손상/혼합 거부를 함께 요구한다. 전자를 후자로 대체하거나 별도 B envelope 안정성으로 목표를 바꾸지 않는다. 새 타입/schema는 R1, 공통 dispatch·pipeline·4종 projection은 R10 소유다.
 순서는 확정 취약점→verify 게이트→미도달→한계다. JSON/Markdown/SARIF/agent 모두 비밀 canary·원문 마커·DB 내용 누출 0을 검증한다.
 
-### M1-150 / CPx12 N3 in-process 입력 분류의 잔여 호환 충돌
+### M1-150/153 / CPx12 N3 명시 공통 진입 방식의 선택·구현 단계
 
-serialized/plain JSON wire의 공통 A 모델·runtime own-data 상한과 in-process JavaScript 객체의 수용 범위는 구별한다. CLI/plain JSON 호환 관측만으로 임의 JS 객체 전체의 공개 API 호환성을 주장하지 않는다. 위의 “기존 valid legacy 입력 보존” 요구는 그대로이며 Proxy를 사후에 invalid legacy로 재정의하지 않는다.
-`8341092a0e9624c7fce59db0953538a828b4678c`의 runtimeReportInput은 own data descriptor의 mode=runtime/top.runtime/check.runtime/runtime evidence basis로 분기한다. legacy class instance·nested Proxy/getter 자체는 runtime 구조라고 추정하지 않고 기존 Scan sanitizer로 넘긴다. R10 M1-146은 확인된 class/nested metadata 사례의 baseline 출력·추가 hook0 및 기존 static-context 회귀 통과를 보고했다. 이 문서 패킷은 해당 코드·테스트 단언을 읽었으며 재실행하지 않았다. 이 관측은 모든 getter/Proxy가 안전하다는 보장이 아니다.
-단, **raw report 전체가 Proxy이면** target의 branch를 trap0으로 판별할 수 없어 현재 common API는 `invalid_runtime_report`로 거부한다. 이 선행 분류는 sanitiseReport/toAgentReport/toReportSummary/toSarif/toMarkdown/writeReports의 legacy 호출에도 적용된다. 따라서 672 baseline에서 수용하던 benign forwarding Proxy도 새 공통 공개 진입점에서는 거부될 수 있으며, 이는 과거 API보다 거부 범위가 넓어진 잔여 차이다.
-명시 `sanitiseScanReport`는 기존 Scan sanitizer 경로를 유지한다. 이 별도 경로가 있다는 것만으로 원래 공개 이름의 호환 회귀가 해결된 것은 아니며, 기존 Scan 경로에 전체 Proxy의 trap0 보장을 새로 부여하지도 않는다. 명확한 runtime 구조가 있으면 class/nested Proxy/getter도 strict own-data validator의 거부 대상이며 혼합 입력을 legacy로 축소 통과시키지 않는다.
-**미해결 / PLAN 제안:** trap0 implicit 분류·모든 기존 in-process legacy 수용·opaque runtime Proxy의 축소 통과 금지를 동시에 충족했다고 주장하지 않는다. 아래 선택은 문서에 기록한 검토안이며 이번 문서화로 강화가 사람에게 승인됐거나 실행 안전성이 입증됐다는 뜻은 아니다.
-
-| 선택지 | 계약 영향 |
-| --- | --- |
-| A · 현재 common API의 전체 Proxy 거부 유지 | 기존 공개 JS 객체 수용 범위 축소를 명시적 API 정책 변경으로 검토해야 한다. serialized/data-only wire 호환과 명시 Scan 경로의 보존은 전체 in-process 호환의 대체 증거가 아니다. |
-| B · 기존 공개 Scan 진입 동작 보존 + 명시 runtime/common data 경계 | 기존 공개 이름의 legacy 수용을 유지하고 runtime/공통 data-only 처리는 명시 진입으로 구별하는 API 경계 조정을 검토한다. 같은 공통 A 모델/4파일을 유지하며 별도 B 보고서 포맷을 만들자는 안이 아니다. |
-
-최소 권고는 기존 valid legacy 보존 요구를 철회하지 않고 B의 API 경계 정리를 root의 후속 R10 패킷/CPx에서 검토하는 것이다. 현재 전체 Proxy 거부는 그 결정 전까지 미해결 호환 충돌로 남긴다. 단순 false fallback으로 opaque runtime Proxy를 Scan으로 통과시키거나 getter/trap을 실행해 branch를 추측하는 변경은 이 문서가 승인하지 않는다. 확인 조건은 baseline benign whole Proxy·class/nested metadata 출력/추가 hook 수와 명시 runtime/mixed 거부를 각각 대조하는 것이며, 제품·보호 규칙·기대값은 이번에 바꾸지 않는다.
+오케스트레이터는 M1-150의 **선택지 B(기존 공개 Scan 동작 보존 + 명시 runtime/common data 진입)**를 선택하고 R10에 M1-152를 발행했다. 같은 A 공통 Report 모델과 같은 `report.json/report.md/report.sarif/agent-report.json`을 유지한다. 여기서 B는 API 경계 선택의 이름이며 별도 B envelope/주포맷을 뜻하지 않는다. 사람 승인이나 구현 완료를 뜻하지도 않는다.
+기존 공개 `sanitiseReport/toAgentReport/toReportSummary/toSarif/toMarkdown/writeReports`는 672 baseline의 **Scan 시그니처·동작**을 유지하고 선행 runtime 분류로 기존 입력을 새로 거부하지 않는다. benign whole-report forwarding Proxy를 포함해 기존 Scan sanitizer가 수용하던 JS 객체 동작을 보존한다. `sanitiseScanReport` 별칭만 남기고 원래 공개 이름을 좁히는 것으로 대신하지 않는다. 기존 scan 소비자는 이 변경 때문에 새 진입으로 옮길 필요가 없다.
+새 `sanitiseCommonReport/toCommonAgentReport/toCommonReportSummary/toCommonSarif/toCommonMarkdown/writeCommonReports`는 Report union을 받는 명시 진입이다. explicit runtime/common 경계는 전체 raw Proxy를 trap0으로 거부하고 명확한 mode/top.runtime/check.runtime/runtime evidence 구조에 strict own-data 검증을 적용한다. 기존 Scan 경로에 전체 Proxy trap0 보장이나 runtime 지원을 새로 부여하지 않는다.
+새 verify의 4종 writer/selector 배선은 명시 common 진입을 사용해야 한다. parseReport/readReport 및 explicit runtime parser의 data-only·상한·mixed 거부와 기존 parseScanReport/readScanReport의 경계는 유지한다. runtime.* ID 문자열만으로 namespace를 예약하지 않으며 실제 runtime 필드가 섞인 wire 입력을 Scan으로 축소 통과시키지 않는다.
+serialized/plain JSON wire의 호환성과 in-process JS 객체 수용은 계속 구별한다. 8341092 단계의 전체 Proxy 거부가 기존 공개 이름까지 영향을 준 잔여 차이가 이 선택의 수정 대상이다. “valid legacy”의 뜻을 축소하지 않으며 CLI/plain JSON·확인된 class/nested Proxy/getter의 baseline 출력/추가 hook0 관측을 모든 JS 객체의 실행 안전성으로 일반화하지 않는다.
+**단계:** M1-152는 R10 구현 중이고 이 문서 커밋은 API 배선·호환 복구 완료나 독립 검증을 입증하지 않는다. baseline whole Proxy/class/nested metadata의 기존 공개 Scan 출력·추가 hook 수, 명시 common의 whole Proxy trap0 거부·runtime/mixed 거부, 같은 4파일 raw SHA/legacy 회귀는 R10/R9 후속 검증으로 확인하고 CPx13에서 검토한다. 이 문서로 제품·타입·schema·기대값·보호 규칙을 바꾸거나 새 권한/안전 보장을 부여하지 않는다.
 
 ### M1-131 / runtime agent·summary의 additive projection 계약
 
