@@ -1758,14 +1758,14 @@ test('generated private APT config disables optional translations and preserves 
   });
 
 const SELECTION_API_FIXTURE = String.raw`
-import ast, sys, re
+import ast, sys, re, urllib.parse
 from collections.abc import Mapping
 from types import SimpleNamespace
 module = ast.parse(sys.stdin.read())
-names = {'require','selection_step','selected_record','selected'}
+names = {'require','selection_step','record_filename','package_uri','selected_record','selected'}
 nodes = [n for n in module.body if (isinstance(n, ast.FunctionDef) and n.name in names)
     or (isinstance(n, ast.Assign) and any(isinstance(t, ast.Name) and t.id == 'PINS' for t in n.targets))]
-namespace = dict(re=re, failure_detail='')
+namespace = dict(re=re, urllib=urllib, failure_detail='')
 exec(compile(ast.Module(body=nodes, type_ignores=[]), 'owned selection', 'exec'), namespace)
 PINS = namespace['PINS']
 MODE, READING = 'normal', False
@@ -1773,10 +1773,15 @@ def api(label, value):
     if READING and MODE == 'api-' + label: raise RuntimeError('synthetic withheld API error')
     return value
 class RecordBackend(dict):
-    def get(self, key, default=None): return api('sha', super().get(key, default))
+    def get(self, key, default=None):
+        return api('sha' if key == 'SHA256' else 'uri-record', super().get(key, default))
 class Record(Mapping):
     # Noble defines get explicitly; 2.7.7ubuntu5.3 delegates it to its internal record backend.
-    def __init__(self, digest): self._rec = RecordBackend({} if MODE == 'sha' else {'SHA256':digest})
+    def __init__(self, digest, filename='pool/main/f/fixed/fixed_1.0_arm64.deb'):
+        self._rec = RecordBackend(Filename='' if MODE == 'uri-record' else filename)
+        if MODE == 'uri-record-missing': self._rec.pop('Filename')
+        if MODE == 'uri-binding': self._rec['Filename'] = filename.replace('_','-other_',1)
+        if MODE != 'sha': self._rec['SHA256'] = digest
     def __getitem__(self, key): return self._rec[key]
     def __iter__(self): return iter(self._rec)
     def get(self, key, default=None): return self._rec.get(key, default)
@@ -1793,17 +1798,27 @@ class Version:
     @property
     def origins(self):
         return api('origin', [] if MODE == 'empty-origin' else [SimpleNamespace(trusted=MODE != 'origin')])
+    def archive_filename(self):
+        basename = self.name + '_' + self.value + '_arm64.deb'
+        if self.name in [p[0] for p in PINS]: return 'dists/noble/pool/stable/arm64/' + basename
+        bucket = self.name[:4] if self.name.startswith('lib') else self.name[:1]
+        return 'pool/main/' + bucket + '/' + self.name + '/' + basename
     @property
     def uri(self):
-        prefix = 'https://download.docker.com/linux/ubuntu/dists/noble/pool/stable/arm64/'
-        if self.name not in [p[0] for p in PINS]: prefix = 'https://ports.ubuntu.com/ubuntu-ports/pool/'
-        return api('uri', None if MODE == 'uri' else prefix + 'fixed.deb')
+        prefix = 'https://download.docker.com/linux/ubuntu/'
+        if self.name not in [p[0] for p in PINS]: prefix = 'https://ports.ubuntu.com/ubuntu-ports/'
+        tail = self.archive_filename()
+        if MODE == 'encoded': tail = tail.replace('+', '%2b').replace('~', '%7e')
+        return api('uri-read', None if MODE == 'uri' else prefix + tail)
     @property
     def uris(self):
         if MODE == 'uri': return []
+        if MODE == 'uris-type': return 'not-a-list'
+        if MODE == 'uris-empty': return []
+        if MODE == 'uris-element': return [None]
         return ['https://unapproved.invalid/'] if MODE == 'uris' else [self.uri]
     @property
-    def record(self): return Record('0'*64 if MODE == 'pin' else self.digest)
+    def record(self): return Record('0'*64 if MODE == 'pin' else self.digest, self.archive_filename())
 class Package:
     def __init__(self, name, version, size, digest):
         self.key, self.v = name, Version(name, version, size, digest)
@@ -1812,7 +1827,8 @@ class Package:
     @property
     def versions(self): return [] if MODE == 'pinned-version' else [self.v]
     @property
-    def candidate(self): return api('candidate-lookup', self.v)
+    def candidate(self):
+        return api('candidate-lookup', None if READING and MODE == 'candidate-lookup' else self.v)
     @candidate.setter
     def candidate(self, value):
         if MODE == 'api-pinned-version': raise RuntimeError('synthetic withheld API error')
@@ -1830,7 +1846,7 @@ class Cache:
         for name in ['uidmap','slirp4netns','dbus-user-session','iptables','nftables']:
             self.packages[name] = Package(name, '1.0', 16, 'a'*64)
     def __getitem__(self, name):
-        if MODE == 'candidate-lookup': raise KeyError('synthetic withheld API error')
+        if MODE == 'package-lookup': raise KeyError('synthetic withheld API error')
         return self.packages[name]
     @property
     def broken_count(self):
@@ -1845,11 +1861,14 @@ class Cache:
         if MODE == 'total':
             changes += [Package('extra'+str(i), '1.0', 128*1024*1024, 'a'*64) for i in range(4)]
         return changes
-guards = ['candidate-lookup','pinned-version','mark-install','broken','change-set','name','version',
-    'arch-size','origin','uri','sha','pin','required-set','total']
+guards = ['package-lookup','candidate-lookup','pinned-version','mark-install','broken','change-set','name','version',
+    'arch-size','origin','sha','pin','required-set','total','uri-record','uri-binding']
 cases = {m:m for m in guards}
-cases.update({'delete':'change-set','downgrade':'change-set','empty-origin':'origin','uris':'uri'})
-for m in ['candidate-lookup','pinned-version','broken','change-set','name','version','arch-size','origin','uri','sha']:
+cases.update({'delete':'change-set','downgrade':'change-set','empty-origin':'origin',
+    'uri':'uri-type','uris':'uri-host','uris-type':'uri-type','uris-empty':'uri-type','uris-element':'uri-type',
+    'uri-record-missing':'uri-record'})
+for m in ['candidate-lookup','pinned-version','broken','change-set','name','version','arch-size','origin',
+    'uri-read','uri-record','sha']:
     cases['api-'+m] = m
 for MODE, expected in cases.items():
     READING, namespace['failure_detail'] = False, ''
@@ -1860,10 +1879,17 @@ for MODE, expected in cases.items():
     try: namespace['require'](False)
     except ValueError: pass
     assert namespace['failure_detail'] == 'selection-' + expected
-MODE, READING = 'normal', False
-records = namespace['selected'](Cache())
-assert len(records) == 5 and namespace['failure_detail'] == ''
-assert [r['name'] for r,v in records] == sorted(r['name'] for r,v in records)
+selected_rows = []
+for MODE in ['normal','encoded']:
+    READING = False
+    records = namespace['selected'](Cache())
+    assert len(records) == 5 and namespace['failure_detail'] == ''
+    assert [r['name'] for r,v in records] == sorted(r['name'] for r,v in records)
+    selected_rows.append([r for r,v in records])
+expected_rows = [dict(name=n,version=v,arch='arm64',size=s,sha256=h,origin='docker') for n,v,s,h in PINS]
+expected_rows.append(dict(name='uidmap',version='1.0',arch='arm64',size=16,sha256='a'*64,origin='ubuntu'))
+assert selected_rows[0] == selected_rows[1] == sorted(expected_rows, key=lambda r:r['name'])
+MODE = 'normal'
 assert 'get' in Record.__dict__ and Record('a'*64).get('SHA256', '') == 'a'*64
 assert Record('a'*64).get('missing', '') == ''
 print('owned Noble API selection guards pass; Record.get delegates; no APT/filesystem/network operations')
@@ -1880,8 +1906,9 @@ test('selection uses Noble API shapes and preserves each guard/API failure locat
   });
 });
 test('selection details accept only their closed stage pairing and cannot grant prepared bytes or authority', () => {
-  for (const suffix of ['candidate-lookup', 'pinned-version', 'mark-install', 'broken', 'change-set',
-    'name', 'version', 'arch-size', 'origin', 'uri', 'sha', 'pin', 'required-set', 'total']) {
+  for (const suffix of ['package-lookup', 'candidate-lookup', 'pinned-version', 'mark-install', 'broken', 'change-set',
+    'name', 'version', 'arch-size', 'origin', 'uri', 'sha', 'pin', 'required-set', 'total',
+    'uri-read', 'uri-type', 'uri-host', 'uri-path', 'uri-encoding', 'uri-record', 'uri-binding']) {
     const detail = 'selection-' + suffix;
     const raw = `wakeio-rootless-packages-failure/v1:selection:operation_failed:${detail}\n`;
     const answer = parseRootlessPackageFailure(raw);
@@ -1898,3 +1925,65 @@ test('selection details accept only their closed stage pairing and cannot grant 
     }
   }
 });
+
+const URI_BINDING_FIXTURE = String.raw`
+import ast, sys, re, urllib.parse
+module = ast.parse(sys.stdin.read())
+names = {'require','selection_step','record_filename','package_uri'}
+namespace = dict(re=re, urllib=urllib, failure_detail='')
+exec(compile(ast.Module(body=[n for n in module.body if isinstance(n, ast.FunctionDef) and n.name in names],
+    type_ignores=[]), 'owned URI binding', 'exec'), namespace)
+docker = 'dists/noble/pool/stable/arm64/pkg_1.0+fix~noble_arm64.deb'
+ubuntu = 'pool/main/p/pkg/pkg_1.0+fix~noble_arm64.deb'
+library = 'pool/universe/libp/libpkg/libpkg_2:1.0+fix~noble_all.deb'
+dr, ur = 'https://download.docker.com/linux/ubuntu/', 'https://ports.ubuntu.com/ubuntu-ports/'
+for root, filename, expected in [(dr,docker,'docker'),(ur,ubuntu,'ubuntu'),(ur,library,'ubuntu')]:
+    for tail in [filename, filename.replace('+','%2b').replace('~','%7e')]:
+        assert namespace['package_uri'](root+tail, filename) == expected
+bad_records = [None, False, [], '', '/'+ubuntu, './'+ubuntu, '../'+ubuntu, ubuntu+'/extra',
+    ubuntu.replace('/p/','//p/'), ubuntu.replace('/p/','/./'), ubuntu.replace('/p/','/../'),
+    ubuntu.replace('pkg_','pkg.._'), ubuntu.replace('/p/','\\p\\'), ubuntu+'\n', ubuntu+'\0',
+    ubuntu.replace('+','%2b'), ubuntu+'?', ubuntu+'#', ubuntu.replace('main','restricted'),
+    ubuntu.replace('/p/pkg/','/q/pkg/'), docker.replace('arm64/','amd64/'), docker.replace('_arm64','_all'),
+    docker.replace('stable/','test/'), ubuntu.replace('.deb','.rpm'), 'https://unapproved.invalid/'+ubuntu]
+for filename in bad_records:
+    failed = False
+    try: namespace['package_uri'](ur+ubuntu, filename)
+    except BaseException: failed = True
+    assert failed and namespace['failure_detail'] == 'selection-uri-record'
+cases = []
+for uri in [None, 1, [], {}, '', '\n'+ur+ubuntu, ur+ubuntu+'\0', ur+ubuntu+' ', ur+ubuntu+'\\x']:
+    cases.append((uri, 'type'))
+for uri in ['http://ports.ubuntu.com/ubuntu-ports/'+ubuntu, 'HTTPS://ports.ubuntu.com/ubuntu-ports/'+ubuntu,
+    'https://user@ports.ubuntu.com/ubuntu-ports/'+ubuntu, 'https://user:pass@ports.ubuntu.com/ubuntu-ports/'+ubuntu,
+    'https://ports.ubuntu.com:443/ubuntu-ports/'+ubuntu, 'https://ports.ubuntu.com.evil.invalid/ubuntu-ports/'+ubuntu,
+    'https://PORTS.UBUNTU.COM/ubuntu-ports/'+ubuntu, ur+ubuntu+'?', ur+ubuntu+'?x=1', ur+ubuntu+'#',
+    ur+ubuntu+'#x', '//ports.ubuntu.com/ubuntu-ports/'+ubuntu]:
+    cases.append((uri, 'host'))
+for uri in ['https://ports.ubuntu.com/other/'+ubuntu, ur+'/'+ubuntu, ur+'./'+ubuntu, ur+'../'+ubuntu,
+    ur+ubuntu.replace('/p/','//p/'), ur+ubuntu+'/']:
+    cases.append((uri, 'path'))
+for escape in ['%2f','%2F','%2e','%2E','%5c','%5C','%00','%25','%252b','%20','%3a','%2B','%7E','%zz','%']:
+    cases.append((ur+ubuntu.replace('+',escape), 'encoding'))
+cases.append((ur+ubuntu.replace('+','%2b'), 'encoding'))
+for uri in [ur+ubuntu.replace('pkg_','other_'), ur+ubuntu.replace('1.0','2.0'), dr+ubuntu]:
+    cases.append((uri, 'binding'))
+for uri, expected in cases:
+    failed = False
+    try: namespace['package_uri'](uri, ubuntu)
+    except BaseException: failed = True
+    assert failed and namespace['failure_detail'] == 'selection-uri-' + expected
+print('owned URI binding: raw/canonical safe escapes match record; unsafe URL/path/escape/record data rejected')
+`;
+test('fixed URI validation binds raw/canonical APT paths to the same record without general percent decoding',
+  async () => {
+    await scope(async base => {
+      const prefix = '/usr/bin/python3 -I -c ';
+      const python = ROOTLESS_PACKAGE_PREPARE.slice(prefix.length + 1, -1).replaceAll("'\"'\"'", "'");
+      const result = await runRuntimeProcess('/usr/bin/python3', ['-I', '-c', URI_BINDING_FIXTURE], {
+        input: python, cwd: base, home: base, timeoutMs: 5000, deadlineAt: Date.now() + 10000, maxOutputBytes: 16384 });
+      assert.equal(result.completed, true); assert.equal(result.stderr, '');
+      assert.equal(result.stdout,
+        'owned URI binding: raw/canonical safe escapes match record; unsafe URL/path/escape/record data rejected\n');
+    });
+  });
