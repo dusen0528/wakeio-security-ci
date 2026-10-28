@@ -8,8 +8,8 @@ import { snapshotJsonData } from '../../json-snapshot.js';
 import { runRuntimeProcess, type RuntimeProcessResult } from '../process.js';
 import { ROOTLESS_PACKAGE_PREPARE, ROOTLESS_PACKAGE_SNAPSHOT, packagePreparationUnknown,
   parseRootlessPackagePreparation,
-  parseRootlessPackageFailure,
-  type RootlessPackagePreparation } from './container-lifecycle.js';
+  parseRootlessPackageFailure, packageInstallationUnknown,
+  type RootlessPackagePreparation, type RootlessPackageInstallation } from './container-lifecycle.js';
 
 export interface LimaPins {
   rootfs: { url: string; sha256: string; arch: 'aarch64' | 'x86_64' };
@@ -426,6 +426,8 @@ function inventoryData(raw: string, arch: LimaPins['rootfs']['arch']): Readonly<
 }
 export interface LimaRootlessSetupCapability extends LimaOsProbeCapability {
   preparePackages(): Promise<Readonly<RootlessPackagePreparation>>;
+  /** Inactive: validates/consumes a private seal, then closes with installer_unavailable. */
+  installPrepared(): Promise<Readonly<RootlessPackageInstallation>>;
 }
 export type LimaRootlessSetupUse = (capability: Readonly<LimaRootlessSetupCapability>) => Promise<void>;
 export type LimaOsSessionUse = (capability: Readonly<LimaOsProbeCapability>) => Promise<void>;
@@ -864,6 +866,7 @@ class OsSession {
   private active?: Promise<unknown>; private binary?: SessionBinary; private timer?: NodeJS.Timeout;
   private prepared?: Readonly<{ snapshot: string; result: Readonly<RootlessPackagePreparation> }>;
   private preparationAttempted = false;
+  private installationAttempted = false;
   private wake!: () => void; private readonly lost = new Promise<void>(resolve => { this.wake = resolve; });
   private readonly onAbort = () => this.fail();
   constructor(readonly owner: OsProfile, readonly setup = false) {
@@ -971,6 +974,29 @@ class OsSession {
       }
     } catch { if (!this.stopping) this.fail(); }
   }
+  private installPrepared(args: unknown[]): Promise<Readonly<RootlessPackageInstallation>> {
+    if (!this.setup || !this.open || this.failed || !this.observed || this.controller.signal.aborted
+      || Date.now() >= this.deadline || args.length || this.active || !this.prepared || this.installationAttempted) {
+      if (this.open) this.fail();
+      return Promise.reject(new TypeError('closed_rootless_install_capability'));
+    }
+    this.installationAttempted = true;
+    const job = (async () => {
+      try {
+        await this.checkpoint();
+        await this.revalidatePrepared();
+        if (!this.prepared || !this.open || this.failed || this.controller.signal.aborted) invalid();
+        this.prepared = undefined;
+        // No installer dispatch exists: network/resource/autostart/owned guest cleanup remain prerequisites.
+        this.fail();
+        return packageInstallationUnknown('installer_unavailable');
+      } catch { this.fail(); return packageInstallationUnknown('identity_unknown'); }
+    })();
+    this.active = job;
+    void job.then(() => { if (this.active === job) this.active = undefined; },
+      () => { if (this.active === job) this.active = undefined; });
+    return job;
+  }
   async run(use: LimaOsSessionUse | LimaRootlessSetupUse): Promise<void> {
     this.binary = await bindSessionBinary(this.owner, this.deadline, this.owner.config.signal);
     await this.checkBinary();
@@ -989,7 +1015,8 @@ class OsSession {
     await this.checkpoint(); if (this.failed) invalid(); this.open = true; this.monitor = this.watch();
     const capability = Object.freeze({ probe: (...args: unknown[]) => this.probe(args),
       inventory: (...args: unknown[]) => this.inventory(args),
-      ...(this.setup ? { preparePackages: (...args: unknown[]) => this.preparePackages(args) } : {}) });
+      ...(this.setup ? { preparePackages: (...args: unknown[]) => this.preparePackages(args),
+        installPrepared: (...args: unknown[]) => this.installPrepared(args) } : {}) });
     const callback = Promise.resolve().then(() => {
       if (!this.open || this.failed || Date.now() >= this.deadline) invalid();
       return (use as LimaRootlessSetupUse)(capability as LimaRootlessSetupCapability);
