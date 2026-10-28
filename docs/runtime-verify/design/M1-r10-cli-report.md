@@ -81,6 +81,13 @@ M1-139의 `sanitiseScanReport`는 기존 sanitizer 본문이며 구 parseScanRep
 M1-140/142는 공개 reader/sanitizer/projection/writer에서 ID의 runtime. 접두만으로 runtime을 추정하지 않는다.
 mode/top.runtime/check.runtime/runtime evidence basis 같은 실제 구조가 혼합된 경우는 계속 거부한다.
 legacy ID namespace를 임의 예약하지 않고 writer→parseReport/readReport 왕복과 기존 Scan ID를 보존한다.
+M1-146은 descriptor 탐색 중 legacy의 nested Proxy/accessor/class를 runtime 증거로 추정하거나 새로 거부하지 않는다.
+own data의 mode=runtime/runtime payload/ledger basis가 명확할 때만 strict parser로 보내며 hook은 실행하지 않는다.
+전체 report가 Proxy면 trap 없이 분류할 수 없어 공통 API는 거부한다. 이는 benign forwarding Proxy까지 받던
+baseline legacy 경로와의 잔여 차이다. 명시 Scan sanitizer는 유지하며 일반 Proxy 호환 정책은 별도 공유 결정이 필요하다.
+SARIF executionSuccessful은 finding 등급/게이트와 분리한 동일 완료 조건을 사용한다. finding만 있고 완료면 true,
+관측·검사·cleanup 미완료면 finding 때문에 exit1이어도 false다. Markdown은 Findings by grade 순으로 등급을 구분한다.
+agent/summary anchor는 JSON-safe snapshot을 직접 검증한다. root parser의 uniqueItems용 ordinary copy는 유지한다.
 새 경계의 1 MiB/20,000노드/깊이40과 기존 legacy entry의 범위는 별개다. 원문 가능성이 있는 자유 prose는 생략한다.
 상태/null·표면/커버리지 집계·기록된 grade/게이트/cleanup의 내부 정합성을 검사하며 assertion의 진위를 인증하지 않는다.
 finding별 surface/control 연결과 실제 ref bytes·lease/run 체인은 후속 vault/Verdict 읽기가 필요하다. receipt는 후속이다.
