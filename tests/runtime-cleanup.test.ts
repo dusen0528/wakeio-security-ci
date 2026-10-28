@@ -31,6 +31,14 @@ async function scope(run: (base: string) => Promise<void>): Promise<void> {
   const base = await mkdtemp(join(await realpath('/tmp'), 'wk-ctl-'));
   try { await run(base); } finally { await rm(base, { recursive: true, force: true }); }
 }
+async function waitForOwnedEvent(ready: () => boolean, operation: Promise<unknown>, signal?: AbortSignal) {
+  let settled = false;
+  void operation.then(() => { settled = true; }, () => { settled = true; });
+  while (!ready()) {
+    if (settled || signal?.aborted) throw new Error('owned_expected_event_missing');
+    await delay(5, undefined, { signal });
+  }
+}
 async function mockTool(base: string, mode = ''): Promise<LimaProfileOptions> {
   const executable = join(base, 'mock-limactl');
   await writeFile(executable, `#!/usr/bin/env node
@@ -1554,7 +1562,8 @@ test('setup cancellation drains one active download; concurrent and late calls s
     let reason = '', retained!: LimaRootlessSetupCapability;
     const result = await recorder.run({ ...await osMockTool(base), signal: controller.signal }, async cap => {
       retained = cap; await cap.probe(); const pending = cap.preparePackages();
-      while (!recorder.events.some(e => e.args.at(-1) === ROOTLESS_PACKAGE_PREPARE_RECEIPT)) await delay(5);
+      await waitForOwnedEvent(() => recorder.events.some(e => e.args.at(-1) === ROOTLESS_PACKAGE_PREPARE_RECEIPT),
+        pending, controller.signal);
       const before = recorder.events.length; await assert.rejects(cap.preparePackages());
       assert.equal(recorder.events.length, before); controller.abort(); reason = (await pending).reason;
     });
@@ -2056,9 +2065,8 @@ test('supervised preparation seals private state; forged data, duplicate calls a
         assert.equal(answer.phase, 'download_prepared');
         if (mode === 'overlap') {
           const pending = cap.probe();
-          while (recorder.events.filter(e => e.args.at(-1) === ROOTLESS_PACKAGE_SNAPSHOT).length < 2) {
-            await delay(5);
-          }
+          await waitForOwnedEvent(() =>
+            recorder.events.filter(e => e.args.at(-1) === ROOTLESS_PACKAGE_SNAPSHOT).length >= 2, pending);
           await assert.rejects(cap.inventory()); await assert.rejects(pending);
         } else if (mode === 'duplicate') await assert.rejects(cap.preparePackages());
         else if (mode === 'forged') await assert.rejects((cap.probe as (...a: unknown[]) => Promise<unknown>)(copied));
@@ -2202,9 +2210,9 @@ test('inactive installer requires a private same-session seal and never dispatch
         const pending = cap.installPrepared();
         if (mode === 'duplicate') await assert.rejects(cap.installPrepared());
         if (mode === 'abort') {
-          while (recorder.events.filter(e => e.args.at(-1) === ROOTLESS_PACKAGE_SNAPSHOT).length < 2) {
-            await delay(5);
-          }
+          await waitForOwnedEvent(() =>
+            recorder.events.filter(e => e.args.at(-1) === ROOTLESS_PACKAGE_SNAPSHOT).length >= 2,
+          pending, abort.signal);
           abort.abort();
         }
         const answer = await pending;
@@ -2300,5 +2308,51 @@ test('inactive APT v3 gate rejects changed config, baseline, architecture, actio
     assert.equal(result.completed, true); assert.equal(result.stderr, '');
     assert.equal(result.stdout,
       'owned APT v3 gate validates exact config/actions/baseline; no APT/dpkg/install/network execution\n');
+  });
+});
+
+test('owned event waits reject settled operations and abort without accepting a missing event', async () => {
+  await waitForOwnedEvent(() => true, Promise.resolve());
+  for (const start of [() => Promise.resolve(), () => Promise.reject(new Error('owned operation failed'))]) {
+    await assert.rejects(waitForOwnedEvent(() => false, start()), /owned_expected_event_missing/);
+  }
+  const controller = new AbortController(); let release!: () => void;
+  const operation = new Promise<void>(resolve => { release = resolve; });
+  queueMicrotask(() => controller.abort());
+  try { await assert.rejects(waitForOwnedEvent(() => false, operation, controller.signal)); }
+  finally { release(); }
+});
+
+test('owned CI liveness reproduction: abort before snapshot leaves no orphaned callback wait', async () => {
+  const marker = 'owned-runtime-ci-liveness-child';
+  const child = await readFile(join(process.env.HOME!, marker), 'utf8').catch(() => '');
+  if (child === marker) {
+    await scope(async base => {
+      const controller = new AbortController(), recorder = setupRecorder();
+      const result = await recorder.run({ ...await osMockTool(base), signal: controller.signal }, async cap => {
+        await cap.probe();
+        assert.equal((await cap.preparePackages()).phase, 'download_prepared');
+        controller.abort();
+        const pending = cap.probe();
+        void pending.catch(() => undefined);
+        console.log('owned missing-snapshot callback entered after actual session abort');
+        await assert.rejects(waitForOwnedEvent(() =>
+          recorder.events.filter(e => e.args.at(-1) === ROOTLESS_PACKAGE_SNAPSHOT).length >= 2,
+        pending, controller.signal), /owned_expected_event_missing/);
+        await assert.rejects(pending);
+      });
+      assert.equal(result.phase, 'failed'); assert.equal(result.cleanup?.confirmed, true);
+    });
+    return;
+  }
+  await scope(async base => {
+    await writeFile(join(base, marker), marker);
+    const result = await runRuntimeProcess(process.execPath, ['--test', '--test-concurrency=2',
+      '--test-name-pattern=^owned CI liveness reproduction:', '--test-reporter=spec', fileURLToPath(import.meta.url)], {
+      cwd: base, home: base, timeoutMs: 5000, deadlineAt: Date.now() + 10000, maxOutputBytes: 16384 });
+    assert.equal(result.cleanupConfirmed, true);
+    assert.ok(result.stdout.includes('owned missing-snapshot callback entered after actual session abort'));
+    assert.equal(result.completed, true, JSON.stringify({ timedOut: result.timedOut, exitCode: result.exitCode,
+      closeConfirmed: result.closeConfirmed, finalSummary: result.stdout.includes('ℹ tests ') }));
   });
 });
