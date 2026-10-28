@@ -63,8 +63,8 @@
   "patch": {
     "path": "workers/pg-parser/native/lexer-diagnostics.patch",
     "status": "hash_sealed",
-    "sha256": "5a3f8f36f68cc301c248d2859ab38797550d79bcfa5d34b1124571f155730831",
-    "bytes": 14878,
+    "sha256": "e24e503523c6eb4111d29495c0c97f850a8c3fd26325cd5af55feccf194072de",
+    "bytes": 14752,
     "requiredPrefixes": ["a/core/", "b/core/", "a/wrapper/", "b/wrapper/"],
     "stripComponents": 1
   },
