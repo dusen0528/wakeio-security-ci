@@ -2017,7 +2017,7 @@ test('supervised preparation seals private state; forged data, duplicate calls a
       const recorder = setupRecorder({ snapshot: mode }); let retained!: LimaRootlessSetupCapability;
       const result = await recorder.run(await osMockTool(base), async cap => {
         retained = cap; await cap.probe();
-        assert.deepEqual(Object.keys(cap).sort(), ['inventory', 'preparePackages', 'probe']);
+        assert.deepEqual(Object.keys(cap).sort(), ['installPrepared', 'inventory', 'preparePackages', 'probe']);
         const copied = JSON.parse(JSON.stringify(parseRootlessPackagePreparation(packageWire())));
         await assert.rejects((cap.preparePackages as (...a: unknown[]) => Promise<unknown>)(copied));
         assert.equal(recorder.events.some(e => e.args.at(-1) === ROOTLESS_PACKAGE_SNAPSHOT), false);
@@ -2093,9 +2093,10 @@ def setup():
     fs.put('/owned/manifest.json', ns['encoded'](dict(packages=records,
         indexManifestSha256=digest(b'[]'),installedStatusSha256=digest(b'fixed synthetic status'))))
     fs.put('/owned/boot.sha256', b'c'*64); fs.put('/owned/deb-bindings.json', ns['encoded'](bindings))
+    for name in ['apt.conf','sources.list','docker.asc']: fs.put('/owned/'+name, b'fixed synthetic config')
     return fs, ns
 for mode in ['normal','bytes','inode','manifest-inode','owner','mode','link','symlink',
-    'boot','status','extra','fd-swap']:
+    'boot','status','extra','fd-swap','apt-config']:
     fs, ns = setup(); before = ns['prepared_snapshot'](); target = fs.files['/owned/archives/p0_1.0_arm64.deb']
     if mode == 'bytes': target['body'] = b'xxxx'
     if mode == 'inode': target['ino'] += 1
@@ -2106,6 +2107,7 @@ for mode in ['normal','bytes','inode','manifest-inode','owner','mode','link','sy
     if mode == 'symlink': target['mode'] = stat.S_IFLNK|0o600
     if mode == 'boot': ns['boot_digest'] = lambda:'e'*64
     if mode == 'status': fs.files['/var/lib/dpkg/status']['body'] = b'changed synthetic status'
+    if mode == 'apt-config': fs.files['/owned/apt.conf']['body'] = b'changed synthetic config'
     if mode == 'extra': fs.put('/owned/archives/extra.deb', b'xx')
     fs.mode = mode; failed = False
     try: after = ns['prepared_snapshot']()
@@ -2123,5 +2125,127 @@ test('prepared snapshot reopens stable owned FDs and rejects byte, name, permiss
     assert.equal(result.completed, true); assert.equal(result.stderr, '');
     assert.equal(result.stdout,
       'owned snapshot: named FD/bytes/boot/status tamper closes; no guest/package/network operations\n');
+  });
+});
+
+test('inactive installer requires a private same-session seal and never dispatches an installer',
+  async () => {
+  for (const mode of ['missing', 'forged', 'normal', 'drift', 'duplicate', 'abort']) {
+    await scope(async base => {
+      const abort = new AbortController(); let retained!: LimaRootlessSetupCapability;
+      const recorder = setupRecorder({ snapshot: mode === 'abort' ? 'overlap' : mode });
+      const result = await recorder.run({ ...await osMockTool(base), signal: abort.signal }, async cap => {
+        retained = cap; await cap.probe();
+        if (mode === 'missing' || mode === 'forged') {
+          const args = mode === 'forged' ? [JSON.parse(packageWire())] : [];
+          const before = recorder.events.length;
+          await assert.rejects((cap.installPrepared as (...a: unknown[]) => Promise<unknown>)(...args));
+          assert.equal(recorder.events.some(e => e.args.at(-1) === ROOTLESS_PACKAGE_SNAPSHOT), false);
+          assert.equal(recorder.events.slice(before).some(e => e.args[1] === 'shell'), false);
+          return;
+        }
+        assert.equal((await cap.preparePackages()).phase, 'download_prepared');
+        const before = recorder.events.length;
+        const pending = cap.installPrepared();
+        if (mode === 'duplicate') await assert.rejects(cap.installPrepared());
+        if (mode === 'abort') {
+          while (recorder.events.filter(e => e.args.at(-1) === ROOTLESS_PACKAGE_SNAPSHOT).length < 2) {
+            await delay(5);
+          }
+          abort.abort();
+        }
+        const answer = await pending;
+        assert.ok(recorder.events.slice(before).filter(e => e.args[1] === 'shell')
+          .every(e => e.args.at(-1) === ROOTLESS_PACKAGE_SNAPSHOT));
+        assert.equal(answer.phase, 'unknown'); assert.equal(answer.backendVerified, false);
+        assert.equal(answer.sourceExecutionAuthorized, false); assert.equal(answer.daemonObserved, false);
+        assert.equal(answer.reason, mode === 'normal' ? 'installer_unavailable' : 'identity_unknown');
+        await assert.rejects(cap.installPrepared());
+      });
+      assert.equal(result.phase, 'failed'); assert.equal(result.cleanup?.confirmed, true);
+      const before = recorder.events.length; await assert.rejects(retained.installPrepared());
+      assert.equal(recorder.events.length, before);
+      // Every guest command is an existing fixed probe/inventory/prepare/snapshot; no installer command exists.
+      assert.equal(recorder.events.some(e => e.args.at(-1)?.includes('apt-get --no-download')), false);
+    });
+  }
+});
+
+const INSTALL_HOOK_FIXTURE = String.raw`
+import ast, sys, re, hashlib, urllib.parse, copy
+from types import SimpleNamespace
+module = ast.parse(sys.stdin.read())
+names = {'require','hook_config','hook_plan','validate_install_hook'}
+ns = dict(re=re, hashlib=hashlib, urllib=urllib, BASE='/owned')
+exec(compile(ast.Module(body=[n for n in module.body if isinstance(n, ast.FunctionDef) and n.name in names],
+    type_ignores=[]), 'owned hook gate', 'exec'), ns)
+def compare(new, old):
+    versions = ['1.0','2.0']; assert new in versions and old in versions
+    return versions.index(new) - versions.index(old)
+sys.modules['apt_pkg'] = SimpleNamespace(version_compare=compare)
+plan = {'pkg'+str(i):dict(old=('-','-','none'),new=('1.0','arm64','none'),direction='<',
+    deb='/owned/archives/pkg'+str(i)+'_1.0_arm64.deb') for i in range(4)}
+configuration = [('APT::Get::Download','false'),('APT::Get::Remove','false'),
+    ('APT::Get::AllowUnauthenticated','false'),('Acquire::AllowInsecureRepositories','false'),
+    ('Acquire::AllowDowngradeToInsecureRepositories','false'),('Acquire::AllowWeakRepositories','false'),
+    ('Acquire::Check-Valid-Until','true'),('Acquire::https::Verify-Peer','true'),
+    ('Acquire::https::Verify-Host','true'),('Acquire::https::AllowRedirect','false'),
+    ('DPkg::ConfigurePending','false'),('DPkg::TriggersPending','false'),('DPkg::NoTriggers','false'),
+    ('DPkg::Tools::Options::/owned/install-hook::Version','3'),
+    ('DPkg::Tools::Options::/owned/install-hook::InfoFD','0'),('APT::Example','safe=value%')]
+def wire(p=plan, config=configuration):
+    header = ['VERSION 3'] + [k+'='+v.replace('%','%25') for k,v in config] + ['']
+    rows = []
+    for name, entry in p.items():
+        prefix = ' '.join((name,*entry['old'],entry['direction'],*entry['new'])) + ' '
+        rows += [prefix+entry['deb'], prefix+'**CONFIGURE**']
+    return ('\n'.join(header+rows)+'\n').encode('ascii')
+raw = wire(); validate = ns['validate_install_hook']
+assert validate(raw, plan, configuration) == hashlib.sha256(raw).hexdigest()
+invalid = [raw.replace(b'VERSION 3',b'VERSION 2'),raw.replace(b'VERSION 3',b'VERSION 4'),
+    raw+b'\n',raw[:-1],raw.replace(b'\n\n',b'\n'),raw.replace(b'%25',b'%zz'),raw.replace(b'%25',b'%0a'),
+    raw.replace(b'**CONFIGURE**',b'**REMOVE**',1),raw.replace(b'**CONFIGURE**',b'**ERROR**',1),
+    raw.replace(b'pkg0 ',b'extra ',1),raw.replace(b' < ',b' > ',1),raw.replace(b'arm64',b'amd64',1),
+    raw.replace(b'none',b'unsupported',1),raw.replace(b'1.0',b'2.0',1),raw.replace(b'pkg0 ',b'pkg0  ',1),
+    raw.replace(b'/owned/archives/pkg0_',b'/other/pkg0_',1),raw+b'private withheld bytes',b'x'*16385,
+    raw.replace(b'VERSION 3',b'VERSION 3\x00'),raw.replace(b'VERSION 3',b'VERSION 3\xff')]
+lines = raw.splitlines(keepends=True)
+invalid += [b''.join(lines[:-1]),raw+lines[-1],raw.replace(b'\n\n',b'\nunknown=value\n\n')]
+for payload in invalid:
+    failed = False
+    try: validate(payload, plan, configuration)
+    except BaseException: failed = True
+    assert failed
+for key, value in configuration[:-1]:
+    wrong = 'false' if value == 'true' else 'true'
+    edited = [(k,wrong if k == key else v) for k,v in configuration]
+    failed = False
+    try: validate(wire(config=edited), plan, edited)
+    except BaseException: failed = True
+    assert failed
+for direction, old, new, ok in [('<','1.0','2.0',True),('=','1.0','1.0',True),('<','2.0','1.0',False)]:
+    edited = copy.deepcopy(plan)
+    edited['pkg0'].update(old=(old,'arm64','none'),new=(new,'arm64','none'),direction=direction)
+    failed = False
+    try: validate(wire(p=edited), edited, configuration)
+    except BaseException: failed = True
+    assert failed != ok
+for edit in ['../escape.deb','/other/pkg.deb']:
+    edited = copy.deepcopy(plan); edited['pkg0']['deb'] = edit; failed = False
+    try: validate(wire(p=edited), edited, configuration)
+    except BaseException: failed = True
+    assert failed
+print('owned APT v3 gate validates exact config/actions/baseline; no APT/dpkg/install/network execution')
+`;
+test('inactive APT v3 gate rejects changed config, baseline, architecture, actions and deb sets',
+  async () => {
+  await scope(async base => {
+    const prefix = '/usr/bin/python3 -I -c ';
+    const python = ROOTLESS_PACKAGE_PREPARE.slice(prefix.length + 1, -1).replaceAll("'\"'\"'", "'");
+    const result = await runRuntimeProcess('/usr/bin/python3', ['-I', '-c', INSTALL_HOOK_FIXTURE], {
+      input: python, cwd: base, home: base, timeoutMs: 5000, deadlineAt: Date.now() + 10000, maxOutputBytes: 16384 });
+    assert.equal(result.completed, true); assert.equal(result.stderr, '');
+    assert.equal(result.stdout,
+      'owned APT v3 gate validates exact config/actions/baseline; no APT/dpkg/install/network execution\n');
   });
 });

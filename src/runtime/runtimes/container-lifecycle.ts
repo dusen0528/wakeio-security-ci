@@ -44,6 +44,15 @@ export function packagePreparationUnknown(reason: RootlessPackagePreparation['re
     manifestSha256: null, indexManifestSha256: null, installedStatusSha256: null,
     packages: Object.freeze([]) }) as RootlessPackagePreparation;
 }
+export interface RootlessPackageInstallation {
+  kind: 'rootless-package-installation'; phase: 'unknown'; reason: 'installer_unavailable' | 'identity_unknown';
+  backendVerified: false; sourceExecutionAuthorized: false; daemonObserved: false;
+}
+/** Inactive until the owned network/resource/autostart/installer cleanup barriers are implemented. */
+export function packageInstallationUnknown(reason: RootlessPackageInstallation['reason']) {
+  return Object.freeze({ kind: 'rootless-package-installation', phase: 'unknown', reason,
+    backendVerified: false, sourceExecutionAuthorized: false, daemonObserved: false }) as RootlessPackageInstallation;
+}
 function invalid(): never { throw new TypeError('invalid_package_preparation'); }
 function exact(value: Record<string, unknown>, keys: string[]): void {
   if (!value || typeof value !== 'object' || Array.isArray(value)
@@ -361,6 +370,8 @@ def prepared_snapshot():
     stage = 'state-recheck'
     directories = [owned_directory(BASE + suffix) for suffix in ['', '/archives', '/archives/partial']]
     captured = []
+    for name, limit in [('apt.conf',16384), ('sources.list',8192), ('docker.asc',3817)]:
+        read_file(BASE + '/' + name, limit, bindings=captured)
     manifest_body = read_file(BASE + '/manifest.json', 16384, bindings=captured)
     manifest = json.loads(manifest_body)
     index_body = read_file(BASE + '/indexes.json', 16384, bindings=captured)
@@ -385,6 +396,79 @@ def prepared_snapshot():
     state = hashlib.sha256(encoded([directories, captured, current])).hexdigest()
     fields = [hashlib.sha256(manifest_body).hexdigest(), index_sha, status_sha, boot, state]
     return ('wakeio-rootless-packages-snapshot/v1:' + ':'.join(fields)).encode('ascii')
+
+def hook_config(lines):
+    result = []
+    for line in lines:
+        key, separator, value = line.partition('=')
+        require(separator == '=' and key)
+        fields = []
+        for field in [key, value]:
+            require(re.fullmatch(r'(?:[^%]|%[0-9a-f]{2})*', field) is not None)
+            decoded = urllib.parse.unquote_to_bytes(field).decode('ascii')
+            require(len(decoded) <= 4096 and re.fullmatch(r'[\x20-\x7e]*', decoded) is not None)
+            fields.append(decoded)
+        require(re.fullmatch(r'[A-Za-z0-9:/_.+-]{1,256}', fields[0]) is not None)
+        result.append(tuple(fields))
+    return result
+
+def hook_plan(plan):
+    require(isinstance(plan, dict) and 4 <= len(plan) <= 48)
+    for name, expected in plan.items():
+        require(re.fullmatch(r'[a-z0-9][a-z0-9+.-]{0,63}', name) is not None)
+        require(set(expected) == {'old', 'new', 'direction', 'deb'})
+        for version, arch, multi in [expected['old'], expected['new']]:
+            require(multi in ['none', 'no', 'same', 'foreign', 'allowed'])
+            require((version == '-' and arch == '-' and multi in ['none','no']) or
+                (re.fullmatch(r'[0-9][A-Za-z0-9.+:~_-]{0,127}', version) is not None
+                    and arch in ['arm64','all']))
+        require(expected['new'][0] != '-' and expected['direction'] in ['<','='])
+        if expected['direction'] == '=': require(expected['old'] == expected['new'])
+        if expected['old'][0] != '-':
+            from apt_pkg import version_compare
+            delta = version_compare(expected['new'][0], expected['old'][0])
+            require((expected['direction'] == '<' and delta > 0)
+                or (expected['direction'] == '=' and delta == 0))
+        require(isinstance(expected['deb'], str) and expected['deb'].startswith(BASE + '/archives/'))
+        tail = expected['deb'][len(BASE + '/archives/'):]
+        require(re.fullmatch(r'[A-Za-z0-9+~_.:-]+\.deb', tail) is not None and '..' not in tail)
+
+def validate_install_hook(payload, plan, configuration):
+    # Data validation only. No current action dispatches an installer or grants authority from this result.
+    # The future plan must be private, built by standard APT/version_compare from the sealed clean baseline.
+    hook_plan(plan)
+    required = {'apt::get::download':'false', 'apt::get::remove':'false',
+        'apt::get::allowunauthenticated':'false', 'acquire::allowinsecurerepositories':'false',
+        'acquire::allowdowngradetoinsecurerepositories':'false', 'acquire::allowweakrepositories':'false',
+        'acquire::check-valid-until':'true', 'acquire::https::verify-peer':'true',
+        'acquire::https::verify-host':'true', 'acquire::https::allowredirect':'false',
+        'dpkg::configurepending':'false', 'dpkg::triggerspending':'false', 'dpkg::notriggers':'false',
+        ('dpkg::tools::options::'+BASE+'/install-hook::version'):'3',
+        ('dpkg::tools::options::'+BASE+'/install-hook::infofd'):'0'}
+    for key, expected in required.items():
+        require([value for name, value in configuration if name.lower() == key] == [expected])
+    require(isinstance(payload, bytes) and 0 < len(payload) <= 16384)
+    text = payload.decode('ascii')
+    require(re.fullmatch(r'[\x20-\x7e\n]+', text) is not None and text.endswith('\n'))
+    lines = text[:-1].split('\n')
+    require(lines[0] == 'VERSION 3')
+    end = lines.index('', 1)
+    require(hook_config(lines[1:end]) == configuration)
+    seen = set()
+    for line in lines[end+1:]:
+        fields = line.split(' ')
+        require(len(fields) == 9 and all(fields))
+        name, direction, action = fields[0], fields[4], fields[8]
+        require(name in plan)
+        expected = plan[name]
+        require(tuple(fields[1:4]) == expected['old'] and tuple(fields[5:8]) == expected['new'])
+        require(direction == expected['direction'] and direction in ['<','='])
+        kind = 'configure' if action == '**CONFIGURE**' else 'unpack'
+        require(kind == 'configure' or action == expected['deb'])
+        require((name, kind) not in seen)
+        seen.add((name, kind))
+    require(seen == {(name, kind) for name in plan for kind in ['unpack','configure']})
+    return hashlib.sha256(payload).hexdigest()
 
 def prepare():
     global stage
