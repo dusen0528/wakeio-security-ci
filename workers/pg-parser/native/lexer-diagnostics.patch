@@ -1,0 +1,398 @@
+diff --git a/core/pg_query.h b/core/pg_query.h
+--- a/core/pg_query.h
++++ b/core/pg_query.h
+@@ -115,6 +115,31 @@
+ #ifdef __cplusplus
+ extern "C" {
+ #endif
++
++/* Custom diagnostic ABI: no source text, strings, pointers or token/AST data. */
++typedef struct {
++  uint32_t abiRevision;
++  uint32_t encoding;
++  uint32_t standardConformingStrings;
++  uint32_t backslashQuote;
++} WakeioPg18Settings;
++
++typedef struct {
++  uint32_t abiRevision;
++  uint32_t status; /* 0 ok, 1 EOF, 2 syntax, 3 unsupported, 4 invalid. */
++  uint32_t code; /* 0 none; EOF 1..10 in the locked ABI order. */
++  uint32_t presenceBits; /* 1 construct, 2 error byte + PG char, 4 end. */
++  uint32_t constructStartByte;
++  uint32_t errorByte;
++  uint32_t endByte;
++  uint32_t pgCharPosition1Based;
++  uint32_t encoding;
++  uint32_t standardConformingStrings;
++  uint32_t backslashQuote;
++} WakeioPg18Diagnostic;
++
++WakeioPg18Diagnostic *wakeio_pg18_lexer_diagnose(const char *sql, uint32_t length,
++                                              const WakeioPg18Settings *settings);
+ 
+ PgQueryNormalizeResult pg_query_normalize(const char* input);
+ PgQueryNormalizeResult pg_query_normalize_utility(const char* input);
+diff --git a/core/src/pg_query_scan.c b/core/src/pg_query_scan.c
+--- a/core/src/pg_query_scan.c
++++ b/core/src/pg_query_scan.c
+@@ -172,3 +172,121 @@
+   free(result.pbuf.data);
+   free(result.stderr_buffer);
+ }
++
++/* Deliberately separate from pg_query_scan: no partial tokens or error strings. */
++#include "mb/pg_wchar.h"
++#include "parser/parser.h"
++
++_Static_assert(sizeof(WakeioPg18Settings) == 16, "settings ABI");
++_Static_assert(sizeof(WakeioPg18Diagnostic) == 44, "diagnostic ABI");
++
++typedef struct {
++  WakeioPg18Diagnostic *result;
++  WakeioPg18LexerState diagnostic;
++  core_yy_extra_type extra;
++  core_yyscan_t scanner;
++  MemoryContext context;
++  char *input;
++  uint32_t length;
++} WakeioPg18Job;
++
++static void wakeio_pg18_scan(WakeioPg18Job *job)
++{
++  core_YYSTYPE value;
++  YYLTYPE location;
++  job->context = pg_query_enter_memory_context();
++  if (GetDatabaseEncoding() != PG_UTF8) return;
++  job->scanner = scanner_init(job->input, &job->extra, &ScanKeywords, ScanKeywordTokens);
++  job->extra.wakeio_diagnostic = &job->diagnostic;
++  /* Apply the sole supported tuple to this instance, never to global GUCs. */
++  job->extra.standard_conforming_strings = true;
++  job->extra.backslash_quote = BACKSLASH_QUOTE_SAFE_ENCODING;
++  job->extra.escape_string_warning = false;
++  if (!job->extra.standard_conforming_strings ||
++      job->extra.backslash_quote != BACKSLASH_QUOTE_SAFE_ENCODING) return;
++  job->result->encoding = 1;
++  job->result->standardConformingStrings = 1;
++  job->result->backslashQuote = 1;
++  job->result->presenceBits = 4;
++  job->result->endByte = job->length;
++  while (core_yylex(&value, &location, job->scanner) != 0) {}
++  scanner_finish(job->scanner);
++  job->result->status = 0;
++}
++
++static void wakeio_pg18_capture(WakeioPg18Job *job)
++{
++  WakeioPg18Diagnostic *r = job->result;
++  ErrorData *error;
++  int cursor, sqlstate;
++  uint32_t offset = 0, character = 1;
++  MemoryContextSwitchTo(job->context ? job->context : TopMemoryContext);
++  error = CopyErrorData();
++  cursor = error->cursorpos; /* Original PG 1-based chars; zero remains absent. */
++  sqlstate = error->sqlerrcode;
++  FreeErrorData(error); /* No message, context, filename or stack reaches the POD. */
++  FlushErrorState();
++  r->status = sqlstate == ERRCODE_SYNTAX_ERROR ? 2 : 3;
++  if (cursor > 0) {
++    while (offset < job->length && character < (uint32_t) cursor) {
++      offset += pg_encoding_mblen(PG_UTF8, job->input + offset);
++      character++;
++    }
++    if (character != (uint32_t) cursor) { r->status = 3; return; }
++    r->errorByte = offset;
++    r->pgCharPosition1Based = (uint32_t) cursor;
++    r->presenceBits |= 2;
++  }
++  if (r->status != 2 || job->diagnostic.code == 0) return;
++  if (job->diagnostic.code > 10 || !(r->presenceBits & 2) ||
++      job->diagnostic.errorByte < 0 || (uint32_t) job->diagnostic.errorByte != offset ||
++      job->diagnostic.constructStartByte < 0 ||
++      (uint32_t) job->diagnostic.constructStartByte > offset ||
++      !pg_verify_mbstr(PG_UTF8, job->input, job->diagnostic.constructStartByte, true)) {
++    r->status = 3;
++    return;
++  }
++  r->constructStartByte = (uint32_t) job->diagnostic.constructStartByte;
++  r->presenceBits |= 1;
++  r->code = job->diagnostic.code;
++  r->status = 1;
++}
++
++WakeioPg18Diagnostic *wakeio_pg18_lexer_diagnose(const char *sql, uint32_t length,
++                                              const WakeioPg18Settings *settings)
++{
++  WakeioPg18Diagnostic *result = calloc(1, sizeof(*result));
++  WakeioPg18Job *job;
++  if (!result) return NULL; /* Caller closes allocation failure as unknown/error. */
++  result->abiRevision = 1;
++  result->status = 4;
++  if (!sql || length > 32768 || memchr(sql, 0, length) ||
++      !pg_verify_mbstr(PG_UTF8, sql, length, true)) return result;
++  result->status = 3;
++  if (!settings || settings->abiRevision != 1 || settings->encoding != 1 ||
++      settings->standardConformingStrings != 1 || settings->backslashQuote != 1) return result;
++  job = calloc(1, sizeof(*job));
++  if (!job) return result;
++  job->input = malloc((size_t) length + 1);
++  if (!job->input) { free(job); return result; }
++  memcpy(job->input, sql, length);
++  job->input[length] = 0;
++  job->length = length;
++  job->result = result;
++  job->diagnostic.constructStartByte = -1;
++  job->diagnostic.errorByte = -1;
++  /* The pointer itself is never reassigned after setjmp; mutable state is heap-owned. */
++  PG_TRY();
++  {
++    wakeio_pg18_scan(job);
++  }
++  PG_CATCH();
++  {
++    wakeio_pg18_capture(job);
++  }
++  PG_END_TRY();
++  if (job->context) pg_query_exit_memory_context(job->context);
++  free(job->input);
++  free(job);
++  return result;
++}
+diff --git a/core/src/postgres/include/parser/scanner.h b/core/src/postgres/include/parser/scanner.h
+--- a/core/src/postgres/include/parser/scanner.h
++++ b/core/src/postgres/include/parser/scanner.h
+@@ -63,6 +63,28 @@
+  * yy_extra struct may be larger and have this as its first component, thus
+  * allowing the calling parser to keep some fields of its own in YY_EXTRA.
+  */
++/* Private job storage is allocated before PG_TRY, outside PG memory contexts. */
++enum WakeioPg18EofCode {
++  WAKEIO_EOF_NONE = 0,
++  WAKEIO_EOF_COMMENT = 1,
++  WAKEIO_EOF_BIT = 2,
++  WAKEIO_EOF_HEX = 3,
++  WAKEIO_EOF_STANDARD = 4,
++  WAKEIO_EOF_ESCAPE = 5,
++  WAKEIO_EOF_UNICODE = 6,
++  WAKEIO_EOF_DOLLAR = 7,
++  WAKEIO_EOF_IDENTIFIER = 8,
++  WAKEIO_EOF_UNICODE_IDENTIFIER = 9,
++  WAKEIO_EOF_SURROGATE = 10
++};
++
++typedef struct WakeioPg18LexerState
++{
++  uint32 code;
++  int constructStartByte;
++  int errorByte;
++} WakeioPg18LexerState;
++
+ typedef struct core_yy_extra_type
+ {
+ 	/*
+@@ -114,6 +136,7 @@
+ 	bool		warn_on_first_escape;
+ 	bool		saw_non_ascii;
+ 
++	WakeioPg18LexerState *wakeio_diagnostic; /* NULL for existing callers. */
+ 	int yyllocend;
+ } core_yy_extra_type;
+ 
+diff --git a/core/src/postgres/src_backend_parser_scan.c b/core/src/postgres/src_backend_parser_scan.c
+--- a/core/src/postgres/src_backend_parser_scan.c
++++ b/core/src/postgres/src_backend_parser_scan.c
+@@ -8139,7 +8139,17 @@
+ #define PUSH_YYLLOC()	(yyextra->save_yylloc = *(yylloc))
+ #define POP_YYLLOC()	(*(yylloc) = yyextra->save_yylloc)
+ 
+-#define startlit()	( yyextra->literallen = 0 )
++#define WAKEIO_CONSTRUCT() do { \
++  if (yyextra->wakeio_diagnostic) \
++    yyextra->wakeio_diagnostic->constructStartByte = *yylloc; \
++} while (0)
++#define WAKEIO_EOF(code_) do { \
++  if (yyextra->wakeio_diagnostic) { \
++    yyextra->wakeio_diagnostic->code = (code_); \
++    yyextra->wakeio_diagnostic->errorByte = *yylloc; \
++  } \
++} while (0)
++#define startlit() do { yyextra->literallen = 0; WAKEIO_CONSTRUCT(); } while (0)
+ static void addlit(char *ytext, int yleng, core_yyscan_t yyscanner);
+ static void addlitchar(unsigned char ychar, core_yyscan_t yyscanner);
+ static char *litbufdup(core_yyscan_t yyscanner);
+@@ -8675,6 +8685,7 @@
+ {
+ 					/* Set location in case of syntax error in comment */
+ 					SET_YYLLOC();
++					WAKEIO_CONSTRUCT();
+ 					yyextra->xcdepth = 0;
+ 					BEGIN(xc);
+ 					/* Put back any characters past slash-star; see above */
+@@ -8730,6 +8741,7 @@
+ case YY_STATE_EOF(xc):
+ #line 490 "scan.l"
+ {
++					WAKEIO_EOF(WAKEIO_EOF_COMMENT);
+ 					yyerror("unterminated /* comment");
+ 				}
+ 	YY_BREAK
+@@ -8763,7 +8775,7 @@
+ 	YY_BREAK
+ case YY_STATE_EOF(xb):
+ #line 511 "scan.l"
+-{ yyerror("unterminated bit string literal"); }
++{ WAKEIO_EOF(WAKEIO_EOF_BIT); yyerror("unterminated bit string literal"); }
+ 	YY_BREAK
+ case 12:
+ YY_RULE_SETUP
+@@ -8783,7 +8795,7 @@
+ 	YY_BREAK
+ case YY_STATE_EOF(xh):
+ #line 525 "scan.l"
+-{ yyerror("unterminated hexadecimal string literal"); }
++{ WAKEIO_EOF(WAKEIO_EOF_HEX); yyerror("unterminated hexadecimal string literal"); }
+ 	YY_BREAK
+ case 13:
+ YY_RULE_SETUP
+@@ -9024,6 +9036,7 @@
+ {
+ 					/* Set the error cursor to point at missing esc seq */
+ 					SET_YYLLOC();
++					if (yy_act == YY_STATE_EOF(xeu)) WAKEIO_EOF(WAKEIO_EOF_SURROGATE);
+ 					yyerror("invalid Unicode surrogate pair");
+ 				}
+ 	YY_BREAK
+@@ -9097,7 +9110,9 @@
+ case YY_STATE_EOF(xe):
+ case YY_STATE_EOF(xus):
+ #line 755 "scan.l"
+-{ yyerror("unterminated quoted string"); }
++{ WAKEIO_EOF(YYSTATE == xq ? WAKEIO_EOF_STANDARD :
++               YYSTATE == xe ? WAKEIO_EOF_ESCAPE : WAKEIO_EOF_UNICODE);
++  yyerror("unterminated quoted string"); }
+ 	YY_BREAK
+ case 33:
+ YY_RULE_SETUP
+@@ -9170,7 +9185,7 @@
+ 	YY_BREAK
+ case YY_STATE_EOF(xdolq):
+ #line 801 "scan.l"
+-{ yyerror("unterminated dollar-quoted string"); }
++{ WAKEIO_EOF(WAKEIO_EOF_DOLLAR); yyerror("unterminated dollar-quoted string"); }
+ 	YY_BREAK
+ case 39:
+ YY_RULE_SETUP
+@@ -9238,7 +9253,8 @@
+ case YY_STATE_EOF(xd):
+ case YY_STATE_EOF(xui):
+ #line 841 "scan.l"
+-{ yyerror("unterminated quoted identifier"); }
++{ WAKEIO_EOF(YYSTATE == xd ? WAKEIO_EOF_IDENTIFIER : WAKEIO_EOF_UNICODE_IDENTIFIER);
++  yyerror("unterminated quoted identifier"); }
+ 	YY_BREAK
+ case 45:
+ YY_RULE_SETUP
+@@ -10657,6 +10673,7 @@
+ 
+ 	core_yyset_extra(yyext, scanner);
+ 
++	yyext->wakeio_diagnostic = NULL;
+ 	yyext->keywordlist = keywordlist;
+ 	yyext->keyword_tokens = keyword_tokens;
+ 
+diff --git a/wrapper/scripts/copy-templates.js b/wrapper/scripts/copy-templates.js
+--- a/wrapper/scripts/copy-templates.js
++++ b/wrapper/scripts/copy-templates.js
+@@ -111,9 +111,14 @@
+     let makefileContent = makefileTemplate.replace(/{{VERSION_TAG}}/g, config.tag);
+     makefileContent = makefileContent.replace(/{{LIBPG_QUERY_REPO}}/g, config.repo);
+     makefileContent = makefileContent.replace(/{{LIBPG_QUERY_COMMIT}}/g, config.commit);
++    makefileContent = makefileContent.replace(/{{WAKEIO_PG18_DIAGNOSTICS}}/g, version === '18'
++      ? 'WASM_OUT_NAME := wakeio-pg18-diagnostics\nWASM_MODULE_NAME := WakeioPg18Diagnostics' +
++        '\nCXXFLAGS += -DWAKEIO_PG18_DIAGNOSTICS=1' : '');
+     makefileContent = makefileContent.replace(
+       /{{EXPORTED_FUNCTIONS}}/g,
+-      config.fullApi ? FULL_EXPORTED_FUNCTIONS : SLIM_EXPORTED_FUNCTIONS
++      version === '18' ? FULL_EXPORTED_FUNCTIONS.replace(']',
++        ",'_wakeio_pg18_diagnose_v1','_wakeio_pg18_diagnose_v1_free']") :
++        config.fullApi ? FULL_EXPORTED_FUNCTIONS : SLIM_EXPORTED_FUNCTIONS
+     );
+     
+     // Handle the USE_EMSCRIPTEN_PATCH placeholder
+diff --git a/wrapper/templates/Makefile.template b/wrapper/templates/Makefile.template
+--- a/wrapper/templates/Makefile.template
++++ b/wrapper/templates/Makefile.template
+@@ -41,6 +41,7 @@
+ LIBPG_QUERY_ARCHIVE := $(LIBPG_QUERY_DIR)/libpg_query.a
+ LIBPG_QUERY_HEADER := $(LIBPG_QUERY_DIR)/pg_query.h
+ CXXFLAGS := -O3 -flto
++{{WAKEIO_PG18_DIAGNOSTICS}}
+ 
+ ifdef EMSCRIPTEN
+ OUT_FILES := $(foreach EXT,.js .wasm,$(WASM_OUT_DIR)/$(WASM_OUT_NAME)$(EXT))
+diff --git a/wrapper/templates/full/wasm_wrapper.c b/wrapper/templates/full/wasm_wrapper.c
+--- a/wrapper/templates/full/wasm_wrapper.c
++++ b/wrapper/templates/full/wasm_wrapper.c
+@@ -400,3 +400,18 @@
+ void wasm_free_string(char* str) {
+     free(str);
+ }
++
++#ifdef WAKEIO_PG18_DIAGNOSTICS
++/* Custom numeric ABI only; this does not change the existing wasm_* API. */
++_Static_assert(sizeof(void *) == 4, "custom ABI requires WASM32");
++EMSCRIPTEN_KEEPALIVE
++WakeioPg18Diagnostic *wakeio_pg18_diagnose_v1(const char *sql, uint32_t length,
++                                          const WakeioPg18Settings *settings) {
++    return wakeio_pg18_lexer_diagnose(sql, length, settings);
++}
++
++EMSCRIPTEN_KEEPALIVE
++void wakeio_pg18_diagnose_v1_free(WakeioPg18Diagnostic *result) {
++    free(result);
++}
++#endif
+diff --git a/wrapper/versions/18/Makefile b/wrapper/versions/18/Makefile
+--- a/wrapper/versions/18/Makefile
++++ b/wrapper/versions/18/Makefile
+@@ -46,6 +46,9 @@
+ LIBPG_QUERY_ARCHIVE := $(LIBPG_QUERY_DIR)/libpg_query.a
+ LIBPG_QUERY_HEADER := $(LIBPG_QUERY_DIR)/pg_query.h
+ CXXFLAGS := -O3 -flto
++WASM_OUT_NAME := wakeio-pg18-diagnostics
++WASM_MODULE_NAME := WakeioPg18Diagnostics
++CXXFLAGS += -DWAKEIO_PG18_DIAGNOSTICS=1
+ 
+ ifdef EMSCRIPTEN
+ OUT_FILES := $(foreach EXT,.js .wasm,$(WASM_OUT_DIR)/$(WASM_OUT_NAME)$(EXT))
+@@ -76,7 +79,7 @@
+ 		-I$(LIBPG_QUERY_DIR) \
+ 		-I$(LIBPG_QUERY_DIR)/vendor \
+ 		-L$(LIBPG_QUERY_DIR) \
+-		-sEXPORTED_FUNCTIONS="['_malloc','_free','_wasm_parse_query','_wasm_parse_plpgsql','_wasm_fingerprint','_wasm_normalize_query','_wasm_scan','_wasm_parse_query_detailed','_wasm_free_detailed_result','_wasm_free_string','_wasm_parse_query_raw','_wasm_free_parse_result']" \
++		-sEXPORTED_FUNCTIONS="['_malloc','_free','_wasm_parse_query','_wasm_parse_plpgsql','_wasm_fingerprint','_wasm_normalize_query','_wasm_scan','_wasm_parse_query_detailed','_wasm_free_detailed_result','_wasm_free_string','_wasm_parse_query_raw','_wasm_free_parse_result','_wakeio_pg18_diagnose_v1','_wakeio_pg18_diagnose_v1_free']" \
+ 		-sEXPORTED_RUNTIME_METHODS="['lengthBytesUTF8','stringToUTF8','getValue','UTF8ToString','HEAPU8','HEAPU32']" \
+ 		-sEXPORT_NAME="$(WASM_MODULE_NAME)" \
+ 		-sENVIRONMENT="web,node,worker" \
+diff --git a/wrapper/versions/18/src/wasm_wrapper.c b/wrapper/versions/18/src/wasm_wrapper.c
+--- a/wrapper/versions/18/src/wasm_wrapper.c
++++ b/wrapper/versions/18/src/wasm_wrapper.c
+@@ -407,3 +407,18 @@
+ void wasm_free_string(char* str) {
+     free(str);
+ }
++
++#ifdef WAKEIO_PG18_DIAGNOSTICS
++/* Custom numeric ABI only; this does not change the existing wasm_* API. */
++_Static_assert(sizeof(void *) == 4, "custom ABI requires WASM32");
++EMSCRIPTEN_KEEPALIVE
++WakeioPg18Diagnostic *wakeio_pg18_diagnose_v1(const char *sql, uint32_t length,
++                                          const WakeioPg18Settings *settings) {
++    return wakeio_pg18_lexer_diagnose(sql, length, settings);
++}
++
++EMSCRIPTEN_KEEPALIVE
++void wakeio_pg18_diagnose_v1_free(WakeioPg18Diagnostic *result) {
++    free(result);
++}
++#endif

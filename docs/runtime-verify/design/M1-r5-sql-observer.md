@@ -239,3 +239,35 @@ AttackAttempt와 별도 delivery에 실제 sent·취소/손실·공유 ordinal·
 현재 실제 R3 request/restore/관측/coverage hook 연결은 없다. hook은 RunContext의 lease/runNonce/cursor·abort/deadline을 강제해야 한다.
 후속 R1/R3 계약에는 실제 wire digest와 logical/shared ordinal 배정·barrier 결속을 확정해야 한다. 기존 공유 type은 바꾸지 않았다.
 소유 계약 테스트의 fake port 응답은 실행 증거·Oracle 판정·R8 보안 기대값이 아니다.
+
+## M1-172/173/175 고정 lexer EOF 진단 patch (빌드 전)
+
+기준은 통합 `2d505ead6076b5fce7fdb88f82dca82c7c6cee7f`와 M1-171 `sources.lock.json`이다.
+R9의 두 archive를 nofollow·안정 FD/이름·소유권·크기·SHA로 재대조한 뒤 exact root 하나만 제거했다.
+중복/절대/상위 경로·링크·특수 member와 크기 초과를 거부한 private core/·wrapper/ 조립본에만 적용을 검사했다.
+`lexer-diagnostics.patch`는 고정 generated scanner/header·scan 연결부와 wrapper/template/export만 대상으로 한다.
+PG 원형 scan.l을 이 archive에 존재하는 파일로 가장하지 않으며 기존 pg_query_*·PgQueryError·scanner prototype은 유지한다.
+내부 scanner extra에 instance별 진단 연결을 추가하므로 core 전체를 같은 patch로 다시 빌드해야 한다.
+진입 때 construct 시작을 보존하고 실제 EOF action에서만 닫힌 code1~10과 오류 byte를 기록한다.
+xq/xe/xus·xd/xui는 실제 lexer 상태로 구분하고 xqs의 정상 EOF는 바꾸지 않는다.
+xeu의 공유 action은 실제 yy_act가 EOF일 때만 code10을 기록하며 일반 문자/개행 오류는 code0이다.
+별도 `wakeio_pg18_diagnose_v1/free`는 revision1·설정16B·numeric 결과44B와 WASM32 compile assertion을 가진다.
+job·POD·입력 복사본은 PG_TRY 전에 할당하고 setjmp 이후에는 변경되지 않는 job pointer의 heap 상태만 읽는다.
+PG_CATCH는 살아 있는 context에서 ErrorData의 원래 cursorpos/sqlerrcode 숫자만 가져와 FreeErrorData/FlushErrorState한다.
+유효한 원본 UTF8을 순회해 원래 1-based 문자 위치를 byte로 변환하고 lexer 오류 byte와 대조한다.
+시작/오류/end의 범위·UTF8 경계와 presenceBits를 검사하며 위치0/없음을 첫 문자로 채우지 않는다.
+EOF의 end는 입력 byteLength다. SQL 32KiB 초과·NUL·잘못된 UTF8·설정 ABI/tuple 불일치는 닫힌 상태다.
+UTF8을 확인한 뒤 instance에 standard_conforming_strings=true·backslash_quote=safe_encoding을 실제 적용한다.
+escape_string_warning은 이 진단 scanner에서만 끄며 전역 lexical GUC를 수정하지 않는다.
+status0은 lexical scan 완료일 뿐 parse·DB 관측·보안 판정 성공이 아니다. syntax/unsupported는 code0이다.
+EOF 진단은 모든10종을 구분하지만 최초 quote 인과 검토는 R1의 xq 및 실제 control/DB/template 결속 조건뿐이다.
+lexical 실패에는 AST/부분 token이 없고 후속 별도 control_template_bytes protocol이 필요하다. 이번에 연결하지 않는다.
+POD에는 SQL·message·filename·stack·포인터·token/AST가 없고 원문과 개별 tokenHashes를 저장/보고하지 않는다.
+정상·PG ERROR 경로는 context와 job을 정리한다. FATAL/abort/WASM trap/오류 복사 중 할당 실패는 결과를 신뢰하지 않는다.
+후속 supervisor는 해당 instance를 폐기해야 하며 worker의 재초기화·상태 재사용으로 성공을 가장하지 않는다.
+wrapper full template와 PG18 생성 C·Makefile 및 template export 생성 조건을 함께 반영한다.
+PG18에만 custom define과 `wakeio-pg18-diagnostics.js/.wasm`·`WakeioPg18Diagnostics`를 선택한다.
+이 upstream Emscripten JS를 최종 canonical `.cjs`로 패키징하는 작업은 후속 R10 책임이다.
+현재 제품 TS·protocol·Oracle·공식 npm CJS/WASM·manifest와 일반 npm build는 변경하지 않는다.
+패치 적용/정적 대조는 compile·실제 EOF 출력·재현 build·성능·1초/256MiB·published WASM 대응의 증거가 아니다.
+R3/R10/R8/R9 후속 승인·독립 검증 전에는 source lock의 ready/executable=false와 unknown 경계를 유지한다.
