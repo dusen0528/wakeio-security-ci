@@ -562,6 +562,25 @@ test('legacy class and nested Proxy/accessor metadata retain Scan sanitation wit
   assert.throws(() => sanitiseCommonReport(forwarding), { message: 'invalid_runtime_report' });
 });
 
+test('accessor-only runtime hints keep legacy sanitation with no additional getter calls from dispatch', async () => {
+  const base: ScanReport = JSON.parse(await readFile('tests/fixtures/compat-0.5/findings/reports/report.json', 'utf8'));
+  const input = () => {
+    const raw = clone(base), calls = { mode: 0, runtime: 0 };
+    Object.defineProperties(raw, {
+      mode: { enumerable: true, get() { calls.mode++; return 'runtime'; } },
+      runtime: { enumerable: true, get() { calls.runtime++; return { revision: 'verify-m1-v1' }; } },
+    });
+    return { raw, calls };
+  };
+  const common = input(), legacy = input();
+  assert.notEqual(common.raw, legacy.raw);
+  const actual = sanitiseCommonReport(common.raw), expected = sanitiseReport(legacy.raw);
+  assert.deepEqual(actual, expected);
+  assert.equal(actual.mode, 'source'); assert.equal(Object.hasOwn(actual, 'runtime'), false);
+  assert.deepEqual(common.calls, { mode: 1, runtime: 0 });
+  assert.deepEqual(common.calls, legacy.calls);
+});
+
 test('explicit runtime signals keep class, nested Proxy and accessor inputs strict without invoking hooks', () => {
   let calls = 0;
   const trap = () => { calls++; throw Error('must_not_run'); };
