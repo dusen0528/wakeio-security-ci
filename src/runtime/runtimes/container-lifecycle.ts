@@ -24,10 +24,15 @@ const INDEX_FAILURE_DETAILS = ['index-list-io', 'index-name', 'index-kind-transl
   'index-type', 'index-owner', 'index-links', 'index-mode', 'index-size', 'index-read', 'index-consistency',
   'index-count', 'index-repo-presence'] as const;
 type IndexFailureDetail = typeof INDEX_FAILURE_DETAILS[number];
+const SELECTION_FAILURE_DETAILS = ['selection-candidate-lookup', 'selection-pinned-version',
+  'selection-mark-install', 'selection-broken', 'selection-change-set', 'selection-name', 'selection-version',
+  'selection-arch-size', 'selection-origin', 'selection-uri', 'selection-sha', 'selection-pin',
+  'selection-required-set', 'selection-total'] as const;
+type SelectionFailureDetail = typeof SELECTION_FAILURE_DETAILS[number];
 export interface RootlessPackagePreparation {
   kind: 'rootless-package-preparation'; phase: 'download_prepared' | 'unknown';
   reason: 'none' | 'prepare_unavailable' | 'invalid_metadata' | 'identity_unknown' | 'operation_failed';
-  failureStage?: PreparationStage; failureDetail?: IndexFailureDetail;
+  failureStage?: PreparationStage; failureDetail?: IndexFailureDetail | SelectionFailureDetail;
   backendVerified: false; sourceExecutionAuthorized: false; daemonObserved: false;
   manifestSha256: string | null; indexManifestSha256: string | null; installedStatusSha256: string | null;
   packages: readonly Readonly<PreparedPackage>[];
@@ -86,8 +91,9 @@ export function parseRootlessPackageFailure(raw: string): Readonly<RootlessPacka
       if (raw === prefix + '\n') {
         return Object.freeze({ ...packagePreparationUnknown('operation_failed'), failureStage: stage });
       }
-      if (stage !== 'index-snapshot' && stage !== 'state-recheck') continue;
-      for (const detail of INDEX_FAILURE_DETAILS) {
+      const details = stage === 'selection' ? SELECTION_FAILURE_DETAILS
+        : stage === 'index-snapshot' || stage === 'state-recheck' ? INDEX_FAILURE_DETAILS : [];
+      for (const detail of details) {
         if (raw === prefix + ':' + detail + '\n') return Object.freeze({
           ...packagePreparationUnknown('operation_failed'), failureStage: stage, failureDetail: detail });
       }
@@ -229,39 +235,62 @@ def indexes():
     failure_detail = ''
     return records
 
+def selection_step(code):
+    global failure_detail
+    failure_detail = code
+
+def selected_record(package):
+    selection_step('selection-candidate-lookup')
+    v = package.candidate; require(v is not None)
+    selection_step('selection-arch-size')
+    arch, size = v.architecture, v.size
+    require(arch in ['arm64', 'all'] and 0 < size <= 128 * 1024 * 1024)
+    selection_step('selection-name')
+    name = package.name; require(re.fullmatch(r'[a-z0-9][a-z0-9+.-]{0,63}', name) is not None)
+    selection_step('selection-version')
+    version = v.version; require(re.fullmatch(r'[0-9][A-Za-z0-9.+:~_-]{0,127}', version) is not None)
+    selection_step('selection-origin')
+    origins = v.origins; require(all(o.trusted for o in origins) and len(origins) > 0)
+    selection_step('selection-uri')
+    uri, uris = v.uri, v.uris
+    require(all(u.startswith(('https://download.docker.com/linux/ubuntu/',
+        'https://ports.ubuntu.com/ubuntu-ports/')) for u in uris))
+    docker = uri.startswith('https://download.docker.com/linux/ubuntu/dists/noble/pool/stable/arm64/')
+    ubuntu = uri.startswith('https://ports.ubuntu.com/ubuntu-ports/pool/')
+    require((docker or ubuntu) and re.fullmatch(r'https://[A-Za-z0-9./+~_:%-]+', uri) is not None)
+    require('..' not in uri and '%' not in uri and '?' not in uri and '#' not in uri)
+    selection_step('selection-sha')
+    # Noble Record inherits Mapping.get; the expected digest still comes from the signed record.
+    sha = v.record.get('SHA256', ''); require(re.fullmatch(r'[a-f0-9]{64}', sha) is not None)
+    record = dict(name=name, version=version, arch=arch, size=size, sha256=sha,
+        origin='docker' if docker else 'ubuntu')
+    selection_step('selection-pin')
+    pin = next((p for p in PINS if p[0] == name), None)
+    require((not pin and ubuntu) or (pin and docker and (version,size,sha) == tuple(pin[1:])))
+    return record, v
+
 def selected(cache):
+    global failure_detail
     for name, version, size, sha in PINS:
+        selection_step('selection-candidate-lookup')
         package = cache[name]
+        selection_step('selection-pinned-version')
         versions = [v for v in package.versions if v.version == version and v.architecture == 'arm64']
         require(len(versions) == 1); package.candidate = versions[0]
     for name in [p[0] for p in PINS] + ['uidmap', 'slirp4netns', 'dbus-user-session', 'iptables', 'nftables']:
+        selection_step('selection-mark-install')
         cache[name].mark_install(auto_fix=True, auto_inst=True, from_user=True)
+    selection_step('selection-broken')
     require(cache.broken_count == 0)
+    selection_step('selection-change-set')
     changes = cache.get_changes()
     require(4 <= len(changes) <= 48 and not any(p.marked_delete or p.marked_downgrade for p in changes))
-    records = []
-    for package in changes:
-        v = package.candidate
-        require(v and v.architecture in ['arm64', 'all'] and 0 < v.size <= 128 * 1024 * 1024)
-        require(re.fullmatch(r'[a-z0-9][a-z0-9+.-]{0,63}', package.name) is not None)
-        require(re.fullmatch(r'[0-9][A-Za-z0-9.+:~_-]{0,127}', v.version) is not None)
-        require(all(o.trusted for o in v.origins) and len(v.origins) > 0)
-        uri = v.uri
-        require(all(u.startswith(('https://download.docker.com/linux/ubuntu/',
-            'https://ports.ubuntu.com/ubuntu-ports/')) for u in v.uris))
-        docker = uri.startswith('https://download.docker.com/linux/ubuntu/dists/noble/pool/stable/arm64/')
-        ubuntu = uri.startswith('https://ports.ubuntu.com/ubuntu-ports/pool/')
-        require((docker or ubuntu) and re.fullmatch(r'https://[A-Za-z0-9./+~_:%-]+', uri) is not None)
-        require('..' not in uri and '%' not in uri and '?' not in uri and '#' not in uri)
-        sha = v.record.get('SHA256', '')
-        require(re.fullmatch(r'[a-f0-9]{64}', sha) is not None)
-        record = dict(name=package.name, version=v.version, arch=v.architecture, size=v.size,
-            sha256=sha, origin='docker' if docker else 'ubuntu')
-        pin = next((p for p in PINS if p[0] == package.name), None)
-        require((not pin and ubuntu) or (pin and docker and (v.version,v.size,sha) == tuple(pin[1:])))
-        records.append((record, v))
+    records = [selected_record(package) for package in changes]
+    selection_step('selection-required-set')
     require(all(any(r['name'] == pin[0] for r,v in records) for pin in PINS))
+    selection_step('selection-total')
     require(sum(r['size'] for r,v in records) <= 512 * 1024 * 1024)
+    failure_detail = ''
     return sorted(records, key=lambda pair: pair[0]['name'])
 
 def prepare():
