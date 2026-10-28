@@ -389,6 +389,8 @@ reportArtifact는 `{name:report.json,algorithm:sha256,digest:<확정된 report.j
 이 Mac/Lima profile의 toolchain 고정 후보는 upstream 선언 그대로 `emscripten/emsdk:6.0.3`의 **linux/arm64/v8 child digest**다. index·child manifest bytes와 config/layer descriptor를 보존하되 descriptor를 content 검증이나 guest compiler 실행 증거로 바꾸지 않는다. config/layer content·실행 환경·서명·재현성·published npm WASM 대응은 미검증이다. 다른 아키텍처로 자동 fallback하지 않는다.
 M1-176은 승인된 `workers/pg-parser/native/lexer-diagnostics.patch`의 committed bytes(`e0e093e6fcfb14809bf0203ce10f94325b09c1c5`)만 **14,878B·SHA256 `5a3f8f36f68cc301c248d2859ab38797550d79bcfa5d34b1124571f155730831`·status:hash_sealed**로 봉인한다. 전체 상태는 pending_build_and_execution_checks이며 lock은 계속 **`ready:false/executable:false/authority:none`**이다. hash 봉인은 설치·pull·compile·실행 권한이나 준비 완료가 아니며 현재 배포 manifest/host pin/protocol/types는 바꾸지 않는다.
 R5 보고의 최초 context 손상으로 인한 적용 실패2회와 수정본의 정/역방향 적용·정적 대조 성공을 구별한다. 이 봉인 시점까지 compile·실제 native 진단 실행은0이며 source/OCI 후보와 모든 기존 verification 미검증 값은 그대로다. 이후 새 구현 없이 R9 독립 검증·CPx15로 넘긴다.
+M1-184는 CPx15 N1의 중복 상수 검사를 제거한 R5 commit `e489739ff4e729101ecb6f975b34187ffcd8ad24`의 Git blob을 **14,752B·SHA256 `e24e503523c6eb4111d29495c0c97f850a8c3fd26325cd5af55feccf194072de`**로 재봉인한다. lock의 나머지 필드·실행 미준비 상태는 그대로다. 이 계약 커밋 시점의 working patch는 이전 bytes이므로 root가 R3/R5를 병합하기 전 중간 상태를 일치/성공으로 검증하지 않는다.
+CPx15 N3의 실제 copy-templates 실행·보존한 PG18 Makefile과의 byte 동일성 및 custom 출력/두 export 대조는 후속 승인된 제한 build 단계다. 이번 봉인은 그 실행·compile·실제 진단을 대신하지 않으며 통합 후 R9/CPx16 검증으로 이어간다.
 후속 native build는 config/layer content와 실제 실행 환경, CPU2·4GiB·PID256·network-none·개별10분/2회 합계20분·로그 각16KiB·산출물 합계32MiB의 강제 수단을 검증하기 전에는 실행하지 않는다. runtime job의1초/256MiB/network-none와 별개다. 일반 npm build의 고정 로컬 자산 검증/복사 원칙도 유지한다.
 
 ### M1-83 / CPx7 승인 PostgreSQL parser 자산 명부
