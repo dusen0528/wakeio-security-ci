@@ -88,6 +88,10 @@ toMarkdown/writeReports는 Scan 전용이며 runtime 분류를 선행하지 않�
 명시 sanitiseCommonReport/toCommonAgentReport/toCommonReportSummary/toCommonSarif/toCommonMarkdown/
 writeCommonReports는 기존 runtime helpers를 재사용하고 전체 Proxy를 trap 0으로 거부한다. parseReport/readReport와
 raw runtime API의 strict 경계도 유지한다. 임의 JS 객체 호환과 trap 0 분류를 한 API에서 모두 보장한다고 주장하지 않는다.
+M1-163은 accessor 뒤에만 runtime 신호가 있고 다른 own-data 신호가 없으면 common이 Scan으로 분류함을 고정한다.
+descriptor-only 분류는 getter를 추가 호출하지 않는다. 이후 기존 sanitizer가 mode getter를 1회 읽고 runtime getter는 읽지 않는다.
+CPx13 N3의 "legacy sanitizer getter 0회" 설명은 실제 본문과 달라 M1-161에서 정정했다. common 전체가 무조건 strict
+snapshot을 거치는 API는 아니다. 명시 own-data runtime 신호는 strict 검증하며 전체 Proxy는 trap 0으로 거부한다.
 후속 verify pipeline은 명시 common API를 사용한다. 같은 A 공통 모델·4파일이며 별도 보고서 envelope는 추가하지 않는다.
 672 baseline 보고서 소스와 현재 compiled dependency를 쓴 대조에서 56개 기존 함수 본문과 whole Proxy/class/nested Proxy의
 6개 공개 함수 출력·hook 수가 같다. 이는 옛 checkout 전체 재빌드나 실행 진위·KPI 검증이 아니다.
