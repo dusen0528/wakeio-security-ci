@@ -1,6 +1,6 @@
 {
   "revision": "wakeio.pg-parser-native-sources/v1",
-  "status": "pending_patch_and_execution_checks",
+  "status": "pending_build_and_execution_checks",
   "ready": false,
   "executable": false,
   "authority": "none",
@@ -62,8 +62,9 @@
   },
   "patch": {
     "path": "workers/pg-parser/native/lexer-diagnostics.patch",
-    "status": "pending",
-    "sha256": null,
+    "status": "hash_sealed",
+    "sha256": "5a3f8f36f68cc301c248d2859ab38797550d79bcfa5d34b1124571f155730831",
+    "bytes": 14878,
     "requiredPrefixes": ["a/core/", "b/core/", "a/wrapper/", "b/wrapper/"],
     "stripComponents": 1
   },
