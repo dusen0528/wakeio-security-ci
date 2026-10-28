@@ -364,15 +364,36 @@ function types(runtime: RuntimeReport, scan: ScanReport): Report {
 }
 void types;
 
-test('legacy reader and Scan sanitizer retain historical IDs separately from the strict common boundary', async () => {
-  const legacy = JSON.parse(await readFile('tests/fixtures/compat-0.5/pass/reports/report.json', 'utf8'));
-  legacy.checks = [{ id: 'runtime.legacy-extension', status: 'completed', findings: [], notes: [] }];
-  delete legacy.scope;
-  const old = parseScanReport(legacy);
-  assert.equal(old.checks[0].id, 'runtime.legacy-extension');
-  assert.deepEqual(sanitiseScanReport(legacy), old);
-  assert.equal(evaluateGate(old).exitCode, 0);
-  assert.throws(() => parseReport(legacy)); assert.throws(() => sanitiseReport(legacy));
+test('legacy source/API readers, projections and writer preserve ID-only namespaces', async () => {
+  const base = JSON.parse(await readFile('tests/fixtures/compat-0.5/pass/reports/report.json', 'utf8'));
+  const top = await mkdtemp(join(tmpdir(), 'wakeio-legacy-report-id-'));
+  try {
+    for (const mode of ['source', 'api'] as const) {
+      const legacy: ScanReport = { ...base, mode, checks: [
+        { id: 'runtime.legacy-extension', status: 'partial', findings: [], notes: [] },
+      ] };
+      delete legacy.scope;
+      const old = parseScanReport(legacy), id = legacy.checks[0].id;
+      assert.equal(old.checks[0].id, id);
+      assert.deepEqual(sanitiseScanReport(legacy), old); assert.deepEqual(sanitiseReport(legacy), old);
+      const agent = toAgentReport(legacy), navigation = toReportSummary(legacy);
+      assert.equal(agent.mode, mode); assert.equal(agent.checks[0].checkId, id);
+      assert.deepEqual(agent.scanGate, evaluateGate(old)); assert.deepEqual(agent.summary, navigation);
+      assert.equal(navigation.incompleteChecks[0].checkId, id);
+      // Historical Markdown escapes punctuation; its displayed check ID is unchanged.
+      assert.ok(toMarkdown(legacy).replaceAll('\\', '').includes(id));
+      assert.ok(JSON.stringify(toSarif(legacy)).includes(id));
+      assert.deepEqual(parseReport(legacy), old);
+      const out = join(top, mode); await writeReports(legacy, out);
+      const stored = JSON.parse(await readFile(join(out, 'report.json'), 'utf8'));
+      const storedAgent = JSON.parse(await readFile(join(out, 'agent-report.json'), 'utf8'));
+      assert.equal(stored.checks[0].id, id); assert.equal(storedAgent.checks[0].checkId, id);
+      assert.equal((await readScanReport(join(out, 'report.json'))).checks[0].id, id);
+      assert.deepEqual(await readReport(join(out, 'report.json')), await readScanReport(join(out, 'report.json')));
+      assert.equal(await readFile(join(out, 'report.md'), 'utf8'), toMarkdown(legacy));
+      assert.deepEqual(JSON.parse(await readFile(join(out, 'report.sarif'), 'utf8')), toSarif(legacy));
+    }
+  } finally { await rm(top, { recursive: true, force: true }); }
 });
 
 test('common runtime projections retain grades, refs and verification limits with matching raw SHA', async () => {

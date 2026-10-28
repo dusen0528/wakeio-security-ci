@@ -261,9 +261,8 @@ export function runtimeReportInput(raw: unknown): boolean {
   if (raw && typeof raw === 'object' && ![Object.prototype, null].includes(Object.getPrototypeOf(raw))) invalid();
   if (own(raw, 'mode') === 'runtime' || raw && typeof raw === 'object' && Object.hasOwn(raw, 'runtime')) return true;
   return rows(own(raw, 'checks')).some(row => {
-    const id = own(row, 'id');
+    if (types.isProxy(row)) invalid();
     return !!row && typeof row === 'object' && Object.hasOwn(row, 'runtime')
-      || typeof id === 'string' && id.startsWith('runtime.')
       || rows(own(row, 'findings')).some(item => own(own(item, 'evidence'), 'basis') === 'runtime-observation-ledger');
   });
 }

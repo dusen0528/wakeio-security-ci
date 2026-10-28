@@ -149,7 +149,7 @@ export async function readScanReport(path: string): Promise<ScanReport> {
 
 function runtimeShapedCheck(check: unknown): boolean {
   return record(check)
-    && (Object.hasOwn(check, 'runtime') || typeof check.id === 'string' && check.id.startsWith('runtime.')
+    && (Object.hasOwn(check, 'runtime')
       || Array.isArray(check.findings) && check.findings.some((finding: unknown) => record(finding)
         && record(finding.evidence) && finding.evidence.basis === 'runtime-observation-ledger'));
 }

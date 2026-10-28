@@ -247382,8 +247382,9 @@ function runtimeReportInput(raw) {
   if (own2(raw, "mode") === "runtime" || raw && typeof raw === "object" && Object.hasOwn(raw, "runtime"))
     return true;
   return rows(own2(raw, "checks")).some((row) => {
-    const id = own2(row, "id");
-    return !!row && typeof row === "object" && Object.hasOwn(row, "runtime") || typeof id === "string" && id.startsWith("runtime.") || rows(own2(row, "findings")).some((item) => own2(own2(item, "evidence"), "basis") === "runtime-observation-ledger");
+    if (types7.isProxy(row))
+      invalid2();
+    return !!row && typeof row === "object" && Object.hasOwn(row, "runtime") || rows(own2(row, "findings")).some((item) => own2(own2(item, "evidence"), "basis") === "runtime-observation-ledger");
   });
 }
 function projection(value, name2) {

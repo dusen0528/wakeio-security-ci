@@ -78,6 +78,9 @@ legacy 진입의 불필요 초기화 제거는 격리된 compile 계수로 확�
 M1-136은 기존 함수의 scan overload와 본문을 유지하고 runtime의 strict projection/writer dispatch를 추가한다.
 M1-139의 `sanitiseScanReport`는 기존 sanitizer 본문이며 구 parseScanReport/readScanReport가 alias로 사용한다.
 새 공통 함수의 runtime 혼합 거부와 달리 구 reader가 수용하던 legacy check ID·정규화 범위를 좁히지 않는다.
+M1-140/142는 공개 reader/sanitizer/projection/writer에서 ID의 runtime. 접두만으로 runtime을 추정하지 않는다.
+mode/top.runtime/check.runtime/runtime evidence basis 같은 실제 구조가 혼합된 경우는 계속 거부한다.
+legacy ID namespace를 임의 예약하지 않고 writer→parseReport/readReport 왕복과 기존 Scan ID를 보존한다.
 새 경계의 1 MiB/20,000노드/깊이40과 기존 legacy entry의 범위는 별개다. 원문 가능성이 있는 자유 prose는 생략한다.
 상태/null·표면/커버리지 집계·기록된 grade/게이트/cleanup의 내부 정합성을 검사하며 assertion의 진위를 인증하지 않는다.
 finding별 surface/control 연결과 실제 ref bytes·lease/run 체인은 후속 vault/Verdict 읽기가 필요하다. receipt는 후속이다.
