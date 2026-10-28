@@ -1772,12 +1772,15 @@ MODE, READING = 'normal', False
 def api(label, value):
     if READING and MODE == 'api-' + label: raise RuntimeError('synthetic withheld API error')
     return value
+class RecordBackend(dict):
+    def get(self, key, default=None): return api('sha', super().get(key, default))
 class Record(Mapping):
-    # Match Noble's Mapping inheritance; no custom get method exists on this fixture either.
-    def __init__(self, digest): self.data = {} if MODE == 'sha' else {'SHA256':digest}
-    def __getitem__(self, key): return api('sha', self.data[key])
-    def __iter__(self): return iter(self.data)
-    def __len__(self): return len(self.data)
+    # Noble defines get explicitly; 2.7.7ubuntu5.3 delegates it to its internal record backend.
+    def __init__(self, digest): self._rec = RecordBackend({} if MODE == 'sha' else {'SHA256':digest})
+    def __getitem__(self, key): return self._rec[key]
+    def __iter__(self): return iter(self._rec)
+    def get(self, key, default=None): return self._rec.get(key, default)
+    def __len__(self): return len(self._rec)
 class Version:
     def __init__(self, name, version, size, digest):
         self.name, self.value, self.bytes, self.digest = name, version, size, digest
@@ -1861,9 +1864,9 @@ MODE, READING = 'normal', False
 records = namespace['selected'](Cache())
 assert len(records) == 5 and namespace['failure_detail'] == ''
 assert [r['name'] for r,v in records] == sorted(r['name'] for r,v in records)
-assert 'get' not in Record.__dict__ and Record('a'*64).get('SHA256', '') == 'a'*64
+assert 'get' in Record.__dict__ and Record('a'*64).get('SHA256', '') == 'a'*64
 assert Record('a'*64).get('missing', '') == ''
-print('owned Noble API selection guards pass; Mapping.get inherited; no APT/filesystem/network operations')
+print('owned Noble API selection guards pass; Record.get delegates; no APT/filesystem/network operations')
 `;
 test('selection uses Noble API shapes and preserves each guard/API failure location without raw errors', async () => {
   await scope(async base => {
@@ -1873,7 +1876,7 @@ test('selection uses Noble API shapes and preserves each guard/API failure locat
       input: python, cwd: base, home: base, timeoutMs: 5000, deadlineAt: Date.now() + 10000, maxOutputBytes: 16384 });
     assert.equal(result.completed, true); assert.equal(result.stderr, '');
     assert.equal(result.stdout,
-      'owned Noble API selection guards pass; Mapping.get inherited; no APT/filesystem/network operations\n');
+      'owned Noble API selection guards pass; Record.get delegates; no APT/filesystem/network operations\n');
   });
 });
 test('selection details accept only their closed stage pairing and cannot grant prepared bytes or authority', () => {
