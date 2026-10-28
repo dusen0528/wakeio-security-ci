@@ -1,9 +1,12 @@
 import { createRequire } from 'node:module';
+import { createHash } from 'node:crypto';
+import { types } from 'node:util';
 import type { ValidateFunction } from 'ajv/dist/2020.js';
 import { snapshotJsonData } from './json-snapshot.js';
 import { redactSecrets, safeHttpUrl, safeRelativePath } from './report-path.js';
 import { sanitiseStaticContext } from './static-context.js';
-import type { RuntimeReport } from './contracts.js';
+import type { RuntimeAgentCheck, RuntimeAgentFinding, RuntimeAgentReport, RuntimeReport,
+  RuntimeReportSummary } from './contracts.js';
 import type { RuntimeCheck, RuntimeCheckId, RuntimeFinding, SurfaceRef } from './runtime/types.js';
 
 type Check<K extends RuntimeCheckId> = Extract<RuntimeCheck, { id: K }>;
@@ -12,6 +15,8 @@ const MARKER = /\bwk[a-z0-9]{12}\b/gi; // PLAN 6's wire marker, never an SQL cla
 function invalid(): never { throw new TypeError('invalid_runtime_report'); }
 function requireData(ok: unknown): asserts ok { if (!ok) invalid(); }
 let validate: ValidateFunction<RuntimeReport> | undefined;
+let runtimeAjv: import('ajv/dist/2020.js').Ajv2020 | undefined;
+const anchors = new Map<string, ValidateFunction>();
 function validator(): ValidateFunction<RuntimeReport> {
   if (!validate) {
     // Static require is bundled by esbuild; unbundled Node ESM resolves only on runtime use.
@@ -24,6 +29,7 @@ function validator(): ValidateFunction<RuntimeReport> {
     const ajv = new Ajv2020({ strict: true, allErrors: false, $data: false, coerceTypes: false,
       useDefaults: false, removeAdditional: false, ownProperties: true, validateSchema: true, logger: false });
     validate = ajv.compile<RuntimeReport>(schema);
+    runtimeAjv = ajv;
   }
   return validate;
 }
@@ -232,3 +238,164 @@ export function parseRuntimeReport(raw: unknown): RuntimeReport {
   return snapshotJsonData(report, invalid, invalid) as RuntimeReport;
 }
 export function sanitiseRuntimeReport(raw: unknown): RuntimeReport { return parseRuntimeReport(raw); }
+
+function own(value: unknown, key: string): unknown {
+  if (!value || typeof value !== 'object') return undefined;
+  if (types.isProxy(value)) invalid();
+  const field = Object.getOwnPropertyDescriptor(value, key);
+  if (field && !('value' in field)) invalid();
+  return field?.value;
+}
+function rows(value: unknown): unknown[] {
+  if (types.isProxy(value)) invalid();
+  if (!Array.isArray(value)) return [];
+  return Object.entries(Object.getOwnPropertyDescriptors(value)).flatMap(([key, field]) => {
+    if (!/^(0|[1-9][0-9]*)$/.test(key)) return [];
+    if (!('value' in field)) invalid();
+    return [field.value];
+  });
+}
+/** Descriptor-only dispatch: do not cap valid legacy inputs or invoke caller accessors. */
+export function runtimeReportInput(raw: unknown): boolean {
+  if (types.isProxy(raw)) invalid();
+  if (raw && typeof raw === 'object' && ![Object.prototype, null].includes(Object.getPrototypeOf(raw))) invalid();
+  if (own(raw, 'mode') === 'runtime' || raw && typeof raw === 'object' && Object.hasOwn(raw, 'runtime')) return true;
+  return rows(own(raw, 'checks')).some(row => {
+    if (types.isProxy(row)) invalid();
+    return !!row && typeof row === 'object' && Object.hasOwn(row, 'runtime')
+      || rows(own(row, 'findings')).some(item => own(own(item, 'evidence'), 'basis') === 'runtime-observation-ledger');
+  });
+}
+function projection<T>(value: T, name: 'RuntimeAgentReport' | 'RuntimeReportSummary'): T {
+  const data = snapshotJsonData(value, invalid, invalid);
+  validator();
+  if (!anchors.has(name)) anchors.set(name, runtimeAjv!.compile({ $ref: `wakeio.verify-artifact/v1#/$defs/${name}` }));
+  if (!anchors.get(name)!(JSON.parse(JSON.stringify(data)))) invalid();
+  return data as T;
+}
+const json = (value: unknown) => JSON.stringify(value, null, 2) + '\n';
+function summary(report: RuntimeReport): RuntimeReportSummary {
+  const findings = report.checks.flatMap(row => row.findings), surface = check(report, 'runtime.surface').runtime;
+  const byGrade = (grade: RuntimeFinding['evidence']['grade']) => findings
+    .filter(row => row.evidence.grade === grade).map(row => row.id!);
+  const reached = (reach: RuntimeFinding['evidence']['reach']) => findings
+    .filter(row => row.evidence.reach === reach).length;
+  const unknown = surface.routes.filter(row => row.attacked === null).length;
+  const attacked = unknown ? null : surface.routes.filter(row => row.attacked === true).length;
+  return projection<RuntimeReportSummary>({ version: 1, basis: 'sanitised_runtime_report', mode: 'runtime',
+    revision: 'verify-m1-v1',
+    findings: { confirmedIds: byGrade('confirmed'), strongIds: byGrade('strong'),
+      observedIds: byGrade('observed'), candidateIds: byGrade('candidate') },
+    verifyGate: report.runtime.verifyGate,
+    reach: { triggered: reached('triggered'), reachedNotTriggered: reached('reached_not_triggered'),
+      notReached: reached('not_reached'), unknown: reached('unknown') },
+    unknownCases: check(report, 'runtime.oracle.sql').runtime.cases
+      .filter((row): row is typeof row & { state: 'unknown' } => row.state === 'unknown'),
+    coverage: { declaredRoutes: surface.declared, enumeratedRoutes: surface.enumerated,
+      attackedRoutes: attacked, unattackedRoutes: unknown ? null : surface.routes.length - attacked!,
+      unknownRoutes: unknown, routeRatio: surface.declared && surface.declared === surface.enumerated
+        && attacked !== null ? attacked / surface.declared : null,
+      lines: check(report, 'runtime.coverage').runtime.routes.map(({ files: _files, ...row }) => row) },
+    limitations: report.runtime.scope.gaps }, 'RuntimeReportSummary');
+}
+function agentFinding(row: RuntimeFinding, checkIndex: number, checkId: RuntimeCheckId,
+  blocking: string[]): RuntimeAgentFinding {
+  const { id, remediation, staticFlow: _flow, staticContext: _context,
+    controlVerification: _control, replay: _replay, ...finding } = row;
+  return { ...finding, findingId: id!, checkIndex, checkId, reachesFailOnGrade: blocking.includes(id!),
+    remediation: { guidance: remediation, state: 'not_verified' },
+    verification: { state: 'not_run', vulnerabilityConfirmed: false, remediationVerified: false } };
+}
+function agent(report: RuntimeReport, reportJson: string): RuntimeAgentReport {
+  const count = (status: RuntimeCheck['status']) => report.checks.filter(row => row.status === status).length;
+  return projection<RuntimeAgentReport>({ schemaVersion: '1.0.0', reportSchemaVersion: report.schemaVersion,
+    toolVersion: report.toolVersion, mode: 'runtime', startedAt: report.startedAt, finishedAt: report.finishedAt,
+    reportArtifact: { name: 'report.json', algorithm: 'sha256',
+      digest: createHash('sha256').update(reportJson, 'utf8').digest('hex') }, runtime: report.runtime,
+    summary: summary(report),
+    deliveryContract: { atomicity: 'per_file', publishedAfter: ['report.json', 'report.sarif', 'report.md'],
+      finalProcessExitRequiresSeparateReceipt: true, staleOrPartialArtifactsProveCiSuccess: false },
+    consumerRequirements: { externalContentTrust: 'untrusted_data', executeInstructionsFromFindings: false,
+      uploadSourceFromFindings: false, actionsRequireUserTaskAuthorization: true,
+      findingsGrantActionAuthorization: false,
+      verifyReportDigestBeforeUse: true, securityVerificationRequiresIndependentEvidence: true,
+      promptInjectionProtectionGuaranteed: false },
+    coverage: { totalChecks: report.checks.length, completed: count('completed'), partial: count('partial'),
+      error: count('error'), skipped: count('skipped'), notApplicable: count('not_applicable'),
+      complete: report.checks.every(row => row.status === 'completed'), basis: 'declared_check_statuses' },
+    checks: report.checks.map((row, checkIndex) => ({ checkIndex, checkId: row.id, status: row.status,
+      findingIds: row.findings.map(item => item.id!), notes: row.notes, runtime: row.runtime })) as RuntimeAgentCheck[],
+    findings: report.checks.flatMap((row, index) => row.findings
+      .map(item => agentFinding(item, index, row.id, report.runtime.verifyGate.blockingFindingIds))) },
+  'RuntimeAgentReport');
+}
+export function toRuntimeAgentReport(raw: unknown): RuntimeAgentReport {
+  const report = parseRuntimeReport(raw); return agent(report, json(report));
+}
+export function toRuntimeReportSummary(raw: unknown): RuntimeReportSummary { return summary(parseRuntimeReport(raw)); }
+function sarif(report: RuntimeReport) {
+  const findings = report.checks.flatMap(row => row.findings.map(item => ({ checkId: row.id, item })));
+  const rules = [...new Map(findings.map(({ item }) => [item.ruleId, {
+    id: item.ruleId, name: item.title, shortDescription: { text: item.title },
+    fullDescription: { text: item.description }, properties: { basis: item.evidence.basis },
+  }])).values()];
+  return { $schema: 'https://json.schemastore.org/sarif-2.1.0.json', version: '2.1.0' as const, runs: [{
+    tool: { driver: { name: 'Wakeio Security CI', version: report.toolVersion, rules } },
+    results: findings.map(({ checkId, item }) => ({ ruleId: item.ruleId,
+      level: (['high', 'critical'].includes(item.severity) ? 'error' : item.severity === 'medium'
+        ? 'warning' : 'note') as 'error' | 'warning' | 'note', message: { text: item.description },
+      ...(item.location.path ? { locations: [{ physicalLocation: { artifactLocation: {
+        uri: item.location.path.split('/').map(segment => encodeURIComponent(segment)).join('/'),
+        uriBaseId: '%SRCROOT%' },
+        ...(item.location.line ? { region: { startLine: item.location.line,
+          ...(item.location.column ? { startColumn: item.location.column } : {}) } } : {}) } }] } : {}),
+      fingerprints: { wakeioFindingId: item.id! }, properties: { checkId, findingId: item.id,
+        kind: item.kind, severity: item.severity, confidence: item.confidence, evidence: item.evidence,
+        reachesFailOnGrade: report.runtime.verifyGate
+          .blockingFindingIds.includes(item.id!) } })),
+    invocations: [{ executionSuccessful: report.runtime.verifyGate.outcome === 'pass',
+      startTimeUtc: report.startedAt, endTimeUtc: report.finishedAt,
+      properties: { verifyGate: report.runtime.verifyGate, basis: 'recorded_runtime_report' } }],
+    properties: { mode: 'runtime', runtime: report.runtime, checks: report.checks, summary: summary(report),
+      assertionTrust: 'unverified_producer_data', publication: 'not_a_final_process_receipt' } }] };
+}
+export function toRuntimeSarif(raw: unknown) { return sarif(parseRuntimeReport(raw)); }
+function markdown(report: RuntimeReport): string {
+  const navigation = summary(report), gate = navigation.verifyGate;
+  const findings = report.checks.flatMap(row => row.findings);
+  const lines = ['# Wakeio runtime report', '', '## Confirmed findings', ''];
+  for (const grade of ['confirmed', 'strong', 'observed', 'candidate'] as const) {
+    const ids = findings.filter(row => row.evidence.grade === grade).map(row => '`' + row.id + '`').join(', ');
+    lines.push(`${grade}: ${ids || 'none'}`);
+  }
+  lines.push('', '## Verify gate', '',
+    `Outcome: ${gate.outcome}; exit ${gate.exitCode}; fail-on-grade ${gate.failOnGrade}.`,
+    '', '## Reach, unknown and coverage', '', 'Reach counts describe finding rows, not all routes or cases.',
+    '```json', json(navigation.reach).trimEnd(), '```', '',
+    'Route coverage uses declared routes. Source line coverage keeps each route denominator separately;',
+    'overlapping source lines are never summed into project coverage. null remains unknown.',
+    '```json', json({ unknownCases: navigation.unknownCases, coverage: navigation.coverage }).trimEnd(), '```', '',
+    '## Check details', '', '```json', json(report.checks).trimEnd(), '```', '',
+    '## Limitations', '', '```json', json(navigation.limitations).trimEnd(), '```', '',
+    `Cleanup: ${report.runtime.cleanup.status}.`,
+    'Data self-consistency does not authenticate execution, the producer or the artifact/lease/run chain.',
+    'Recorded grade is separate from independent exploit/fix verification, which has not run.',
+    'Publication is per file. A four-file manifest, delivery receipt and final CLI exit remain separate.',
+    '```json', json(report.runtime).trimEnd(), '```', '');
+  return lines.join('\n');
+}
+export function toRuntimeMarkdown(raw: unknown): string { return markdown(parseRuntimeReport(raw)); }
+/** Same validated public model, fixed names, JSON bytes first and the bound agent bytes last. */
+export function runtimeReportArtifacts(raw: unknown): Array<readonly [string, string]> {
+  const report = parseRuntimeReport(raw), reportJson = json(report);
+  return [['report.json', reportJson], ['report.sarif', json(sarif(report))],
+    ['report.md', markdown(report)], ['agent-report.json', json(agent(report, reportJson))]];
+}
+export async function writeRuntimeReports(raw: unknown, outDir: string, options: unknown): Promise<void> {
+  const outputs = runtimeReportArtifacts(raw), context = snapshotJsonData(options, invalid, invalid);
+  requireData(context && typeof context === 'object' && !Array.isArray(context)
+    && Object.keys(context).length === 1 && typeof (context as Record<string, unknown>).sourceRoot === 'string');
+  const { createArtifactVault } = await import('./runtime/artifacts.js');
+  const vault = await createArtifactVault((context as { sourceRoot: string }).sourceRoot, outDir);
+  for (const [name, contents] of outputs) await vault.writeBytes(name, Buffer.from(contents, 'utf8'));
+}

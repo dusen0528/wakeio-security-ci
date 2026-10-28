@@ -61,7 +61,7 @@ runtime 분기는 공통 envelope의 `checks`와 `runtime`을 함께 검증·보
 runtime 필드/판별자 불일치·필수 check 누락·중복·손상은 legacy fallback 없이 거부한다. scan 모드의 runtime 혼합도 거부한다.
 runtime을 모르는 예전 바이너리의 지원을 주장하지 않는다. 갱신된 공통 reader는 runtime을 누락한 깨끗한 scan으로 축소하지 않는다.
 runtime 보고서는 갱신된 공통 reader가 필요하며 0.5 소비자는 미지원으로 거부한다. 기존 0.5 scan 입력·출력 호환과 구별한다.
-init-target은 실행 권한 없는 draft 생성으로 연결했다. verify 실행·runtime writer는 후속이며 [USAGE.md](../USAGE.md)를 따른다.
+init-target의 draft 생성과 M1-136의 공통 writer API가 연결됐다. verify 실행 배선은 후속이며 [USAGE.md](../USAGE.md)를 따른다.
 `parseScanReport`와 compare의 소비 경로도 분기하며 runtime 비교는 R1의 계약·정책·digest가 맞을 때만 수행한다.
 runtime gate는 `runtime.verifyGate`가 권위다. 기존 `evaluateGate`/agent.scanGate의 미완료 우선 의미를 verify에 적용하지 않는다.
 별도 versioned envelope를 주포맷으로 삼는 B안은 미채택이다. N5의 B안 사람 승인이나 PLAN 기준 재정의를 기다리지 않는다.
@@ -75,10 +75,20 @@ M1-90은 Ajv 모듈 해석도 첫 runtime 사용으로 늦춘다. Node ESM은 cr
 schema도 이 시점에 배포 루트 schemas에서 읽는다. 필터된 release archive에 없는 build/schemas에 의존하지 않는다.
 기존 packed legacy consumer는 Ajv 없이 import하고, 번들 runtime reader는 포함된 Ajv로 검증하며 외부 패키지를 읽지 않는다.
 legacy 진입의 불필요 초기화 제거는 격리된 compile 계수로 확인하며, 실제 성능/KPI 측정은 R9 후속이다.
-기존 `sanitiseReport`는 scan 전용으로 유지해 미연결 legacy writer/gate가 runtime 분기를 소비하는 확장을 피한다.
+M1-136은 기존 함수의 scan overload와 본문을 유지하고 runtime의 strict projection/writer dispatch를 추가한다.
+M1-139의 `sanitiseScanReport`는 기존 sanitizer 본문이며 구 parseScanReport/readScanReport가 alias로 사용한다.
+새 공통 함수의 runtime 혼합 거부와 달리 구 reader가 수용하던 legacy check ID·정규화 범위를 좁히지 않는다.
+M1-140/142는 공개 reader/sanitizer/projection/writer에서 ID의 runtime. 접두만으로 runtime을 추정하지 않는다.
+mode/top.runtime/check.runtime/runtime evidence basis 같은 실제 구조가 혼합된 경우는 계속 거부한다.
+legacy ID namespace를 임의 예약하지 않고 writer→parseReport/readReport 왕복과 기존 Scan ID를 보존한다.
 새 경계의 1 MiB/20,000노드/깊이40과 기존 legacy entry의 범위는 별개다. 원문 가능성이 있는 자유 prose는 생략한다.
 상태/null·표면/커버리지 집계·기록된 grade/게이트/cleanup의 내부 정합성을 검사하며 assertion의 진위를 인증하지 않는다.
-finding별 surface/control 연결과 실제 ref bytes·lease/run 체인은 후속 vault/Verdict 읽기가 필요하다. 4종 writer/receipt는 미연결이다.
+finding별 surface/control 연결과 실제 ref bytes·lease/run 체인은 후속 vault/Verdict 읽기가 필요하다. receipt는 후속이다.
+agent·summary는 R1의 별도 schema anchor와 기존 own JSON 상한을 적용한다. summary는 navigation이며 게이트를 복사한다.
+runtime `writeReports`는 `{sourceRoot}`를 명시해야 한다. source 밖의 새 디렉터리를 artifact vault로 만들고
+0700/0600·no-replace·per-file atomic 저장을 사용하며 agent를 마지막에 쓴다. 기존 scan overwrite 정책은 그대로다.
+sourceRoot는 호출자가 선언한 배치 기준이다. input artifact digest와의 source identity 결속을 입증하지 않는다.
+같은 strict 모델에서 JSON bytes를 먼저 고정하고 agent digest를 구한다. CLI verify·4파일 manifest/receipt·최종 exit는 후속이다.
 
 ## 4. 네 보고서와 원문 해시
 
@@ -111,7 +121,7 @@ old/new 포맷 혼합·오래된 산출물·중도 출판 실패를 새 verify �
 
 신규/변경 파일·테스트·역할 소유와 PLAN 11/R8 case 매핑은 R1 §7만 유일한 권위 목록으로 삼는다. 독자 파일 명부를 두지 않는다.
 현재 CLI/parser/pipeline·공통 report dispatch·init-target·보고서 전달의 모든 경로 요청을 R1 canonical 목록 작성자에게 송부했다.
-내부 runtime projection 모듈은 A 공통 모델의 구현 분리일 뿐 별도 envelope/주포맷이 아니다. 실제 쓰기 권한은 후속 패킷에서 받는다.
+내부 runtime projection 모듈은 A 공통 모델의 구현 분리일 뿐 별도 envelope/주포맷이 아니다. 쓰기 권한은 각 root 패킷을 따른다.
 R1에 공통 runtime union·evidence 분기·판별자·verifyGate·artifact refs를 요청하고, transport/lifecycle는 R3 capability만 소비한다.
 R8만 reports/CLI의 고정 입력·기대 0/1/2·unknown·손상/혼합 사례를 작성한다. R10은 그 입력·기대값을 읽기만 한다.
 갱신된 공통 reader→sanitiser→4종 writer 왕복에서 필수 check/field/null/partial/grade/reach가 보존되는지 확인한다.

@@ -13,6 +13,9 @@ import { sanitiseApiWriteStateEvidence } from './api-write-observer.js';
 import { API_PROPERTY_CHECK, apiPropertyCheckConsistent, sanitiseApiPropertyWriteEvidence } from './api-property-evidence.js';
 import { projectReportSummary } from './report-summary.js';
 export { parseRuntimeReport, sanitiseRuntimeReport } from './runtime-report.js';
+import { runtimeReportInput, toRuntimeAgentReport, toRuntimeReportSummary, toRuntimeSarif,
+  toRuntimeMarkdown, writeRuntimeReports, parseRuntimeReport as parseRuntimeReportForDispatch }
+  from './runtime-report.js';
 import { createHash } from 'node:crypto';
 import { constants as fsConstants } from 'node:fs';
 import { lstat, mkdir, open, realpath, rename, unlink } from 'node:fs/promises';
@@ -39,6 +42,7 @@ import type {
   ScanReport,
   ScanGate,
   ReportSummary,
+  RuntimeReport, RuntimeAgentReport, RuntimeReportSummary, Report, CommonAgentReport, CommonReportSummary,
   Severity,
 } from './contracts.js';
 
@@ -125,7 +129,15 @@ export function createReport(
  * directory. Temporary files are created in the checked directory and then
  * renamed into place.
  */
-export async function writeReports(
+export function writeReports(report: ScanReport, outDir: string, options?: { failOn?: FailOn }): Promise<void>;
+export function writeReports(report: RuntimeReport, outDir: string, options: { sourceRoot: string }): Promise<void>;
+export function writeReports(report: Report, outDir: string, options: { sourceRoot: string }): Promise<void>;
+export async function writeReports(report: Report, outDir: string,
+  options: { failOn?: FailOn; sourceRoot?: string } = {}): Promise<void> {
+  if (runtimeReportInput(report)) return writeRuntimeReports(report, outDir, options);
+  return writeScanReports(report as ScanReport, outDir, options);
+}
+async function writeScanReports(
   report: ScanReport,
   outDir: string,
   options: { failOn?: FailOn } = {},
@@ -220,12 +232,32 @@ function evaluateSanitisedGate(report: ScanReport, failOn: FailOn): ScanGate {
 }
 
 /** Public projection always passes through the same sanitiser as report.json. */
-export function toAgentReport(report: ScanReport, failOn: FailOn = 'high'): AgentReport {
+export function toAgentReport(report: ScanReport, failOn?: FailOn): AgentReport;
+export function toAgentReport(report: RuntimeReport): RuntimeAgentReport;
+export function toAgentReport(report: Report): CommonAgentReport;
+export function toAgentReport(report: Report, failOn?: FailOn): CommonAgentReport {
+  if (runtimeReportInput(report)) {
+    if (failOn !== undefined) throw new TypeError('runtime_report_uses_recorded_verify_gate');
+    return toRuntimeAgentReport(report);
+  }
+  return toScanAgentReport(report as ScanReport, failOn);
+}
+function toScanAgentReport(report: ScanReport, failOn: FailOn = 'high'): AgentReport {
   return projectAgentReport(sanitiseReport(report), failOn);
 }
 
 /** First-read navigation only; uses the same sanitisation and adjudication as the agent report. */
-export function toReportSummary(report: ScanReport, failOn: FailOn = 'high'): ReportSummary {
+export function toReportSummary(report: ScanReport, failOn?: FailOn): ReportSummary;
+export function toReportSummary(report: RuntimeReport): RuntimeReportSummary;
+export function toReportSummary(report: Report): CommonReportSummary;
+export function toReportSummary(report: Report, failOn?: FailOn): CommonReportSummary {
+  if (runtimeReportInput(report)) {
+    if (failOn !== undefined) throw new TypeError('runtime_report_uses_recorded_verify_gate');
+    return toRuntimeReportSummary(report);
+  }
+  return toScanReportSummary(report as ScanReport, failOn);
+}
+function toScanReportSummary(report: ScanReport, failOn: FailOn = 'high'): ReportSummary {
   const safeReport = sanitiseReport(report);
   return projectReportSummary(safeReport, evaluateSanitisedGate(safeReport, failOn));
 }
@@ -330,7 +362,13 @@ function projectAgentReport(report: ScanReport, failOn: FailOn): AgentReport {
 }
 
 /** Exposed for the CLI and tests that need to inspect the SARIF projection. */
-export function toSarif(report: ScanReport): SarifLog {
+export function toSarif(report: ScanReport): SarifLog;
+export function toSarif(report: RuntimeReport): SarifLog;
+export function toSarif(report: Report): SarifLog;
+export function toSarif(report: Report): SarifLog {
+  return runtimeReportInput(report) ? toRuntimeSarif(report) : toScanSarif(report as ScanReport);
+}
+function toScanSarif(report: ScanReport): SarifLog {
   const safeReport = sanitiseReport(report);
   const rules = new Map<string, SarifRule>();
   const results: SarifResult[] = [];
@@ -493,7 +531,17 @@ export function toSarif(report: ScanReport): SarifLog {
 }
 
 /** Exposed for tests and consumers that want the human-readable projection. */
-export function toMarkdown(report: ScanReport, failOn: FailOn = 'high'): string {
+export function toMarkdown(report: ScanReport, failOn?: FailOn): string;
+export function toMarkdown(report: RuntimeReport): string;
+export function toMarkdown(report: Report): string;
+export function toMarkdown(report: Report, failOn?: FailOn): string {
+  if (runtimeReportInput(report)) {
+    if (failOn !== undefined) throw new TypeError('runtime_report_uses_recorded_verify_gate');
+    return toRuntimeMarkdown(report);
+  }
+  return toScanMarkdown(report as ScanReport, failOn);
+}
+function toScanMarkdown(report: ScanReport, failOn: FailOn = 'high'): string {
   const safeReport = sanitiseReport(report);
   const summary = projectReportSummary(safeReport, evaluateSanitisedGate(safeReport, failOn));
   const lines: string[] = [
@@ -779,7 +827,15 @@ interface SarifLocation {
   logicalLocations?: Array<{ fullyQualifiedName: string }>;
 }
 
-export function sanitiseReport(report: ScanReport): ScanReport {
+function sanitiseCommonReport(report: ScanReport): ScanReport;
+function sanitiseCommonReport(report: RuntimeReport): RuntimeReport;
+function sanitiseCommonReport(report: Report): Report;
+function sanitiseCommonReport(report: Report): Report {
+  return runtimeReportInput(report) ? parseRuntimeReportForDispatch(report) : sanitiseReport(report as ScanReport);
+}
+// Preserve the local Scan binding used by legacy gates/projections while exporting the common dispatcher.
+export { sanitiseCommonReport as sanitiseReport, sanitiseReport as sanitiseScanReport };
+function sanitiseReport(report: ScanReport): ScanReport {
   const checks = sanitiseChecks(report?.checks);
   const authPolicyField = ownDataField(report?.scope, 'schemathesisAuthPolicy');
   const authPolicy = authPolicyField.valid ? safeSchemathesisAuthPolicy(authPolicyField.value) : undefined;
