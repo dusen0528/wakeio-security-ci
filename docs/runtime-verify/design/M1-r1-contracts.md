@@ -221,11 +221,21 @@ M1-165의 고정 소스 조사와 CPx14 N2를 반영한 문서 계약이다. 아
 **확인한 source assembly 범위.** wrapper 고정 commit은 `55c0963bf79bfd437c2aa1eb5fba9329a6fcd76f`, libpg_query는 `b0f5f331dc50d69597ec610de7b21afa47a66808`이다. [wrapper Makefile](https://github.com/constructive-io/libpg-query-node/blob/55c0963bf79bfd437c2aa1eb5fba9329a6fcd76f/versions/18/Makefile#L18-L79)은 `versions/18/src/wasm_wrapper.c`와 `.cache/$(PLATFORM_ARCH)/libpg_query/$(LIBPG_QUERY_COMMIT)` 아래 archive/header를 연결한다. 원본 Makefile에는 git clone 경로가 있으므로 승인된 고정 로컬 source 조립 없이 그대로 실행하지 않는다.
 
 - 해당 libpg_query 트리에는 `scan.l`이 없고 [생성 scanner C](https://github.com/constructive-io/libpg_query/blob/b0f5f331dc50d69597ec610de7b21afa47a66808/src/postgres/src_backend_parser_scan.c), `src/postgres/include/parser/scanner.h`, `src/pg_query_scan.c`, `pg_query.h`가 있다. patch는 이 source root와 wrapper root를 구분하여 실제 파일에 적용하고 base bytes/context 불일치 시 거부한다. upstream PG scan.l은 rule 대조 근거이며 이 트리에 존재하는 patch 대상으로 가장하지 않는다.
-- [copy-templates의 full API 선택](https://github.com/constructive-io/libpg-query-node/blob/55c0963bf79bfd437c2aa1eb5fba9329a6fcd76f/scripts/copy-templates.js#L62-L87)에 따라 wrapper 원형은 `templates/full/wasm_wrapper.c`, 생성 위치는 `versions/18/src/wasm_wrapper.c`다. R5는 patch의 실제 적용 대상·생성물 일치 범위를 밝히며 기존 npm CJS/WASM을 수동 수정하지 않는다. concrete source archive bytes·toolchain bytes·OCI digest/아키텍처와 최종 build 조립 경로는 아직 미선정이다.
+- [copy-templates의 full API 선택](https://github.com/constructive-io/libpg-query-node/blob/55c0963bf79bfd437c2aa1eb5fba9329a6fcd76f/scripts/copy-templates.js#L62-L87)에 따라 wrapper 원형은 `templates/full/wasm_wrapper.c`, 생성 위치는 `versions/18/src/wasm_wrapper.c`다. R5는 patch의 실제 적용 대상·생성물 일치 범위를 밝히며 기존 npm CJS/WASM을 수동 수정하지 않는다. 아래 M1-170의 source/OCI metadata는 측정된 후보이며 제품 source lock·toolchain·아키텍처 선정은 아니다. 최종 build 조립 경로도 아직 미선정이다.
+
+**M1-170 / R9가 측정한 입력 후보.** `.handoff/evidence/M1/native-parser-sources/{README.md,sources.json,oci.json}`은 manifest raw SHA256 `125ed713e2d06c8118709c76d76758fd6f8c5c27cdee8ec6e9d20cb506d4e878`에 결속된다. 두 archive의 고정 commit과 실제 byte SHA를 후속 source lock 입력으로 참조하며 이번 문서에서 제품 pin으로 승격하지 않는다.
+
+| 고정 commit archive | 압축 bytes | SHA256 |
+| --- | ---: | --- |
+| wrapper `55c0963bf79bfd437c2aa1eb5fba9329a6fcd76f` | 497,766 | `92a879c16d194caf274eaac89f3b2259a125f820f7ab79990b517ff1e71b5395` |
+| core `b0f5f331dc50d69597ec610de7b21afa47a66808` | 4,584,500 | `efb6664a0aab73bcc37a613ef9081f75439e3a520c0300fd6ac71eb5ffb8cfc3` |
+
+R9의 archive 검사상 wrapper `versions/18/Makefile`은 template 생성물이고 package의 `wasm:make`는 정확히 `emscripten/emsdk:6.0.3`을 요구한다. core `Makefile`은 `PG_VERSION=18.4`를 선언하며 generated scanner C는 있지만 `scan.l`은 없다. 위 REL_18_0 링크는 설명·상태 대조 근거이며 실제 patch는 **고정 core의 생성 C/header·scan 연결부와 wrapper/template**에 적용한다. source 조립 경로는 확인한 Makefile 경로만 사용한다. PG18.4 core와 실제 PG18 대상 minor의 동작 동일성은 미입증이므로 설정 tuple만 맞았다고 실제 V3 지원 완료로 처리하지 않는다.
+OCI `6.0.3` index 후보는 `sha256:bb0910e6a18bb9bd7cb31ae4ed40f9073148b78cb2cdb8ea8676454e0d85425c`다. child descriptor/raw manifest는 linux/amd64 `sha256:2a7a41cd7e2065b30ba389c8db0fbeaebd7ec06bb4e20f23cab8ba92180f25c7`, linux/arm64 `sha256:ddfb30ef76e97bb9a231af1fb262f0a4f2f6aa726778572a028e215922afac40`가 확인됐다. 이는 descriptor 수준이며 config/layer pull·guest compiler 실행·이미지 서명·재현 빌드는 검증되지 않았다. 실제 toolchain/OCI 아키텍처 선택과 `sources.lock.json` 생성은 후속 R1 패킷으로 남기고 공식 npm WASM과의 동일성을 주장하지 않는다.
 
 **후속 R3/R10 패킷의 필수 상한과 선택 조건(CPx14 N2).** native 진단 **job**은 기존 network-none·1초·256MiB를 유지한다. 별도 명시 native **build**의 후보 상한은 CPU2·메모리4GiB·PID256, 개별10분·재현2회 합계20분, 로그 각16KiB·산출물 합계32MiB다. 고정 로컬 source/toolchain만 사용하며 네트워크를 끈다. R3가 CPU/PID/메모리·전체 자식 종료·wall deadline·로그/산출물 상한을 실제 강제할 수 있는 수단을 확인하지 못하면 실행을 거부한다. 이 문서는 해당 격리 보장의 측정 결과가 아니다.
 R10은 명시 custom artifactId·새 protocol revision·독립 source/build/pins가 **모두 일치할 때만** custom CJS/WASM을 선택한다. 누락·불일치·미지원 tuple은 거부/unknown·미완료이며 공식 v1 fallback으로 quote 진단 완료를 가장하지 않는다. 공식 v1의 기존 명시 실행 경로와 지원 범위는 유지한다. 일반 npm build는 고정 로컬 자산의 검증/복사만 하며 compiler·source fetch를 시작하지 않는다.
-후속 순서는 **R9 source/toolchain bytes·아키텍처 측정 → R1 sources.lock 패킷 → R5 고정 base patch 확인 → R3 별도 제한 build 패킷 → R10 배포/manifest → R3 독립 host pins → R8 독립 projection → R9 실제 PG 대조**다. 현재 source commit 읽기가 published WASM의 재현성을 증명하지 않으며 새 진단이나 R8 expected가 서로의 정답을 생성하지 않는다.
+후속 순서는 **R9 source/OCI metadata 측정(M1-169 완료, toolchain 실행은 미검증) → R1 sources.lock 선정 패킷 → R5 고정 base patch 확인 → R3 별도 제한 build 패킷 → R10 배포/manifest → R3 독립 host pins → R8 독립 projection → R9 실제 PG 대조**다. 현재 source commit 읽기가 published WASM의 재현성을 증명하지 않으며 새 진단이나 R8 expected가 서로의 정답을 생성하지 않는다.
 
 ## 5. RunContext·격리·스냅샷·실패 수명
 
