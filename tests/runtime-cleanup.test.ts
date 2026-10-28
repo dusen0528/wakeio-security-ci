@@ -11,8 +11,12 @@ import { runRuntimeProcess } from '../src/runtime/process.js';
 import { copyPgParserAssetFiles, createPgParserAssetLoader,
   compileLimaProfileConfig, createLimaProfilePreparer, prepareLimaProfile,
   createLimaOsPreparer, createLimaOsSessionRunner, MAX_LIMA_ROOTFS_BYTES, prepareLimaOsProfile, withLimaOsSession,
-  type LimaOsOptions, type LimaPins, type LimaProfileOptions, type LimaOsProbeCapability }
+  type LimaOsOptions, type LimaPins, type LimaProfileOptions, type LimaOsProbeCapability,
+  createLimaRootlessSetupRunner, withLimaRootlessSetup, type LimaRootlessSetupCapability }
   from '../src/runtime/runtimes/controller.js';
+
+import { ROOTLESS_PACKAGE_PREPARE, parseRootlessPackagePreparation, parseRootlessPackageFailure }
+  from '../src/runtime/runtimes/container-lifecycle.js';
 
 // Deliberately synthetic metadata. A mock tool never downloads, starts or validates these assets.
 const pins: LimaPins = {
@@ -1388,5 +1392,192 @@ process.stderr.write('dpkg-query: no packages found matching uidmap\\n');process
 `, { mode: 0o700 });
     const bad = await runRuntimeProcess('/bin/sh', ['-c', prefix + script], options);
     assert.equal(bad.completed, false); assert.equal(bad.exitCode, 125);
+  });
+});
+
+// Synthetic closed metadata only: no package/key/network/guest tools are executed by these mocks.
+function packageWire(): string {
+  const version = '5:29.9.2-1~ubuntu.24.04~noble';
+  const rows = [
+    ['containerd.io', '2.4.2-3~ubuntu.24.04~noble', 19561964,
+      '7837470e586f0b5d228a5eefdd9674b6bd0f127c47841ae808b086ae7fe3f41a'],
+    ['docker-ce', version, 21023748, 'c34d0bd4a58891b1fd9bab57702d7ce84c0f0c77db5fbabcf192288fe52d2535'],
+    ['docker-ce-cli', version, 15847216, 'de18f48f32758568af16d73aa758678af472c2e780dc2aaa9fd9279b8260f7a9'],
+    ['docker-ce-rootless-extras', version, 9128964,
+      '12584930245f79a0fb82c835edc6004c82b9ce790eae1fe99c833625c76d0536'],
+  ];
+  return JSON.stringify({ protocol: 'wakeio-rootless-packages/v1', signatureVerified: true,
+    keySha256: '1500c1f56fa9e26b9b8f42452a553675796ade0807cdce11975eb98170b3a570',
+    keyFingerprint: '9DC858229FC7DD38854AE2D88D81803C0EBFCD88', indexManifestSha256: 'a'.repeat(64),
+    installedStatusSha256: 'b'.repeat(64), packages: rows.map(([name, version, size, sha256]) =>
+      ({ name, version, arch: 'arm64', size, sha256, origin: 'docker' })) }) + '\n';
+}
+function setupRecorder(options: { fail?: boolean; hang?: boolean; uncertain?: boolean;
+  reply?: Partial<Awaited<ReturnType<typeof runRuntimeProcess>>> } = {}) {
+  const events: { args: readonly string[]; timeoutMs: number; home: string }[] = [];
+  const run = createLimaRootlessSetupRunner(async (executable, args, config) => {
+    events.push({ args, timeoutMs: config.timeoutMs, home: config.home });
+    if (args.at(-1) === ROOTLESS_PACKAGE_PREPARE) {
+      if (options.hang) return runRuntimeProcess(process.execPath,
+        ['-e', "process.on('SIGTERM',()=>process.exit(0));setInterval(()=>{},1000)"], config);
+      const result = await runRuntimeProcess(process.execPath, ['-e', ''], config);
+      return { ...result, stdout: options.fail ? 'discard private tool output' : packageWire(),
+        completed: !options.fail, exitCode: options.fail ? 125 : 0, ...options.reply,
+        cleanupConfirmed: options.uncertain ? false : result.cleanupConfirmed };
+    }
+    return runRuntimeProcess(executable, args, config);
+  });
+  return { run, events };
+}
+test('trusted package setup requires consent before getters, proxy hooks, callback or any tool I/O', async () => {
+  let calls = 0;
+  const raw = Object.defineProperty({ executeTargetConsent: false }, 'rootfsFile', { get() { calls++; } });
+  const proxy = new Proxy({}, { get() { calls++; }, ownKeys() { calls++; return []; } });
+  for (const value of [raw, proxy, null, {}]) {
+    const answer = await withLimaRootlessSetup(value as LimaOsOptions, async () => { calls++; });
+    assert.equal(answer.phase, 'consent_required'); assert.equal(answer.verified, false);
+  }
+  assert.equal(calls, 0);
+});
+test('signed package preparation binds immutable pins and never grants daemon or source authority', () => {
+  const good = parseRootlessPackagePreparation(packageWire());
+  assert.equal(good.phase, 'download_prepared'); assert.equal(good.packages.length, 4);
+  assert.equal(good.sourceExecutionAuthorized, false); assert.equal(good.backendVerified, false);
+  assert.equal(good.daemonObserved, false); assert.ok(Object.isFrozen(good.packages[0]));
+  const edits: ((data: any) => void)[] = [
+    d => { d.signatureVerified = false; }, d => { d.keySha256 = '0'.repeat(64); },
+    d => { d.keyFingerprint = '0'.repeat(40); }, d => { d.expectedSha = d.keySha256; },
+    d => { d.packages[0].version = '2.1.5-1~ubuntu.24.04~noble'; },
+    d => { d.packages[1].sha256 = '0'.repeat(64); }, d => { d.packages[2].size++; },
+    d => { d.packages[0].arch = 'amd64'; }, d => { d.packages.reverse(); },
+    d => { d.packages.push(d.packages[0]); }, d => { d.packages.pop(); },
+    d => { d.packages[0].version = '2.4.2\n'; }, d => { delete d.installedStatusSha256; },
+  ];
+  for (const edit of edits) {
+    const data = JSON.parse(packageWire()); edit(data);
+    const answer = parseRootlessPackagePreparation(JSON.stringify(data) + '\n');
+    assert.equal(answer.phase, 'unknown'); assert.deepEqual(answer.packages, []);
+  }
+  assert.equal(parseRootlessPackagePreparation('x'.repeat(16385)).phase, 'unknown');
+});
+test('private setup has a separate fixed deadline, guard barrier and scoped download-only capability', async () => {
+  await scope(async base => {
+    const recorder = setupRecorder(); let retained!: LimaRootlessSetupCapability;
+    const options = { ...await osMockTool(base), deadlineAt: Date.now() + 600_000 };
+    const result = await recorder.run(options, async cap => {
+      retained = cap; assert.ok(Object.isFrozen(cap));
+      const before = recorder.events.length; await assert.rejects(cap.preparePackages());
+      assert.equal(recorder.events.length, before); assert.equal((await cap.probe()).observed, true);
+      await assert.rejects((cap.preparePackages as (...a: unknown[]) => Promise<unknown>)('apt install'));
+      const answer = await cap.preparePackages(); assert.equal(answer.phase, 'download_prepared');
+      assert.equal(answer.daemonObserved, false); assert.equal(answer.sourceExecutionAuthorized, false);
+    });
+    assert.equal(result.phase, 'callback_completed'); assert.equal(result.cleanup?.confirmed, true);
+    assert.equal(result.status, 'unavailable'); assert.equal(result.verified, false);
+    const shell = recorder.events.filter(e => e.args[1] === 'shell');
+    assert.equal(shell.length, 3); assert.equal(shell[0].timeoutMs, 5_000); assert.equal(shell[1].timeoutMs, 5_000);
+    assert.equal(shell[2].args.at(-1), ROOTLESS_PACKAGE_PREPARE); assert.equal(shell[2].timeoutMs, 300_000);
+    assert.equal(recorder.events.find(e => e.args[1] === 'start')?.timeoutMs, 300_000);
+    assert.deepEqual(shell[2].args.slice(5, -1), ['--', '/usr/bin/sudo', '-n', '/usr/bin/env', '-i',
+      'PATH=/usr/sbin:/usr/bin:/sbin:/bin', 'LC_ALL=C', '/bin/sh', '-c']);
+    const before = recorder.events.length; await assert.rejects(retained.preparePackages());
+    assert.equal(recorder.events.length, before);
+  });
+});
+test('setup rejects absent guards and download failures; cleanup uncertainty stays sticky', async () => {
+  for (const mode of ['session-probe-fail', 'download-fail', 'group-unknown']) {
+    await scope(async base => {
+      const recorder = setupRecorder({ fail: mode === 'download-fail', uncertain: mode === 'group-unknown' });
+      let phase = '';
+      const result = await recorder.run(await osMockTool(base, mode), async cap => {
+        if (!(await cap.probe()).observed) { await assert.rejects(cap.preparePackages()); return; }
+        phase = (await cap.preparePackages()).reason;
+      });
+      if (mode === 'session-probe-fail') assert.equal(recorder.events.some(e =>
+        e.args.at(-1) === ROOTLESS_PACKAGE_PREPARE), false);
+      else assert.equal(phase, mode === 'group-unknown' ? 'identity_unknown' : 'invalid_metadata');
+      assert.equal(result.cleanup?.confirmed, mode !== 'group-unknown');
+      if (mode !== 'session-probe-fail') assert.equal(result.phase, 'failed');
+      assert.equal(result.verified, false);
+    });
+  }
+});
+test('setup cancellation drains one active download; concurrent and late calls start no I/O', async () => {
+  await scope(async base => {
+    const controller = new AbortController(), recorder = setupRecorder({ hang: true });
+    let reason = '', retained!: LimaRootlessSetupCapability;
+    const result = await recorder.run({ ...await osMockTool(base), signal: controller.signal }, async cap => {
+      retained = cap; await cap.probe(); const pending = cap.preparePackages();
+      while (!recorder.events.some(e => e.args.at(-1) === ROOTLESS_PACKAGE_PREPARE)) await delay(5);
+      const before = recorder.events.length; await assert.rejects(cap.preparePackages());
+      assert.equal(recorder.events.length, before); controller.abort(); reason = (await pending).reason;
+    });
+    assert.equal(result.phase, 'failed'); assert.equal(result.cleanup?.confirmed, true);
+    assert.equal(reason, 'identity_unknown'); const before = recorder.events.length;
+    await assert.rejects(retained.preparePackages()); assert.equal(recorder.events.length, before);
+  });
+});
+test('fixed preparation uses signed standard APT without package lifecycle, rootful units or daemon execution', () => {
+  assert.match(ROOTLESS_PACKAGE_PREPARE, /python3 -I -c/);
+  for (const required of ['signed-by=', 'ubuntu-archive-keyring.gpg', 'APT_CONFIG', 'AllowUnauthenticated',
+    'AllowInsecureRepositories', 'AllowRedirect', 'Check-Valid-Until', 'allow_unauthenticated=False',
+    'fetch_binary', 'indexManifestSha256', 'installedStatusSha256', 'O_NOFOLLOW', 'O_EXCL']) {
+    assert.ok(ROOTLESS_PACKAGE_PREPARE.includes(required), required);
+  }
+  assert.doesNotMatch(ROOTLESS_PACKAGE_PREPARE, /cache\.commit|apt-get.*install|dpkg.*--install|systemctl|dockerd/);
+  // No install exists yet: autostart guards/masks must precede any later no-download lifecycle implementation.
+  assert.doesNotMatch(ROOTLESS_PACKAGE_PREPARE, /trusted=yes|allow-unauthenticated|curl.*\|.*sh/);
+});
+
+test('package failure stages are closed data; extra, unknown, truncated and successful wires cannot pass', () => {
+  for (const stage of ['prerequisites', 'key', 'apt-config', 'index-update', 'index-snapshot',
+    'selection', 'download', 'digest', 'state-recheck', 'manifest']) {
+    const raw = `wakeio-rootless-packages-failure/v1:${stage}:operation_failed\n`;
+    const answer = parseRootlessPackageFailure(raw);
+    assert.equal(answer.reason, 'operation_failed'); assert.equal(answer.failureStage, stage);
+    assert.equal(answer.phase, 'unknown'); assert.equal(answer.backendVerified, false);
+    assert.equal(answer.sourceExecutionAuthorized, false); assert.equal(answer.daemonObserved, false);
+    assert.equal(answer.manifestSha256, null); assert.deepEqual(answer.packages, []);
+    for (const bad of [raw.slice(0, -1), raw + '\n', raw.replace(stage, 'unsupported'),
+      raw.replace('operation_failed', 'signatureVerified'), raw + 'extra', packageWire(), 'x'.repeat(129)]) {
+      const invalid = parseRootlessPackageFailure(bad);
+      assert.equal(invalid.reason, 'invalid_metadata'); assert.equal(invalid.failureStage, undefined);
+    }
+  }
+});
+test('package failure stages require supervised exit125 and current identity; cleanup stays sticky', async () => {
+  for (const mode of ['normal', 'bad-exit', 'timeout', 'output-limit', 'stderr', 'group-unknown']) {
+    await scope(async base => {
+      const reply = { stdout: 'wakeio-rootless-packages-failure/v1:key:operation_failed\n',
+        completed: false, exitCode: mode === 'bad-exit' ? 1 : 125,
+        timedOut: mode === 'timeout', outputLimitExceeded: mode === 'output-limit',
+        stderr: mode === 'stderr' ? 'synthetic withheld diagnostic' : '' };
+      const recorder = setupRecorder({ reply, uncertain: mode === 'group-unknown' });
+      let answer: Awaited<ReturnType<LimaRootlessSetupCapability['preparePackages']>> | undefined;
+      const result = await recorder.run(await osMockTool(base), async cap => {
+        await cap.probe(); answer = await cap.preparePackages();
+      });
+      assert.equal(answer?.phase, 'unknown'); assert.equal(answer?.sourceExecutionAuthorized, false);
+      assert.equal(answer?.failureStage, mode === 'normal' ? 'key' : undefined);
+      assert.equal(result.phase, 'failed'); assert.equal(result.cleanup?.confirmed, mode !== 'group-unknown');
+    });
+  }
+});
+test('owned Python failure fixture emits only fixed stage and reason while discarding exception details', async () => {
+  await scope(async base => {
+    const prefix = '/usr/bin/python3 -I -c ';
+    assert.ok(ROOTLESS_PACKAGE_PREPARE.startsWith(prefix));
+    const python = ROOTLESS_PACKAGE_PREPARE.slice(prefix.length + 1, -1).replaceAll("'\"'\"'", "'");
+    assert.equal(python.split('body = prepare()').length, 2);
+    for (const stage of ['prerequisites', 'key', 'index-update', 'digest', 'manifest']) {
+      // No prepare/guest/package/network function is called: only the final error encoder is executed.
+      const fixture = python.replace('body = prepare()',
+        `stage = '${stage}'; raise RuntimeError('synthetic withheld exception')`);
+      const result = await runRuntimeProcess('/usr/bin/python3', ['-I', '-c', fixture], {
+        cwd: base, home: base, timeoutMs: 5000, deadlineAt: Date.now() + 10000, maxOutputBytes: 16384 });
+      assert.equal(result.exitCode, 125); assert.equal(result.cleanupConfirmed, true);
+      assert.equal(result.stdout, `wakeio-rootless-packages-failure/v1:${stage}:operation_failed\n`);
+      assert.equal(result.stderr, ''); assert.equal(parseRootlessPackageFailure(result.stdout).failureStage, stage);
+    }
   });
 });
