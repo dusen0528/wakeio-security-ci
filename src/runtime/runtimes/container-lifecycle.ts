@@ -24,10 +24,11 @@ const INDEX_FAILURE_DETAILS = ['index-list-io', 'index-name', 'index-kind-transl
   'index-type', 'index-owner', 'index-links', 'index-mode', 'index-size', 'index-read', 'index-consistency',
   'index-count', 'index-repo-presence'] as const;
 type IndexFailureDetail = typeof INDEX_FAILURE_DETAILS[number];
-const SELECTION_FAILURE_DETAILS = ['selection-candidate-lookup', 'selection-pinned-version',
+const SELECTION_FAILURE_DETAILS = ['selection-package-lookup', 'selection-candidate-lookup', 'selection-pinned-version',
   'selection-mark-install', 'selection-broken', 'selection-change-set', 'selection-name', 'selection-version',
   'selection-arch-size', 'selection-origin', 'selection-uri', 'selection-sha', 'selection-pin',
-  'selection-required-set', 'selection-total'] as const;
+  'selection-required-set', 'selection-total', 'selection-uri-read', 'selection-uri-type', 'selection-uri-host',
+  'selection-uri-path', 'selection-uri-encoding', 'selection-uri-record', 'selection-uri-binding'] as const;
 type SelectionFailureDetail = typeof SELECTION_FAILURE_DETAILS[number];
 export interface RootlessPackagePreparation {
   kind: 'rootless-package-preparation'; phase: 'download_prepared' | 'unknown';
@@ -105,7 +106,7 @@ export function parseRootlessPackageFailure(raw: string): Readonly<RootlessPacka
 // Fixed trusted guest preparation only. There is deliberately no install, commit, unit start or Docker API here.
 // Standard signed APT performs dependency resolution and download; this program only verifies its selections.
 const PACKAGE_PREPARE_PY = String.raw`
-import os, sys, json, hashlib, stat, re, urllib.request, importlib.util
+import os, sys, json, hashlib, stat, re, urllib.request, urllib.parse, importlib.util
 PINS = __PINS__
 KEY_SHA = '__KEY_SHA__'
 KEY_FINGERPRINT = '__KEY_FINGERPRINT__'
@@ -239,6 +240,46 @@ def selection_step(code):
     global failure_detail
     failure_detail = code
 
+def record_filename(filename):
+    selection_step('selection-uri-record')
+    require(isinstance(filename, str) and re.fullmatch(r'[A-Za-z0-9+~_.:/-]+', filename) is not None)
+    require('..' not in filename and all(p not in ['', '.', '..'] for p in filename.split('/')))
+    basename = filename.rsplit('/', 1)[-1]
+    require(re.fullmatch(r'[a-z0-9][a-z0-9+.-]*_[A-Za-z0-9.+:~_-]+_(arm64|all)\.deb', basename) is not None)
+    if filename.startswith('dists/noble/pool/stable/arm64/'):
+        require(len(filename.split('/')) == 6 and basename.endswith('_arm64.deb'))
+        return 'docker'
+    match = re.fullmatch(r'pool/(main|universe)/([a-z0-9]|lib[a-z0-9])/([a-z0-9][a-z0-9+.-]*)/[^/]+', filename)
+    require(match is not None)
+    source = match.group(3)
+    require(match.group(2) == (source[:4] if source.startswith('lib') else source[:1]))
+    return 'ubuntu'
+
+def package_uri(uri, filename):
+    origin = record_filename(filename)
+    selection_step('selection-uri-type')
+    require(isinstance(uri, str) and re.fullmatch(r'[\x21-\x7e]+', uri) is not None and '\\' not in uri)
+    selection_step('selection-uri-host')
+    require(uri.startswith('https://') and '?' not in uri and '#' not in uri)
+    parts = urllib.parse.urlsplit(uri)
+    roots = {'download.docker.com':('docker', '/linux/ubuntu/'),
+        'ports.ubuntu.com':('ubuntu', '/ubuntu-ports/')}
+    require(parts.scheme == 'https' and parts.netloc in roots and not parts.query and not parts.fragment)
+    host_origin, root = roots[parts.netloc]
+    selection_step('selection-uri-path')
+    require(parts.path.startswith(root))
+    tail = parts.path[len(root):]
+    require('..' not in tail and all(p not in ['', '.', '..'] for p in tail.split('/')))
+    selection_step('selection-uri-encoding')
+    require(re.fullmatch(r'(?:[A-Za-z0-9.+~_:/-]|%2b|%7e)+', tail) is not None)
+    # Decode only after the two safe escapes were allowlisted; no general URL normalization is accepted.
+    decoded = urllib.parse.unquote_to_bytes(tail)
+    raw = decoded.decode('ascii'); canonical = raw.replace('+', '%2b').replace('~', '%7e')
+    require(tail == raw or tail == canonical)
+    selection_step('selection-uri-binding')
+    require(decoded == filename.encode('ascii') and host_origin == origin)
+    return origin
+
 def selected_record(package):
     selection_step('selection-candidate-lookup')
     v = package.candidate; require(v is not None)
@@ -251,28 +292,27 @@ def selected_record(package):
     version = v.version; require(re.fullmatch(r'[0-9][A-Za-z0-9.+:~_-]{0,127}', version) is not None)
     selection_step('selection-origin')
     origins = v.origins; require(all(o.trusted for o in origins) and len(origins) > 0)
-    selection_step('selection-uri')
+    selection_step('selection-uri-read')
     uri, uris = v.uri, v.uris
-    require(all(u.startswith(('https://download.docker.com/linux/ubuntu/',
-        'https://ports.ubuntu.com/ubuntu-ports/')) for u in uris))
-    docker = uri.startswith('https://download.docker.com/linux/ubuntu/dists/noble/pool/stable/arm64/')
-    ubuntu = uri.startswith('https://ports.ubuntu.com/ubuntu-ports/pool/')
-    require((docker or ubuntu) and re.fullmatch(r'https://[A-Za-z0-9./+~_:%-]+', uri) is not None)
-    require('..' not in uri and '%' not in uri and '?' not in uri and '#' not in uri)
+    selection_step('selection-uri-type')
+    require(isinstance(uris, list) and len(uris) > 0 and isinstance(uri, str))
+    selection_step('selection-uri-record')
+    signed_record = v.record; filename = signed_record.get('Filename', '')
+    origin = package_uri(uri, filename)
+    require(all(package_uri(other, filename) == origin for other in uris))
     selection_step('selection-sha')
     # Noble Record explicitly defines get; the expected digest still comes from the signed record.
-    sha = v.record.get('SHA256', ''); require(re.fullmatch(r'[a-f0-9]{64}', sha) is not None)
-    record = dict(name=name, version=version, arch=arch, size=size, sha256=sha,
-        origin='docker' if docker else 'ubuntu')
+    sha = signed_record.get('SHA256', ''); require(re.fullmatch(r'[a-f0-9]{64}', sha) is not None)
+    record = dict(name=name, version=version, arch=arch, size=size, sha256=sha, origin=origin)
     selection_step('selection-pin')
     pin = next((p for p in PINS if p[0] == name), None)
-    require((not pin and ubuntu) or (pin and docker and (version,size,sha) == tuple(pin[1:])))
+    require((not pin and origin == 'ubuntu') or (pin and origin == 'docker' and (version,size,sha) == tuple(pin[1:])))
     return record, v
 
 def selected(cache):
     global failure_detail
     for name, version, size, sha in PINS:
-        selection_step('selection-candidate-lookup')
+        selection_step('selection-package-lookup')
         package = cache[name]
         selection_step('selection-pinned-version')
         versions = [v for v in package.versions if v.version == version and v.architecture == 'arm64']
