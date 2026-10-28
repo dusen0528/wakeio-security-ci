@@ -408,6 +408,46 @@ reportArtifact는 `{name:report.json,algorithm:sha256,digest:<확정된 report.j
 기존 패키지로 충족되는지 먼저 확인하고, 안 되면 검증된 고정 dependency를 쓴다. 자체 불완전 YAML/JSON Schema 파서로 검증 목표를 축소하지 않는다. 구체 버전·SQL WASM helper 자산/파일 경로는 후속 실측 뒤 정확한 별도 경로 승인으로 남긴다.
 이 명부 제안은 구현 권한을 스스로 부여하지 않는다. 위 공유 경로의 실제 수정에는 root 후속 패킷과 CPx 승인이 필수이며 M1-19에서는 package/lock/bundle builder/고지/dependency를 바꾸지 않는다.
 
+### M1-224/227 / CPx20에 승인 요청할 root의 개발 CI 진단 경로
+
+현재 `70ad9b6fb5a754f7661e7faca89e207729a7ea02`의 Linux required-engine CI 실패는 **미해결**이다.
+R9의 `cpx19-timeout-diagnosis/README.md`와 `cpx19-timeout-comparison/{README.md,ERRATA.md}`를 함께 읽는다.
+성공 기준은 약575.8초, 후보는600초 timeout이며, 출력 수집 시각·완료 duration 합은 실제 병렬 실행 경로가 아니다.
+ERRATA에 따라 `zap-integration.test.ts`는7/7 완료이고 `zap.test.ts` 마지막 두 선언만 미보고다. 시작·정체 원인은 미확정이다.
+이 절은 PLAN11·12의 회귀/증거를 위한 **후속 명부 제안**이며 제품·Oracle·테스트 기준 변경안이 아니다.
+
+| 제안 소유 | 정확한 기존 경로 | 허용을 요청하는 개발 검증 범위 |
+| --- | --- | --- |
+| root 오케스트레이터 | `scripts/ci-test-reporter.mjs` | 안전한 임시 단조 시계 event-delivery metadata만 직접 추가한다. 기존 판정용 이벤트와 분리한다. |
+| root 오케스트레이터 | `scripts/test-schemathesis.mjs` | timeout/실패에도 제한된 안전 metadata 요약을 직접 남긴다. 성공/실패·필수 시나리오 판정은 유지한다. |
+| root 오케스트레이터 | `scripts/ci-process.mjs` | 전체 파일집합을 유지하는 결정적 순서의 진단과, 별도 승인된 후속 순서 실험만 직접 수행한다. |
+
+위3개 script의 임시 안전 계측은 root가 직접 수행하는 CI orchestration 작업이며 R11·새 역할·R9 권한 확장이 아니다.
+R9는 기존 `.handoff/evidence/**` 안의 evidence/prototype·검증과 `.github/workflows/runtime-*.yml` 범위만 유지하고 위 script를 수정하지 않는다.
+root도 CPx20 검토와 정확한 후속 작업 범위 확정 전에는 위3개 script를 수정하지 않는다. SUBAGENTS 예외를 만들지 않는다.
+보호 지침을 고치거나 명부 제안으로 구현 권한을 스스로 부여하지 않는다. R9의 `src/**`·기존 테스트/기대값 수정 권한은 없다.
+`scripts/ci-verification.test.mjs`와 `.github/workflows/self-test.yml`은 읽기/기존 검증 대상으로만 두며 쓰기 명부에 추가하지 않는다.
+
+**계측 의미와 노출 제한.** dequeue/start/end는 reporter가 해당 Node 이벤트를 **전달받은 시각**이다.
+단조 시계의 상대 경과·sequence·닫힌 event type·파일 ID·이름 SHA256만으로 표현하며 실제 테스트 함수 실행 시작/끝으로 명명하지 않는다.
+timeout의 active ID도 미종결 delivery 집합일 뿐 실제 실행 중이라는 증거가 아니다. 버퍼링·전달 지연·유실은 한계로 표시한다.
+새 진단에서 이름은 hash만 쓰고, 경로는 소유 repo의 열거된 test allowlist 안의 상대 경로만 허용한다. 임의/외부 경로는 거부한다.
+stderr/stdout 본문·Node diagnostic/error message·SQL·URI·secret·환경값을 metadata나 실패 요약으로 복사하지 않는다.
+기존 판정용 이벤트의 정확한 이름/파일 매칭은 바꾸지 않는다. 새 metadata로 기존 pass/fail을 위조하거나 대체하지 않는다.
+NDJSON/metadata와 요약은 기존8MiB/출력 상한 안에서 별도 행·필드·총 byte 한도를 강제하며 상한을 늘리지 않는다.
+초과·불완전/손상 metadata는 제한 초과/관측 불명으로 남기고 통과 receipt를 합성하지 않는다. 새로운 자식/소켓 추적은 이 명부 밖이다.
+
+**실험 순서.** root의 첫 임시 계측은 metadata-only이며 정렬·스케줄은 기존 그대로 둔다.
+같은 Linux 원 required-engine 경로·고정 엔진/환경·전체190파일·2workers·global600초에서 실패 위치의 delivery를 먼저 관측한다.
+원 source/test bytes·원 SHA 목록·전체 파일집합·테스트 선언/필수 시나리오를 빠짐없이 대조하고 입력·빌드 JS 해시를 남긴다.
+허용된 harness 수정은 원/후보 SHA와 diff로 별도 식별하며 전체 source SHA가 baseline과 같다고 가장하지 않는다.
+그 증거가 누적 스케줄 경로 가설을 지지할 때만 root의 **별도 패킷**으로 느린 파일을 앞에 놓는 결정적 순서를 실험한다.
+순서 실험도 같은 전체190파일/동일 bytes·원 SHA·2workers/600초이며 파일 누락·중복·skip/개별 threshold 변경을 허용하지 않는다.
+metadata와 순서 변경을 한 번에 실험하지 않는다. 파일 수/입력이 달라지면 동일 cohort 비교로 주장하지 않고 재검토한다.
+`sourceSnapshot`의 범위·before/after 불변 검사, `validateTestEvents`의 pass/fail·zero-skip·필수 시나리오 의미는 그대로다.
+공개 Scan·`runExecutionPlan`·`RunStore`·Oracle·기존 테스트 기대값과 workflow 한도도 유지한다.
+이 문서 패킷은 테스트/엔진을 실행하지 않는다. 새 계측·순서 실험과 정확한 CI 재검증 전에는 원 timeout 해결이나 회귀 통과를 주장하지 않는다.
+
 ### M1-208 / CPx19에 승인 요청할 scanner 정책 경로 후보
 
 아래는 §4 M1-208의 소유/경로 **검토 명부**다. 이번에는 이 문서만 수정한다. CPx19 승인과 root 후속 패킷 전에는 파일·자산 생성이나 기존 제품 변경을 하지 않는다. 명부가 실행 capability를 부여하지 않는다.
