@@ -1546,9 +1546,11 @@ test('package failure stages are closed data; extra, unknown, truncated and succ
   }
 });
 test('package failure stages require supervised exit125 and current identity; cleanup stays sticky', async () => {
-  for (const mode of ['normal', 'bad-exit', 'timeout', 'output-limit', 'stderr', 'group-unknown']) {
+  for (const mode of ['normal', 'normal-detail', 'bad-exit', 'timeout', 'output-limit', 'stderr', 'group-unknown']) {
     await scope(async base => {
-      const reply = { stdout: 'wakeio-rootless-packages-failure/v1:key:operation_failed\n',
+      const detailed = mode === 'normal-detail', stage = detailed ? 'index-snapshot' : 'key';
+      const reply = { stdout: `wakeio-rootless-packages-failure/v1:${stage}:operation_failed`
+        + (detailed ? ':index-kind-translation' : '') + '\n',
         completed: false, exitCode: mode === 'bad-exit' ? 1 : 125,
         timedOut: mode === 'timeout', outputLimitExceeded: mode === 'output-limit',
         stderr: mode === 'stderr' ? 'synthetic withheld diagnostic' : '' };
@@ -1558,7 +1560,8 @@ test('package failure stages require supervised exit125 and current identity; cl
         await cap.probe(); answer = await cap.preparePackages();
       });
       assert.equal(answer?.phase, 'unknown'); assert.equal(answer?.sourceExecutionAuthorized, false);
-      assert.equal(answer?.failureStage, mode === 'normal' ? 'key' : undefined);
+      assert.equal(answer?.failureStage, mode === 'normal' || detailed ? stage : undefined);
+      assert.equal(answer?.failureDetail, detailed ? 'index-kind-translation' : undefined);
       assert.equal(result.phase, 'failed'); assert.equal(result.cleanup?.confirmed, mode !== 'group-unknown');
     });
   }
@@ -1569,15 +1572,123 @@ test('owned Python failure fixture emits only fixed stage and reason while disca
     assert.ok(ROOTLESS_PACKAGE_PREPARE.startsWith(prefix));
     const python = ROOTLESS_PACKAGE_PREPARE.slice(prefix.length + 1, -1).replaceAll("'\"'\"'", "'");
     assert.equal(python.split('body = prepare()').length, 2);
-    for (const stage of ['prerequisites', 'key', 'index-update', 'digest', 'manifest']) {
+    for (const stage of ['prerequisites', 'key', 'index-update', 'digest', 'manifest', 'index-snapshot']) {
       // No prepare/guest/package/network function is called: only the final error encoder is executed.
+      const detail = stage === 'index-snapshot' ? 'index-kind-translation' : '';
       const fixture = python.replace('body = prepare()',
-        `stage = '${stage}'; raise RuntimeError('synthetic withheld exception')`);
+        `stage = '${stage}'; failure_detail = '${detail}'; raise RuntimeError('synthetic withheld exception')`);
       const result = await runRuntimeProcess('/usr/bin/python3', ['-I', '-c', fixture], {
         cwd: base, home: base, timeoutMs: 5000, deadlineAt: Date.now() + 10000, maxOutputBytes: 16384 });
       assert.equal(result.exitCode, 125); assert.equal(result.cleanupConfirmed, true);
-      assert.equal(result.stdout, `wakeio-rootless-packages-failure/v1:${stage}:operation_failed\n`);
+      assert.equal(result.stdout, `wakeio-rootless-packages-failure/v1:${stage}:operation_failed`
+        + (detail ? ':' + detail : '') + '\n');
       assert.equal(result.stderr, ''); assert.equal(parseRootlessPackageFailure(result.stdout).failureStage, stage);
     }
   });
+});
+
+const INDEX_GUARD_FIXTURE = String.raw`
+import ast, sys, stat, re, hashlib
+from types import SimpleNamespace
+module = ast.parse(sys.stdin.read())
+functions = {'require','identity','read_file','index_check','index_file','indexes','write_new'}
+class Stream:
+    def __init__(self, mode): self.mode, self.closed = mode, False
+    def __enter__(self): return self
+    def __exit__(self, *args): self.closed = True
+    def write(self, data):
+        if self.mode == 'write': raise OSError('synthetic withheld error')
+    def flush(self): pass
+    def fileno(self): return 11
+class OwnedOs:
+    O_RDONLY, O_WRONLY, O_CREAT, O_EXCL, O_NOFOLLOW, O_NONBLOCK = 1, 2, 4, 8, 16, 32
+    def __init__(self, mode):
+        self.mode, self.closed, self.stream = mode, 0, Stream(mode)
+    def listdir(self, path):
+        if self.mode == 'list-io': raise OSError('synthetic withheld error')
+        if self.mode == 'name': return ['invalid@name']
+        if self.mode == 'translation': return ['repo_Translation-en']
+        if self.mode == 'other': return ['repo_Components.yml']
+        if self.mode == 'count': return []
+        if self.mode == 'repo': return ['r'+str(i)+'_Packages' for i in range(4)]
+        return ['download.docker.com_InRelease','ports.ubuntu.com_InRelease','r_Packages','s_Packages']
+    def open(self, path, flags, *mode):
+        assert flags & self.O_NOFOLLOW
+        if self.mode == 'symlink': raise OSError('synthetic withheld error')
+        self.offset, self.calls = 0, 0
+        return 11
+    def metadata(self):
+        m = self.mode
+        return SimpleNamespace(st_dev=1, st_ino=7, st_size=0 if m == 'size' else 2,
+            st_mtime_ns=1, st_ctime_ns=1, st_uid=1 if m == 'owner' else 0,
+            st_nlink=2 if m == 'links' else 1, st_mode=(stat.S_IFDIR if m == 'type' else stat.S_IFREG)
+                | (0o622 if m == 'mode' else 0o600))
+    def fstat(self, fd):
+        self.calls += 1; value = self.metadata()
+        if self.mode == 'consistency' and self.calls > 1: value.st_ino += 1
+        return value
+    def stat(self, path, follow_symlinks):
+        assert follow_symlinks is False; value = self.metadata()
+        if self.mode == 'name-drift': value.st_ino += 1
+        return value
+    def read(self, fd, size):
+        if self.mode == 'read': raise OSError('synthetic withheld error')
+        if self.offset: return b''
+        self.offset = 1; return b'x' if self.mode == 'short' else b'xx'
+    def close(self, fd): assert fd == 11; self.closed += 1
+    def fdopen(self, fd, mode):
+        if self.mode == 'fdopen': raise OSError('synthetic withheld error')
+        return self.stream
+    def fsync(self, fd): assert fd == 11
+namespace = dict(stat=stat, re=re, hashlib=hashlib, BASE='/owned', failure_detail='')
+exec(compile(ast.Module(body=[n for n in module.body if isinstance(n, ast.FunctionDef)
+    and n.name in functions], type_ignores=[]), 'owned guards', 'exec'), namespace)
+cases = {'list-io':'index-list-io','name':'index-name','translation':'index-kind-translation',
+    'other':'index-kind-other','type':'index-type','owner':'index-owner','links':'index-links',
+    'mode':'index-mode','size':'index-size','read':'index-read','symlink':'index-read',
+    'consistency':'index-consistency','name-drift':'index-consistency','short':'index-consistency',
+    'count':'index-count','repo':'index-repo-presence'}
+for mode, expected in cases.items():
+    namespace['os'] = OwnedOs(mode)
+    failed = False
+    try: namespace['indexes']()
+    except (ValueError, OSError): failed = True
+    assert failed and namespace['failure_detail'] == expected
+namespace['os'] = OwnedOs('normal')
+assert len(namespace['indexes']()) == 4 and namespace['failure_detail'] == ''
+for mode in ['normal','write','fdopen']:
+    owned = OwnedOs(mode); namespace['os'] = owned; failed = False
+    try: namespace['write_new']('/owned/file', b'fixed synthetic bytes')
+    except OSError: failed = True
+    assert failed == (mode != 'normal')
+    assert owned.closed == (1 if mode == 'fdopen' else 0)
+    assert owned.stream.closed == (mode != 'fdopen')
+print('owned index guards and FD ownership pass; no filesystem/package/network operations')
+`;
+test('owned index guards classify each rejection without raw errors; write FD ownership transfers once', async () => {
+  await scope(async base => {
+    const prefix = '/usr/bin/python3 -I -c ';
+    const python = ROOTLESS_PACKAGE_PREPARE.slice(prefix.length + 1, -1).replaceAll("'\"'\"'", "'");
+    const result = await runRuntimeProcess('/usr/bin/python3', ['-I', '-c', INDEX_GUARD_FIXTURE], {
+      input: python, cwd: base, home: base, timeoutMs: 5000, deadlineAt: Date.now() + 10000, maxOutputBytes: 16384 });
+    assert.equal(result.completed, true); assert.equal(result.stderr, '');
+    assert.equal(result.stdout, 'owned index guards and FD ownership pass; no filesystem/package/network operations\n');
+  });
+});
+test('index detail is optional closed metadata on index snapshot/recheck only and grants no authority', () => {
+  const details = ['index-list-io', 'index-name', 'index-kind-translation', 'index-kind-other', 'index-type',
+    'index-owner', 'index-links', 'index-mode', 'index-size', 'index-read', 'index-consistency',
+    'index-count', 'index-repo-presence'];
+  for (const stage of ['index-snapshot', 'state-recheck']) for (const detail of details) {
+    const raw = `wakeio-rootless-packages-failure/v1:${stage}:operation_failed:${detail}\n`;
+    const answer = parseRootlessPackageFailure(raw);
+    assert.equal(answer.failureDetail, detail); assert.equal(answer.phase, 'unknown');
+    assert.equal(answer.sourceExecutionAuthorized, false); assert.equal(answer.backendVerified, false);
+    assert.equal(answer.daemonObserved, false); assert.deepEqual(answer.packages, []);
+    for (const bad of [raw.slice(0, -1), raw + '\n', raw + 'extra', raw.replace(detail, 'unsupported'),
+      raw.replace(stage, 'key'), raw.replace(detail, 'index-name:/raw/path')]) {
+      assert.equal(parseRootlessPackageFailure(bad).reason, 'invalid_metadata');
+      assert.equal(parseRootlessPackageFailure(bad).failureDetail, undefined);
+    }
+  }
 });

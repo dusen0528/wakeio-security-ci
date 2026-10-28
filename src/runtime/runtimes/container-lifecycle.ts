@@ -20,10 +20,14 @@ export interface PreparedPackage {
 const PREPARATION_STAGES = ['prerequisites', 'key', 'apt-config', 'index-update', 'index-snapshot',
   'selection', 'download', 'digest', 'state-recheck', 'manifest'] as const;
 type PreparationStage = typeof PREPARATION_STAGES[number];
+const INDEX_FAILURE_DETAILS = ['index-list-io', 'index-name', 'index-kind-translation', 'index-kind-other',
+  'index-type', 'index-owner', 'index-links', 'index-mode', 'index-size', 'index-read', 'index-consistency',
+  'index-count', 'index-repo-presence'] as const;
+type IndexFailureDetail = typeof INDEX_FAILURE_DETAILS[number];
 export interface RootlessPackagePreparation {
   kind: 'rootless-package-preparation'; phase: 'download_prepared' | 'unknown';
   reason: 'none' | 'prepare_unavailable' | 'invalid_metadata' | 'identity_unknown' | 'operation_failed';
-  failureStage?: PreparationStage;
+  failureStage?: PreparationStage; failureDetail?: IndexFailureDetail;
   backendVerified: false; sourceExecutionAuthorized: false; daemonObserved: false;
   manifestSha256: string | null; indexManifestSha256: string | null; installedStatusSha256: string | null;
   packages: readonly Readonly<PreparedPackage>[];
@@ -78,8 +82,14 @@ export function parseRootlessPackagePreparation(raw: string): Readonly<RootlessP
 export function parseRootlessPackageFailure(raw: string): Readonly<RootlessPackagePreparation> {
   if (Buffer.byteLength(raw) <= 128) {
     for (const stage of PREPARATION_STAGES) {
-      if (raw === `wakeio-rootless-packages-failure/v1:${stage}:operation_failed\n`) {
+      const prefix = `wakeio-rootless-packages-failure/v1:${stage}:operation_failed`;
+      if (raw === prefix + '\n') {
         return Object.freeze({ ...packagePreparationUnknown('operation_failed'), failureStage: stage });
+      }
+      if (stage !== 'index-snapshot' && stage !== 'state-recheck') continue;
+      for (const detail of INDEX_FAILURE_DETAILS) {
+        if (raw === prefix + ':' + detail + '\n') return Object.freeze({
+          ...packagePreparationUnknown('operation_failed'), failureStage: stage, failureDetail: detail });
       }
     }
   }
@@ -96,6 +106,13 @@ KEY_FINGERPRINT = '__KEY_FINGERPRINT__'
 BASE = '/run/wakeio-m1-packages'
 ENV = {'PATH':'/usr/sbin:/usr/bin:/sbin:/bin', 'LC_ALL':'C', 'HOME':'/root'}
 stage = 'prerequisites'
+failure_detail = ''
+
+def index_check(ok, code):
+    global failure_detail
+    if not ok:
+        failure_detail = code
+        require(False)
 
 def require(ok):
     if not ok: raise ValueError('closed_preparation_failure')
@@ -106,25 +123,33 @@ def encoded(value):
 def identity(s):
     return (s.st_dev, s.st_ino, s.st_size, s.st_mtime_ns, s.st_ctime_ns)
 
-def read_file(path, limit):
+def read_file(path, limit, indexing=False):
     fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
     try:
         before = os.fstat(fd)
-        require(stat.S_ISREG(before.st_mode) and before.st_uid == 0 and before.st_nlink == 1)
-        require(not before.st_mode & 0o022 and 0 < before.st_size <= limit)
+        check = index_check if indexing else lambda ok, code: require(ok)
+        check(stat.S_ISREG(before.st_mode), 'index-type')
+        check(before.st_uid == 0, 'index-owner')
+        check(before.st_nlink == 1, 'index-links')
+        check(not before.st_mode & 0o022, 'index-mode')
+        check(0 < before.st_size <= limit, 'index-size')
         chunks, used = [], 0
         while True:
             chunk = os.read(fd, 65536)
             if not chunk: break
-            used += len(chunk); require(used <= limit); chunks.append(chunk)
-        require(used == before.st_size and identity(before) == identity(os.fstat(fd)))
-        require(identity(before) == identity(os.stat(path, follow_symlinks=False)))
+            used += len(chunk); check(used <= limit, 'index-size'); chunks.append(chunk)
+        check(used == before.st_size and identity(before) == identity(os.fstat(fd)), 'index-consistency')
+        check(identity(before) == identity(os.stat(path, follow_symlinks=False)), 'index-consistency')
         return b''.join(chunks)
     finally: os.close(fd)
 
 def write_new(path, data):
     fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
-    with os.fdopen(fd, 'wb') as stream: stream.write(data); stream.flush(); os.fsync(stream.fileno())
+    try: stream = os.fdopen(fd, 'wb')
+    except BaseException:
+        os.close(fd)
+        raise
+    with stream: stream.write(data); stream.flush(); os.fsync(stream.fileno())
 
 class NoRedirect(urllib.request.HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):
@@ -173,17 +198,34 @@ def apt_config():
     write_new(BASE + '/apt.conf', ''.join(k + ' "' + v + '";\n' for k,v in config.items()).encode('ascii'))
     os.environ.clear(); os.environ.update(ENV); os.environ['APT_CONFIG'] = BASE + '/apt.conf'
 
+def index_file(path):
+    global failure_detail
+    try: return read_file(path, 256 * 1024 * 1024, True)
+    except OSError:
+        failure_detail = 'index-read'
+        raise
+
 def indexes():
+    global failure_detail
+    failure_detail = ''
+    try: names = sorted(os.listdir(BASE + '/lists'))
+    except OSError:
+        failure_detail = 'index-list-io'
+        raise
     records = []
-    for name in sorted(os.listdir(BASE + '/lists')):
+    for name in names:
         if name in ['lock', 'partial', 'auxfiles']: continue
-        require(re.fullmatch(r'[A-Za-z0-9_.-]{1,240}', name) is not None)
-        require(name.endswith('InRelease') or '_Packages' in name)
-        body = read_file(BASE + '/lists/' + name, 256 * 1024 * 1024)
+        index_check(re.fullmatch(r'[A-Za-z0-9_.-]{1,240}', name) is not None, 'index-name')
+        kind = 'index-kind-translation' if '_Translation-' in name else 'index-kind-other'
+        index_check(name.endswith('InRelease') or '_Packages' in name, kind)
+        body = index_file(BASE + '/lists/' + name)
         records.append({'file':name, 'size':len(body), 'sha256':hashlib.sha256(body).hexdigest()})
-    require(4 <= len(records) <= 32)
-    require(any('download.docker.com' in r['file'] and r['file'].endswith('InRelease') for r in records))
-    require(any('ports.ubuntu.com' in r['file'] and r['file'].endswith('InRelease') for r in records))
+    index_check(4 <= len(records) <= 32, 'index-count')
+    index_check(any('download.docker.com' in r['file'] and r['file'].endswith('InRelease') for r in records),
+        'index-repo-presence')
+    index_check(any('ports.ubuntu.com' in r['file'] and r['file'].endswith('InRelease') for r in records),
+        'index-repo-presence')
+    failure_detail = ''
     return records
 
 def selected(cache):
@@ -267,7 +309,9 @@ try:
     body = prepare()
     os.write(out, body + b'\n')
 except BaseException:
-    os.write(out, ('wakeio-rootless-packages-failure/v1:' + stage + ':operation_failed\n').encode('ascii'))
+    detail = ':' + failure_detail if failure_detail else ''
+    token = 'wakeio-rootless-packages-failure/v1:' + stage + ':operation_failed' + detail + '\n'
+    os.write(out, token.encode('ascii'))
     sys.exit(125)
 finally:
     os.close(out)

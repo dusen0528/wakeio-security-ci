@@ -420,3 +420,11 @@ parent는 정상 종료된 소유 group/close·현재 신원·exit125·stderr �
 unknown/extra/잘림·다른 exit·timeout/output cap/abort·정리/신원 불명은 stage를 신뢰하지 않고 기존 실패 경로로 닫힌다. 이전 테스트의 garbage exit125 기대만 prepare_unavailable에서 더 엄격한 invalid_metadata로 바꿨으며 실패/권한 false·sticky cleanup 기준은 유지했다.
 자체 fixture는 prepare를 호출하지 않고 마지막 failure encoder에 합성 예외만 주입한다. 실제 apt/OS/VM·다운로드·설치·daemon 실행은 없다. 40efd의90 pass는 그 원래 코드의 결과이며 이번 결과와 구별한다. 설치 미완료·python3-apt/API 미측정·OS30초/읽기5초/16KiB·setup300초는 그대로다.
 이번 build·cleanup/compose/compat 직렬93 pass·fail/skip0과120/60·diff-check를 통과했다. 최초 길이 검사3행은 의미 불변 줄바꿈으로 수정했으며 Docker/key 독립 pin AST와 배포 자산/Action은 불변이다. fixture가 실제 apt/다운로드 성공을 증명하지 않는다.
+
+### M1-167 / index 세부 진단과 fdopen 소유권
+
+기존10stage·stage-only failure wire를 유지하고 index-snapshot/state-recheck에만 optional failureDetail을 추가한다. list-io/name/kind/type/owner/links/mode/size/read/consistency/count/repo-presence를 닫힌 index-* token으로 구분한다. kind는 기존 허용 조건에서 실패한 이름의 `_Translation-` 표식 유무만 translation/other로 분류하며 파일명·경로·UID·본문·예외는 반환하지 않는다.
+기존 InRelease/_Packages 종류·ASCII 이름·root owner/regular/nlink1/쓰기권한·크기/안정 FD/이름·개수/repo 존재·서명/origin/hash 조건은 그대로다. 성공 wire·index/status digest 구성과128B failure/16KiB 출력·300초setup/30초OS/5초read·신원/cleanup·false authority도 유지한다. 알 수 없는 detail이나 다른 stage와의 조합·추가/잘린 token은 거부한다.
+세부 진단은 실패한 조건 위치만 나타낸다. acdb 실제 원인이나 Translation 실재·서명 성공·설치/실행 권한을 확정하지 않는다. 이번에는 Acquire::Languages나 종류 허용 범위를 바꾸지 않으며 실제 고정 cycle 재측정은 다음 CPx 승인 후 R9가 담당한다.
+write_new는 fdopen 생성 실패 때만 원시 fd를 닫고 재던진다. stream 생성 뒤에는 context가 정상/쓰기 예외 모두 닫는다. 소유 합성 fixture는 filesystem/package/network 접근 없이 각 index guard 및 이 세 FD 경로와 원문 오류 비출력을 검증한다. 설치/daemon/target/VM/다운로드 실행은 없다.
+자체 build·cleanup/compat 직렬80 pass·fail/skip0, Python AST/소유 guard·FD fixture·120/60·diff-check를 확인했다. 초기121자 footer 한 행은 줄바꿈으로 수정했다. 독립 pins·성공 wire parser AST와 생성물은 불변이며 이 결과는 실제 index 상태나 prepare 성공의 증거가 아니다.
