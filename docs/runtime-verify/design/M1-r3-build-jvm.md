@@ -497,3 +497,9 @@ R9 M1-212의 별도 prepared-seal-audit는30d95에서 B1(최초 응답에 deb-bi
 회귀는 원 FD bindings의 메모리 값과 실제 prepare의 anchor 계산 AST를 사용한다. 같은 bytes의 deb inode와 sidecar를 최초 snapshot 전에 함께 바꾸어 snapshot의 manifest/index/status 세 digest가 유지되지만 원 receipt anchor와 달라짐을 확인한다. owner mock도 첫 anchor 불일치를 unknown/폐쇄로 검사한다. 공개/비공개 JSON을 인수로 넘기거나 빈/변조/혼합/과대 receipt로 seal·설치 권한을 만들 수 없다. 실제 VM/prepare/설치 실행은0이다.
 B2는 미완료다. 이후 snapshot에 일부 config FD가 들어가더라도 최초 APT/key/source/empty 입력의 독립 결속을 대체하지 않으며 실제 설치 전에 고정 검증이 필수다. N1도 개별 index FD가 읽는 동안 안정적이라는 보증과 snapshot 사이 inode 동일성을 구별해야 한다. 현재는 후자를 보장하지 않으며 installer는 계속 비활성이다. 원 감사 B1의 lifecycle prepare/receipt·controller 최초 seal/재검증 비교가 이번 수정 위치이며 B2/N1 가동 완료를 주장하지 않는다.
 자체 npm ci ignore-scripts/build·cleanup/compat 직렬89 pass·fail/skip0, Python AST·120자/함수60줄·diff-check를 확인했다. 초기 길이 검사2행은 줄바꿈으로 수정했다. 공개 parser/pins/wire와 manifest encoding·FD/서명/trust/selection guard는 byte/AST 동일이며 첫 anchor 및 이후 anchor 교체가 모두 닫힌다. 합성 FD 모델/소유 mock 검증만 수행했으며 실제 VM 성공이나 설치 권한으로 해석하지 않는다.
+
+### M1-225 / 소유 테스트 event 대기의 독립 liveness 수정
+
+M1-220의 실제 source-free **mock** session에서 prepare 뒤 취소된 probe는 두 번째 snapshot을 시작하지 않는다. event만 기다리던 callback은 session/PGID 정리가 끝난 뒤에도 polling timer를 남겼고, 소유 재현 자식은5.08초에 timeout·최종 집계 없음으로 종료됐다. 세 기존 overlap/abort 대기와 회귀가 같은 helper로 predicate뿐 아니라 pending operation 정착·AbortSignal을 관찰하게 했다. event 전 종료를 성공으로 간주하지 않고 명시적으로 거부하며 callback 실패는 기존 session close가 active 작업을 취소·drain한다. 제품 코드·신원/권한/정리·timeout 기준은 바꾸지 않았다.
+R9는 실제 실패 CI에서 runtime-cleanup84개가 모두 완료됐음을 확인했다. 이 수정은 독립 잠재 테스트 결함의 local red→green이며 hosted600초 timeout 원인이나 해결 증거가 아니다. M1-223의 baseline84/87.18초·candidate89/102.88초와 ZAP fake 집중2 pass도 실제 Linux ZAP/JDK의 종료를 증명하지 않는다.
+동일한 liveness 집중 명령은 수정 전1 fail/5.08초→수정 후1 pass/1.57초로 바뀌고 자식은 자연 종료했다. helper의 정상 event/성공·실패 정착/중간 abort 및 기존 setup cancellation·seal overlap·installer abort 집중4 pass, compat5 pass를 확인했다. 자체 build·120자/함수60줄·diff-check도 통과했으며 기존 전체 회귀89/102.88초를 불필요하게 다시 실행하지 않았다.
