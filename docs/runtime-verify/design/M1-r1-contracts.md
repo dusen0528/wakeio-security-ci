@@ -198,6 +198,38 @@ simple Query는 전체 query 문자열의 최초 lexical/raw parse가 실행 전
 현재 이 capture/enforcement 구현은 없다. 결속 불가·설정 관측 손실/변경 누락·불일치는 해당 설정 의존 판정을 unknown으로 남긴다. 특정 server extension·새 코드 경로·설정 불변성 대안은 이번에 선택하지 않는다. byte 패턴이나 SQL regex로 confirmed를 올리거나 실제 tuple 관측으로 표기하지 않는다.
 후속 별도 계약 리뷰와 독립 R8 기대값·R9 실제 설정 교차 matrix가 필요하다. 이번 정정은 V3 confirmed 등급·R8 원본·현재 v1/선언된 native ABI를 바꾸거나 native 실행 완료를 주장하지 않는다.
 
+### M1-208 / CPx19 검토: common scanner 진입의 tuple 정책 후보
+
+M1-200/201/203의 source 조사에 따른 **후속 검토 후보**다. 최종 선택·구현·가동·tuple 동등성 완료를 뜻하지 않으며 PLAN14.4의 M1 범위를 넓히지 않는다. §7의 새 경로도 CPx19 검토·승인과 root의 역할별 패킷 전에는 생성하지 않는다.
+공식 REL_18_6의 [scanner_init](https://github.com/postgres/postgres/blob/REL_18_6/src/backend/parser/scan.l)은 lexical globals를 scanner extra로 복사하며, [SQL raw_parser](https://github.com/postgres/postgres/blob/REL_18_6/src/backend/parser/parser.c)와 [PL/pgSQL 직접 scanner](https://github.com/postgres/postgres/blob/REL_18_6/src/pl/plpgsql/src/pl_scanner.c)가 함께 사용한다. source 읽기 결과이며 실제 custom 서버의 관측 증거는 아니다.
+
+**최소 후보.** 고정 PG18.6 서버의 scanner_init에서 globals를 복사하기 전에 실제 `standard_conforming_strings=true`, `backslash_quote=safe_encoding`, `GetDatabaseEncoding()=UTF8`, `pg_get_client_encoding()=UTF8`를 검사한다. 관리 SHOW·기본값·env 선언을 검사값으로 대신하지 않는다.
+불일치는 고정된 별도 non-42601 정책 오류(후보 SQLSTATE 0A000)와 닫힌 지원 거부 사유로 끝낸다. 해당 요청은 unknown/gap이며 취약점·정상 control·수집 완료로 세지 않는다. 원문 SQL이나 오류 문자열을 진단 증거에 넣지 않는다.
+이 정책은 SET/rollback을 가로막거나 GUC hook를 바꾸는 방식이 아니다. 설정이 달라진 뒤 새 scanner를 열면 그 순간의 값으로 거부한다. 이미 파싱된 트리의 실행 당시에도 tuple이 같다고 주장하지 않는다.
+
+| source에서 확인한 범위 | 후속 검증·제한 |
+| --- | --- |
+| simple Query·extended Parse | 새 raw parse의 scanner 진입을 검사한다. 여러 statement는 실행 전 전체 parse이고 Parse와 Execute 시점을 혼동하지 않는다. |
+| PL/pgSQL body·SQL 검증·SPI·type-name mode | 공유 scanner 진입으로 raw_parser 단독 검사 사각을 줄인다. 내부 문장과 외부 로그 statement의 hash/위치 귀속은 여전히 별도다. |
+| bootstrap·initdb·--single | bootstrap은 별도 BKI grammar다. initdb 후반 --single SQL은 검사 대상이며 standalone 전체 예외를 두지 않는다. UTF8 initdb·초기화 순서의 실제 성공은 미측정이다. |
+| prepared tree·SQL function·parallel reuse | 새 scan이 없으면 재검사가 아니다. 최초 검증된 parse와 같은 서버/정책/lease의 트리라는 근거가 필요하며 worker의 새 nested scan도 matrix에 포함한다. |
+| 직접·중첩·정규화 scanner 호출 | 같은 진입을 검사하므로 pg_stat_statements 재스캔 등도 거부될 수 있다. 독립 parser·임의 native extension까지 포괄하는 보장은 아니다. |
+
+[scanner API](https://github.com/postgres/postgres/blob/REL_18_6/src/include/parser/scanner.h)는 호출자가 복사값을 바꿀 수 있게 한다. client encoding은 lexer action에서도 현재 값을 참조한다. 고정 호출자와 scanner 수명 중 변경·재진입을 검증하지 못하면 진입 검사만으로 M1-192 capture를 대체하지 않는다.
+[initdb](https://github.com/postgres/postgres/blob/REL_18_6/src/bin/initdb/initdb.c)는 BKI encoding 대체 뒤 standalone SQL을 수행한다. 예외가 정말 필요하면 실제 bootstrap mode만 별도 검토하며 앱의 SQL 권한으로 켤 수 있는 우회 설정은 만들지 않는다. OS 실행/C 코드·서버 자산 쓰기 권한 배제도 확인한다.
+server-side statement의 검증된 UTF8 bytes와 [client→server 변환](https://github.com/postgres/postgres/blob/REL_18_6/src/backend/utils/mb/mbutils.c) provenance를 결속한다. clientUTF8 검사도 필요한 이유는 safe_encoding의 실제 lexer 분기가 client 값을 참조하기 때문이다. 정규화만으로 이 의존성을 없앴다고 하지 않는다.
+서버의 네 값 검사와 native helper의 적용 tuple은 다른 증거다. 이 제안 시점의 worker는 공식 package parseSync/scanSync의 wakeio.pg-parser/v1 경로이며 custom 진단/정책 배선 완료가 아니다. 현재 v1·16B/44B native ABI의 encoding 의미를 바꾸지 않으며 libpg_query core18.4와 서버18.6의 진단·위치·설정 동등성은 독립 actual 대조 전 미입증이다. xq 코드만으로 V3를 승격하지 않는다.
+
+**배포 최소 권장 후보.** 고정 로컬 PG source+patch를 trusted 관리 도구가 별도 제한 build하여 만드는 **custom image**를 우선 검토한다. source/patch·compiler/flags·libc/arch·base/runtime image·생성 postgres bytes와 최종 image digest를 결속하고 독립 host pin으로 승인한다. 공식 PG 이미지와 동일품으로 부르지 않는다.
+image 생성/사용은 Target sourceExec와 분리한다. 앱 source·compose·env가 recipe/image/정책·server volume을 교체하거나 관리 DB role을 얻지 못해야 한다. sourceExec consent나 기존 VM 소유권만으로 새 tool build/daemon/대상 실행 권한이 생기지 않는다.
+로컬 binary 배포안은 정확한 OS/arch/libc·동적 라이브러리·PG share 자산과 설치 경로를 함께 고정해야 한다. 플랫폼별 postgres를 npm에 직접 넣는 선택은 이번 최소안으로 삼지 않는다. 필요성이 실측되면 경로·크기·배포 목록을 별도 승인받는다.
+일반 npm build는 선택된 로컬 metadata/자산의 검증·복사만 유지한다. 자동 source fetch·compiler·이미지 pull/build는 추가하지 않는다. custom 서버 build/run 상한은 후속 R3 패킷에서 구체적으로 CPx 검토하며 기존 WASM job1초/256MiB를 서버 전체의 한도로 전용하지 않는다.
+
+**실행 전 입증.** R9는 고정 source/patch/build·postgres/image raw digest, 실제 실행 lease/container·DB/session·정책 revision을 대조한다. 문장 hash·parse ID·cursor/요청 창과 원본→UTF8 변환을 결속하며 자기 manifest나 producer의 enforced boolean만으로 승인하지 않는다.
+실제 matrix는 새 연결·startup/role/DB 설정·SET/LOCAL/set_config·function proconfig·RESET/rollback/SIGHUP, direct/nested scanner·prepared/parallel reuse·UTF8 initdb/--single·실패 cleanup을 포함한다. 다른 tuple을 요구하는 앱은 지원 거부 범위로 드러낸다.
+고정 R8 기대값/V3 confirmed 등급은 유지한다. R8이 독립 matrix를 작성하고 R9가 실제 서버와 native의 취약/수정·음성 대조를 확인한다. byte 패턴·SQL regex·manual projection이나 정책 오류만으로 confirmed를 만들지 않는다.
+입증되면 검증 범위 안의 스캔에 한해 강제 정책 증거를 tuple 관측 대신 쓸 수 있다. 문장 인과·producer 신원·DB 사건 귀속까지 대신하지 않으며 누락·불일치·미검증 수명/경로는 unknown이다. 현재 구현·compile·전체 matrix 완료를 주장하지 않는다.
+
 ### M1-168 / 최소 native ABI·최초 지원·후속 실행 조건
 
 M1-165의 고정 소스 조사와 CPx14 N2를 반영한 문서 계약이다. 아래 선택은 patch·새 wire/types/context 또는 자산 구현 완료를 뜻하지 않는다. 현재 공식 npm 자산·`wakeio.pg-parser/v1`은 그대로 두고, root가 이 문서를 병합한 뒤 R5 patch 패킷과 R1/R5의 새 protocol 계약 패킷을 별도로 발행한다.
@@ -375,6 +407,26 @@ reportArtifact는 `{name:report.json,algorithm:sha256,digest:<확정된 report.j
 공유 배포 경로의 **후속 승인 제안**: R1은 `package.json`/`package-lock.json`의 strict YAML·JSON Schema 검증용 고정 dependency와 packs/schema 배포 파일 목록, R10은 `scripts/build-action-bundle.mjs`/`THIRD_PARTY_NOTICES.md`의 필요한 새 배포 자산·고지를 맡는다. legacy bundle/기존 출력 회귀를 검증한다.
 기존 패키지로 충족되는지 먼저 확인하고, 안 되면 검증된 고정 dependency를 쓴다. 자체 불완전 YAML/JSON Schema 파서로 검증 목표를 축소하지 않는다. 구체 버전·SQL WASM helper 자산/파일 경로는 후속 실측 뒤 정확한 별도 경로 승인으로 남긴다.
 이 명부 제안은 구현 권한을 스스로 부여하지 않는다. 위 공유 경로의 실제 수정에는 root 후속 패킷과 CPx 승인이 필수이며 M1-19에서는 package/lock/bundle builder/고지/dependency를 바꾸지 않는다.
+
+### M1-208 / CPx19에 승인 요청할 scanner 정책 경로 후보
+
+아래는 §4 M1-208의 소유/경로 **검토 명부**다. 이번에는 이 문서만 수정한다. CPx19 승인과 root 후속 패킷 전에는 파일·자산 생성이나 기존 제품 변경을 하지 않는다. 명부가 실행 capability를 부여하지 않는다.
+기존 pg-parser WASM과 별도 서버 정책 identity를 사용하며 제안 이름을 현재 배포/승인 pin처럼 해석하지 않는다.
+
+| 역할 | 최소 신규 후보 또는 기존 재사용 경로 | 책임·후속 조건 |
+| --- | --- | --- |
+| R1 | 신규 `workers/pg-server-policy/native/sources.lock.json`; 기존 `src/runtime/types.ts`, `schemas/verify-artifact.v1.json` | 고정 PG18.6 source/build 입력·정책 revision·pending 핀 및 관측/강제 증거의 닫힌 계약. 미측정 SHA를 채우지 않는다. |
+| R3 | 신규 `workers/pg-server-policy/native/scanner-tuple.patch`, `scripts/build-pg-server-policy.mjs` | 공통 scanner 진입의 최소 source patch와 로컬 고정 입력의 별도 제한 custom-image build recipe·감독. 필요 상한/실행 권한은 별도 검토한다. |
+| R3 | 기존 `src/runtime/{process.ts,runtimes/controller.ts}` | 실제 custom image/binary·정책/DB lease의 독립 pin과 격리·negative probes·cleanup. Target recipe/자산 교체와 권한 승격을 거부한다. |
+| R10 | 신규 후보 `workers/pg-server-policy/{manifest.json,THIRD_PARTY_LICENSES.txt}`; 기존 `scripts/build-action-bundle.mjs`, `THIRD_PARTY_NOTICES.md` | 생성 metadata/고지·관리 도구 배포. custom image는 소유 tool cache에서 식별하고 npm에 플랫폼 binary가 자동 포함된다고 가정하지 않는다. |
+| R5 | 기존 `src/runtime/observers/{pg-log,sql-projection,pg-parser-helper,pg-parser-worker}.ts`, `src/runtime/oracles/sql.ts` | 실제 statement/parse/session/cursor와 정책 증거 결속·지원 거부 unknown. Oracle은 여전히 data-only이며 native18.4/서버18.6 동등성을 가정하지 않는다. |
+| R8 | 기존 `tests/fixtures/runtime-m1/**`, `examples/runtime/{spring-sqli,spring-sqli-jdbc}/**` | 독립 설정/경로 matrix·원래 V3 및 음성/수정 기대 보존. 구현 출력에서 정답을 생성하지 않는다. |
+| R9 | 기존 `.handoff/evidence/M1/**`(세부 파일은 root 패킷) | 입력/산출물 bytes·Target source 없는 고정 도구 build·앱 경로/설정·격리·실패·native/PG 대조를 독립 측정한다. |
+
+image archive가 배포에 필요하거나 local binary안을 택하면 실제 asset 경로·크기·플랫폼/의존 자산을 실측한 뒤 canonical 명부에 정확히 추가 승인받는다. 이번에는 OCI tar/postgres binary 경로를 확정하거나 생성하지 않는다.
+서버 PG18.6 source lock은 기존 `workers/pg-parser/native/sources.lock.json`의 core18.4/emsdk 입력과 섞지 않는다. 공유 package/files 변경도 필요성이 확인된 후 R1 별도 패킷으로만 한다.
+후속 순서는 CPx19 명부/후보 검토 → root의 R9 입력 측정·R1 계약/핀 → R3 patch/제한 build → R10 metadata/배포 → R3 독립 host pin → R8 독립 matrix → R9 actual 대조·다음 CPx다. 각 실행은 별도 승인 범위 안에서만 한다.
+새 테스트 파일은 제안하지 않는다. 기존 runtime-contracts(R1), runtime-cleanup(R3), runtime-pg-log/runtime-sql(R5), runtime-delivery(R10) 소유 테스트와 R8 matrix를 후속 패킷에서 재사용한다.
 
 ### M1-160 / CPx14 승인 native 진단 경로 명부
 
