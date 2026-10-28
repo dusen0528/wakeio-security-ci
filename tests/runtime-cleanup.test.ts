@@ -1618,7 +1618,7 @@ class OwnedOs:
         self.offset, self.calls = 0, 0
         return 11
     def metadata(self):
-        m = self.mode
+        m = 'owner' if self.mode == 'owner-close' else self.mode
         return SimpleNamespace(st_dev=1, st_ino=7, st_size=0 if m == 'size' else 2,
             st_mtime_ns=1, st_ctime_ns=1, st_uid=1 if m == 'owner' else 0,
             st_nlink=2 if m == 'links' else 1, st_mode=(stat.S_IFDIR if m == 'type' else stat.S_IFREG)
@@ -1635,7 +1635,9 @@ class OwnedOs:
         if self.mode == 'read': raise OSError('synthetic withheld error')
         if self.offset: return b''
         self.offset = 1; return b'x' if self.mode == 'short' else b'xx'
-    def close(self, fd): assert fd == 11; self.closed += 1
+    def close(self, fd):
+        assert fd == 11; self.closed += 1
+        if self.mode in ['owner-close','close']: raise OSError('synthetic withheld close error')
     def fdopen(self, fd, mode):
         if self.mode == 'fdopen': raise OSError('synthetic withheld error')
         return self.stream
@@ -1647,12 +1649,15 @@ cases = {'list-io':'index-list-io','name':'index-name','translation':'index-kind
     'other':'index-kind-other','type':'index-type','owner':'index-owner','links':'index-links',
     'mode':'index-mode','size':'index-size','read':'index-read','symlink':'index-read',
     'consistency':'index-consistency','name-drift':'index-consistency','short':'index-consistency',
-    'count':'index-count','repo':'index-repo-presence'}
+    'count':'index-count','repo':'index-repo-presence','owner-close':'index-owner','close':'index-read'}
 for mode, expected in cases.items():
     namespace['os'] = OwnedOs(mode)
     failed = False
     try: namespace['indexes']()
-    except (ValueError, OSError): failed = True
+    except (ValueError, OSError) as error:
+        failed = True
+        if mode == 'owner-close':
+            assert isinstance(error, OSError) and isinstance(error.__context__, ValueError)
     assert failed and namespace['failure_detail'] == expected
 namespace['os'] = OwnedOs('normal')
 assert len(namespace['indexes']()) == 4 and namespace['failure_detail'] == ''

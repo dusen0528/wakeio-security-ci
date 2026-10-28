@@ -202,7 +202,7 @@ def index_file(path):
     global failure_detail
     try: return read_file(path, 256 * 1024 * 1024, True)
     except OSError:
-        failure_detail = 'index-read'
+        if not failure_detail: failure_detail = 'index-read'
         raise
 
 def indexes():

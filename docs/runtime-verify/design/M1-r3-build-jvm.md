@@ -428,3 +428,7 @@ unknown/extra/잘림·다른 exit·timeout/output cap/abort·정리/신원 불�
 세부 진단은 실패한 조건 위치만 나타낸다. acdb 실제 원인이나 Translation 실재·서명 성공·설치/실행 권한을 확정하지 않는다. 이번에는 Acquire::Languages나 종류 허용 범위를 바꾸지 않으며 실제 고정 cycle 재측정은 다음 CPx 승인 후 R9가 담당한다.
 write_new는 fdopen 생성 실패 때만 원시 fd를 닫고 재던진다. stream 생성 뒤에는 context가 정상/쓰기 예외 모두 닫는다. 소유 합성 fixture는 filesystem/package/network 접근 없이 각 index guard 및 이 세 FD 경로와 원문 오류 비출력을 검증한다. 설치/daemon/target/VM/다운로드 실행은 없다.
 자체 build·cleanup/compat 직렬80 pass·fail/skip0, Python AST/소유 guard·FD fixture·120/60·diff-check를 확인했다. 초기121자 footer 한 행은 줄바꿈으로 수정했다. 독립 pins·성공 wire parser AST와 생성물은 불변이며 이 결과는 실제 index 상태나 prepare 성공의 증거가 아니다.
+
+### M1-181 / CPx15 N2의 상세 실패 보존
+
+index guard가 구체 failureDetail을 기록한 뒤 close의 OSError가 겹쳐도 index_file은 이를 index-read로 덮어쓰지 않는다. detail이 비어 있는 단독 read/close 실패만 index-read를 기록한다. 소유 fixture는 owner guard ValueError→close OSError의 실제 예외 연결·기존 index-owner 보존과 단독 read/close의 index-read·원문 오류 비출력을 확인한다. wire/pins/guard/Acquire 설정·상한·신원/cleanup·false authority와 실제 prepare 실패 원인은 바꾸지 않는다. 실제 VM/prepare/download/설치/daemon/target 실행은 없다.
