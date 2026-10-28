@@ -15,7 +15,8 @@ import { copyPgParserAssetFiles, createPgParserAssetLoader,
   createLimaRootlessSetupRunner, withLimaRootlessSetup, type LimaRootlessSetupCapability }
   from '../src/runtime/runtimes/controller.js';
 
-import { ROOTLESS_PACKAGE_PREPARE, parseRootlessPackagePreparation, parseRootlessPackageFailure }
+import { ROOTLESS_PACKAGE_PREPARE, ROOTLESS_PACKAGE_SNAPSHOT,
+  parseRootlessPackagePreparation, parseRootlessPackageFailure }
   from '../src/runtime/runtimes/container-lifecycle.js';
 
 // Deliberately synthetic metadata. A mock tool never downloads, starts or validates these assets.
@@ -1412,11 +1413,30 @@ function packageWire(): string {
     installedStatusSha256: 'b'.repeat(64), packages: rows.map(([name, version, size, sha256]) =>
       ({ name, version, arch: 'arm64', size, sha256, origin: 'docker' })) }) + '\n';
 }
-function setupRecorder(options: { fail?: boolean; hang?: boolean; uncertain?: boolean;
+function packageSnapshotWire(): string {
+  const p = parseRootlessPackagePreparation(packageWire());
+  return 'wakeio-rootless-packages-snapshot/v1:' + [p.manifestSha256, p.indexManifestSha256,
+    p.installedStatusSha256, 'c'.repeat(64), 'd'.repeat(64)].join(':') + '\n';
+}
+function setupRecorder(options: { fail?: boolean; hang?: boolean; uncertain?: boolean; snapshot?: string;
   reply?: Partial<Awaited<ReturnType<typeof runRuntimeProcess>>> } = {}) {
   const events: { args: readonly string[]; timeoutMs: number; home: string }[] = [];
+  let snapshots = 0;
   const run = createLimaRootlessSetupRunner(async (executable, args, config) => {
     events.push({ args, timeoutMs: config.timeoutMs, home: config.home });
+    if (args.at(-1) === ROOTLESS_PACKAGE_SNAPSHOT) {
+      snapshots++;
+      if (options.snapshot === 'overlap' && snapshots > 1) return runRuntimeProcess(process.execPath,
+        ['-e', 'setInterval(()=>{},1000)'], config);
+      const result = await runRuntimeProcess(process.execPath, ['-e', ''], config);
+      const stdout = packageSnapshotWire();
+      return { ...result, stdout: options.snapshot === 'bad' ? stdout + '\n'
+        : options.snapshot === 'manifest'
+          ? stdout.replace(parseRootlessPackagePreparation(packageWire()).manifestSha256!, 'e'.repeat(64))
+        : snapshots > 1 && options.snapshot === 'drift' ? stdout.replace('c'.repeat(64), 'e'.repeat(64)) : stdout,
+        stderr: options.snapshot === 'stderr' ? 'synthetic withheld diagnostic' : '',
+        cleanupConfirmed: options.snapshot === 'group' ? false : result.cleanupConfirmed };
+    }
     if (args.at(-1) === ROOTLESS_PACKAGE_PREPARE) {
       if (options.hang) return runRuntimeProcess(process.execPath,
         ['-e', "process.on('SIGTERM',()=>process.exit(0));setInterval(()=>{},1000)"], config);
@@ -1475,8 +1495,9 @@ test('private setup has a separate fixed deadline, guard barrier and scoped down
     assert.equal(result.phase, 'callback_completed'); assert.equal(result.cleanup?.confirmed, true);
     assert.equal(result.status, 'unavailable'); assert.equal(result.verified, false);
     const shell = recorder.events.filter(e => e.args[1] === 'shell');
-    assert.equal(shell.length, 3); assert.equal(shell[0].timeoutMs, 5_000); assert.equal(shell[1].timeoutMs, 5_000);
+    assert.equal(shell.length, 4); assert.equal(shell[0].timeoutMs, 5_000); assert.equal(shell[1].timeoutMs, 5_000);
     assert.equal(shell[2].args.at(-1), ROOTLESS_PACKAGE_PREPARE); assert.equal(shell[2].timeoutMs, 300_000);
+    assert.equal(shell[3].args.at(-1), ROOTLESS_PACKAGE_SNAPSHOT); assert.equal(shell[3].timeoutMs, 5_000);
     assert.equal(recorder.events.find(e => e.args[1] === 'start')?.timeoutMs, 300_000);
     assert.deepEqual(shell[2].args.slice(5, -1), ['--', '/usr/bin/sudo', '-n', '/usr/bin/env', '-i',
       'PATH=/usr/sbin:/usr/bin:/sbin:/bin', 'LC_ALL=C', '/bin/sh', '-c']);
@@ -1987,3 +2008,120 @@ test('fixed URI validation binds raw/canonical APT paths to the same record with
         'owned URI binding: raw/canonical safe escapes match record; unsafe URL/path/escape/record data rejected\n');
     });
   });
+
+test('supervised preparation seals private state; forged data, duplicate calls and changed snapshots close it',
+  async () => {
+  for (const mode of ['normal', 'drift', 'bad', 'manifest', 'stderr', 'group', 'duplicate',
+    'forged', 'overlap']) {
+    await scope(async base => {
+      const recorder = setupRecorder({ snapshot: mode }); let retained!: LimaRootlessSetupCapability;
+      const result = await recorder.run(await osMockTool(base), async cap => {
+        retained = cap; await cap.probe();
+        assert.deepEqual(Object.keys(cap).sort(), ['inventory', 'preparePackages', 'probe']);
+        const copied = JSON.parse(JSON.stringify(parseRootlessPackagePreparation(packageWire())));
+        await assert.rejects((cap.preparePackages as (...a: unknown[]) => Promise<unknown>)(copied));
+        assert.equal(recorder.events.some(e => e.args.at(-1) === ROOTLESS_PACKAGE_SNAPSHOT), false);
+        const answer = await cap.preparePackages();
+        assert.equal(answer.backendVerified, false); assert.equal(answer.sourceExecutionAuthorized, false);
+        if (['bad', 'manifest', 'stderr', 'group'].includes(mode)) {
+          assert.equal(answer.phase, 'unknown'); return;
+        }
+        assert.equal(answer.phase, 'download_prepared');
+        if (mode === 'overlap') {
+          const pending = cap.probe();
+          while (recorder.events.filter(e => e.args.at(-1) === ROOTLESS_PACKAGE_SNAPSHOT).length < 2) {
+            await delay(5);
+          }
+          await assert.rejects(cap.inventory()); await assert.rejects(pending);
+        } else if (mode === 'duplicate') await assert.rejects(cap.preparePackages());
+        else if (mode === 'forged') await assert.rejects((cap.probe as (...a: unknown[]) => Promise<unknown>)(copied));
+        else if (mode === 'drift') await assert.rejects(cap.probe());
+        else assert.equal((await cap.probe()).observed, true);
+      });
+      assert.equal(result.phase, mode === 'normal' ? 'callback_completed' : 'failed');
+      assert.equal(result.cleanup?.confirmed, mode !== 'group'); assert.equal(result.verified, false);
+      assert.equal(recorder.events.filter(e => e.args.at(-1) === ROOTLESS_PACKAGE_PREPARE).length, 1);
+      const before = recorder.events.length; await assert.rejects(retained.preparePackages());
+      assert.equal(recorder.events.length, before);
+    });
+  }
+});
+
+const PREPARED_SNAPSHOT_FIXTURE = String.raw`
+import ast, sys, json, hashlib, stat, posixpath
+from types import SimpleNamespace
+module = ast.parse(sys.stdin.read())
+names = {'require','identity','read_file','owned_directory','prepared_snapshot','encoded'}
+functions = [n for n in module.body if isinstance(n, ast.FunctionDef) and n.name in names]
+digest = lambda b: hashlib.sha256(b).hexdigest()
+class OwnedFs:
+    O_RDONLY, O_NOFOLLOW, O_NONBLOCK = 1, 2, 4
+    path = posixpath
+    def __init__(self): self.files, self.fds, self.nextfd, self.mode = {}, {}, 0, ''
+    def put(self, path, body):
+        self.files[path] = dict(body=body, ino=len(self.files)+10, mode=stat.S_IFREG|0o600, uid=0, links=1)
+    def metadata(self, path):
+        f = self.files.get(path, dict(body=b'',ino=1,mode=stat.S_IFDIR|0o700,uid=0,links=2))
+        return SimpleNamespace(st_dev=1, st_ino=f['ino'], st_size=len(f['body']), st_mtime_ns=1, st_ctime_ns=1,
+            st_mode=f['mode'], st_uid=f['uid'], st_nlink=f['links'])
+    def stat(self, path, follow_symlinks):
+        assert follow_symlinks is False; return self.metadata(path)
+    def open(self, path, flags):
+        assert flags == self.O_RDONLY|self.O_NOFOLLOW|self.O_NONBLOCK and path in self.files
+        self.nextfd += 1; self.fds[self.nextfd] = [path,0,self.metadata(path)]; return self.nextfd
+    def fstat(self, fd): return self.fds[fd][2]
+    def read(self, fd, size):
+        path, offset, _ = self.fds[fd]; body = self.files[path]['body'][offset:offset+size]
+        self.fds[fd][1] += len(body)
+        if self.mode == 'fd-swap' and '/archives/' in path: self.files[path]['ino'] += 1
+        return body
+    def close(self, fd): del self.fds[fd]
+    def listdir(self, path):
+        if path.endswith('/partial'): return []
+        return ['partial'] + [p.rsplit('/',1)[-1] for p in self.files if p.startswith('/owned/archives/')]
+def setup():
+    fs = OwnedFs()
+    ns = dict(os=fs, stat=stat, json=json, hashlib=hashlib, BASE='/owned', boot_digest=lambda:'c'*64,
+        indexes=lambda:[], stage='', re=__import__('re'))
+    exec(compile(ast.Module(body=functions,type_ignores=[]), 'owned snapshot', 'exec'), ns)
+    fs.put('/var/lib/dpkg/status', b'fixed synthetic status'); fs.put('/owned/indexes.json', b'[]')
+    bindings, records = [], []
+    for i in range(4):
+        path = '/owned/archives/p'+str(i)+'_1.0_arm64.deb'; body = bytes([i+1])*4
+        fs.put(path, body); ns['read_file'](path, 128, bindings=bindings)
+        records.append(dict(size=len(body),sha256=digest(body)))
+    fs.put('/owned/manifest.json', ns['encoded'](dict(packages=records,
+        indexManifestSha256=digest(b'[]'),installedStatusSha256=digest(b'fixed synthetic status'))))
+    fs.put('/owned/boot.sha256', b'c'*64); fs.put('/owned/deb-bindings.json', ns['encoded'](bindings))
+    return fs, ns
+for mode in ['normal','bytes','inode','manifest-inode','owner','mode','link','symlink',
+    'boot','status','extra','fd-swap']:
+    fs, ns = setup(); before = ns['prepared_snapshot'](); target = fs.files['/owned/archives/p0_1.0_arm64.deb']
+    if mode == 'bytes': target['body'] = b'xxxx'
+    if mode == 'inode': target['ino'] += 1
+    if mode == 'manifest-inode': fs.files['/owned/manifest.json']['ino'] += 1
+    if mode == 'owner': target['uid'] = 1
+    if mode == 'mode': target['mode'] |= 0o022
+    if mode == 'link': target['links'] = 2
+    if mode == 'symlink': target['mode'] = stat.S_IFLNK|0o600
+    if mode == 'boot': ns['boot_digest'] = lambda:'e'*64
+    if mode == 'status': fs.files['/var/lib/dpkg/status']['body'] = b'changed synthetic status'
+    if mode == 'extra': fs.put('/owned/archives/extra.deb', b'xx')
+    fs.mode = mode; failed = False
+    try: after = ns['prepared_snapshot']()
+    except BaseException: failed = True
+    assert not fs.fds and (not failed and before == after if mode == 'normal' else failed or before != after)
+print('owned snapshot: named FD/bytes/boot/status tamper closes; no guest/package/network operations')
+`;
+test('prepared snapshot reopens stable owned FDs and rejects byte, name, permission, boot and status drift',
+  async () => {
+  await scope(async base => {
+    const prefix = '/usr/bin/python3 -I -c ';
+    const python = ROOTLESS_PACKAGE_SNAPSHOT.slice(prefix.length + 1, -1).replaceAll("'\"'\"'", "'");
+    const result = await runRuntimeProcess('/usr/bin/python3', ['-I', '-c', PREPARED_SNAPSHOT_FIXTURE], {
+      input: python, cwd: base, home: base, timeoutMs: 5000, deadlineAt: Date.now() + 10000, maxOutputBytes: 16384 });
+    assert.equal(result.completed, true); assert.equal(result.stderr, '');
+    assert.equal(result.stdout,
+      'owned snapshot: named FD/bytes/boot/status tamper closes; no guest/package/network operations\n');
+  });
+});
