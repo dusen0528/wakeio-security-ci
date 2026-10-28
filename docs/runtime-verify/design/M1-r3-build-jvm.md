@@ -411,3 +411,11 @@ cache와 manifest는 현재 소유 VM 안에만 있고 정상 종료 시 VM과 �
 실패/한도/abort/신원 불명은 unknown/failed이며 scope를 닫는다. 소유 foreground PGID 종료→strict Stopped→SDK delete/부재 확인만 사용하고 불명은 sticky다. 일반 Stopped/버전/신원 거부와 별도 bounded cleanup은 완화하지 않는다. trusted 비동기 callback의 동기 무한 루프 선점 한계도 기존과 같다.
 후속 설치는 이 manifest·cache·현재 신원을 다시 검증하고 no-download로만 진행해야 한다. 먼저 소유 policy-rc.d와 docker.service/docker.socket/containerd.service mask의 배타 생성·사후 비활성 검증을 구현해야 하며, 기존 파일/unit의 소유가 모호하면 거부한다. 아직 해당 설치 함수가 없어 autostart 순서의 실제 검증도 없다.
 자체 npm ci ignore-scripts/build·cleanup/compose/compat 직렬90 pass·fail/skip0, 고정 Python AST 구문 검사와120/60을 확인했다. 초기 길이 검사4행은 줄바꿈으로 수정했다. mock은 guard/pin/서명 실패 metadata·한도·consent/lifetime/abort·sticky cleanup만 검증하며 실제 APT/VM/설치/daemon/네트워크 실행은0이다. 실제 download 준비 성공과 python-apt/의존 package·AppArmor/driver 지원은 승인 후 R9 과제다.
+
+### M1-154 / 준비 실패의 닫힌 단계 진단
+
+Python은 각 작업 전에 prerequisites/key/apt-config/index-update/index-snapshot/selection/download/digest/state-recheck/manifest 중 고정 stage를 설정한다. 실패는 `wakeio-rootless-packages-failure/v1:STAGE:operation_failed` 단일 행·exit125뿐이며 exception/message·APT 원문·URL 응답·키·환경·계정은 포함하지 않는다. stage는 실패한 작업 위치이며 암호 검증 실패 등 실제 원인의 확정이 아니다.
+parent는 정상 종료된 소유 group/close·현재 신원·exit125·stderr 비어 있음·128B 이내 정확한 token/known stage가 모두 맞을 때만 unknown/operation_failed와 failureStage를 보존한다. signatureVerified/download_prepared/권한으로 승격하지 않는다. 성공 wire와 독립 pins는 그대로다.
+unknown/extra/잘림·다른 exit·timeout/output cap/abort·정리/신원 불명은 stage를 신뢰하지 않고 기존 실패 경로로 닫힌다. 이전 테스트의 garbage exit125 기대만 prepare_unavailable에서 더 엄격한 invalid_metadata로 바꿨으며 실패/권한 false·sticky cleanup 기준은 유지했다.
+자체 fixture는 prepare를 호출하지 않고 마지막 failure encoder에 합성 예외만 주입한다. 실제 apt/OS/VM·다운로드·설치·daemon 실행은 없다. 40efd의90 pass는 그 원래 코드의 결과이며 이번 결과와 구별한다. 설치 미완료·python3-apt/API 미측정·OS30초/읽기5초/16KiB·setup300초는 그대로다.
+이번 build·cleanup/compose/compat 직렬93 pass·fail/skip0과120/60·diff-check를 통과했다. 최초 길이 검사3행은 의미 불변 줄바꿈으로 수정했으며 Docker/key 독립 pin AST와 배포 자산/Action은 불변이다. fixture가 실제 apt/다운로드 성공을 증명하지 않는다.

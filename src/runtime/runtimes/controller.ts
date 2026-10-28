@@ -7,6 +7,7 @@ import { types } from 'node:util';
 import { snapshotJsonData } from '../../json-snapshot.js';
 import { runRuntimeProcess, type RuntimeProcessResult } from '../process.js';
 import { ROOTLESS_PACKAGE_PREPARE, packagePreparationUnknown, parseRootlessPackagePreparation,
+  parseRootlessPackageFailure,
   type RootlessPackagePreparation } from './container-lifecycle.js';
 
 export interface LimaPins {
@@ -731,7 +732,10 @@ class OsProfile extends Profile {
     if (this.config.pins.rootfs.arch !== 'aarch64') return packagePreparationUnknown('prepare_unavailable');
     const result = await this.guestRead(ROOTLESS_PACKAGE_PREPARE, deadline, signal, ROOTLESS_SETUP_MS);
     if (!this.groupConfirmed) invalid();
-    return result.completed ? parseRootlessPackagePreparation(result.stdout)
+    if (result.completed) return parseRootlessPackagePreparation(result.stdout);
+    const closedFailure = result.exitCode === 125 && !result.signal && !result.stopReason && !result.spawnError
+      && !result.timedOut && !result.cancelled && !result.outputLimitExceeded && result.stderr === '';
+    return closedFailure ? parseRootlessPackageFailure(result.stdout)
       : packagePreparationUnknown('prepare_unavailable');
   }
   async guestInventory(deadline: number, signal: AbortSignal): Promise<Readonly<OsInventory>> {

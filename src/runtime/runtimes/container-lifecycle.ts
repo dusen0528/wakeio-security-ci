@@ -17,9 +17,13 @@ export interface PreparedPackage {
   name: string; version: string; arch: 'arm64' | 'all'; size: number; sha256: string;
   origin: 'docker' | 'ubuntu';
 }
+const PREPARATION_STAGES = ['prerequisites', 'key', 'apt-config', 'index-update', 'index-snapshot',
+  'selection', 'download', 'digest', 'state-recheck', 'manifest'] as const;
+type PreparationStage = typeof PREPARATION_STAGES[number];
 export interface RootlessPackagePreparation {
   kind: 'rootless-package-preparation'; phase: 'download_prepared' | 'unknown';
-  reason: 'none' | 'prepare_unavailable' | 'invalid_metadata' | 'identity_unknown';
+  reason: 'none' | 'prepare_unavailable' | 'invalid_metadata' | 'identity_unknown' | 'operation_failed';
+  failureStage?: PreparationStage;
   backendVerified: false; sourceExecutionAuthorized: false; daemonObserved: false;
   manifestSha256: string | null; indexManifestSha256: string | null; installedStatusSha256: string | null;
   packages: readonly Readonly<PreparedPackage>[];
@@ -70,6 +74,18 @@ export function parseRootlessPackagePreparation(raw: string): Readonly<RootlessP
   } catch { return packagePreparationUnknown('invalid_metadata'); }
 }
 
+/** Failure diagnostics are data, never signature verification, prepared bytes or execution authority. */
+export function parseRootlessPackageFailure(raw: string): Readonly<RootlessPackagePreparation> {
+  if (Buffer.byteLength(raw) <= 128) {
+    for (const stage of PREPARATION_STAGES) {
+      if (raw === `wakeio-rootless-packages-failure/v1:${stage}:operation_failed\n`) {
+        return Object.freeze({ ...packagePreparationUnknown('operation_failed'), failureStage: stage });
+      }
+    }
+  }
+  return packagePreparationUnknown('invalid_metadata');
+}
+
 // Fixed trusted guest preparation only. There is deliberately no install, commit, unit start or Docker API here.
 // Standard signed APT performs dependency resolution and download; this program only verifies its selections.
 const PACKAGE_PREPARE_PY = String.raw`
@@ -79,6 +95,7 @@ KEY_SHA = '__KEY_SHA__'
 KEY_FINGERPRINT = '__KEY_FINGERPRINT__'
 BASE = '/run/wakeio-m1-packages'
 ENV = {'PATH':'/usr/sbin:/usr/bin:/sbin:/bin', 'LC_ALL':'C', 'HOME':'/root'}
+stage = 'prerequisites'
 
 def require(ok):
     if not ok: raise ValueError('closed_preparation_failure')
@@ -117,6 +134,8 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
         raise ValueError('redirect_rejected')
 
 def key():
+    global stage
+    stage = 'key'
     opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirect())
     with opener.open('https://download.docker.com/linux/ubuntu/gpg', timeout=8) as response:
         require(response.status == 200)
@@ -125,10 +144,13 @@ def key():
     write_new(BASE + '/docker.asc', body)
 
 def apt_config():
+    global stage
+    stage = 'apt-config'
     os.mkdir(BASE, 0o700)
     for directory in ['lists', 'lists/partial', 'archives', 'archives/partial', 'empty']:
         os.mkdir(BASE + '/' + directory, 0o700)
     key()
+    stage = 'apt-config'
     sources = ('deb [arch=arm64 signed-by=' + BASE + '/docker.asc] '
         'https://download.docker.com/linux/ubuntu noble stable\n')
     for suite in ['noble', 'noble-updates', 'noble-security']:
@@ -203,6 +225,8 @@ def selected(cache):
     return sorted(records, key=lambda pair: pair[0]['name'])
 
 def prepare():
+    global stage
+    stage = 'prerequisites'
     require(os.geteuid() == 0 and os.uname().machine == 'aarch64')
     require(b'ID=ubuntu\n' in read_file('/usr/lib/os-release', 8192))
     require(importlib.util.find_spec('apt') is not None)
@@ -210,18 +234,26 @@ def prepare():
     apt_config()
     import apt, apt.progress.base
     cache = apt.Cache(progress=apt.progress.base.OpProgress())
+    stage = 'index-update'
     require(cache.update(fetch_progress=apt.progress.base.AcquireProgress()))
     cache.open(apt.progress.base.OpProgress())
-    index_records = indexes(); records = selected(cache)
+    stage = 'index-snapshot'
+    index_records = indexes()
+    stage = 'selection'
+    records = selected(cache)
     for record, version in records:
         # python-apt uses the selected signed record's archive name; no extraction/lifecycle runs here.
         # Public APT download-only API preserves authentication; no commit/install is called.
+        stage = 'download'
         path = version.fetch_binary(destdir=BASE + '/archives', progress=apt.progress.base.AcquireProgress(),
             allow_unauthenticated=False)
+        stage = 'digest'
         require(os.path.dirname(path) == BASE + '/archives')
         body = read_file(path, 128 * 1024 * 1024)
         require(len(body) == record['size'] and hashlib.sha256(body).hexdigest() == record['sha256'])
+    stage = 'state-recheck'
     require(indexes() == index_records and status == read_file('/var/lib/dpkg/status', 32 * 1024 * 1024))
+    stage = 'manifest'
     index_body = encoded(index_records); write_new(BASE + '/indexes.json', index_body)
     manifest = dict(protocol='wakeio-rootless-packages/v1', signatureVerified=True, keySha256=KEY_SHA,
         keyFingerprint=KEY_FINGERPRINT, indexManifestSha256=hashlib.sha256(index_body).hexdigest(),
@@ -238,6 +270,7 @@ try:
     body = prepare()
     os.write(out, body + b'\n')
 except BaseException:
+    os.write(out, ('wakeio-rootless-packages-failure/v1:' + stage + ':operation_failed\n').encode('ascii'))
     sys.exit(125)
 finally:
     os.close(out)
