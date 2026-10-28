@@ -422,7 +422,7 @@ test('common runtime projections retain grades, refs and verification limits wit
   for (const text of [JSON.stringify(safe), JSON.stringify(agent), JSON.stringify(sarif), markdown]) {
     for (const raw of [secret, marker, corpus.rawTemplates.promotion.statement]) assert.ok(!text.includes(raw));
   }
-  assert.ok(markdown.indexOf('## Confirmed findings') < markdown.indexOf('## Verify gate'));
+  assert.ok(markdown.indexOf('## Findings by grade') < markdown.indexOf('## Verify gate'));
   assert.ok(markdown.indexOf('## Verify gate') < markdown.indexOf('## Reach, unknown and coverage'));
   assert.ok(markdown.indexOf('## Reach, unknown and coverage') < markdown.indexOf('## Limitations'));
   assert.equal(JSON.stringify(report), before);
@@ -519,4 +519,67 @@ test('runtime publication interruption leaves partial files and never publishes 
     assert.equal(JSON.parse(await readFile(join(out, 'report.json'), 'utf8')).runtime.verifyGate.exitCode, 1);
     assert.deepEqual(await readdir(source), []);
   } finally { await rm(top, { recursive: true, force: true }); }
+});
+
+test('legacy class and nested Proxy/accessor metadata retain Scan sanitation without added caller hooks', async () => {
+  const base: ScanReport = JSON.parse(await readFile('tests/fixtures/compat-0.5/findings/reports/report.json', 'utf8'));
+  const wrapped = Object.assign(new class LegacyReport {}, clone(base));
+  assert.deepEqual(sanitiseReport(wrapped), sanitiseScanReport(wrapped));
+  assert.deepEqual(toAgentReport(wrapped), toAgentReport(base));
+  assert.equal(toMarkdown(wrapped), toMarkdown(base)); assert.deepEqual(toSarif(wrapped), toSarif(base));
+  let calls = 0;
+  const trap = () => { calls++; throw Error('must_not_run'); };
+  const raw = clone(base), row = raw.checks.find(item => item.findings.length > 0)!;
+  row.findings[0] = new Proxy(row.findings[0], { get: trap, ownKeys: trap,
+    getOwnPropertyDescriptor: trap, getPrototypeOf: trap });
+  const safe = sanitiseScanReport(raw), projected = sanitiseReport(raw);
+  assert.deepEqual(projected, safe);
+  assert.equal(projected.checks.find(item => item.id === row.id)!.status, 'partial');
+  assert.equal(projected.checks.find(item => item.id === row.id)!.findings[0].confidence, 'low');
+  assert.deepEqual(toAgentReport(raw), toAgentReport(safe));
+  for (const metadata of [Object.create({ get basis() { return trap(); } }),
+    new Proxy({}, { get: trap, ownKeys: trap, getOwnPropertyDescriptor: trap })]) {
+    const input = clone(base), finding = input.checks.find(item => item.findings.length > 0)!.findings[0];
+    Object.assign(finding, { evidence: metadata });
+    assert.deepEqual(sanitiseReport(input), sanitiseScanReport(input));
+  }
+  const accessor = clone(base), finding = accessor.checks.find(item => item.findings.length > 0)!.findings[0];
+  Object.defineProperty(finding, 'evidence', { enumerable: true, get: trap });
+  assert.deepEqual(sanitiseReport(accessor), sanitiseScanReport(accessor));
+  assert.equal(calls, 0);
+  const forwarding = new Proxy(base, {});
+  assert.deepEqual(sanitiseScanReport(forwarding), sanitiseScanReport(base));
+  assert.throws(() => sanitiseReport(forwarding), { message: 'invalid_runtime_report' });
+});
+
+test('explicit runtime signals keep class, nested Proxy and accessor inputs strict without invoking hooks', () => {
+  let calls = 0;
+  const trap = () => { calls++; throw Error('must_not_run'); };
+  const nested = withFinding();
+  part(nested, 'runtime.oracle.sql').findings[0] = new Proxy(finding('confirmed'), { get: trap, ownKeys: trap });
+  const accessor = withFinding(); Object.defineProperty(accessor, 'runtime', { get: trap });
+  const wrapped = Object.assign(new class RuntimeReportClass {}, withFinding());
+  for (const raw of [nested, accessor, wrapped]) {
+    for (const project of [sanitiseReport, toAgentReport, toReportSummary, toSarif, toMarkdown]) {
+      assert.throws(() => project(raw));
+    }
+  }
+  assert.equal(calls, 0);
+});
+
+test('runtime SARIF execution completion is independent of finding-only and finding-plus-incomplete gates', () => {
+  const findingOnly = withFinding(), incompleteOnly = fixture(), findingPartial = withFinding();
+  const coverage = part(incompleteOnly, 'runtime.coverage');
+  coverage.status = 'partial'; coverage.runtime.reasons = ['contract_incomplete']; incomplete(incompleteOnly);
+  const partial = part(findingPartial, 'runtime.coverage');
+  partial.status = 'partial'; partial.runtime.reasons = ['contract_incomplete'];
+  const cleanupFailure = withFinding(); cleanupFailure.runtime.cleanup.status = 'error';
+  cleanupFailure.runtime.cleanup.processGroupExitConfirmed = false;
+  cleanupFailure.runtime.cleanup.reasons = ['cleanup_unknown'];
+  const cases: Array<[RuntimeReport, boolean, 0 | 1 | 2]> = [[fixture(), true, 0], [findingOnly, true, 1],
+    [incompleteOnly, false, 2], [findingPartial, false, 1], [cleanupFailure, false, 1]];
+  for (const [report, complete, exit] of cases) {
+    assert.equal(toSarif(report).runs[0].invocations[0].executionSuccessful, complete);
+    assert.equal(toReportSummary(report).verifyGate.exitCode, exit);
+  }
 });

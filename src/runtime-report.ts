@@ -186,17 +186,19 @@ function sql(row: Check<'runtime.oracle.sql'>, surface: Check<'runtime.surface'>
     && surface.runtime.routes.filter(route => route.attacked === true)
       .every(route => data.cases.some(item => item.surfaceId === route.surface.id)));
 }
+function runtimeIncomplete(report: RuntimeReport): boolean {
+  return report.checks.some(row => row.status !== 'completed')
+    || report.runtime.cleanup.status !== 'confirmed' || report.runtime.scope.gaps.length > 0
+    || report.runtime.inputArtifacts.length === 0 || report.runtime.stages.length === 0
+    || report.checks.some(row => row.findings.some(item => item.evidence.reach === 'unknown'));
+}
 function gate(report: RuntimeReport): void {
   const findings = report.checks.flatMap(row => row.findings), gate = report.runtime.verifyGate;
   unique(findings.map(item => item.id!));
   const blocking = findings.filter(item => item.evidence.grade === 'confirmed'
     || gate.failOnGrade === 'strong' && item.evidence.grade === 'strong').map(item => item.id!).sort();
   requireData(JSON.stringify([...gate.blockingFindingIds].sort()) === JSON.stringify(blocking));
-  const incomplete = report.checks.some(row => row.status !== 'completed')
-    || report.runtime.cleanup.status !== 'confirmed' || report.runtime.scope.gaps.length > 0
-    || report.runtime.inputArtifacts.length === 0 || report.runtime.stages.length === 0
-    || findings.some(item => item.evidence.reach === 'unknown');
-  const code = blocking.length ? 1 : incomplete ? 2 : 0;
+  const code = blocking.length ? 1 : runtimeIncomplete(report) ? 2 : 0;
   requireData(gate.exitCode === code && gate.outcome === ['pass', 'findings', 'incomplete'][code]);
 }
 function timestamp(value: string): number {
@@ -239,38 +241,31 @@ export function parseRuntimeReport(raw: unknown): RuntimeReport {
 }
 export function sanitiseRuntimeReport(raw: unknown): RuntimeReport { return parseRuntimeReport(raw); }
 
-function own(value: unknown, key: string): unknown {
-  if (!value || typeof value !== 'object') return undefined;
-  if (types.isProxy(value)) invalid();
+function dataField(value: unknown, key: string): PropertyDescriptor | undefined {
+  if (!value || typeof value !== 'object' || types.isProxy(value)) return undefined;
   const field = Object.getOwnPropertyDescriptor(value, key);
-  if (field && !('value' in field)) invalid();
-  return field?.value;
+  return field && 'value' in field ? field : undefined;
 }
+function own(value: unknown, key: string): unknown { return dataField(value, key)?.value; }
 function rows(value: unknown): unknown[] {
-  if (types.isProxy(value)) invalid();
-  if (!Array.isArray(value)) return [];
+  if (types.isProxy(value) || !Array.isArray(value)) return [];
   return Object.entries(Object.getOwnPropertyDescriptors(value)).flatMap(([key, field]) => {
-    if (!/^(0|[1-9][0-9]*)$/.test(key)) return [];
-    if (!('value' in field)) invalid();
-    return [field.value];
+    return /^(0|[1-9][0-9]*)$/.test(key) && 'value' in field ? [field.value] : [];
   });
 }
 /** Descriptor-only dispatch: do not cap valid legacy inputs or invoke caller accessors. */
 export function runtimeReportInput(raw: unknown): boolean {
+  // An opaque whole-report Proxy cannot be classified without invoking caller traps.
   if (types.isProxy(raw)) invalid();
-  if (raw && typeof raw === 'object' && ![Object.prototype, null].includes(Object.getPrototypeOf(raw))) invalid();
-  if (own(raw, 'mode') === 'runtime' || raw && typeof raw === 'object' && Object.hasOwn(raw, 'runtime')) return true;
-  return rows(own(raw, 'checks')).some(row => {
-    if (types.isProxy(row)) invalid();
-    return !!row && typeof row === 'object' && Object.hasOwn(row, 'runtime')
-      || rows(own(row, 'findings')).some(item => own(own(item, 'evidence'), 'basis') === 'runtime-observation-ledger');
-  });
+  if (own(raw, 'mode') === 'runtime' || dataField(raw, 'runtime')) return true;
+  return rows(own(raw, 'checks')).some(row => !!dataField(row, 'runtime')
+    || rows(own(row, 'findings')).some(item => own(own(item, 'evidence'), 'basis') === 'runtime-observation-ledger'));
 }
 function projection<T>(value: T, name: 'RuntimeAgentReport' | 'RuntimeReportSummary'): T {
   const data = snapshotJsonData(value, invalid, invalid);
   validator();
   if (!anchors.has(name)) anchors.set(name, runtimeAjv!.compile({ $ref: `wakeio.verify-artifact/v1#/$defs/${name}` }));
-  if (!anchors.get(name)!(JSON.parse(JSON.stringify(data)))) invalid();
+  if (!anchors.get(name)!(data)) invalid();
   return data as T;
 }
 const json = (value: unknown) => JSON.stringify(value, null, 2) + '\n';
@@ -353,7 +348,7 @@ function sarif(report: RuntimeReport) {
         kind: item.kind, severity: item.severity, confidence: item.confidence, evidence: item.evidence,
         reachesFailOnGrade: report.runtime.verifyGate
           .blockingFindingIds.includes(item.id!) } })),
-    invocations: [{ executionSuccessful: report.runtime.verifyGate.outcome === 'pass',
+    invocations: [{ executionSuccessful: !runtimeIncomplete(report),
       startTimeUtc: report.startedAt, endTimeUtc: report.finishedAt,
       properties: { verifyGate: report.runtime.verifyGate, basis: 'recorded_runtime_report' } }],
     properties: { mode: 'runtime', runtime: report.runtime, checks: report.checks, summary: summary(report),
@@ -363,7 +358,7 @@ export function toRuntimeSarif(raw: unknown) { return sarif(parseRuntimeReport(r
 function markdown(report: RuntimeReport): string {
   const navigation = summary(report), gate = navigation.verifyGate;
   const findings = report.checks.flatMap(row => row.findings);
-  const lines = ['# Wakeio runtime report', '', '## Confirmed findings', ''];
+  const lines = ['# Wakeio runtime report', '', '## Findings by grade', ''];
   for (const grade of ['confirmed', 'strong', 'observed', 'candidate'] as const) {
     const ids = findings.filter(row => row.evidence.grade === grade).map(row => '`' + row.id + '`').join(', ');
     lines.push(`${grade}: ${ids || 'none'}`);

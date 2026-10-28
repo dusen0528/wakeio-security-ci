@@ -247297,13 +247297,15 @@ function sql(row, surface) {
   if (row.status === "completed")
     requireData(data.cases.length > 0 && data.markerLedger && data.parserRevision && data.cases.every((item) => item.state !== "unknown") && surface.runtime.routes.filter((route) => route.attacked === true).every((route) => data.cases.some((item) => item.surfaceId === route.surface.id)));
 }
+function runtimeIncomplete(report) {
+  return report.checks.some((row) => row.status !== "completed") || report.runtime.cleanup.status !== "confirmed" || report.runtime.scope.gaps.length > 0 || report.runtime.inputArtifacts.length === 0 || report.runtime.stages.length === 0 || report.checks.some((row) => row.findings.some((item) => item.evidence.reach === "unknown"));
+}
 function gate(report) {
   const findings = report.checks.flatMap((row) => row.findings), gate2 = report.runtime.verifyGate;
   unique(findings.map((item) => item.id));
   const blocking = findings.filter((item) => item.evidence.grade === "confirmed" || gate2.failOnGrade === "strong" && item.evidence.grade === "strong").map((item) => item.id).sort();
   requireData(JSON.stringify([...gate2.blockingFindingIds].sort()) === JSON.stringify(blocking));
-  const incomplete2 = report.checks.some((row) => row.status !== "completed") || report.runtime.cleanup.status !== "confirmed" || report.runtime.scope.gaps.length > 0 || report.runtime.inputArtifacts.length === 0 || report.runtime.stages.length === 0 || findings.some((item) => item.evidence.reach === "unknown");
-  const code = blocking.length ? 1 : incomplete2 ? 2 : 0;
+  const code = blocking.length ? 1 : runtimeIncomplete(report) ? 2 : 0;
   requireData(gate2.exitCode === code && gate2.outcome === ["pass", "findings", "incomplete"][code]);
 }
 function timestamp(value) {
@@ -247351,48 +247353,35 @@ function parseRuntimeReport(raw) {
   semantics(report);
   return snapshotJsonData(report, invalid2, invalid2);
 }
-function own2(value, key2) {
-  if (!value || typeof value !== "object")
+function dataField(value, key2) {
+  if (!value || typeof value !== "object" || types7.isProxy(value))
     return void 0;
-  if (types7.isProxy(value))
-    invalid2();
   const field3 = Object.getOwnPropertyDescriptor(value, key2);
-  if (field3 && !("value" in field3))
-    invalid2();
-  return field3?.value;
+  return field3 && "value" in field3 ? field3 : void 0;
+}
+function own2(value, key2) {
+  return dataField(value, key2)?.value;
 }
 function rows(value) {
-  if (types7.isProxy(value))
-    invalid2();
-  if (!Array.isArray(value))
+  if (types7.isProxy(value) || !Array.isArray(value))
     return [];
   return Object.entries(Object.getOwnPropertyDescriptors(value)).flatMap(([key2, field3]) => {
-    if (!/^(0|[1-9][0-9]*)$/.test(key2))
-      return [];
-    if (!("value" in field3))
-      invalid2();
-    return [field3.value];
+    return /^(0|[1-9][0-9]*)$/.test(key2) && "value" in field3 ? [field3.value] : [];
   });
 }
 function runtimeReportInput(raw) {
   if (types7.isProxy(raw))
     invalid2();
-  if (raw && typeof raw === "object" && ![Object.prototype, null].includes(Object.getPrototypeOf(raw)))
-    invalid2();
-  if (own2(raw, "mode") === "runtime" || raw && typeof raw === "object" && Object.hasOwn(raw, "runtime"))
+  if (own2(raw, "mode") === "runtime" || dataField(raw, "runtime"))
     return true;
-  return rows(own2(raw, "checks")).some((row) => {
-    if (types7.isProxy(row))
-      invalid2();
-    return !!row && typeof row === "object" && Object.hasOwn(row, "runtime") || rows(own2(row, "findings")).some((item) => own2(own2(item, "evidence"), "basis") === "runtime-observation-ledger");
-  });
+  return rows(own2(raw, "checks")).some((row) => !!dataField(row, "runtime") || rows(own2(row, "findings")).some((item) => own2(own2(item, "evidence"), "basis") === "runtime-observation-ledger"));
 }
 function projection(value, name2) {
   const data = snapshotJsonData(value, invalid2, invalid2);
   validator();
   if (!anchors.has(name2))
     anchors.set(name2, runtimeAjv.compile({ $ref: `wakeio.verify-artifact/v1#/$defs/${name2}` }));
-  if (!anchors.get(name2)(JSON.parse(JSON.stringify(data))))
+  if (!anchors.get(name2)(data))
     invalid2();
   return data;
 }
@@ -247539,7 +247528,7 @@ function sarif(report) {
       }
     })),
     invocations: [{
-      executionSuccessful: report.runtime.verifyGate.outcome === "pass",
+      executionSuccessful: !runtimeIncomplete(report),
       startTimeUtc: report.startedAt,
       endTimeUtc: report.finishedAt,
       properties: { verifyGate: report.runtime.verifyGate, basis: "recorded_runtime_report" }
@@ -247560,7 +247549,7 @@ function toRuntimeSarif(raw) {
 function markdown(report) {
   const navigation = summary(report), gate2 = navigation.verifyGate;
   const findings = report.checks.flatMap((row) => row.findings);
-  const lines = ["# Wakeio runtime report", "", "## Confirmed findings", ""];
+  const lines = ["# Wakeio runtime report", "", "## Findings by grade", ""];
   for (const grade of ["confirmed", "strong", "observed", "candidate"]) {
     const ids = findings.filter((row) => row.evidence.grade === grade).map((row) => "`" + row.id + "`").join(", ");
     lines.push(`${grade}: ${ids || "none"}`);
