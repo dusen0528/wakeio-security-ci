@@ -7,9 +7,10 @@ import { lstat, mkdir, mkdtemp, readFile, readdir, rm, symlink, writeFile } from
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { parseReport, parseScanReport, readReport, readScanReport } from '../src/compare.js';
-import { parseRuntimeReport, sanitiseRuntimeReport, sanitiseReport, sanitiseScanReport,
-  toAgentReport, toReportSummary,
-  toMarkdown, toSarif, writeReports, evaluateGate } from '../src/report.js';
+import { parseRuntimeReport, sanitiseRuntimeReport, sanitiseCommonReport, sanitiseScanReport,
+  toCommonAgentReport, toCommonReportSummary,
+  toCommonMarkdown, toCommonSarif, writeCommonReports, evaluateGate, sanitiseReport,
+  toAgentReport, toReportSummary, toMarkdown, toSarif, writeReports } from '../src/report.js';
 import type { AgentReport, Report, RuntimeAgentReport, RuntimeReport, ScanReport } from '../src/contracts.js';
 import type { EvidenceGrade, Reach, RuntimeCheckId, RuntimeFinding } from '../src/runtime/types.js';
 
@@ -92,12 +93,12 @@ test('isolated legacy entries never load Ajv; runtime loads and compiles once on
     };
     const { parseReport, parseScanReport } = await import(
       ${JSON.stringify(new URL('../src/compare.js', import.meta.url).href)});
-    const { parseRuntimeReport, sanitiseRuntimeReport, sanitiseReport } = await import(
+    const { parseRuntimeReport, sanitiseRuntimeReport, sanitiseCommonReport } = await import(
       ${JSON.stringify(new URL('../src/report.js', import.meta.url).href)});
     const { legacy, runtime } = JSON.parse(readFileSync(0, 'utf8'));
     assert.equal(loads, 0); assert.equal(count, 0);
     assert.deepEqual(parseReport(legacy), parseScanReport(legacy));
-    assert.deepEqual(sanitiseReport(legacy), parseScanReport(legacy));
+    assert.deepEqual(sanitiseCommonReport(legacy), parseScanReport(legacy));
     const getter = Object.defineProperty({}, 'mode', { get() { calls++; throw Error('must_not_run'); } });
     const proxy = new Proxy({}, { get() { calls++; throw Error('must_not_run'); } });
     const custom = { toJSON() { calls++; throw Error('must_not_run'); } };
@@ -190,12 +191,12 @@ test('report contract copies R8 V/F/N grade expectations without executing or de
     const findings = part(safe, 'runtime.oracle.sql').findings as RuntimeFinding[];
     assert.equal(findings.filter(row => row.evidence.grade === 'confirmed').length, expected.confirmed, item.id);
     assert.equal(findings.filter(row => row.evidence.grade === 'strong').length, expected.strong, item.id);
-    const agent = toAgentReport(report), navigation = toReportSummary(report);
+    const agent = toCommonAgentReport(report), navigation = toCommonReportSummary(report);
     assert.equal(navigation.findings.confirmedIds.length, expected.confirmed, item.id);
     assert.equal(navigation.findings.strongIds.length, expected.strong, item.id);
     assert.equal(agent.runtime.verifyGate.exitCode, expected.exit, item.id);
     assert.deepEqual(agent.summary, navigation);
-    assert.deepEqual(toSarif(report).runs[0].properties.runtime, safe.runtime);
+    assert.deepEqual(toCommonSarif(report).runs[0].properties.runtime, safe.runtime);
   }
   assert.deepEqual(await readFile('tests/fixtures/runtime-m1/sql-cases.json'), raw);
 });
@@ -277,7 +278,7 @@ test('coverage arithmetic, unique files, route identities, null and unknown acco
     surfaceId: 'second-route', state: 'not_triggered', reasons: [],
   });
   assert.doesNotThrow(() => parseRuntimeReport(both));
-  assert.deepEqual(toReportSummary(both).coverage.lines.map(row => row.executableLines), [2, 2]);
+  assert.deepEqual(toCommonReportSummary(both).coverage.lines.map(row => row.executableLines), [2, 2]);
   second.surface.pathTemplate = mapping.surface.pathTemplate = '/api/items/search';
   assert.throws(() => parseRuntimeReport(both));
   second.surface.pathTemplate = mapping.surface.pathTemplate = '/api/second';
@@ -345,8 +346,8 @@ test('bounded/common and historical scan readers keep distinct limits and legacy
     await assert.rejects(readReport(join(top, 'password=private-path')), { message: 'invalid_report' });
     const legacy = JSON.parse(await readFile('tests/fixtures/compat-0.5/findings/reports/report.json', 'utf8'));
     assert.deepEqual(parseReport(legacy), parseScanReport(legacy));
-    assert.deepEqual(sanitiseReport(legacy), parseScanReport(legacy));
-    assert.equal(toAgentReport(legacy).findings[0].verification.vulnerabilityConfirmed, false);
+    assert.deepEqual(sanitiseCommonReport(legacy), parseScanReport(legacy));
+    assert.equal(toCommonAgentReport(legacy).findings[0].verification.vulnerabilityConfirmed, false);
     legacy.checks[0].notes.push('x'.repeat(1024 * 1024 + 1));
     assert.doesNotThrow(() => parseScanReport(legacy)); assert.throws(() => parseReport(legacy));
     await writeFile(path, JSON.stringify(legacy));
@@ -358,8 +359,8 @@ test('bounded/common and historical scan readers keep distinct limits and legacy
 function types(runtime: RuntimeReport, scan: ScanReport): Report {
   const unchanged: ScanReport = sanitiseReport(scan); void unchanged;
   const legacyAgent: AgentReport = toAgentReport(scan); void legacyAgent;
-  const runtimeAgent: RuntimeAgentReport = toAgentReport(runtime); void runtimeAgent;
-  const runtimeSafe: RuntimeReport = sanitiseReport(runtime); void runtimeSafe;
+  const runtimeAgent: RuntimeAgentReport = toCommonAgentReport(runtime); void runtimeAgent;
+  const runtimeSafe: RuntimeReport = sanitiseCommonReport(runtime); void runtimeSafe;
   return parseReport(runtime);
 }
 void types;
@@ -376,6 +377,8 @@ test('legacy source/API readers, projections and writer preserve ID-only namespa
       const old = parseScanReport(legacy), id = legacy.checks[0].id;
       assert.equal(old.checks[0].id, id);
       assert.deepEqual(sanitiseScanReport(legacy), old); assert.deepEqual(sanitiseReport(legacy), old);
+      assert.deepEqual(sanitiseCommonReport(legacy), old);
+      assert.deepEqual(toCommonAgentReport(legacy), toAgentReport(legacy));
       const agent = toAgentReport(legacy), navigation = toReportSummary(legacy);
       assert.equal(agent.mode, mode); assert.equal(agent.checks[0].checkId, id);
       assert.deepEqual(agent.scanGate, evaluateGate(old)); assert.deepEqual(agent.summary, navigation);
@@ -386,6 +389,8 @@ test('legacy source/API readers, projections and writer preserve ID-only namespa
       assert.deepEqual(parseReport(legacy), old);
       const out = join(top, mode); await writeReports(legacy, out);
       const stored = JSON.parse(await readFile(join(out, 'report.json'), 'utf8'));
+      const commonOut = join(top, mode + '-common'); await writeCommonReports(legacy, commonOut);
+      assert.deepEqual(JSON.parse(await readFile(join(commonOut, 'report.json'), 'utf8')), stored);
       const storedAgent = JSON.parse(await readFile(join(out, 'agent-report.json'), 'utf8'));
       assert.equal(stored.checks[0].id, id); assert.equal(storedAgent.checks[0].checkId, id);
       assert.equal((await readScanReport(join(out, 'report.json'))).checks[0].id, id);
@@ -402,8 +407,8 @@ test('common runtime projections retain grades, refs and verification limits wit
   const secret = 'private-password', marker = corpus.cases[0].requests[0].marker;
   sql.findings[0].location.path = 'src/Fixture #%.java';
   sql.findings[0].description = corpus.rawTemplates.promotion.statement + ' ' + marker + ' password="' + secret + '"';
-  const before = JSON.stringify(report), safe = sanitiseReport(report), agent = toAgentReport(report);
-  const summary = toReportSummary(report), sarif = toSarif(report), markdown = toMarkdown(report);
+  const before = JSON.stringify(report), safe = sanitiseCommonReport(report), agent = toCommonAgentReport(report);
+  const summary = toCommonReportSummary(report), sarif = toCommonSarif(report), markdown = toCommonMarkdown(report);
   assert.deepEqual(agent.runtime, safe.runtime); assert.deepEqual(agent.summary, summary);
   assert.equal(agent.reportArtifact.digest, sha(JSON.stringify(safe, null, 2) + '\n'));
   assert.equal(agent.checks.length, 5); assert.equal(agent.findings[0].checkId, 'runtime.oracle.sql');
@@ -427,7 +432,7 @@ test('common runtime projections retain grades, refs and verification limits wit
   assert.ok(markdown.indexOf('## Reach, unknown and coverage') < markdown.indexOf('## Limitations'));
   assert.equal(JSON.stringify(report), before);
   agent.runtime.cleanup.reasons.push('caller_mutation');
-  assert.deepEqual(toAgentReport(report).summary, summary);
+  assert.deepEqual(toCommonAgentReport(report).summary, summary);
 });
 
 test('runtime summary keeps unknown routes, per-route line denominators and finding priority distinct', () => {
@@ -442,7 +447,7 @@ test('runtime summary keeps unknown routes, per-route line denominators and find
   Object.assign(coverage.runtime.routes[0], { files: null, coveredFiles: null, coveredLines: null,
     executableLines: null, ratio: null, accounting: 'unknown', reasons: ['coverage_unknown'] });
   incomplete(report);
-  const navigation = toReportSummary(report);
+  const navigation = toCommonReportSummary(report);
   assert.equal(navigation.coverage.declaredRoutes, null); assert.equal(navigation.coverage.unknownRoutes, 1);
   assert.equal(navigation.coverage.attackedRoutes, null); assert.equal(navigation.coverage.unattackedRoutes, null);
   assert.equal(navigation.coverage.routeRatio, null); assert.equal(navigation.coverage.lines[0].executableLines, null);
@@ -451,9 +456,9 @@ test('runtime summary keeps unknown routes, per-route line denominators and find
   const found = withFinding(); found.runtime.cleanup.status = 'error';
   found.runtime.cleanup.reasons = ['cleanup_unknown']; found.runtime.cleanup.processGroupExitConfirmed = false;
   part(found, 'runtime.oracle.sql').findings[0].evidence.reach = 'unknown';
-  assert.equal(toReportSummary(found).verifyGate.exitCode, 1);
-  assert.equal(toAgentReport(found).runtime.cleanup.status, 'error');
-  assert.equal(toReportSummary(found).reach.unknown, 1);
+  assert.equal(toCommonReportSummary(found).verifyGate.exitCode, 1);
+  assert.equal(toCommonAgentReport(found).runtime.cleanup.status, 'error');
+  assert.equal(toCommonReportSummary(found).reach.unknown, 1);
 });
 
 test('common projection dispatch rejects mixed branches, caller hooks and severity policy on runtime', () => {
@@ -463,13 +468,15 @@ test('common projection dispatch rejects mixed branches, caller hooks and severi
   const mixed: any = withFinding(); mixed.mode = 'source'; delete mixed.runtime;
   const bad: any = withFinding(); bad.checks[4].findings[0].evidence.tokenHashes = [sha('not_public')];
   for (const raw of [getter, proxy, mixed, bad]) {
-    for (const project of [sanitiseReport, toAgentReport, toReportSummary, toSarif, toMarkdown]) {
+    const projects = [sanitiseCommonReport, toCommonAgentReport, toCommonReportSummary,
+      toCommonSarif, toCommonMarkdown];
+    for (const project of projects) {
       assert.throws(() => project(raw as RuntimeReport));
     }
   }
   assert.equal(calls, 0);
-  assert.throws(() => (toAgentReport as any)(withFinding(), 'none'));
-  assert.throws(() => (toMarkdown as any)(withFinding(), 'none'));
+  assert.throws(() => (toCommonAgentReport as any)(withFinding(), 'none'));
+  assert.throws(() => (toCommonMarkdown as any)(withFinding(), 'none'));
 });
 
 test('runtime common writer creates a new private source-external directory and binds actual JSON bytes', async () => {
@@ -477,20 +484,20 @@ test('runtime common writer creates a new private source-external directory and 
   try {
     const source = join(top, 'source'), out = join(top, 'reports'); await mkdir(source);
     await writeFile(join(source, 'owned.txt'), 'source_canary');
-    await assert.rejects((writeReports as any)(withFinding(), out));
+    await assert.rejects((writeCommonReports as any)(withFinding(), out));
     await assert.rejects(lstat(out), { code: 'ENOENT' });
-    await assert.rejects((writeReports as any)(withFinding(), out, { sourceRoot: source, failOn: 'none' }));
-    await assert.rejects(writeReports(withFinding(), join(source, 'reports'), { sourceRoot: source }));
-    await writeReports(withFinding(), out, { sourceRoot: source });
+    await assert.rejects((writeCommonReports as any)(withFinding(), out, { sourceRoot: source, failOn: 'none' }));
+    await assert.rejects(writeCommonReports(withFinding(), join(source, 'reports'), { sourceRoot: source }));
+    await writeCommonReports(withFinding(), out, { sourceRoot: source });
     assert.equal((await lstat(out)).mode & 0o777, 0o700);
     assert.deepEqual((await readdir(out)).sort(), ['agent-report.json', 'report.json', 'report.md', 'report.sarif']);
     const reportJson = await readFile(join(out, 'report.json'), 'utf8');
     const agent = JSON.parse(await readFile(join(out, 'agent-report.json'), 'utf8'));
     assert.equal(agent.reportArtifact.digest, sha(reportJson));
     assert.deepEqual(agent.runtime, JSON.parse(reportJson).runtime);
-    assert.equal(await readFile(join(out, 'report.md'), 'utf8'), toMarkdown(withFinding()));
+    assert.equal(await readFile(join(out, 'report.md'), 'utf8'), toCommonMarkdown(withFinding()));
     for (const name of await readdir(out)) assert.equal((await lstat(join(out, name))).mode & 0o777, 0o600);
-    await assert.rejects(writeReports(withFinding(), out, { sourceRoot: source }));
+    await assert.rejects(writeCommonReports(withFinding(), out, { sourceRoot: source }));
     assert.equal(await readFile(join(source, 'owned.txt'), 'utf8'), 'source_canary');
   } finally { await rm(top, { recursive: true, force: true }); }
 });
@@ -510,8 +517,8 @@ test('runtime publication interruption leaves partial files and never publishes 
         return link(from, to);
       };
       syncBuiltinESMExports();
-      const { writeReports } = await import(${JSON.stringify(new URL('../src/report.js', import.meta.url).href)});
-      await assert.rejects(writeReports(JSON.parse(readFileSync(0, 'utf8')), process.argv[2],
+      const { writeCommonReports } = await import(${JSON.stringify(new URL('../src/report.js', import.meta.url).href)});
+      await assert.rejects(writeCommonReports(JSON.parse(readFileSync(0, 'utf8')), process.argv[2],
         { sourceRoot: process.argv[1] }));
     `, source, out], { input: JSON.stringify(withFinding()), encoding: 'utf8', timeout: 30000 });
     assert.equal(child.error, undefined); assert.equal(child.status, 0, child.stderr);
@@ -525,6 +532,7 @@ test('legacy class and nested Proxy/accessor metadata retain Scan sanitation wit
   const base: ScanReport = JSON.parse(await readFile('tests/fixtures/compat-0.5/findings/reports/report.json', 'utf8'));
   const wrapped = Object.assign(new class LegacyReport {}, clone(base));
   assert.deepEqual(sanitiseReport(wrapped), sanitiseScanReport(wrapped));
+  assert.deepEqual(sanitiseCommonReport(wrapped), sanitiseReport(base));
   assert.deepEqual(toAgentReport(wrapped), toAgentReport(base));
   assert.equal(toMarkdown(wrapped), toMarkdown(base)); assert.deepEqual(toSarif(wrapped), toSarif(base));
   let calls = 0;
@@ -534,6 +542,7 @@ test('legacy class and nested Proxy/accessor metadata retain Scan sanitation wit
     getOwnPropertyDescriptor: trap, getPrototypeOf: trap });
   const safe = sanitiseScanReport(raw), projected = sanitiseReport(raw);
   assert.deepEqual(projected, safe);
+  assert.deepEqual(sanitiseCommonReport(raw), safe);
   assert.equal(projected.checks.find(item => item.id === row.id)!.status, 'partial');
   assert.equal(projected.checks.find(item => item.id === row.id)!.findings[0].confidence, 'low');
   assert.deepEqual(toAgentReport(raw), toAgentReport(safe));
@@ -549,7 +558,8 @@ test('legacy class and nested Proxy/accessor metadata retain Scan sanitation wit
   assert.equal(calls, 0);
   const forwarding = new Proxy(base, {});
   assert.deepEqual(sanitiseScanReport(forwarding), sanitiseScanReport(base));
-  assert.throws(() => sanitiseReport(forwarding), { message: 'invalid_runtime_report' });
+  assert.deepEqual(sanitiseReport(forwarding), sanitiseReport(base));
+  assert.throws(() => sanitiseCommonReport(forwarding), { message: 'invalid_runtime_report' });
 });
 
 test('explicit runtime signals keep class, nested Proxy and accessor inputs strict without invoking hooks', () => {
@@ -560,11 +570,58 @@ test('explicit runtime signals keep class, nested Proxy and accessor inputs stri
   const accessor = withFinding(); Object.defineProperty(accessor, 'runtime', { get: trap });
   const wrapped = Object.assign(new class RuntimeReportClass {}, withFinding());
   for (const raw of [nested, accessor, wrapped]) {
-    for (const project of [sanitiseReport, toAgentReport, toReportSummary, toSarif, toMarkdown]) {
+    const projects = [sanitiseCommonReport, toCommonAgentReport, toCommonReportSummary,
+      toCommonSarif, toCommonMarkdown];
+    for (const project of projects) {
       assert.throws(() => project(raw));
     }
   }
   assert.equal(calls, 0);
+});
+
+test('historical Scan names retain baseline whole Proxy, class and nested Proxy behavior', async () => {
+  const base: ScanReport = JSON.parse(await readFile('tests/fixtures/compat-0.5/findings/reports/report.json', 'utf8'));
+  const top = await mkdtemp(join(tmpdir(), 'wakeio-report-public-'));
+  try {
+    for (const variant of ['whole', 'class', 'nested']) {
+      let calls = 0;
+      const unexpected = () => { throw Error('new_shape_inspection'); };
+      const instrument = (data: ScanReport | ScanReport['checks'][number]['findings'][number]) => new Proxy(data, {
+        get(target, key, receiver) { calls++; return Reflect.get(target, key, receiver); },
+        ownKeys: unexpected, getOwnPropertyDescriptor: unexpected, getPrototypeOf: unexpected, has: unexpected,
+      });
+      let raw = clone(base);
+      if (variant === 'whole') raw = instrument(raw) as ScanReport;
+      if (variant === 'class') raw = Object.assign(new class LegacyReport {}, raw);
+      if (variant === 'nested') {
+        const row = raw.checks.find(item => item.findings.length > 0)!;
+        row.findings[0] = instrument(row.findings[0]) as typeof row.findings[number];
+      }
+      const safe = sanitiseScanReport(variant === 'whole' ? base : raw);
+      const projects = [sanitiseReport, toAgentReport, toReportSummary, toMarkdown, toSarif];
+      for (const project of projects) {
+        calls = 0; assert.deepEqual(project(raw), project(safe));
+        // Baseline672 source with current compiled dependencies: each public function reads the wrapper eight times.
+        assert.equal(calls, variant === 'whole' ? 8 : 0);
+      }
+      const out = join(top, variant); calls = 0; await writeReports(raw, out);
+      assert.equal(calls, variant === 'whole' ? 8 : 0);
+      assert.deepEqual(JSON.parse(await readFile(join(out, 'report.json'), 'utf8')), safe);
+      assert.deepEqual(JSON.parse(await readFile(join(out, 'agent-report.json'), 'utf8')), toAgentReport(safe));
+      assert.deepEqual(JSON.parse(await readFile(join(out, 'report.sarif'), 'utf8')), toSarif(safe));
+      assert.equal(await readFile(join(out, 'report.md'), 'utf8'), toMarkdown(safe));
+    }
+    let calls = 0;
+    const trap = () => { calls++; throw Error('must_not_run'); };
+    const common = [sanitiseCommonReport, toCommonAgentReport, toCommonReportSummary, toCommonSarif,
+      toCommonMarkdown, parseRuntimeReport, sanitiseRuntimeReport, parseReport];
+    for (const target of [base, withFinding()]) {
+      const opaque = new Proxy(target, { get: trap, ownKeys: trap, getOwnPropertyDescriptor: trap });
+      for (const project of common) assert.throws(() => project(opaque as never));
+      await assert.rejects(writeCommonReports(opaque as RuntimeReport, join(top, 'rejected'), { sourceRoot: top }));
+    }
+    assert.equal(calls, 0); await assert.rejects(lstat(join(top, 'rejected')), { code: 'ENOENT' });
+  } finally { await rm(top, { recursive: true, force: true }); }
 });
 
 test('runtime SARIF execution completion is independent of finding-only and finding-plus-incomplete gates', () => {
@@ -579,7 +636,7 @@ test('runtime SARIF execution completion is independent of finding-only and find
   const cases: Array<[RuntimeReport, boolean, 0 | 1 | 2]> = [[fixture(), true, 0], [findingOnly, true, 1],
     [incompleteOnly, false, 2], [findingPartial, false, 1], [cleanupFailure, false, 1]];
   for (const [report, complete, exit] of cases) {
-    assert.equal(toSarif(report).runs[0].invocations[0].executionSuccessful, complete);
-    assert.equal(toReportSummary(report).verifyGate.exitCode, exit);
+    assert.equal(toCommonSarif(report).runs[0].invocations[0].executionSuccessful, complete);
+    assert.equal(toCommonReportSummary(report).verifyGate.exitCode, exit);
   }
 });

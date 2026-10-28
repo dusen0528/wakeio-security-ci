@@ -56,13 +56,13 @@ SIGINT/SIGTERM은 공통 AbortController로 전달하고 finally에서 후손 �
 
 PLAN 10·11을 따르는 A안으로 정렬한다. 공통 보고서에 discriminated/additive runtime union을 추가한다.
 공통 schemaVersion=1.0.0에서 `mode:runtime`과 최상위 `runtime.revision:verify-m1-v1`을 함께 검사한다(R1 §6).
-기존 reader/writer/sanitiser/Markdown/SARIF/agent 진입점이 R1 §6의 판별자를 먼저 검사하고 runtime 분기로 dispatch한다.
+명시 common reader/writer/sanitiser/Markdown/SARIF/agent 진입점이 R1 §6 판별자로 runtime 분기를 선택한다.
 runtime 분기는 공통 envelope의 `checks`와 `runtime`을 함께 검증·보존하며, 기존 scan 분기의 직렬화와 API proof 의미는 유지한다.
 runtime 필드/판별자 불일치·필수 check 누락·중복·손상은 legacy fallback 없이 거부한다. scan 모드의 runtime 혼합도 거부한다.
 runtime을 모르는 예전 바이너리의 지원을 주장하지 않는다. 갱신된 공통 reader는 runtime을 누락한 깨끗한 scan으로 축소하지 않는다.
 runtime 보고서는 갱신된 공통 reader가 필요하며 0.5 소비자는 미지원으로 거부한다. 기존 0.5 scan 입력·출력 호환과 구별한다.
 init-target의 draft 생성과 M1-136의 공통 writer API가 연결됐다. verify 실행 배선은 후속이며 [USAGE.md](../USAGE.md)를 따른다.
-`parseScanReport`와 compare의 소비 경로도 분기하며 runtime 비교는 R1의 계약·정책·digest가 맞을 때만 수행한다.
+공통 `parseReport`/`readReport`는 분기하고 역사적 Scan reader는 그대로 둔다. runtime 비교는 후속 계약·정책·digest 검증이 필요하다.
 runtime gate는 `runtime.verifyGate`가 권위다. 기존 `evaluateGate`/agent.scanGate의 미완료 우선 의미를 verify에 적용하지 않는다.
 별도 versioned envelope를 주포맷으로 삼는 B안은 미채택이다. N5의 B안 사람 승인이나 PLAN 기준 재정의를 기다리지 않는다.
 `Finding.kind`의 observation/candidate/advisory는 유지한다. 새 runtime finding의 evidence는 구 API evidence와 별도 판별 분기다.
@@ -75,7 +75,7 @@ M1-90은 Ajv 모듈 해석도 첫 runtime 사용으로 늦춘다. Node ESM은 cr
 schema도 이 시점에 배포 루트 schemas에서 읽는다. 필터된 release archive에 없는 build/schemas에 의존하지 않는다.
 기존 packed legacy consumer는 Ajv 없이 import하고, 번들 runtime reader는 포함된 Ajv로 검증하며 외부 패키지를 읽지 않는다.
 legacy 진입의 불필요 초기화 제거는 격리된 compile 계수로 확인하며, 실제 성능/KPI 측정은 R9 후속이다.
-M1-136은 기존 함수의 scan overload와 본문을 유지하고 runtime의 strict projection/writer dispatch를 추가한다.
+M1-136의 runtime overload는 M1-152에서 명시 common API로 옮기고 기존 공개 Scan 이름·시그니처·본문을 복원한다.
 M1-139의 `sanitiseScanReport`는 기존 sanitizer 본문이며 구 parseScanReport/readScanReport가 alias로 사용한다.
 새 공통 함수의 runtime 혼합 거부와 달리 구 reader가 수용하던 legacy check ID·정규화 범위를 좁히지 않는다.
 M1-140/142는 공개 reader/sanitizer/projection/writer에서 ID의 runtime. 접두만으로 runtime을 추정하지 않는다.
@@ -83,8 +83,14 @@ mode/top.runtime/check.runtime/runtime evidence basis 같은 실제 구조가 �
 legacy ID namespace를 임의 예약하지 않고 writer→parseReport/readReport 왕복과 기존 Scan ID를 보존한다.
 M1-146은 descriptor 탐색 중 legacy의 nested Proxy/accessor/class를 runtime 증거로 추정하거나 새로 거부하지 않는다.
 own data의 mode=runtime/runtime payload/ledger basis가 명확할 때만 strict parser로 보내며 hook은 실행하지 않는다.
-전체 report가 Proxy면 trap 없이 분류할 수 없어 공통 API는 거부한다. 이는 benign forwarding Proxy까지 받던
-baseline legacy 경로와의 잔여 차이다. 명시 Scan sanitizer는 유지하며 일반 Proxy 호환 정책은 별도 공유 결정이 필요하다.
+M1-152는 R1 M1-150의 API 선택 B를 채택한다. 기존 sanitiseReport/toAgentReport/toReportSummary/toSarif/
+toMarkdown/writeReports는 Scan 전용이며 runtime 분류를 선행하지 않는다. benign whole Proxy의 과거 hook 동작도 유지한다.
+명시 sanitiseCommonReport/toCommonAgentReport/toCommonReportSummary/toCommonSarif/toCommonMarkdown/
+writeCommonReports는 기존 runtime helpers를 재사용하고 전체 Proxy를 trap 0으로 거부한다. parseReport/readReport와
+raw runtime API의 strict 경계도 유지한다. 임의 JS 객체 호환과 trap 0 분류를 한 API에서 모두 보장한다고 주장하지 않는다.
+후속 verify pipeline은 명시 common API를 사용한다. 같은 A 공통 모델·4파일이며 별도 보고서 envelope는 추가하지 않는다.
+672 baseline 보고서 소스와 현재 compiled dependency를 쓴 대조에서 56개 기존 함수 본문과 whole Proxy/class/nested Proxy의
+6개 공개 함수 출력·hook 수가 같다. 이는 옛 checkout 전체 재빌드나 실행 진위·KPI 검증이 아니다.
 SARIF executionSuccessful은 finding 등급/게이트와 분리한 동일 완료 조건을 사용한다. finding만 있고 완료면 true,
 관측·검사·cleanup 미완료면 finding 때문에 exit1이어도 false다. Markdown은 Findings by grade 순으로 등급을 구분한다.
 agent/summary anchor는 JSON-safe snapshot을 직접 검증한다. root parser의 uniqueItems용 ordinary copy는 유지한다.
@@ -92,7 +98,7 @@ agent/summary anchor는 JSON-safe snapshot을 직접 검증한다. root parser�
 상태/null·표면/커버리지 집계·기록된 grade/게이트/cleanup의 내부 정합성을 검사하며 assertion의 진위를 인증하지 않는다.
 finding별 surface/control 연결과 실제 ref bytes·lease/run 체인은 후속 vault/Verdict 읽기가 필요하다. receipt는 후속이다.
 agent·summary는 R1의 별도 schema anchor와 기존 own JSON 상한을 적용한다. summary는 navigation이며 게이트를 복사한다.
-runtime `writeReports`는 `{sourceRoot}`를 명시해야 한다. source 밖의 새 디렉터리를 artifact vault로 만들고
+runtime `writeCommonReports`는 `{sourceRoot}`를 명시해야 한다. source 밖의 새 디렉터리를 artifact vault로 만들고
 0700/0600·no-replace·per-file atomic 저장을 사용하며 agent를 마지막에 쓴다. 기존 scan overwrite 정책은 그대로다.
 sourceRoot는 호출자가 선언한 배치 기준이다. input artifact digest와의 source identity 결속을 입증하지 않는다.
 같은 strict 모델에서 JSON bytes를 먼저 고정하고 agent digest를 구한다. CLI verify·4파일 manifest/receipt·최종 exit는 후속이다.
