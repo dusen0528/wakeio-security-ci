@@ -1,0 +1,114 @@
+{
+  "revision": "wakeio.pg-parser-native-sources/v1",
+  "status": "pending_patch_and_execution_checks",
+  "ready": false,
+  "executable": false,
+  "authority": "none",
+  "evidence": {
+    "manifestPath": ".handoff/evidence/M1/native-parser-sources/manifest.json",
+    "manifestSha256": "125ed713e2d06c8118709c76d76758fd6f8c5c27cdee8ec6e9d20cb506d4e878",
+    "head": "e708f603a8f26a5e0fcc58ddc6d33e2e2b1fa5fc"
+  },
+  "assembly": {
+    "coreRoot": "core/",
+    "wrapperRoot": "wrapper/",
+    "archivePrefixPolicy": "exact_archive_root",
+    "stripComponents": 1,
+    "unsafeLinkSpecialDuplicateMembers": "reject",
+    "overwrite": false,
+    "upstreamCloneFetch": false,
+    "automaticTemplateRefresh": false
+  },
+  "sources": {
+    "wrapper": {
+      "repositoryUrl": "https://github.com/constructive-io/libpg-query-node",
+      "commit": "55c0963bf79bfd437c2aa1eb5fba9329a6fcd76f",
+      "archiveUrl": "https://codeload.github.com/constructive-io/libpg-query-node/tar.gz/55c0963bf79bfd437c2aa1eb5fba9329a6fcd76f",
+      "archiveRoot": "libpg-query-node-55c0963bf79bfd437c2aa1eb5fba9329a6fcd76f",
+      "archiveBytes": 497766,
+      "archiveSha256": "92a879c16d194caf274eaac89f3b2259a125f820f7ab79990b517ff1e71b5395",
+      "memberCount": 333,
+      "expandedFileBytes": 1995754,
+      "files": [
+        {"path":"LICENSE","bytes":1160,"sha256":"6676f35ef9ae1f095f420c56ab2078cf321227a88599ad224218b76d05fec731"},
+        {"path":"versions/18/LICENSE","bytes":1160,"sha256":"6676f35ef9ae1f095f420c56ab2078cf321227a88599ad224218b76d05fec731"},
+        {"path":"versions/18/Makefile","bytes":3648,"sha256":"ed9d08d403abe2df57028a9bee9b94c93e9cb929fde9ee842c6fb3927f0c3b5d"},
+        {"path":"versions/18/package.json","bytes":1828,"sha256":"a7172d3aa605f5e239d9e122a49bd65d300f6920ffa26a2139fc31184083869d"},
+        {"path":"versions/18/src/index.ts","bytes":18206,"sha256":"32f12e05973ec485da91c771ea625d40ed27d819697fed78c1a593b34592592c"},
+        {"path":"versions/18/src/wasm_wrapper.c","bytes":13348,"sha256":"9e5d2f38beb74108b57cb587bdec0885d66abb29958050c2235b966686539228"},
+        {"path":"versions/18/scripts/build.js","bytes":1104,"sha256":"6079f7d1b0c3e36e3cbeaa3eb229f65f49bdb697730ae400fe18becf9b9339de"}
+      ]
+    },
+    "core": {
+      "repositoryUrl": "https://github.com/constructive-io/libpg_query",
+      "commit": "b0f5f331dc50d69597ec610de7b21afa47a66808",
+      "archiveUrl": "https://codeload.github.com/constructive-io/libpg_query/tar.gz/b0f5f331dc50d69597ec610de7b21afa47a66808",
+      "archiveRoot": "libpg_query-b0f5f331dc50d69597ec610de7b21afa47a66808",
+      "archiveBytes": 4584500,
+      "archiveSha256": "efb6664a0aab73bcc37a613ef9081f75439e3a520c0300fd6ac71eb5ffb8cfc3",
+      "memberCount": 1199,
+      "expandedFileBytes": 31424964,
+      "files": [
+        {"path":"LICENSE","bytes":1561,"sha256":"f9352c20940619a380a5e9f23cebe34d8f797cfbd747fc236a7a3e5fc8ef9b41"},
+        {"path":"src/postgres/COPYRIGHT","bytes":1198,"sha256":"3d6af92ff8a4c2cdf69afb1cf44edea727922f5cd0cf8b5f72b11cdecac8fdfd"},
+        {"path":"Makefile","bytes":16181,"sha256":"db9190553f34677273a285547e3575c9e43f3f17cff8e91f43a551a03a49509b"},
+        {"path":"pg_query.h","bytes":5641,"sha256":"9eb7a6744e7950d103427df8a454986621a780088f1c7732aa136cb67c607ea3"},
+        {"path":"src/pg_query_scan.c","bytes":4776,"sha256":"5b9a9acf7d086419e3b48f501279392b4ca60efa2390b962a2f510e9e5256ed9"},
+        {"path":"src/postgres/src_backend_parser_scan.c","bytes":572973,"sha256":"10d129153b374e06190e1cbfe65db873f99da483e7da2950ac59fedefc0778f8"},
+        {"path":"protobuf/pg_query.pb-c.c","bytes":1453784,"sha256":"4983c60d728c15e2ba7c1a8d4ab72b98de768066409d4094f83cc211829ea0e5"},
+        {"path":"protobuf/pg_query.pb.cc","bytes":5213276,"sha256":"fcbe7f01d5ee87f923aa904ff026193ec9c2e824bb942092e109182a198e168c"}
+      ]
+    }
+  },
+  "patch": {
+    "path": "workers/pg-parser/native/lexer-diagnostics.patch",
+    "status": "pending",
+    "sha256": null,
+    "requiredPrefixes": ["a/core/", "b/core/", "a/wrapper/", "b/wrapper/"],
+    "stripComponents": 1
+  },
+  "toolchain": {
+    "selection": "mac_lima_arm64_candidate",
+    "image": "emscripten/emsdk",
+    "tag": "6.0.3",
+    "indexDigest": "sha256:bb0910e6a18bb9bd7cb31ae4ed40f9073148b78cb2cdb8ea8676454e0d85425c",
+    "indexBytes": 772,
+    "platform": {"os":"linux","architecture":"arm64","variant":"v8"},
+    "childManifestDigest": "sha256:ddfb30ef76e97bb9a231af1fb262f0a4f2f6aa726778572a028e215922afac40",
+    "childManifestBytes": 1161,
+    "configDescriptor": {"digest":"sha256:64785cf29d0d881b438aac8504d38fc055d50b2a51650ecddac11f4ba269fdb3","bytes":5404},
+    "layerDescriptors": [
+      "sha256:4b987da45db4d6278590ab89840c7167ea397df222f3ee4cdb77c3e15694b1a9",
+      "sha256:50ca949cc970ba5f13e70885fdcac97dc53bc4df9328ef755972ff6d1692386f",
+      "sha256:21f6d4952154f2e6ea80094a18dc6cd52b056cb0661385b1f5ce57be53df7399",
+      "sha256:79843c46fc97fd42ba634625c7c146551df9e1c206067056e2587f6ba7439aa9"
+    ],
+    "verification": {
+      "indexAndChildManifestBytes": true,
+      "platform": "descriptor_only",
+      "configContent": false,
+      "layerContent": false,
+      "guestExecution": false,
+      "signature": false,
+      "reproducibleBuild": false
+    }
+  },
+  "nativeBuild": {
+    "status": "blocked",
+    "cpuCount": 2,
+    "memoryBytes": 4294967296,
+    "pidLimit": 256,
+    "network": "none",
+    "attemptSeconds": 600,
+    "maxAttempts": 2,
+    "totalSeconds": 1200,
+    "logBytesPerAttempt": 16384,
+    "artifactBytesTotal": 33554432,
+    "environmentVerified": false,
+    "limitsEnforced": false,
+    "requiresLayerContentVerification": true,
+    "requiresRootPacket": true
+  },
+  "runtimeJob": {"timeoutMs":1000,"memoryBytes":268435456,"network":"none"},
+  "publishedNpmWasmCorrespondence": "unverified"
+}
