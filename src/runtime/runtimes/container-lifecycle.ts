@@ -260,7 +260,7 @@ def selected_record(package):
     require((docker or ubuntu) and re.fullmatch(r'https://[A-Za-z0-9./+~_:%-]+', uri) is not None)
     require('..' not in uri and '%' not in uri and '?' not in uri and '#' not in uri)
     selection_step('selection-sha')
-    # Noble Record inherits Mapping.get; the expected digest still comes from the signed record.
+    # Noble Record explicitly defines get; the expected digest still comes from the signed record.
     sha = v.record.get('SHA256', ''); require(re.fullmatch(r'[a-f0-9]{64}', sha) is not None)
     record = dict(name=name, version=version, arch=arch, size=size, sha256=sha,
         origin='docker' if docker else 'ubuntu')
