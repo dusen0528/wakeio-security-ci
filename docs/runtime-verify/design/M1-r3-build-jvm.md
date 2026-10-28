@@ -432,3 +432,12 @@ write_new는 fdopen 생성 실패 때만 원시 fd를 닫고 재던진다. strea
 ### M1-181 / CPx15 N2의 상세 실패 보존
 
 index guard가 구체 failureDetail을 기록한 뒤 close의 OSError가 겹쳐도 index_file은 이를 index-read로 덮어쓰지 않는다. detail이 비어 있는 단독 read/close 실패만 index-read를 기록한다. 소유 fixture는 owner guard ValueError→close OSError의 실제 예외 연결·기존 index-owner 보존과 단독 read/close의 index-read·원문 오류 비출력을 확인한다. wire/pins/guard/Acquire 설정·상한·신원/cleanup·false authority와 실제 prepare 실패 원인은 바꾸지 않는다. 실제 VM/prepare/download/설치/daemon/target 실행은 없다.
+
+### M1-183 / 선택적 Translation acquisition 중지
+
+R9 M1-180(manifest78f14e7127d2efc4fdc57362c9bd8b7897a5b03082ceedc6790de672fa617101)은 unknown/index-snapshot/index-kind-translation·package0·세 권한false와 정상 소유cleanup을 관측했다. SDK list652frame 중 parse failure1건의 원래 frame·구체 파일명/내용·SDK 원인은 미확인이다.
+표준 [Acquire::Languages=none](https://manpages.ubuntu.com/manpages/noble/man5/apt.conf.5.html)을 고정 private config에 추가해 불필요한 번역 index acquisition을 중지한다. InRelease/package 서명·후보 selection/bytes·기존 unexpected-kind 거부/진단·FD/digest/pins/상한/cleanup은 유지한다. 파일 무시/삭제 fallback이나 종류 허용 확대는 없다.
+소유 AST fixture는 apt_config를 mock filesystem/env/key로 실행해 실제 생성된 Languages=none, signed-by가 포함된 고정 HTTPS source4행, 인증/redirect/trust 설정과 부모 env 비상속을 검증한다. APT/서명 검증/네트워크의 실제 성공을 뜻하지 않으며 다음 CPx16 승인 후 R9가 새 prepare를 한 번 측정한다. M1-181의 복합 실패 detail 보존도 유지한다.
+
+M1-183의 첫 cleanup/compat 검증은80 pass·1 fail였고 진단 재현도 exit1이었다. 둘 다 새 fixture key 정규식의 underscore 누락으로 기존 Dir::State::extended_states를 파싱하지 못한 helper 문법 오류이며 실제 APT/prepare 실패와 구분한다. M1-185는 underscore만 추가하고 생성 옵션 전체 집합/값의 정확한 동등 비교로 검증을 강화했다. 제품 설정이나 기대 값을 실패에 맞춰 바꾸지 않았다.
+M1-185 재검증은 자체 build·cleanup/compat 직렬81 pass·fail/skip0이다. AST 소유 fixture의 전체32개 생성 옵션/값·source4행·부모 env 비상속과 M1-181의 겹친 오류/단독 read·close 보존도 통과했다. 120/60·diff-check 및 제품 코드가 M1-181에 Languages=none 한 줄만 추가된 것임을 확인했다. 실제 prepare 성공은 아직 미측정이다.

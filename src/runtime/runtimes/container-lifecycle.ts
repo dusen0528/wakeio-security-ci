@@ -187,6 +187,7 @@ def apt_config():
         'Dir::State::lists': BASE + '/lists', 'Dir::State::status': '/var/lib/dpkg/status',
         'Dir::Cache::archives': BASE + '/archives', 'Dir::Cache::pkgcache': '', 'Dir::Cache::srcpkgcache': '',
         'APT::Architecture': 'arm64', 'APT::Install-Recommends': 'false', 'APT::Install-Suggests': 'false',
+        'Acquire::Languages': 'none',
         'APT::Get::AllowUnauthenticated': 'false', 'Acquire::AllowInsecureRepositories': 'false',
         'Acquire::AllowDowngradeToInsecureRepositories': 'false', 'Acquire::Check-Valid-Until': 'true',
         'Acquire::AllowWeakRepositories': 'false',

@@ -1697,3 +1697,58 @@ test('index detail is optional closed metadata on index snapshot/recheck only an
     }
   }
 });
+
+const APT_CONFIG_FIXTURE = String.raw`
+import ast, sys, re
+from types import SimpleNamespace
+module = ast.parse(sys.stdin.read())
+function = next(n for n in module.body if isinstance(n, ast.FunctionDef) and n.name == 'apt_config')
+written, directories, keys = {}, [], []
+def mkdir(path, mode):
+    assert mode == 0o700; directories.append(path)
+def write_new(path, body):
+    assert path not in written; written[path] = body
+owned_env = {'UNTRUSTED_PARENT':'synthetic'}
+namespace = dict(BASE='/owned', ENV={'PATH':'/usr/sbin:/usr/bin:/sbin:/bin','LC_ALL':'C','HOME':'/root'},
+    os=SimpleNamespace(mkdir=mkdir, environ=owned_env), key=lambda: keys.append('fixed-key'), write_new=write_new)
+exec(compile(ast.Module(body=[function], type_ignores=[]), 'owned apt config', 'exec'), namespace)
+namespace['apt_config']()
+assert keys == ['fixed-key'] and len(directories) == len(set(directories)) == 6
+assert set(written) == {'/owned/sources.list','/owned/apt.conf'}
+sources = 'deb [arch=arm64 signed-by=/owned/docker.asc] https://download.docker.com/linux/ubuntu noble stable\n'
+for suite in ['noble','noble-updates','noble-security']:
+    sources += ('deb [arch=arm64 signed-by=/usr/share/keyrings/ubuntu-archive-keyring.gpg] '
+        'https://ports.ubuntu.com/ubuntu-ports ' + suite + ' main universe\n')
+assert written['/owned/sources.list'].decode('ascii') == sources
+lines = written['/owned/apt.conf'].decode('ascii').splitlines()
+pairs = [re.fullmatch(r'([A-Za-z0-9_:.-]+) "([^"\n]*)";', line).groups() for line in lines]
+config = dict(pairs); assert len(config) == len(pairs)
+expected = {'Acquire::Languages':'none','APT::Architecture':'arm64','APT::Install-Recommends':'false',
+    'APT::Install-Suggests':'false','APT::Get::AllowUnauthenticated':'false',
+    'Acquire::AllowInsecureRepositories':'false','Acquire::AllowDowngradeToInsecureRepositories':'false',
+    'Acquire::AllowWeakRepositories':'false','Acquire::Check-Valid-Until':'true',
+    'Acquire::https::Verify-Peer':'true','Acquire::https::Verify-Host':'true',
+    'Acquire::https::AllowRedirect':'false','Acquire::https::Proxy':'DIRECT','Acquire::http::Proxy':'DIRECT',
+    'Dir::Etc::Parts':'/owned/empty','Dir::Etc::main':'/owned/absent','Dir::Etc::sourcelist':'/owned/sources.list',
+    'Dir::Etc::sourceparts':'/owned/empty','Dir::Etc::trusted':'/owned/absent','Dir::Etc::trustedparts':'/owned/empty',
+    'Dir::Etc::preferences':'/owned/absent','Dir::Etc::preferencesparts':'/owned/empty',
+    'Dir::State::lists':'/owned/lists','Dir::State::status':'/var/lib/dpkg/status',
+    'Dir::Cache::archives':'/owned/archives','Dir::Cache::pkgcache':'','Dir::Cache::srcpkgcache':'',
+    'Acquire::Retries':'0','Acquire::https::Timeout':'8','APT::Sandbox::User':'root',
+    'Dir::Log':'/owned','Dir::State::extended_states':'/owned/extended'}
+assert config == expected
+assert owned_env == dict(namespace['ENV'], APT_CONFIG='/owned/apt.conf')
+print('owned generated APT config: languages none; fixed signed HTTPS sources and authentication preserved')
+`;
+test('generated private APT config disables optional translations and preserves signed source/authentication policy',
+  async () => {
+    await scope(async base => {
+      const prefix = '/usr/bin/python3 -I -c ';
+      const python = ROOTLESS_PACKAGE_PREPARE.slice(prefix.length + 1, -1).replaceAll("'\"'\"'", "'");
+      const result = await runRuntimeProcess('/usr/bin/python3', ['-I', '-c', APT_CONFIG_FIXTURE], {
+        input: python, cwd: base, home: base, timeoutMs: 5000, deadlineAt: Date.now() + 10000, maxOutputBytes: 16384 });
+      assert.equal(result.completed, true); assert.equal(result.stderr, '');
+      assert.equal(result.stdout,
+        'owned generated APT config: languages none; fixed signed HTTPS sources and authentication preserved\n');
+    });
+  });
