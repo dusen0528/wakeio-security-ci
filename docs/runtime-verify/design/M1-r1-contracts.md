@@ -154,6 +154,40 @@ Oracle은 검증된 readonly `AttackLog+MarkerLedger`, Observation[], CoverageMa
 정상 control 응답·대응 PG 관측·같은 controlContextHash가 필수다. 문장 직접 조립은 strong 후보, 삽입 token의 literal 밖 AST 승격 또는 PG42601+일치 위치+parser quote 불균형 진단이 있어야 confirmed다. Bind/literal/comment 안의 값은 문법 승격이 아니다.
 응답/SQLSTATE만으로 confirmed를 내지 않는다. parser/방언 미지원·손상·역할 불명은 unknown이며 F1/F2의 정상 바인딩 완료를 unknown으로 숨기지 않는다. unknown은 CaseOutcome+gap이고 빈 Verdict 배열은 안전/완료가 아니다. N1/N2의 confirmed 0을 모든 grade 0으로 바꾸지 않는다.
 
+### M1-160 / native 오류 진단의 후속 계약 제안
+
+이 절은 M1-149/155에서 확인한 실제 parser API 부족을 해결하기 위한 후속 CPx 제안이다. 현재 제품의 protocol/types/Oracle 또는 R8 기대값을 바꾸지 않는다. §7의 새 경로도 CPx 승인 뒤 root의 별도 구현 패킷으로만 쓴다. 설계 문서 자체는 설치·native build·WASM/PG/대상 실행 권한이 아니다.
+
+**현재 한계와 근거.** pinned `libpg-query@18.2.1`의 parse 오류는 message/cursorPosition/fileName/functionName/lineNumber를 채우며 quote enum/SQLSTATE를 제공하지 않는다(type에 선언된 optional context도 이를 대신하지 못한다). wrapper가 원래 cursorpos>0이면 1을 빼고 나머지를0으로 만들므로 “위치 없음”과 “첫 문자”를 잃어버린다. wasm_scan 오류는 message만 반환하며 partial token 결과가 없다. libpg_query scan은 첫 전체 lexical pass가 성공한 뒤 두 번째 pass에서 token 결과를 만든다. lexical quote 실패의 정확한 outside-token context를 현재 API에서 복원할 수 없다.
+- [고정 wrapper의 parse 오류/위치 변환](https://github.com/constructive-io/libpg-query-node/blob/55c0963bf79bfd437c2aa1eb5fba9329a6fcd76f/versions/18/src/index.ts#L395-L412) · [wasm_scan 오류 반환](https://github.com/constructive-io/libpg-query-node/blob/55c0963bf79bfd437c2aa1eb5fba9329a6fcd76f/versions/18/src/wasm_wrapper.c#L349-L377).
+- [선언된 libpg_query source의 두 scan pass](https://github.com/constructive-io/libpg_query/blob/b0f5f331dc50d69597ec610de7b21afa47a66808/src/pg_query_scan.c#L63-L108) · [PG18 lexer EOF 분기](https://github.com/postgres/postgres/blob/REL_18_0/src/backend/parser/scan.l#L694) · [byte 위치에서 PG 문자 위치로 변환](https://github.com/postgres/postgres/blob/REL_18_0/src/backend/parser/scan.l#L1072-L1082).
+위 source 읽기는 published npm WASM과 해당 source commit의 재현 빌드 대응을 입증하지 않는다. R8 `sql-projections.json`의 authorship도 manual ground truth/NOT measured PG로 명시돼 있다. V3의 UNTERMINATED_LITERAL·위치·context는 그 독립 예제이며 현재 native 출력이라고 주장하지 않는다. V3의 confirmed 기대값은 유지하고 실제 지원 부족을 unknown/미완료로 남긴다.
+
+**wire 구분.** 아래 이름/형태는 새 revision의 후보이며 현 `wakeio.pg-parser/v1`이나 기존 error/hash 필드의 의미를 조용히 바꾸지 않는다. R1 타입/schema와 R5의 request/reply 검증을 함께 검토한 뒤 닫힌 union으로 구현한다.
+
+| 제안 필드·domain | 의미와 거부 기준 |
+| --- | --- |
+| `dbError` | 실제 소유 PG 로그 사건의 SQLSTATE와 원래 statement 문자 위치를 담는다. native parser 오류나 HTTP 응답을 DB 오류로 복사하지 않는다. internal query 위치·다른 statement·없는 로그는 해당 statement의 증거로 쓰지 않는다. |
+| `position` | `presence:present`이면 원래 PG 1-based 문자 위치와 검증한 UTF-8 0-based byte offset을 함께 둔다. `presence:absent`이면 두 값은 null이다. 원래 PG의0/없음을 첫 문자0-based 위치로 채우지 않으며 현재 wrapper의0에서 유효성을 역추정하지 않는다. |
+| `nativeDiagnostic` | `none / lexer_eof / other_syntax / unsupported`를 구분한다. lexer_eof는 native lexer가 실패한 그 분기에서 기록한 닫힌 code·원본 UTF-8 span·위치 유효성을 요구한다. 원문 message/파일명/함수명 패턴으로 EOF 종류를 추정하지 않는다. |
+| native EOF code | 구체 enum과 quote 승격 허용 집합은 아직 미확정이다. 후속 제한 읽기 전용 패킷에서 PG18 scanner 상태·EOF rule·오류 캡처 수명/ABI를 대조한 뒤 확정한다. 문자열/identifier/comment 등의 서로 다른 종료 실패를 한 quote 성공 코드로 합치지 않는다. 미확정 code는 unsupported다. |
+| `context.basis=complete_tokens` | 원본 statement의 전체 scan이 성공한 경우에만 token 역할/span 기반 context를 쓴다. 기존 token hash 계산/원문 폐기 규칙은 이 domain에서 유지한다. |
+| `context.basis=control_template_bytes` | lexical 실패 때문에 token 결과가 없을 때 별도로 쓰는 원본 byte 문맥이다. 정상 control literal span·각 실제 삽입 span·recipe hash·삽입 전후 prefix/suffix의 길이 및 hash·domain을 구분한 template hash를 결속한다. token 결과나 outsidePayloadTokenHash인 것처럼 저장하지 않는다. |
+| `context.basis=unavailable` | 정상 control·정확한 삽입 경계·byte 동일성·설정·native 진단 중 하나라도 검증할 수 없을 때 사용하며 해당 case는 unknown이다. 다른 basis의 hash끼리 같다는 이유로 비교하지 않는다. |
+
+span은 원래 SQL의 검증된 UTF-8 byte 기준 반열린 구간이며 byte 범위·문자 경계·실제 입력 길이를 검사한다. PG 문자 위치는 JS UTF-16 index가 아니다. EOF의 끝은 원문 끝, 시작은 native lexer가 실제로 기록한 시작점이어야 한다. SQL을 고쳐 parser를 성공시키거나 추정 AST/token·UNTERMINATED_LITERAL을 만들어 실제 관측으로 내보내지 않는다. lexical 실패에는 AST/token 결과가 없다는 사실을 그대로 보존한다.
+native SQLSTATE를 새로 제공하더라도 DB SQLSTATE와 출처를 분리한다. EOF enum은 해당 parser source의 구조적 진단이고, DB 발생/route 인과는 소유 PG 관측에서 따로 확인한다. producer가 준 promoted boolean·SQLSTATE 단독·HTTP 오류·오류 message regex로 grade를 올리지 않는다.
+
+**control→probe 인과 조건.** 같은 route/param/controlPairId·발급 recipe·payload hash·requestOrdinal과 snapshot을 사용한 정상 control이 먼저 성공해야 한다. control의 실제 SQL에서 literal 범위와 marker 삽입 구간을 확인하고 probe의 원래 bytes에서 대응 삽입 전후 template가 같음을 확인한다. 이때 원문은 trusted helper/collector RAM에서만 비교하고 이전 개별 tokenHashes 수명 정책대로 폐기한다. hash가 기밀성이나 생산자 인증을 보장하지는 않는다.
+native 오류의 시작점은 payload 내부라고 가정하지 않는다. V3처럼 삽입 앞의 control literal 여는 따옴표가 오류 위치일 수 있으므로 control literal·삽입 구간·원래 template의 위치 대응으로 검토한다. 삽입 경계가 여러 개/불명확하거나 실제 quoting/직렬화를 검증할 수 없으면 unknown이다. 이 조건을 만족한 lexer EOF 종류만 후속 Oracle의 quote 인과 검토 대상으로 삼는다.
+DB 사건·control/probe 원문 hash·native 입력 hash는 같은 runId/epoch/runNonce·observer session·DB lease/container/PG session/line·요청 cursor 창·drain 완료에 묶는다. 늦은 사건·rotation gap·다른 run 재현 마커·누락/잘린 로그·일치하지 않는 statement는 거부하거나 unknown으로 남긴다. Bind 값은 SQL 본문 삽입이 아니므로 template/literal 실패 경로로 가장하지 않는다.
+실제 PG의 major/encoding과 standard_conforming_strings/backslash_quote 등 lexical 관련 설정을 trusted 관리 연결로 읽어 같은 lease의 설정 hash에 묶고 native parser의 선언·적용 설정과 대조한다. 방언·설정·유효성/byte 변환이 불명이거나 다르면 unknown이다. 관측하지 않은 기본값을 가정해 일치로 만들지 않는다. quote 오류 지원이 생겨도 F1/F2의 정상 바인딩·다른 음성 조건은 그대로 검증한다.
+
+**자산 정체성과 단계.** custom 진단에는 공식 npm18.2.1과 다른 artifact kind/id·revision 및 protocol revision을 부여한다. native source lock·patch SHA·compiler/linker/환경 image digest·옵션·생성 CJS/WASM bytes SHA·고지를 manifest의 build provenance로 구분한다. published upstream commit 선언·고지 원본·custom 재현 빌드의 입증 수준도 구분하며 npm WASM의 공식 version/integrity를 custom bytes에 붙이지 않는다. 원래 `libpg-query.wasm`은 원본 식별을 유지하고 custom 쌍은 §7의 다른 이름을 사용한다.
+진행은 명부/계약 CPx 승인 → R5 C/wrapper 진단 보완 → R3 고정 source/toolchain의 격리 재현 build → R10 로컬 자산/manifest·고지/배포 연결 → R8 독립 projection 적합성 검토 → R9 실제 PG18 대조·인과/음성/실패 검증 순서다. R3는 R10 산출물의 최종 raw SHA가 확정된 뒤 별도 host 승인 pin을 갱신한다. source/worker directory의 manifest를 기대 pin으로 그대로 신뢰하지 않는다. 각 단계는 root 패킷과 기존 전체 lock pin 갱신 절차를 따른다.
+native build는 별도 명시 script/승인된 tool 환경에서만 한다. build의 자원/deadline은 R3 패킷에서 별도로 고정하며 parser job의1초/256MiB와 혼동하지 않는다. 일반 `npm run build`는 native source fetch·C/WASM compiler·Docker/VM을 요구하지 않고 고정된 로컬 native 자산의 검증/복사만 추가한다(기존 local tsc/esbuild 경로는 유지). 누락/손상/새 source 또는 toolchain 불일치에서 fail-closed하며 네트워크로 자동 복구하지 않는다.
+R8은 고정 소스/보안 기대값의 독립 작성자이고 R5/R3/R10 출력으로 expected를 재생성하지 않는다. 새 native 진단과 V3 confirmed의 실제 결속은 R9의 실제 PG 로그·위치·설정·control/probe 대조가 있어야 입증된다. 고정 V3 등급을 낮추거나 manual projection 성공만으로 완료시키는 선택은 없다.
+
 ## 5. RunContext·격리·스냅샷·실패 수명
 
 ```ts
@@ -282,6 +316,22 @@ reportArtifact는 `{name:report.json,algorithm:sha256,digest:<확정된 report.j
 공유 배포 경로의 **후속 승인 제안**: R1은 `package.json`/`package-lock.json`의 strict YAML·JSON Schema 검증용 고정 dependency와 packs/schema 배포 파일 목록, R10은 `scripts/build-action-bundle.mjs`/`THIRD_PARTY_NOTICES.md`의 필요한 새 배포 자산·고지를 맡는다. legacy bundle/기존 출력 회귀를 검증한다.
 기존 패키지로 충족되는지 먼저 확인하고, 안 되면 검증된 고정 dependency를 쓴다. 자체 불완전 YAML/JSON Schema 파서로 검증 목표를 축소하지 않는다. 구체 버전·SQL WASM helper 자산/파일 경로는 후속 실측 뒤 정확한 별도 경로 승인으로 남긴다.
 이 명부 제안은 구현 권한을 스스로 부여하지 않는다. 위 공유 경로의 실제 수정에는 root 후속 패킷과 CPx 승인이 필수이며 M1-19에서는 package/lock/bundle builder/고지/dependency를 바꾸지 않는다.
+
+### M1-160 / native 진단의 후속 CPx 경로 승인 제안
+
+아래는 §4의 새 native 진단을 위한 **경로/소유 제안**이다. 이번에는 이 문서만 쓰며 실제 파일 생성·수정은 명부 CPx 승인 후 root의 경로별 패킷으로만 한다. §7 밖 파일을 임의로 늘리지 않는다. 구체 EOF enum·native ABI·source/toolchain bytes 선정은 후속 읽기 검토/측정 단계이며 승인 없이 현재 v1 protocol/핀을 바꾸지 않는다.
+
+| 역할 | 새 경로 후보 또는 재사용할 정확한 기존 경로 | 책임·검증 |
+| --- | --- | --- |
+| R1 | **신규 제안** `workers/pg-parser/native/sources.lock.json`; 기존 `src/runtime/types.ts`, `schemas/verify-artifact.v1.json` | 고정 PG/libpg_query/wrapper source commit/URL/bytes SHA·patch·toolchain/환경 digest·build 옵션의 데이터 명부, source/배포 provenance 및 새 diagnostic/context/position union을 소유한다. lock의 선언을 재현 build 증거로 부르지 않는다. |
+| R5 | **신규 제안** `workers/pg-parser/native/lexer-diagnostics.patch`; 기존 `src/runtime/observers/{pg-parser-helper,pg-parser-worker,pg-log,sql-projection}.ts`, `src/runtime/oracles/sql.ts` | 고정 upstream C/lexer·wrapper 보완 patch와 닫힌 protocol/정규화·실제 PG 오류/설정 수집·순수 Oracle 인과 검증을 소유한다. 새 TS SQL lexer·메시지 regex·수정 SQL AST로 대체하지 않는다. |
+| R3 | **신규 제안** `scripts/build-pg-parser-native.mjs`; 기존 `src/runtime/{process.ts,runtimes/controller.ts}` | 승인된 source lock/patch와 고정 compiler 환경의 별도 재현 build를 감독하고 결과 bytes를 측정한다. 실행 host의 독립 approval pins·trusted asset 경로·network-none/시간/메모리·정리를 유지한다. 일반 npm build나 임의 source/target에게 compiler/VM 권한을 주지 않는다. |
+| R10 | **신규 제안** `workers/pg-parser/wakeio-pg18-diagnostics.cjs`, `workers/pg-parser/wakeio-pg18-diagnostics.wasm`; 기존 `scripts/build-action-bundle.mjs`, `workers/pg-parser/{pg-parser-worker.cjs,manifest.json}` | R3가 만든 custom 쌍의 고정 bytes를 로컬 검증/복사·배포하고 worker와 manifest의 명시 artifact/protocol identity를 연결한다. official npm 자산을 같은 이름으로 덮어써 custom을 공식 동일품으로 보이게 하지 않는다. |
+| R10 | 기존 `workers/pg-parser/{THIRD_PARTY_LICENSES.txt,LICENSE.libpg_query,COPYRIGHT.PostgreSQL}`, `THIRD_PARTY_NOTICES.md`, `dist-action/{wakeio-security-ci.mjs,THIRD_PARTY_LICENSES.txt}` | 실제 선정 source/patch/생성 loader의 고지·custom 출처와 미입증 사항을 반영하고 npm/Action의 로컬 파일·raw SHA 포함을 검증한다. 필요한 package/files/lock 변경은 기존 R1 `package.json`/`package-lock.json` 공유 절차로만 요청한다. |
+| R8 | 기존 `tests/fixtures/runtime-m1/{sql-cases,sql-projections}.json`, `examples/runtime/{spring-sqli,spring-sqli-jdbc}/**` | 원래 V3 confirmed와 음성/정상 바인딩 기대를 유지하며 새 revision의 독립 ground truth/projection 적합성을 검토한다. 기존 manual projection을 actual native 출력으로 재표기하지 않는다. |
+| R9 | 기존 `.handoff/evidence/M1/**`(root 패킷에서 세부 파일 지정) | native source/patch/compiler/환경과 산출물 raw SHA·재현성, 실제 PG18 설정/오류 위치·control/probe 인과·음성/Bind·유실/timeout/trap/cleanup·원문 비출판을 독립 검증한다. 구현이나 R8 expected는 수정하지 않는다. |
+
+새 테스트 파일은 제안하지 않는다. 기존 `tests/runtime-contracts.test.ts`(R1: 새 union/핀/거부), `tests/runtime-{pg-log,sql}.test.ts`(R5: protocol·관측·순수 판정), `tests/runtime-cleanup.test.ts`(R3: 별도 build/실행 감독·실패), `tests/runtime-delivery.test.ts`(R10: source-free npm/Action 배포·손상/혼합 거부)를 각 소유 패킷에서 재사용한다. 보안 기대값은 R8 소유 파일만 참조하고 복제/완화하지 않는다. 실제 측정 증거는 R9에 남긴다.
 
 ### M1-83 / CPx7 승인 PostgreSQL parser 자산 명부
 
