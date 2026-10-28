@@ -93,6 +93,26 @@ export function parseRootlessPackagePreparation(raw: string): Readonly<RootlessP
   } catch { return packagePreparationUnknown('invalid_metadata'); }
 }
 
+/** Private transport data only; this parser cannot create a session seal or installation authority. */
+export function parsePrivatePrepareReceipt(raw: string): Readonly<{
+  preparation: Readonly<RootlessPackagePreparation>; bindingsSha256: string | null;
+}> {
+  try {
+    if (Buffer.byteLength(raw) > 16384 || /[^\x20-\x7e\n]/.test(raw)) invalid();
+    const value = snapshotJsonData(JSON.parse(raw), invalid) as Record<string, unknown>;
+    exact(value, ['protocol', 'preparation', 'bindingsSha256']);
+    if (raw !== JSON.stringify(value) + '\n' || value.protocol !== 'wakeio-rootless-prepare-receipt/v1'
+      || typeof value.preparation !== 'string' || typeof value.bindingsSha256 !== 'string'
+      || !/^[a-f0-9]{64}$/.test(value.bindingsSha256)) invalid();
+    if (!value.preparation.endsWith('\n') || value.preparation.slice(0, -1).includes('\n')) invalid();
+    const preparation = parseRootlessPackagePreparation(value.preparation);
+    if (preparation.phase !== 'download_prepared') invalid();
+    return Object.freeze({ preparation, bindingsSha256: value.bindingsSha256 });
+  } catch {
+    return Object.freeze({ preparation: packagePreparationUnknown('invalid_metadata'), bindingsSha256: null });
+  }
+}
+
 /** Failure diagnostics are data, never signature verification, prepared bytes or execution authority. */
 export function parseRootlessPackageFailure(raw: string): Readonly<RootlessPackagePreparation> {
   if (Buffer.byteLength(raw) <= 128) {
@@ -123,6 +143,7 @@ BASE = '/run/wakeio-m1-packages'
 ENV = {'PATH':'/usr/sbin:/usr/bin:/sbin:/bin', 'LC_ALL':'C', 'HOME':'/root'}
 stage = 'prerequisites'
 failure_detail = ''
+prepared_bindings_sha = ''
 
 def index_check(ok, code):
     global failure_detail
@@ -381,7 +402,8 @@ def prepared_snapshot():
     require(index_sha == manifest['indexManifestSha256'] and status_sha == manifest['installedStatusSha256'])
     boot = boot_digest()
     require(read_file(BASE + '/boot.sha256', 64, bindings=captured) == boot.encode('ascii'))
-    bindings = json.loads(read_file(BASE + '/deb-bindings.json', 65536, bindings=captured))
+    bindings_body = read_file(BASE + '/deb-bindings.json', 65536, bindings=captured)
+    bindings = json.loads(bindings_body)
     require(isinstance(bindings, list) and 4 <= len(bindings) == len(manifest['packages']) <= 48)
     names = [entry['file'] for entry in bindings]
     require(all(isinstance(n, str) and re.fullmatch(r'[A-Za-z0-9+~_.:-]+\.deb', n) and '..' not in n for n in names))
@@ -394,8 +416,9 @@ def prepared_snapshot():
     require(current == bindings)
     require(directories == [owned_directory(BASE + suffix) for suffix in ['', '/archives', '/archives/partial']])
     state = hashlib.sha256(encoded([directories, captured, current])).hexdigest()
-    fields = [hashlib.sha256(manifest_body).hexdigest(), index_sha, status_sha, boot, state]
-    return ('wakeio-rootless-packages-snapshot/v1:' + ':'.join(fields)).encode('ascii')
+    fields = [hashlib.sha256(manifest_body).hexdigest(), index_sha, status_sha, boot, state,
+        hashlib.sha256(bindings_body).hexdigest()]
+    return ('wakeio-rootless-packages-snapshot/v2:' + ':'.join(fields)).encode('ascii')
 
 def hook_config(lines):
     result = []
@@ -471,7 +494,7 @@ def validate_install_hook(payload, plan, configuration):
     return hashlib.sha256(payload).hexdigest()
 
 def prepare():
-    global stage
+    global stage, prepared_bindings_sha
     stage = 'prerequisites'
     require(os.geteuid() == 0 and os.uname().machine == 'aarch64')
     require(b'ID=ubuntu\n' in read_file('/usr/lib/os-release', 8192))
@@ -504,7 +527,9 @@ def prepare():
     stage = 'manifest'
     require(boot_digest() == boot)
     write_new(BASE + '/boot.sha256', boot.encode('ascii'))
-    write_new(BASE + '/deb-bindings.json', encoded(bindings))
+    bindings_body = encoded(bindings)
+    prepared_bindings_sha = hashlib.sha256(bindings_body).hexdigest()
+    write_new(BASE + '/deb-bindings.json', bindings_body)
     index_body = encoded(index_records); write_new(BASE + '/indexes.json', index_body)
     manifest = dict(protocol='wakeio-rootless-packages/v1', signatureVerified=True, keySha256=KEY_SHA,
         keyFingerprint=KEY_FINGERPRINT, indexManifestSha256=hashlib.sha256(index_body).hexdigest(),
@@ -512,6 +537,15 @@ def prepare():
     body = encoded(manifest); require(len(body) < 16 * 1024)
     write_new(BASE + '/manifest.json', body)
     return body
+
+def prepare_receipt():
+    preparation = prepare()
+    # This anchor comes from the original download FD bindings in this process, never a reopened sidecar.
+    require(re.fullmatch(r'[a-f0-9]{64}', prepared_bindings_sha) is not None)
+    receipt = encoded(dict(protocol='wakeio-rootless-prepare-receipt/v1',
+        preparation=preparation.decode('ascii')+'\n', bindingsSha256=prepared_bindings_sha))
+    require(len(receipt) < 16384)
+    return receipt
 
 # Tool chatter never becomes metadata. The owned VM and PGID are reclaimed even on abrupt termination.
 out = os.dup(1)
@@ -530,9 +564,10 @@ finally:
 `.replace('__PINS__', JSON.stringify(DOCKER_PINS)).replace('__KEY_SHA__', KEY_SHA)
   .replace('__KEY_FINGERPRINT__', KEY_FINGERPRINT);
 // Fixed Python is product code. No raw Target/options/text can select this script or its input.
-function fixedPython(action: 'prepare' | 'prepared_snapshot'): string {
+function fixedPython(action: 'prepare' | 'prepare_receipt' | 'prepared_snapshot'): string {
   return '/usr/bin/python3 -I -c '
     + "'" + PACKAGE_PREPARE_PY.replace('__ACTION__', action).replaceAll("'", "'\"'\"'") + "'";
 }
 export const ROOTLESS_PACKAGE_PREPARE = fixedPython('prepare');
+export const ROOTLESS_PACKAGE_PREPARE_RECEIPT = fixedPython('prepare_receipt');
 export const ROOTLESS_PACKAGE_SNAPSHOT = fixedPython('prepared_snapshot');

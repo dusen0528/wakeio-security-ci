@@ -6,8 +6,8 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { types } from 'node:util';
 import { snapshotJsonData } from '../../json-snapshot.js';
 import { runRuntimeProcess, type RuntimeProcessResult } from '../process.js';
-import { ROOTLESS_PACKAGE_PREPARE, ROOTLESS_PACKAGE_SNAPSHOT, packagePreparationUnknown,
-  parseRootlessPackagePreparation,
+import { ROOTLESS_PACKAGE_PREPARE_RECEIPT, ROOTLESS_PACKAGE_SNAPSHOT, packagePreparationUnknown,
+  parsePrivatePrepareReceipt,
   parseRootlessPackageFailure, packageInstallationUnknown,
   type RootlessPackagePreparation, type RootlessPackageInstallation } from './container-lifecycle.js';
 
@@ -736,15 +736,16 @@ class OsProfile extends Profile {
     this.groupConfirmed &&= result.cleanupConfirmed === true && result.closeConfirmed === true;
     return result;
   }
-  async guestPreparePackages(deadline: number, signal: AbortSignal): Promise<Readonly<RootlessPackagePreparation>> {
-    if (this.config.pins.rootfs.arch !== 'aarch64') return packagePreparationUnknown('prepare_unavailable');
-    const result = await this.guestRead(ROOTLESS_PACKAGE_PREPARE, deadline, signal, ROOTLESS_SETUP_MS);
+  async guestPreparePackages(deadline: number, signal: AbortSignal) {
+    if (this.config.pins.rootfs.arch !== 'aarch64') return {
+      preparation: packagePreparationUnknown('prepare_unavailable'), bindingsSha256: null };
+    const result = await this.guestRead(ROOTLESS_PACKAGE_PREPARE_RECEIPT, deadline, signal, ROOTLESS_SETUP_MS);
     if (!this.groupConfirmed) invalid();
-    if (guestCompleted(result)) return parseRootlessPackagePreparation(result.stdout);
+    if (guestCompleted(result)) return parsePrivatePrepareReceipt(result.stdout);
     const closedFailure = result.exitCode === 125 && !result.signal && !result.stopReason && !result.spawnError
       && !result.timedOut && !result.cancelled && !result.outputLimitExceeded && result.stderr === '';
-    return closedFailure ? parseRootlessPackageFailure(result.stdout)
-      : packagePreparationUnknown('prepare_unavailable');
+    return { preparation: closedFailure ? parseRootlessPackageFailure(result.stdout)
+      : packagePreparationUnknown('prepare_unavailable'), bindingsSha256: null };
   }
   async guestPackageSnapshot(deadline: number, signal: AbortSignal): Promise<string> {
     const result = await this.guestRead(ROOTLESS_PACKAGE_SNAPSHOT, deadline, signal);
@@ -864,7 +865,9 @@ class OsSession {
   failed = false; observed = false; private open = false; private stopping = false; private pid?: number;
   private foreground?: Promise<RuntimeProcessResult | undefined>; private monitor?: Promise<void>;
   private active?: Promise<unknown>; private binary?: SessionBinary; private timer?: NodeJS.Timeout;
-  private prepared?: Readonly<{ snapshot: string; result: Readonly<RootlessPackagePreparation> }>;
+  private prepared?: Readonly<{
+    snapshot: string; result: Readonly<RootlessPackagePreparation>; bindingsSha256: string;
+  }>;
   private preparationAttempted = false;
   private installationAttempted = false;
   private wake!: () => void; private readonly lost = new Promise<void>(resolve => { this.wake = resolve; });
@@ -894,7 +897,8 @@ class OsSession {
     if (!seal) return;
     const actual = await this.owner.guestPackageSnapshot(this.deadline, this.controller.signal);
     await this.checkpoint();
-    if (this.prepared !== seal || actual !== seal.snapshot) invalid();
+    if (this.prepared !== seal || actual !== seal.snapshot
+      || !actual.endsWith(':' + seal.bindingsSha256 + '\n')) invalid();
   }
   private probe(args: unknown[]): Promise<Readonly<OsPrerequisites>> {
     if (!this.open || this.failed || this.controller.signal.aborted || args.length || this.active) {
@@ -946,19 +950,20 @@ class OsSession {
         const guard = await this.owner.guestProbe(this.deadline, this.controller.signal);
         await this.checkpoint(); this.observed = guard.observed;
         if (!guard.observed) { this.fail(); return packagePreparationUnknown('prepare_unavailable'); }
-        const answer = await this.owner.guestPreparePackages(this.deadline, this.controller.signal);
+        const receipt = await this.owner.guestPreparePackages(this.deadline, this.controller.signal);
+        const answer = receipt.preparation, anchor = receipt.bindingsSha256;
         await this.checkpoint();
         if (answer.phase !== 'download_prepared') { this.fail(); return answer; }
         const snapshot = await this.owner.guestPackageSnapshot(this.deadline, this.controller.signal);
         await this.checkpoint();
-        const pattern = '^wakeio-rootless-packages-snapshot/v1:'
-          + Array(5).fill('([a-f0-9]{64})').join(':') + '\n$';
+        const pattern = '^wakeio-rootless-packages-snapshot/v2:'
+          + Array(6).fill('([a-f0-9]{64})').join(':') + '\n$';
         const match = new RegExp(pattern).exec(snapshot);
         if (!match || match[0] !== snapshot || match[1] !== answer.manifestSha256
           || match[2] !== answer.indexManifestSha256
-          || match[3] !== answer.installedStatusSha256) invalid();
+          || match[3] !== answer.installedStatusSha256 || !anchor || match[6] !== anchor) invalid();
         if (!this.open || this.failed || this.controller.signal.aborted || Date.now() >= this.deadline) invalid();
-        this.prepared = Object.freeze({ snapshot, result: answer });
+        this.prepared = Object.freeze({ snapshot, result: answer, bindingsSha256: anchor });
         return answer;
       } catch { this.fail(); return packagePreparationUnknown('identity_unknown'); }
     })();

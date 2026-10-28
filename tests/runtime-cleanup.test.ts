@@ -15,8 +15,8 @@ import { copyPgParserAssetFiles, createPgParserAssetLoader,
   createLimaRootlessSetupRunner, withLimaRootlessSetup, type LimaRootlessSetupCapability }
   from '../src/runtime/runtimes/controller.js';
 
-import { ROOTLESS_PACKAGE_PREPARE, ROOTLESS_PACKAGE_SNAPSHOT,
-  parseRootlessPackagePreparation, parseRootlessPackageFailure }
+import { ROOTLESS_PACKAGE_PREPARE, ROOTLESS_PACKAGE_PREPARE_RECEIPT, ROOTLESS_PACKAGE_SNAPSHOT,
+  parseRootlessPackagePreparation, parseRootlessPackageFailure, parsePrivatePrepareReceipt }
   from '../src/runtime/runtimes/container-lifecycle.js';
 
 // Deliberately synthetic metadata. A mock tool never downloads, starts or validates these assets.
@@ -1413,10 +1413,15 @@ function packageWire(): string {
     installedStatusSha256: 'b'.repeat(64), packages: rows.map(([name, version, size, sha256]) =>
       ({ name, version, arch: 'arm64', size, sha256, origin: 'docker' })) }) + '\n';
 }
+const syntheticBindingAnchor = 'f'.repeat(64);
+function privatePrepareWire(): string {
+  return JSON.stringify({ protocol: 'wakeio-rootless-prepare-receipt/v1', preparation: packageWire(),
+    bindingsSha256: syntheticBindingAnchor }) + '\n';
+}
 function packageSnapshotWire(): string {
   const p = parseRootlessPackagePreparation(packageWire());
-  return 'wakeio-rootless-packages-snapshot/v1:' + [p.manifestSha256, p.indexManifestSha256,
-    p.installedStatusSha256, 'c'.repeat(64), 'd'.repeat(64)].join(':') + '\n';
+  return 'wakeio-rootless-packages-snapshot/v2:' + [p.manifestSha256, p.indexManifestSha256,
+    p.installedStatusSha256, 'c'.repeat(64), 'd'.repeat(64), syntheticBindingAnchor].join(':') + '\n';
 }
 function setupRecorder(options: { fail?: boolean; hang?: boolean; uncertain?: boolean; snapshot?: string;
   reply?: Partial<Awaited<ReturnType<typeof runRuntimeProcess>>> } = {}) {
@@ -1431,17 +1436,19 @@ function setupRecorder(options: { fail?: boolean; hang?: boolean; uncertain?: bo
       const result = await runRuntimeProcess(process.execPath, ['-e', ''], config);
       const stdout = packageSnapshotWire();
       return { ...result, stdout: options.snapshot === 'bad' ? stdout + '\n'
+        : options.snapshot === 'anchor' || snapshots > 1 && options.snapshot === 'anchor-late'
+          ? stdout.replace(syntheticBindingAnchor, 'e'.repeat(64))
         : options.snapshot === 'manifest'
           ? stdout.replace(parseRootlessPackagePreparation(packageWire()).manifestSha256!, 'e'.repeat(64))
         : snapshots > 1 && options.snapshot === 'drift' ? stdout.replace('c'.repeat(64), 'e'.repeat(64)) : stdout,
         stderr: options.snapshot === 'stderr' ? 'synthetic withheld diagnostic' : '',
         cleanupConfirmed: options.snapshot === 'group' ? false : result.cleanupConfirmed };
     }
-    if (args.at(-1) === ROOTLESS_PACKAGE_PREPARE) {
+    if (args.at(-1) === ROOTLESS_PACKAGE_PREPARE_RECEIPT) {
       if (options.hang) return runRuntimeProcess(process.execPath,
         ['-e', "process.on('SIGTERM',()=>process.exit(0));setInterval(()=>{},1000)"], config);
       const result = await runRuntimeProcess(process.execPath, ['-e', ''], config);
-      return { ...result, stdout: options.fail ? 'discard private tool output' : packageWire(),
+      return { ...result, stdout: options.fail ? 'discard private tool output' : privatePrepareWire(),
         completed: !options.fail, exitCode: options.fail ? 125 : 0, ...options.reply,
         cleanupConfirmed: options.uncertain ? false : result.cleanupConfirmed };
     }
@@ -1449,6 +1456,24 @@ function setupRecorder(options: { fail?: boolean; hang?: boolean; uncertain?: bo
   });
   return { run, events };
 }
+test('private prepare receipts preserve public metadata and reject malformed, mixed or oversized envelopes', () => {
+  const good = parsePrivatePrepareReceipt(privatePrepareWire());
+  assert.deepEqual(good.preparation, parseRootlessPackagePreparation(packageWire()));
+  assert.equal(good.bindingsSha256, syntheticBindingAnchor);
+  const edits: ((d: any) => void)[] = [d => { d.bindingsSha256 = ''; }, d => { d.bindingsSha256 = 'G'.repeat(64); },
+    d => { delete d.bindingsSha256; }, d => { d.extra = true; }, d => { d.protocol = 'unsupported'; },
+    d => { d.preparation = packageWire() + '\n'; }, d => { d.preparation = false; },
+    d => { d.preparation = 'x'.repeat(16384); }];
+  for (const edit of edits) {
+    const data = JSON.parse(privatePrepareWire()); edit(data);
+    assert.equal(parsePrivatePrepareReceipt(JSON.stringify(data) + '\n').preparation.phase, 'unknown');
+  }
+  for (const bad of ['', packageWire(), privatePrepareWire() + packageWire(), packageWire() + privatePrepareWire(),
+    privatePrepareWire() + '\n', privatePrepareWire().slice(0, -1), 'x'.repeat(16385)]) {
+    const answer = parsePrivatePrepareReceipt(bad);
+    assert.equal(answer.preparation.phase, 'unknown'); assert.equal(answer.bindingsSha256, null);
+  }
+});
 test('trusted package setup requires consent before getters, proxy hooks, callback or any tool I/O', async () => {
   let calls = 0;
   const raw = Object.defineProperty({ executeTargetConsent: false }, 'rootfsFile', { get() { calls++; } });
@@ -1496,7 +1521,7 @@ test('private setup has a separate fixed deadline, guard barrier and scoped down
     assert.equal(result.status, 'unavailable'); assert.equal(result.verified, false);
     const shell = recorder.events.filter(e => e.args[1] === 'shell');
     assert.equal(shell.length, 4); assert.equal(shell[0].timeoutMs, 5_000); assert.equal(shell[1].timeoutMs, 5_000);
-    assert.equal(shell[2].args.at(-1), ROOTLESS_PACKAGE_PREPARE); assert.equal(shell[2].timeoutMs, 300_000);
+    assert.equal(shell[2].args.at(-1), ROOTLESS_PACKAGE_PREPARE_RECEIPT); assert.equal(shell[2].timeoutMs, 300_000);
     assert.equal(shell[3].args.at(-1), ROOTLESS_PACKAGE_SNAPSHOT); assert.equal(shell[3].timeoutMs, 5_000);
     assert.equal(recorder.events.find(e => e.args[1] === 'start')?.timeoutMs, 300_000);
     assert.deepEqual(shell[2].args.slice(5, -1), ['--', '/usr/bin/sudo', '-n', '/usr/bin/env', '-i',
@@ -1515,7 +1540,7 @@ test('setup rejects absent guards and download failures; cleanup uncertainty sta
         phase = (await cap.preparePackages()).reason;
       });
       if (mode === 'session-probe-fail') assert.equal(recorder.events.some(e =>
-        e.args.at(-1) === ROOTLESS_PACKAGE_PREPARE), false);
+        e.args.at(-1) === ROOTLESS_PACKAGE_PREPARE_RECEIPT), false);
       else assert.equal(phase, mode === 'group-unknown' ? 'identity_unknown' : 'invalid_metadata');
       assert.equal(result.cleanup?.confirmed, mode !== 'group-unknown');
       if (mode !== 'session-probe-fail') assert.equal(result.phase, 'failed');
@@ -1529,7 +1554,7 @@ test('setup cancellation drains one active download; concurrent and late calls s
     let reason = '', retained!: LimaRootlessSetupCapability;
     const result = await recorder.run({ ...await osMockTool(base), signal: controller.signal }, async cap => {
       retained = cap; await cap.probe(); const pending = cap.preparePackages();
-      while (!recorder.events.some(e => e.args.at(-1) === ROOTLESS_PACKAGE_PREPARE)) await delay(5);
+      while (!recorder.events.some(e => e.args.at(-1) === ROOTLESS_PACKAGE_PREPARE_RECEIPT)) await delay(5);
       const before = recorder.events.length; await assert.rejects(cap.preparePackages());
       assert.equal(recorder.events.length, before); controller.abort(); reason = (await pending).reason;
     });
@@ -2011,7 +2036,7 @@ test('fixed URI validation binds raw/canonical APT paths to the same record with
 
 test('supervised preparation seals private state; forged data, duplicate calls and changed snapshots close it',
   async () => {
-  for (const mode of ['normal', 'drift', 'bad', 'manifest', 'stderr', 'group', 'duplicate',
+  for (const mode of ['normal', 'drift', 'anchor-late', 'bad', 'manifest', 'anchor', 'stderr', 'group', 'duplicate',
     'forged', 'overlap']) {
     await scope(async base => {
       const recorder = setupRecorder({ snapshot: mode }); let retained!: LimaRootlessSetupCapability;
@@ -2020,10 +2045,12 @@ test('supervised preparation seals private state; forged data, duplicate calls a
         assert.deepEqual(Object.keys(cap).sort(), ['installPrepared', 'inventory', 'preparePackages', 'probe']);
         const copied = JSON.parse(JSON.stringify(parseRootlessPackagePreparation(packageWire())));
         await assert.rejects((cap.preparePackages as (...a: unknown[]) => Promise<unknown>)(copied));
+        const privateCopy = JSON.parse(privatePrepareWire());
+        await assert.rejects((cap.preparePackages as (...a: unknown[]) => Promise<unknown>)(privateCopy));
         assert.equal(recorder.events.some(e => e.args.at(-1) === ROOTLESS_PACKAGE_SNAPSHOT), false);
         const answer = await cap.preparePackages();
         assert.equal(answer.backendVerified, false); assert.equal(answer.sourceExecutionAuthorized, false);
-        if (['bad', 'manifest', 'stderr', 'group'].includes(mode)) {
+        if (['bad', 'manifest', 'anchor', 'stderr', 'group'].includes(mode)) {
           assert.equal(answer.phase, 'unknown'); return;
         }
         assert.equal(answer.phase, 'download_prepared');
@@ -2035,12 +2062,12 @@ test('supervised preparation seals private state; forged data, duplicate calls a
           await assert.rejects(cap.inventory()); await assert.rejects(pending);
         } else if (mode === 'duplicate') await assert.rejects(cap.preparePackages());
         else if (mode === 'forged') await assert.rejects((cap.probe as (...a: unknown[]) => Promise<unknown>)(copied));
-        else if (mode === 'drift') await assert.rejects(cap.probe());
+        else if (mode === 'drift' || mode === 'anchor-late') await assert.rejects(cap.probe());
         else assert.equal((await cap.probe()).observed, true);
       });
       assert.equal(result.phase, mode === 'normal' ? 'callback_completed' : 'failed');
       assert.equal(result.cleanup?.confirmed, mode !== 'group'); assert.equal(result.verified, false);
-      assert.equal(recorder.events.filter(e => e.args.at(-1) === ROOTLESS_PACKAGE_PREPARE).length, 1);
+      assert.equal(recorder.events.filter(e => e.args.at(-1) === ROOTLESS_PACKAGE_PREPARE_RECEIPT).length, 1);
       const before = recorder.events.length; await assert.rejects(retained.preparePackages());
       assert.equal(recorder.events.length, before);
     });
@@ -2094,10 +2121,12 @@ def setup():
         indexManifestSha256=digest(b'[]'),installedStatusSha256=digest(b'fixed synthetic status'))))
     fs.put('/owned/boot.sha256', b'c'*64); fs.put('/owned/deb-bindings.json', ns['encoded'](bindings))
     for name in ['apt.conf','sources.list','docker.asc']: fs.put('/owned/'+name, b'fixed synthetic config')
-    return fs, ns
+    ns['download_bindings'] = json.loads(ns['encoded'](bindings))
+    return fs, ns, digest(ns['encoded'](bindings))
 for mode in ['normal','bytes','inode','manifest-inode','owner','mode','link','symlink',
     'boot','status','extra','fd-swap','apt-config']:
-    fs, ns = setup(); before = ns['prepared_snapshot'](); target = fs.files['/owned/archives/p0_1.0_arm64.deb']
+    fs, ns, original_anchor = setup()
+    before = ns['prepared_snapshot'](); target = fs.files['/owned/archives/p0_1.0_arm64.deb']
     if mode == 'bytes': target['body'] = b'xxxx'
     if mode == 'inode': target['ino'] += 1
     if mode == 'manifest-inode': fs.files['/owned/manifest.json']['ino'] += 1
@@ -2113,6 +2142,30 @@ for mode in ['normal','bytes','inode','manifest-inode','owner','mode','link','sy
     try: after = ns['prepared_snapshot']()
     except BaseException: failed = True
     assert not fs.fds and (not failed and before == after if mode == 'normal' else failed or before != after)
+fs, ns, original_anchor = setup()
+prepare = next(n for n in module.body if isinstance(n, ast.FunctionDef) and n.name == 'prepare')
+anchor_assignments = [n for n in prepare.body if isinstance(n, ast.Assign)
+    and any(isinstance(t,ast.Name) and t.id in ['bindings_body','prepared_bindings_sha'] for t in n.targets)]
+assert len(anchor_assignments) == 2
+ns['bindings'] = ns['download_bindings']
+exec(compile(ast.Module(body=anchor_assignments,type_ignores=[]), 'original FD anchor', 'exec'), ns)
+receipt_fn = next(n for n in module.body if isinstance(n,ast.FunctionDef) and n.name == 'prepare_receipt')
+exec(compile(ast.Module(body=[receipt_fn],type_ignores=[]), 'prepare receipt', 'exec'), ns)
+ns['prepare'] = lambda: fs.files['/owned/manifest.json']['body']
+reader = ns['read_file']
+def no_posthoc(*args, **kwargs): raise AssertionError('receipt must not read the sidecar')
+ns['read_file'] = no_posthoc
+receipt = json.loads(ns['prepare_receipt']())
+ns['read_file'] = reader
+fs.files['/owned/archives/p0_1.0_arm64.deb']['ino'] += 1
+tampered = json.loads(fs.files['/owned/deb-bindings.json']['body'])
+tampered[0]['identity'][1] += 1
+fs.files['/owned/deb-bindings.json']['body'] = ns['encoded'](tampered)
+first_snapshot = ns['prepared_snapshot']().decode('ascii').split(':')
+assert receipt['bindingsSha256'] == original_anchor and first_snapshot[-1] != original_anchor
+metadata = json.loads(receipt['preparation'])
+assert first_snapshot[1:4] == [digest(fs.files['/owned/manifest.json']['body']),
+    metadata['indexManifestSha256'],metadata['installedStatusSha256']]
 print('owned snapshot: named FD/bytes/boot/status tamper closes; no guest/package/network operations')
 `;
 test('prepared snapshot reopens stable owned FDs and rejects byte, name, permission, boot and status drift',
