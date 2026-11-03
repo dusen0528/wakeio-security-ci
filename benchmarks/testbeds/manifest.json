@@ -1,0 +1,61 @@
+{
+  "schema": "wakeio.testbed/v1",
+  "scope": "partial-not-representative-accuracy",
+  "targets": [{
+    "id": "juice-shop-search",
+    "version": "19.0.0",
+    "source": {
+      "repository": "https://github.com/juice-shop/juice-shop",
+      "commit": "36870cbbdfe7864698e1adf644c7bf772f67ebb7",
+      "pinPath": "benchmarks/dast-zap/juice-shop.mjs"
+    },
+    "image": "bkimminich/juice-shop@sha256:2765a26de7647609099a338d5b7f61085d95903c8703bb70f03fcc4b12f0818d",
+    "license": {"spdx": "MIT", "evidence": "org.opencontainers.image.licenses on pinned image; source repository in OCI labels"},
+    "seed": {"kind": "image-initial-state", "value": "fresh pinned image; disposable registered principal, no invented numeric seed"},
+    "service": "juice-shop",
+    "actors": ["registered-user"],
+    "operations": ["GET /rest/products/search"],
+    "variants": [
+      {"id": "vulnerable", "artifactSha256": "073059f1600484467f9039b3989314c7aacd6a806ec679d5afc4a8f91b6e9b3c", "pinPath": "benchmarks/dast-zap/juice-shop.mjs"},
+      {"id": "fixed", "artifactSha256": "a26713609ed5a6622af93ef6e56863f4396f0e7d99b36c65395e836fe9d738a7", "pinPath": "benchmarks/dast-zap/juice-shop.mjs"}
+    ],
+    "reset": "fresh-container-per-variant",
+    "truth": [
+      {
+        "cwe": "CWE-89", "operation": "GET /rest/products/search", "input": "query:q", "actor": "registered-user",
+        "singleSite": {"vulnerable": true, "fixed": false}, "chain": null,
+        "normalControl": {"operation": "GET /rest/products/search", "input": "query:q=apple", "status": 200},
+        "proofChannels": ["engine-evidence"], "knownMiss": null,
+        "pinPath": "benchmarks/dast-zap/application-labels.json"
+      },
+      {
+        "cwe": "CWE-79", "operation": "GET /rest/products/search", "input": "query:q", "actor": "registered-user",
+        "singleSite": {"vulnerable": false, "fixed": false}, "chain": null,
+        "normalControl": {"operation": "GET /rest/products/search", "input": "query:q=apple", "status": 200},
+        "proofChannels": ["engine-evidence"], "knownMiss": null,
+        "pinPath": "benchmarks/dast-zap/application-labels.json"
+      }
+    ]
+  }],
+  "privateFiles": [
+    {"path": "benchmarks/dast-zap/juice-shop.mjs", "sha256": "a26048f09b2f9c3557659e3aaa63082e0af40d946dac298ac9cd67769c41c722", "commit": null},
+    {"path": "benchmarks/dast-zap/application-labels.json", "sha256": "d4fa807d01e37f388bd5356779894d8bbb6e42c564be42df2565f534b5c75c20", "commit": null},
+    {"path": "benchmarks/runtime-corpus.json", "sha256": "d7e95c72c22eb0401ffde158be73f960e14df5437411ff2200221ef77754d119", "commit": "62db8cb5c373459d8c67a01a41136bf5e70b76ab"},
+    {"path": "examples/runtime/spring-sqli/pins.json", "sha256": "87d3694b47521ecf00ee16bc165522af3610a2e59cf6e65c99568410aaa41700", "commit": "62db8cb5c373459d8c67a01a41136bf5e70b76ab"},
+    {"path": "examples/runtime/spring-sqli-jdbc/pins.json", "sha256": "87d3694b47521ecf00ee16bc165522af3610a2e59cf6e65c99568410aaa41700", "commit": "62db8cb5c373459d8c67a01a41136bf5e70b76ab"},
+    {"path": "tests/fixtures/runtime-m1/primary-ground-truth.json", "sha256": "29a1da8fdd03d5a6ecf1bf2463e551a7dcde445c9c58d9c49f06d4c0bfb9b152", "commit": "62db8cb5c373459d8c67a01a41136bf5e70b76ab"},
+    {"path": "tests/fixtures/runtime-m1/jdbc-ground-truth.json", "sha256": "3fe46ea2d7142873a995f0da7d1e6bbaeda9f538279f4626fd0c53ea5d5a80bb", "commit": "62db8cb5c373459d8c67a01a41136bf5e70b76ab"}
+  ],
+  "prerequisites": [
+    {
+      "id": "spring-primary-pair", "status": "unavailable",
+      "reason": "Read-only M1 metadata; application image/JAR/bytecode digests null, dependency license inspection pending, verify execution unavailable. Not a runnable or scored target.",
+      "pinPaths": ["benchmarks/runtime-corpus.json", "examples/runtime/spring-sqli/pins.json", "tests/fixtures/runtime-m1/primary-ground-truth.json"]
+    },
+    {
+      "id": "spring-jdbc-pair", "status": "unavailable",
+      "reason": "Read-only M1 metadata; application image/JAR/bytecode digests null, dependency license inspection pending, verify execution unavailable. Not a runnable or scored target.",
+      "pinPaths": ["benchmarks/runtime-corpus.json", "examples/runtime/spring-sqli-jdbc/pins.json", "tests/fixtures/runtime-m1/jdbc-ground-truth.json"]
+    }
+  ]
+}
