@@ -1,0 +1,26 @@
+{
+  "command": "/Users/rosaic/Work/.toolchains/node-v22.23.1-darwin-arm64/bin/node",
+  "args": [
+    "scripts/qa/roadmap.mjs",
+    "--case",
+    "harness",
+    "--out",
+    "/Users/rosaic/Desktop/wakeio-security-ci-wt/release-gates-w0-t3-qa/.omo/evidence/release-gates-kpi-roadmap/a49da4ceebc2c7dd24020ecbce420f46d0ca7625/t03-20261103-0528/t03/verified/malformed",
+    "--case",
+    "harness"
+  ],
+  "reason": null,
+  "exitCode": 2,
+  "signal": null,
+  "stdout": "",
+  "stderr": "roadmap_qa_unavailable\n",
+  "outputBytes": 23,
+  "truncated": false,
+  "cleanup": {
+    "confirmed": true,
+    "pid": 59326,
+    "closeConfirmed": true,
+    "groupGone": true
+  },
+  "expectedExitCode": 2
+}

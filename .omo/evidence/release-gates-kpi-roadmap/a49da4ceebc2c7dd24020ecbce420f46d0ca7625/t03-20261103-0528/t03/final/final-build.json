@@ -1,0 +1,21 @@
+{
+  "command": "npm",
+  "args": [
+    "run",
+    "build"
+  ],
+  "reason": null,
+  "exitCode": 1,
+  "signal": null,
+  "stdout": "\n> wakeio-security-ci@0.5.0 build\n> tsc -p tsconfig.json && node scripts/build-action-bundle.mjs\n\ntests/roadmap-qa.test.ts(103,38): error TS18046: 'cleanup.children' is of type 'unknown'.\n",
+  "stderr": "",
+  "outputBytes": 188,
+  "truncated": false,
+  "cleanup": {
+    "confirmed": true,
+    "pid": 57308,
+    "closeConfirmed": true,
+    "groupGone": true
+  },
+  "expectedExitCode": 0
+}
