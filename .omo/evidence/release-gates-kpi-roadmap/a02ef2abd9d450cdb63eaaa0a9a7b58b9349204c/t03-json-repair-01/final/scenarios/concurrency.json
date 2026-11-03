@@ -1,0 +1,19 @@
+{
+  "results": [
+    {
+      "name": "parallel-a",
+      "exitCode": 0,
+      "cleanup": true
+    },
+    {
+      "name": "parallel-b",
+      "exitCode": 0,
+      "cleanup": true
+    },
+    {
+      "name": "parallel-c",
+      "exitCode": 0,
+      "cleanup": true
+    }
+  ]
+}

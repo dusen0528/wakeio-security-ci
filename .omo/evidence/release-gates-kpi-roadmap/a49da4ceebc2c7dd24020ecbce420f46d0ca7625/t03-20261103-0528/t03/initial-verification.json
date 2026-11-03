@@ -1,0 +1,11 @@
+{
+  "sourceHead": "a49da4ceebc2c7dd24020ecbce420f46d0ca7625",
+  "terminal": "mon_K7TB15SHHGPNWGGM",
+  "commands": [
+    {"argv": ["npm", "ci", "--ignore-scripts", "--no-audit", "--no-fund"], "exitCode": 0, "addedPackages": 7},
+    {"argv": ["npm", "run", "build"], "exitCode": 0, "observed": "tsc and Action bundle completed"},
+    {"argv": ["node", "--test", "build/tests/roadmap-qa.test.js", "build/tests/process-supervision.test.js", "build/tests/report.test.js"], "exitCode": 0, "tests": 25, "passed": 25, "failed": 0, "skipped": 0, "cancelled": 0}
+  ],
+  "fullSuite": {"rerun": false, "suppliedT1Baseline": {"total": 1678, "failed": 27, "skipped": 23}},
+  "followup": "Review found receipt-window signal coverage and capped PEM fragments; fixed before final verification. Initial results are not final-source evidence."
+}

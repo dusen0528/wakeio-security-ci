@@ -1,0 +1,23 @@
+{
+  "command": "bun",
+  "args": [
+    "run",
+    "/Applications/OmO.app/Contents/Resources/omo-runtime/darwin-arm64/plugin/skills/programming/scripts/typescript/check-test-junk.ts",
+    "tests/report.test.ts",
+    "tests/roadmap-qa.test.ts"
+  ],
+  "reason": null,
+  "exitCode": 0,
+  "signal": null,
+  "stdout": "check-test-junk: no findings\n",
+  "stderr": "",
+  "outputBytes": 29,
+  "truncated": false,
+  "cleanup": {
+    "confirmed": true,
+    "pid": 72042,
+    "closeConfirmed": true,
+    "groupGone": true
+  },
+  "expectedExitCode": 0
+}

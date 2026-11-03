@@ -1,0 +1,18 @@
+{
+  "request": {
+    "method": "GET",
+    "host": "127.0.0.1",
+    "port": 63936,
+    "path": "/"
+  },
+  "status": 200,
+  "headers": {
+    "content-type": "application/json",
+    "x-qa-surface": "real-http",
+    "date": "Tue, 03 Nov 2026 05:39:24 GMT",
+    "connection": "close",
+    "transfer-encoding": "chunked"
+  },
+  "body": "{\"surface\":\"loopback-http\",\"value\":42}\n",
+  "complete": true
+}

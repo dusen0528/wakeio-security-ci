@@ -1,0 +1,20 @@
+{
+  "command": "/Users/rosaic/Work/.toolchains/node-v22.23.1-darwin-arm64/bin/node",
+  "args": [
+    "-e",
+    "console.log(JSON.stringify({password:[REDACTED];console.error(JSON.stringify({token:[REDACTED]"
+  ],
+  "reason": null,
+  "exitCode": 0,
+  "signal": null,
+  "stdout": "{\"password\":\"[REDACTED]\"}\n",
+  "stderr": "{\"token\":\"[REDACTED]\"}\n",
+  "outputBytes": 101,
+  "truncated": false,
+  "cleanup": {
+    "confirmed": true,
+    "pid": 73927,
+    "closeConfirmed": true,
+    "groupGone": true
+  }
+}

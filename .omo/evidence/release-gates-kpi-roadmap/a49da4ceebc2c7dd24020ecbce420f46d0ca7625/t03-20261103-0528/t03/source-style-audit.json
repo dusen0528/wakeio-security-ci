@@ -1,0 +1,26 @@
+{
+  "command": "bun",
+  "args": [
+    "run",
+    "/Applications/OmO.app/Contents/Resources/omo-runtime/darwin-arm64/plugin/skills/programming/scripts/typescript/check-no-excuse-rules.ts",
+    "scripts/qa/roadmap.mjs",
+    "scripts/qa/roadmap-cases/artifacts.mjs",
+    "scripts/qa/roadmap-cases/process.mjs",
+    "scripts/qa/roadmap-cases/harness.mjs",
+    "tests/roadmap-qa.test.ts"
+  ],
+  "reason": null,
+  "exitCode": 2,
+  "signal": null,
+  "stdout": "",
+  "stderr": "error: cannot resolve \"typescript\" from the caller project (/Users/rosaic/Desktop/wakeio-security-ci-wt/release-gates-w0-t3-qa). Install it in the project being checked (e.g. `bun add -d typescript`) and re-run.\n",
+  "outputBytes": 212,
+  "truncated": false,
+  "cleanup": {
+    "confirmed": true,
+    "pid": 52145,
+    "closeConfirmed": true,
+    "groupGone": true
+  },
+  "expectedExitCode": 0
+}

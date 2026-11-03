@@ -1,0 +1,14 @@
+{
+  "confirmed": false,
+  "children": [
+    {
+      "confirmed": true,
+      "pid": 74042,
+      "closeConfirmed": true,
+      "groupGone": true
+    }
+  ],
+  "port": 64842,
+  "portReleased": true,
+  "serverClosed": true
+}

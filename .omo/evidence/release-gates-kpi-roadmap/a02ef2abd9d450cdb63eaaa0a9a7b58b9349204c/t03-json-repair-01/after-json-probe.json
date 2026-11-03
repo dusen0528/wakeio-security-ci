@@ -1,0 +1,25 @@
+{
+  "flags": {
+    "stdoutRawCanaryRetained": false,
+    "stderrRawCanaryRetained": false,
+    "serializedArtifactRawCanaryRetained": false
+  },
+  "persistedArtifactRawCanaryRetained": false,
+  "childExitCode": 0,
+  "childCleanup": {
+    "confirmed": true,
+    "pid": 71341,
+    "closeConfirmed": true,
+    "groupGone": true
+  },
+  "source": {
+    "sha256": "30d5cb8fb83a47f66ef2d50d23b600972f0c7c0a149bc96f86f842e457310347",
+    "fileCount": 442,
+    "totalBytes": 5216353,
+    "enumeration": "explicit_filesystem_scope",
+    "gitPresent": true,
+    "scope": "src/tests/scripts/schemas/workers/examples/workflows/package-lock/tsconfig/action/actions/dast; generated outputs excluded; input symlinks unsupported"
+  },
+  "expected": "all_retention_flags_false",
+  "unsafeCapturePersisted": false
+}
