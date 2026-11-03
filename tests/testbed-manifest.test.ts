@@ -2,9 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises';
+import { cp, mkdir, mkdtemp, readFile, realpath, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import fixture from '../benchmarks/testbeds/manifest.json' with { type: 'json' };
 
@@ -128,4 +128,34 @@ test('CLI creates only the public input while evaluator metadata stays separatel
     assert.equal(bytes.includes('CWE-'), false);
     assert.equal(JSON.parse(await readFile(join(root, 'benchmarks/testbeds/manifest.json'), 'utf8')).targets[0].truth[0].cwe, 'CWE-89');
   } finally { await rm(temporary, { recursive: true, force: true }); }
+});
+
+async function isolatedEvaluator(t: test.TestContext) {
+  const directory = await realpath(await mkdtemp(join(tmpdir(), 'testbed-export-')));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  for (const path of ['scripts/testbed-manifest.mjs', 'schemas/testbed.v1.json', 'benchmarks/testbeds',
+    'benchmarks/dast-zap/juice-shop.mjs', 'benchmarks/dast-zap/application-labels.json']) {
+    await mkdir(dirname(join(directory, path)), { recursive: true });
+    await cp(join(root, path), join(directory, path), { recursive: true, errorOnExist: true, force: false });
+  }
+  return directory;
+}
+
+for (const row of [
+  { name: 'missing', reason: /ENOENT/, change: (path: string) => rm(path) },
+  { name: 'stale', reason: /stale_pin/, change: async (path: string) => writeFile(path, (await readFile(path, 'utf8')) + '\n') },
+] as const) test(`CLI refuses ${row.name} immutable snapshot without a Git fallback`, async t => {
+  const directory = await isolatedEvaluator(t);
+  const pin = fixture.privateFiles.find(item => item.commit !== null);
+  assert.ok(pin && pin.commit);
+  await row.change(join(directory, 'benchmarks/testbeds/provenance', pin.commit, pin.path));
+  await assert.rejects(exec(process.execPath, [join(directory, 'scripts/testbed-manifest.mjs')], {
+    cwd: directory, timeout: 10000, env: { ...process.env, GIT_DIR: join(directory, '.git-denied'),
+      GIT_CEILING_DIRECTORIES: directory, GIT_NO_LAZY_FETCH: '1', GIT_ALLOW_PROTOCOL: '' },
+  }), error => {
+    assert.ok(error instanceof Error && 'code' in error && 'stderr' in error);
+    assert.equal(error.code, 2);
+    assert.match(String(error.stderr), row.reason);
+    return true;
+  });
 });

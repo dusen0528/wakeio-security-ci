@@ -30,6 +30,7 @@
     "path": {"type": "string", "pattern": "^[a-zA-Z0-9_-]+(?:/[a-zA-Z0-9_.-]+)*$"},
     "operation": {"type": "string", "pattern": "^(GET|HEAD|POST|PUT|PATCH|DELETE|OPTIONS) /[^?#\\s]*$"},
     "pin": {
+      "description": "Evaluator-only bytes bound to sha256. With commit=null, path is repository-local. A non-null commit is immutable origin provenance: bytes must ship at benchmarks/testbeds/provenance/<commit>/<path>. Missing or stale snapshots fail; Git/network lookup is never a qualification fallback.",
       "type": "object", "additionalProperties": false,
       "required": ["path", "sha256", "commit"],
       "properties": {

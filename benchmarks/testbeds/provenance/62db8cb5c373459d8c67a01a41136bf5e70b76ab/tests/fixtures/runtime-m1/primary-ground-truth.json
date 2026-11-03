@@ -1,0 +1,57 @@
+{
+  "schema": "wakeio.runtime-primary-ground-truth/v1",
+  "owner": "R8",
+  "fixture": "examples/runtime/spring-sqli",
+  "class": "io.wakeio.fixtures.ItemController",
+  "source": "src/main/java/io/wakeio/fixtures/Application.java",
+  "sourceSha256": {
+    "vulnerable": "0b325e79bcaa59e1e7ea2d6029fff272d054f9cd8ab4d360564a0962b8243a11",
+    "fixed": "cb1f46d4b6ddfc945e2a7187603700d6c605f88d967d552bfdb8daf7cc82c006"
+  },
+  "bytecodeSha256": null,
+  "declaredBusinessRoutes": 5,
+  "implicitHeadOptionsCounted": false,
+  "expectedProvenance": [
+    "spring-actuator",
+    "openapi"
+  ],
+  "preparationOnly": [
+    "GET /actuator/health",
+    "GET /actuator/mappings",
+    "GET /v3/api-docs"
+  ],
+  "routes": [
+    {"method": "GET", "path": "/api/items/search",
+     "handler": "searchGet", "signature": "searchGet(java.lang.String)",
+     "input": "query:name", "declarationLine": 32, "bodyLines": [33, 33],
+     "attacked": true, "coverage": "covered"},
+    {"method": "POST", "path": "/api/items/search",
+     "handler": "searchPost", "signature": "searchPost(io.wakeio.fixtures.ItemController$SearchRequest)",
+     "input": "json:/name", "declarationLine": 37, "bodyLines": [38, 38],
+     "attacked": true, "coverage": "covered"},
+    {"method": "GET", "path": "/api/items/safe-search",
+     "handler": "safeSearch", "signature": "safeSearch(java.lang.String)",
+     "input": "query:name", "declarationLine": 42, "bodyLines": [43, 43],
+     "attacked": true, "coverage": "covered"},
+    {"method": "GET", "path": "/api/ping",
+     "handler": "ping", "signature": "ping(java.lang.String)",
+     "input": "query:name", "declarationLine": 47, "bodyLines": [48, 48],
+     "attacked": true, "coverage": "covered"},
+    {"method": "GET", "path": "/api/untouched",
+     "handler": "untouched", "signature": "untouched()",
+     "input": null, "declarationLine": 52, "bodyLines": [53, 53],
+     "attacked": false, "coverage": "uncovered"}
+  ],
+  "sqlSink": {
+      "method": "search",
+      "vulnerableLines": [
+          57,
+          58
+      ],
+      "fixedLines": [
+          57,
+          58
+      ],
+      "difference": "unbound string assembly / JdbcTemplate bind; all other source lines identical"
+  }
+}

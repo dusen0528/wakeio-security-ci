@@ -120,21 +120,12 @@ export async function loadManifest(path = resolve(root, 'benchmarks/testbeds/man
   const bytes = await readFile(path), data = parseManifest(JSON.parse(bytes.toString('utf8')));
   const pinBytes = new Map();
   for (const pin of data.privateFiles) {
-    let bytes;
-    if (pin.commit === null) {
-      const file = resolve(root, pin.path);
-      if (!file.startsWith(root + sep) || await regularFile(file) !== file) fail('unsafe_pin', pin.path);
-      bytes = await readFile(file);
-    } else {
-      const result = await exec('git', ['--no-replace-objects', 'show', `${pin.commit}:${pin.path}`], {
-        cwd: root, encoding: 'buffer', maxBuffer: 2 * 1024 * 1024, timeout: 10000,
-        env: { PATH: '/usr/bin:/bin', GIT_MASTER: '1', GIT_PAGER: 'cat', GIT_TERMINAL_PROMPT: '0',
-          GIT_CONFIG_NOSYSTEM: '1', GIT_CONFIG_GLOBAL: '/dev/null', GIT_NO_LAZY_FETCH: '1', GIT_OPTIONAL_LOCKS: '0',
-          TMPDIR: process.env.TMPDIR, NODE_COMPILE_CACHE: process.env.NODE_COMPILE_CACHE,
-          BUN_RUNTIME_TRANSPILER_CACHE_PATH: process.env.BUN_RUNTIME_TRANSPILER_CACHE_PATH },
-      });
-      bytes = result.stdout;
-    }
+    // A commit is provenance, not a dependency on the caller's Git object store.
+    // Required immutable snapshots ship with the evaluator; no fetch/fallback.
+    const file = resolve(root, pin.commit === null ? pin.path
+      : `benchmarks/testbeds/provenance/${pin.commit}/${pin.path}`);
+    if (!file.startsWith(root + sep) || await regularFile(file) !== file) fail('unsafe_pin', pin.path);
+    const bytes = await readFile(file);
     if (sha256(bytes) !== pin.sha256) fail('stale_pin', pin.path);
     pinBytes.set(pin.path, bytes.toString('utf8'));
   }
