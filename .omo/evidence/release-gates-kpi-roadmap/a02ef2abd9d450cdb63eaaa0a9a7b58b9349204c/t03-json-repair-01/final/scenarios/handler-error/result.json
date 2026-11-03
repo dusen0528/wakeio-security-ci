@@ -1,0 +1,60 @@
+{
+  "schema": "wakeio.roadmap-qa/v1",
+  "case": "harness",
+  "mutate": "handler-error",
+  "invocation": [
+    "/Users/rosaic/Work/.toolchains/node-v22.23.1-darwin-arm64/bin/node",
+    "scripts/qa/roadmap.mjs",
+    "--case",
+    "harness",
+    "--out",
+    "/Users/rosaic/Desktop/wakeio-security-ci-wt/release-gates-w0-t3-qa/.omo/evidence/release-gates-kpi-roadmap/a02ef2abd9d450cdb63eaaa0a9a7b58b9349204c/t03-json-repair-01/final/scenarios/handler-error",
+    "--mutate",
+    "handler-error"
+  ],
+  "head": "a02ef2abd9d450cdb63eaaa0a9a7b58b9349204c",
+  "source": {
+    "sha256": "8f5b3a58a50046266cd2cf590eb9b0bfaa03197cc33c091d62bc3d0ce4dcdb63",
+    "fileCount": 442,
+    "totalBytes": 5216350,
+    "enumeration": "explicit_filesystem_scope",
+    "gitPresent": true,
+    "scope": "src/tests/scripts/schemas/workers/examples/workflows/package-lock/tsconfig/action/actions/dast; generated outputs excluded; input symlinks unsupported"
+  },
+  "node": "v22.23.1",
+  "platform": "darwin",
+  "status": "unavailable",
+  "exitCode": 2,
+  "reason": null,
+  "artifacts": [
+    {
+      "path": "http.json",
+      "bytes": 401,
+      "sha256": "0a370dab5e22238ab76d7e16a5aa3a5043ebd9a2e7ff2d892eecaf8e9a2ac11c"
+    },
+    {
+      "path": "cli.json",
+      "bytes": 476,
+      "sha256": "a2bda6f1b84707647e5970515d39efc90f2b7dfc2196abe84ea3f0279b9c4f68"
+    },
+    {
+      "path": "cleanup.json",
+      "bytes": 221,
+      "sha256": "545f8d2ece5d3bea24e8e85bab861cb5ae608dfc33852146869053dc04a4514f"
+    }
+  ],
+  "cleanup": {
+    "confirmed": true,
+    "children": [
+      {
+        "confirmed": true,
+        "pid": 74009,
+        "closeConfirmed": true,
+        "groupGone": true
+      }
+    ],
+    "port": 64838,
+    "portReleased": true,
+    "serverClosed": true
+  }
+}

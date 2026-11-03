@@ -1,0 +1,85 @@
+{
+  "task": "T3-REDACTION-JSON",
+  "repairClassification": "verifier-classified harness repair, non-counting attempt",
+  "executorStatus": "verified",
+  "priorIndependentVerdict": "../t03-independent/verdict.json",
+  "priorIndependentStatus": "needs-fix",
+  "independentReverificationClaimed": false,
+  "branch": "ulw/release-gates-w0-t3-qa",
+  "parentCommit": "a02ef2abd9d450cdb63eaaa0a9a7b58b9349204c",
+  "verifiedSourceSha256": "8f5b3a58a50046266cd2cf590eb9b0bfaa03197cc33c091d62bc3d0ce4dcdb63",
+  "commitSubject": "fix(qa): redact quoted JSON credential values",
+  "productionChange": "One canonical regex accepts an optional closing key quote; no private redactor or credential catalogue change.",
+  "changedTrackedPaths": ["src/report-path.ts", "tests/report.test.ts", "tests/roadmap-qa.test.ts"],
+  "qualifyingEvidence": "final/",
+  "tests": [
+    {"argv": ["npm", "run", "build"], "exitCode": 0, "artifact": "final/after-build.json"},
+    {
+      "argv": ["node", "--test", "build/tests/report.test.js", "build/tests/agent-report.test.js", "build/tests/parser-boundaries.test.js", "build/tests/roadmap-qa.test.js"],
+      "exitCode": 0, "tests": 36, "passed": 36, "failed": 0, "skipped": 0, "cancelled": 0,
+      "artifact": "final/after-covering-tests.json"
+    },
+    {"check": "junk-test auditor on both edited test files", "exitCode": 0, "findings": 0, "artifact": "final/test-junk.json"}
+  ],
+  "failingBefore": {
+    "realJsonProbeExit": 1,
+    "stdoutRawCanaryRetained": true,
+    "stderrRawCanaryRetained": true,
+    "serializedArtifactRawCanaryRetained": true,
+    "unsafeCapturePersisted": false,
+    "newRegressionTests": 2,
+    "newRegressionFailures": 2,
+    "artifact": "before-regressions.json"
+  },
+  "passingAfter": {
+    "exactIndependentProbeExit": 0,
+    "assertingRealJsonProbeExit": 0,
+    "stdoutRawCanaryRetained": false,
+    "stderrRawCanaryRetained": false,
+    "serializedArtifactRawCanaryRetained": false,
+    "persistedArtifactRawCanaryRetained": false,
+    "unsafeCapturePersisted": false,
+    "supportedFormats": 9,
+    "allSupportedFormatRetentionFlagsFalse": true,
+    "artifacts": ["final/after-independent.json", "final/after-json-probe.json", "final/after-safe-capture.json", "final/classification.json"]
+  },
+  "realScenarios": {
+    "harness": 0,
+    "harness --mutate child-abort": 2,
+    "unknown": 2,
+    "harness --mutate truncated-output": 1,
+    "harness --mutate child-fail": 1,
+    "harness --mutate output-limit": 2,
+    "harness --mutate handler-error": 2,
+    "harness --mutate long-child": 2,
+    "harness --mutate incomplete-cleanup": 2,
+    "harness --mutate unknown": 2,
+    "policy_module_absent": 2,
+    "manifest_module_absent": 2,
+    "malformed_duplicate_argv": 2,
+    "stale_output": 2,
+    "three_parent_present_concurrent_runs": [0, 0, 0],
+    "evidence": "final/scenarios/"
+  },
+  "cleanup": {
+    "confirmed": true,
+    "recordedPidsIndependentlyAbsent": 80,
+    "recordedPortsIndependentlyRebound": 22,
+    "ownedDirectoriesRemoved": ["node_modules", "build", ".omo/tmp/t03-json-repair-01"],
+    "ownedCachesRemoved": ["TMPDIR", "NODE_COMPILE_CACHE", "BUN_RUNTIME_TRANSPILER_CACHE_PATH", "npm_config_cache"],
+    "sharedCachesTouched": false,
+    "generatedBundleContentAndExecutableModeRestored": true,
+    "artifact": "cleanup.json"
+  },
+  "sourceBindings": "source-binding.json",
+  "apiUnchanged": "async runCase({out,mutate}) => {status:'pass'|'fail'|'unavailable',artifacts:string[],cleanup:{confirmed:boolean,...}}; exits 0/1/2",
+  "scopeNotes": [
+    "No full-suite rerun; covering privacy and QA boundaries were exercised. Supplied prior full-suite baseline remains 1678 total, 27 failed, 23 skipped.",
+    "Plain assignments, Bearer, case-insensitive names, nested JSON, and escaped quoted values pass. Unicode-escaped key spellings and multiply encoded documents are not newly claimed.",
+    "Nonblocking shared absent-ancestor mkdir race remains separately recorded and unchanged.",
+    "Generated Action bundle is unchanged in this repair commit; root integration owns rebuilding it with the canonical source fix.",
+    "tests/roadmap-qa.test.ts is 204 pure LOC (warning band); further growth should split CLI and capture coverage, not expand this repair.",
+    "Existing untracked independent verifier evidence is preserved and excluded from this executor's commit.",
+    "No delegation, source changes outside the canonical blast radius, sibling copies, amend, push, merge, cherry-pick or PR."
+  ]
+}

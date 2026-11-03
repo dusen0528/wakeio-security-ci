@@ -1,0 +1,449 @@
+{
+  "confirmed": true,
+  "pidChecks": [
+    {
+      "pid": 71269,
+      "absent": true
+    },
+    {
+      "pid": 71782,
+      "absent": true
+    },
+    {
+      "pid": 71273,
+      "absent": true
+    },
+    {
+      "pid": 71275,
+      "absent": true
+    },
+    {
+      "pid": 71302,
+      "absent": true
+    },
+    {
+      "pid": 71340,
+      "absent": true
+    },
+    {
+      "pid": 71341,
+      "absent": true
+    },
+    {
+      "pid": 66821,
+      "absent": true
+    },
+    {
+      "pid": 65779,
+      "absent": true
+    },
+    {
+      "pid": 65786,
+      "absent": true
+    },
+    {
+      "pid": 65787,
+      "absent": true
+    },
+    {
+      "pid": 65788,
+      "absent": true
+    },
+    {
+      "pid": 65789,
+      "absent": true
+    },
+    {
+      "pid": 66884,
+      "absent": true
+    },
+    {
+      "pid": 73881,
+      "absent": true
+    },
+    {
+      "pid": 74188,
+      "absent": true
+    },
+    {
+      "pid": 73885,
+      "absent": true
+    },
+    {
+      "pid": 73887,
+      "absent": true
+    },
+    {
+      "pid": 73888,
+      "absent": true
+    },
+    {
+      "pid": 73926,
+      "absent": true
+    },
+    {
+      "pid": 73927,
+      "absent": true
+    },
+    {
+      "pid": 73945,
+      "absent": true
+    },
+    {
+      "pid": 73930,
+      "absent": true
+    },
+    {
+      "pid": 73962,
+      "absent": true
+    },
+    {
+      "pid": 73994,
+      "absent": true
+    },
+    {
+      "pid": 73886,
+      "absent": true
+    },
+    {
+      "pid": 74027,
+      "absent": true
+    },
+    {
+      "pid": 74010,
+      "absent": true
+    },
+    {
+      "pid": 74103,
+      "absent": true
+    },
+    {
+      "pid": 74088,
+      "absent": true
+    },
+    {
+      "pid": 73978,
+      "absent": true
+    },
+    {
+      "pid": 74106,
+      "absent": true
+    },
+    {
+      "pid": 74107,
+      "absent": true
+    },
+    {
+      "pid": 74108,
+      "absent": true
+    },
+    {
+      "pid": 74073,
+      "absent": true
+    },
+    {
+      "pid": 74104,
+      "absent": true
+    },
+    {
+      "pid": 73946,
+      "absent": true
+    },
+    {
+      "pid": 74058,
+      "absent": true
+    },
+    {
+      "pid": 74043,
+      "absent": true
+    },
+    {
+      "pid": 73977,
+      "absent": true
+    },
+    {
+      "pid": 74009,
+      "absent": true
+    },
+    {
+      "pid": 73928,
+      "absent": true
+    },
+    {
+      "pid": 74042,
+      "absent": true
+    },
+    {
+      "pid": 74025,
+      "absent": true
+    },
+    {
+      "pid": 73993,
+      "absent": true
+    },
+    {
+      "pid": 74153,
+      "absent": true
+    },
+    {
+      "pid": 74151,
+      "absent": true
+    },
+    {
+      "pid": 74152,
+      "absent": true
+    },
+    {
+      "pid": 73961,
+      "absent": true
+    },
+    {
+      "pid": 74429,
+      "absent": true
+    },
+    {
+      "pid": 66789,
+      "absent": true
+    },
+    {
+      "pid": 71431,
+      "absent": true
+    },
+    {
+      "pid": 71395,
+      "absent": true
+    },
+    {
+      "pid": 71448,
+      "absent": true
+    },
+    {
+      "pid": 71480,
+      "absent": true
+    },
+    {
+      "pid": 71274,
+      "absent": true
+    },
+    {
+      "pid": 71512,
+      "absent": true
+    },
+    {
+      "pid": 71496,
+      "absent": true
+    },
+    {
+      "pid": 71592,
+      "absent": true
+    },
+    {
+      "pid": 71577,
+      "absent": true
+    },
+    {
+      "pid": 71464,
+      "absent": true
+    },
+    {
+      "pid": 71594,
+      "absent": true
+    },
+    {
+      "pid": 71595,
+      "absent": true
+    },
+    {
+      "pid": 71596,
+      "absent": true
+    },
+    {
+      "pid": 71558,
+      "absent": true
+    },
+    {
+      "pid": 71593,
+      "absent": true
+    },
+    {
+      "pid": 71432,
+      "absent": true
+    },
+    {
+      "pid": 71543,
+      "absent": true
+    },
+    {
+      "pid": 71528,
+      "absent": true
+    },
+    {
+      "pid": 71463,
+      "absent": true
+    },
+    {
+      "pid": 71495,
+      "absent": true
+    },
+    {
+      "pid": 71350,
+      "absent": true
+    },
+    {
+      "pid": 71527,
+      "absent": true
+    },
+    {
+      "pid": 71511,
+      "absent": true
+    },
+    {
+      "pid": 71479,
+      "absent": true
+    },
+    {
+      "pid": 71639,
+      "absent": true
+    },
+    {
+      "pid": 71641,
+      "absent": true
+    },
+    {
+      "pid": 71640,
+      "absent": true
+    },
+    {
+      "pid": 71447,
+      "absent": true
+    },
+    {
+      "pid": 72042,
+      "absent": true
+    }
+  ],
+  "portChecks": [
+    {
+      "port": 64830,
+      "rebindConfirmed": true
+    },
+    {
+      "port": 64834,
+      "rebindConfirmed": true
+    },
+    {
+      "port": 64838,
+      "rebindConfirmed": true
+    },
+    {
+      "port": 64828,
+      "rebindConfirmed": true
+    },
+    {
+      "port": 64842,
+      "rebindConfirmed": true
+    },
+    {
+      "port": 64840,
+      "rebindConfirmed": true
+    },
+    {
+      "port": 64836,
+      "rebindConfirmed": true
+    },
+    {
+      "port": 64845,
+      "rebindConfirmed": true
+    },
+    {
+      "port": 64846,
+      "rebindConfirmed": true
+    },
+    {
+      "port": 64844,
+      "rebindConfirmed": true
+    },
+    {
+      "port": 64832,
+      "rebindConfirmed": true
+    },
+    {
+      "port": 64678,
+      "rebindConfirmed": true
+    },
+    {
+      "port": 64683,
+      "rebindConfirmed": true
+    },
+    {
+      "port": 64691,
+      "rebindConfirmed": true
+    },
+    {
+      "port": 64649,
+      "rebindConfirmed": true
+    },
+    {
+      "port": 64697,
+      "rebindConfirmed": true
+    },
+    {
+      "port": 64695,
+      "rebindConfirmed": true
+    },
+    {
+      "port": 64687,
+      "rebindConfirmed": true
+    },
+    {
+      "port": 64702,
+      "rebindConfirmed": true
+    },
+    {
+      "port": 64700,
+      "rebindConfirmed": true
+    },
+    {
+      "port": 64701,
+      "rebindConfirmed": true
+    },
+    {
+      "port": 64681,
+      "rebindConfirmed": true
+    }
+  ],
+  "removals": [
+    {
+      "path": "/Users/rosaic/Desktop/wakeio-security-ci-wt/release-gates-w0-t3-qa/node_modules",
+      "originallyAbsent": true,
+      "removalCompleted": true
+    },
+    {
+      "path": "/Users/rosaic/Desktop/wakeio-security-ci-wt/release-gates-w0-t3-qa/build",
+      "originallyAbsent": true,
+      "removalCompleted": true
+    },
+    {
+      "path": "/Users/rosaic/Desktop/wakeio-security-ci-wt/release-gates-w0-t3-qa/.omo/tmp/t03-json-repair-01",
+      "originallyAbsent": true,
+      "removalCompleted": true
+    }
+  ],
+  "scratchParentRemoved": true,
+  "cachesRemovedWithScratch": [
+    "TMPDIR",
+    "NODE_COMPILE_CACHE",
+    "BUN_RUNTIME_TRANSPILER_CACHE_PATH",
+    "npm_config_cache"
+  ],
+  "sharedCachesTouched": false,
+  "dockerResourcesCreated": 0,
+  "sourceAfterCleanup": {
+    "sha256": "8f5b3a58a50046266cd2cf590eb9b0bfaa03197cc33c091d62bc3d0ce4dcdb63",
+    "fileCount": 442,
+    "totalBytes": 5216350,
+    "enumeration": "explicit_filesystem_scope",
+    "gitPresent": true,
+    "scope": "src/tests/scripts/schemas/workers/examples/workflows/package-lock/tsconfig/action/actions/dast; generated outputs excluded; input symlinks unsupported"
+  }
+}

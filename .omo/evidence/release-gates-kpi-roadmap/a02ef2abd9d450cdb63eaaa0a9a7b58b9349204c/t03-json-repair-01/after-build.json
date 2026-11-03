@@ -1,0 +1,21 @@
+{
+  "command": "npm",
+  "args": [
+    "run",
+    "build"
+  ],
+  "reason": null,
+  "exitCode": 0,
+  "signal": null,
+  "stdout": "\n> wakeio-security-ci@0.5.0 build\n> tsc -p tsconfig.json && node scripts/build-action-bundle.mjs\n\nBuilt dependency-free Action bundle: /Users/rosaic/Desktop/wakeio-security-ci-wt/release-gates-w0-t3-qa/dist-action/wakeio-security-ci.mjs\n",
+  "stderr": "",
+  "outputBytes": 237,
+  "truncated": false,
+  "cleanup": {
+    "confirmed": true,
+    "pid": 71269,
+    "closeConfirmed": true,
+    "groupGone": true
+  },
+  "expectedExitCode": 0
+}

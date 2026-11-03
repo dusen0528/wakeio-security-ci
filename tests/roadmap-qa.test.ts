@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { promisify } from 'node:util';
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { createServer } from 'node:net';
 import { once } from 'node:events';
 
@@ -23,6 +23,9 @@ const processQa: {
     readonly onStdout?: (text: string) => void;
   }) => Promise<Capture>;
 } = await import(pathToFileURL(resolve('scripts/qa/roadmap-cases/process.mjs')).href);
+const artifactQa: { readonly redactArtifact: (value: unknown) => unknown;
+  readonly writeArtifact: (out: string, name: string, value: unknown) => Promise<string> } =
+  await import(pathToFileURL(resolve('scripts/qa/roadmap-cases/artifacts.mjs')).href);
 
 async function invoke(args: readonly string[]) {
   try {
@@ -180,6 +183,21 @@ test('capture redacts credentials split across writes only after complete collec
   assert.equal(result.exitCode, 0); assert.equal(result.cleanup.confirmed, true);
   assert.equal(result.stdout, 'password=[REDACTED]\n');
   assert.equal(result.stderr, 'Bearer [REDACTED]\n');
+});
+
+test('capture and persisted artifacts remove JSON credential canaries from both real child streams', async t => {
+  const out = await sandbox(t), secret = randomUUID();
+  process.env.T3_JSON_CANARY = secret;
+  let result: Capture;
+  try {
+    result = await processQa.captureProcess(process.execPath, ['-e',
+      'console.log(JSON.stringify({password:process.env.T3_JSON_CANARY}));console.error(JSON.stringify({token:process.env.T3_JSON_CANARY}))']);
+  } finally { delete process.env.T3_JSON_CANARY; }
+  assert.equal(result.exitCode, 0); assert.equal(result.cleanup.confirmed, true);
+  assert.equal(result.stdout.includes(secret), false); assert.equal(result.stderr.includes(secret), false);
+  assert.equal(JSON.stringify(artifactQa.redactArtifact(result)).includes(secret), false);
+  const path = await artifactQa.writeArtifact(out, 'captured.json', result);
+  assert.equal((await readFile(join(out, path), 'utf8')).includes(secret), false);
 });
 
 test('pre-aborted capture starts no child and invalid budgets are rejected', async () => {

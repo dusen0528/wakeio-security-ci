@@ -1,0 +1,46 @@
+{
+  "parentCommit": "a02ef2abd9d450cdb63eaaa0a9a7b58b9349204c",
+  "bindings": [
+    {
+      "path": "src/report-path.ts",
+      "bytes": 3655,
+      "sha256": "d58c3dd6677f602b20f305332b4f47d583fab7978ab44163cd6f379882d78662"
+    },
+    {
+      "path": "tests/report.test.ts",
+      "bytes": 6761,
+      "sha256": "7abc966fe0152f7b658e1d7abbfcd32c8c3fc86a8c0ff4585842b7214a0a9dc2"
+    },
+    {
+      "path": "tests/roadmap-qa.test.ts",
+      "bytes": 11801,
+      "sha256": "0bee17639cc8e22860348f62b99dfc1d382d2ad4a3ddbde39bac6cc5cbaebbfd"
+    },
+    {
+      "path": "scripts/qa/roadmap.mjs",
+      "bytes": 5749,
+      "sha256": "00e5edcdcfe4910f92704ae74a6dddc41e0e70001879034b500976839aebe598"
+    },
+    {
+      "path": "scripts/qa/roadmap-cases/process.mjs",
+      "bytes": 3593,
+      "sha256": "88e7cd6d16e62a3ca98f244f93329966c618deb6656db3dc36e2f1e25a82f683"
+    },
+    {
+      "path": "scripts/qa/roadmap-cases/artifacts.mjs",
+      "bytes": 966,
+      "sha256": "3932a89849621dfb9fb5e0eb8b020f2288c46751c2e1ad0bf7b911bea843019f"
+    }
+  ],
+  "source": {
+    "sha256": "8f5b3a58a50046266cd2cf590eb9b0bfaa03197cc33c091d62bc3d0ce4dcdb63",
+    "fileCount": 442,
+    "totalBytes": 5216350,
+    "enumeration": "explicit_filesystem_scope",
+    "gitPresent": true,
+    "scope": "src/tests/scripts/schemas/workers/examples/workflows/package-lock/tsconfig/action/actions/dast; generated outputs excluded; input symlinks unsupported"
+  },
+  "priorVerdict": "../t03-independent/verdict.json",
+  "finalEvidence": "final/",
+  "generatedBundleRestoredToParent": true
+}
