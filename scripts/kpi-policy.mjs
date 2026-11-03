@@ -9,6 +9,7 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const frozen = JSON.parse(await readFile(join(ROOT, 'schemas/kpi-policy.v1.json'), 'utf8')).const;
 const hash = /^[a-f0-9]{64}$/;
 const finite = n => typeof n === 'number' && Number.isFinite(n) && n >= 0;
+const isCount = n => Number.isSafeInteger(n) && n >= 0;
 const median = runs => [...runs].sort((a, b) => a - b)[1];
 
 export class PolicyError extends Error {
@@ -53,11 +54,21 @@ export function readKpi(report) {
   }
 }
 
+function validMeasurement(row, definition) {
+  if (!row || row.status !== 'measured' || row.value === null || row.unit !== definition.unit
+    || !isCount(row.numerator) || !isCount(row.denominator) || row.denominator === 0) return false;
+  switch (definition.unit) {
+    case 'count':
+      return (definition.target.fields ? definition.target.fields.map(key => row.value?.[key]) : [row.value]).every(isCount)
+        && (!definition.target.baselineRequired || isCount(row.baseline));
+    case 'ms': return finite(row.value);
+    default: return true; // Other units retain their target-specific value validation below.
+  }
+}
+
 function evaluate(row, definition, context) {
   const target = definition.target;
-  if (!row || row.status !== 'measured' || row.value === null || row.unit !== definition.unit
-    || !Number.isSafeInteger(row.numerator) || row.numerator < 0
-    || !Number.isSafeInteger(row.denominator) || row.denominator <= 0) return 'unavailable';
+  if (!validMeasurement(row, definition)) return 'unavailable';
   if (definition.unit === 'ratio' && (!finite(row.value) || row.value !== row.numerator / row.denominator
     || row.numerator > row.denominator)) return 'unavailable';
   if (target.runs && definition.id !== 'dashboard_first_screen' && definition.id !== 'determinism'
@@ -69,7 +80,7 @@ function evaluate(row, definition, context) {
   const old = context.baseline?.metrics.find(m => m.id === definition.id);
   switch (target.kind) {
     case 'latency':
-      if (!old || old.status !== 'measured' || !finite(old.value) || !Array.isArray(old.runs)
+      if (!validMeasurement(old, definition) || !Array.isArray(old.runs)
         || old.runs.length !== 3 || old.runs.some(n => !finite(n)) || old.value !== median(old.runs)
         || ['fixtureDigest', 'environmentDigest'].some(k => context.report[k] !== context.baseline[k])) return 'unavailable';
       return finite(row.value) && row.value <= target.maximum && row.value <= old.value ? 'pass' : 'fail';
@@ -82,8 +93,7 @@ function evaluate(row, definition, context) {
       if (target.trialsPerFixtureProvider && row.denominator !== target.trialsPerFixtureProvider) return 'unavailable';
       return finite(row.value) && row.value >= target.value ? 'pass' : 'fail';
     case 'regression':
-      if (!row.value || !old || old.status !== 'measured'
-        || target.fields.some(k => !finite(row.value[k]) || !finite(old.value?.[k]))) return 'unavailable';
+      if (!validMeasurement(old, definition)) return 'unavailable';
       return target.fields.every(k => row.value[k] - old.value[k] <= target.maximumIncrease) ? 'pass' : 'fail';
     case 'paired':
       if (!Array.isArray(row.pairs) || row.pairs.length !== target.pairs || row.independent !== true) return 'unavailable';
@@ -99,7 +109,7 @@ function evaluate(row, definition, context) {
       return row.value.experimental || eligible ? 'pass' : 'fail';
     }
     case 'record':
-      if (target.authentic && row.authentic !== true || target.baselineRequired && !finite(row.baseline)) return 'unavailable';
+      if (target.authentic && row.authentic !== true) return 'unavailable';
       return row.recorded === true && row.value !== undefined ? 'pass' : 'unavailable';
     case 'diagnostic': return 'pass';
     default: throw new PolicyError('unsupported_target');
@@ -128,10 +138,11 @@ export function qualify(policy, input) {
       .map(d => ({ id: d.id, status: evaluate(report.metrics.find(r => r.id === d.id), d, context) })),
   ];
   const analysis = report.metrics.find(r => r.id === 'analysis_ms'), oldAnalysis = baseline?.metrics.find(r => r.id === 'analysis_ms');
+  const analysisDefinition = policy.metrics.find(r => r.id === 'analysis_ms');
   const exitCode = results.some(r => r.status === 'unavailable') ? 2 : results.some(r => r.status === 'fail') ? 1 : 0;
   return { schema: 'wakeio.kpi-qualification/v1', release: input.release, status: ['pass', 'fail', 'unavailable'][exitCode], exitCode, results,
-    analysisTiming: { warning: analysis?.status === 'measured' && oldAnalysis?.status === 'measured'
-      && finite(analysis.value) && finite(oldAnalysis.value) ? analysis.value > oldAnalysis.value * 1.5 : null, threshold: 1.5, gating: false },
+    analysisTiming: { warning: validMeasurement(analysis, analysisDefinition) && validMeasurement(oldAnalysis, analysisDefinition)
+      ? analysis.value > oldAnalysis.value * 1.5 : null, threshold: 1.5, gating: false },
     qualificationScope: 'policy_input_only; source/artifact authenticity is verified by release-gates integration' };
 }
 
