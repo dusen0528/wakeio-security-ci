@@ -1,0 +1,349 @@
+{
+  "schema": "wakeio.kpi-policy/v1",
+  "releases": [
+    "0.6",
+    "0.7",
+    "0.8",
+    "1.0"
+  ],
+  "gates": [
+    {
+      "id": "G1",
+      "metric": "source_offline_network_llm",
+      "unit": "count",
+      "minRelease": "0.6",
+      "target": {
+        "kind": "eq",
+        "value": 0
+      }
+    },
+    {
+      "id": "G2",
+      "metric": "normalized_report_equality",
+      "unit": "ratio",
+      "minRelease": "0.6",
+      "target": {
+        "kind": "eq",
+        "value": 1
+      }
+    },
+    {
+      "id": "G3",
+      "metric": "wire_budget_overflow",
+      "unit": "count",
+      "minRelease": "0.6",
+      "target": {
+        "kind": "eq",
+        "value": 0
+      }
+    },
+    {
+      "id": "G4",
+      "metric": "planned_state_completeness",
+      "unit": "ratio",
+      "minRelease": "0.6",
+      "target": {
+        "kind": "eq",
+        "value": 1
+      }
+    },
+    {
+      "id": "G5",
+      "metric": "plaintext_leaks",
+      "unit": "count",
+      "minRelease": "0.6",
+      "target": {
+        "kind": "eq",
+        "value": 0
+      }
+    },
+    {
+      "id": "G6",
+      "metric": "compatibility_failures",
+      "unit": "count",
+      "minRelease": "0.6",
+      "target": {
+        "kind": "eq",
+        "value": 0
+      }
+    },
+    {
+      "id": "G7",
+      "metric": "release_identity_mismatch",
+      "unit": "count",
+      "minRelease": "0.6",
+      "target": {
+        "kind": "eq",
+        "value": 0
+      }
+    }
+  ],
+  "metrics": [
+    {
+      "id": "first_report_ms",
+      "unit": "ms",
+      "minRelease": "0.6",
+      "target": {
+        "kind": "latency",
+        "maximum": 60000,
+        "runs": 3,
+        "baseline": "same_environment_median_no_degradation"
+      }
+    },
+    {
+      "id": "analysis_ms",
+      "unit": "ms",
+      "minRelease": "0.6",
+      "target": {
+        "kind": "diagnostic",
+        "warningRatio": 1.5,
+        "gating": false
+      }
+    },
+    {
+      "id": "planned_state_completeness",
+      "unit": "ratio",
+      "minRelease": "0.6",
+      "target": {
+        "kind": "eq",
+        "value": 1
+      }
+    },
+    {
+      "id": "determinism",
+      "unit": "ratio",
+      "minRelease": "0.6",
+      "target": {
+        "kind": "eq",
+        "value": 1,
+        "runs": 3
+      }
+    },
+    {
+      "id": "wire_budget_overflow",
+      "unit": "count",
+      "minRelease": "0.6",
+      "target": {
+        "kind": "eq",
+        "value": 0
+      }
+    },
+    {
+      "id": "loop_stop_reason_rate",
+      "unit": "ratio",
+      "minRelease": "0.6",
+      "target": {
+        "kind": "eq",
+        "value": 1,
+        "fixtures": 4
+      }
+    },
+    {
+      "id": "inventory_recall",
+      "unit": "ratio",
+      "minRelease": "0.6",
+      "target": {
+        "kind": "eq",
+        "value": 1,
+        "denominators": [
+          "v1_GET",
+          "v2_all_methods"
+        ]
+      }
+    },
+    {
+      "id": "source_regression",
+      "unit": "count",
+      "minRelease": "0.6",
+      "target": {
+        "kind": "regression",
+        "maximumIncrease": 0,
+        "fields": [
+          "fp",
+          "fn",
+          "analysisGapEvents"
+        ]
+      }
+    },
+    {
+      "id": "first_plan_validity",
+      "unit": "ratio",
+      "minRelease": "0.7",
+      "target": {
+        "kind": "min",
+        "value": 0.9,
+        "trialsPerFixtureProvider": 10
+      }
+    },
+    {
+      "id": "coverage_gain",
+      "unit": "ratio",
+      "minRelease": "0.7",
+      "target": {
+        "kind": "paired",
+        "pairs": 10,
+        "wins": 10,
+        "positiveDelta": true,
+        "retainBaseline": true,
+        "independent": true,
+        "oneSidedSignP": 0.0009765625
+      }
+    },
+    {
+      "id": "new_confirmed_findings",
+      "unit": "count",
+      "minRelease": "0.7",
+      "target": {
+        "kind": "record",
+        "baselineRequired": true
+      }
+    },
+    {
+      "id": "injection_boundary_escapes",
+      "unit": "count",
+      "minRelease": "0.7",
+      "target": {
+        "kind": "eq",
+        "value": 0,
+        "minimumFixtures": 5
+      }
+    },
+    {
+      "id": "planner_input_bytes",
+      "unit": "bytes",
+      "minRelease": "0.7",
+      "target": {
+        "kind": "max",
+        "value": 8192,
+        "aggregation": "maximum"
+      }
+    },
+    {
+      "id": "agent_token_cost",
+      "unit": "tokens",
+      "minRelease": "0.7",
+      "target": {
+        "kind": "tokens",
+        "fields": [
+          "input",
+          "output"
+        ],
+        "unknown": null
+      }
+    },
+    {
+      "id": "proposal_overflow",
+      "unit": "count",
+      "minRelease": "0.7",
+      "target": {
+        "kind": "eq",
+        "value": 0,
+        "maximumProposalsPerIteration": 3
+      }
+    },
+    {
+      "id": "promotion_rule",
+      "unit": "boolean",
+      "minRelease": "0.7",
+      "target": {
+        "kind": "promotion",
+        "minimumValidity": 0.9,
+        "positiveGain": true,
+        "missingRequiresExperimental": true
+      }
+    },
+    {
+      "id": "dashboard_value_mismatch",
+      "unit": "count",
+      "minRelease": "0.8",
+      "target": {
+        "kind": "eq",
+        "value": 0
+      }
+    },
+    {
+      "id": "dashboard_first_screen",
+      "unit": "ms",
+      "minRelease": "0.8",
+      "target": {
+        "kind": "max",
+        "value": 2000,
+        "runs": 100,
+        "tasks": 4096
+      }
+    },
+    {
+      "id": "dashboard_database_writes",
+      "unit": "count",
+      "minRelease": "0.8",
+      "target": {
+        "kind": "eq",
+        "value": 0
+      }
+    },
+    {
+      "id": "dashboard_consent_bypass",
+      "unit": "count",
+      "minRelease": "0.8",
+      "target": {
+        "kind": "eq",
+        "value": 0
+      }
+    },
+    {
+      "id": "dashboard_dependencies",
+      "unit": "dependencies",
+      "minRelease": "0.8",
+      "target": {
+        "kind": "record",
+        "minimize": true,
+        "numericThreshold": null
+      }
+    },
+    {
+      "id": "clean_release_streak",
+      "unit": "releases",
+      "minRelease": "1.0",
+      "target": {
+        "kind": "min",
+        "value": 3,
+        "authentic": true,
+        "consecutive": true
+      }
+    },
+    {
+      "id": "schema_readability",
+      "unit": "ratio",
+      "minRelease": "1.0",
+      "target": {
+        "kind": "eq",
+        "value": 1,
+        "since": "0.6",
+        "shippedOnly": true
+      }
+    },
+    {
+      "id": "claim_test_traceability",
+      "unit": "ratio",
+      "minRelease": "1.0",
+      "target": {
+        "kind": "eq",
+        "value": 1
+      }
+    },
+    {
+      "id": "external_ci_evidence",
+      "unit": "receipts",
+      "minRelease": "1.0",
+      "target": {
+        "kind": "record",
+        "authentic": true,
+        "countTargetAfter": "0.8"
+      }
+    }
+  ],
+  "nonGating": [
+    "stars",
+    "downloads"
+  ]
+}
