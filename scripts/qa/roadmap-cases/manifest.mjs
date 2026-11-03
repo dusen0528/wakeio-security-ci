@@ -15,12 +15,15 @@ export async function runCase({ out, mutate }) {
   const output = resolve(out);
   await mkdir(output, { recursive: true });
   const temporary = await realpath(await mkdtemp(join(tmpdir(), 'wakeio-t4-')));
-  const owner = `t4-${randomUUID()}`, owned = [], artifacts = [], commands = [];
+  const owner = `t4-${randomUUID()}`, owned = [], artifacts = [], bindings = [], commands = [];
   let status = 'fail', reason, inventoryBefore, cleanup;
-  const record = async (name, bytes) => {
+  const record = async (name, value) => {
+    const bytes = JSON.stringify(value, null, 2) + '\n';
+    if (!/^[a-z][a-z0-9-]*\.json$/.test(name) || Buffer.byteLength(bytes) > 1024 * 1024) throw new TestbedError('artifact_contract');
     const path = join(output, name);
     await writeFile(path, bytes, { flag: 'wx', mode: 0o600 });
-    artifacts.push({ path, sha256: sha256(bytes), bytes: Buffer.byteLength(bytes) });
+    artifacts.push(name);
+    bindings.push({ path: name, sha256: sha256(bytes), bytes: Buffer.byteLength(bytes) });
     return path;
   };
   // Each child is bounded and captured; maxBuffer failure is failure, not a
@@ -30,20 +33,20 @@ export async function runCase({ out, mutate }) {
     commands.push(command);
     try {
       const result = await exec(binary, argv, {
-        cwd: root, timeout: 60000, maxBuffer: 4 * 1024 * 1024, killSignal: 'SIGKILL',
+        cwd: root, timeout: 60000, maxBuffer: 128 * 1024, killSignal: 'SIGKILL',
         env: { ...process.env, TMPDIR: temporary, NODE_COMPILE_CACHE: join(temporary, 'node-cache'),
           BUN_RUNTIME_TRANSPILER_CACHE_PATH: join(temporary, 'bun-cache'), GIT_MASTER: '1', GIT_PAGER: 'cat' },
       });
       command.exit = 0;
-      await record(`${ordinal}-stdout.txt`, result.stdout);
-      await record(`${ordinal}-stderr.txt`, result.stderr);
+      await record(`command-${ordinal}-stdout.json`, { stdout: result.stdout });
+      await record(`command-${ordinal}-stderr.json`, { stderr: result.stderr });
       return result.stdout.trim();
     } catch (error) {
       if (!(error instanceof Error)) throw error;
       command.exit = error.code ?? null;
       command.killed = error.killed === true;
-      await record(`${ordinal}-stdout.txt`, typeof error.stdout === 'string' ? error.stdout : '');
-      await record(`${ordinal}-stderr.txt`, typeof error.stderr === 'string' ? error.stderr : error.message);
+      await record(`command-${ordinal}-stdout.json`, { stdout: typeof error.stdout === 'string' ? error.stdout : '' });
+      await record(`command-${ordinal}-stderr.json`, { stderr: typeof error.stderr === 'string' ? error.stderr : error.message });
       throw error;
     }
   };
@@ -88,25 +91,26 @@ export async function runCase({ out, mutate }) {
       '--security-opt', 'no-new-privileges', '--memory', '512m', '--pids-limit', '64',
       '--tmpfs', '/tmp:rw,noexec,nosuid,size=64m', '--entrypoint', 'node', ...mounts, SCANNER_IMAGE,
       '/scanner.mjs', 'scan', '--source', '/input', '--tools', 'none', '--out', '/tmp/report']);
-    await record('docker-inspect.json', await docker('inspect', '--type', 'container', scannerId));
+    await record('docker-inspect.json', JSON.parse(await docker('inspect', '--type', 'container', scannerId)));
     await run(process.execPath, ['scripts/testbed-manifest.mjs', '--inspect', scannerId, '--input', input, '--scanner', scanner]);
     await docker('start', '--attach', scannerId);
     const [completed] = JSON.parse(await docker('inspect', '--type', 'container', scannerId));
     if (completed.State.Running || completed.State.ExitCode !== 0 || completed.State.OOMKilled || completed.State.Error) throw new TestbedError('scanner_execution');
-    await record('scanner-completed.json', JSON.stringify(completed, null, 2) + '\n');
-    await record('scanner-input.mjs', await readFile(input));
-    await record('evaluator.json', JSON.stringify({
+    await record('scanner-completed.json', completed);
+    await record('scanner-input.json', { source: await readFile(input, 'utf8') });
+    await record('evaluator.json', {
       manifestSha256: manifest.sha256, privateMetadataReadable: true, truthUnits: target.truth.length,
       targetImageId: image.Id, targetSource: target.source, license: target.license,
       originalRouteSha256: sha256(original), fixedRouteSha256: sha256(fixed), scannerSha256: sha256(await readFile(scanner)),
       scope: manifest.data.scope, targetExecuted: false, accuracyMeasured: false,
       prerequisites: manifest.data.prerequisites,
-    }, null, 2) + '\n');
+    });
     status = 'pass';
   } catch (error) {
     if (!(error instanceof Error)) throw error;
     reason = error.message;
-    status = 'fail';
+    const refusedInput = commands.at(-1)?.binary === process.execPath && commands.at(-1)?.exit === 2;
+    status = refusedInput || (error instanceof TestbedError && error.code === 'unknown_mutation') ? 'unavailable' : 'fail';
   } finally {
     const failures = [];
     // Query by our unpredictable label, not by global inventory. This also
@@ -131,11 +135,11 @@ export async function runCase({ out, mutate }) {
       failures.push(error.message);
       cleanup = { ...cleanup, temporaryRemoved: false };
     }
-    cleanup = { ...cleanup, status: failures.length ? 'fail' : 'pass', failures };
+    cleanup = { ...cleanup, confirmed: failures.length === 0, status: failures.length ? 'fail' : 'pass', failures };
     if (failures.length) { status = 'fail'; reason = 'cleanup_failed'; }
-    await record('cleanup.json', JSON.stringify(cleanup, null, 2) + '\n');
-    await record('commands.json', JSON.stringify(commands, null, 2) + '\n');
+    await record('cleanup.json', cleanup);
+    await record('commands.json', { commands });
   }
-  await record('case-result.json', JSON.stringify({ status, reason: reason ?? null, cleanup, artifacts }, null, 2) + '\n');
+  await record('case-result.json', { status, reason: reason ?? null, cleanup, artifacts, artifactDigests: bindings });
   return { status, artifacts, cleanup };
 }
