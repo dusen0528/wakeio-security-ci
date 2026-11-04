@@ -23,7 +23,7 @@ export async function runBounded(command, args, { cwd, env = process.env, timeou
   signalGroup = (pid, signal) => process.kill(pid, signal), settlementGraceMs = 2000 } = {}) {
   if (process.platform === 'win32' || !Number.isSafeInteger(timeoutMs) || timeoutMs < 1) throw Error('invalid_POSIX_execution_budget');
   const started = Date.now();
-  let reason = null, exited = false, exitCode = null, signal = null, closeConfirmed = false, outputBytes = 0;
+  let reason = null, exited = false, exitCode = null, signal = null, closeConfirmed = false, outputBytes = 0, spawnError = null;
   const stdout = [], stderr = [];
   let settle, stopTimer, closeTimer, settled = false;
   const child = spawn(command, args, { cwd, env, shell: false, detached: true, stdio: ['ignore', 'pipe', 'pipe'] });
@@ -50,7 +50,10 @@ export async function runBounded(command, args, { cwd, env = process.env, timeou
   child.stderr.on('data', chunk => collect(chunk, stderr));
   await new Promise(resolve => {
     settle = () => { settled = true; resolve(); };
-    child.once('error', () => { reason ??= 'spawn_error'; exited = true; settle(); });
+    child.once('error', error => {
+      spawnError = { code: error.code ?? null, errno: error.errno ?? null, syscall: error.syscall ?? null, path: error.path ?? null };
+      reason ??= 'spawn_error'; exited = true; settle();
+    });
     child.once('exit', (code, sig) => {
       exited = true; exitCode = code; signal = sig;
       killGroup();
@@ -67,7 +70,7 @@ export async function runBounded(command, args, { cwd, env = process.env, timeou
   const cleanupDeadline = Date.now() + 2000;
   while (cleanup === 'running' && Date.now() < cleanupDeadline) { await delay(20); cleanup = groupState(child.pid); }
   const cleanupConfirmed = ['terminated', 'terminated_zombies', 'not_started'].includes(cleanup) && (closeConfirmed || !child.pid);
-  return { command, args, exitCode, signal, reason, elapsedMs: Date.now() - started,
+  return { command, args, exitCode, signal, reason, spawnError, elapsedMs: Date.now() - started,
     exited, closeConfirmed, cleanup, cleanupConfirmed, cleanupScope: 'command_process_group', processGroupId: child.pid ?? null, outputBytes,
     stdout: Buffer.concat(stdout).toString('utf8'), stderr: Buffer.concat(stderr).toString('utf8') };
 }
