@@ -1,0 +1,117 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "wakeio.testbed/v1",
+  "description": "Evaluator-only manifest. Runtime additionally checks truth identity, references, causal DAGs, pin bytes and exact scanner file mounts. Never pass this manifest to a scanner.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "scope", "targets", "privateFiles", "prerequisites"],
+  "properties": {
+    "schema": {"const": "wakeio.testbed/v1"},
+    "scope": {"const": "partial-not-representative-accuracy"},
+    "targets": {"type": "array", "minItems": 1, "maxItems": 64, "items": {"$ref": "#/$defs/target"}},
+    "privateFiles": {"type": "array", "minItems": 1, "maxItems": 256, "items": {"$ref": "#/$defs/pin"}},
+    "prerequisites": {
+      "type": "array", "maxItems": 64,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["id", "status", "reason", "pinPaths"],
+        "properties": {
+          "id": {"$ref": "#/$defs/id"}, "status": {"const": "unavailable"},
+          "reason": {"$ref": "#/$defs/text"},
+          "pinPaths": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/path"}}
+        }
+      }
+    }
+  },
+  "$defs": {
+    "id": {"type": "string", "pattern": "^[a-z][a-z0-9-]{0,63}$"},
+    "text": {"type": "string", "minLength": 1, "maxLength": 1024},
+    "hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "path": {"type": "string", "pattern": "^[a-zA-Z0-9_-]+(?:/[a-zA-Z0-9_.-]+)*$"},
+    "operation": {"type": "string", "pattern": "^(GET|HEAD|POST|PUT|PATCH|DELETE|OPTIONS) /[^?#\\s]*$"},
+    "pin": {
+      "description": "Evaluator-only bytes bound to sha256. With commit=null, path is repository-local. A non-null commit is immutable origin provenance: bytes must ship at benchmarks/testbeds/provenance/<commit>/<path>. Missing or stale snapshots fail; Git/network lookup is never a qualification fallback.",
+      "type": "object", "additionalProperties": false,
+      "required": ["path", "sha256", "commit"],
+      "properties": {
+        "path": {"$ref": "#/$defs/path"}, "sha256": {"$ref": "#/$defs/hash"},
+        "commit": {"type": ["string", "null"], "pattern": "^[a-f0-9]{40}$"}
+      }
+    },
+    "target": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "version", "source", "image", "license", "seed", "service", "actors", "operations", "variants", "reset", "truth"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"}, "version": {"$ref": "#/$defs/text"},
+        "source": {
+          "type": "object", "additionalProperties": false, "required": ["repository", "commit", "pinPath"],
+          "properties": {
+            "repository": {"type": "string", "pattern": "^https://github.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"},
+            "commit": {"type": "string", "pattern": "^[a-f0-9]{40}$"}, "pinPath": {"$ref": "#/$defs/path"}
+          }
+        },
+        "image": {"type": "string", "pattern": "^[a-z0-9./_-]+@sha256:[a-f0-9]{64}$"},
+        "license": {
+          "type": "object", "additionalProperties": false, "required": ["spdx", "evidence"],
+          "properties": {"spdx": {"type": "string", "pattern": "^[A-Za-z0-9.+-]+$"}, "evidence": {"$ref": "#/$defs/text"}}
+        },
+        "seed": {
+          "type": "object", "additionalProperties": false, "required": ["kind", "value"],
+          "properties": {"kind": {"enum": ["image-initial-state", "deterministic-seed"]}, "value": {"$ref": "#/$defs/text"}}
+        },
+        "service": {"$ref": "#/$defs/id"},
+        "actors": {"type": "array", "minItems": 1, "maxItems": 32, "uniqueItems": true, "items": {"$ref": "#/$defs/id"}},
+        "operations": {"type": "array", "minItems": 1, "maxItems": 256, "uniqueItems": true, "items": {"$ref": "#/$defs/operation"}},
+        "variants": {
+          "type": "array", "minItems": 2, "maxItems": 16,
+          "items": {
+            "type": "object", "additionalProperties": false, "required": ["id", "artifactSha256", "pinPath"],
+            "properties": {
+              "id": {"$ref": "#/$defs/id"}, "artifactSha256": {"$ref": "#/$defs/hash"}, "pinPath": {"$ref": "#/$defs/path"}
+            }
+          }
+        },
+        "reset": {"enum": ["fresh-container-per-variant", "controller-snapshot-per-sequence"]},
+        "truth": {"type": "array", "minItems": 1, "maxItems": 4096, "items": {"$ref": "#/$defs/truth"}}
+      }
+    },
+    "truth": {
+      "type": "object", "additionalProperties": false,
+      "required": ["cwe", "operation", "input", "actor", "singleSite", "chain", "normalControl", "proofChannels", "knownMiss", "pinPath"],
+      "properties": {
+        "cwe": {"type": "string", "pattern": "^CWE-[1-9][0-9]*$"},
+        "operation": {"$ref": "#/$defs/operation"}, "input": {"$ref": "#/$defs/text"}, "actor": {"$ref": "#/$defs/id"},
+        "singleSite": {"type": "object", "minProperties": 2, "additionalProperties": {"type": "boolean"}},
+        "chain": {
+          "type": ["object", "null"], "additionalProperties": false, "required": ["id", "steps", "edges", "expected"],
+          "properties": {
+            "id": {"$ref": "#/$defs/id"},
+            "expected": {"type": "object", "minProperties": 2, "additionalProperties": {"type": "boolean"}},
+            "steps": {"type": "array", "minItems": 2, "maxItems": 16, "uniqueItems": true, "items": {"$ref": "#/$defs/operation"}},
+            "edges": {
+              "type": "array", "minItems": 1, "maxItems": 120,
+              "items": {
+                "type": "object", "additionalProperties": false, "required": ["producer", "consumer", "binding", "interruptedControl"],
+                "properties": {
+                  "producer": {"type": "integer", "minimum": 0, "maximum": 15},
+                  "consumer": {"type": "integer", "minimum": 1, "maximum": 15},
+                  "binding": {"$ref": "#/$defs/text"}, "interruptedControl": {"$ref": "#/$defs/operation"}
+                }
+              }
+            }
+          }
+        },
+        "normalControl": {
+          "type": "object", "additionalProperties": false, "required": ["operation", "input", "status"],
+          "properties": {
+            "operation": {"$ref": "#/$defs/operation"}, "input": {"$ref": "#/$defs/text"},
+            "status": {"type": "integer", "minimum": 200, "maximum": 299}
+          }
+        },
+        "proofChannels": {"type": "array", "minItems": 1, "maxItems": 16, "uniqueItems": true, "items": {"enum": ["sql-observer", "browser-execution", "protected-read", "controller-state", "engine-evidence"]}},
+        "knownMiss": {"type": ["string", "null"], "minLength": 1, "maxLength": 1024},
+        "pinPath": {"$ref": "#/$defs/path"}
+      }
+    }
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "schema": "wakeio.runtime-corpus/v1",
+  "owner": "R8",
+  "scope": "M1 two Spring pairs plus independent SQL matrix; execution unverified",
+  "cases": [{
+    "id": "spring-sqli-primary", "fixture": "examples/runtime/spring-sqli",
+    "variants": ["vulnerable", "fixed"], "pins": "examples/runtime/spring-sqli/pins.json",
+    "expectations": "examples/runtime/spring-sqli/cases.json",
+    "groundTruth": "tests/fixtures/runtime-m1/primary-ground-truth.json",
+    "pack": {"id": "spring-boot", "version": 1}, "seed": 1, "maxRequests": 40,
+    "runsRequired": 2, "buildAndExecution": "not-run", "launchReady": false,
+    "fixtureTreeSha256": "428cb156f39d31d9aef2127be7cd003b35e1e7e762166e6295697d525df3c4d3",
+    "fixtureTreeHashRule": "sorted relative UTF-8 path + NUL + file SHA256 + LF",
+    "groundTruthSha256": "29a1da8fdd03d5a6ecf1bf2463e551a7dcde445c9c58d9c49f06d4c0bfb9b152"
+  },{
+    "id":"sql-independent-matrix",
+    "cases":"tests/fixtures/runtime-m1/sql-cases.json",
+    "projections":"tests/fixtures/runtime-m1/sql-projections.json",
+    "caseCount":18,
+    "casesSha256":"5b959a98c486f47e8536fac1af50657415f7886d6833c0b9643370aafbbb297a",
+    "projectionsSha256":"45b19bf3a6f1c963c3bf3c086dceb9adb659af355bacd9e5e60441ee962b5b4f",
+    "authorship":"R8 manual ground truth",
+    "parserExecuted":false
+  },
+    {"id":"spring-sqli-jdbc","fixture":"examples/runtime/spring-sqli-jdbc","variants":["vulnerable","fixed"],"pins":
+    "examples/runtime/spring-sqli-jdbc/pins.json","expectations":"examples/runtime/spring-sqli-jdbc/cases.json",
+    "groundTruth":"tests/fixtures/runtime-m1/jdbc-ground-truth.json","pack":{"id":"spring-boot","version":1},"seed":1,
+    "maxRequests":40,"runsRequired":2,"buildAndExecution":"not-run","launchReady":false,"fixtureTreeSha256":
+    "452f8f98e6615ac728c983e93513dd720c1baa2131c4b9d22099b5340da776aa","fixtureTreeHashRule":
+    "sorted relative UTF-8 path + NUL + file SHA256 + LF","groundTruthSha256":
+    "3fe46ea2d7142873a995f0da7d1e6bbaeda9f538279f4626fd0c53ea5d5a80bb"}
+  ]
+}
