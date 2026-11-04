@@ -22,7 +22,7 @@ export function redactSecrets(value: string): string {
     '$1[REDACTED]',
   );
   result = result.replace(
-    /((?:api[_-]?key|access[_-]?key|secret|token|password|passwd|client[_-]?secret|session|cookie|refresh[_-]?token)\s*[:=]\s*)(["'])(?:\\.|(?!\2)[\s\S])*?\2/gi,
+    /((?:api[_-]?key|access[_-]?key|secret|token|password|passwd|client[_-]?secret|session|cookie|refresh[_-]?token)["']?\s*[:=]\s*)(["'])(?:\\.|(?!\2)[\s\S])*?\2/gi,
     '$1$2[REDACTED]$2',
   );
   result = result.replace(

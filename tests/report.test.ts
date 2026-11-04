@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import { mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { createReport, exitCode, toMarkdown, toSarif, writeReports } from '../src/report.js';
+import { createReport, exitCode, toAgentReport, toMarkdown, toSarif, writeReports } from '../src/report.js';
+import { randomUUID } from 'node:crypto';
 import type { CheckResult } from '../src/contracts.js';
 
 const startedAt = '2026-09-15T00:00:00.000Z';
@@ -45,6 +46,25 @@ test('report projection redacts secrets and query strings', () => {
   assert.equal(sarif.runs[0].properties.category, 'wakeio-security-ci/source');
   assert.equal(result.helpUri, undefined);
   assert.equal(sarif.runs[0].tool.driver.rules[0].helpUri, 'https://example.com/advisory');
+});
+
+test('report projections redact JSON credential values with casing, nesting and escaped values', () => {
+  const secret = randomUUID();
+  for (const description of [
+    JSON.stringify({ password: secret, token: secret }),
+    JSON.stringify({ nested: [{ PaSsWoRd: secret, API_KEY: secret }], visible: 'keep' }),
+    JSON.stringify({ password: `${secret}"\\\n${secret}`, session: secret }),
+    `{'password':'${secret}'}`,
+    `password="${secret}"; token=${secret}; Bearer ${secret}`,
+  ]) {
+    const report = createReport(
+      [{ id: 'fixture', status: 'completed', findings: [finding({ description })], notes: [] }],
+      'source', startedAt,
+    );
+    for (const output of [JSON.stringify(report), toMarkdown(report), JSON.stringify(toSarif(report)), JSON.stringify(toAgentReport(report))]) {
+      assert.equal(output.includes(secret), false);
+    }
+  }
 });
 
 test('semantic anchors and bounded provenance survive report projections without paths or secrets', () => {
