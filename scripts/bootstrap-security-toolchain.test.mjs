@@ -5,6 +5,41 @@ import { chmod, lstat, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from '
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { bootstrapSecurityToolchain, failSecuritySetup, verifySecurityArchive } from './bootstrap-security-toolchain.mjs';
+import { runBounded } from './ci-process.mjs';
+import { fileURLToPath } from 'node:url';
+
+test('preflight CLI retains command identity and errno without exposing argv or environment', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'wakeio-preflight-diagnostic-'));
+  try {
+    for (const code of ['ETXTBSY', 'ENOENT']) {
+      const executable = join(directory, 'missing-python');
+      const preload = `import childProcess from 'node:child_process';
+import { syncBuiltinESMExports } from 'node:module';
+Object.defineProperty(process,'platform',{value:'linux'});
+Object.defineProperty(process,'arch',{value:'x64'});
+globalThis.fetch=async()=>{throw Error('offline_test_network_blocked')};
+${code === 'ETXTBSY' ? `childProcess.spawn=()=>{throw Object.assign(Error('spawn ETXTBSY secret-argv'),{code:'ETXTBSY',errno:-26,syscall:'spawn'})}; syncBuiltinESMExports();` : ''}`;
+      const env = { ...process.env, GITHUB_ENV: join(directory, 'github-env'), JAVA_HOME_21_X64: directory,
+        WAKEIO_BOOTSTRAP_PYTHON: executable, DIAGNOSTIC_TEST_SECRET: 'secret-environment' };
+      delete env.NODE_TEST_CONTEXT;
+      const result = await runBounded(process.execPath, ['--import', 'data:text/javascript,' + encodeURIComponent(preload),
+        fileURLToPath(new URL('./bootstrap-security-toolchain.mjs', import.meta.url))], { timeoutMs: 10000, env });
+      assert.equal(result.exitCode, 2);
+      assert.equal(result.cleanupConfirmed, true);
+      const diagnostics = result.stderr.split('\n').filter(line => line.startsWith('Security toolchain command failed: '))
+        .map(line => JSON.parse(line.slice('Security toolchain command failed: '.length)));
+      const diagnostic = diagnostics.find(value => value.name === 'python-version');
+      assert.ok(diagnostic, result.stderr);
+      assert.equal(diagnostic.executable, executable);
+      assert.equal(diagnostic.code, code);
+      assert.equal(diagnostic.errno, code === 'ETXTBSY' ? -26 : -2);
+      assert.equal(diagnostic.syscall, code === 'ETXTBSY' ? 'spawn' : 'spawn ' + executable);
+      assert.equal(diagnostic.writerContext, 'not_observed');
+      assert.equal(typeof diagnostic.parentPid, 'number');
+      assert.equal(JSON.stringify(diagnostic).includes('secret-'), false);
+    }
+  } finally { await rm(directory, { recursive: true, force: true }); }
+});
 
 test('security bootstrap rejects corrupt or empty downloaded archives before extraction', () => {
   const archive = Buffer.from('owned checksum boundary fixture');
