@@ -39,12 +39,23 @@ async function download(spec, path) {
 }
 
 async function command(name, executable, args, cwd, timeoutMs, env = process.env) {
-  const result = await runBounded(executable, args, { cwd, timeoutMs, env });
-  if (result.reason || !result.cleanupConfirmed || result.exitCode !== 0) {
-    process.stderr.write(result.stderr + result.stdout);
-    throw Error(`${name}:${result.reason ?? (result.cleanupConfirmed ? 'command_failed' : 'cleanup_unknown')}:exit=${result.exitCode}:reason=${result.reason}:cleanup=${result.cleanup}:signal=${result.signal}`);
+  try {
+    const result = await runBounded(executable, args, { cwd, timeoutMs, env });
+    if (result.reason || !result.cleanupConfirmed || result.exitCode !== 0) {
+      process.stderr.write(result.stderr + result.stdout);
+      throw Object.assign(Error(`${name}:${result.reason ?? (result.cleanupConfirmed ? 'command_failed' : 'cleanup_unknown')}:exit=${result.exitCode}:reason=${result.reason}:cleanup=${result.cleanup}:signal=${result.signal}`), result.spawnError);
+    }
+    return result.stdout;
+  } catch (error) {
+    if (!(error instanceof Error)) throw error;
+    // Allowlisted fields only: argv, environment and raw error messages can contain secrets.
+    // A spawn failure does not identify the writer; do not imply that the parent is that writer.
+    process.stderr.write('Security toolchain command failed: ' + JSON.stringify({
+      name, executable, cwd, code: error.code ?? null, errno: error.errno ?? null,
+      syscall: error.syscall ?? null, path: error.path ?? null, parentPid: process.pid, writerContext: 'not_observed',
+    }) + '\n');
+    throw error;
   }
-  return result.stdout;
 }
 
 const shellQuote = value => `'${value.replaceAll("'", "'\\''")}'`;
