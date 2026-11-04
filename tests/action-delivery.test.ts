@@ -1,10 +1,12 @@
 import test, { type TestContext } from 'node:test';
 import assert from 'node:assert/strict';
+import { randomUUID } from 'node:crypto';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { copyFile, mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
+import type { ScanReport } from '../src/contracts.js';
 
 const exec = promisify(execFile);
 const runner = process.env.WAKEIO_TEST_ACTION_RUNNER ?? resolve('scripts/action-run.mjs');
@@ -52,6 +54,35 @@ async function outputs(path: string) {
     const index = line.indexOf('='); return [line.slice(0, index), line.slice(index + 1)];
   }));
 }
+
+test('bundled Action omits JSON credential-bearing parser paths from delivered artifacts', async t => {
+  const f = await fixture(t);
+  await copyFile(resolve('dist-action/wakeio-security-ci.mjs'), join(f.action, 'dist-action', 'wakeio-security-ci.mjs'));
+  const canary = randomUUID();
+  await writeFile(join(f.workspace, `${JSON.stringify({ password: canary, token: canary })}.ts`), 'function {');
+  await writeFile(join(f.workspace, 'normal.ts'), 'export const ready = true;');
+
+  const result = await run(f, 0);
+
+  assert.equal(result.code, 2);
+  for (const name of ['report.json', 'report.sarif', 'report.md', 'agent-report.json', 'action-status.json']) {
+    const text = await readFile(join(f.reports, name), 'utf8');
+    assert.equal(text.includes(canary), false, `${name} disclosed a credential-bearing parser path`);
+  }
+  for (const text of [result.stdout, result.stderr, await readFile(f.output, 'utf8'), await readFile(f.summary, 'utf8')]) {
+    assert.equal(text.includes(canary), false, 'Action delivery channel disclosed a credential');
+  }
+  const report: ScanReport = JSON.parse(await readFile(join(f.reports, 'report.json'), 'utf8'));
+  const ast = report.checks.find(check => check.id === 'source.builtin-ast');
+  assert.equal(ast?.metrics?.filesParsed, 2);
+  assert.equal(ast?.metrics?.filesParseValid, 1);
+  assert.deepEqual(ast?.analysisGaps?.items.map(item => [item.reason, item.extent, item.observations, item.location]),
+    [['parse_error', 'check', 1, undefined]]);
+  const out = await outputs(f.output);
+  assert.equal(out['scan-exit-code'], '2');
+  assert.equal(out['delivery-status'], 'delivered');
+  assert.equal(out['report-agent'], join(f.reports, 'agent-report.json'));
+});
 
 for (const code of [0, 1, 2]) {
   test(`Action delivery preserves scanner ${code} when every required channel is writable`, async t => {

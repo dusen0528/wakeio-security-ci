@@ -278,7 +278,7 @@ function redactSecrets(value) {
   });
   result3 = result3.replace(/-----BEGIN [^-]+-----[\s\S]*?-----END [^-]+-----/gi, "[REDACTED_KEY]");
   result3 = result3.replace(/(authorization\s*[:=]\s*(?:bearer\s+)?|bearer\s+)([^\s,;]+)/gi, "$1[REDACTED]");
-  result3 = result3.replace(/((?:api[_-]?key|access[_-]?key|secret|token|password|passwd|client[_-]?secret|session|cookie|refresh[_-]?token)\s*[:=]\s*)(["'])(?:\\.|(?!\2)[\s\S])*?\2/gi, "$1$2[REDACTED]$2");
+  result3 = result3.replace(/((?:api[_-]?key|access[_-]?key|secret|token|password|passwd|client[_-]?secret|session|cookie|refresh[_-]?token)["']?\s*[:=]\s*)(["'])(?:\\.|(?!\2)[\s\S])*?\2/gi, "$1$2[REDACTED]$2");
   result3 = result3.replace(/\b[A-Z0-9_]*(?:SECRET|TOKEN|PASSWORD|API[_-]?KEY|ACCESS[_-]?KEY)[A-Z0-9_-]*\s*=\s*(["'])(?:\\.|(?!\1)[\s\S])*?\1/gi, "[REDACTED_ASSIGNMENT]");
   result3 = result3.replace(/((?:api[_-]?key|access[_-]?key|secret|token|password|passwd|client[_-]?secret|session|cookie|refresh[_-]?token)\s*[:=]\s*["']?)([^\s"',;]+)/gi, "$1[REDACTED]");
   result3 = result3.replace(/\b(?:ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9_]+\b/g, "[REDACTED_TOKEN]");
