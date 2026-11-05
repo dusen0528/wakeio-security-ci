@@ -1,0 +1,149 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:wakeio:runtime-sequence:v1",
+  "description": "CP1 shape only; parser enforces scope, DAGs, types, counts, UTF-8 bounds; no execution authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "kind", "scopeRef", "limits", "sequences"],
+  "properties": {
+    "version": {"const": 1},
+    "kind": {"const": "wakeio.runtime-sequence"},
+    "scopeRef": {"$ref": "#/$defs/id"},
+    "limits": {
+      "type": "object", "additionalProperties": false,
+      "required": ["maxPlannedCells", "maxIterations"],
+      "properties": {
+        "maxPlannedCells": {"type": "integer", "minimum": 1, "maximum": 4096},
+        "maxIterations": {"type": "integer", "minimum": 1, "maximum": 64}
+      }
+    },
+    "sequences": {
+      "type": "array", "minItems": 1, "maxItems": 256,
+      "items": {"$ref": "#/$defs/sequence"}
+    }
+  },
+  "$defs": {
+    "id": {"type": "string", "pattern": "^[a-z][a-z0-9_-]{0,39}(?![\\s\\S])"},
+    "ordinal": {"type": "integer", "minimum": 0, "maximum": 15},
+    "scalarType": {"enum": ["string", "number", "boolean", "null"]},
+    "pointer": {
+      "type": "string", "maxLength": 512,
+      "pattern": "^(?:/(?:[^~/\\u0000-\\u001f\\u007f]|~[01])*){0,16}(?![\\s\\S])",
+      "description": "RFC6901 subset; 512 UTF-8 bytes; own props; canonical indices; reject decoded prototype names."
+    },
+    "refs": {
+      "type": "array", "maxItems": 16, "uniqueItems": true,
+      "items": {"$ref": "#/$defs/id"}
+    },
+    "sequence": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "stateScope", "steps"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "stateScope": {"$ref": "#/$defs/id"},
+        "steps": {"type": "array", "minItems": 1, "maxItems": 16, "items": {"$ref": "#/$defs/step"}}
+      }
+    },
+    "step": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "ordinal", "dependsOn", "operationRef", "method", "actorRef", "checks",
+        "bindings", "extract", "controlRefs", "observationRefs"
+      ],
+      "properties": {
+        "ordinal": {"$ref": "#/$defs/ordinal"},
+        "dependsOn": {
+          "type": "array", "maxItems": 15, "uniqueItems": true,
+          "items": {"$ref": "#/$defs/ordinal"}
+        },
+        "operationRef": {"$ref": "#/$defs/id"},
+        "method": {"enum": ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE"]},
+        "actorRef": {"$ref": "#/$defs/id"},
+        "checks": {"$ref": "#/$defs/refs", "minItems": 1},
+        "bindings": {"type": "array", "maxItems": 16, "items": {"$ref": "#/$defs/binding"}},
+        "extract": {"type": "array", "maxItems": 16, "items": {"$ref": "#/$defs/extraction"}},
+        "controlRefs": {"$ref": "#/$defs/refs"},
+        "observationRefs": {"$ref": "#/$defs/refs"}
+      }
+    },
+    "destination": {
+      "oneOf": [
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["location", "name"],
+          "properties": {
+            "location": {"enum": ["path", "query", "header", "cookie"]},
+            "name": {"$ref": "#/$defs/id"}
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["location", "pointer"],
+          "properties": {
+            "location": {"const": "body"},
+            "pointer": {"$ref": "#/$defs/pointer"}
+          }
+        }
+      ]
+    },
+    "binding": {
+      "oneOf": [
+        {"$ref": "#/$defs/literal"},
+        {"$ref": "#/$defs/extracted"},
+        {"$ref": "#/$defs/actor"}
+      ]
+    },
+    "literal": {
+      "type": "object", "additionalProperties": false,
+      "required": ["destination", "kind", "valueType", "scalarType", "value"],
+      "properties": {
+        "destination": {"$ref": "#/$defs/destination"},
+        "kind": {"const": "literal"},
+        "valueType": {"$ref": "#/$defs/id"},
+        "scalarType": {"$ref": "#/$defs/scalarType"},
+        "value": {"type": ["string", "number", "boolean", "null"], "maxLength": 4096}
+      },
+      "oneOf": [
+        {"properties": {"scalarType": {"const": "string"}, "value": {"type": "string"}}},
+        {"properties": {"scalarType": {"const": "number"}, "value": {"type": "number"}}},
+        {"properties": {"scalarType": {"const": "boolean"}, "value": {"type": "boolean"}}},
+        {"properties": {"scalarType": {"const": "null"}, "value": {"type": "null"}}}
+      ],
+      "description": "Only approved public synthetic scalars; JSON UTF-8 <=4096 bytes; credential slots ban literals."
+    },
+    "extracted": {
+      "type": "object", "additionalProperties": false,
+      "required": ["destination", "kind", "valueType", "scalarType", "producerOrdinal", "extractionRef"],
+      "properties": {
+        "destination": {"$ref": "#/$defs/destination"},
+        "kind": {"const": "extracted"},
+        "valueType": {"$ref": "#/$defs/id"},
+        "scalarType": {"$ref": "#/$defs/scalarType"},
+        "producerOrdinal": {"$ref": "#/$defs/ordinal"},
+        "extractionRef": {"$ref": "#/$defs/id"}
+      }
+    },
+    "actor": {
+      "type": "object", "additionalProperties": false,
+      "required": ["destination", "kind", "valueType", "scalarType", "credentialRef"],
+      "properties": {
+        "destination": {"$ref": "#/$defs/destination"},
+        "kind": {"const": "actor"},
+        "valueType": {"$ref": "#/$defs/id"},
+        "scalarType": {"$ref": "#/$defs/scalarType"},
+        "credentialRef": {"$ref": "#/$defs/id"}
+      }
+    },
+    "extraction": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "pointer", "scalarType", "valueType", "maxBytes"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "pointer": {"$ref": "#/$defs/pointer"},
+        "scalarType": {"$ref": "#/$defs/scalarType"},
+        "valueType": {"$ref": "#/$defs/id"},
+        "maxBytes": {"type": "integer", "minimum": 1, "maximum": 4096}
+      }
+    }
+  }
+}
