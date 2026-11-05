@@ -12,6 +12,7 @@ const cases = new Map([
   ['harness', () => import('./roadmap-cases/harness.mjs')],
   ['policy', () => import('./roadmap-cases/policy.mjs')],
   ['manifest', () => import('./roadmap-cases/manifest.mjs')],
+  ['sequence-contract', () => import('./roadmap-cases/sequence-contract.mjs')],
 ]);
 
 export function parseArgs(argv) {
