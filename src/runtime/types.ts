@@ -103,3 +103,16 @@ export interface AttackContext {
 export interface RegisteredAttackEngine<T extends ExecutionTask = ExecutionTask> extends ExecutionTaskDescriptor<T> {
   prepare(task: T, data: ReadonlyMap<string, unknown>, options: AttackContext): PreparedAttackTask<T>;
 }
+
+// M1 target data only; these declarations grant no execution authority.
+export type PathRef = string;
+export interface TargetSpec {
+  version: 1; project: string; source: PathRef;
+  build: { kind: 'compose'; file: PathRef; service: string };
+  pack: { id: string; version: number };
+  entry: { port: number; health: string; startupTimeoutSec: number };
+  dependencies: { service: string; observer: 'pg-log' }[];
+  seed: { sql: PathRef[]; snapshot: 'per-request' };
+  scope: { include: string[]; exclude: string[] };
+  budget: { maxRequests: number; maxMinutes: number; ratePerSecond: number };
+}
