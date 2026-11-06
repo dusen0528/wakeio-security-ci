@@ -218,10 +218,14 @@ test('old and empty snapshot readers conserve originals and close their actual o
     }
     if (version === 3) validStage(path);
     const before = conserved(path), previousTmp = process.env.TMPDIR;
-    assert.ok(previousTmp);
     process.env.TMPDIR = directory;
-    const reader = await openSequenceDatabaseReader(source);
+    const reader = await openSequenceDatabaseReader(source).finally(() => {
+      if (previousTmp === undefined) delete process.env.TMPDIR;
+      else process.env.TMPDIR = previousTmp;
+    });
     try {
+      assert.equal(Object.hasOwn(process.env, 'TMPDIR'), previousTmp !== undefined);
+      assert.equal(process.env.TMPDIR, previousTmp);
       assert.equal(reader.schema().version, version);
       assert.equal(reader.legacySummary('r-owned').summary?.gaps.timeout, version === 0 ? undefined : 2);
       assert.deepEqual(reader.cells('r-owned'), { kind: 'unavailable',
@@ -233,7 +237,7 @@ test('old and empty snapshot readers conserve originals and close their actual o
       reader.close();
       assert.deepEqual(conserved(path), before);
       assert.deepEqual(readdirSync(directory), ['source.db']);
-    } finally { reader.close(); process.env.TMPDIR = previousTmp; rmSync(directory, { recursive: true }); }
+    } finally { reader.close(); rmSync(directory, { recursive: true }); }
   }
 });
 
