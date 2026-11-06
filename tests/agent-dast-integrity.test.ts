@@ -241,7 +241,9 @@ PRAGMA user_version=1;
 test('integrity independent: new private disk schema works, populated prototypev1 refusal preserves exact bytes and empty v1 is explicit migration', async () => {
   const top = await mkdtemp(join(tmpdir(), 'wakeio-owned-legacy-')); await chmod(top, 0o700);
   try {
-    assert.equal(RUN_DB_VERSION, 2); const freshPath = join(top, 'fresh.db'); const fresh = await openRunStore(freshPath);
+    assert.equal(RUN_DB_VERSION, 3);
+    const freshPath = join(top, 'fresh.db');
+    const fresh = await openRunStore(freshPath);
     try { newRun(fresh); assert.equal((await stat(freshPath)).mode & 0o777, 0o600); } finally { fresh.close(); }
     const legacy = join(top, 'legacy.db'), db = new DatabaseSync(legacy); db.exec(LEGACY_SQL);
     db.prepare("INSERT INTO runs VALUES(?,?,?,?,?,NULL,'running')").run(RUN, 'https://owned.invalid', 'a'.repeat(64), PROVIDER, '2026-10-14T00:00:00Z');
