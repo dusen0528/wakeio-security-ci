@@ -1,0 +1,245 @@
+{
+  "schema": "wakeio.fixed-compose-profiles/v1",
+  "profiles": [
+    {
+      "id": "f01",
+      "root": "examples/runtime/spring-sqli/vulnerable",
+      "files": [0, 1, 2, 3, 4, 5, 6, 7],
+      "pinsPath": "examples/runtime/spring-sqli/pins.json"
+    },
+    {
+      "id": "f02",
+      "root": "examples/runtime/spring-sqli/fixed",
+      "files": [0, 1, 2, 3, 4, 8, 6, 7],
+      "pinsPath": "examples/runtime/spring-sqli/pins.json"
+    },
+    {
+      "id": "f03",
+      "root": "examples/runtime/spring-sqli-jdbc/vulnerable",
+      "files": [0, 9, 2, 10, 4, 11, 12, 13],
+      "pinsPath": "examples/runtime/spring-sqli-jdbc/pins.json"
+    },
+    {
+      "id": "f04",
+      "root": "examples/runtime/spring-sqli-jdbc/fixed",
+      "files": [0, 9, 2, 10, 4, 14, 12, 13],
+      "pinsPath": "examples/runtime/spring-sqli-jdbc/pins.json"
+    }
+  ],
+  "bindings": [
+    {
+      "path": ".dockerignore",
+      "bytes": 26,
+      "sha256": "c768d36a82662ecabf279b5c0ca7bf30bd20aea1f62263f55b8ac3ff0767a82a",
+      "roles": [
+        "BUILD"
+      ]
+    },
+    {
+      "path": "Dockerfile",
+      "bytes": 600,
+      "sha256": "5c823b4c07acf1a9406394df06ce05f422da9967a94672b5d312deb8b50f2919",
+      "roles": [
+        "BUILD"
+      ]
+    },
+    {
+      "path": "compose.json",
+      "bytes": 525,
+      "sha256": "6ef87b3c0d3cdb96b325bc456eed4dab82842b1f4e695543e7648929290b3cb0",
+      "roles": [
+        "CONTROLLER_ONLY"
+      ]
+    },
+    {
+      "path": "pom.xml",
+      "bytes": 1774,
+      "sha256": "641574186d01397c3e5baec25d11f4e6016ec6a475880b31069be778aa1ecfe8",
+      "roles": [
+        "BUILD",
+        "SCANNER"
+      ]
+    },
+    {
+      "path": "seed.sql",
+      "bytes": 158,
+      "sha256": "a3f47d9135535816373b437607a4bf4bf2613d8297d38074b428640d6d637de4",
+      "roles": [
+        "CONTROLLER_ONLY"
+      ]
+    },
+    {
+      "path": "src/main/java/io/wakeio/fixtures/Application.java",
+      "bytes": 2294,
+      "sha256": "0b325e79bcaa59e1e7ea2d6029fff272d054f9cd8ab4d360564a0962b8243a11",
+      "roles": [
+        "BUILD",
+        "SCANNER"
+      ]
+    },
+    {
+      "path": "src/main/resources/application.properties",
+      "bytes": 372,
+      "sha256": "d59736f6c235e90d09addc15b848e72998f7e9c6f8557e5ea69c451368f16382",
+      "roles": [
+        "BUILD",
+        "SCANNER"
+      ]
+    },
+    {
+      "path": "wakeio.target.yml",
+      "bytes": 507,
+      "sha256": "d9ac7404fb5e8846d4ae5a5de14511e7805d78d110827b97d34633db14deaa0d",
+      "roles": [
+        "CONTROLLER_ONLY"
+      ]
+    },
+    {
+      "path": "src/main/java/io/wakeio/fixtures/Application.java",
+      "bytes": 2287,
+      "sha256": "cb1f46d4b6ddfc945e2a7187603700d6c605f88d967d552bfdb8daf7cc82c006",
+      "roles": [
+        "BUILD",
+        "SCANNER"
+      ]
+    },
+    {
+      "path": "Dockerfile",
+      "bytes": 597,
+      "sha256": "72d2761c39e7e41261643d3fe65e50038aa5bb888577cbdb072834e58e7b5bef",
+      "roles": [
+        "BUILD"
+      ]
+    },
+    {
+      "path": "pom.xml",
+      "bytes": 1771,
+      "sha256": "da7a5b06ab092eda3682f2d77a389f5e696f5e4d6dff0e0d1210443c2743a3ee",
+      "roles": [
+        "BUILD",
+        "SCANNER"
+      ]
+    },
+    {
+      "path": "src/main/java/io/wakeio/jdbcfixtures/Application.java",
+      "bytes": 2981,
+      "sha256": "e7558343b0f0b8d1036a7ee7142f8de04237555bc8d320972b21ffa06c56f68b",
+      "roles": [
+        "BUILD",
+        "SCANNER"
+      ]
+    },
+    {
+      "path": "src/main/resources/application.properties",
+      "bytes": 369,
+      "sha256": "f39585ea20e782a73492ad8ebe94f8b1e43f5fb95ea908a88af45af726fbec86",
+      "roles": [
+        "BUILD",
+        "SCANNER"
+      ]
+    },
+    {
+      "path": "wakeio.target.yml",
+      "bytes": 504,
+      "sha256": "fb40ba91a136e4ef778d645df8171763d6759f7f1846c30374654ed744e49d3b",
+      "roles": [
+        "CONTROLLER_ONLY"
+      ]
+    },
+    {
+      "path": "src/main/java/io/wakeio/jdbcfixtures/Application.java",
+      "bytes": 3057,
+      "sha256": "c8cc3c7eff4d48e0853746b2377d49993e5652a18ba240aecbedcf704dc50042",
+      "roles": [
+        "BUILD",
+        "SCANNER"
+      ]
+    }
+  ],
+  "pinsBinding": {
+    "bytes": 3044,
+    "sha256": "87d3694b47521ecf00ee16bc165522af3610a2e59cf6e65c99568410aaa41700"
+  },
+  "pins": {
+    "javaRelease": 21,
+    "maven": "3.10.0",
+    "springBoot": "4.1.2",
+    "springdoc": "3.2.0",
+    "pgjdbc": "42.7.14",
+    "postgresql": "18.6",
+    "jdkPatch": "21.0.12.1+1",
+    "baseImages": {
+      "build": {
+        "repository": "docker.io/library/maven",
+        "indexDigest": "sha256:2060a0028047a1974e7e0e343f93b7d2742db8cce69cb5662cf2a9a09b17dbca",
+        "platforms": {
+          "linux/amd64": {
+            "manifestDigest": "sha256:3e598b8b4680fa5ec51f9661fe278901cde75af841116f9f03956601c92a778f",
+            "configDigest": "sha256:6dae7ba6ab719b3627206c755e24c411d1c281a12b1acb3d53515051cd7dbf98"
+          },
+          "linux/arm64": {
+            "manifestDigest": "sha256:65cedfb84cfbb1dc9974c14662d6bf9b20aa6aea274c877fe08952bdfae7992f",
+            "configDigest": "sha256:fe1f0cef06dadb4b4e7b613be22c806414f48f3357c9728e659f7bc0baab7326"
+          }
+        }
+      },
+      "runtime": {
+        "repository": "docker.io/library/eclipse-temurin",
+        "indexDigest": "sha256:57424b1d8eca9c4cf8a4fe226207027911f08d6758628891bf59fcfb53777029",
+        "platforms": {
+          "linux/amd64": {
+            "manifestDigest": "sha256:8b3b108b98b06013f1fb7105745b4ab128f6bdce7759206d3fa8ef9fc58e4d90",
+            "configDigest": "sha256:850a79a648b155cc2802ac214a109f2707418645a2f1eb16b227a3f22687b672"
+          },
+          "linux/arm64": {
+            "manifestDigest": "sha256:47d408e3a08b4e0cf7e966e891491a8a886a49ca8c0d2f79f1d3a22995ba1ecf",
+            "configDigest": "sha256:65c7de6113db9872bf81fd68e5328bfc73d71f61d610b1e277d4b89bb90f5aa4"
+          }
+        }
+      },
+      "postgres": {
+        "repository": "docker.io/library/postgres",
+        "indexDigest": "sha256:edb0c08dc33befd0262ab3b5cf1c4f3f8cfd8b09e88c05b45adee29d6761ddb6",
+        "platforms": {
+          "linux/amd64": {
+            "manifestDigest": "sha256:9770878138a2e83abcb10856d30cc3f24dae0d317bb956db6ab9159de6c3c80d",
+            "configDigest": "sha256:79061104669bb30919d015b549c764e2d8021a18ee39cb175581a2588fe90dbe"
+          },
+          "linux/arm64": {
+            "manifestDigest": "sha256:a8be76d23699a6c366437e9f80ead007975f24c35e01c9ee0533c6930ab57ac1",
+            "configDigest": "sha256:91e2759ab4ea7238bc7bed3893439d7abb8edd5c8ac24bab0571e4179f405235"
+          }
+        }
+      }
+    }
+  },
+  "commands": {
+    "maven": [
+      "mvn",
+      "--batch-mode",
+      "--no-transfer-progress",
+      "-Dmaven.repo.local=/tmp/wakeio-m2",
+      "verify"
+    ],
+    "entrypoint": [
+      "java",
+      "-jar",
+      "/app/app.jar"
+    ]
+  },
+  "restrictions": {
+    "executable": false,
+    "platform": "linux/arm64",
+    "maxPathsPerRole": 5,
+    "maxFileBytes": 1048576,
+    "maxProjectionBytes": 8388608,
+    "sourceUid": "65532:65532",
+    "inheritEnvironment": false,
+    "hostPorts": [],
+    "requires": [
+      "source-snapshot",
+      "trusted-postgres-pin",
+      "verified-isolation"
+    ]
+  }
+}
