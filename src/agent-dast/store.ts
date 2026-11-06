@@ -11,8 +11,7 @@
  * this database; findings point to `evidence/<finding_id>.json` instead.
  */
 import { createHash } from 'node:crypto';
-import { closeSync, constants, fstatSync, lstatSync, openSync, readSync, realpathSync } from 'node:fs';
-import { basename, dirname, resolve } from 'node:path';
+import { closeSync, constants, fstatSync, lstatSync, openSync, readSync } from 'node:fs';
 import type { DatabaseSync, StatementSync } from 'node:sqlite';
 import { snapshotJsonData } from '../json-snapshot.js';
 import {
@@ -21,13 +20,21 @@ import {
   type GapReason, type NextHint, type Severity, type WorkerCategory, type WorkerResultV1, type WorkerStatus,
 } from './result.js';
 
+import {
+  AUTH_STATES, FINDING_STATES, PARAM_LOCATIONS, PROVIDERS, RUN_STATUSES, TASK_STATUSES,
+  InitializationFailure, RunStoreError, requireSqliteRuntime,
+  type AuthState, type FindingState, type ParamLocation, type Provider, type RunStatus, type TaskStatus,
+} from './store-contract.js';
+import { initializeDatabase, inspectRunDatabase } from './store-schema.js';
+import { privatePath } from './store-path.js';
+export {
+  AUTH_STATES, FINDING_STATES, PARAM_LOCATIONS, PROVIDERS, RUN_STATUSES, TASK_STATUSES,
+  RunStoreError, requireSqliteRuntime,
+  type AuthState, type FindingState, type ParamLocation, type Provider, type RunStatus, type TaskStatus,
+} from './store-contract.js';
+export { RUN_DB_VERSION } from './store-schema.js';
+
 export const SURFACE_ID = /^s-[0-9a-z-]{1,60}$/;
-export const PROVIDERS = ['codex', 'claude', 'mixed', 'fixed'] as const;
-export const AUTH_STATES = ['anonymous', 'user', 'other_user', 'admin'] as const;
-export const PARAM_LOCATIONS = ['query', 'body', 'header', 'path', 'cookie'] as const;
-export const FINDING_STATES = ['candidate', 'confirmed', 'rejected'] as const;
-export const TASK_STATUSES = ['queued', 'running', 'completed', 'partial', 'error', 'skipped'] as const;
-export const RUN_STATUSES = ['running', 'completed', 'partial', 'error'] as const;
 export const MAX_COVERAGE_PLAN = 256;
 export const MAX_STORE_BATCH = 256;
 export const MAX_RUN_ITEMS = 4096;
@@ -35,117 +42,9 @@ export const MAX_TASK_OBSERVATIONS = 4096;
 export const MAX_LEDGER_COUNT = 1_000_000_000;
 export const MAX_LEDGER_BYTES = 1024 * 1024 * 1024;
 
-export type Provider = typeof PROVIDERS[number];
-export type AuthState = typeof AUTH_STATES[number];
-export type ParamLocation = typeof PARAM_LOCATIONS[number];
-export type FindingState = typeof FINDING_STATES[number];
-export type TaskStatus = typeof TASK_STATUSES[number];
-export type RunStatus = typeof RUN_STATUSES[number];
 
-const quoted = (values: readonly string[]) => values.map(v => `'${v}'`).join(',');
 
-/** Ordered migrations. user_version records how many have been applied. */
-const MIGRATIONS: readonly string[] = [
-  `
-  CREATE TABLE runs (
-    run_id        TEXT PRIMARY KEY,
-    target_origin TEXT NOT NULL,
-    scope_hash    TEXT NOT NULL,
-    provider      TEXT NOT NULL CHECK (provider IN (${quoted(PROVIDERS)})),
-    started_at    TEXT NOT NULL,
-    finished_at   TEXT,
-    status        TEXT NOT NULL CHECK (status IN (${quoted(RUN_STATUSES)}))
-  );
-  CREATE TABLE surface (
-    surface_id TEXT PRIMARY KEY,
-    run_id     TEXT NOT NULL REFERENCES runs(run_id),
-    method     TEXT NOT NULL,
-    path       TEXT NOT NULL,
-    param      TEXT,
-    location   TEXT CHECK (location IN (${quoted(PARAM_LOCATIONS)})),
-    auth_state TEXT NOT NULL CHECK (auth_state IN (${quoted(AUTH_STATES)}))
-  );
-  CREATE TABLE tasks (
-    task_id     TEXT PRIMARY KEY,
-    run_id      TEXT NOT NULL REFERENCES runs(run_id),
-    category    TEXT NOT NULL CHECK (category IN (${quoted(WORKER_CATEGORIES)})),
-    surface_ids TEXT NOT NULL,
-    provider    TEXT NOT NULL CHECK (provider IN (${quoted(PROVIDERS)})),
-    script_ref  TEXT NOT NULL,
-    status      TEXT NOT NULL CHECK (status IN (${quoted(TASK_STATUSES)})),
-    next_hint   TEXT,
-    duration_ms INTEGER
-  );
-  CREATE TABLE task_gaps (
-    task_id TEXT NOT NULL REFERENCES tasks(task_id),
-    reason  TEXT NOT NULL CHECK (reason IN (${quoted(GAP_REASONS)})),
-    count   INTEGER NOT NULL CHECK (count >= 1),
-    PRIMARY KEY (task_id, reason)
-  );
-  CREATE TABLE findings (
-    finding_id   TEXT PRIMARY KEY,
-    run_id       TEXT NOT NULL REFERENCES runs(run_id),
-    task_id      TEXT NOT NULL REFERENCES tasks(task_id),
-    surface_id   TEXT REFERENCES surface(surface_id),
-    rule_id      TEXT NOT NULL,
-    severity     TEXT NOT NULL CHECK (severity IN (${quoted(SEVERITIES)})),
-    state        TEXT NOT NULL CHECK (state IN (${quoted(FINDING_STATES)})),
-    dedupe_key   TEXT NOT NULL,
-    evidence_ref TEXT NOT NULL,
-    UNIQUE (run_id, dedupe_key)
-  );
-  CREATE TABLE coverage (
-    task_id    TEXT NOT NULL REFERENCES tasks(task_id),
-    surface_id TEXT NOT NULL REFERENCES surface(surface_id),
-    "check"    TEXT NOT NULL,
-    result     TEXT NOT NULL CHECK (result IN ('executed','skipped','error')),
-    reason     TEXT CHECK (reason IS NULL OR reason IN (${quoted(GAP_REASONS)})),
-    PRIMARY KEY (task_id, surface_id, "check")
-  );
-  CREATE TABLE ledger (
-    task_id       TEXT PRIMARY KEY REFERENCES tasks(task_id),
-    provider      TEXT NOT NULL CHECK (provider IN (${quoted(PROVIDERS)})),
-    input_tokens  INTEGER,
-    output_tokens INTEGER,
-    request_count INTEGER NOT NULL DEFAULT 0,
-    bytes         INTEGER NOT NULL DEFAULT 0,
-    exit_code     INTEGER,
-    stdout_bytes  INTEGER NOT NULL DEFAULT 0,
-    truncated     INTEGER NOT NULL DEFAULT 0 CHECK (truncated IN (0,1))
-  );
-  CREATE INDEX idx_findings_state ON findings(run_id, state, severity);
-  CREATE INDEX idx_tasks_run ON tasks(run_id, status);
-  CREATE INDEX idx_coverage_result ON coverage(task_id, result);
-  `,
-  `CREATE TABLE coverage_plan (
-    task_id TEXT NOT NULL REFERENCES tasks(task_id), surface_id TEXT NOT NULL REFERENCES surface(surface_id),
-    "check" TEXT NOT NULL, PRIMARY KEY(task_id,surface_id,"check")
-  );
-  CREATE TABLE finding_observations (
-    observation_id TEXT PRIMARY KEY, finding_id TEXT NOT NULL REFERENCES findings(finding_id),
-    task_id TEXT NOT NULL, surface_id TEXT NOT NULL, "check" TEXT NOT NULL,
-    severity TEXT NOT NULL CHECK(severity IN (${quoted(SEVERITIES)})), evidence_ref TEXT NOT NULL,
-    FOREIGN KEY(task_id,surface_id,"check") REFERENCES coverage_plan(task_id,surface_id,"check")
-  );
-  CREATE INDEX idx_observations_task ON finding_observations(task_id,finding_id);
-  DROP TABLE coverage;
-  CREATE TABLE coverage (
-    task_id TEXT NOT NULL, surface_id TEXT NOT NULL, "check" TEXT NOT NULL,
-    result TEXT NOT NULL CHECK(result IN ('executed','skipped','error')),
-    reason TEXT CHECK(reason IS NULL OR reason IN (${quoted(GAP_REASONS)})),
-    PRIMARY KEY(task_id,surface_id,"check"),
-    FOREIGN KEY(task_id,surface_id,"check") REFERENCES coverage_plan(task_id,surface_id,"check")
-  );
-  CREATE INDEX idx_coverage_result ON coverage(task_id,result);`,
-];
 
-export const RUN_DB_VERSION = MIGRATIONS.length;
-
-export class RunStoreError extends Error {
-  constructor(readonly code: 'node_sqlite_unavailable' | 'unsupported_version' | 'legacy_evidence_untrusted' | 'unsafe_path' | 'storage_error' | 'invalid_input' | 'invalid_transition' | 'not_found', detail?: string) {
-    super(detail ? `${code}: ${detail}` : code);
-  }
-}
 
 function invalid(field: string): never { throw new RunStoreError('invalid_input', field); }
 function check(ok: unknown, field: string): asserts ok { if (!ok) invalid(field); }
@@ -224,17 +123,25 @@ export interface RoundSummary {
 const zeros = <T extends string>(keys: readonly T[]) => Object.fromEntries(keys.map(k => [k, 0])) as Record<T, number>;
 type Task = { task_id: string; run_id: string; category: WorkerCategory; provider: Provider; status: TaskStatus };
 type Surface = { surface_id: string; run_id: string; method: string; path: string; param: string | null; location: ParamLocation | null; auth_state: AuthState };
-function requireSqliteRuntime(): void {
-  const match = /^(\d+)\.(\d+)\.(\d+)(?:[-+].*)?$/.exec(process.versions.node);
-  if (!match) throw new RunStoreError('node_sqlite_unavailable');
-  const major = Number(match[1]), minor = Number(match[2]);
-  if (!(major === 22 && minor >= 13 || major === 23 && minor >= 4 || major >= 24)) throw new RunStoreError('node_sqlite_unavailable');
-}
 
 export class RunStore {
   private readonly statements = new Map<string, StatementSync>();
 
-  constructor(private readonly db: DatabaseSync) { requireSqliteRuntime(); initializeDatabase(db); }
+  constructor(private readonly db: DatabaseSync) {
+    requireSqliteRuntime();
+    try { initializeDatabase(db); }
+    catch (error) {
+      if (error instanceof InitializationFailure) {
+        switch (error.primary.kind) {
+          case 'contract': throw error.primary.error;
+          case 'native': case 'unexpected': throw new RunStoreError('unsupported_version');
+          default: { const impossible: never = error.primary; throw impossible; }
+        }
+      }
+      if (error instanceof RunStoreError) throw error;
+      throw new RunStoreError('unsupported_version');
+    }
+  }
 
   private prepare(sql: string): StatementSync {
     let statement = this.statements.get(sql);
@@ -508,84 +415,6 @@ export class RunStore {
  * `node_sqlite_unavailable` on a Node without `node:sqlite` instead of
  * breaking the rest of the CLI at import time.
  */
-const V1_TABLES = ['runs', 'surface', 'tasks', 'task_gaps', 'findings', 'coverage', 'ledger'];
-const TABLE_COLUMNS: Record<string, readonly string[]> = {
-  runs: ['run_id', 'target_origin', 'scope_hash', 'provider', 'started_at', 'finished_at', 'status'],
-  surface: ['surface_id', 'run_id', 'method', 'path', 'param', 'location', 'auth_state'],
-  tasks: ['task_id', 'run_id', 'category', 'surface_ids', 'provider', 'script_ref', 'status', 'next_hint', 'duration_ms'],
-  task_gaps: ['task_id', 'reason', 'count'],
-  findings: ['finding_id', 'run_id', 'task_id', 'surface_id', 'rule_id', 'severity', 'state', 'dedupe_key', 'evidence_ref'],
-  coverage: ['task_id', 'surface_id', 'check', 'result', 'reason'],
-  ledger: ['task_id', 'provider', 'input_tokens', 'output_tokens', 'request_count', 'bytes', 'exit_code', 'stdout_bytes', 'truncated'],
-  coverage_plan: ['task_id', 'surface_id', 'check'],
-  finding_observations: ['observation_id', 'finding_id', 'task_id', 'surface_id', 'check', 'severity', 'evidence_ref'],
-};
-function canonicalSql(sql: string): string {
-  const tokens = sql.match(/'(?:''|[^'])*'|"(?:""|[^"])*"|[a-z_][a-z_0-9]*|\d+|[^\s]/gi) ?? [];
-  return tokens.map(token => token.startsWith("'") ? token : token.startsWith('"') ? token.slice(1, -1).replace(/""/g, '"').toLowerCase() : token.toLowerCase()).join(' ');
-}
-function schemaStatements(version: number): Map<string, string> {
-  const statements = new Map<string, string>();
-  for (const migration of MIGRATIONS.slice(0, version)) for (const statement of migration.split(';')) {
-    const create = /^\s*CREATE (?:TABLE|INDEX) ([a-z_]+)/i.exec(statement);
-    const drop = /^\s*DROP TABLE ([a-z_]+)/i.exec(statement);
-    if (drop) statements.delete(drop[1]);
-    if (create) statements.set(create[1], canonicalSql(statement));
-  }
-  return statements;
-}
-function preflight(db: DatabaseSync): number {
-  const version = (db.prepare('PRAGMA user_version').get() as { user_version: number }).user_version;
-  const tables = (db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name LIMIT 20").all() as { name: string }[]).map(row => row.name);
-  if (version !== 0 && version !== 1 && version !== RUN_DB_VERSION) throw new RunStoreError('unsupported_version');
-  const expected = version === 2 ? [...V1_TABLES, 'coverage_plan', 'finding_observations'] : version === 1 ? V1_TABLES : [];
-  if (JSON.stringify(tables) !== JSON.stringify([...expected].sort())) throw new RunStoreError('unsupported_version');
-  if (version === 1 && V1_TABLES.some(table => db.prepare(`SELECT 1 FROM "${table}" LIMIT 1`).get())) throw new RunStoreError('legacy_evidence_untrusted');
-  const objects = db.prepare("SELECT name,sql FROM sqlite_master WHERE sql IS NOT NULL ORDER BY name LIMIT 30").all() as { name: string; sql: string }[];
-  const expectedStatements = schemaStatements(version);
-  if (objects.length !== expectedStatements.size || objects.some(object => expectedStatements.get(object.name) !== canonicalSql(object.sql))) throw new RunStoreError('unsupported_version');
-  for (const table of expected) {
-    const columns = (db.prepare(`PRAGMA table_info("${table}")`).all() as { name: string }[]).map(row => row.name);
-    if (JSON.stringify(columns) !== JSON.stringify(TABLE_COLUMNS[table])) throw new RunStoreError('unsupported_version');
-  }
-  if (version === 2) {
-    // Compile authoritative queries and check FK integrity before accepting an existing store.
-    db.prepare('SELECT observation_id,finding_id,task_id,surface_id,"check",severity,evidence_ref FROM finding_observations LIMIT 0');
-    db.prepare('SELECT task_id,surface_id,"check" FROM coverage_plan LIMIT 0');
-    db.prepare('SELECT provider,exit_code,stdout_bytes,truncated FROM ledger LIMIT 0');
-    if (db.prepare('SELECT 1 FROM pragma_foreign_key_check LIMIT 1').get()) throw new RunStoreError('unsupported_version');
-  }
-  return version;
-}
-function initializeDatabase(db: DatabaseSync): void {
-  try {
-    preflight(db); // Legacy refusal precedes writes and journal settings.
-    db.exec('PRAGMA foreign_keys=ON'); db.exec('PRAGMA busy_timeout=5000'); db.exec('BEGIN IMMEDIATE');
-    try {
-      const version = preflight(db);
-      for (let i = version; i < MIGRATIONS.length; i++) { db.exec(MIGRATIONS[i]); db.exec(`PRAGMA user_version=${i + 1}`); }
-      db.exec('COMMIT');
-    } catch (error) { try { db.exec('ROLLBACK'); } catch { /* Preserve refusal. */ } throw error; }
-  } catch (error) { if (error instanceof RunStoreError) throw error; throw new RunStoreError('unsupported_version'); }
-}
-function privatePath(path: string): { path: string; existing: boolean; dev: number; ino: number } {
-  text(path, 4096, 'path'); check(!path.startsWith('file:'), 'path');
-  try {
-    const absolute = resolve(path), parent = dirname(absolute), directory = lstatSync(parent), uid = process.getuid?.();
-    if (!directory.isDirectory() || directory.isSymbolicLink() || (directory.mode & 0o777) !== 0o700 || uid === undefined || directory.uid !== uid) throw new RunStoreError('unsafe_path');
-    // Ancestors are canonicalized, including macOS /var. A hostile same-UID path swap is outside this local contract.
-    const canonical = resolve(realpathSync(parent), basename(absolute));
-    let file;
-    try { file = lstatSync(canonical); } catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error; }
-    if (file) {
-      if (!file.isFile() || file.isSymbolicLink() || file.nlink !== 1 || file.uid !== uid || (file.mode & 0o777) !== 0o600) throw new RunStoreError('unsafe_path');
-      return { path: canonical, existing: true, dev: file.dev, ino: file.ino };
-    }
-    const descriptor = openSync(canonical, constants.O_CREAT | constants.O_EXCL | constants.O_WRONLY | constants.O_NOFOLLOW, 0o600);
-    closeSync(descriptor); const created = lstatSync(canonical);
-    return { path: canonical, existing: false, dev: created.dev, ino: created.ino };
-  } catch (error) { if (error instanceof RunStoreError) throw error; throw new RunStoreError('unsafe_path'); }
-}
 export async function openRunStore(path: string): Promise<RunStore> {
   requireSqliteRuntime();
   text(path, 4096, 'path');
@@ -610,7 +439,7 @@ export async function openRunStore(path: string): Promise<RunStore> {
     } catch (error) { if (error instanceof RunStoreError) throw error; throw new RunStoreError('unsafe_path'); }
     finally { if (descriptor !== undefined) closeSync(descriptor); }
     let readonly: DatabaseSync | undefined;
-    try { readonly = new sqlite.DatabaseSync(file.path, { readOnly: true }); preflight(readonly); }
+    try { readonly = new sqlite.DatabaseSync(file.path, { readOnly: true }); inspectRunDatabase(readonly, 'write'); }
     catch (error) { if (error instanceof RunStoreError) throw error; throw new RunStoreError('unsupported_version'); }
     finally { readonly?.close(); }
   }
