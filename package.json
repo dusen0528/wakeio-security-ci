@@ -39,6 +39,8 @@
     "schemas",
     "workers/api-state",
     "workers/api-write-state",
+    "workers/runtime-source/snapshot.py",
+    "workers/runtime-source/source_disposal.py",
     "workers/schemathesis/worker.py",
     "workers/schemathesis/openapi.json",
     "workers/schemathesis/requirements.txt",
