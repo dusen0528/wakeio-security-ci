@@ -30,3 +30,15 @@ export function authenticateGuest(text: string, expected: Readonly<{
   requireProvision(timingSafeEqual(mac, Buffer.from(frame.mac, 'hex')), 'guest_identity_mac');
   return Object.freeze({ boot, helper, key });
 }
+
+export function sshArgv(guest: Readonly<{
+  knownHosts: string; name: string; key: string; port: number;
+}>, argv: readonly string[]): readonly string[] {
+  return ['-F', '/dev/null', '-T', '-o', 'BatchMode=yes', '-o', 'IdentitiesOnly=yes',
+    '-o', 'IdentityAgent=none', '-o', 'StrictHostKeyChecking=yes',
+    '-o', 'UserKnownHostsFile=' + guest.knownHosts, '-o', 'HostKeyAlias=' + guest.name,
+    '-o', 'ForwardAgent=no', '-o', 'ClearAllForwardings=yes', '-i', guest.key,
+    '-p', String(guest.port), 'wakeio-admin@127.0.0.1',
+    '/usr/bin/sudo', '-n', '/usr/bin/env', '-i', 'PATH=/usr/sbin:/usr/bin:/sbin:/bin', 'LC_ALL=C',
+    ...argv];
+}

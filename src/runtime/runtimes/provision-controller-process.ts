@@ -1,5 +1,6 @@
 import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
 import { isAbsolute, join } from 'node:path';
+import { finished, type Readable } from 'node:stream';
 import { ProvisionError, requireProvision } from './provision-types.js';
 
 export interface ProvisionCommand {
@@ -28,7 +29,12 @@ export class ProvisionProcess {
   private observed = false;
   private signalFailed = false;
   private killTimer: NodeJS.Timeout | undefined;
+  private readonly stdoutClosed: Promise<Error | undefined>;
+  private readonly stderrClosed: Promise<Error | undefined>;
   private readonly abort = () => this.stop();
+  private readonly failureController = new AbortController();
+  readonly failureSignal = this.failureController.signal;
+  private readonly fail = () => this.failureController.abort(new ProvisionError('process_failed'));
 
   constructor(command: ProvisionCommand, private readonly signal: AbortSignal) {
     requireProvision(!signal.aborted, 'operation_aborted');
@@ -45,6 +51,8 @@ export class ProvisionProcess {
         XDG_CACHE_HOME: join(command.home, '.cache'), XDG_CONFIG_HOME: join(command.home, '.config'),
         XDG_DATA_HOME: join(command.home, '.local/share') },
     });
+    this.stdoutClosed = this.observePipe(this.child.stdout);
+    this.stderrClosed = this.observePipe(this.child.stderr);
     this.closed = new Promise(resolve => {
       this.child.once('close', (code, exitSignal) => {
         this.closedObserved = true;
@@ -62,16 +70,49 @@ export class ProvisionProcess {
       });
     });
     // Errors do not prove close; Node emits close separately after spawn failure.
-    this.child.once('error', this.abort);
-    this.child.stdin.on('error', this.abort);
+    this.child.once('error', this.fail);
+    this.child.stdin.on('error', this.fail);
     signal.addEventListener('abort', this.abort, { once: true });
     if (signal.aborted) this.abort();
   }
 
   stop(): void {
-    if (this.closedObserved || this.stopping) return;
+    if (this.stopping) return;
     this.stopping = true;
+    // Containment discards bytes, but passive lifecycle observation never consumes them.
+    this.child.stdout.resume();
+    this.child.stderr.resume();
+    if (this.closedObserved) return;
     if (this.send('SIGINT')) this.killTimer = setTimeout(() => this.send('SIGKILL'), 5_000);
+  }
+
+  private observePipe(stream: Readable): Promise<Error | undefined> {
+    let eof = false;
+    let failure: Error | undefined;
+    stream.once('end', () => { eof = true; });
+    stream.on('error', error => {
+      failure ??= error;
+      this.fail();
+    });
+    const closed = new Promise<void>(resolve => {
+      stream.once('close', () => {
+        if (!eof) {
+          failure ??= new ProvisionError('process_pipe_unconfirmed');
+          this.fail();
+        }
+        resolve();
+      });
+    });
+    const completed = new Promise<void>(resolve => {
+      finished(stream, { readable: true, writable: false }, error => {
+        if (error) {
+          failure ??= error;
+          this.fail();
+        }
+        resolve();
+      });
+    });
+    return Promise.all([completed, closed]).then(() => failure);
   }
 
   private send(signal: NodeJS.Signals): boolean {
@@ -100,17 +141,14 @@ export class ProvisionProcess {
     const stdout: Buffer[] = [], stderr: Buffer[] = [];
     let bytes = 0, failed = false;
     const append = (chunks: Buffer[], chunk: Buffer) => {
+      if (failed) return;
       bytes += chunk.length;
-      if (bytes > 1024 * 1024) { failed = true; this.stop(); }
+      if (bytes > 1024 * 1024) { failed = true; this.fail(); }
       else chunks.push(chunk);
     };
     const out = (chunk: Buffer) => append(stdout, chunk), err = (chunk: Buffer) => append(stderr, chunk);
     this.child.stdout.on('data', out);
     this.child.stderr.on('data', err);
-    void this.closed.then(() => {
-      this.child.stdout.removeListener('data', out);
-      this.child.stderr.removeListener('data', err);
-    });
     let cancel = () => {};
     const cancelled = new Promise<never>((_resolve, reject) => {
       cancel = () => reject(new ProvisionError('command_aborted'));
@@ -119,16 +157,27 @@ export class ProvisionProcess {
     });
     try {
       if (endInput) this.child.stdin.end(input);
-      const result = await Promise.race([this.closed, cancelled]);
-      requireProvision(!failed && !this.signal.aborted && result.groupAbsent, 'command_failed');
+      const [result, stdoutFailure, stderrFailure] = await Promise.race([
+        Promise.all([this.closed, this.stdoutClosed, this.stderrClosed]), cancelled,
+      ]);
+      requireProvision(!failed && !this.failureSignal.aborted && !this.signal.aborted && result.groupAbsent
+        && !stdoutFailure && !stderrFailure, 'command_failed');
       return Object.freeze({ ...result, stdout: Buffer.concat(stdout).toString('utf8'),
         stderr: Buffer.concat(stderr).toString('utf8') });
-    } finally { this.signal.removeEventListener('abort', cancel); }
+    } finally {
+      this.signal.removeEventListener('abort', cancel);
+      this.child.stdout.removeListener('data', out);
+      this.child.stderr.removeListener('data', err);
+    }
   }
 
   async drain(): Promise<void> {
-    const result = await this.closed;
+    const [result, stdoutFailure, stderrFailure] = await Promise.all([
+      this.closed, this.stdoutClosed, this.stderrClosed,
+    ]);
     if (!result.groupAbsent) throw new ProvisionError('process_group_unconfirmed',
       this.child.pid === undefined ? [] : [String(this.child.pid)]);
+    if (stdoutFailure || stderrFailure) throw new ProvisionError('process_pipe_unconfirmed',
+      [stdoutFailure, stderrFailure].flatMap(error => error ? [error.message] : []));
   }
 }

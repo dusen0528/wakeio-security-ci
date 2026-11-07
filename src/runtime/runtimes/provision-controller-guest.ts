@@ -8,7 +8,7 @@ import { loadProvisionHelpers, loadNativeInstallHelpers,
   provisionHelperDigest } from './provision-controller-artifacts.js';
 import { provisionHostCapacity, provisionPlatformTools } from './provision-controller-host.js';
 import { installProvisionGuest } from './provision-controller-installer.js';
-import { ProvisionRelay } from './provision-relay.js';
+import type { ProvisionRelay } from './provision-relay.js';
 import { provisionRecord, requireProvision, sameBackendIdentity, type BackendIdentity } from './provision-types.js';
 import type { MavenMirror } from './provision-network.js';
 import type { GuestAuthentication } from './provision-controller-auth.js';
@@ -76,7 +76,7 @@ export async function prepareControllerConnection(owner: ProvisionOwner, files: 
   const { vm, nonce, authenticated, platform, helpers } = state;
   const helperDigest = provisionHelperDigest(helpers);
   await installProvisionGuest(vm);
-  const relay = new ProvisionRelay(vm, nonce);
+  const relay = vm.createRelay(nonce);
   await relay.start();
   const identity = await relay.identity(await vm.machineDigest());
   requireProvision(identity.boot === authenticated.boot && identity.helper === helperDigest,

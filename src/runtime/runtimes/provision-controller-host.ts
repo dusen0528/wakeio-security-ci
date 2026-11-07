@@ -32,6 +32,12 @@ Promise<readonly ProvisionFile[]> {
     }, owner.signal);
     owner.own({ identity: 'platform-verifier:' + path, stop: () => verify.stop(), drained: verify.drain(),
       remove: async () => (await verify.closed).groupAbsent });
+    const failed = () => {
+      owner.revoke('process_failed');
+      verify.stop();
+    };
+    verify.failureSignal.addEventListener('abort', failed, { once: true });
+    if (verify.failureSignal.aborted) failed();
     await verify.output();
     await file.check();
   }

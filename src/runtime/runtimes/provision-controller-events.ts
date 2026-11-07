@@ -12,10 +12,15 @@ export class LimaEvents {
   readonly running: Promise<void>;
   readonly exiting: Promise<void>;
   private readonly watcher: FSWatcher;
+  private readonly watcherClosed: Promise<void>;
+  private observationClosed = false;
+  private closing: Promise<void> | undefined;
   private position = 0;
   private pending = Buffer.alloc(0);
   private serial = Promise.resolve();
   private failure: Error | undefined;
+  private readonly failureController = new AbortController();
+  readonly failureSignal = this.failureController.signal;
   private runningSeen = false;
   private exitingSeen = false;
   private resolveRunning: () => void = () => {};
@@ -32,13 +37,39 @@ export class LimaEvents {
     this.watcher = watch(directory, (_event, name) => {
       if (name === 'ha.stdout.log') this.schedule();
     });
+    this.watcherClosed = new Promise(resolve => {
+      this.watcher.once('close', () => {
+        this.observationClosed = true;
+        if (!this.closing) this.fail(new ProvisionError('boot_event_closed'));
+        resolve();
+      });
+    });
     this.watcher.on('error', error => this.fail(error));
     signal.addEventListener('abort', this.abort, { once: true });
     if (signal.aborted) this.abort();
     this.schedule();
   }
 
+  waitRunning(publicSignal: AbortSignal): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const abort = () => {
+        publicSignal.removeEventListener('abort', abort);
+        reject(new ProvisionError('boot_aborted'));
+      };
+      publicSignal.addEventListener('abort', abort, { once: true });
+      if (publicSignal.aborted) abort();
+      void this.running.then(() => {
+        publicSignal.removeEventListener('abort', abort);
+        resolve();
+      }, error => {
+        publicSignal.removeEventListener('abort', abort);
+        reject(error);
+      });
+    });
+  }
+
   private schedule(): void {
+    if (this.observationClosed) return;
     this.serial = this.serial.then(() => this.read()).catch(error => {
       if (!(error instanceof Error)) throw error;
       this.fail(error);
@@ -90,13 +121,19 @@ export class LimaEvents {
 
   private fail(error: Error): void {
     this.failure ??= error;
+    this.failureController.abort(this.failure);
     this.rejectRunning(this.failure);
     this.rejectExiting(this.failure);
   }
 
-  async close(): Promise<void> {
-    this.watcher.close();
-    this.signal.removeEventListener('abort', this.abort);
-    await this.serial;
+  close(): Promise<void> {
+    this.closing ??= Promise.resolve().then(async () => {
+      this.watcher.close();
+      await this.watcherClosed;
+      this.signal.removeEventListener('abort', this.abort);
+      await this.serial;
+      if (this.failure) throw this.failure;
+    });
+    return this.closing;
   }
 }

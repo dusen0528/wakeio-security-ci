@@ -72,9 +72,39 @@ test('wire rejects incorrect MAC and reflected or substituted response bindings'
     "response.challenge='ef'.repeat(32);",
   ]) {
     await withPeer(change, async wire => {
+      let notifications = 0;
+      wire.failureSignal.addEventListener('abort', () => { notifications++; }, { once: true });
+      const refused = wire.request({ operation: 'identity' }).catch((error: unknown) => {
+        assert.equal(notifications, 1);
+        assert.equal(error, wire.failureSignal.reason);
+        throw error;
+      });
+      await assert.rejects(refused, { code: 'relay_frame_invalid' });
       await assert.rejects(wire.request({ operation: 'identity' }), { code: 'relay_frame_invalid' });
+      assert.equal(notifications, 1);
     });
   }
+});
+
+test('closing idle admission preserves one authenticated wire-only shutdown', async () => {
+  await withPeer('', async wire => {
+    assert.equal(wire.beginClose(), true);
+    await assert.rejects(wire.request({ operation: 'identity' }), { code: 'relay_closed' });
+    assert.deepEqual(await wire.shutdown(), { observed: 'wire-only' });
+    await assert.rejects(wire.shutdown(), { code: 'relay_closed' });
+    assert.equal(wire.beginClose(), false);
+  });
+});
+
+test('closing active admission rejects the original request without concurrent cleanup', async () => {
+  await withPeer('', async wire => {
+    const pending = wire.request({ operation: 'identity' });
+    const rejected = assert.rejects(pending, { code: 'relay_closed' });
+    assert.equal(wire.beginClose(), false);
+    await rejected;
+    await assert.rejects(wire.shutdown(), { code: 'relay_closed' });
+    await assert.rejects(wire.request({ operation: 'identity' }), { code: 'relay_closed' });
+  });
 });
 
 test('cleanup deadline reports retention and never treats elapsed grace as a drain event', async t => {

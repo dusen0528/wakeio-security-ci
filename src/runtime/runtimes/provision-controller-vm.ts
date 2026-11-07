@@ -3,10 +3,11 @@ import { join } from 'node:path';
 import { ProvisionDirectory, ProvisionFile, provisionAbsent } from './provision-controller-files.js';
 import { ProvisionOwner } from './provision-controller-owner.js';
 import { ProvisionProcess } from './provision-controller-process.js';
+import { ProvisionRelay, relayServiceArgv } from './provision-relay.js';
 import { LimaEvents } from './provision-controller-events.js';
 import { ProvisionError, provisionRecord, requireProvision } from './provision-types.js';
 import { snapshotJsonData } from '../../json-snapshot.js';
-import { authenticateGuest, guestChallenge, type GuestAuthentication } from './provision-controller-auth.js';
+import { authenticateGuest, guestChallenge, sshArgv, type GuestAuthentication } from './provision-controller-auth.js';
 
 /** Created only inside the retained asset borrow. No tool path comes from TargetSpec. */
 export class ProvisionVm {
@@ -18,6 +19,16 @@ export class ProvisionVm {
   private config: ProvisionFile | undefined;
   private foreground: ProvisionProcess | undefined;
   private events: LimaEvents | undefined;
+  private relay: ProvisionRelay | undefined;
+  private relayClaimed = false;
+  private service: ProvisionProcess | undefined;
+  private serviceAttempted = false;
+  private pending = 0;
+  private resolveAllocations: () => void = () => {};
+  private readonly allocationsDrained = new Promise<void>(resolve => { this.resolveAllocations = resolve; });
+  private readonly containment = new AbortController();
+  private readonly abort = () => this.stop();
+  private closing: Promise<void> | undefined;
   private readonly commands = new Set<ProvisionProcess>();
   private temporaryOrdinal = 0;
   private stopped = false;
@@ -42,18 +53,60 @@ export class ProvisionVm {
     this.resolveDrain = resolveDrain;
     this.rejectDrain = rejectDrain;
     void this.drained.catch(() => undefined);
+    owner.signal.addEventListener('abort', this.abort, { once: true });
+    if (owner.signal.aborted) this.abort();
   }
 
-  async command(argv: readonly string[], signal = this.owner.signal): Promise<ProvisionProcess> {
-    await this.root.check();
-    await this.assets.executable.check();
-    await this.assets.guestagent.check();
-    await this.assets.rootfs.check();
-    const temporary = await this.root.directory('command-' + this.temporaryOrdinal++);
-    const child = new ProvisionProcess({ executable: this.assets.executable.path, argv: ['--tty=false', ...argv],
-      home: this.root.root, limaHome: join(this.root.root, '.lima'), temporary }, signal);
-    this.commands.add(child);
-    return child;
+  createRelay(nonce: string): ProvisionRelay {
+    this.owner.check();
+    requireProvision(!this.relayClaimed && !this.stopped, 'relay_replay');
+    this.relayClaimed = true;
+    const relay = new ProvisionRelay(this, nonce, this.containment.signal);
+    this.relay = relay;
+    this.owner.own({ identity: 'relay-watch:' + this.owner.run, stop: () => this.stop(), drained: relay.drained,
+      remove: () => relay.remove() });
+    return relay;
+  }
+
+  checkRelay(relay: ProvisionRelay): void {
+    requireProvision(this.relay === relay, 'relay_owner_changed');
+  }
+
+  command(argv: readonly string[], signal = this.owner.signal): Promise<ProvisionProcess> {
+    return this.commandProcess(argv, signal);
+  }
+
+  private async commandProcess(argv: readonly string[], signal: AbortSignal,
+    foreground = false): Promise<ProvisionProcess> {
+    this.pending++;
+    try {
+      await this.root.check();
+      await this.assets.executable.check();
+      await this.assets.guestagent.check();
+      await this.assets.rootfs.check();
+      const temporary = await this.root.directory('command-' + this.temporaryOrdinal++);
+      if (foreground) requireProvision(!this.stopped, 'vm_closed');
+      const child = new ProvisionProcess({ executable: this.assets.executable.path, argv: ['--tty=false', ...argv],
+        home: this.root.root, limaHome: join(this.root.root, '.lima'), temporary }, signal);
+      this.commands.add(child);
+      if (foreground) this.foreground = child;
+      this.observeProcess(child);
+      return child;
+    } finally { this.settledAllocation(); }
+  }
+
+  private settledAllocation(): void {
+    this.pending--;
+    if (this.stopped && this.pending === 0) this.resolveAllocations();
+  }
+
+  private observeProcess(child: ProvisionProcess): void {
+    const failed = () => {
+      this.owner.revoke('process_failed');
+      if (child !== this.foreground && child !== this.service) child.stop();
+    };
+    child.failureSignal.addEventListener('abort', failed, { once: true });
+    if (child.failureSignal.aborted) failed();
   }
 
   async start(configPath: string): Promise<void> {
@@ -70,15 +123,17 @@ export class ProvisionVm {
     this.machine = await ProvisionFile.open(join(this.directory, 'vz-identifier'));
     this.config = await ProvisionFile.open(join(this.directory, 'lima.yaml'));
     await this.frame('Stopped');
-    this.events = new LimaEvents(this.directory, this.owner.signal);
-    this.foreground = await this.command(['start', '--foreground', '--timeout=300s', this.name]);
-    this.foreground.child.stdin.end();
-    this.foreground.child.stdout.resume();
-    this.foreground.child.stderr.resume();
-    void this.foreground.closed.then(() => {
-      if (!this.stopped) this.owner.revoke('vm_exited');
-    });
-    await Promise.race([this.events.running, this.foreground.closed.then(() => {
+    this.owner.check();
+    this.events = new LimaEvents(this.directory, this.containment.signal);
+    this.events.failureSignal.addEventListener('abort', () => this.owner.revoke('vm_event_failed'), { once: true });
+    const foreground = await this.commandProcess(['start', '--foreground', '--timeout=300s', this.name],
+      this.containment.signal, true);
+    foreground.child.stdin.end();
+    foreground.child.stdout.resume();
+    foreground.child.stderr.resume();
+    void Promise.race([foreground.closed, this.events.exiting]).then(
+      () => this.owner.revoke('vm_exited'), () => this.owner.revoke('vm_event_failed'));
+    await Promise.race([this.events.waitRunning(this.owner.signal), foreground.closed.then(() => {
       throw new ProvisionError('vm_exited');
     })]);
     await this.frame('Running');
@@ -127,33 +182,69 @@ export class ProvisionVm {
     return identity;
   }
 
-  async admin(argv: readonly string[], signal = this.owner.signal): Promise<ProvisionProcess> {
-    await this.frame('Running', signal);
-    requireProvision(this.key && this.knownHosts && this.sshPort, 'guest_unauthenticated');
-    requireProvision(argv.every(arg => /^[A-Za-z0-9_./:=,@%+-]+$/.test(arg)), 'admin_argv_invalid');
-    await this.key.check();
-    const temporary = await this.root.directory('command-' + this.temporaryOrdinal++);
-    const child = new ProvisionProcess({
-      executable: '/usr/bin/ssh', home: this.root.root, limaHome: join(this.root.root, '.lima'), temporary,
-      argv: ['-F', '/dev/null', '-T', '-o', 'BatchMode=yes', '-o', 'IdentitiesOnly=yes',
-        '-o', 'IdentityAgent=none', '-o', 'StrictHostKeyChecking=yes',
-        '-o', 'UserKnownHostsFile=' + this.knownHosts, '-o', 'HostKeyAlias=' + this.name,
-        '-o', 'ForwardAgent=no', '-o', 'ClearAllForwardings=yes', '-i', this.key.path,
-        '-p', String(this.sshPort), 'wakeio-admin@127.0.0.1',
-        '/usr/bin/sudo', '-n', '/usr/bin/env', '-i', 'PATH=/usr/sbin:/usr/bin:/sbin:/bin', 'LC_ALL=C',
-        ...argv],
-    }, signal);
-    this.commands.add(child);
-    return child;
+  admin(argv: readonly string[], signal = this.owner.signal): Promise<ProvisionProcess> {
+    return this.adminProcess(argv, signal);
+  }
+
+  startRelayService(relay: ProvisionRelay): Promise<ProvisionProcess> {
+    this.checkRelay(relay);
+    this.owner.check();
+    return this.adminProcess(relayServiceArgv(this.owner.run), this.containment.signal, true);
+  }
+
+  get relayServiceAttempted(): boolean {
+    return this.serviceAttempted;
+  }
+
+  private async adminProcess(argv: readonly string[], signal: AbortSignal,
+    service = false): Promise<ProvisionProcess> {
+    this.pending++;
+    try {
+      await this.frame('Running', service ? this.owner.signal : signal);
+      requireProvision(this.key && this.knownHosts && this.sshPort, 'guest_unauthenticated');
+      requireProvision(argv.every(arg => /^[A-Za-z0-9_./:=,@%+-]+$/.test(arg)), 'admin_argv_invalid');
+      await this.key.check();
+      const temporary = await this.root.directory('command-' + this.temporaryOrdinal++);
+      if (service) requireProvision(!this.stopped, 'vm_closed');
+      if (service) this.serviceAttempted = true;
+      const child = new ProvisionProcess({
+        executable: '/usr/bin/ssh', home: this.root.root, limaHome: join(this.root.root, '.lima'), temporary,
+        argv: sshArgv({ knownHosts: this.knownHosts, name: this.name,
+          key: this.key.path, port: this.sshPort }, argv),
+      }, signal);
+      this.commands.add(child);
+      if (service) this.service = child;
+      this.observeProcess(child);
+      return child;
+    } finally { this.settledAllocation(); }
   }
 
   stop(): void {
     if (this.stopped) return;
     this.stopped = true;
-    for (const command of this.commands) if (command !== this.foreground) command.stop();
-    this.foreground?.stop();
-    void Promise.all([...this.commands].map(command => command.drain())).then(this.resolveDrain,
+    this.closing = Promise.resolve().then(() => this.contain());
+    void this.closing.then(this.resolveDrain,
       error => this.rejectDrain(error instanceof Error ? error : new ProvisionError('vm_drain_unconfirmed')));
+    this.relay?.beginClose();
+    this.owner.revoke('vm_closed');
+    for (const command of this.commands) {
+      if (command !== this.foreground && command !== this.service) command.stop();
+    }
+    if (this.pending === 0) this.resolveAllocations();
+  }
+
+  private async contain(): Promise<void> {
+    let failure: unknown;
+    try { await this.relay?.beforeVmStop(); }
+    catch (error) { failure = error; }
+    this.foreground?.stop();
+    await this.allocationsDrained;
+    const processes = await Promise.allSettled([...this.commands].map(command => command.drain()));
+    const observers = await Promise.allSettled([this.relay?.drained, this.events?.close()]);
+    this.owner.signal.removeEventListener('abort', this.abort);
+    this.containment.abort();
+    requireProvision(failure === undefined && [...processes, ...observers]
+      .every(result => result.status === 'fulfilled'), 'vm_drain_unconfirmed');
   }
 
   async remove(): Promise<boolean> {
