@@ -28,24 +28,41 @@ class Process:
         self.descriptors: dict[str, int] = {}
         self.streams: dict[int, IO[bytes]] = {}
         self.events = select.poll()
+        self.armed: set[int] = set()
         self.output = bytearray()
         self.errors = bytearray()
         self.output_overflow = False
+        self.observation_failed = False
         self.offset = 0
         self.exit_observed = False
         self.reaped = False
         self.stdout_eof = False
         self.stderr_eof = False
+        self.started = False
         self.released = False
         self.stopped = False
         self.stop_raced = False
         self.wake_error: OSError | None = None
         self.drained = False
 
+    def _fault(self, reason: str) -> None:
+        self.observation_failed = True
+        self.stopped = True
+        self.pending.session._fail(reason)
+
+    def _unwatch(self, descriptor: int) -> None:
+        if descriptor in self.armed:
+            self.events.unregister(descriptor)
+            self.armed.remove(descriptor)
+
     def _dispose(self, name: str) -> None:
         descriptor = self.descriptors.pop(name, None)
         if descriptor is not None:
-            os.close(descriptor)
+            self._unwatch(descriptor)
+            try:
+                os.close(descriptor)
+            except OSError as error:
+                self._fault("build_descriptor_close:" + str(error))
 
     def wake(self) -> None:
         try:
@@ -68,12 +85,15 @@ class Process:
                 os.killpg(child.pid, signal.SIGKILL)
             except ProcessLookupError:
                 self.stop_raced = True
+            except OSError as error:
+                self._fault("build_child_stop:" + str(error))
 
     def start(self) -> None:
         session = self.pending.session
         session._member(self.pending, self)
-        require(self.child is None and not self.descriptors, "build_process_replay")
+        require(not self.started, "build_process_replay")
         require(sys.platform == "linux", "build_process_platform")
+        self.started = True
         try:
             reader, writer = os.pipe2(os.O_CLOEXEC)
             self.descriptors.update({"gate-read": reader, "gate-write": writer})
@@ -85,8 +105,8 @@ class Process:
                 env=USER_ENV, user=10001, group=10001, extra_groups=(), start_new_session=True,
                 stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=0,
                 pass_fds=(self.descriptors["gate-read"],))
-            self._dispose("gate-read")
             self._arm()
+            self._dispose("gate-read")
             session._eligible(self.pending, self)
             packet = encode_selection(self.pending.selection)
             writer = self.descriptors["gate-write"]
@@ -106,26 +126,42 @@ class Process:
             self.stop()
         self.join()
 
+    def _watch(self, descriptor: int, flags: int) -> None:
+        try:
+            self.events.register(descriptor, flags)
+            self.armed.add(descriptor)
+        except (OSError, ValueError) as error:
+            self._fault("build_observer_arming:" + str(error))
+
     def _arm(self) -> None:
         child = self.child
         if child is None:
             raise BackendError("build_child_missing")
         if child.stdin is None or child.stdout is None or child.stderr is None:
             raise BackendError("build_pipe_missing")
-        self.descriptors["pidfd"] = os.pidfd_open(child.pid)
-        self.events.register(self.descriptors["pidfd"], select.POLLIN)
-        self.events.register(self.descriptors["wake-read"], select.POLLIN)
-        for stream in (child.stdout, child.stderr, child.stdin):
-            descriptor = stream.fileno()
-            os.set_blocking(descriptor, False)
-            self.streams[descriptor] = stream
-            self.events.register(descriptor, select.POLLOUT if stream is child.stdin else select.POLLIN)
+        self.streams.update((stream.fileno(), stream) for stream in (child.stdout, child.stderr, child.stdin))
+        try:
+            self.descriptors["pidfd"] = os.pidfd_open(child.pid)
+        except OSError as error:
+            self._fault("build_pidfd_arming:" + str(error))
+        if "pidfd" in self.descriptors:
+            self._watch(self.descriptors["pidfd"], select.POLLIN)
+        self._watch(self.descriptors["wake-read"], select.POLLIN)
+        for descriptor, stream in self.streams.items():
+            try:
+                os.set_blocking(descriptor, False)
+            except OSError as error:
+                self._fault("build_stream_arming:" + str(error))
+            else:
+                self._watch(descriptor, select.POLLOUT if stream is child.stdin else select.POLLIN)
 
     def _close_stream(self, descriptor: int) -> None:
-        stream = self.streams[descriptor]
-        self.events.unregister(descriptor)
-        stream.close()
-        del self.streams[descriptor]
+        stream = self.streams.pop(descriptor)
+        self._unwatch(descriptor)
+        try:
+            stream.close()
+        except OSError as error:
+            self._fault("build_stream_close:" + str(error))
 
     def _input(self, descriptor: int) -> None:
         if self.stopped or self.offset == len(self.pending.body):
@@ -167,25 +203,33 @@ class Process:
         if not self.output_overflow:
             target.extend(chunk)
 
-    def _join_arming(self) -> None:
-        """Re-arm only drainage of this same child; this path never releases its gate."""
+    def _ready(self, descriptor: int, flags: int) -> None:
         child = self.child
-        if child is None:
-            return
-        self.events = select.poll()
-        for stream in (child.stdin, child.stdout, child.stderr):
-            if stream is not None and not stream.closed:
-                descriptor = stream.fileno()
-                os.set_blocking(descriptor, False)
-                self.streams[descriptor] = stream
-                self.events.register(descriptor, select.POLLOUT if stream is child.stdin else select.POLLIN)
-        if "pidfd" in self.descriptors and not self.exit_observed:
-            self.events.register(self.descriptors["pidfd"], select.POLLIN)
-        if "wake-read" in self.descriptors:
-            self.events.register(self.descriptors["wake-read"], select.POLLIN)
+        try:
+            require(not flags & select.POLLNVAL, "build_descriptor_invalid")
+            if descriptor == self.descriptors.get("wake-read"):
+                os.read(descriptor, 65536)
+                if self.stopped:
+                    self.stop()
+            elif descriptor == self.descriptors.get("pidfd"):
+                require(bool(flags & select.POLLIN), "build_pidfd_observation")
+                self.exit_observed = True
+                self._unwatch(descriptor)
+            elif descriptor in self.streams and child is not None:
+                if self.streams[descriptor] is child.stdin:
+                    self._input(descriptor)
+                else:
+                    self._output(descriptor)
+        except (OSError, BackendError) as error:
+            self._fault("build_observation:" + str(error))
+            self.stop()
+            if descriptor in self.streams:
+                self._close_stream(descriptor)
+            else:
+                self._unwatch(descriptor)
 
     def join(self) -> None:
-        """Drain bounded chunks through both real EOFs and reap the retained Popen."""
+        """Keep independent observations after a fault; never manufacture a missing join."""
         if self.drained:
             return
         child = self.child
@@ -194,29 +238,26 @@ class Process:
         if child is not None:
             if self.stopped:
                 self.stop()
-            self._join_arming()
-            while self.streams or ("pidfd" in self.descriptors and not self.exit_observed):
-                for descriptor, flags in self.events.poll():
-                    require(not flags & select.POLLNVAL, "build_descriptor_invalid")
-                    if descriptor == self.descriptors.get("wake-read"):
-                        os.read(descriptor, 65536)
-                        if self.stopped:
-                            self.stop()
-                    elif descriptor == self.descriptors.get("pidfd"):
-                        require(bool(flags & select.POLLIN), "build_pidfd_observation")
-                        self.exit_observed = True
-                        self.events.unregister(descriptor)
-                    elif descriptor in self.streams:
-                        if self.streams[descriptor] is child.stdin:
-                            self._input(descriptor)
-                        else:
-                            self._output(descriptor)
-            child.wait()
+            while self.streams.keys() & self.armed or self.descriptors.get("pidfd") in self.armed:
+                try:
+                    ready = self.events.poll()
+                except OSError as error:
+                    self._fault("build_poll:" + str(error))
+                    self.stop()
+                    return
+                for descriptor, flags in ready:
+                    self._ready(descriptor, flags)
+            try:
+                child.wait()
+            except OSError as error:
+                self._fault("build_wait:" + str(error))
+                return
             self.reaped = True
+            for descriptor in tuple(self.streams):
+                self._close_stream(descriptor)
         for name in tuple(self.descriptors):
             self._dispose(name)
-        self.drained = self.wake_error is None and (child is None or (
-            self.exit_observed and self.reaped and self.stdout_eof and self.stderr_eof
-            and child.stdin is not None and child.stdin.closed
-            and child.stdout is not None and child.stdout.closed
-            and child.stderr is not None and child.stderr.closed and not self.descriptors))
+        self.drained = not self.observation_failed and self.wake_error is None and not self.descriptors and (
+            child is None or (self.exit_observed and self.reaped and self.stdout_eof and self.stderr_eof
+                              and all(stream is not None and stream.closed for stream in (
+                                  child.stdin, child.stdout, child.stderr))))
