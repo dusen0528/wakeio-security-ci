@@ -20,6 +20,10 @@ export class ProvisionRelayWire {
     reject: (error: ProvisionError) => void;
   }> | undefined;
   private failure: ProvisionError | undefined;
+  private readonly failureController = new AbortController();
+  readonly failureSignal = this.failureController.signal;
+  private closing = false;
+  private cleanupSent = false;
   private diagnosticBytes = 0;
   private buildStart: number | undefined;
   private buildRef: string | undefined;
@@ -44,12 +48,14 @@ export class ProvisionRelayWire {
   }
 
   request(request: RelayRequest): Promise<Record<string, unknown>> {
+    if (this.closing) return Promise.reject(this.failure ?? new ProvisionError('relay_closed'));
     if (this.buildStart !== undefined && this.phase !== 7 && request.operation !== 'shutdown'
       && this.sequence - this.buildStart >= 254) return Promise.reject(new ProvisionError('build_budget'));
     return this.send(request);
   }
 
   async build(raw: BuildRequest): Promise<BuildReply> {
+    if (this.closing) throw this.failure ?? new ProvisionError('relay_closed');
     const request = buildRequest(raw);
     if (this.failure) throw this.failure;
     const { operation } = request;
@@ -83,8 +89,28 @@ export class ProvisionRelayWire {
     return { build: this.buildRef ?? null, result };
   }
 
-  private send(request: RelayRequest | BuildRequest, build?: BuildRequest): Promise<Record<string, unknown>> {
+  beginClose(): boolean {
+    if (this.closing) return false;
+    this.closing = true;
+    if (this.failure || this.active || this.sequence >= 1024) {
+      this.fail('relay_closed');
+      return false;
+    }
+    return true;
+  }
+
+  shutdown(): Promise<Record<string, unknown>> {
+    if (!this.closing || this.cleanupSent || this.active || this.failure) {
+      return Promise.reject(this.failure ?? new ProvisionError('relay_closed'));
+    }
+    this.cleanupSent = true;
+    return this.send({ operation: 'shutdown' }, undefined, true);
+  }
+
+  private send(request: RelayRequest | BuildRequest, build?: BuildRequest,
+    cleanup = false): Promise<Record<string, unknown>> {
     if (this.failure) return Promise.reject(this.failure);
+    if (this.closing && !cleanup) return Promise.reject(new ProvisionError('relay_closed'));
     if (this.active || this.sequence >= 1024) {
       this.fail('relay_concurrent_or_exhausted');
       return Promise.reject(this.failure);
@@ -183,6 +209,7 @@ export class ProvisionRelayWire {
 
   private fail(code: string): void {
     this.failure ??= new ProvisionError(code);
+    this.failureController.abort(this.failure);
     this.active?.reject(this.failure);
     this.active = undefined;
     this.child.stdin.destroy();
