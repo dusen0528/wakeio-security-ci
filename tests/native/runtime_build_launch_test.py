@@ -34,6 +34,11 @@ class LaunchDataTests(unittest.TestCase):
             ("volume-inspect", NAME), ("volume-remove", NAME), ("carrier-create", NAME),
             ("carrier-inspect", CONTAINER), ("carrier-remove", CONTAINER),
             ("copy-in", CONTAINER), ("copy-out", CONTAINER),
+            ("slice-reload", None), ("slice-start", "wk" + RUN + "b7prepare.slice"),
+            ("slice-present", "wk" + RUN + "b1offline.slice"),
+            ("slice-files", "wk" + RUN + "b9999999999999999prepare.slice"),
+            ("slice-inspect", "wk" + RUN + "b7offline.slice"),
+            ("slice-stop", "wk" + RUN + "b7prepare.slice"),
         ]
         for role, value in cases:
             body = json.dumps({"role": role, "operand": value}, separators=(",", ":")).encode()
@@ -70,6 +75,11 @@ class LaunchDataTests(unittest.TestCase):
     def test_arbitrary_commands_fields_operands_and_noncanonical_data_are_refused(self) -> None:
         cases = [
             (b'{"role":"execute","operand":null}', "launch_role"),
+            (b'{"role":"slice-execute","operand":null}', "launch_role"),
+            (b'{"role":"slice-reload","operand":"anything"}', "launch_operand"),
+            (b'{"role":"slice-reload","operand":false}', "launch_operand"),
+            (b'{"role":"slice-start","operand":null}', "launch_operand"),
+            (b'{"role":"slice-inspect","operand":17}', "launch_operand"),
             (b'{"role":null,"operand":null}', "launch_operand"),
             (b'{"role":"image-pull","operand":"/bin/sh"}', "launch_operand"),
             (b'{"role":"image-inspect","operand":true}', "launch_operand"),
@@ -105,6 +115,12 @@ class LaunchDataTests(unittest.TestCase):
             ("copy-out", CONTAINER.upper(), "launch_container"),
             ("carrier-inspect", "sha256:" + CONTAINER, "launch_container"),
             ("carrier-remove", CONTAINER + "\0", "launch_container"),
+            ("slice-present", NAME, "launch_slice:cold_slice_name"),
+            ("slice-files", "wk" + RUN + "b07prepare.slice", "launch_slice:cold_slice_name"),
+            ("slice-start", "wk" + RUN + "b0prepare.slice", "launch_slice:cold_slice_name"),
+            ("slice-inspect", "wk" + RUN + "b7prepare.slice/../x", "launch_slice:cold_slice_name"),
+            ("slice-stop", "wk" + RUN + "b7prepare.slice\0", "launch_slice:cold_slice_name"),
+            ("slice-start", "--all", "launch_slice:cold_slice_name"),
         ]
         for role, value, reason in cases:
             body = json.dumps({"role": role, "operand": value}, separators=(",", ":")).encode()

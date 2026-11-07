@@ -15,7 +15,8 @@ from pathlib import Path
 from typing import BinaryIO, Final, Literal, TypedDict, assert_never
 
 Role = Literal["image-pull", "image-inspect", "volume-create", "volume-inspect", "volume-remove",
-               "carrier-create", "carrier-inspect", "carrier-remove", "copy-in", "copy-out"]
+               "carrier-create", "carrier-inspect", "carrier-remove", "copy-in", "copy-out",
+               "slice-present", "slice-files", "slice-reload", "slice-start", "slice-inspect", "slice-stop"]
 MAX_CONTROL: Final = 1024
 VOLUME: Final = re.compile(r"wk-([a-f0-9]{32})-b([1-9][0-9]{0,15})-input")
 IDENTIFIER: Final = re.compile(r"[a-f0-9]{64}")
@@ -37,7 +38,8 @@ def require(condition: bool, reason: str) -> None:
 def selected_role(raw: str) -> Role:
     roles: tuple[Role, ...] = ("image-pull", "image-inspect", "volume-create", "volume-inspect",
                               "volume-remove", "carrier-create", "carrier-inspect", "carrier-remove",
-                              "copy-in", "copy-out")
+                              "copy-in", "copy-out", "slice-present", "slice-files", "slice-reload",
+                              "slice-start", "slice-inspect", "slice-stop")
     for value in roles:
         if raw == value:
             return value
@@ -52,12 +54,19 @@ class Selection:
 
     def __post_init__(self) -> None:
         match self.role:
-            case "image-pull" | "image-inspect":
+            case "image-pull" | "image-inspect" | "slice-reload":
                 require(self.operand is None, "launch_operand")
             case "volume-create" | "volume-inspect" | "volume-remove" | "carrier-create":
                 require(VOLUME.fullmatch(operand(self)) is not None, "launch_volume")
             case "carrier-inspect" | "carrier-remove" | "copy-in" | "copy-out":
                 require(IDENTIFIER.fullmatch(operand(self)) is not None, "launch_container")
+            case "slice-present" | "slice-files" | "slice-start" | "slice-inspect" | "slice-stop":
+                from cold_envelope_data import ColdDataError, validated_name
+
+                try:
+                    validated_name(operand(self))
+                except ColdDataError as error:
+                    raise LaunchError("launch_slice:" + error.reason) from error
             case unreachable:
                 assert_never(unreachable)
 
@@ -180,6 +189,22 @@ def command(selection: Selection) -> tuple[str, ...]:
             return (*DOCKER, "cp", "--archive", "-", operand(selection) + ":/")
         case "copy-out":
             return (*DOCKER, "cp", "--archive", operand(selection) + ":/work", "-")
+        case "slice-present":
+            return ("/usr/bin/systemctl", "--user", "list-units", "--all", "--plain", "--no-legend",
+                    "--no-pager", operand(selection))
+        case "slice-files":
+            return ("/usr/bin/systemctl", "--user", "list-unit-files", "--no-legend", "--no-pager",
+                    operand(selection))
+        case "slice-reload":
+            return ("/usr/bin/systemctl", "--user", "daemon-reload")
+        case "slice-start":
+            return ("/usr/bin/systemctl", "--user", "start", operand(selection))
+        case "slice-inspect":
+            from cold_envelope_data import UNIT_PROPERTIES
+
+            return ("/usr/bin/systemctl", "--user", "show", operand(selection), "--property=" + UNIT_PROPERTIES)
+        case "slice-stop":
+            return ("/usr/bin/systemctl", "--user", "stop", operand(selection))
         case unreachable:
             assert_never(unreachable)
 
