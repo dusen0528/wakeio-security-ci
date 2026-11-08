@@ -18,13 +18,15 @@ from process import LOG_BOUND, Process
 
 if TYPE_CHECKING:
     from cold_envelope import ColdEnvelope
+    from preparation_materials import PreparationMaterials
     from relay import Backend
+    type Origin = InputResources | ColdEnvelope | PreparationMaterials
 
 
 class Pending:
     """Mutable original continuation; DATA cannot register or settle this record."""
 
-    def __init__(self, session: BuildSession, resources: InputResources | ColdEnvelope, selection: Selection) -> None:
+    def __init__(self, session: BuildSession, resources: Origin, selection: Selection) -> None:
         self.session = session
         self.resources = resources
         self.selection = selection
@@ -35,6 +37,13 @@ class Pending:
         self.process: Process | None = None
         self.settled = False
         match selection.role:
+            case "preparation-material":
+                from preparation_material_archive import transfer
+                frame = selection.material()
+                self.mutation = frame.mutation
+                require(not self.cleanup or frame.cleanup, "build_cleanup_copy")
+                payload = transfer(frame, session._copy)
+                self.body, self.output_bound, self.archive_output = payload.body, payload.bound, payload.archive
             case "copy-in" | "copy-out":
                 data = session._copy
                 if data is None:
@@ -68,6 +77,8 @@ class BuildSession:
         self.mirror = backend.mirror
         self._resources = InputResources(self)
         self._cold: dict[Literal["prepare", "offline"], ColdEnvelope | None] = {}
+        self._phase_reservations: set[Literal["prepare", "offline"]] = set()
+        self._preparation_materials: PreparationMaterials | None = None
         self._pending: list[Pending] = []
         self._active: Pending | None = None
         self._input: InputData | None = None
@@ -101,27 +112,30 @@ class BuildSession:
                 and pending.process is process and process.pending is pending, "build_foreign_process")
         self._origin(pending.resources, pending.selection)
 
-    def _origin(self, resources: InputResources | ColdEnvelope, selection: Selection) -> None:
+    def _origin(self, resources: Origin, selection: Selection) -> None:
         if resources is self._resources:
-            require(not selection.role.startswith("slice-"), "build_input_role")
+            require(not selection.role.startswith("slice-") and selection.role != "preparation-material",
+                    "build_input_role")
         else:
-            origin = next((item for item in self._cold.values() if item is resources), None)
-            if origin is None:
-                raise BackendError("build_operation_owner")
-            origin.accept(selection)
+            require(resources is not None and (resources is self._preparation_materials
+                    or any(item is resources for item in self._cold.values())), "build_operation_owner")
+            from phase_factory import phase_origin
+            phase_origin(self, resources, selection)
 
     def _eligible(self, pending: Pending, process: Process) -> None:
         self._member(pending, process)
         require(self._active is pending and not pending.settled and not process.stopped
                 and not process.released and not self.backend._mutation_unknown, "build_operation_revoked")
         if pending.cleanup:
-            require(self._cleaning and pending.selection.role in (
+            require(self._cleaning and (pending.selection.role in (
                 "image-inspect", "volume-inspect", "volume-remove", "carrier-inspect", "carrier-remove",
-                "slice-present", "slice-files", "slice-inspect", "slice-stop", "slice-reload"),
+                "slice-present", "slice-files", "slice-inspect", "slice-stop", "slice-reload")
+                or (pending.selection.role == "preparation-material" and pending.selection.material().cleanup)),
                     "build_cleanup_role")
-            self.backend.check()
         else:
-            self._check()
+            require(self._failure is None and not self._closing, "build_revoked")
+        if pending.resources is self._preparation_materials and self._preparation_materials is not None:
+            self._preparation_materials.eligible(pending.selection)
         require(not process.stopped, "build_operation_revoked")
 
     def _fail(self, reason: str) -> None:
@@ -173,36 +187,32 @@ class BuildSession:
                 raise
 
     def _prepare_cold(self, phase: Literal["prepare", "offline"]) -> None:
-        """Retain a never-enrolled allocation; no build handle or execution authority is returned."""
-        with self.backend._mutation_lock:
-            self._check()
-            require(self._resources.sealed and self._copy is not None and self._generation > 0
-                    and self.backend.qualified and self.network.phase == "BUILD", "build_cold_input")
-            require(phase in ("prepare", "offline") and phase not in self._cold, "build_cold_replay")
-            for name in ("cold_envelope.py", "cold_envelope_data.py", "cold_envelope_drain.py"):
-                require(any(path == self.backend.root / "build" / name for path, _, _ in self.backend.files),
-                        "build_cold_helper_unavailable")
-            self.backend.check()
-            from importlib import import_module
-            import_module("cold_envelope_drain")
-            from cold_envelope import ColdEnvelope
-            from cold_envelope_data import ColdDataError
-            self._cold[phase] = None
-            try:
-                envelope = ColdEnvelope(self, phase)
-                self._cold[phase] = envelope
-                envelope.prepare()
-            except (BackendError, ColdDataError, LaunchError, OSError, ValueError, KeyError, TypeError) as error:
-                self._fail("build_cold_failed:" + str(error))
-                self._uncertainty()
-                raise
+        self._factory_available()
+        from phase_factory import prepare_cold
+        prepare_cold(self, phase)
 
-    def _run(self, resources: InputResources | ColdEnvelope, selection: Selection) -> Pending:
+    def _prepare_materials(self) -> None:
+        self._factory_available()
+        from phase_factory import prepare_materials
+        prepare_materials(self)
+
+    def _factory_available(self) -> None:
+        self._check()
+        require(any(path == self.backend.root / "build/phase_factory.py" for path, _, _ in self.backend.files),
+                "build_phase_factory_unavailable")
+
+    def _run(self, resources: Origin, selection: Selection) -> Pending:
         self._original()
         require(self._active is None, "build_operation_owner")
         self._origin(resources, selection)
+        if self._cleaning:
+            self.backend.check()
+        else:
+            self._check()
         pending = Pending(self, resources, selection)
         self._pending.append(pending)
+        if resources is self._preparation_materials and self._preparation_materials is not None:
+            self._preparation_materials.retain(pending)
         pending.process = Process(pending)
         self._active = pending
         try:
@@ -238,6 +248,10 @@ class BuildSession:
         self._original()
         self._closing = True
         self._fail("build_closed")
+        if self._preparation_materials is not None:
+            from preparation_material_drain import drain
+            drain(self)
+            return
         if self._cold:
             from cold_envelope_drain import drain
             drain(self)
@@ -253,13 +267,8 @@ class BuildSession:
                 if not self._uncertainty() and not self.backend._mutation_unknown:
                     self._cleaning = True
                     self._resources.remove()
-                    for envelope in self._cold.values():
-                        if envelope is not None:
-                            envelope.remove()
-                    self._cleaning = False
                     self._drained = all(pending.process is not None and pending.process.drained
-                                        for pending in self._pending) and all(
-                                            item is None or item.drained for item in self._cold.values())
+                                        for pending in self._pending)
             except (BackendError, LaunchError, OSError, ValueError, KeyError, TypeError) as error:
                 self._fail("build_drain_failed:" + str(error))
                 self._uncertainty()

@@ -3,6 +3,8 @@
 # dependencies = []
 # ///
 """Closed private launch DATA and the fixed Linux child release gate."""
+from __future__ import annotations
+
 import hashlib
 import json
 import os
@@ -12,11 +14,15 @@ import struct
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import BinaryIO, Final, Literal, TypedDict, assert_never
+from typing import TYPE_CHECKING, BinaryIO, Final, Literal, TypedDict, assert_never
+
+if TYPE_CHECKING:
+    from preparation_material_data import Json, MaterialFrame
 
 Role = Literal["image-pull", "image-inspect", "volume-create", "volume-inspect", "volume-remove",
                "carrier-create", "carrier-inspect", "carrier-remove", "copy-in", "copy-out",
-               "slice-present", "slice-files", "slice-reload", "slice-start", "slice-inspect", "slice-stop"]
+               "slice-present", "slice-files", "slice-reload", "slice-start", "slice-inspect", "slice-stop",
+               "preparation-material"]
 MAX_CONTROL: Final = 1024
 VOLUME: Final = re.compile(r"wk-([a-f0-9]{32})-b([1-9][0-9]{0,15})-input")
 IDENTIFIER: Final = re.compile(r"[a-f0-9]{64}")
@@ -39,7 +45,7 @@ def selected_role(raw: str) -> Role:
     roles: tuple[Role, ...] = ("image-pull", "image-inspect", "volume-create", "volume-inspect",
                               "volume-remove", "carrier-create", "carrier-inspect", "carrier-remove",
                               "copy-in", "copy-out", "slice-present", "slice-files", "slice-reload",
-                              "slice-start", "slice-inspect", "slice-stop")
+                              "slice-start", "slice-inspect", "slice-stop", "preparation-material")
     for value in roles:
         if raw == value:
             return value
@@ -50,7 +56,7 @@ def selected_role(raw: str) -> Role:
 class Selection:
     """Validated command DATA; never a resource or release-authority registration."""
     role: Role
-    operand: str | None
+    operand: str | None | MaterialFrame
 
     def __post_init__(self) -> None:
         match self.role:
@@ -67,23 +73,35 @@ class Selection:
                     validated_name(operand(self))
                 except ColdDataError as error:
                     raise LaunchError("launch_slice:" + error.reason) from error
+            case "preparation-material":
+                self.material()
+            case unreachable:
+                assert_never(unreachable)
+
+    def material(self) -> MaterialFrame:
+        from preparation_material_data import MaterialFrame
+
+        require(self.role == "preparation-material", "launch_material_role")
+        match self.operand:
+            case MaterialFrame() as frame:
+                require(type(frame) is MaterialFrame, "launch_operand")
+                return frame
+            case str() | None:
+                raise LaunchError("launch_operand")
             case unreachable:
                 assert_never(unreachable)
 
 
 def operand(selection: Selection) -> str:
-    match selection.operand:
-        case str() as value:
-            return value
-        case None:
-            raise LaunchError("launch_operand")
-        case unreachable:
-            assert_never(unreachable)
+    value = selection.operand
+    if not isinstance(value, str):
+        raise LaunchError("launch_operand")
+    return value
 
 
 class _SelectionData(TypedDict):
     role: str
-    operand: str | None
+    operand: Json
 
 
 class _Platform(TypedDict):
@@ -117,7 +135,8 @@ def build_image() -> tuple[str, str]:
 
 
 def encode_selection(selection: Selection) -> bytes:
-    body = json.dumps({"role": selection.role, "operand": selection.operand},
+    value = selection.material().data() if selection.role == "preparation-material" else selection.operand
+    body = json.dumps({"role": selection.role, "operand": value},
                       ensure_ascii=False, separators=(",", ":")).encode("utf-8")
     require(0 < len(body) <= MAX_CONTROL, "launch_bound")
     return struct.pack("!I", len(body)) + body + b"R"
@@ -143,9 +162,20 @@ def read_selection(stream: BinaryIO) -> Selection:
         raise LaunchError("launch_encoding") from error
     require(type(data) is dict and list(data) == ["role", "operand"], "launch_fields")
     require(json.dumps(data, ensure_ascii=False, separators=(",", ":")) == text, "launch_canonical")
-    require(type(data["role"]) is str and (data["operand"] is None or type(data["operand"]) is str),
-            "launch_operand")
-    selection = Selection(selected_role(data["role"]), data["operand"])
+    require(type(data["role"]) is str, "launch_operand")
+    if data["role"] == "preparation-material":
+        from backend_process import BackendError
+        from preparation_material_data import parse_frame
+
+        try:
+            selection = Selection("preparation-material", parse_frame(data["operand"]))
+        except BackendError as error:
+            raise LaunchError(error.code) from error
+    else:
+        value = data["operand"]
+        if value is not None and not isinstance(value, str):
+            raise LaunchError("launch_operand")
+        selection = Selection(selected_role(data["role"]), value)
     require(_exact(stream, 1) == b"R" and stream.read(1) == b"", "launch_release")
     return selection
 
@@ -205,6 +235,10 @@ def command(selection: Selection) -> tuple[str, ...]:
             return ("/usr/bin/systemctl", "--user", "show", operand(selection), "--property=" + UNIT_PROPERTIES)
         case "slice-stop":
             return ("/usr/bin/systemctl", "--user", "stop", operand(selection))
+        case "preparation-material":
+            from preparation_material_data import command as material_command
+
+            return material_command(selection.material())
         case unreachable:
             assert_never(unreachable)
 

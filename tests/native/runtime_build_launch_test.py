@@ -11,6 +11,7 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "workers/runtime-build"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "workers/runtime-controller"))
 from launch import MAX_CONTROL, LaunchError, Selection, encode_selection, read_selection, resource_labels
 
 RUN = "ab" * 16
@@ -28,6 +29,33 @@ class Fragmented(io.BytesIO):
 
 
 class LaunchDataTests(unittest.TestCase):
+    def test_material_operand_preserves_exact_closed_frame(self) -> None:
+        body = (
+            b'{"role":"preparation-material","operand":{"run":"abababababababababababababababab",'
+            b'"generation":7,"operation":"carrier-create","container":null}}'
+        )
+        selected = read_selection(Fragmented(packet(body)))
+        from preparation_material_data import MaterialFrame
+
+        self.assertEqual(selected.role, "preparation-material")
+        self.assertEqual(selected.operand, MaterialFrame(RUN, 7, "carrier-create", None))
+        self.assertEqual(encode_selection(selected), packet(body))
+
+    def test_material_frames_keep_release_canonical_and_old_operand_boundaries(self) -> None:
+        body = (
+            b'{"role":"preparation-material","operand":{"run":"abababababababababababababababab",'
+            b'"generation":7,"operation":"carrier-create","container":null}}'
+        )
+        for raw in (packet(body)[:-1], packet(body) + b"R", packet(body) + packet(body),
+                    packet(body.replace(b'"generation":7', b'"generation":7,"generation":7')),
+                    packet(body.replace(b'"operation":"carrier-create","container":null',
+                                        b'"container":null,"operation":"carrier-create"')),
+                    packet(body.replace(b'"preparation-material"', b'"copy-in"')),
+                    packet(b'{"role":"preparation-material","operand":null}'),
+                    packet(b'{"role":"preparation-material","operand":"arbitrary"}')):
+            with self.subTest(raw=raw), self.assertRaises(LaunchError):
+                read_selection(io.BytesIO(raw))
+
     def test_closed_roles_accept_complete_independent_data_and_fragmented_reads(self) -> None:
         cases = [
             ("image-pull", None), ("image-inspect", None), ("volume-create", NAME),
