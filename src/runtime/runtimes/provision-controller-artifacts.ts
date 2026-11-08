@@ -5,7 +5,9 @@ import type { ProvisionHelper } from './provision-controller-config.js';
 import { PROVISION_ASSET_CATALOG } from './provision-asset-catalog.js';
 import { requireProvision } from './provision-types.js';
 
-const CONTROLLER = ['backend_process.py', 'backend_resources.py', 'bootstrap.py',
+const CONTROLLER = ['backend_process.py', 'backend_resources.py',
+  'backend_startup_data.py', 'backend_startup.py', 'backend_observe.py', 'backend_service.py', 'bootstrap.py',
+  'backend_startup_io.py',
   'bootstrap_identity.py', 'bootstrap_prepare.py', 'bootstrap_enforce.py', 'collector.py',
   'collector.mjs', 'collector-memory.mjs', 'collector-network.mjs', 'daemon.py', 'network.py',
   'prequalification.py', 'proxy.mjs', 'proxy_owner.py', 'relay.py', 'relay_transport.py'] as const;
