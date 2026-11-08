@@ -18,11 +18,12 @@ from typing import TYPE_CHECKING, BinaryIO, Final, Literal, TypedDict, assert_ne
 
 if TYPE_CHECKING:
     from preparation_material_data import Json, MaterialFrame
+    from preparation_config_data import ConfigFrame
 
 Role = Literal["image-pull", "image-inspect", "volume-create", "volume-inspect", "volume-remove",
                "carrier-create", "carrier-inspect", "carrier-remove", "copy-in", "copy-out",
                "slice-present", "slice-files", "slice-reload", "slice-start", "slice-inspect", "slice-stop",
-               "preparation-material"]
+               "preparation-material", "preparation-config"]
 MAX_CONTROL: Final = 1024
 VOLUME: Final = re.compile(r"wk-([a-f0-9]{32})-b([1-9][0-9]{0,15})-input")
 IDENTIFIER: Final = re.compile(r"[a-f0-9]{64}")
@@ -45,7 +46,8 @@ def selected_role(raw: str) -> Role:
     roles: tuple[Role, ...] = ("image-pull", "image-inspect", "volume-create", "volume-inspect",
                               "volume-remove", "carrier-create", "carrier-inspect", "carrier-remove",
                               "copy-in", "copy-out", "slice-present", "slice-files", "slice-reload",
-                              "slice-start", "slice-inspect", "slice-stop", "preparation-material")
+                              "slice-start", "slice-inspect", "slice-stop",
+                              "preparation-material", "preparation-config")
     for value in roles:
         if raw == value:
             return value
@@ -56,7 +58,7 @@ def selected_role(raw: str) -> Role:
 class Selection:
     """Validated command DATA; never a resource or release-authority registration."""
     role: Role
-    operand: str | None | MaterialFrame
+    operand: str | None | MaterialFrame | ConfigFrame
 
     def __post_init__(self) -> None:
         match self.role:
@@ -75,21 +77,29 @@ class Selection:
                     raise LaunchError("launch_slice:" + error.reason) from error
             case "preparation-material":
                 self.material()
+            case "preparation-config":
+                self.configuration()
             case unreachable:
                 assert_never(unreachable)
 
     def material(self) -> MaterialFrame:
         from preparation_material_data import MaterialFrame
-
         require(self.role == "preparation-material", "launch_material_role")
-        match self.operand:
-            case MaterialFrame() as frame:
-                require(type(frame) is MaterialFrame, "launch_operand")
-                return frame
-            case str() | None:
-                raise LaunchError("launch_operand")
-            case unreachable:
-                assert_never(unreachable)
+        return _frame_operand(self, MaterialFrame)
+
+    def configuration(self) -> ConfigFrame:
+        from preparation_config_data import ConfigFrame
+        require(self.role == "preparation-config", "launch_config_role")
+        return _frame_operand(self, ConfigFrame)
+
+
+def _frame_operand[Frame](selection: Selection, expected: type[Frame]) -> Frame:
+    match selection.operand:
+        case expected() as frame:
+            require(type(frame) is expected, "launch_operand")
+            return frame
+        case _:
+            raise LaunchError("launch_operand")
 
 
 def operand(selection: Selection) -> str:
@@ -135,7 +145,13 @@ def build_image() -> tuple[str, str]:
 
 
 def encode_selection(selection: Selection) -> bytes:
-    value = selection.material().data() if selection.role == "preparation-material" else selection.operand
+    match selection.role:
+        case "preparation-material":
+            value = selection.material().data()
+        case "preparation-config":
+            value = selection.configuration().data()
+        case _:
+            value = selection.operand
     body = json.dumps({"role": selection.role, "operand": value},
                       ensure_ascii=False, separators=(",", ":")).encode("utf-8")
     require(0 < len(body) <= MAX_CONTROL, "launch_bound")
@@ -163,19 +179,25 @@ def read_selection(stream: BinaryIO) -> Selection:
     require(type(data) is dict and list(data) == ["role", "operand"], "launch_fields")
     require(json.dumps(data, ensure_ascii=False, separators=(",", ":")) == text, "launch_canonical")
     require(type(data["role"]) is str, "launch_operand")
-    if data["role"] == "preparation-material":
-        from backend_process import BackendError
-        from preparation_material_data import parse_frame
-
-        try:
-            selection = Selection("preparation-material", parse_frame(data["operand"]))
-        except BackendError as error:
-            raise LaunchError(error.code) from error
-    else:
-        value = data["operand"]
-        if value is not None and not isinstance(value, str):
-            raise LaunchError("launch_operand")
-        selection = Selection(selected_role(data["role"]), value)
+    match data["role"]:
+        case "preparation-material":
+            from backend_process import BackendError
+            from preparation_material_data import parse_frame
+            try:
+                selection = Selection("preparation-material", parse_frame(data["operand"]))
+            except BackendError as error:
+                raise LaunchError(error.code) from error
+        case "preparation-config":
+            from preparation_config_data import ConfigError, parse_frame as config_frame
+            try:
+                selection = Selection("preparation-config", config_frame(data["operand"]))
+            except ConfigError as error:
+                raise LaunchError(error.reason) from error
+        case _:
+            value = data["operand"]
+            if value is not None and not isinstance(value, str):
+                raise LaunchError("launch_operand")
+            selection = Selection(selected_role(data["role"]), value)
     require(_exact(stream, 1) == b"R" and stream.read(1) == b"", "launch_release")
     return selection
 
@@ -239,6 +261,9 @@ def command(selection: Selection) -> tuple[str, ...]:
             from preparation_material_data import command as material_command
 
             return material_command(selection.material())
+        case "preparation-config":
+            from preparation_config_data import command as config_command
+            return config_command(selection.configuration())
         case unreachable:
             assert_never(unreachable)
 

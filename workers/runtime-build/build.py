@@ -14,13 +14,15 @@ from input import Chunk, InputCopy, InputData, InputError, Receipt
 from input_archive import MAX_METADATA, build_archive
 from input_resources import InputResources
 from launch import LaunchError, Selection
+import phase_factory
 from process import LOG_BOUND, Process
 
 if TYPE_CHECKING:
     from cold_envelope import ColdEnvelope
     from preparation_materials import PreparationMaterials
     from relay import Backend
-    type Origin = InputResources | ColdEnvelope | PreparationMaterials
+    from preparation_config import PreparationConfiguration
+    type Origin = InputResources | ColdEnvelope | PreparationMaterials | PreparationConfiguration
 
 
 class Pending:
@@ -37,13 +39,8 @@ class Pending:
         self.process: Process | None = None
         self.settled = False
         match selection.role:
-            case "preparation-material":
-                from preparation_material_archive import transfer
-                frame = selection.material()
-                self.mutation = frame.mutation
-                require(not self.cleanup or frame.cleanup, "build_cleanup_copy")
-                payload = transfer(frame, session._copy)
-                self.body, self.output_bound, self.archive_output = payload.body, payload.bound, payload.archive
+            case "preparation-material" | "preparation-config":
+                phase_factory.phase_payload(self)
             case "copy-in" | "copy-out":
                 data = session._copy
                 if data is None:
@@ -65,7 +62,7 @@ class Pending:
                 assert_never(unreachable)
 
 
-class BuildSession:
+class BuildSession(phase_factory.ConfigurationBorrowCreatorBoundary):
     """One Backend-retained ledger; construction allocates no external resources."""
 
     def __init__(self, backend: Backend) -> None:
@@ -79,6 +76,8 @@ class BuildSession:
         self._cold: dict[Literal["prepare", "offline"], ColdEnvelope | None] = {}
         self._phase_reservations: set[Literal["prepare", "offline"]] = set()
         self._preparation_materials: PreparationMaterials | None = None
+        self._preparation_config: PreparationConfiguration | None = None
+        self._config_consumed = False
         self._pending: list[Pending] = []
         self._active: Pending | None = None
         self._input: InputData | None = None
@@ -114,13 +113,11 @@ class BuildSession:
 
     def _origin(self, resources: Origin, selection: Selection) -> None:
         if resources is self._resources:
-            require(not selection.role.startswith("slice-") and selection.role != "preparation-material",
+            require(not selection.role.startswith("slice-")
+                    and selection.role not in ("preparation-material", "preparation-config"),
                     "build_input_role")
         else:
-            require(resources is not None and (resources is self._preparation_materials
-                    or any(item is resources for item in self._cold.values())), "build_operation_owner")
-            from phase_factory import phase_origin
-            phase_origin(self, resources, selection)
+            phase_factory.phase_origin(self, resources, selection)
 
     def _eligible(self, pending: Pending, process: Process) -> None:
         self._member(pending, process)
@@ -130,12 +127,12 @@ class BuildSession:
             require(self._cleaning and (pending.selection.role in (
                 "image-inspect", "volume-inspect", "volume-remove", "carrier-inspect", "carrier-remove",
                 "slice-present", "slice-files", "slice-inspect", "slice-stop", "slice-reload")
-                or (pending.selection.role == "preparation-material" and pending.selection.material().cleanup)),
+                or pending.selection.role in ("preparation-material", "preparation-config")),
                     "build_cleanup_role")
         else:
             require(self._failure is None and not self._closing, "build_revoked")
-        if pending.resources is self._preparation_materials and self._preparation_materials is not None:
-            self._preparation_materials.eligible(pending.selection)
+        if pending.selection.role in ("preparation-material", "preparation-config"):
+            phase_factory.phase_eligible(pending)
         require(not process.stopped, "build_operation_revoked")
 
     def _fail(self, reason: str) -> None:
@@ -196,6 +193,9 @@ class BuildSession:
         from phase_factory import prepare_materials
         prepare_materials(self)
 
+    def _config_stop(self, process: Process) -> bool:
+        return self._preparation_config is not None and self._preparation_config.stop_process(process)
+
     def _factory_available(self) -> None:
         self._check()
         require(any(path == self.backend.root / "build/phase_factory.py" for path, _, _ in self.backend.files),
@@ -211,8 +211,8 @@ class BuildSession:
             self._check()
         pending = Pending(self, resources, selection)
         self._pending.append(pending)
-        if resources is self._preparation_materials and self._preparation_materials is not None:
-            self._preparation_materials.retain(pending)
+        if selection.role in ("preparation-material", "preparation-config"):
+            phase_factory.phase_retain(pending)
         pending.process = Process(pending)
         self._active = pending
         try:
@@ -234,8 +234,9 @@ class BuildSession:
 
     def _uncertainty(self) -> bool:
         unknown = any(pending.mutation and not pending.settled
-                      and pending.process is not None
-                      and pending.process.released for pending in self._pending)
+                      and pending.process is not None and pending.process.released
+                      and not (self._preparation_config and self._preparation_config.inflight(pending))
+                      for pending in self._pending)
         if unknown:
             self.backend._mutation_unknown = True
         return unknown

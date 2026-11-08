@@ -79,6 +79,8 @@ class Process:
     def stop(self) -> None:
         self.stopped = True
         self._dispose("gate-write")
+        if self.pending.session._config_stop(self):
+            return
         child = self.child
         if child is not None and not self.reaped:
             try:
@@ -89,6 +91,11 @@ class Process:
                 self._fault("build_child_stop:" + str(error))
 
     def start(self) -> None:
+        self._start_gated()
+        self.join()
+
+    def _start_gated(self) -> None:
+        """Perform the original one-use setup and release without joining."""
         session = self.pending.session
         session._member(self.pending, self)
         require(not self.started, "build_process_replay")
@@ -124,7 +131,6 @@ class Process:
         except (OSError, ValueError, BackendError, LaunchError) as error:
             session._fail("build_process_setup:" + str(error))
             self.stop()
-        self.join()
 
     def _watch(self, descriptor: int, flags: int) -> None:
         try:
@@ -192,6 +198,8 @@ class Process:
             else:
                 self.stderr_eof = True
             self._close_stream(descriptor)
+            return
+        if self.output_overflow and self.pending.session._config_stop(self):
             return
         target = self.output if stdout else self.errors
         bound = self.pending.output_bound if stdout else LOG_BOUND

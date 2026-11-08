@@ -29,7 +29,7 @@ if __name__ == "__main__":
     sys.modules["relay"] = sys.modules[__name__]
 from backend_process import BackendError, require
 from backend_resources import Resources
-from build import BuildSession
+import build
 from collector import collect, baseline_inventory, owned_inventory, DelegationRefusal, Qualification
 from daemon import Daemon
 from network import Network
@@ -72,7 +72,7 @@ def receive(connection: socket.socket, backend: "Backend") -> bytes:
     return bytes(body)
 
 
-class Backend:
+class Backend(build.phase_factory.ConfigurationObservationBoundary):
     """Only this source-free producer can answer qualification; JSON never restores it."""
     def __init__(self, run_id: str):
         self.run_id = run_id
@@ -98,7 +98,7 @@ class Backend:
         self.daemon.start()
         self.resources = Resources(self.daemon, run_id, "infrastructure")
         self.mirror = Mirror(self.resources, self.network)
-        self.build = BuildSession(self)
+        self.build = build.BuildSession(self)
 
     def acquire(self) -> None:
         with self.mutation():

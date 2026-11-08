@@ -29,6 +29,37 @@ class Fragmented(io.BytesIO):
 
 
 class LaunchDataTests(unittest.TestCase):
+    def test_configuration_roundtrips_the_closed_wire_and_fixed_command(self) -> None:
+        from launch import command
+        from preparation_config_data import ConfigFrame, Operation
+        body = (
+            b'{"role":"preparation-config","operand":{"run":"abababababababababababababababab",'
+            b'"generation":7,"operation":"read-config","tool":"verifier",'
+            b'"container":"' + CONTAINER.encode("ascii") + b'"}}'
+        )
+        selected = read_selection(Fragmented(packet(body)))
+        self.assertEqual(selected.configuration(), ConfigFrame(RUN, 7, Operation.READ_CONFIG, "verifier", CONTAINER))
+        self.assertEqual(encode_selection(selected), packet(body))
+        self.assertEqual(command(selected), ("/usr/bin/docker", "--host=unix:///run/user/10001/docker.sock",
+                                             "cp", "--archive", CONTAINER + ":/build-config", "-"))
+    def test_configuration_wire_cannot_smuggle_authority_or_another_phase(self) -> None:
+        body = (
+            b'{"role":"preparation-config","operand":{"run":"abababababababababababababababab",'
+            b'"generation":7,"operation":"read-config","tool":"verifier",'
+            b'"container":"' + CONTAINER.encode("ascii") + b'"}}'
+        )
+        malformed = (
+            body.replace(b'"generation":7', b'"generation":true'),
+            body.replace(b'"generation":7', b'"generation":7,"generation":7'),
+            body.replace(b'"operation":"read-config"', b'"operation":"terminal-read"'),
+            body.replace(b'"tool":"verifier"', b'"tool":"offline"'),
+            body[:-2] + b',"deadline":1}}', body[:-2] + b',"mode":"terminal"}}',
+            body.replace(b'"preparation-config"', b'"preparation-material"'),
+        )
+        for raw in (*map(packet, malformed), packet(body)[:-1], packet(body) + packet(body)):
+            with self.subTest(raw=raw), self.assertRaises(LaunchError):
+                read_selection(io.BytesIO(raw))
+
     def test_material_operand_preserves_exact_closed_frame(self) -> None:
         body = (
             b'{"role":"preparation-material","operand":{"run":"abababababababababababababababab",'

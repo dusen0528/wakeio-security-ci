@@ -80,8 +80,9 @@ class PreparationMaterials:
             case "carrier-inspect" | "carrier-remove":
                 require(bool(self.carrier) and not self.carrier_removed, "material_carrier_removed")
             case "volume-remove-work" | "volume-remove-cache" | "volume-remove-output":
-                require(frame.kind in self.volumes and (not self.carrier or self.carrier_removed),
-                        "material_borrower_retained")
+                configuration = self.session._preparation_config
+                require(frame.kind in self.volumes and (not self.carrier or self.carrier_removed)
+                        and (configuration is None or configuration.drained), "material_borrower_retained")
             case "volume-inspect-work" | "volume-inspect-cache" | "volume-inspect-output":
                 require(self.started, "material_not_started")
             case unreachable:
@@ -236,8 +237,9 @@ class PreparationMaterials:
         """Dispose the original carrier before output/cache/work and close original FDs only once."""
         self.accept(Selection("preparation-material", MaterialFrame(self.run, self.generation,
                                                                   "volume-inspect-work", None)))
-        require(self.session._cleaning and not self.close_unknown and not self.identity_unknown,
-                "material_cleanup_unavailable")
+        configuration = self.session._preparation_config
+        require(self.session._cleaning and not self.close_unknown and not self.identity_unknown
+                and (configuration is None or configuration.drained), "material_cleanup_unavailable")
         self.held = False
         self.state = "DISPOSING"
         if self.carrier and not self.carrier_removed:
