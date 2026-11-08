@@ -4,23 +4,19 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ProvisionProcess } from './provision-controller-process.js';
 import { ProvisionRelayWire, type RelayRequest } from './provision-relay-wire.js';
+import { ProvisionRelayStartup } from './provision-relay-startup.js';
 import type { BuildRequest, BuildReply } from './provision-build-wire.js';
 import type { ProvisionVm } from './provision-controller-vm.js';
 import { ProvisionError, provisionRecord, requireProvision, type BackendIdentity } from './provision-types.js';
 
-export function relayServiceArgv(run: string): readonly string[] {
-  return ['/usr/bin/systemd-run', '--quiet', '--pipe', '--wait', '--collect',
-    '--service-type=exec', '--unit=wakeio-backend-' + run + '.service',
-    '--property=CPUQuota=50%', '--property=MemoryMax=268435456', '--property=TasksMax=64',
-    '--property=RuntimeMaxSec=900', '--property=TimeoutStopSec=30', '--property=KillMode=control-group',
-    '/usr/bin/python3', '-I', '-B', '/usr/local/lib/wakeio-controller/relay.py', run];
-}
+export { relayServiceArgv } from './provision-relay-startup.js';
 
 /** Same original VM, connection and private prerequisite lifetime. */
 export class ProvisionRelay {
   private socket: { readonly dev: number; readonly ino: number } | undefined;
   private watcher: FSWatcher | undefined;
   private service: ProvisionProcess | undefined;
+  private startup: ProvisionRelayStartup | undefined;
   private bridge: ProvisionProcess | undefined;
   private wire: ProvisionRelayWire | undefined;
   private starting: Promise<void> | undefined;
@@ -126,13 +122,12 @@ export class ProvisionRelay {
   }
 
   private async startService(): Promise<void> {
-    this.service = await this.vm.startRelayService(this);
-    this.service.child.stdin.end();
-    this.service.child.stdout.resume();
-    this.service.child.stderr.resume();
-    void this.service.closed.then(() => {
-      if (!this.closing) this.vm.owner.revoke('guest_relay_exited');
-    });
+    const startup = new ProvisionRelayStartup(this.vm, this);
+    this.startup = startup;
+    if (this.closing) startup.beginClose();
+    const result = await startup.start();
+    this.service = result.process;
+    await result.ready;
   }
 
   private async checkSocket(): Promise<void> {
@@ -196,6 +191,7 @@ export class ProvisionRelay {
     if (this.closing) return;
     this.vm.checkRelay(this);
     this.closing = true;
+    this.startup?.beginClose();
     this.grace = new Promise(resolve => {
       this.finishGrace = resolve;
       this.graceTimer = setTimeout(() => { this.cutoff = true; resolve(); }, 30_000);
@@ -249,7 +245,7 @@ export class ProvisionRelay {
 
   private async drainOriginal(): Promise<void> {
     await Promise.allSettled([this.starting, this.cleanup]);
-    const physical = await Promise.allSettled([this.service?.drain(), this.bridge?.drain(), this.watcherClosed]);
+    const physical = await Promise.allSettled([this.startup?.drain(), this.bridge?.drain(), this.watcherClosed]);
     await this.serial;
     requireProvision(!this.failure && physical.every(row => row.status === 'fulfilled'), 'relay_drain_unconfirmed');
   }

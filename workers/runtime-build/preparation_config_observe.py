@@ -190,6 +190,7 @@ def observe_tool(tool: ConfigurationTool) -> None:
             try:
                 _kill_once(tool)
                 if not blocked or exceptional is not None or fresh_wake is not None:
+                    tool.configuration.backend._observations.prepare_join(tool)
                     tool.reconcile()
                     blocked = False
             except (BackendError, ConfigError, ColdDataError, LaunchError, OSError, ValueError, KeyError,
@@ -278,6 +279,7 @@ class ConfigurationSubscriptions:
 
 
 def unwatch_foreign(tool: ConfigurationTool) -> None:
+    tool.configuration.backend._observations.detach(tool)
     if tool.events is not None:
         events = _process(tool).events
         for name, descriptor in tuple(tool.foreign.items()):

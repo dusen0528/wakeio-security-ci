@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import os
 import stat
+import backend_observe
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Never
 
@@ -258,10 +259,11 @@ def negative_hold(configuration: PreparationConfiguration, reason: str) -> Never
     if configuration.wake is not None:
         configuration.wake.discard()
     for tool in (configuration.producer, configuration.verifier):
-        if tool is None or tool.events is None:
+        if tool is None:
             continue
         try:
             unwatch_foreign(tool)
         except (BackendError, OSError, ValueError, KeyError) as error:
             configuration.session._fail("config_terminal_unwatch:" + str(error))
+    backend_observe.terminal_hold(configuration, reason)
     _hold(configuration.session, reason)
