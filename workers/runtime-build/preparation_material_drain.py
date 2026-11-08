@@ -60,6 +60,8 @@ class _Wake:
 
 
 def _certain(session: BuildSession, materials: PreparationMaterials) -> None:
+    configuration = session._preparation_config
+    require(configuration is None or configuration.drained, "material_config_retained")
     require(not session._uncertainty() and not session.backend._mutation_unknown
             and not materials.close_unknown and not materials.identity_unknown, "material_cleanup_uncertain")
     input_close_unknown = session._resources.mount_fd is not None and any(
@@ -70,6 +72,10 @@ def _certain(session: BuildSession, materials: PreparationMaterials) -> None:
 
 def _attempt(session: BuildSession, materials: PreparationMaterials) -> None:
     try:
+        configuration = session._preparation_config
+        if configuration is not None and not configuration.drained:
+            from preparation_config_drain import drain as config_drain
+            config_drain(configuration)
         _join_children(session)
         _certain(session, materials)
         session._cleaning = True
